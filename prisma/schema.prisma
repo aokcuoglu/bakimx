@@ -7,13 +7,13 @@ datasource db {
 }
 
 model Workshop {
-  id           String   @id @default(cuid())
+  id           String       @id @default(cuid())
   kind         WorkshopKind @default(customer)
   // Tenant giriş kodu (BAK-40). E-postasız kullanıcı `/w/<loginCode>` ile kendi
   // atölyesini seçer; kullanıcı adları YALNIZ bu tenant içinde benzersizdir.
   // Format: küçük harf `a-z0-9-`, 3–20 karakter (bkz. `src/lib/workshop-code.ts`).
   // v1'de uygulama içinden DEĞİŞTİRİLEMEZ — yazdırılmış QR kartları ölmesin.
-  loginCode    String   @unique
+  loginCode    String       @unique
   name         String
   phone        String
   city         String
@@ -25,8 +25,8 @@ model Workshop {
   taxNumber    String?
   taxOffice    String?
   invoiceTitle String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   // --- Billing / subscription / onboarding (SaaS) ---
   // Defaults keep existing & admin-provisioned workshops fully active; only the
@@ -114,9 +114,9 @@ model Workshop {
   demoSessions              SalesDemoSession[]
   salesDiscountCodes        SalesDiscountCode[]
   salesRegistrationLink     SalesRegistrationLink?
-  acquisitionAdvisor        SalesAdvisor? @relation("WorkshopAcquisitionAdvisor", fields: [acquisitionAdvisorId], references: [id], onDelete: SetNull)
-  referredByWorkshop        Workshop?     @relation("WorkshopReferralAttribution", fields: [referredByWorkshopId], references: [id], onDelete: SetNull)
-  referredWorkshops         Workshop[]    @relation("WorkshopReferralAttribution")
+  acquisitionAdvisor        SalesAdvisor?              @relation("WorkshopAcquisitionAdvisor", fields: [acquisitionAdvisorId], references: [id], onDelete: SetNull)
+  referredByWorkshop        Workshop?                  @relation("WorkshopReferralAttribution", fields: [referredByWorkshopId], references: [id], onDelete: SetNull)
+  referredWorkshops         Workshop[]                 @relation("WorkshopReferralAttribution")
 
   @@index([referredByWorkshopId])
   @@index([kind])
@@ -170,8 +170,12 @@ model BillingOrder {
   workshop         Workshop           @relation(fields: [workshopId], references: [id])
   type             BillingOrderType
   planTier         PlanTier
+  previousPlanTier PlanTier?
   billingCycle     BillingCycle
-  amountMinor      Int // kuruş — satın alma anındaki KDV-dahil fiyat snapshot'ı
+  amountMinor      Int // legacy alias — grossAmountMinor ile aynı KDV-dahil kuruş tutarı
+  vatRateBps       Int                @default(2000)
+  grossAmountMinor Int
+  netAmountMinor   Int
   currency         String             @default("TRY")
   status           BillingOrderStatus @default(pending_payment)
   method           BillingMethod      @default(havale)
@@ -199,6 +203,7 @@ enum BillingCycle {
 enum BillingOrderType {
   new_purchase
   upgrade
+  downgrade
   renewal
 }
 
@@ -345,28 +350,30 @@ model User {
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
 
-  auditLogs             AuditLog[]
-  sentInvites           Invite[]             @relation("InviteCreatedBy")
-  passwordResets        PasswordResetToken[]
-  deletedPhotos         VehiclePhoto[]       @relation("VehiclePhotoDeletedBy")
-  deletedChecklistItems ChecklistItem[]      @relation("ChecklistItemDeletedBy")
-  platformAdmin         PlatformAdmin?       @relation("PlatformAdminUser")
-  grantedPlatformAdmins PlatformAdmin[]      @relation("PlatformAdminCreatedBy")
+  auditLogs                     AuditLog[]
+  sentInvites                   Invite[]                @relation("InviteCreatedBy")
+  passwordResets                PasswordResetToken[]
+  deletedPhotos                 VehiclePhoto[]          @relation("VehiclePhotoDeletedBy")
+  deletedChecklistItems         ChecklistItem[]         @relation("ChecklistItemDeletedBy")
+  platformAdmin                 PlatformAdmin?          @relation("PlatformAdminUser")
+  grantedPlatformAdmins         PlatformAdmin[]         @relation("PlatformAdminCreatedBy")
   /// Bu personele ATANMIŞ destek talepleri (BAK-98).
-  supportRequests       SupportRequest[]     @relation("SupportRequestAssignee")
+  supportRequests               SupportRequest[]        @relation("SupportRequestAssignee")
   /// BAK-129: Bu hesabın Web Push abonelikleri (cihaz/tarayıcı başına bir satır).
-  pushSubscriptions     PushSubscription[]
+  pushSubscriptions             PushSubscription[]
   /// BAK-138: Bu hesabın elle düzelttiği işçilik süresi kayıtları.
-  editedLaborSessions   LaborSession[]       @relation("LaborSessionEditedBy")
-  salesAdvisor          SalesAdvisor?
-  createdSalesAdvisorInvites SalesAdvisorInvite[] @relation("SalesAdvisorInviteCreator")
-  salesActivities       SalesActivity[]      @relation("SalesActivityActor")
-  salesLeadAssignments  SalesLeadAssignment[] @relation("SalesLeadAssignmentActor")
-  createdSalesTasks     SalesTask[]          @relation("SalesTaskCreator")
-  createdDemoSessions   SalesDemoSession[]   @relation("SalesDemoSessionCreator")
+  editedLaborSessions           LaborSession[]          @relation("LaborSessionEditedBy")
+  salesAdvisor                  SalesAdvisor?
+  createdSalesAdvisorInvites    SalesAdvisorInvite[]    @relation("SalesAdvisorInviteCreator")
+  salesActivities               SalesActivity[]         @relation("SalesActivityActor")
+  salesLeadAssignments          SalesLeadAssignment[]   @relation("SalesLeadAssignmentActor")
+  createdSalesTasks             SalesTask[]             @relation("SalesTaskCreator")
+  createdDemoSessions           SalesDemoSession[]      @relation("SalesDemoSessionCreator")
   createdSalesRegistrationLinks SalesRegistrationLink[] @relation("SalesRegistrationLinkCreator")
   revokedSalesRegistrationLinks SalesRegistrationLink[] @relation("SalesRegistrationLinkRevoker")
-  createdSalesDiscountCodes SalesDiscountCode[] @relation("SalesDiscountCodeCreator")
+  createdSalesDiscountCodes     SalesDiscountCode[]     @relation("SalesDiscountCodeCreator")
+  createdSalesCommissionRules   SalesCommissionRule[]   @relation("SalesCommissionRuleCreator")
+  salesCommissionEvents         SalesCommissionEvent[]  @relation("SalesCommissionEventActor")
 
   // Kimlik boş kalamaz (email VEYA username) ve ayrıcalıklı rollerde e-posta
   // zorunludur — ikisi de migration'da CHECK kısıtı olarak DB'de durur; PSL
@@ -1039,37 +1046,37 @@ model ServiceOrderItem {
 /// provider response. Provider status remains a string so adding a provider or
 /// status never requires a PostgreSQL enum migration.
 model ExternalProcurementOrder {
-  id                      String                         @id @default(cuid())
-  provider                String
-  workshopId              String
-  workshop                Workshop                       @relation(fields: [workshopId], references: [id], onDelete: Restrict)
-  serviceOrderId          String
-  serviceOrder            ServiceOrder                   @relation(fields: [serviceOrderId], references: [id], onDelete: Restrict)
-  idempotencyKey          String
-  requestHash             String
-  externalOrderId         String?
-  partnerStatus           String
-  partnerVersion          Int                            @default(0)
-  bindingNetKurus         Int?
-  bindingVatKurus         Int?
-  bindingGrossKurus       Int?
-  currency                String?
-  pricingPolicyVersion    String?
-  reservationExpiresAt    DateTime?
-  invoiceReference        String?
-  cancellationCode        String?
-  failureCode             String?
-  requestedByUserId       String
-  cancellationRequestedAt DateTime?
-  failedAt                DateTime?
-  lastReconciledAt        DateTime?
-  nextReconcileAt         DateTime?
-  reconcileFailureCount   Int                            @default(0)
-  lastReconcileError      String?
+  id                        String                         @id @default(cuid())
+  provider                  String
+  workshopId                String
+  workshop                  Workshop                       @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  serviceOrderId            String
+  serviceOrder              ServiceOrder                   @relation(fields: [serviceOrderId], references: [id], onDelete: Restrict)
+  idempotencyKey            String
+  requestHash               String
+  externalOrderId           String?
+  partnerStatus             String
+  partnerVersion            Int                            @default(0)
+  bindingNetKurus           Int?
+  bindingVatKurus           Int?
+  bindingGrossKurus         Int?
+  currency                  String?
+  pricingPolicyVersion      String?
+  reservationExpiresAt      DateTime?
+  invoiceReference          String?
+  cancellationCode          String?
+  failureCode               String?
+  requestedByUserId         String
+  cancellationRequestedAt   DateTime?
+  failedAt                  DateTime?
+  lastReconciledAt          DateTime?
+  nextReconcileAt           DateTime?
+  reconcileFailureCount     Int                            @default(0)
+  lastReconcileError        String?
   manualReconcileRequiredAt DateTime?
-  createdAt               DateTime                       @default(now())
-  updatedAt               DateTime                       @updatedAt
-  items                   ExternalProcurementOrderItem[]
+  createdAt                 DateTime                       @default(now())
+  updatedAt                 DateTime                       @updatedAt
+  items                     ExternalProcurementOrderItem[]
 
   @@unique([provider, workshopId, idempotencyKey])
   @@unique([provider, externalOrderId])
@@ -1081,17 +1088,17 @@ model ExternalProcurementOrder {
 /// Durable inbox for authenticated provider events. Raw payloads and secrets are
 /// intentionally excluded; the row is only a dedupe and operations record.
 model ExternalProcurementEvent {
-  id                String    @id @default(cuid())
-  provider          String
-  eventId           String
-  contractVersion   String
-  eventType         String
-  externalOrderId   String
-  partnerVersion    Int
-  status            String    @default("received")
-  failureCode       String?
-  receivedAt        DateTime  @default(now())
-  processedAt       DateTime?
+  id              String    @id @default(cuid())
+  provider        String
+  eventId         String
+  contractVersion String
+  eventType       String
+  externalOrderId String
+  partnerVersion  Int
+  status          String    @default("received")
+  failureCode     String?
+  receivedAt      DateTime  @default(now())
+  processedAt     DateTime?
 
   @@unique([provider, eventId])
   @@index([provider, externalOrderId, partnerVersion])
@@ -1177,29 +1184,29 @@ enum QuoteStatus {
 }
 
 model QuoteItem {
-  id              String         @id @default(cuid())
-  workshopId      String
-  workshop        Workshop       @relation(fields: [workshopId], references: [id])
-  quoteId         String
-  quote           Quote          @relation(fields: [quoteId], references: [id])
-  type            QuoteItemType
-  name            String
-  sku             String?
-  unit            String?
-  quantity        Int            @default(1)
-  unitPrice       Int? // kuruş
-  totalPrice      Int? // kuruş
-  partId          String?
-  part            PartStockItem? @relation(fields: [partId], references: [id])
+  id                  String         @id @default(cuid())
+  workshopId          String
+  workshop            Workshop       @relation(fields: [workshopId], references: [id])
+  quoteId             String
+  quote               Quote          @relation(fields: [quoteId], references: [id])
+  type                QuoteItemType
+  name                String
+  sku                 String?
+  unit                String?
+  quantity            Int            @default(1)
+  unitPrice           Int? // kuruş
+  totalPrice          Int? // kuruş
+  partId              String?
+  part                PartStockItem? @relation(fields: [partId], references: [id])
   // ServiceOrderItem.bakimxProductId ile aynı sözleşme: FK yok, teklif satırı
   // ürün kartından bağımsız yaşar.
-  bakimxProductId String?
+  bakimxProductId     String?
   // ServiceOrderItem.getirbakimProductId ile aynı sözleşme: FK yok, teklif
   // satırı GetirBakım kartından bağımsız yaşar (katalog kopyalanmaz).
   getirbakimProductId String?
-  note            String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  note                String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
   @@index([workshopId])
   @@index([quoteId])
@@ -1864,24 +1871,24 @@ model PlatformAdmin {
 /// Saha satış personeli için platform profili. Tenant içi `UserRole` yerine bu
 /// tablo kullanılır; böylece müşteri iş yeri yetkileriyle satış erişimi karışmaz.
 model SalesAdvisor {
-  id         String   @id @default(cuid())
-  userId     String   @unique
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  disabledAt DateTime?
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  disabledAt        DateTime?
   /// Doluysa bu andan önce açılmış satış oturumları geçersizdir.
   sessionsValidFrom DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  leads      SalesLead[]
-  assignmentsFrom SalesLeadAssignment[] @relation("SalesLeadAssignmentFrom")
-  assignmentsTo   SalesLeadAssignment[] @relation("SalesLeadAssignmentTo")
-  commissions SalesCommission[]
-  demoSessions SalesDemoSession[]
-  discountCodes SalesDiscountCode[]
-  acquisitionWorkshops Workshop[] @relation("WorkshopAcquisitionAdvisor")
-  referrals SalesReferral[]
-  registrationLinks SalesRegistrationLink[]
+  leads                SalesLead[]
+  assignmentsFrom      SalesLeadAssignment[]   @relation("SalesLeadAssignmentFrom")
+  assignmentsTo        SalesLeadAssignment[]   @relation("SalesLeadAssignmentTo")
+  commissions          SalesCommission[]
+  demoSessions         SalesDemoSession[]
+  discountCodes        SalesDiscountCode[]
+  acquisitionWorkshops Workshop[]              @relation("WorkshopAcquisitionAdvisor")
+  referrals            SalesReferral[]
+  registrationLinks    SalesRegistrationLink[]
 
   @@index([disabledAt])
 }
@@ -1969,43 +1976,48 @@ enum SalesCommissionStatus {
   void
 }
 
+enum SalesCommissionReviewReason {
+  missing_rule
+  legacy_manual
+}
+
 /// BakımX'ın kendi satış hunisi. Globaldir; müşteri tenant verisi değildir.
 model SalesLead {
-  id                 String          @id @default(cuid())
-  source             SalesLeadSource @default(field)
-  status             SalesLeadStatus @default(new)
-  businessName       String
-  contactName        String
-  phone              String
-  normalizedPhone    String?
-  email              String?
-  normalizedEmail    String?
-  city               String?
-  district           String?
-  address            String?
-  monthlyVehicles    String?
-  notes              String?
-  nextActionAt       DateTime?
-  lostReason         String?
+  id                  String          @id @default(cuid())
+  source              SalesLeadSource @default(field)
+  status              SalesLeadStatus @default(new)
+  businessName        String
+  contactName         String
+  phone               String
+  normalizedPhone     String?
+  email               String?
+  normalizedEmail     String?
+  city                String?
+  district            String?
+  address             String?
+  monthlyVehicles     String?
+  notes               String?
+  nextActionAt        DateTime?
+  lostReason          String?
   /// Doluysa lead'in danışman atfı artık değiştirilemez. İlk kazanımda dolar.
   attributionFrozenAt DateTime?
-  advisorId          String?
-  advisor            SalesAdvisor?  @relation(fields: [advisorId], references: [id], onDelete: SetNull)
-  workshopId         String?         @unique
-  workshop           Workshop?       @relation(fields: [workshopId], references: [id], onDelete: SetNull)
-  demoRequestId      String?         @unique
-  demoRequest        DemoRequest?    @relation(fields: [demoRequestId], references: [id], onDelete: SetNull)
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  advisorId           String?
+  advisor             SalesAdvisor?   @relation(fields: [advisorId], references: [id], onDelete: SetNull)
+  workshopId          String?         @unique
+  workshop            Workshop?       @relation(fields: [workshopId], references: [id], onDelete: SetNull)
+  demoRequestId       String?         @unique
+  demoRequest         DemoRequest?    @relation(fields: [demoRequestId], references: [id], onDelete: SetNull)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
-  activities         SalesActivity[]
-  assignments        SalesLeadAssignment[]
-  tasks              SalesTask[]
-  demoSessions       SalesDemoSession[]
-  commissions        SalesCommission[]
-  discountCodes      SalesDiscountCode[]
+  activities        SalesActivity[]
+  assignments       SalesLeadAssignment[]
+  tasks             SalesTask[]
+  demoSessions      SalesDemoSession[]
+  commissions       SalesCommission[]
+  discountCodes     SalesDiscountCode[]
   registrationLinks SalesRegistrationLink[]
-  referral           SalesReferral?
+  referral          SalesReferral?
 
   @@index([advisorId, status])
   @@index([status, nextActionAt])
@@ -2062,19 +2074,19 @@ model SalesLeadAssignment {
 }
 
 model SalesActivity {
-  id           String               @id @default(cuid())
-  leadId       String
-  lead         SalesLead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  type         SalesActivityType
-  result       SalesActivityResult?
-  summary      String
-  lostReason   String?
-  occurredAt   DateTime             @default(now())
-  nextActionAt DateTime?
-  createdById  String
-  createdBy    User                 @relation("SalesActivityActor", fields: [createdById], references: [id])
-  completedTask SalesTask?          @relation("SalesTaskCompletion")
-  createdAt    DateTime             @default(now())
+  id            String               @id @default(cuid())
+  leadId        String
+  lead          SalesLead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type          SalesActivityType
+  result        SalesActivityResult?
+  summary       String
+  lostReason    String?
+  occurredAt    DateTime             @default(now())
+  nextActionAt  DateTime?
+  createdById   String
+  createdBy     User                 @relation("SalesActivityActor", fields: [createdById], references: [id])
+  completedTask SalesTask?           @relation("SalesTaskCompletion")
+  createdAt     DateTime             @default(now())
 
   @@index([leadId, occurredAt])
   @@index([result, occurredAt])
@@ -2107,66 +2119,115 @@ model SalesTask {
 
 /// Ekran paylaşımı için açılan, üretimden izole demo iş yeri oturumu.
 model SalesDemoSession {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   leadId      String
-  lead        SalesLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  lead        SalesLead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
   advisorId   String
   advisor     SalesAdvisor @relation(fields: [advisorId], references: [id], onDelete: Cascade)
-  workshopId  String   @unique
-  workshop    Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
-  tokenHash   String   @unique
+  workshopId  String       @unique
+  workshop    Workshop     @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  tokenHash   String       @unique
   expiresAt   DateTime
   endedAt     DateTime?
   createdById String
-  createdBy   User     @relation("SalesDemoSessionCreator", fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
+  createdBy   User         @relation("SalesDemoSessionCreator", fields: [createdById], references: [id])
+  createdAt   DateTime     @default(now())
 
   @@index([advisorId, expiresAt])
   @@index([expiresAt])
 }
 
 model SalesCommission {
-  id              String                @id @default(cuid())
-  leadId          String
-  lead            SalesLead             @relation(fields: [leadId], references: [id], onDelete: Restrict)
-  advisorId       String
-  advisor         SalesAdvisor          @relation(fields: [advisorId], references: [id], onDelete: Restrict)
-  billingOrderId  String                @unique
-  billingOrder    BillingOrder          @relation(fields: [billingOrderId], references: [id], onDelete: Restrict)
-  status          SalesCommissionStatus @default(draft)
-  amountMinor     Int?
-  note            String?
-  approvedAt      DateTime?
-  paidAt          DateTime?
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  id                    String                       @id @default(cuid())
+  leadId                String
+  lead                  SalesLead                    @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  advisorId             String
+  advisor               SalesAdvisor                 @relation(fields: [advisorId], references: [id], onDelete: Restrict)
+  billingOrderId        String                       @unique
+  billingOrder          BillingOrder                 @relation(fields: [billingOrderId], references: [id], onDelete: Restrict)
+  ruleId                String?
+  rule                  SalesCommissionRule?         @relation(fields: [ruleId], references: [id], onDelete: Restrict)
+  status                SalesCommissionStatus        @default(draft)
+  calculationBaseMinor  Int?
+  calculationRateBps    Int?
+  calculatedAmountMinor Int?
+  approvedAmountMinor   Int?                         @map("amountMinor")
+  reviewReason          SalesCommissionReviewReason?
+  adjustmentReason      String?
+  note                  String?
+  approvedAt            DateTime?
+  paidAt                DateTime?
+  voidedAt              DateTime?
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
+  events                SalesCommissionEvent[]
 
   @@index([advisorId, status])
   @@index([leadId])
+  @@index([ruleId])
+}
+
+/// Paket + faturalama dönemi için append-only hakediş yüzdesi geçmişi.
+/// Yeni bir satır önceki etkin satırın effectiveTo değerini kapatır; kayıtlar
+/// silinmez ve oran/başlangıç değerleri değiştirilmez; ledger izlenebilir kalır.
+model SalesCommissionRule {
+  id            String            @id @default(cuid())
+  planTier      PlanTier
+  billingCycle  BillingCycle
+  rateBps       Int
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  createdById   String
+  createdBy     User              @relation("SalesCommissionRuleCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt     DateTime          @default(now())
+  commissions   SalesCommission[]
+
+  @@unique([planTier, billingCycle, effectiveFrom])
+  @@index([planTier, billingCycle, effectiveFrom])
+  @@index([createdById])
+}
+
+/// Hakediş durum değişikliklerinin aktör, zaman, tutar ve gerekçe geçmişi.
+/// Ödeme callback'i gibi sistem aktörlerinde actorId NULL, actorLabel doludur.
+model SalesCommissionEvent {
+  id           String                 @id @default(cuid())
+  commissionId String
+  commission   SalesCommission        @relation(fields: [commissionId], references: [id], onDelete: Cascade)
+  fromStatus   SalesCommissionStatus?
+  toStatus     SalesCommissionStatus
+  actorId      String?
+  actor        User?                  @relation("SalesCommissionEventActor", fields: [actorId], references: [id], onDelete: Restrict)
+  actorLabel   String
+  amountMinor  Int?
+  reason       String?
+  createdAt    DateTime               @default(now())
+
+  @@index([commissionId, createdAt])
+  @@index([actorId])
 }
 
 /// Satış danışmanlarının müşteri adayları için ürettiği tek kullanımlık indirim
 /// kodları. Kod 7 gün geçerlidir; bir müşteri iş yeri tarafından ilk kullanımda
 /// bağlanır (workshopId doldurulur) ve sonra tükenir.
 model SalesDiscountCode {
-  id                String   @id @default(cuid())
-  code              String   @unique
-  discountPercent   Int      // 1-100 arası yüzde
-  fundingSource     SalesDiscountFundingSource @default(advisor_margin)
-  maxUses           Int      @default(1)
-  usedCount         Int      @default(0)
-  advisorId         String?
-  advisor           SalesAdvisor? @relation(fields: [advisorId], references: [id], onDelete: SetNull)
-  leadId            String?
-  lead              SalesLead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
-  workshopId        String?
-  workshop          Workshop?    @relation(fields: [workshopId], references: [id], onDelete: SetNull)
-  expiresAt         DateTime
-  usedAt            DateTime?
-  disabledAt         DateTime?
-  createdByUserId   String?
-  createdBy         User?    @relation("SalesDiscountCodeCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  createdAt         DateTime @default(now())
+  id              String                     @id @default(cuid())
+  code            String                     @unique
+  discountPercent Int // 1-100 arası yüzde
+  fundingSource   SalesDiscountFundingSource @default(advisor_margin)
+  maxUses         Int                        @default(1)
+  usedCount       Int                        @default(0)
+  advisorId       String?
+  advisor         SalesAdvisor?              @relation(fields: [advisorId], references: [id], onDelete: SetNull)
+  leadId          String?
+  lead            SalesLead?                 @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  workshopId      String?
+  workshop        Workshop?                  @relation(fields: [workshopId], references: [id], onDelete: SetNull)
+  expiresAt       DateTime
+  usedAt          DateTime?
+  disabledAt      DateTime?
+  createdByUserId String?
+  createdBy       User?                      @relation("SalesDiscountCodeCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime                   @default(now())
 
   @@index([code])
   @@index([advisorId, createdAt])
@@ -2189,7 +2250,7 @@ enum SalesReferralStatus {
 }
 
 model SalesReferral {
-  id                   String             @id @default(cuid())
+  id                   String              @id @default(cuid())
   status               SalesReferralStatus @default(new)
   referrerName         String
   referrerPhone        String
@@ -2199,11 +2260,11 @@ model SalesReferral {
   referredEmail        String?
   notes                String?
   advisorId            String?
-  advisor              SalesAdvisor?      @relation(fields: [advisorId], references: [id], onDelete: SetNull)
-  leadId               String             @unique
-  lead                 SalesLead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  advisor              SalesAdvisor?       @relation(fields: [advisorId], references: [id], onDelete: SetNull)
+  leadId               String              @unique
+  lead                 SalesLead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
 
   @@index([advisorId, status])
   @@index([createdAt])
@@ -2436,10 +2497,10 @@ model TecdocCache {
 /// TecDoc catalog query) creates one row here with the requesting workshopId.
 /// This enables per-tier quota enforcement without polluting the global cache tables.
 model QuotaUsage {
-  id          String   @id @default(cuid())
-  workshopId  String
-  source      String   // "vin" | "tecdoc"
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  workshopId String
+  source     String // "vin" | "tecdoc"
+  createdAt  DateTime @default(now())
 
   @@index([workshopId, createdAt])
   @@index([createdAt])

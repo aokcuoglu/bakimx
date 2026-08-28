@@ -12,7 +12,6 @@ export default async function SalesPage({
 }) {
   const access = await getSalesAccess()
   const canManagePipeline = canAccessSales(access, "manageSalesPipeline")
-  const canManageCommissions = canAccessSales(access, "manageSalesCommissions")
   const sp = await searchParams
   const initialLeadId = typeof sp.lead === "string" ? sp.lead : null
   const now = new Date()
@@ -47,18 +46,6 @@ export default async function SalesPage({
       },
     },
   })
-
-  const commissions = canManageCommissions
-    ? await prisma.salesCommission.findMany({
-        where: { status: { in: ["draft", "approved"] } },
-        orderBy: { createdAt: "asc" },
-        select: {
-          id: true, status: true, amountMinor: true, note: true,
-          lead: { select: { businessName: true } },
-          advisor: { select: { user: { select: { firstName: true, lastName: true, email: true } } } },
-        },
-      })
-    : []
 
   const tasks = await prisma.salesTask.findMany({
     where: {
@@ -138,7 +125,6 @@ export default async function SalesPage({
       <SalesConsole
         isAdmin={access.kind === "admin"}
         canManagePipeline={canManagePipeline}
-        canManageCommissions={canManageCommissions}
         initialLeadId={initialLeadId}
         leads={serializedLeads}
         tasks={tasks.map((task) => ({
@@ -156,11 +142,6 @@ export default async function SalesPage({
           advisorName: task.lead.advisor
             ? [task.lead.advisor.user.firstName, task.lead.advisor.user.lastName].filter(Boolean).join(" ") || task.lead.advisor.user.email
             : null,
-        }))}
-        commissions={commissions.map((c) => ({
-          id: c.id, status: c.status, amountMinor: c.amountMinor, note: c.note,
-          businessName: c.lead.businessName,
-          advisorName: [c.advisor.user.firstName, c.advisor.user.lastName].filter(Boolean).join(" ") || c.advisor.user.email || "—",
         }))}
         discountCodes={serializedDiscountCodes}
         advisors={advisors.map((a) => ({

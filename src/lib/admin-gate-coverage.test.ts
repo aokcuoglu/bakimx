@@ -43,10 +43,10 @@ const ALLOWLIST = new Map<string, string>([
     "sales/actions.ts::resolveSalesTask",
     "Görev sonucu getSalesAccess(manageSalesPipeline) ve görev üzerinden aday sahiplik kontrolüyle korunur.",
   ],
-  [
-    "sales/actions.ts::updateSalesCommission",
-    "Hakediş action'ı getSalesAccess() ardından yalnız kind=admin kabul eder; danışmanların tutar veya ödeme durumuna erişimi yoktur.",
-  ],
+  ["sales/commissions/actions.ts::approveSalesCommission", "Hakediş onayı getSalesAccess(manageSalesCommissions) ile yalnız founder/finance yöneticiye açıktır ve transaction içinde durum guard'ı uygular."],
+  ["sales/commissions/actions.ts::markSalesCommissionPaid", "Ödendi geçişi getSalesAccess(manageSalesCommissions) ile yalnız founder/finance yöneticiye açıktır ve transaction içinde durum guard'ı uygular."],
+  ["sales/commissions/actions.ts::voidSalesCommission", "Hakediş iptali getSalesAccess(manageSalesCommissions) ile yalnız founder/finance yöneticiye açıktır ve zorunlu gerekçeyi denetim olayına yazar."],
+  ["sales/settings/actions.ts::createSalesCommissionRule", "Append-only hakediş kuralı yalnız getSalesAccess(manageSalesCommissions) yeteneğine sahip founder/finance yöneticilerince eklenebilir."],
   [
     "sales/actions.ts::generateSalesRegistrationLink",
     "Kayıt linki getSalesAccess(manageSalesPipeline), aday sahipliği ve dondurulmuş atıf kontrolleriyle korunur; tenant yalnız müşteri kayıt akışında oluşur.",

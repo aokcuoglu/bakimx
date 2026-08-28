@@ -19,7 +19,6 @@ import {
 } from "@/lib/sales/registration-link"
 import {
   salesActivitySchema,
-  salesCommissionSchema,
   salesDiscountCodeSchema,
   salesDiscountCodeUpdateSchema,
   salesLeadAssignmentSchema,
@@ -472,26 +471,6 @@ export async function resolveSalesTask(taskId: string, status: unknown): Promise
   }
 
   refresh(task.leadId)
-  return { ok: true }
-}
-
-export async function updateSalesCommission(id: string, input: unknown, status: "approved" | "paid" | "void"): Promise<Result> {
-  await getSalesAccess("manageSalesCommissions")
-  const parsed = salesCommissionSchema.safeParse(input)
-  if (!id) return { ok: false, error: "Hakediş seçilmedi." }
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz hakediş" }
-  const now = new Date()
-  await prisma.salesCommission.update({
-    where: { id },
-    data: {
-      amountMinor: parsed.data.amountMinor,
-      note: parsed.data.note || null,
-      status,
-      approvedAt: status === "approved" ? now : undefined,
-      paidAt: status === "paid" ? now : undefined,
-    },
-  })
-  refresh()
   return { ok: true }
 }
 

@@ -7,6 +7,7 @@ import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
 import { getPlanPriceMinor } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
+import { createBillingTaxSnapshot } from "@/lib/billing/tax"
 import { workshopCodeCandidate } from "@/lib/workshop-code"
 import type { BillingCycle } from "@prisma/client"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
@@ -65,6 +66,7 @@ export async function POST(request: Request) {
   const tier = data.tier as PlanTier
   const cycle = data.cycle as BillingCycle
   const amountMinor = getPlanPriceMinor(tier, cycle)
+  const taxSnapshot = createBillingTaxSnapshot(amountMinor)
   const billingSnapshot = {
     invoiceTitle: data.invoiceTitle,
     taxNumber: data.taxNumber,
@@ -157,6 +159,7 @@ export async function POST(request: Request) {
               planTier: tier,
               billingCycle: cycle,
               amountMinor,
+              ...taxSnapshot,
               status: "pending_payment",
               method: data.method,
               reference,
