@@ -29,7 +29,17 @@ export default async function SalesPage({
       email: true,
       city: true,
       district: true,
+      neighborhood: true,
+      route: true,
+      streetNumber: true,
+      postalCode: true,
       address: true,
+      formattedAddress: true,
+      googlePlaceId: true,
+      latitude: true,
+      longitude: true,
+      locationSource: true,
+      locationConfirmedAt: true,
       monthlyVehicles: true,
       notes: true,
       status: true,
@@ -97,6 +107,9 @@ export default async function SalesPage({
 
   const serializedLeads = leads.map((lead) => ({
     ...lead,
+    latitude: lead.latitude == null ? null : Number(lead.latitude),
+    longitude: lead.longitude == null ? null : Number(lead.longitude),
+    locationConfirmedAt: lead.locationConfirmedAt?.toISOString() ?? null,
     advisorName: lead.advisor
       ? [lead.advisor.user.firstName, lead.advisor.user.lastName].filter(Boolean).join(" ") || lead.advisor.user.email
       : null,
@@ -126,6 +139,8 @@ export default async function SalesPage({
         isAdmin={access.kind === "admin"}
         canManagePipeline={canManagePipeline}
         initialLeadId={initialLeadId}
+        googleMapsApiKey={process.env.GOOGLE_MAPS_BROWSER_API_KEY?.trim() || null}
+        googleMapsMapId={process.env.GOOGLE_MAPS_MAP_ID?.trim() || null}
         leads={serializedLeads}
         tasks={tasks.map((task) => ({
           id: task.id,
