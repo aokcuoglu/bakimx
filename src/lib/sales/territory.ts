@@ -1,41 +1,95 @@
 import { TR_CITIES } from "@/lib/tr-cities"
 
-export type TerritoryPosition = { x: number; y: number }
+export type TerritoryCoordinates = { latitude: number; longitude: number }
 
 /**
- * Lightweight city-centre projection for the operations overview. Coordinates
- * are percentages inside the custom Turkey silhouette; no external map service,
- * tracking SDK or customer address is sent off-platform.
+ * Approximate city-centre coordinates used to place sales leads on the map.
+ * A lead without a recognisable Turkish city remains unplaced rather than
+ * being assigned a misleading fallback location.
  */
-export const TURKEY_CITY_POSITIONS = {
-  Adana: { x: 52, y: 62 }, Adıyaman: { x: 66, y: 56 }, Afyonkarahisar: { x: 30, y: 48 },
-  Ağrı: { x: 91, y: 38 }, Aksaray: { x: 44, y: 50 }, Amasya: { x: 58, y: 26 },
-  Ankara: { x: 43, y: 39 }, Antalya: { x: 29, y: 69 }, Ardahan: { x: 87, y: 21 },
-  Artvin: { x: 84, y: 17 }, Aydın: { x: 15, y: 53 }, Balıkesir: { x: 16, y: 36 },
-  Bartın: { x: 42, y: 18 }, Batman: { x: 80, y: 54 }, Bayburt: { x: 78, y: 29 },
-  Bilecik: { x: 29, y: 35 }, Bingöl: { x: 78, y: 40 }, Bitlis: { x: 88, y: 49 },
-  Bolu: { x: 38, y: 30 }, Burdur: { x: 28, y: 60 }, Bursa: { x: 24, y: 33 },
-  Çanakkale: { x: 9, y: 34 }, Çankırı: { x: 47, y: 30 }, Çorum: { x: 54, y: 27 },
-  Denizli: { x: 22, y: 54 }, Diyarbakır: { x: 75, y: 54 }, Düzce: { x: 34, y: 27 },
-  Edirne: { x: 9, y: 26 }, Elazığ: { x: 70, y: 46 }, Erzincan: { x: 72, y: 33 },
-  Erzurum: { x: 84, y: 32 }, Eskişehir: { x: 34, y: 39 }, Gaziantep: { x: 60, y: 64 },
-  Giresun: { x: 71, y: 20 }, Gümüşhane: { x: 74, y: 26 }, Hakkâri: { x: 91, y: 65 },
-  Hatay: { x: 57, y: 76 }, Iğdır: { x: 95, y: 31 }, Isparta: { x: 30, y: 56 },
-  İstanbul: { x: 22, y: 24 }, İzmir: { x: 10, y: 47 }, Kahramanmaraş: { x: 60, y: 52 },
-  Karabük: { x: 42, y: 25 }, Karaman: { x: 38, y: 62 }, Kars: { x: 90, y: 27 },
-  Kastamonu: { x: 49, y: 18 }, Kayseri: { x: 54, y: 46 }, Kırıkkale: { x: 47, y: 38 },
-  Kırklareli: { x: 16, y: 18 }, Kırşehir: { x: 48, y: 43 }, Kilis: { x: 59, y: 69 },
-  Kocaeli: { x: 28, y: 29 }, Konya: { x: 37, y: 52 }, Kütahya: { x: 28, y: 40 },
-  Malatya: { x: 66, y: 48 }, Manisa: { x: 15, y: 45 }, Mardin: { x: 77, y: 62 },
-  Mersin: { x: 46, y: 66 }, Muğla: { x: 16, y: 63 }, Muş: { x: 84, y: 44 },
-  Nevşehir: { x: 48, y: 48 }, Niğde: { x: 48, y: 56 }, Ordu: { x: 67, y: 20 },
-  Osmaniye: { x: 57, y: 60 }, Rize: { x: 80, y: 19 }, Sakarya: { x: 31, y: 28 },
-  Samsun: { x: 62, y: 17 }, Siirt: { x: 84, y: 55 }, Sinop: { x: 55, y: 12 },
-  Sivas: { x: 62, y: 37 }, Şanlıurfa: { x: 69, y: 61 }, Şırnak: { x: 84, y: 63 },
-  Tekirdağ: { x: 17, y: 29 }, Tokat: { x: 62, y: 29 }, Trabzon: { x: 76, y: 20 },
-  Tunceli: { x: 73, y: 41 }, Uşak: { x: 24, y: 47 }, Van: { x: 94, y: 50 },
-  Yalova: { x: 24, y: 29 }, Yozgat: { x: 53, y: 37 }, Zonguldak: { x: 38, y: 21 },
-} satisfies Record<(typeof TR_CITIES)[number], TerritoryPosition>
+export const TURKEY_CITY_COORDINATES = {
+  Adana: { latitude: 37, longitude: 35.3213 },
+  Adıyaman: { latitude: 37.7648, longitude: 38.2786 },
+  Afyonkarahisar: { latitude: 38.7569, longitude: 30.5387 },
+  Ağrı: { latitude: 39.7191, longitude: 43.0503 },
+  Aksaray: { latitude: 38.3687, longitude: 34.037 },
+  Amasya: { latitude: 40.6539, longitude: 35.8331 },
+  Ankara: { latitude: 39.9334, longitude: 32.8597 },
+  Antalya: { latitude: 36.8969, longitude: 30.7133 },
+  Ardahan: { latitude: 41.1105, longitude: 42.7022 },
+  Artvin: { latitude: 41.1828, longitude: 41.8183 },
+  Aydın: { latitude: 37.845, longitude: 27.8396 },
+  Balıkesir: { latitude: 39.6484, longitude: 27.8826 },
+  Bartın: { latitude: 41.6358, longitude: 32.3375 },
+  Batman: { latitude: 37.8812, longitude: 41.1351 },
+  Bayburt: { latitude: 40.2552, longitude: 40.2249 },
+  Bilecik: { latitude: 40.1501, longitude: 29.9831 },
+  Bingöl: { latitude: 38.8854, longitude: 40.498 },
+  Bitlis: { latitude: 38.4006, longitude: 42.1095 },
+  Bolu: { latitude: 40.7395, longitude: 31.6116 },
+  Burdur: { latitude: 37.7203, longitude: 30.2908 },
+  Bursa: { latitude: 40.195, longitude: 29.06 },
+  Çanakkale: { latitude: 40.1553, longitude: 26.4142 },
+  Çankırı: { latitude: 40.6013, longitude: 33.6134 },
+  Çorum: { latitude: 40.5506, longitude: 34.9556 },
+  Denizli: { latitude: 37.7765, longitude: 29.0864 },
+  Diyarbakır: { latitude: 37.9144, longitude: 40.2306 },
+  Düzce: { latitude: 40.8438, longitude: 31.1565 },
+  Edirne: { latitude: 41.6771, longitude: 26.5557 },
+  Elazığ: { latitude: 38.6748, longitude: 39.2225 },
+  Erzincan: { latitude: 39.75, longitude: 39.5 },
+  Erzurum: { latitude: 39.9043, longitude: 41.2679 },
+  Eskişehir: { latitude: 39.7767, longitude: 30.5206 },
+  Gaziantep: { latitude: 37.0662, longitude: 37.3833 },
+  Giresun: { latitude: 40.9128, longitude: 38.3895 },
+  Gümüşhane: { latitude: 40.4603, longitude: 39.4814 },
+  Hakkâri: { latitude: 37.5744, longitude: 43.7408 },
+  Hatay: { latitude: 36.2021, longitude: 36.1604 },
+  Iğdır: { latitude: 39.9237, longitude: 44.045 },
+  Isparta: { latitude: 37.7648, longitude: 30.5566 },
+  İstanbul: { latitude: 41.0082, longitude: 28.9784 },
+  İzmir: { latitude: 38.4237, longitude: 27.1428 },
+  Kahramanmaraş: { latitude: 37.5753, longitude: 36.9228 },
+  Karabük: { latitude: 41.2061, longitude: 32.6204 },
+  Karaman: { latitude: 37.1759, longitude: 33.2287 },
+  Kars: { latitude: 40.6013, longitude: 43.0975 },
+  Kastamonu: { latitude: 41.3887, longitude: 33.7827 },
+  Kayseri: { latitude: 38.7225, longitude: 35.4875 },
+  Kırıkkale: { latitude: 39.8398, longitude: 33.5089 },
+  Kırklareli: { latitude: 41.7351, longitude: 27.2252 },
+  Kırşehir: { latitude: 39.1458, longitude: 34.1607 },
+  Kilis: { latitude: 36.7184, longitude: 37.1212 },
+  Kocaeli: { latitude: 40.7654, longitude: 29.9408 },
+  Konya: { latitude: 37.8746, longitude: 32.4932 },
+  Kütahya: { latitude: 39.4192, longitude: 29.9857 },
+  Malatya: { latitude: 38.3552, longitude: 38.3095 },
+  Manisa: { latitude: 38.6191, longitude: 27.4289 },
+  Mardin: { latitude: 37.3212, longitude: 40.7245 },
+  Mersin: { latitude: 36.8121, longitude: 34.6415 },
+  Muğla: { latitude: 37.2153, longitude: 28.3636 },
+  Muş: { latitude: 38.9462, longitude: 41.7539 },
+  Nevşehir: { latitude: 38.6247, longitude: 34.7142 },
+  Niğde: { latitude: 37.9698, longitude: 34.6766 },
+  Ordu: { latitude: 40.9839, longitude: 37.8764 },
+  Osmaniye: { latitude: 37.0742, longitude: 36.2478 },
+  Rize: { latitude: 41.0201, longitude: 40.5234 },
+  Sakarya: { latitude: 40.7569, longitude: 30.3781 },
+  Samsun: { latitude: 41.2867, longitude: 36.33 },
+  Siirt: { latitude: 37.933, longitude: 41.95 },
+  Sinop: { latitude: 42.0264, longitude: 35.1551 },
+  Sivas: { latitude: 39.7477, longitude: 37.0179 },
+  Şanlıurfa: { latitude: 37.1674, longitude: 38.7955 },
+  Şırnak: { latitude: 37.5164, longitude: 42.4611 },
+  Tekirdağ: { latitude: 40.9781, longitude: 27.5117 },
+  Tokat: { latitude: 40.3167, longitude: 36.55 },
+  Trabzon: { latitude: 41.0027, longitude: 39.7168 },
+  Tunceli: { latitude: 39.1079, longitude: 39.5401 },
+  Uşak: { latitude: 38.6823, longitude: 29.4082 },
+  Van: { latitude: 38.4891, longitude: 43.4089 },
+  Yalova: { latitude: 40.65, longitude: 29.2667 },
+  Yozgat: { latitude: 39.8181, longitude: 34.8147 },
+  Zonguldak: { latitude: 41.4564, longitude: 31.7987 },
+} satisfies Record<(typeof TR_CITIES)[number], TerritoryCoordinates>
 
 function normalizeCity(value: string): string {
   return value
@@ -50,11 +104,11 @@ function normalizeCity(value: string): string {
 
 const CITY_LOOKUP = TR_CITIES.map((city) => ({ city, normalized: normalizeCity(city) }))
 
-export function territoryPositionForCity(city: string | null): TerritoryPosition | null {
+export function territoryCoordinatesForCity(city: string | null): TerritoryCoordinates | null {
   if (!city) return null
   const normalized = normalizeCity(city)
   const match = CITY_LOOKUP.find(({ normalized: candidate }) =>
     normalized === candidate || normalized.startsWith(`${candidate} `) || normalized.endsWith(` ${candidate}`)
   )
-  return match ? TURKEY_CITY_POSITIONS[match.city] : null
+  return match ? TURKEY_CITY_COORDINATES[match.city] : null
 }
