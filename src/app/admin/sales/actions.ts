@@ -13,6 +13,11 @@ import {
 } from "@/lib/sales/crm"
 import { canManageSalesDiscountCode, resolveSalesDiscountAssignment } from "@/lib/sales/discount-policy"
 import {
+  buildSalesRegistrationPath,
+  generateSalesRegistrationToken,
+  salesRegistrationLinkExpiry,
+} from "@/lib/sales/registration-link"
+import {
   salesActivitySchema,
   salesCommissionSchema,
   salesDiscountCodeSchema,
@@ -23,7 +28,6 @@ import {
   salesTaskResolutionSchema,
   salesTaskSchema,
 } from "@/lib/validations/sales"
-import { workshopCodeCandidate } from "@/lib/workshop-code"
 
 type DuplicateLead = {
   id: string
@@ -38,6 +42,11 @@ export type SalesActionResult =
   | { ok: false; error: string; code?: "duplicate"; duplicates?: DuplicateLead[] }
 
 type Result = SalesActionResult
+
+type RegistrationLinkResult = Result & {
+  registrationPath?: string
+  expiresAt?: string
+}
 
 class SalesWorkflowError extends Error {}
 
@@ -130,6 +139,9 @@ export async function setSalesLeadStatus(leadId: string, status: string): Promis
   if (!leadId || !parsed.success) return { ok: false, error: "Geçersiz satış aşaması." }
   if (["won", "lost"].includes(parsed.data)) {
     return { ok: false, error: "Kazanım ve kayıp, zorunlu sonuç alanlarıyla görüşme kaydından tamamlanmalıdır." }
+  }
+  if (parsed.data === "onboarding") {
+    return { ok: false, error: "Kayıt aşaması yalnız güvenli kayıt bağlantısı oluşturularak başlatılabilir." }
   }
   const lead = await prisma.salesLead.findUnique({
     where: { id: leadId },
@@ -248,6 +260,10 @@ export async function addSalesActivity(leadId: string, input: unknown): Promise<
           where: { leadId, status: "scheduled" },
           data: { status: "cancelled", resolvedAt: occurredAt },
         })
+        await tx.salesRegistrationLink.updateMany({
+          where: { leadId, usedAt: null, revokedAt: null },
+          data: { revokedAt: occurredAt, revokedById: access.userId },
+        })
       }
 
       let refreshedNextActionAt = nextActionAt
@@ -338,6 +354,10 @@ export async function assignSalesLead(leadId: string, input: unknown): Promise<R
           toAdvisorId: advisorId,
           actorId: access.userId,
         },
+      })
+      await tx.salesRegistrationLink.updateMany({
+        where: { leadId, usedAt: null, revokedAt: null },
+        data: { revokedAt: new Date(), revokedById: access.userId },
       })
     })
   } catch (error) {
@@ -475,56 +495,89 @@ export async function updateSalesCommission(id: string, input: unknown, status: 
   return { ok: true }
 }
 
-/** Creates the real, not-yet-provisioned workshop record for a won lead. A
- * platform admin completes owner invitation through the existing admin flow. */
-export async function convertSalesLead(leadId: string): Promise<Result> {
+/**
+ * Müşterinin mevcut kayıt sihirbazını lead + danışman atfıyla açan tek
+ * kullanımlık bağlantıyı üretir. Ham token yalnız bu dönüş değerinde bulunur.
+ */
+export async function generateSalesRegistrationLink(leadId: string): Promise<RegistrationLinkResult> {
   const access = await getSalesAccess("manageSalesPipeline")
-  if (access.kind !== "admin") return { ok: false, error: "İş yeri hesabını yalnız yöneticiler açabilir." }
-  const lead = await prisma.salesLead.findUnique({ where: { id: leadId } })
-  if (!lead) return { ok: false, error: "Satış adayı bulunamadı." }
-  if (lead.workshopId) return { ok: false, error: "Bu aday zaten bir iş yerine bağlı." }
-
-  let loginCode = workshopCodeCandidate(lead.businessName)
-  for (let suffix = 2; await prisma.workshop.findUnique({ where: { loginCode }, select: { id: true } }); suffix += 1) {
-    loginCode = `${workshopCodeCandidate(lead.businessName).slice(0, 17)}-${suffix}`
-  }
-  const wonAt = new Date()
-  await prisma.$transaction(async (tx) => {
-    const workshop = await tx.workshop.create({
-      data: {
-        loginCode,
-        name: lead.businessName,
-        phone: lead.phone,
-        city: lead.city || "Belirtilmedi",
-        address: lead.address || "Belirtilmedi",
-        email: lead.email,
-        approvalStatus: "pending",
-        subscriptionStatus: "trialing",
-        acquisitionSource: lead.source === "field" ? (lead.advisorId ? "sales_advisor" : "field_visit") : lead.source === "public_demo_request" ? "website" : lead.source === "customer_referral" ? "referral" : "unknown",
-        acquisitionAdvisorId: lead.advisorId,
-      },
-    })
-    await tx.salesActivity.create({
-      data: {
-        leadId: lead.id,
-        type: "note",
-        result: "won",
-        summary: "Yönetici iş yeri kaydını oluşturdu.",
-        occurredAt: wonAt,
-        createdById: access.userId,
-      },
-    })
-    await tx.salesTask.updateMany({
-      where: { leadId: lead.id, status: "scheduled" },
-      data: { status: "cancelled", resolvedAt: wonAt },
-    })
-    await tx.salesLead.update({
-      where: { id: lead.id },
-      data: { workshopId: workshop.id, status: "won", attributionFrozenAt: wonAt, nextActionAt: null, lostReason: null },
-    })
+  if (!leadId) return { ok: false, error: "Satış adayı seçilmedi." }
+  const lead = await prisma.salesLead.findUnique({
+    where: { id: leadId },
+    select: { advisorId: true, status: true, attributionFrozenAt: true, workshopId: true },
   })
-  refresh(lead.id)
-  return { ok: true }
+  const authorizedLead = assertSalesLeadAccess(access, lead)
+  if (!authorizedLead.advisorId) return { ok: false, error: "Kayıt bağlantısından önce adaya bir danışman atayın." }
+  if (authorizedLead.workshopId || isSalesLeadAttributionFrozen(authorizedLead)) {
+    return { ok: false, error: "Bu adayın müşteri dönüşümü daha önce tamamlanmış." }
+  }
+  if (authorizedLead.status === "lost") return { ok: false, error: "Kaybedilmiş aday için kayıt bağlantısı oluşturulamaz." }
+
+  const { token, tokenHash } = generateSalesRegistrationToken()
+  const now = new Date()
+  const expiresAt = salesRegistrationLinkExpiry(now)
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const currentLead = await tx.salesLead.findUnique({
+        where: { id: leadId },
+        select: { advisorId: true, status: true, attributionFrozenAt: true, workshopId: true },
+      })
+      const currentAuthorizedLead = assertSalesLeadAccess(access, currentLead)
+      if (!currentAuthorizedLead.advisorId) throw new SalesWorkflowError("Kayıt bağlantısından önce adaya bir danışman atayın.")
+      if (currentAuthorizedLead.workshopId || isSalesLeadAttributionFrozen(currentAuthorizedLead)) {
+        throw new SalesWorkflowError("Bu adayın müşteri dönüşümü daha önce tamamlanmış.")
+      }
+      if (currentAuthorizedLead.status === "lost") throw new SalesWorkflowError("Kaybedilmiş aday için kayıt bağlantısı oluşturulamaz.")
+
+      await tx.salesRegistrationLink.updateMany({
+        where: { leadId, usedAt: null, revokedAt: null },
+        data: { revokedAt: now, revokedById: access.userId },
+      })
+      await tx.salesRegistrationLink.create({
+        data: {
+          leadId,
+          advisorId: currentAuthorizedLead.advisorId,
+          tokenHash,
+          expiresAt,
+          createdById: access.userId,
+        },
+      })
+      await tx.salesActivity.create({
+        data: {
+          leadId,
+          type: "note",
+          summary: "Güvenli müşteri kayıt bağlantısı oluşturuldu.",
+          occurredAt: now,
+          createdById: access.userId,
+        },
+      })
+      const updated = await tx.salesLead.updateMany({
+        where: {
+          id: leadId,
+          advisorId: currentAuthorizedLead.advisorId,
+          workshopId: null,
+          attributionFrozenAt: null,
+          status: { notIn: ["won", "lost"] },
+        },
+        data: { status: "onboarding", lostReason: null },
+      })
+      if (updated.count !== 1) throw new SalesWorkflowError("Aday başka bir işlem tarafından değiştirildi. Yenileyip tekrar deneyin.")
+    })
+  } catch (error) {
+    if (error instanceof SalesWorkflowError) return { ok: false, error: error.message }
+    if ((error as { code?: string })?.code === "P2002") {
+      return { ok: false, error: "Bağlantı aynı anda başka bir işlem tarafından yenilendi. Tekrar deneyin." }
+    }
+    throw error
+  }
+
+  refresh(leadId)
+  return {
+    ok: true,
+    registrationPath: buildSalesRegistrationPath(token),
+    expiresAt: expiresAt.toISOString(),
+  }
 }
 
 function generateDiscountCode(): string {

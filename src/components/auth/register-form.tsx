@@ -177,7 +177,6 @@ const registerWizardSchema = z
     selectedModules: z.array(z.enum(REGISTER_MODULE_IDS)).min(1, "En az bir modül seçin"),
     setupPreference: z.enum(SETUP_PREFERENCE_IDS),
     acquisitionSource: z.enum(ACQUISITION_SOURCES).default("unknown"),
-    acquisitionAdvisorId: z.string().optional().default(""),
     referralCode: optionalReferralCodeSchema,
     workshopName: z.string().min(2, "Firma / servis adı zorunludur"),
     phone: z.string().min(10, "Geçerli bir telefon numarası girin"),
@@ -204,9 +203,6 @@ const registerWizardSchema = z
     if (data.acquisitionSource === "referral" && !data.referralCode) {
       ctx.addIssue({ code: "custom", path: ["referralCode"], message: "Referans kodu zorunludur" })
     }
-    if (data.acquisitionSource === "sales_advisor" && !data.acquisitionAdvisorId) {
-      ctx.addIssue({ code: "custom", path: ["acquisitionAdvisorId"], message: "Satış temsilcisi seçimi zorunludur" })
-    }
   })
 
 type WizardFormValues = z.infer<typeof registerWizardSchema>
@@ -229,7 +225,6 @@ const STEP_FIELDS: Record<number, (keyof WizardFormValues)[]> = {
     "password",
     "confirmPassword",
     "acquisitionSource",
-    "acquisitionAdvisorId",
     "referralCode",
     "kvkkConsent",
   ],
@@ -243,11 +238,24 @@ const stepVariants = {
 
 const noopSubscribe = () => () => {}
 
+export type SalesRegistrationPrefill = {
+  token: string
+  advisorName: string
+  workshopName: string
+  phone: string
+  city: string
+  district: string
+  address: string
+  firstName: string
+  lastName: string
+  email: string
+}
+
 export function RegisterForm({
-  advisors = [],
+  salesRegistration,
   onSnapshotChange,
 }: {
-  advisors?: { id: string; label: string }[]
+  salesRegistration?: SalesRegistrationPrefill
   onSnapshotChange?: (snapshot: RegisterWizardSnapshot) => void
 }) {
   const [currentStep, setCurrentStep] = useState(0)
@@ -268,19 +276,18 @@ export function RegisterForm({
       teamSize: "",
       selectedModules: recommendedRegisterModules([]),
       setupPreference: "self_service",
-      acquisitionSource: "unknown",
-      acquisitionAdvisorId: "",
+      acquisitionSource: salesRegistration ? "sales_advisor" : "unknown",
       referralCode: "",
-      workshopName: "",
-      phone: "",
-      city: "",
-      district: "",
-      address: "",
+      workshopName: salesRegistration?.workshopName ?? "",
+      phone: salesRegistration?.phone ?? "",
+      city: salesRegistration?.city ?? "",
+      district: salesRegistration?.district ?? "",
+      address: salesRegistration?.address ?? "",
       taxOffice: "",
       taxNumber: "",
-      firstName: "",
-      lastName: "",
-      email: "",
+      firstName: salesRegistration?.firstName ?? "",
+      lastName: salesRegistration?.lastName ?? "",
+      email: salesRegistration?.email ?? "",
       password: "",
       confirmPassword: "",
       kvkkConsent: false,
@@ -350,7 +357,7 @@ export function RegisterForm({
           selectedModules: values.selectedModules,
           setupPreference: values.setupPreference,
           acquisitionSource: values.acquisitionSource,
-          acquisitionAdvisorId: values.acquisitionAdvisorId || undefined,
+          salesRegistrationToken: salesRegistration?.token,
           referralCode: values.referralCode || undefined,
           workshopName: values.workshopName,
           phone: values.phone,
@@ -447,7 +454,7 @@ export function RegisterForm({
                     form={form}
                     city={city}
                     acquisitionSource={acquisitionSource}
-                    advisors={advisors}
+                    salesAdvisorName={salesRegistration?.advisorName}
                     showPassword={showPassword}
                     onShowPasswordChange={setShowPassword}
                   />
@@ -733,14 +740,14 @@ function AccountStep({
   form,
   city,
   acquisitionSource,
-  advisors,
+  salesAdvisorName,
   showPassword,
   onShowPasswordChange,
 }: {
   form: WizardForm
   city: string
   acquisitionSource: WizardFormValues["acquisitionSource"]
-  advisors: { id: string; label: string }[]
+  salesAdvisorName?: string
   showPassword: boolean
   onShowPasswordChange: (value: boolean) => void
 }) {
@@ -829,23 +836,30 @@ function AccountStep({
           )} />
         </section>
 
-        <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField control={form.control} name="acquisitionSource" render={({ field }) => (
-              <FormItem><FormLabel>Bizi nereden duydunuz?</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger className="w-full"><SelectValue /></SelectTrigger></FormControl><SelectContent>{ACQUISITION_SOURCE_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-            )} />
-            {acquisitionSource === "sales_advisor" && advisors.length > 0 && (
-              <FormField control={form.control} name="acquisitionAdvisorId" render={({ field }) => (
-                <FormItem><FormLabel>Satış temsilcisi <span className="font-normal text-muted-foreground">(varsa)</span></FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger className="w-full"><SelectValue placeholder="Temsilci seçin" /></SelectTrigger></FormControl><SelectContent><SelectItem value="">Atanmadı</SelectItem>{advisors.map((advisor) => <SelectItem key={advisor.id} value={advisor.id}>{advisor.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+        {salesAdvisorName ? (
+          <section className="rounded-xl border border-primary/20 bg-primary/10 p-4 text-primary-strong sm:p-5">
+            <div className="flex items-start gap-3">
+              <Shield className="mt-0.5 size-5 shrink-0" />
+              <div>
+                <h2 className="text-sm font-semibold">Güvenli danışman bağlantısı</h2>
+                <p className="mt-1 text-xs leading-5">Bu kayıt {salesAdvisorName} tarafından size özel oluşturuldu. Firma bilgilerinizi kontrol edip hesabınızı tamamlayın.</p>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField control={form.control} name="acquisitionSource" render={({ field }) => (
+                <FormItem><FormLabel>Bizi nereden duydunuz?</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger className="w-full"><SelectValue /></SelectTrigger></FormControl><SelectContent>{ACQUISITION_SOURCE_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
               )} />
-            )}
-            {acquisitionSource === "referral" && (
-              <FormField control={form.control} name="referralCode" render={({ field }) => (
-                <FormItem className="sm:col-span-2"><FormLabel>Referans kodu *</FormLabel><FormControl><Input {...field} autoCapitalize="characters" autoComplete="off" placeholder="ÖRN: ORNEK-OTO" className="uppercase" onChange={(event) => field.onChange(event.target.value.toUpperCase())} /></FormControl><FormMessage /></FormItem>
-              )} />
-            )}
-          </div>
-        </section>
+              {acquisitionSource === "referral" && (
+                <FormField control={form.control} name="referralCode" render={({ field }) => (
+                  <FormItem className="sm:col-span-2"><FormLabel>Referans kodu *</FormLabel><FormControl><Input {...field} autoCapitalize="characters" autoComplete="off" placeholder="ÖRN: ORNEK-OTO" className="uppercase" onChange={(event) => field.onChange(event.target.value.toUpperCase())} /></FormControl><FormMessage /></FormItem>
+                )} />
+              )}
+            </div>
+          </section>
+        )}
 
         <FormField control={form.control} name="kvkkConsent" render={({ field }) => (
           <FormItem>

@@ -18,6 +18,7 @@ const STATUS_LABELS: Record<SalesLeadStatus, string> = {
   demo_scheduled: "Demo planlandı",
   demo_completed: "Demo yapıldı",
   proposal: "Teklif",
+  onboarding: "Kayıt aşamasında",
   won: "Kazanıldı",
   lost: "Kaybedildi",
 }
