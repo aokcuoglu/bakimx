@@ -32,11 +32,15 @@ let convertedLeadData: Record<string, unknown> | null = null
 let completedSalesActivity: Record<string, unknown> | null = null
 let cancelledTaskCount = 0
 let failLeadConversion = false
+let existingUser: {
+  password: string
+  workshop: { id: string; approvalStatus: "pending"; trialStartedAt: Date | null }
+} | null = null
 
 mock.module("@/lib/db", () => ({
   prisma: {
     user: {
-      findUnique: async () => null,
+      findUnique: async () => existingUser,
       findFirst: async () => ({ email: "owner@example.com", firstName: "Ayşe" }),
     },
     salesAdvisor: { findFirst: async () => null },
@@ -224,6 +228,7 @@ beforeEach(() => {
   completedSalesActivity = null
   cancelledTaskCount = 0
   failLeadConversion = false
+  existingUser = null
 })
 
 afterAll(() => {
@@ -307,6 +312,28 @@ describe("POST /api/auth/register onboarding and attribution", () => {
     })
     expect(transactionCount).toBe(0)
     expect(createdWorkshopCount).toBe(0)
+  })
+
+  test("does not silently resume an existing pending account through a sales link", async () => {
+    const token = "sales-token-existing-account"
+    prepareSalesLink(token)
+    existingUser = {
+      password: "already-hashed-password",
+      workshop: { id: "workshop-existing", approvalStatus: "pending", trialStartedAt: null },
+    }
+
+    const response = await POST(request({
+      ...validBody,
+      salesRegistrationToken: token,
+    }, "198.51.100.82"))
+
+    expect(response.status).toBe(409)
+    expect(await response.json()).toEqual({
+      error: "Bu e-posta adresi ile zaten bir hesap mevcut. Giriş yapmayı deneyin.",
+    })
+    expect(transactionCount).toBe(0)
+    expect(createdWorkshopCount).toBe(0)
+    expect(salesLink?.usedAt).toBeNull()
   })
 
   test.each([

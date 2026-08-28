@@ -102,6 +102,12 @@ export async function POST(request: Request) {
     },
   })
   if (existing) {
+    // Güvenli satış linki mevcut bir yarım kaydın doğrulama-resume yoluna
+    // düşerse lead sessizce açık kalmamalı. Mevcut hesabı bu transaction dışında
+    // yeniden atfetmek yerine açıkça girişe yönlendiririz.
+    if (salesRegistrationTokenHash) {
+      return NextResponse.json({ error: EMAIL_IN_USE_ERROR }, { status: 409 })
+    }
     const passwordValid = await bcrypt.compare(data.password, existing.password)
     if (
       canResumeVerification({

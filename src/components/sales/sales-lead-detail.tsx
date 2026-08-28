@@ -400,7 +400,7 @@ export function SalesLeadDetail({
                 else toast.success("Satış aşaması güncellendi.")
               }))}>
                 <FormField control={stageForm.control} name="status" render={({ field }) => (
-                  <FormItem className="flex-1"><FormLabel>Aşama</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{STATUS_OPTIONS.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                  <FormItem className="flex-1"><FormLabel>Aşama</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{STATUS_OPTIONS.map(([value, label]) => <SelectItem key={value} value={value} disabled={value === "onboarding"}>{label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
                 <Button type="submit" disabled={pending}>Güncelle</Button>
               </form>
