@@ -66,11 +66,10 @@ describe("landing page composition", () => {
     expect(heroSource).not.toContain("<button");
   });
 
-  test("keeps the desktop split, mobile stack, heading hierarchy, and CTA analytics contract", () => {
-    expect(heroSource).toContain("grid-cols-1");
-    expect(heroSource).toContain(
-      "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]",
-    );
+  test("keeps the full-bleed background, heading hierarchy, and CTA analytics contract", () => {
+    expect(heroSource).toContain('sizes="100vw"');
+    expect(heroSource).toContain("absolute inset-0 bg-gradient-to-r");
+    expect(heroSource).not.toContain("grid-cols-1");
     expect(heroSource.match(/<h1/g)).toHaveLength(1);
     expect(heroSource).toContain('cta_location: "hero_primary"');
     expect(heroSource).toContain('cta_location: "hero_secondary"');

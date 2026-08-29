@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const carouselName = "BakımX servis yönetimi özellikleri";
 
-test("landing hero is a desktop split with keyboard-operable controls", async ({
+test("landing hero uses a full-bleed background with keyboard-operable controls", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -19,13 +19,19 @@ test("landing hero is a desktop split with keyboard-operable controls", async ({
   await expect(heading).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
 
-  const [headingBox, imageBox] = await Promise.all([
-    heading.boundingBox(),
+  const [carouselBox, imageBox] = await Promise.all([
+    carousel.boundingBox(),
     activeSlide.locator("img").boundingBox(),
   ]);
-  expect(headingBox).not.toBeNull();
+  expect(carouselBox).not.toBeNull();
   expect(imageBox).not.toBeNull();
-  expect(headingBox!.x + headingBox!.width).toBeLessThan(imageBox!.x);
+  expect(imageBox!.x).toBeLessThanOrEqual(carouselBox!.x + 1);
+  expect(imageBox!.width).toBeGreaterThanOrEqual(carouselBox!.width - 2);
+  await expect(
+    page.getByRole("button", {
+      name: "Carousel otomatik geçişini duraklat",
+    }),
+  ).toBeVisible();
 
   const next = page.getByRole("button", { name: "Sonraki slayt" });
   await expect(next).toBeEnabled();
@@ -41,7 +47,7 @@ test("landing hero is a desktop split with keyboard-operable controls", async ({
   ).toBeVisible();
 });
 
-test("landing hero is a mobile stack and reduced motion disables autoplay", async ({
+test("landing hero stays full-bleed on mobile and autoplay starts active", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -51,22 +57,24 @@ test("landing hero is a mobile stack and reduced motion disables autoplay", asyn
   const carousel = page.getByRole("region", { name: carouselName });
   const activeSlide = carousel.locator('[aria-hidden="false"]');
   const heading = page.getByRole("heading", { level: 1 });
-  const [headingBox, imageBox] = await Promise.all([
-    heading.boundingBox(),
+  const [carouselBox, imageBox] = await Promise.all([
+    carousel.boundingBox(),
     activeSlide.locator("img").boundingBox(),
   ]);
 
-  expect(headingBox).not.toBeNull();
+  await expect(heading).toBeVisible();
+  expect(carouselBox).not.toBeNull();
   expect(imageBox).not.toBeNull();
-  expect(headingBox!.y + headingBox!.height).toBeLessThan(imageBox!.y);
+  expect(imageBox!.x).toBeLessThanOrEqual(carouselBox!.x + 1);
+  expect(imageBox!.width).toBeGreaterThanOrEqual(carouselBox!.width - 2);
   await expect(
     page.getByRole("button", {
-      name: "Carousel otomatik geçişini başlat",
+      name: "Carousel otomatik geçişini duraklat",
     }),
   ).toBeVisible();
 
   await page.waitForTimeout(7_250);
   await expect(
-    page.getByRole("button", { name: /1\. slayta git/ }),
+    page.getByRole("button", { name: /2\. slayta git/ }),
   ).toHaveAttribute("aria-current", "true");
 });

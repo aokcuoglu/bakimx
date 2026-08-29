@@ -24,10 +24,7 @@ export function HeroSection() {
   const [api, setApi] = useState<CarouselApi>();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [autoplayOverride, setAutoplayOverride] = useState(false);
-
-  const autoplayAllowed = !prefersReducedMotion || autoplayOverride;
-  const isPlaying = autoplayAllowed && !paused;
+  const isPlaying = !paused;
 
   useEffect(() => {
     if (!api) return;
@@ -63,7 +60,6 @@ export function HeroSection() {
       return;
     }
 
-    setAutoplayOverride(true);
     setPaused(false);
   }
 
@@ -92,94 +88,102 @@ export function HeroSection() {
                 aria-hidden={!isActive}
                 className="pl-0"
               >
-                <div className="mx-auto grid min-h-[48rem] w-full max-w-7xl grid-cols-1 items-center gap-8 px-4 pb-32 pt-12 sm:min-h-[50rem] sm:px-6 sm:pb-28 sm:pt-16 lg:min-h-[39rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-12 lg:px-8 lg:py-20">
-                  <div className="max-w-2xl lg:max-w-[39rem]">
-                    <span className="inline-flex w-fit items-center gap-2 rounded-full border border-navy-foreground/20 bg-navy/55 px-3 py-1.5 text-xs font-semibold text-navy-foreground backdrop-blur-sm">
-                      <span className="size-1.5 rounded-full bg-warning" />
-                      {slide.eyebrow}
-                    </span>
+                <div className="relative min-h-[44rem] w-full sm:min-h-[46rem] lg:min-h-[39rem]">
+                  <Image
+                    src={slide.image}
+                    alt=""
+                    fill
+                    loading={index === 0 ? "eager" : "lazy"}
+                    sizes="100vw"
+                    style={{ objectPosition: slide.imagePosition }}
+                    className="object-cover"
+                  />
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 bg-gradient-to-r from-navy via-navy/90 to-navy/20"
+                  />
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 bg-gradient-to-t from-navy/75 via-transparent to-navy/25"
+                  />
 
-                    {index === 0 ? (
-                      <h1 className={cn(headingClassName, "mt-6")}>
-                        {slide.title}{" "}
-                        <span className="text-primary">{slide.highlight}</span>
-                      </h1>
-                    ) : (
-                      <h2 className={cn(headingClassName, "mt-6")}>
-                        {slide.title}{" "}
-                        <span className="text-primary">{slide.highlight}</span>
-                      </h2>
-                    )}
+                  <div className="relative z-10 mx-auto flex min-h-[44rem] w-full max-w-7xl items-center px-4 pb-32 pt-12 sm:min-h-[46rem] sm:px-6 sm:pb-28 sm:pt-16 lg:min-h-[39rem] lg:px-8 lg:py-20">
+                    <div className="max-w-2xl lg:max-w-[39rem]">
+                      <span className="inline-flex w-fit items-center gap-2 rounded-full border border-navy-foreground/20 bg-navy/55 px-3 py-1.5 text-xs font-semibold text-navy-foreground backdrop-blur-sm">
+                        <span className="size-1.5 rounded-full bg-warning" />
+                        {slide.eyebrow}
+                      </span>
 
-                    <p className="mt-5 max-w-xl text-base leading-relaxed text-navy-foreground/80 sm:text-lg">
-                      {slide.description}
-                    </p>
+                      {index === 0 ? (
+                        <h1 className={cn(headingClassName, "mt-6")}>
+                          {slide.title}{" "}
+                          <span className="text-primary">
+                            {slide.highlight}
+                          </span>
+                        </h1>
+                      ) : (
+                        <h2 className={cn(headingClassName, "mt-6")}>
+                          {slide.title}{" "}
+                          <span className="text-primary">
+                            {slide.highlight}
+                          </span>
+                        </h2>
+                      )}
 
-                    <ul className="mt-6 flex flex-col gap-3 text-sm text-navy-foreground/90 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-3">
-                      {slide.bullets.map((bullet) => (
-                        <li
-                          key={bullet}
-                          className="inline-flex items-center gap-2"
+                      <p className="mt-5 max-w-xl text-base leading-relaxed text-navy-foreground/80 sm:text-lg">
+                        {slide.description}
+                      </p>
+
+                      <ul className="mt-6 flex flex-col gap-3 text-sm text-navy-foreground/90 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-3">
+                        {slide.bullets.map((bullet) => (
+                          <li
+                            key={bullet}
+                            className="inline-flex items-center gap-2"
+                          >
+                            <Check className="size-4 text-primary" />
+                            {bullet}
+                          </li>
+                        ))}
+                      </ul>
+
+                      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <Link
+                          href="/register"
+                          tabIndex={isActive ? 0 : -1}
+                          onClick={() =>
+                            trackMarketingEvent("trial_cta_click", {
+                              cta_location: "hero_primary",
+                            })
+                          }
+                          className={buttonVariants({
+                            variant: "gradient",
+                            size: "lg",
+                            className: "h-12 gap-2 px-6 text-sm sm:px-7",
+                          })}
                         >
-                          <Check className="size-4 text-primary" />
-                          {bullet}
-                        </li>
-                      ))}
-                    </ul>
-
-                    <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                      <Link
-                        href="/register"
-                        tabIndex={isActive ? 0 : -1}
-                        onClick={() =>
-                          trackMarketingEvent("trial_cta_click", {
-                            cta_location: "hero_primary",
-                          })
-                        }
-                        className={buttonVariants({
-                          variant: "gradient",
-                          size: "lg",
-                          className: "h-12 gap-2 px-6 text-sm sm:px-7",
-                        })}
-                      >
-                        Ücretsiz Dene
-                        <ArrowRight className="size-4" />
-                      </Link>
-                      <Link
-                        href="/#demo-form"
-                        tabIndex={isActive ? 0 : -1}
-                        onClick={() =>
-                          trackMarketingEvent("demo_cta_click", {
-                            cta_location: "hero_secondary",
-                            destination: "form",
-                          })
-                        }
-                        className={buttonVariants({
-                          variant: "navy",
-                          size: "lg",
-                          className:
-                            "h-12 border border-navy-foreground/30 bg-navy/60 px-6 text-sm shadow-none hover:bg-navy",
-                        })}
-                      >
-                        Demo İste
-                      </Link>
+                          Ücretsiz Dene
+                          <ArrowRight className="size-4" />
+                        </Link>
+                        <Link
+                          href="/#demo-form"
+                          tabIndex={isActive ? 0 : -1}
+                          onClick={() =>
+                            trackMarketingEvent("demo_cta_click", {
+                              cta_location: "hero_secondary",
+                              destination: "form",
+                            })
+                          }
+                          className={buttonVariants({
+                            variant: "navy",
+                            size: "lg",
+                            className:
+                              "h-12 border border-navy-foreground/30 bg-navy/60 px-6 text-sm shadow-none hover:bg-navy",
+                          })}
+                        >
+                          Demo İste
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="relative min-h-64 overflow-hidden rounded-2xl border border-navy-foreground/10 bg-navy/70 shadow-2xl shadow-background/20 sm:min-h-80 lg:min-h-[29rem]">
-                    <Image
-                      src={slide.image}
-                      alt=""
-                      fill
-                      loading={index === 0 ? "eager" : "lazy"}
-                      sizes="(min-width: 1024px) 52vw, 100vw"
-                      style={{ objectPosition: slide.imagePosition }}
-                      className="object-cover"
-                    />
-                    <div
-                      aria-hidden
-                      className="absolute inset-0 bg-gradient-to-r from-navy/35 via-transparent to-transparent"
-                    />
                   </div>
                 </div>
               </CarouselItem>
