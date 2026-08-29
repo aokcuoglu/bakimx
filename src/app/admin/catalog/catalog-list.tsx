@@ -40,13 +40,15 @@ const STOCK_BADGE: Record<string, { label: string; className: string }> = {
 export function CatalogList({
   rows,
   total,
-  truncated,
+  page,
+  pageCount,
   brands,
   filters,
 }: {
   rows: AdminCatalogProductRow[]
   total: number
-  truncated: boolean
+  page: number
+  pageCount: number
   brands: CatalogBrandOption[]
   filters: CatalogFilters
 }) {
@@ -62,12 +64,14 @@ export function CatalogList({
   const hasFilters = Boolean(filters.q || filters.brandId || filters.categoryKey || filters.status !== "all")
 
   function pushFilters(next: Partial<CatalogFilters>) {
-    const merged = { ...filters, ...next }
+    // Filtre değişince sayfa 1'e döner; yalnız sayfa değişimi (next.page) korunur.
+    const merged = { ...filters, page: 1, ...next }
     const params = new URLSearchParams()
     if (merged.q) params.set("q", merged.q)
     if (merged.brandId) params.set("brand", merged.brandId)
     if (merged.categoryKey) params.set("category", merged.categoryKey)
     if (merged.status !== "all") params.set("status", merged.status)
+    if (merged.page > 1) params.set("page", String(merged.page))
     const qs = params.toString()
     setSelected([])
     router.push(`/admin/catalog${qs ? `?${qs}` : ""}`)
@@ -321,11 +325,28 @@ export function CatalogList({
         )}
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        {truncated
-          ? `${total} üründen ilk ${rows.length} tanesi gösteriliyor — aramayı daraltın.`
-          : `${total} ürün`}
-      </p>
+      {pageCount > 1 ? (
+        <div className="flex items-center justify-between gap-3 pt-1 text-sm">
+          <span className="text-muted-foreground">
+            Sayfa {page} / {pageCount} · {total} ürün
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => pushFilters({ page: page - 1 })}>
+              Önceki
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= pageCount}
+              onClick={() => pushFilters({ page: page + 1 })}
+            >
+              Sonraki
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">{total} ürün</p>
+      )}
 
       {/* Yalnız açıkken monte edilir — her açılış boş bir formla başlar. */}
       {priceOpen && (

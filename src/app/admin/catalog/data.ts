@@ -10,8 +10,8 @@ import { bakimxCategoryLabel } from "@/lib/catalog/bakimx-catalog"
  * yüzeyine çıkan public DTO ayrı bir issue (BAK-33).
  */
 
-/** Tek sayfada gösterilen üst sınır — filtresiz açılışta binlerce satır çekilmesin. */
-export const CATALOG_PAGE_SIZE = 200
+/** Tek sayfada gösterilen ürün sayısı — filtresiz açılışta binlerce satır çekilmesin. */
+export const CATALOG_PAGE_SIZE = 50
 
 export type CatalogStatusFilter = "all" | "active" | "passive" | "low_stock" | "out_of_stock"
 
@@ -34,6 +34,7 @@ export interface CatalogFilters {
   brandId: string
   categoryKey: string
   status: CatalogStatusFilter
+  page: number
 }
 
 export interface AdminCatalogProductRow {
@@ -92,33 +93,37 @@ function buildWhere(filters: CatalogFilters): Prisma.BakimxProductWhereInput {
 
 export async function getCatalogProducts(
   filters: CatalogFilters,
-): Promise<{ rows: AdminCatalogProductRow[]; total: number; truncated: boolean }> {
+): Promise<{ rows: AdminCatalogProductRow[]; total: number; page: number; pageCount: number }> {
   const where = buildWhere(filters)
 
-  const [total, products] = await Promise.all([
-    prisma.bakimxProduct.count({ where }),
-    prisma.bakimxProduct.findMany({
-      where,
-      orderBy: [{ brandName: "asc" }, { name: "asc" }],
-      take: CATALOG_PAGE_SIZE,
-      select: {
-        id: true,
-        sku: true,
-        name: true,
-        brandId: true,
-        brandName: true,
-        categoryKey: true,
-        workshopPriceKurus: true,
-        vatRateBps: true,
-        costPriceKurus: true,
-        stockQty: true,
-        lowStockQty: true,
-        backorderable: true,
-        isActive: true,
-        updatedAt: true,
-      },
-    }),
-  ])
+  // `total` önce hesaplanır: geçersiz/eskimiş bir sayfa istenirse (ör. filtre
+  // değişince sayfa sayısı azaldı) boş sayfa göstermek yerine son sayfaya kıstır.
+  const total = await prisma.bakimxProduct.count({ where })
+  const pageCount = Math.max(1, Math.ceil(total / CATALOG_PAGE_SIZE))
+  const page = Math.min(Math.max(1, filters.page), pageCount)
+
+  const products = await prisma.bakimxProduct.findMany({
+    where,
+    orderBy: [{ brandName: "asc" }, { name: "asc" }],
+    skip: (page - 1) * CATALOG_PAGE_SIZE,
+    take: CATALOG_PAGE_SIZE,
+    select: {
+      id: true,
+      sku: true,
+      name: true,
+      brandId: true,
+      brandName: true,
+      categoryKey: true,
+      workshopPriceKurus: true,
+      vatRateBps: true,
+      costPriceKurus: true,
+      stockQty: true,
+      lowStockQty: true,
+      backorderable: true,
+      isActive: true,
+      updatedAt: true,
+    },
+  })
 
   const rows: AdminCatalogProductRow[] = products.map((p) => ({
     ...p,
@@ -126,7 +131,7 @@ export async function getCatalogProducts(
     updatedAt: p.updatedAt.toISOString(),
   }))
 
-  return { rows, total, truncated: total > rows.length }
+  return { rows, total, page, pageCount }
 }
 
 export interface CatalogBrandOption {
