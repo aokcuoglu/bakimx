@@ -51,5 +51,5 @@ export function announcementDismissScript(): string {
   const css = JSON.stringify(
     `[data-slot="${ANNOUNCEMENT_BAR_SLOT}"]{display:none!important}`
   );
-  return `(function(){try{if(localStorage.getItem(${key})===${id}){var s=document.createElement("style");s.textContent=${css};document.head.appendChild(s)}}catch{}})();`;
+  return `(function(){try{if(localStorage.getItem(${key})===${id}){var s=document.createElement("style");s.textContent=${css};document.head.appendChild(s)}}catch(e){}})();`;
 }

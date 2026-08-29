@@ -1,1 +1,0 @@
-(function(){try{if(localStorage.getItem("bakimx.announcement.dismissed")==="2026-08-ruhsat-parca"){var s=document.createElement("style");s.textContent="[data-slot=\"announcement-bar\"]{display:none!important}";document.head.appendChild(s)}}catch{}})();
