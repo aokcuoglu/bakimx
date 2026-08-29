@@ -12,6 +12,11 @@ export default defineConfig({
   // uçtan uca testler `*.e2e.ts`.
   testMatch: "**/*.e2e.ts",
   fullyParallel: false,
+  // Satış kabul fixture'ı paylaşılan DEV/CI test veritabanında geçici lead,
+  // workshop ve kullanıcılar oluşturur. Dosyaları paralel çalıştırmak diğer
+  // veri-okuyan smoke testlerine bu satırları sızdırır; tek worker izolasyonu
+  // teardown tamamlanmadan sonraki dosyanın başlamamasını garanti eder.
+  workers: 1,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
   use: {
@@ -28,6 +33,11 @@ export default defineConfig({
   webServer: {
     command: `bun run dev -- -p ${port}`,
     url: `${baseURL}/api/health`,
+    env: {
+      EMAIL_PROVIDER: "mock",
+      SMS_PROVIDER: "mock",
+      WHATSAPP_PROVIDER: "mock",
+    },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

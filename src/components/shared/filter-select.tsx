@@ -15,6 +15,7 @@ type FilterSelectProps = {
   name: string
   defaultValue?: string
   placeholder?: string
+  ariaLabel?: string
   options: Option[]
   className?: string
   /**
@@ -29,6 +30,7 @@ export function FilterSelect({
   name,
   defaultValue = "",
   placeholder,
+  ariaLabel,
   options,
   className,
   autoSubmit = false,
@@ -56,7 +58,7 @@ export function FilterSelect({
           setValue(next)
         }}
       >
-        <SelectTrigger className={className}>
+        <SelectTrigger className={className} aria-label={ariaLabel ?? placeholder ?? name}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
