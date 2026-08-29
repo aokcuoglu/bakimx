@@ -41,6 +41,16 @@ describe("sales operations surface contract", () => {
     expect(LOCATION_PICKER).toContain('gmpDraggable: true')
   })
 
+  it("keeps the address hierarchy selection-based and tied to Google results", () => {
+    expect(LOCATION_PICKER).toContain("<CitySelect")
+    expect(LOCATION_PICKER).toContain("<DistrictSelect")
+    expect(LOCATION_PICKER).toContain('["neighborhood", "sublocality", "administrative_area_level_4"]')
+    expect(LOCATION_PICKER).toContain('["route"]')
+    expect(LOCATION_PICKER).toContain("matchesSelectedTurkishArea")
+    expect(LOCATION_PICKER).toContain('disabled={!configured || !city || !district || !neighborhood}')
+    expect(CONSOLE).not.toContain('(["city", "district", "neighborhood", "route", "streetNumber", "postalCode"] as const).map')
+  })
+
   it("keeps autocomplete place details inside the Essentials billing tier", () => {
     expect(LOCATION_PICKER).toContain(
       'fields: ["id", "formattedAddress", "addressComponents", "location", "viewport"]',

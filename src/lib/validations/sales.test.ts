@@ -92,6 +92,22 @@ describe("sales CRM validation", () => {
     expect(salesLeadSchema.safeParse(validLead).success).toBe(true)
   })
 
+  it("accepts only canonical city and dependent district selections", () => {
+    expect(salesLeadSchema.safeParse({
+      ...validLead,
+      city: "istanbul",
+    }).success).toBe(false)
+    expect(salesLeadSchema.safeParse({
+      ...validLead,
+      district: "Çankaya",
+    }).success).toBe(false)
+    expect(salesLeadSchema.safeParse({
+      ...validLead,
+      city: "Ankara",
+      district: "Çankaya",
+    }).success).toBe(true)
+  })
+
   it("requires a confirmed coordinate pair and source for mapped leads", () => {
     expect(salesLeadSchema.safeParse({
       ...validLead,

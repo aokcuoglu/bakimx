@@ -1,3 +1,6 @@
+import { canonicalizeTurkishCity } from "@/lib/tr-cities"
+import { normalizePartSearchTerm } from "@/lib/tr-search"
+
 /** Türkiye il → ilçe listesi. Anahtarlar src/lib/tr-cities.ts TR_CITIES ile birebir aynı.
  *  Her ilçe listesi Türkçe alfabetik (Intl.Collator("tr")). Form il/ilçe cascade seçicileri için. */
 export const TR_DISTRICTS: Record<string, string[]> = {
@@ -85,5 +88,12 @@ export const TR_DISTRICTS: Record<string, string[]> = {
 }
 
 export function getDistricts(city: string): string[] {
-  return TR_DISTRICTS[city] ?? []
+  return TR_DISTRICTS[canonicalizeTurkishCity(city)] ?? []
+}
+
+/** Seçili ilin ilçe yazımını kanonik listeye taşır; bilinmeyeni olduğu gibi korur. */
+export function canonicalizeTurkishDistrict(city: string, value: string): string {
+  const needle = normalizePartSearchTerm(value)
+  if (!needle) return ""
+  return getDistricts(city).find((district) => normalizePartSearchTerm(district) === needle) ?? value.trim()
 }

@@ -1,3 +1,5 @@
+import { normalizePartSearchTerm } from "@/lib/tr-search"
+
 export type SalesPlaceAddressComponent = {
   longText: string | null
   shortText?: string | null
@@ -45,7 +47,11 @@ export function parseTurkishSalesAddress(
   const city = component(components, "administrative_area_level_1")
   const administrativeDistrict = component(components, "administrative_area_level_2")
   const sublocalityLevel1 = component(components, "sublocality_level_1", "sublocality")
-  const district = administrativeDistrict || sublocalityLevel1
+  const administrativeDistrictIsCity = normalizePartSearchTerm(administrativeDistrict)
+    === normalizePartSearchTerm(city)
+  const district = administrativeDistrict && !administrativeDistrictIsCity
+    ? administrativeDistrict
+    : sublocalityLevel1 || administrativeDistrict
   const neighborhood = component(
     components,
     "neighborhood",
@@ -67,4 +73,32 @@ export function parseTurkishSalesAddress(
     postalCode,
     address: [neighborhood, routeWithNumber].filter(Boolean).join(", "),
   }
+}
+
+export function composeSalesAddress({
+  neighborhood,
+  route,
+  streetNumber,
+}: Pick<ParsedSalesAddress, "neighborhood" | "route" | "streetNumber">): string {
+  const routeWithNumber = route && streetNumber ? `${route} No: ${streetNumber}` : route || streetNumber
+  return [neighborhood, routeWithNumber].filter(Boolean).join(", ")
+}
+
+function matchesAddressPart(componentValue: string, expectedValue: string, formattedAddress: string): boolean {
+  const expected = normalizePartSearchTerm(expectedValue)
+  if (!expected) return false
+  const component = normalizePartSearchTerm(componentValue)
+  if (component) return component === expected
+  return normalizePartSearchTerm(formattedAddress).includes(expected)
+}
+
+/** Google önerisinin kullanıcının seçtiği il ve ilçenin içinde kaldığını doğrular. */
+export function matchesSelectedTurkishArea(
+  parsed: Pick<ParsedSalesAddress, "city" | "district">,
+  formattedAddress: string,
+  selectedCity: string,
+  selectedDistrict: string,
+): boolean {
+  return matchesAddressPart(parsed.city, selectedCity, formattedAddress)
+    && matchesAddressPart(parsed.district, selectedDistrict, formattedAddress)
 }
