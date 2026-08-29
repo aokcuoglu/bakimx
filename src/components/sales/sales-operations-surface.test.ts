@@ -41,6 +41,15 @@ describe("sales operations surface contract", () => {
     expect(LOCATION_PICKER).toContain('gmpDraggable: true')
   })
 
+  it("keeps autocomplete place details inside the Essentials billing tier", () => {
+    expect(LOCATION_PICKER).toContain(
+      'fields: ["id", "formattedAddress", "addressComponents", "location", "viewport"]',
+    )
+    expect(LOCATION_PICKER).toContain("prediction.mainText?.toString()")
+    expect(LOCATION_PICKER).not.toContain('"primaryType"')
+    expect(LOCATION_PICKER).not.toContain("place.displayName")
+  })
+
   it("explains both economic sources instead of presenting a generic coupon", () => {
     expect(CONSOLE).toContain("Danışman bütçeli")
     expect(CONSOLE).toContain("BakımX destekli")
