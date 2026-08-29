@@ -1,3 +1,5 @@
+import { normalizePartSearchTerm } from "@/lib/tr-search"
+
 /** Türkiye'nin 81 ili — Türkçe alfabetik sıra. Form il/şehir seçicileri için ortak liste. */
 export const TR_CITIES = [
   "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara",
@@ -13,3 +15,13 @@ export const TR_CITIES = [
   "Şanlıurfa", "Şırnak", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak",
   "Van", "Yalova", "Yozgat", "Zonguldak",
 ] as const
+
+/**
+ * Eski kayıtlar ve Google cevapları farklı büyük/küçük harf veya ASCII Türkçe
+ * karakterlerle gelebilir. Formda bunları kanonik 81 il yazımına taşır.
+ */
+export function canonicalizeTurkishCity(value: string): string {
+  const needle = normalizePartSearchTerm(value)
+  if (!needle) return ""
+  return TR_CITIES.find((city) => normalizePartSearchTerm(city) === needle) ?? value.trim()
+}

@@ -21,6 +21,8 @@ import { SalesTaskAgenda, type AgendaTask } from "@/components/sales/sales-task-
 import { SalesLocationPicker } from "@/components/sales/sales-location-picker"
 import { cn } from "@/lib/utils"
 import type { SalesPlaceSelection } from "@/lib/sales/google-place"
+import { canonicalizeTurkishCity } from "@/lib/tr-cities"
+import { canonicalizeTurkishDistrict } from "@/lib/tr-districts"
 import { salesLeadAdminHref, salesLeadAnchorId, workshopAdminHref } from "@/lib/sales/links"
 import { SALES_DISCOUNT_FUNDING_LABELS, type SalesDiscountFunding } from "@/lib/sales/discount-policy"
 import { formatMinor } from "@/lib/billing/pricing"
@@ -286,12 +288,13 @@ export function SalesConsole({
 
   function startLeadFromPlace(place: SalesPlaceSelection) {
     leadFormTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const canonicalCity = canonicalizeTurkishCity(place.city)
     form.reset({
       ...EMPTY_SALES_LEAD_VALUES,
       placeSearch: place.businessName,
       businessName: place.businessName,
-      city: place.city,
-      district: place.district,
+      city: canonicalCity,
+      district: canonicalizeTurkishDistrict(canonicalCity, place.district),
       neighborhood: place.neighborhood,
       route: place.route,
       streetNumber: place.streetNumber,
@@ -311,6 +314,7 @@ export function SalesConsole({
 
   function verifyLeadLocation(lead: Lead) {
     leadFormTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const canonicalCity = canonicalizeTurkishCity(lead.city ?? "")
     form.reset({
       ...EMPTY_SALES_LEAD_VALUES,
       placeSearch: lead.businessName,
@@ -318,8 +322,8 @@ export function SalesConsole({
       contactName: lead.contactName,
       phone: lead.phone,
       email: lead.email ?? "",
-      city: lead.city ?? "",
-      district: lead.district ?? "",
+      city: canonicalCity,
+      district: canonicalizeTurkishDistrict(canonicalCity, lead.district ?? ""),
       neighborhood: lead.neighborhood ?? "",
       route: lead.route ?? "",
       streetNumber: lead.streetNumber ?? "",
@@ -344,14 +348,6 @@ export function SalesConsole({
     setDuplicateWarning(null)
     setLocationLeadId(null)
     setShowNewLeadForm(false)
-  }
-
-  function markAddressAsManual() {
-    const hasCoordinates = form.getValues("latitude") != null && form.getValues("longitude") != null
-    form.setValue("googlePlaceId", "", { shouldDirty: true })
-    form.setValue("formattedAddress", "", { shouldDirty: true })
-    form.setValue("locationSource", hasCoordinates ? "manual_pin" : null, { shouldDirty: true })
-    form.setValue("locationConfirmed", false, { shouldDirty: true, shouldValidate: true })
   }
 
   return (
@@ -518,57 +514,6 @@ export function SalesConsole({
                     )}
                   />
                 ))}
-              {(["city", "district", "neighborhood", "route", "streetNumber", "postalCode"] as const).map((name) => (
-                <FormField
-                  key={name}
-                  control={form.control}
-                  name={name}
-                  render={({ field }) => (
-                    <FormItem className={name === "route" ? "sm:col-span-2" : undefined}>
-                      <FormLabel>
-                        {({
-                          city: "İl",
-                          district: "İlçe",
-                          neighborhood: "Mahalle",
-                          route: "Cadde / sokak",
-                          streetNumber: "Dış kapı no",
-                          postalCode: "Posta kodu",
-                        })[name]}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          onChange={(event) => {
-                            field.onChange(event)
-                            markAddressAsManual()
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-2">
-                    <FormLabel>Adres özeti / tarif</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        rows={2}
-                        onChange={(event) => {
-                          field.onChange(event)
-                          markAddressAsManual()
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               {!locationLeadId && <FormField
                 control={form.control}
                 name="notes"

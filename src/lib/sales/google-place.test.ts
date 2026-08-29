@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { parseTurkishSalesAddress } from "./google-place"
+import { composeSalesAddress, matchesSelectedTurkishArea, parseTurkishSalesAddress } from "./google-place"
 
 describe("Google Place Türkiye adres eşlemesi", () => {
   it("il, ilçe, mahalle, cadde ve numarayı ayrı alanlara taşır", () => {
@@ -67,5 +67,39 @@ describe("Google Place Türkiye adres eşlemesi", () => {
       postalCode: "",
       address: "",
     })
+  })
+})
+
+describe("Google adres seçimi yardımcıları", () => {
+  it("mahalle, rota ve kapı numarasından adres özeti üretir", () => {
+    expect(composeSalesAddress({
+      neighborhood: "Feneryolu",
+      route: "Bağdat Caddesi",
+      streetNumber: "63",
+    })).toBe("Feneryolu, Bağdat Caddesi No: 63")
+  })
+
+  it("Google sonucunu seçili il ve ilçeye Türkçe/ASCII yazım farkıyla eşler", () => {
+    expect(matchesSelectedTurkishArea(
+      { city: "Istanbul", district: "Sisli" },
+      "Şişli/İstanbul, Türkiye",
+      "İstanbul",
+      "Şişli",
+    )).toBe(true)
+    expect(matchesSelectedTurkishArea(
+      { city: "İstanbul", district: "Kadıköy" },
+      "Kadıköy/İstanbul, Türkiye",
+      "İstanbul",
+      "Şişli",
+    )).toBe(false)
+  })
+
+  it("eksik bileşeni biçimlendirilmiş adresten doğrular", () => {
+    expect(matchesSelectedTurkishArea(
+      { city: "", district: "" },
+      "Feneryolu, Kadıköy/İstanbul, Türkiye",
+      "İstanbul",
+      "Kadıköy",
+    )).toBe(true)
   })
 })

@@ -1,5 +1,7 @@
 import { z } from "zod"
 import { parseIstanbulLocalDateTime } from "@/lib/sales/time"
+import { TR_CITIES } from "@/lib/tr-cities"
+import { getDistricts } from "@/lib/tr-districts"
 
 export const salesLeadSchema = z.object({
   placeSearch: z.string().trim().max(300),
@@ -7,7 +9,10 @@ export const salesLeadSchema = z.object({
   contactName: z.string().trim().min(2, "Yetkili adı en az 2 karakter olmalıdır").max(120),
   phone: z.string().trim().min(7, "Geçerli bir telefon numarası girin").max(30),
   email: z.string().trim().email("Geçerli bir e-posta girin").or(z.literal("")),
-  city: z.string().trim().max(80),
+  city: z.string().trim().max(80).refine(
+    (value) => !value || (TR_CITIES as readonly string[]).includes(value),
+    "Listeden geçerli bir il seçin",
+  ),
   district: z.string().trim().max(80),
   neighborhood: z.string().trim().max(120),
   route: z.string().trim().max(160),
@@ -24,6 +29,9 @@ export const salesLeadSchema = z.object({
   notes: z.string().trim().max(2000),
   allowDuplicate: z.boolean().optional(),
 }).superRefine((value, ctx) => {
+  if (value.district && !getDistricts(value.city).includes(value.district)) {
+    ctx.addIssue({ code: "custom", path: ["district"], message: "Seçili ile bağlı geçerli bir ilçe seçin" })
+  }
   const hasLatitude = value.latitude != null
   const hasLongitude = value.longitude != null
   if (hasLatitude !== hasLongitude) {
