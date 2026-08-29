@@ -30,6 +30,10 @@ function component(
   return components.find((item) => types.some((type) => item.types.includes(type)))?.longText?.trim() ?? ""
 }
 
+function normalizeStreetNumber(value: string): string {
+  return value.replace(/^no\.?\s*:?\s*/iu, "").trim()
+}
+
 /**
  * Google adres bileşenleri ülkeye ve kaydın ayrıntı düzeyine göre değişebilir.
  * Türkiye için il/ilçe/mahalle sırasını korurken aynı sublocality değerini iki
@@ -42,12 +46,17 @@ export function parseTurkishSalesAddress(
   const administrativeDistrict = component(components, "administrative_area_level_2")
   const sublocalityLevel1 = component(components, "sublocality_level_1", "sublocality")
   const district = administrativeDistrict || sublocalityLevel1
-  const neighborhood = component(components, "neighborhood", "sublocality_level_2")
+  const neighborhood = component(
+    components,
+    "neighborhood",
+    "sublocality_level_2",
+    "administrative_area_level_4",
+  )
     || (administrativeDistrict ? sublocalityLevel1 : "")
   const route = component(components, "route")
-  const streetNumber = component(components, "street_number")
+  const streetNumber = normalizeStreetNumber(component(components, "street_number"))
   const postalCode = component(components, "postal_code")
-  const routeWithNumber = [route, streetNumber].filter(Boolean).join(" No: ")
+  const routeWithNumber = route && streetNumber ? `${route} No: ${streetNumber}` : route || streetNumber
 
   return {
     city,

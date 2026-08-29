@@ -35,6 +35,26 @@ describe("Google Place Türkiye adres eşlemesi", () => {
     })
   })
 
+  it("Türkiye Places cevabındaki dördüncü seviye mahalleyi ve numara önekini normalize eder", () => {
+    expect(parseTurkishSalesAddress([
+      { longText: "No:63", shortText: "No:63", types: ["street_number"] },
+      { longText: "Bağdat Caddesi", shortText: "Bağdat Cad.", types: ["route"] },
+      { longText: "Feneryolu", shortText: "Feneryolu", types: ["administrative_area_level_4", "political"] },
+      { longText: "Kadıköy", shortText: "Kadıköy", types: ["administrative_area_level_2", "political"] },
+      { longText: "İstanbul", shortText: "İstanbul", types: ["administrative_area_level_1", "political"] },
+      { longText: "Türkiye", shortText: "TR", types: ["country", "political"] },
+      { longText: "34724", shortText: "34724", types: ["postal_code"] },
+    ])).toEqual({
+      city: "İstanbul",
+      district: "Kadıköy",
+      neighborhood: "Feneryolu",
+      route: "Bağdat Caddesi",
+      streetNumber: "63",
+      postalCode: "34724",
+      address: "Feneryolu, Bağdat Caddesi No: 63",
+    })
+  })
+
   it("eksik Google bileşenleri için alan uydurmaz", () => {
     expect(parseTurkishSalesAddress([
       { longText: "Ankara", types: ["administrative_area_level_1"] },
