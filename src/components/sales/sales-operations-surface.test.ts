@@ -4,6 +4,9 @@ const CONSOLE = await Bun.file(new URL("../../app/admin/sales/sales-console.tsx"
 const PAGE = await Bun.file(new URL("../../app/admin/sales/page.tsx", import.meta.url)).text()
 const TERRITORY_MAP = await Bun.file(new URL("./sales-territory-map.tsx", import.meta.url)).text()
 const LOCATION_PICKER = await Bun.file(new URL("./sales-location-picker.tsx", import.meta.url)).text()
+const GOOGLE_MAPS_CLIENT = await Bun.file(new URL("../../lib/sales/google-maps-client.ts", import.meta.url)).text()
+const GOOGLE_MAPS_ROUTE = await Bun.file(new URL("../../app/api/admin/sales/google-maps-usage/route.ts", import.meta.url)).text()
+const HEALTH_PAGE = await Bun.file(new URL("../../app/admin/health/page.tsx", import.meta.url)).text()
 
 describe("sales operations surface contract", () => {
   it("loads the browser-only Google map without server-side rendering", () => {
@@ -58,6 +61,26 @@ describe("sales operations surface contract", () => {
     expect(LOCATION_PICKER).toContain("prediction.mainText?.toString()")
     expect(LOCATION_PICKER).not.toContain('"primaryType"')
     expect(LOCATION_PICKER).not.toContain("place.displayName")
+  })
+
+  it("reserves every billable Google SKU before calling Google", () => {
+    expect(TERRITORY_MAP.match(/reserveSalesGoogleMapsUsage\("dynamic_maps"\)/g)).toHaveLength(1)
+    expect(TERRITORY_MAP.match(/reserveSalesGoogleMapsUsage\("nearby_search_pro"\)/g)).toHaveLength(1)
+    expect(LOCATION_PICKER.match(/reserveSalesGoogleMapsUsage\("dynamic_maps"\)/g)).toHaveLength(1)
+    expect(LOCATION_PICKER.match(/reserveSalesGoogleMapsUsage\("autocomplete_requests"\)/g)).toHaveLength(2)
+    expect(LOCATION_PICKER.match(/reserveSalesGoogleMapsUsage\("place_details_essentials"\)/g)).toHaveLength(2)
+    expect(GOOGLE_MAPS_CLIENT).toContain('cache: "no-store"')
+    expect(GOOGLE_MAPS_CLIENT).toContain("payload?.allowed === true")
+  })
+
+  it("fails closed at the authenticated same-origin permit route and reports usage in health", () => {
+    expect(GOOGLE_MAPS_ROUTE).toContain("await getSalesAccess()")
+    expect(GOOGLE_MAPS_ROUTE).toContain("isSameOrigin(request)")
+    expect(GOOGLE_MAPS_ROUTE).toContain('reason: "counter_unavailable"')
+    expect(GOOGLE_MAPS_ROUTE).toContain("{ status: 503 }")
+    expect(HEALTH_PAGE).toContain("getGoogleMapsUsageSnapshot")
+    expect(HEALTH_PAGE).toContain("Ücretli kullanıma otomatik geçiş kapalı")
+    expect(HEALTH_PAGE).toContain("Session token bir tüketim birimi değildir")
   })
 
   it("explains both economic sources instead of presenting a generic coupon", () => {

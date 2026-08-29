@@ -160,6 +160,10 @@ export const KEEP_TABLES = [
   // Herkese açık durum sayfası (BAK-128) platform geneli olay geçmişidir;
   // hiçbir atölyeye ait olmadığı için kiracı sıfırlamasında korunur.
   "status_incidents",
+  // Google Maps maliyet kapısı platformun aylık ortak sayacıdır. Kiracı reseti
+  // bunu sıfırlarsa aynı ay içinde yeniden hak açılır ve ücretsiz SKU sınırı
+  // aşılabilir; bu nedenle faturalama dönemi boyunca mutlaka korunur.
+  "google_maps_usage_counters",
   "_prisma_migrations",
 ]
 

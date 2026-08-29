@@ -59,6 +59,17 @@ GOOGLE_MAPS_MAP_ID=map-id
   `250`, SearchNearby `100`; kullanılmayan Places yöntemleri ile 3D/grounding
   çağrıları `0`. Kota dolunca Google yüzeyi yanıt vermez, satış portföyü ve görev
   akışları haritasız çalışmayı sürdürür.
+- Google çağrısından önce ayrıca Postgres'teki ortak maliyet kapısından aylık
+  hak ayrılır. Uygulama sınırları ücretsiz SKU kotasının %80'idir: Dynamic Maps,
+  Autocomplete ve Place Details `8.000/ay`; Nearby Search Pro `4.000/ay`. Bu
+  değerler ortam değişkeniyle yükseltilemez. Sayaç erişilemezse istek Google'a
+  gönderilmez; yani maliyet yolu diğer rate-limit'lerden farklı olarak
+  fail-closed'dur.
+- `/admin/health`, ilgili UTC ayı için SKU bazında rezerve edilen, kalan ve
+  engellenen hakları; son olayı ve Google Cloud günlük sert kotasını gösterir.
+  Bunlar uygulama gözlemidir ve güvenli tarafta kalmak için başarısız Google
+  çağrılarını da sayar. Session token tüketim birimi değildir; kesin ve gecikmeli
+  faturalama kaynağı Google Cloud Billing'dir.
 - Her ortam ayrı, origin ve API kapsamı kısıtlı anahtar kullanır. DEV anahtarı
   yalnız `localhost:3000`, `127.0.0.1:3000` ve `app-dev.bakimx.com` için geçerlidir;
   PROD bu anahtarı kullanmaz.
