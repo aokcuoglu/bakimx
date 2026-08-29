@@ -35,6 +35,23 @@ describe("Google Place Türkiye adres eşlemesi", () => {
     })
   })
 
+  it("üst idari alan il ile aynıysa ilçeyi sublocality alanından alır", () => {
+    const result = parseTurkishSalesAddress([
+      { longText: "İstanbul", types: ["administrative_area_level_1"] },
+      { longText: "İstanbul", types: ["administrative_area_level_2"] },
+      { longText: "Kadıköy", types: ["sublocality_level_1"] },
+      { longText: "Feneryolu", types: ["neighborhood"] },
+      { longText: "Bağdat Caddesi", types: ["route"] },
+    ])
+
+    expect(result).toMatchObject({
+      city: "İstanbul",
+      district: "Kadıköy",
+      neighborhood: "Feneryolu",
+      route: "Bağdat Caddesi",
+    })
+  })
+
   it("Türkiye Places cevabındaki dördüncü seviye mahalleyi ve numara önekini normalize eder", () => {
     expect(parseTurkishSalesAddress([
       { longText: "No:63", shortText: "No:63", types: ["street_number"] },

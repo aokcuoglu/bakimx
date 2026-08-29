@@ -47,7 +47,11 @@ export function parseTurkishSalesAddress(
   const city = component(components, "administrative_area_level_1")
   const administrativeDistrict = component(components, "administrative_area_level_2")
   const sublocalityLevel1 = component(components, "sublocality_level_1", "sublocality")
-  const district = administrativeDistrict || sublocalityLevel1
+  const administrativeDistrictIsCity = normalizePartSearchTerm(administrativeDistrict)
+    === normalizePartSearchTerm(city)
+  const district = administrativeDistrict && !administrativeDistrictIsCity
+    ? administrativeDistrict
+    : sublocalityLevel1 || administrativeDistrict
   const neighborhood = component(
     components,
     "neighborhood",

@@ -80,7 +80,7 @@ function GoogleAddressComponentCombobox({
   const [searching, setSearching] = useState(false)
   const [selecting, setSelecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const placesLibraryRef = useRef<google.maps.PlacesLibrary | null>(null)
+  const [placesLibrary, setPlacesLibrary] = useState<google.maps.PlacesLibrary | null>(null)
   const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null)
   const newestRequestRef = useRef(0)
   const configured = Boolean(apiKey && mapId)
@@ -91,7 +91,7 @@ function GoogleAddressComponentCombobox({
     let cancelled = false
     void loadSalesGoogleLibrary(apiKey, mapId, "places")
       .then((library) => {
-        if (!cancelled) placesLibraryRef.current = library
+        if (!cancelled) setPlacesLibrary(library)
       })
       .catch(() => {
         if (!cancelled) setError("Google adres seçenekleri yüklenemedi.")
@@ -100,11 +100,9 @@ function GoogleAddressComponentCombobox({
   }, [apiKey, mapId])
 
   useEffect(() => {
-    const library = placesLibraryRef.current
+    const library = placesLibrary
     const query = inputValue.trim()
     if (!configured || disabled || !queryTouched || query.length < 2 || !library) {
-      setSuggestions([])
-      setSearching(false)
       return
     }
 
@@ -150,7 +148,7 @@ function GoogleAddressComponentCombobox({
     }, 350)
 
     return () => window.clearTimeout(timer)
-  }, [city, configured, disabled, district, inputValue, kind, neighborhood, queryTouched])
+  }, [city, configured, disabled, district, inputValue, kind, neighborhood, placesLibrary, queryTouched])
 
   async function selectOption(option: GoogleAddressOption) {
     try {
@@ -159,7 +157,8 @@ function GoogleAddressComponentCombobox({
       await place.fetchFields({ fields: ["formattedAddress", "addressComponents", "location"] })
       const parsed = parseTurkishSalesAddress(place.addressComponents ?? [])
       const formattedAddress = place.formattedAddress ?? option.label
-      if (!matchesSelectedTurkishArea(parsed, formattedAddress, city, district)) {
+      const googleResultAddress = [formattedAddress, option.label].filter(Boolean).join(", ")
+      if (!matchesSelectedTurkishArea(parsed, googleResultAddress, city, district)) {
         setError(`Seçilen sonuç ${city} / ${district} ile örtüşmüyor.`)
         return
       }
@@ -202,6 +201,11 @@ function GoogleAddressComponentCombobox({
         onInputValueChange={(next: string) => {
           setInputValue(next)
           setQueryTouched(true)
+          setSuggestions([])
+          if (next.trim().length < 2) {
+            newestRequestRef.current += 1
+            setSearching(false)
+          }
           if (!next && value) onClear()
         }}
         onValueChange={(option: GoogleAddressOption | null) => {
@@ -334,7 +338,13 @@ function LocationPreviewMap({
   useEffect(() => {
     const map = mapRef.current
     const marker = markerRef.current
-    if (!map || !marker || !coordinates) return
+    if (!map || !marker) return
+    if (!coordinates) {
+      marker.map = null
+      map.setCenter({ lat: 39.1, lng: 35.2 })
+      map.setZoom(5)
+      return
+    }
     const position = { lat: coordinates.latitude, lng: coordinates.longitude }
     marker.position = position
     marker.map = map
@@ -389,7 +399,7 @@ export function SalesLocationPicker({
     () => form.getValues("latitude") != null && form.getValues("longitude") != null,
   )
   const [mapsError, setMapsError] = useState<string | null>(null)
-  const placesLibraryRef = useRef<google.maps.PlacesLibrary | null>(null)
+  const [placesLibrary, setPlacesLibrary] = useState<google.maps.PlacesLibrary | null>(null)
   const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null)
   const newestRequestRef = useRef(0)
 
@@ -401,7 +411,7 @@ export function SalesLocationPicker({
     let cancelled = false
     void loadSalesGoogleLibrary(apiKey, mapId, "places")
       .then((library) => {
-        if (!cancelled) placesLibraryRef.current = library
+        if (!cancelled) setPlacesLibrary(library)
       })
       .catch(() => {
         if (!cancelled) setMapsError("Google Places yüklenemedi. API anahtarı ve etkin servisleri kontrol edin.")
@@ -410,20 +420,16 @@ export function SalesLocationPicker({
   }, [apiKey, mapId])
 
   useEffect(() => {
-    if (!configured || !queryTouched || !query || query.trim().length < 3 || !placesLibraryRef.current) {
-      setSuggestions([])
-      setSearching(false)
+    if (!configured || !queryTouched || !query || query.trim().length < 3 || !placesLibrary) {
       return
     }
 
     const requestId = ++newestRequestRef.current
     const timer = window.setTimeout(async () => {
-      const library = placesLibraryRef.current
-      if (!library) return
       try {
         setSearching(true)
-        sessionTokenRef.current ??= new library.AutocompleteSessionToken()
-        const result = await library.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        sessionTokenRef.current ??= new placesLibrary.AutocompleteSessionToken()
+        const result = await placesLibrary.AutocompleteSuggestion.fetchAutocompleteSuggestions({
           input: query.trim(),
           includedRegionCodes: ["tr"],
           language: "tr",
@@ -444,7 +450,7 @@ export function SalesLocationPicker({
     }, 350)
 
     return () => window.clearTimeout(timer)
-  }, [configured, query, queryTouched])
+  }, [configured, placesLibrary, query, queryTouched])
 
   function clearResolvedLocation({ keepCoordinates = false }: { keepCoordinates?: boolean } = {}) {
     const hasCoordinates = keepCoordinates && form.getValues("latitude") != null && form.getValues("longitude") != null
@@ -453,6 +459,7 @@ export function SalesLocationPicker({
     if (!hasCoordinates) {
       form.setValue("latitude", null, { shouldDirty: true })
       form.setValue("longitude", null, { shouldDirty: true })
+      setShowMap(false)
     }
     form.setValue("locationSource", hasCoordinates ? "manual_pin" : null, { shouldDirty: true })
     form.setValue("locationConfirmed", false, { shouldDirty: true, shouldValidate: true })
@@ -488,7 +495,11 @@ export function SalesLocationPicker({
     } else {
       form.setValue("route", selection.value, { shouldDirty: true, shouldValidate: true })
       form.setValue("streetNumber", "", { shouldDirty: true })
-      form.setValue("postalCode", selection.parsed.postalCode, { shouldDirty: true })
+      form.setValue(
+        "postalCode",
+        selection.parsed.postalCode || form.getValues("postalCode"),
+        { shouldDirty: true },
+      )
       updateAddressSummary({ route: selection.value, streetNumber: "" })
     }
 
@@ -580,6 +591,11 @@ export function SalesLocationPicker({
                       onChange={(event) => {
                         field.onChange(event)
                         setQueryTouched(true)
+                        setSuggestions([])
+                        if (event.target.value.trim().length < 3) {
+                          newestRequestRef.current += 1
+                          setSearching(false)
+                        }
                         if (form.getValues("locationSource") || form.getValues("formattedAddress")) {
                           clearResolvedLocation()
                         }
