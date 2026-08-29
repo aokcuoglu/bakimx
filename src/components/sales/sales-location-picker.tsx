@@ -231,7 +231,7 @@ export function SalesLocationPicker({
       setSelecting(true)
       const place = prediction.toPlace()
       await place.fetchFields({
-        fields: ["id", "displayName", "formattedAddress", "addressComponents", "location", "viewport", "primaryType"],
+        fields: ["id", "formattedAddress", "addressComponents", "location", "viewport"],
       })
       if (!place.location) {
         setMapsError("Seçilen sonuç için harita konumu bulunamadı.")
@@ -240,8 +240,9 @@ export function SalesLocationPicker({
 
       const parsed = parseTurkishSalesAddress(place.addressComponents ?? [])
       const formattedAddress = place.formattedAddress ?? prediction.text.toString()
-      form.setValue("placeSearch", place.displayName || formattedAddress, { shouldDirty: true })
-      if (place.displayName) form.setValue("businessName", place.displayName, { shouldDirty: true, shouldValidate: true })
+      const businessName = prediction.mainText?.toString().trim() || prediction.text.toString().trim()
+      form.setValue("placeSearch", businessName || formattedAddress, { shouldDirty: true })
+      if (businessName) form.setValue("businessName", businessName, { shouldDirty: true, shouldValidate: true })
       form.setValue("city", parsed.city, { shouldDirty: true })
       form.setValue("district", parsed.district, { shouldDirty: true })
       form.setValue("neighborhood", parsed.neighborhood, { shouldDirty: true })
