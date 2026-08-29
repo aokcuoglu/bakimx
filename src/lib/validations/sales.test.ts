@@ -66,19 +66,74 @@ describe("sales discount code creation validation", () => {
 
 describe("sales CRM validation", () => {
   const validLead = {
+    placeSearch: "",
     businessName: "Örnek Servis",
     contactName: "Ayşe Yılmaz",
     phone: "0532 000 00 00",
     email: "",
     city: "İstanbul",
     district: "Kadıköy",
+    neighborhood: "",
+    route: "",
+    streetNumber: "",
+    postalCode: "",
     address: "Rıhtım Cad.",
+    formattedAddress: "",
+    googlePlaceId: "",
+    latitude: null,
+    longitude: null,
+    locationSource: null,
+    locationConfirmed: false,
     monthlyVehicles: "51-100",
     notes: "",
   }
 
   it("accepts the complete lead form", () => {
     expect(salesLeadSchema.safeParse(validLead).success).toBe(true)
+  })
+
+  it("requires a confirmed coordinate pair and source for mapped leads", () => {
+    expect(salesLeadSchema.safeParse({
+      ...validLead,
+      googlePlaceId: "google-place-1",
+      latitude: 41.0082,
+      longitude: 28.9784,
+      locationSource: "google_place",
+      locationConfirmed: true,
+    }).success).toBe(true)
+
+    expect(salesLeadSchema.safeParse({
+      ...validLead,
+      latitude: 41.0082,
+      longitude: 28.9784,
+      locationSource: "google_place",
+      locationConfirmed: false,
+    }).success).toBe(false)
+
+    expect(salesLeadSchema.safeParse({
+      ...validLead,
+      latitude: 41.0082,
+      longitude: null,
+      locationSource: "manual_pin",
+      locationConfirmed: true,
+    }).success).toBe(false)
+
+    expect(salesLeadSchema.safeParse({
+      ...validLead,
+      latitude: 41.0082,
+      longitude: 28.9784,
+      locationSource: "google_place",
+      locationConfirmed: true,
+    }).success).toBe(false)
+
+    expect(salesLeadSchema.safeParse({
+      ...validLead,
+      googlePlaceId: "stale-google-place",
+      latitude: 41.0082,
+      longitude: 28.9784,
+      locationSource: "manual_pin",
+      locationConfirmed: true,
+    }).success).toBe(false)
   })
 
   it("requires a result for interactions but not plain notes", () => {

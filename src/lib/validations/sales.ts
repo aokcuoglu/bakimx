@@ -2,16 +2,52 @@ import { z } from "zod"
 import { parseIstanbulLocalDateTime } from "@/lib/sales/time"
 
 export const salesLeadSchema = z.object({
+  placeSearch: z.string().trim().max(300),
   businessName: z.string().trim().min(2, "Servis adı en az 2 karakter olmalıdır").max(160),
   contactName: z.string().trim().min(2, "Yetkili adı en az 2 karakter olmalıdır").max(120),
   phone: z.string().trim().min(7, "Geçerli bir telefon numarası girin").max(30),
   email: z.string().trim().email("Geçerli bir e-posta girin").or(z.literal("")),
   city: z.string().trim().max(80),
   district: z.string().trim().max(80),
+  neighborhood: z.string().trim().max(120),
+  route: z.string().trim().max(160),
+  streetNumber: z.string().trim().max(40),
+  postalCode: z.string().trim().max(20),
   address: z.string().trim().max(500),
+  formattedAddress: z.string().trim().max(500),
+  googlePlaceId: z.string().trim().max(255),
+  latitude: z.number().min(-90).max(90).nullable(),
+  longitude: z.number().min(-180).max(180).nullable(),
+  locationSource: z.enum(["google_place", "manual_pin"]).nullable(),
+  locationConfirmed: z.boolean(),
   monthlyVehicles: z.string().trim().max(80),
   notes: z.string().trim().max(2000),
   allowDuplicate: z.boolean().optional(),
+}).superRefine((value, ctx) => {
+  const hasLatitude = value.latitude != null
+  const hasLongitude = value.longitude != null
+  if (hasLatitude !== hasLongitude) {
+    ctx.addIssue({ code: "custom", path: ["latitude"], message: "Konum enlem ve boylamıyla birlikte kaydedilmelidir" })
+  }
+  const hasCoordinates = hasLatitude && hasLongitude
+  if (hasCoordinates && !value.locationSource) {
+    ctx.addIssue({ code: "custom", path: ["locationSource"], message: "Konum kaynağı zorunludur" })
+  }
+  if (value.locationSource && !hasCoordinates) {
+    ctx.addIssue({ code: "custom", path: ["locationSource"], message: "Konum kaynağı koordinatsız kaydedilemez" })
+  }
+  if (hasCoordinates && !value.locationConfirmed) {
+    ctx.addIssue({ code: "custom", path: ["locationConfirmed"], message: "Harita konumunu doğrulayın" })
+  }
+  if (value.googlePlaceId && !hasCoordinates) {
+    ctx.addIssue({ code: "custom", path: ["googlePlaceId"], message: "Google işletmesi koordinatsız kaydedilemez" })
+  }
+  if (value.locationSource === "google_place" && !value.googlePlaceId) {
+    ctx.addIssue({ code: "custom", path: ["googlePlaceId"], message: "Google konumu için işletme kimliği zorunludur" })
+  }
+  if (value.locationSource === "manual_pin" && value.googlePlaceId) {
+    ctx.addIssue({ code: "custom", path: ["googlePlaceId"], message: "Manuel pin eski Google işletmesine bağlı kalamaz" })
+  }
 })
 
 const optionalDateTime = z.string().trim().optional().refine(
@@ -106,6 +142,19 @@ export const salesCommissionRuleSchema = z.object({
     (value) => parseIstanbulLocalDateTime(value) != null,
     "Geçerli bir yürürlük tarihi girin",
   ),
+})
+
+export const salesMonthlyTargetSchema = z.object({
+  advisorId: z.string().trim().min(1, "Satış danışmanı seçin"),
+  month: z.string().trim().regex(/^(20\d{2}|21\d{2}|2200)-(0[1-9]|1[0-2])$/, "Geçerli bir hedef ayı seçin"),
+  newLeadTarget: z.number().int("Tam sayı girin").min(0, "Hedef negatif olamaz").max(1_000_000),
+  qualifiedInteractionTarget: z.number().int("Tam sayı girin").min(0, "Hedef negatif olamaz").max(1_000_000),
+  completedDemoTarget: z.number().int("Tam sayı girin").min(0, "Hedef negatif olamaz").max(1_000_000),
+  wonWorkshopTarget: z.number().int("Tam sayı girin").min(0, "Hedef negatif olamaz").max(1_000_000),
+  netSalesTarget: z.number()
+    .min(0, "Hedef negatif olamaz")
+    .max(100_000_000, "Net satış hedefi sınırı aşıyor")
+    .refine((value) => Number.isInteger(value * 100), "En fazla iki ondalık basamak girin"),
 })
 
 export const salesDiscountFundingSchema = z.enum(["advisor_margin", "bakimx_funded"])

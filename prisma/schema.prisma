@@ -351,29 +351,30 @@ model User {
   updatedAt          DateTime    @updatedAt
 
   auditLogs                     AuditLog[]
-  sentInvites                   Invite[]                @relation("InviteCreatedBy")
+  sentInvites                   Invite[]                    @relation("InviteCreatedBy")
   passwordResets                PasswordResetToken[]
-  deletedPhotos                 VehiclePhoto[]          @relation("VehiclePhotoDeletedBy")
-  deletedChecklistItems         ChecklistItem[]         @relation("ChecklistItemDeletedBy")
-  platformAdmin                 PlatformAdmin?          @relation("PlatformAdminUser")
-  grantedPlatformAdmins         PlatformAdmin[]         @relation("PlatformAdminCreatedBy")
+  deletedPhotos                 VehiclePhoto[]              @relation("VehiclePhotoDeletedBy")
+  deletedChecklistItems         ChecklistItem[]             @relation("ChecklistItemDeletedBy")
+  platformAdmin                 PlatformAdmin?              @relation("PlatformAdminUser")
+  grantedPlatformAdmins         PlatformAdmin[]             @relation("PlatformAdminCreatedBy")
   /// Bu personele ATANMIŞ destek talepleri (BAK-98).
-  supportRequests               SupportRequest[]        @relation("SupportRequestAssignee")
+  supportRequests               SupportRequest[]            @relation("SupportRequestAssignee")
   /// BAK-129: Bu hesabın Web Push abonelikleri (cihaz/tarayıcı başına bir satır).
   pushSubscriptions             PushSubscription[]
   /// BAK-138: Bu hesabın elle düzelttiği işçilik süresi kayıtları.
-  editedLaborSessions           LaborSession[]          @relation("LaborSessionEditedBy")
+  editedLaborSessions           LaborSession[]              @relation("LaborSessionEditedBy")
   salesAdvisor                  SalesAdvisor?
-  createdSalesAdvisorInvites    SalesAdvisorInvite[]    @relation("SalesAdvisorInviteCreator")
-  salesActivities               SalesActivity[]         @relation("SalesActivityActor")
-  salesLeadAssignments          SalesLeadAssignment[]   @relation("SalesLeadAssignmentActor")
-  createdSalesTasks             SalesTask[]             @relation("SalesTaskCreator")
-  createdDemoSessions           SalesDemoSession[]      @relation("SalesDemoSessionCreator")
-  createdSalesRegistrationLinks SalesRegistrationLink[] @relation("SalesRegistrationLinkCreator")
-  revokedSalesRegistrationLinks SalesRegistrationLink[] @relation("SalesRegistrationLinkRevoker")
-  createdSalesDiscountCodes     SalesDiscountCode[]     @relation("SalesDiscountCodeCreator")
-  createdSalesCommissionRules   SalesCommissionRule[]   @relation("SalesCommissionRuleCreator")
-  salesCommissionEvents         SalesCommissionEvent[]  @relation("SalesCommissionEventActor")
+  createdSalesAdvisorInvites    SalesAdvisorInvite[]        @relation("SalesAdvisorInviteCreator")
+  salesActivities               SalesActivity[]             @relation("SalesActivityActor")
+  salesLeadAssignments          SalesLeadAssignment[]       @relation("SalesLeadAssignmentActor")
+  createdSalesTasks             SalesTask[]                 @relation("SalesTaskCreator")
+  createdDemoSessions           SalesDemoSession[]          @relation("SalesDemoSessionCreator")
+  createdSalesRegistrationLinks SalesRegistrationLink[]     @relation("SalesRegistrationLinkCreator")
+  revokedSalesRegistrationLinks SalesRegistrationLink[]     @relation("SalesRegistrationLinkRevoker")
+  createdSalesDiscountCodes     SalesDiscountCode[]         @relation("SalesDiscountCodeCreator")
+  createdSalesCommissionRules   SalesCommissionRule[]       @relation("SalesCommissionRuleCreator")
+  salesCommissionEvents         SalesCommissionEvent[]      @relation("SalesCommissionEventActor")
+  setSalesMonthlyTargets        SalesAdvisorMonthlyTarget[] @relation("SalesMonthlyTargetSetter")
 
   // Kimlik boş kalamaz (email VEYA username) ve ayrıcalıklı rollerde e-posta
   // zorunludur — ikisi de migration'da CHECK kısıtı olarak DB'de durur; PSL
@@ -1881,16 +1882,39 @@ model SalesAdvisor {
   updatedAt         DateTime  @updatedAt
 
   leads                SalesLead[]
-  assignmentsFrom      SalesLeadAssignment[]   @relation("SalesLeadAssignmentFrom")
-  assignmentsTo        SalesLeadAssignment[]   @relation("SalesLeadAssignmentTo")
+  assignmentsFrom      SalesLeadAssignment[]       @relation("SalesLeadAssignmentFrom")
+  assignmentsTo        SalesLeadAssignment[]       @relation("SalesLeadAssignmentTo")
   commissions          SalesCommission[]
   demoSessions         SalesDemoSession[]
   discountCodes        SalesDiscountCode[]
-  acquisitionWorkshops Workshop[]              @relation("WorkshopAcquisitionAdvisor")
+  acquisitionWorkshops Workshop[]                  @relation("WorkshopAcquisitionAdvisor")
   referrals            SalesReferral[]
   registrationLinks    SalesRegistrationLink[]
+  monthlyTargets       SalesAdvisorMonthlyTarget[]
 
   @@index([disabledAt])
+}
+
+/// Europe/Istanbul ay başlangıcı + danışman için tek hedef snapshot'ı. Satır
+/// güncellenebilir; gerçekleşen değerler operasyon kayıtlarından anlık hesaplanır.
+model SalesAdvisorMonthlyTarget {
+  id                         String       @id @default(cuid())
+  advisorId                  String
+  advisor                    SalesAdvisor @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  monthStart                 DateTime
+  newLeadTarget              Int          @default(0)
+  qualifiedInteractionTarget Int          @default(0)
+  completedDemoTarget        Int          @default(0)
+  wonWorkshopTarget          Int          @default(0)
+  netSalesTargetMinor        Int          @default(0)
+  setById                    String
+  setBy                      User         @relation("SalesMonthlyTargetSetter", fields: [setById], references: [id], onDelete: Restrict)
+  createdAt                  DateTime     @default(now())
+  updatedAt                  DateTime     @updatedAt
+
+  @@unique([advisorId, monthStart])
+  @@index([monthStart])
+  @@index([setById])
 }
 
 enum SalesAdvisorInviteStatus {
@@ -1934,6 +1958,11 @@ enum SalesLeadStatus {
   onboarding
   won
   lost
+}
+
+enum SalesLeadLocationSource {
+  google_place
+  manual_pin
 }
 
 enum SalesActivityType {
@@ -1994,7 +2023,17 @@ model SalesLead {
   normalizedEmail     String?
   city                String?
   district            String?
+  neighborhood        String?
+  route               String?
+  streetNumber        String?
+  postalCode          String?
   address             String?
+  formattedAddress    String?
+  googlePlaceId       String?                 @unique
+  latitude            Decimal?                @db.Decimal(9, 6)
+  longitude           Decimal?                @db.Decimal(9, 6)
+  locationSource      SalesLeadLocationSource?
+  locationConfirmedAt DateTime?
   monthlyVehicles     String?
   notes               String?
   nextActionAt        DateTime?

@@ -7,6 +7,7 @@ import { format, startOfDay } from "date-fns"
 import { tr } from "date-fns/locale"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import type { z } from "zod"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,9 +18,13 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { SalesTaskAgenda, type AgendaTask } from "@/components/sales/sales-task-agenda"
+import { SalesLocationPicker } from "@/components/sales/sales-location-picker"
 import { cn } from "@/lib/utils"
+import type { SalesPlaceSelection } from "@/lib/sales/google-place"
 import { salesLeadAdminHref, salesLeadAnchorId, workshopAdminHref } from "@/lib/sales/links"
 import { SALES_DISCOUNT_FUNDING_LABELS, type SalesDiscountFunding } from "@/lib/sales/discount-policy"
+import { formatMinor } from "@/lib/billing/pricing"
+import type { SalesAdvisorPerformance } from "@/lib/sales/performance"
 import { salesLeadSchema, salesDiscountCodeSchema, salesDiscountCodeUpdateSchema } from "@/lib/validations/sales"
 import {
   addSalesActivity,
@@ -28,8 +33,9 @@ import {
   updateSalesDiscountCode,
   deactivateSalesDiscountCode,
   setSalesLeadStatus,
+  updateSalesLeadLocation,
 } from "./actions"
-import { Phone, Mail, MessageSquare, FileText, MapPin, Clock, Users, TrendingUp, CheckCircle2, Gift, Copy, Check, Pencil, Ban, Building2, CalendarDays, Plus, Radar, Target, ArrowUpRight, WalletCards, ShieldCheck } from "lucide-react"
+import { Phone, Mail, MessageSquare, FileText, MapPin, Clock, Users, TrendingUp, CheckCircle2, Gift, Copy, Check, Pencil, Ban, Building2, CalendarDays, Plus, Radar, Target, ArrowUpRight, WalletCards, ShieldCheck, ChartNoAxesCombined } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -42,7 +48,17 @@ type Lead = {
   email: string | null
   city: string | null
   district: string | null
+  neighborhood: string | null
+  route: string | null
+  streetNumber: string | null
+  postalCode: string | null
   address: string | null
+  formattedAddress: string | null
+  googlePlaceId: string | null
+  latitude: number | null
+  longitude: number | null
+  locationSource: "google_place" | "manual_pin" | null
+  locationConfirmedAt: string | null
   monthlyVehicles: string | null
   notes: string | null
   status: string
@@ -90,6 +106,32 @@ type DiscountCode = {
 }
 
 type Advisor = { id: string; name: string }
+type SalesLeadFormValues = z.infer<typeof salesLeadSchema>
+
+const EMPTY_SALES_LEAD_VALUES: SalesLeadFormValues = {
+  placeSearch: "",
+  businessName: "",
+  contactName: "",
+  phone: "",
+  email: "",
+  city: "",
+  district: "",
+  neighborhood: "",
+  route: "",
+  streetNumber: "",
+  postalCode: "",
+  address: "",
+  formattedAddress: "",
+  googlePlaceId: "",
+  latitude: null,
+  longitude: null,
+  locationSource: null,
+  locationConfirmed: false,
+  monthlyVehicles: "",
+  notes: "",
+  allowDuplicate: false,
+}
+
 const statuses = [
   ["new", "Yeni", "bg-primary/10 text-primary-strong border-primary/20"],
   ["contacted", "İletişim", "bg-warning/10 text-warning-strong border-warning/20"],
@@ -134,6 +176,9 @@ export function SalesConsole({
   isAdmin,
   canManagePipeline,
   initialLeadId,
+  monthlyPerformance,
+  googleMapsApiKey,
+  googleMapsMapId,
 }: {
   leads: Lead[]
   tasks: AgendaTask[]
@@ -142,22 +187,14 @@ export function SalesConsole({
   isAdmin: boolean
   canManagePipeline: boolean
   initialLeadId: string | null
+  monthlyPerformance: { periodLabel: string; row: SalesAdvisorPerformance } | null
+  googleMapsApiKey: string | null
+  googleMapsMapId: string | null
 }) {
   const [pending, startTransition] = useTransition()
-  const form = useForm({
+  const form = useForm<SalesLeadFormValues>({
     resolver: zodResolver(salesLeadSchema),
-    defaultValues: {
-      businessName: "",
-      contactName: "",
-      phone: "",
-      email: "",
-      city: "",
-      district: "",
-      address: "",
-      monthlyVehicles: "",
-      notes: "",
-      allowDuplicate: false,
-    },
+    defaultValues: EMPTY_SALES_LEAD_VALUES,
   })
   const [duplicateWarning, setDuplicateWarning] = useState<{
     duplicates: { id: string; businessName: string; phone: string; email: string | null; matchedBy: ("phone" | "email")[] }[]
@@ -166,10 +203,11 @@ export function SalesConsole({
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [advisorFilter, setAdvisorFilter] = useState<string>("all")
   const [showNewLeadForm, setShowNewLeadForm] = useState(false)
+  const [locationLeadId, setLocationLeadId] = useState<string | null>(null)
   const initialLeadStatus = leads.find((lead) => lead.id === initialLeadId)?.status
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(initialLeadId)
   const [openStatuses, setOpenStatuses] = useState<string[]>(initialLeadStatus ? [initialLeadStatus] : [])
-  const newLeadButtonRef = useRef<HTMLButtonElement>(null)
+  const leadFormTriggerRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (!selectedLeadId) return
@@ -225,22 +263,13 @@ export function SalesConsole({
     setOpenStatuses((current) => current.includes(lead.status) ? current : [...current, lead.status])
   }
 
-  function submitLead(values: {
-    businessName: string
-    contactName: string
-    phone: string
-    email: string
-    city: string
-    district: string
-    address: string
-    monthlyVehicles: string
-    notes: string
-    allowDuplicate?: boolean
-  }) {
+  function submitLead(values: SalesLeadFormValues) {
     startTransition(async () => {
-      const res = await createSalesLead(values)
+      const res = locationLeadId
+        ? await updateSalesLeadLocation(locationLeadId, values)
+        : await createSalesLead(values)
       if (!res.ok) {
-        if (res.code === "duplicate" && res.duplicates) {
+        if (!locationLeadId && res.code === "duplicate" && res.duplicates) {
           setDuplicateWarning({ duplicates: res.duplicates })
           return
         }
@@ -249,9 +278,80 @@ export function SalesConsole({
       }
       form.reset()
       setDuplicateWarning(null)
+      setLocationLeadId(null)
       setShowNewLeadForm(false)
-      toast.success("Servis adayı satış havuzuna eklendi.")
+      toast.success(locationLeadId ? "Şirket konumu doğrulandı." : "Servis adayı satış havuzuna eklendi.")
     })
+  }
+
+  function startLeadFromPlace(place: SalesPlaceSelection) {
+    leadFormTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    form.reset({
+      ...EMPTY_SALES_LEAD_VALUES,
+      placeSearch: place.businessName,
+      businessName: place.businessName,
+      city: place.city,
+      district: place.district,
+      neighborhood: place.neighborhood,
+      route: place.route,
+      streetNumber: place.streetNumber,
+      postalCode: place.postalCode,
+      address: [place.neighborhood, [place.route, place.streetNumber].filter(Boolean).join(" No: ")].filter(Boolean).join(", ") || place.formattedAddress,
+      formattedAddress: place.formattedAddress,
+      googlePlaceId: place.placeId,
+      latitude: place.latitude,
+      longitude: place.longitude,
+      locationSource: "google_place",
+      locationConfirmed: false,
+    })
+    setLocationLeadId(null)
+    setDuplicateWarning(null)
+    setShowNewLeadForm(true)
+  }
+
+  function verifyLeadLocation(lead: Lead) {
+    leadFormTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    form.reset({
+      ...EMPTY_SALES_LEAD_VALUES,
+      placeSearch: lead.businessName,
+      businessName: lead.businessName,
+      contactName: lead.contactName,
+      phone: lead.phone,
+      email: lead.email ?? "",
+      city: lead.city ?? "",
+      district: lead.district ?? "",
+      neighborhood: lead.neighborhood ?? "",
+      route: lead.route ?? "",
+      streetNumber: lead.streetNumber ?? "",
+      postalCode: lead.postalCode ?? "",
+      address: lead.address ?? "",
+      formattedAddress: lead.formattedAddress ?? "",
+      googlePlaceId: lead.googlePlaceId ?? "",
+      latitude: lead.latitude,
+      longitude: lead.longitude,
+      locationSource: lead.locationSource,
+      locationConfirmed: Boolean(lead.locationConfirmedAt),
+      monthlyVehicles: lead.monthlyVehicles ?? "",
+      notes: lead.notes ?? "",
+    })
+    setLocationLeadId(lead.id)
+    setDuplicateWarning(null)
+    setShowNewLeadForm(true)
+  }
+
+  function closeLeadForm() {
+    form.reset()
+    setDuplicateWarning(null)
+    setLocationLeadId(null)
+    setShowNewLeadForm(false)
+  }
+
+  function markAddressAsManual() {
+    const hasCoordinates = form.getValues("latitude") != null && form.getValues("longitude") != null
+    form.setValue("googlePlaceId", "", { shouldDirty: true })
+    form.setValue("formattedAddress", "", { shouldDirty: true })
+    form.setValue("locationSource", hasCoordinates ? "manual_pin" : null, { shouldDirty: true })
+    form.setValue("locationConfirmed", false, { shouldDirty: true, shouldValidate: true })
   }
 
   return (
@@ -267,13 +367,21 @@ export function SalesConsole({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/sales/performance"><ChartNoAxesCombined className="size-4" /> Performans</Link>
+          </Button>
           {isAdmin && (
             <Button asChild variant="outline">
               <Link href="/admin/sales/advisors"><Users className="size-4" /> Danışmanlar</Link>
             </Button>
           )}
           {canManagePipeline && (
-            <Button ref={newLeadButtonRef} type="button" onClick={() => setShowNewLeadForm(true)}>
+            <Button type="button" onClick={(event) => {
+              leadFormTriggerRef.current = event.currentTarget
+              form.reset()
+              setLocationLeadId(null)
+              setShowNewLeadForm(true)
+            }}>
               <Plus className="size-4" /> Yeni şirket adayı
             </Button>
           )}
@@ -287,8 +395,17 @@ export function SalesConsole({
         <SalesMetric label="Dönüşüm" value={`%${stats.conversionRate}`} detail={`${stats.won} kazanılan şirket`} icon={TrendingUp} tone="success" />
       </section>
 
+      {monthlyPerformance && <MonthlyTargetProgress performance={monthlyPerformance} />}
+
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <SalesTerritoryMap leads={leads} selectedLeadId={selectedLeadId} onSelectLead={focusLead} />
+        <SalesTerritoryMap
+          leads={leads}
+          selectedLeadId={selectedLeadId}
+          onSelectLead={focusLead}
+          onCreateLeadFromPlace={canManagePipeline ? startLeadFromPlace : undefined}
+          apiKey={googleMapsApiKey}
+          mapId={googleMapsMapId}
+        />
         <aside className="flex flex-col rounded-2xl border bg-card p-4 sm:p-5" aria-labelledby="focus-queue-title">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -359,39 +476,74 @@ export function SalesConsole({
 
       <SalesTaskAgenda canManage={canManagePipeline} tasks={tasks} />
 
-      <Dialog open={showNewLeadForm} onOpenChange={setShowNewLeadForm}>
+      <Dialog open={showNewLeadForm} onOpenChange={(open) => { if (open) setShowNewLeadForm(true); else closeLeadForm() }}>
         <DialogContent
-          className="sm:max-w-2xl"
+          className="max-h-[90vh] overflow-y-auto sm:max-w-3xl"
           onCloseAutoFocus={(event) => {
             event.preventDefault()
-            newLeadButtonRef.current?.focus()
+            leadFormTriggerRef.current?.focus()
+            leadFormTriggerRef.current = null
           }}
         >
           <DialogHeader>
-            <DialogTitle>Yeni şirket adayı</DialogTitle>
-            <DialogDescription>Sahada görüşülecek servis veya işletmeyi satış portföyüne ekleyin.</DialogDescription>
+            <DialogTitle>{locationLeadId ? "Şirket konumunu doğrula" : "Yeni şirket adayı"}</DialogTitle>
+            <DialogDescription>
+              {locationLeadId
+                ? "Google Maps sonucunu seçin veya pini doğru noktaya taşıyıp konumu doğrulayın."
+                : "Sahada görüşülecek servis veya işletmeyi satış portföyüne ekleyin."}
+            </DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form id="new-sales-lead-form" onSubmit={form.handleSubmit(submitLead)} className="grid gap-4 sm:grid-cols-2">
-              {(["businessName", "contactName", "phone", "email", "city", "district", "monthlyVehicles"] as const).map((name) => (
+              <SalesLocationPicker apiKey={googleMapsApiKey} mapId={googleMapsMapId} />
+              {!locationLeadId && (["businessName", "contactName", "phone", "email", "monthlyVehicles"] as const).map((name) => (
+                  <FormField
+                    key={name}
+                    control={form.control}
+                    name={name}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {({
+                            businessName: "Şirket / servis adı",
+                            contactName: "Yetkili",
+                            phone: "Telefon",
+                            email: "E-posta",
+                            monthlyVehicles: "Aylık araç hacmi",
+                          })[name]}
+                        </FormLabel>
+                        <FormControl><Input {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              {(["city", "district", "neighborhood", "route", "streetNumber", "postalCode"] as const).map((name) => (
                 <FormField
                   key={name}
                   control={form.control}
                   name={name}
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className={name === "route" ? "sm:col-span-2" : undefined}>
                       <FormLabel>
                         {({
-                          businessName: "Şirket / servis adı",
-                          contactName: "Yetkili",
-                          phone: "Telefon",
-                          email: "E-posta",
-                          city: "Şehir",
+                          city: "İl",
                           district: "İlçe",
-                          monthlyVehicles: "Aylık araç hacmi",
+                          neighborhood: "Mahalle",
+                          route: "Cadde / sokak",
+                          streetNumber: "Dış kapı no",
+                          postalCode: "Posta kodu",
                         })[name]}
                       </FormLabel>
-                      <FormControl><Input {...field} /></FormControl>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          onChange={(event) => {
+                            field.onChange(event)
+                            markAddressAsManual()
+                          }}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -402,13 +554,22 @@ export function SalesConsole({
                 name="address"
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Adres</FormLabel>
-                    <FormControl><Textarea {...field} rows={2} /></FormControl>
+                    <FormLabel>Adres özeti / tarif</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        rows={2}
+                        onChange={(event) => {
+                          field.onChange(event)
+                          markAddressAsManual()
+                        }}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
+              {!locationLeadId && <FormField
                 control={form.control}
                 name="notes"
                 render={({ field }) => (
@@ -418,8 +579,8 @@ export function SalesConsole({
                     <FormMessage />
                   </FormItem>
                 )}
-              />
-              {duplicateWarning && (
+              />}
+              {!locationLeadId && duplicateWarning && (
                 <Alert variant="warning" className="sm:col-span-2">
                   <AlertTitle>Olası mükerrer aday bulundu</AlertTitle>
                   <AlertDescription>
@@ -441,8 +602,8 @@ export function SalesConsole({
             </form>
           </Form>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => { form.reset(); setDuplicateWarning(null); setShowNewLeadForm(false) }}>Vazgeç</Button>
-            {duplicateWarning && (
+            <Button type="button" variant="outline" onClick={closeLeadForm}>Vazgeç</Button>
+            {!locationLeadId && duplicateWarning && (
               <Button
                 type="button"
                 variant="secondary"
@@ -452,7 +613,9 @@ export function SalesConsole({
                 Yine de ekle
               </Button>
             )}
-            <Button type="submit" form="new-sales-lead-form" disabled={pending}>Portföye ekle</Button>
+            <Button type="submit" form="new-sales-lead-form" disabled={pending}>
+              {locationLeadId ? "Konumu kaydet" : "Portföye ekle"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -530,6 +693,7 @@ export function SalesConsole({
                           pending={pending}
                           activity={activity[lead.id] ?? ""}
                           onActivityChange={(val) => setActivity((v) => ({ ...v, [lead.id]: val }))}
+                          onVerifyLocation={() => verifyLeadLocation(lead)}
                           startTransition={startTransition}
                         />
                       ))}
@@ -593,6 +757,57 @@ function SalesMetric({
   )
 }
 
+function MonthlyTargetProgress({ performance }: {
+  performance: { periodLabel: string; row: SalesAdvisorPerformance }
+}) {
+  const metrics = [
+    { label: "Yeni aday", actual: performance.row.actual.newLeads, target: performance.row.target.newLeads },
+    { label: "Nitelikli görüşme", actual: performance.row.actual.qualifiedInteractions, target: performance.row.target.qualifiedInteractions },
+    { label: "Tamamlanan demo", actual: performance.row.actual.completedDemos, target: performance.row.target.completedDemos },
+    { label: "Kazanılan şirket", actual: performance.row.actual.wonWorkshops, target: performance.row.target.wonWorkshops },
+  ]
+  const salesPercent = performance.row.target.netSalesMinor > 0
+    ? Math.min(100, Math.round((performance.row.actual.netSalesMinor / performance.row.target.netSalesMinor) * 100))
+    : 0
+
+  return (
+    <section className="rounded-2xl border bg-card p-4 sm:p-5" aria-labelledby="monthly-target-title">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">{performance.periodLabel}</p>
+          <h2 id="monthly-target-title" className="mt-1 text-lg font-semibold text-foreground">Aylık hedef ilerlemeniz</h2>
+          <p className="mt-1 text-sm text-muted-foreground">CRM aktiviteleri ve onaylı tahsilat ledger’ı üzerinden güncellenir.</p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/admin/sales/performance"><ChartNoAxesCombined className="size-4" /> Ayrıntılı performans</Link>
+        </Button>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {metrics.map((metric) => {
+          const percent = metric.target > 0 ? Math.min(100, Math.round((metric.actual / metric.target) * 100)) : 0
+          return (
+            <div key={metric.label} className="rounded-xl bg-muted/50 p-3">
+              <p className="text-xs text-muted-foreground-strong">{metric.label}</p>
+              <p className="mt-1 font-semibold tabular-nums text-foreground">{metric.actual} / {metric.target || "—"}</p>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background" role="progressbar" aria-label={`${metric.label} hedef ilerlemesi`} aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+                <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+              </div>
+            </div>
+          )
+        })}
+        <div className="rounded-xl bg-primary/10 p-3 text-primary-strong">
+          <p className="text-xs">KDV hariç net satış</p>
+          <p className="mt-1 font-semibold tabular-nums text-foreground">{formatMinor(performance.row.actual.netSalesMinor)}</p>
+          <p className="mt-0.5 text-xs">Hedef {performance.row.target.netSalesMinor > 0 ? formatMinor(performance.row.target.netSalesMinor) : "tanımlanmadı"}</p>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background" role="progressbar" aria-label="Net satış hedef ilerlemesi" aria-valuenow={salesPercent} aria-valuemin={0} aria-valuemax={100}>
+            <div className="h-full rounded-full bg-primary" style={{ width: `${salesPercent}%` }} />
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function LeadCard({
   lead,
   isLinked,
@@ -601,6 +816,7 @@ function LeadCard({
   pending,
   activity,
   onActivityChange,
+  onVerifyLocation,
   startTransition,
 }: {
   lead: Lead
@@ -610,6 +826,7 @@ function LeadCard({
   pending: boolean
   activity: string
   onActivityChange: (val: string) => void
+  onVerifyLocation: () => void
   startTransition: ReturnType<typeof useTransition>[1]
 }) {
   const [, statusLabel, statusColor] = getStatusConfig(lead.status)
@@ -628,6 +845,14 @@ function LeadCard({
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-semibold text-foreground">{lead.businessName}</h3>
             <Badge variant="outline" className={`text-[11px] ${statusColor}`}>{statusLabel}</Badge>
+            <Badge
+              variant="outline"
+              className={lead.locationConfirmedAt
+                ? "bg-success/10 text-success-strong border-success/20 text-[11px]"
+                : "bg-warning/10 text-warning-strong border-warning/20 text-[11px]"}
+            >
+              {lead.locationConfirmedAt ? "Konum doğrulandı" : "Konum bekliyor"}
+            </Badge>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
             <span className="flex items-center gap-1"><Users className="h-3 w-3" />{lead.contactName}</span>
@@ -645,6 +870,11 @@ function LeadCard({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {canManagePipeline && (
+            <Button type="button" variant="outline" size="sm" onClick={onVerifyLocation}>
+              <MapPin className="size-4" /> {lead.locationConfirmedAt ? "Konumu güncelle" : "Konumu doğrula"}
+            </Button>
+          )}
           <Button asChild variant="outline" size="sm">
             <Link href={salesLeadAdminHref(lead.id)}>Detay</Link>
           </Button>
