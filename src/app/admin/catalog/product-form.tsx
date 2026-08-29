@@ -32,6 +32,7 @@ import { bpsToPercent, formatKurus, grossFromNetKurus, kurusToLira, liraToKurus,
 import { createBakimxProductAction, updateBakimxProductAction } from "@/app/admin/catalog/actions"
 import type { CatalogBrandOption } from "@/app/admin/catalog/data"
 import { VehicleTypeSelector } from "@/components/catalog/vehicle-type-selector"
+import { TagInput } from "@/components/catalog/tag-input"
 
 export interface CatalogProductFormData {
   id: string
@@ -56,16 +57,6 @@ export interface CatalogProductFormData {
   isActive: boolean
   fitmentScope: "universal" | "vehicle_linked"
   vehicleTypeIds: number[]
-}
-
-interface TecdocCategory {
-  id: number
-  name: string
-}
-
-interface TecdocCategory {
-  id: number
-  name: string
 }
 
 interface TecdocCategory {
@@ -192,11 +183,29 @@ export function CatalogProductForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-        <div className="flex items-center gap-3">
-          <Link href="/admin/catalog" className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="size-4" />
-          </Link>
-          <h1 className="text-xl font-bold text-foreground">{isEdit ? "Ürünü Düzenle" : "Yeni Ürün"}</h1>
+        <div className="sticky top-16 z-20 -mx-4 border-b bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <Link
+              href="/admin/catalog"
+              aria-label="Kataloğa dön"
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+            </Link>
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold text-foreground">{isEdit ? "Ürünü Düzenle" : "Yeni Ürün"}</h1>
+              {isEdit && <p className="truncate text-xs text-muted-foreground">{product.sku}</p>}
+            </div>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <Button type="submit" disabled={pending} className="min-w-32">
+                {pending ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : <Save className="mr-1 size-3.5" />}
+                {isEdit ? "Güncelle" : "Ürünü oluştur"}
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/admin/catalog">İptal</Link>
+              </Button>
+            </div>
+          </div>
         </div>
 
         {error && (
@@ -207,10 +216,10 @@ export function CatalogProductForm({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">Ürün bilgileri</CardTitle>
+            <CardTitle className="text-sm font-semibold">Temel bilgiler</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="sku"
@@ -240,7 +249,7 @@ export function CatalogProductForm({
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="brandId"
@@ -266,6 +275,22 @@ export function CatalogProductForm({
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Birim</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="adet, litre, kg..." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="categoryKey"
@@ -321,22 +346,9 @@ export function CatalogProductForm({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="unit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Birim</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="adet, litre, kg..." />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="barcode"
@@ -364,37 +376,14 @@ export function CatalogProductForm({
                 )}
               />
             </div>
+          </CardContent>
+        </Card>
 
-            <FormField
-              control={form.control}
-              name="oemNumbers"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>OEM numaraları</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} rows={2} placeholder="Virgül veya satır ile ayırın" />
-                  </FormControl>
-                  <FormDescription>Arama anahtarını besler; muadil eşleştirme Faz 2’de kullanılır.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="crossReferences"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cross-reference kodları</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} rows={2} placeholder="Virgül veya satır ile ayırın" />
-                  </FormControl>
-                  <FormDescription>OEM numaralarından ayrı saklanan üretici muadil kodlarıdır.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold">Açıklama ve eşleşmeler</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <FormField
               control={form.control}
               name="description"
@@ -408,6 +397,45 @@ export function CatalogProductForm({
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="oemNumbers"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>OEM numaraları</FormLabel>
+                    <FormControl>
+                      <TagInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="OEM kodu yazın ve Ekle’ye basın"
+                      />
+                    </FormControl>
+                    <FormDescription>Arama anahtarını besler; muadil eşleştirme Faz 2’de kullanılır.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="crossReferences"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cross-reference kodları</FormLabel>
+                    <FormControl>
+                      <TagInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Muadil kodu yazın ve Ekle’ye basın"
+                      />
+                    </FormControl>
+                    <FormDescription>OEM numaralarından ayrı saklanan üretici muadil kodlarıdır.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -416,7 +444,7 @@ export function CatalogProductForm({
             <CardTitle className="text-sm font-semibold">Fiyat</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-3">
               <FormField
                 control={form.control}
                 name="workshopPrice"
@@ -484,7 +512,7 @@ export function CatalogProductForm({
             <CardTitle className="text-sm font-semibold">Stok ve görünürlük</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-3">
               <FormField
                 control={form.control}
                 name="stockQty"
@@ -526,43 +554,48 @@ export function CatalogProductForm({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="backorderable"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border px-3 py-2">
-                  <div>
-                    <FormLabel>Siparişe açık</FormLabel>
-                    <FormDescription>Stok 0 olsa da ürün “siparişe açık” gösterilir.</FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={(v) => field.onChange(v)} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="isActive"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border px-3 py-2">
-                  <div>
-                    <FormLabel>Aktif</FormLabel>
-                    <FormDescription>Pasif ürünler atölye yüzeyinde listelenmez.</FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={(v) => field.onChange(v)} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="backorderable"
+                render={({ field }) => (
+                  <FormItem className="rounded-lg border px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <FormLabel>Siparişe açık</FormLabel>
+                        <FormDescription>Stok 0 olsa da ürün “siparişe açık” gösterilir.</FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={(v) => field.onChange(v)} />
+                      </FormControl>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="rounded-lg border px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <FormLabel>Aktif</FormLabel>
+                        <FormDescription>Pasif ürünler atölye yüzeyinde listelenmez.</FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={(v) => field.onChange(v)} />
+                      </FormControl>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">Araç kapsamı (BAK-46)</CardTitle>
+            <CardTitle className="text-sm font-semibold">Araç kapsamı</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <FormField
@@ -605,18 +638,6 @@ export function CatalogProductForm({
             )}
           </CardContent>
         </Card>
-
-        <div className="flex gap-3">
-          <Button type="submit" disabled={pending}>
-            {pending ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
-            {isEdit ? "Güncelle" : "Ürünü oluştur"}
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/admin/catalog">
-              İptal
-            </Link>
-          </Button>
-        </div>
       </form>
     </Form>
   )

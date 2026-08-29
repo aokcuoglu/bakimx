@@ -134,7 +134,7 @@ export function VehicleTypeSelector({ selectedIds, onChange }: VehicleTypeSelect
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <Select value={selectedBrand || ""} onValueChange={(v) => setSelectedBrand(v || "")}>
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Marka seçin" />
           </SelectTrigger>
           <SelectContent>
@@ -147,7 +147,7 @@ export function VehicleTypeSelector({ selectedIds, onChange }: VehicleTypeSelect
         </Select>
 
         <Select value={selectedModel || ""} onValueChange={(v) => setSelectedModel(v || "")} disabled={!selectedBrand || loading}>
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Model seçin" />
           </SelectTrigger>
           <SelectContent>
@@ -160,7 +160,7 @@ export function VehicleTypeSelector({ selectedIds, onChange }: VehicleTypeSelect
         </Select>
 
         <Select value={selectedType || ""} onValueChange={(v) => setSelectedType(v || "")} disabled={!selectedModel || loading}>
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Araç tipi seçin" />
           </SelectTrigger>
           <SelectContent>
