@@ -1,7 +1,8 @@
-import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react"
+import { Ban, CheckCircle2, MapPinned, ShieldCheck, XCircle, AlertTriangle } from "lucide-react"
 import { requireAdminCapability } from "@/lib/admin"
 import { getHealthDetail } from "@/lib/ops/health"
 import { getRapidApiUsage } from "@/lib/rapidapi-quota"
+import { getGoogleMapsUsageSnapshot } from "@/lib/sales/google-maps-usage.server"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -17,8 +18,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default async function AdminHealthPage() {
   await requireAdminCapability("viewHealth")
-  const detail = await getHealthDetail()
-  const usage = await getRapidApiUsage()
+  const [detail, usage, googleMapsUsage] = await Promise.all([
+    getHealthDetail(),
+    getRapidApiUsage(),
+    getGoogleMapsUsageSnapshot(),
+  ])
   const { summary } = detail
 
   const usageTone =
@@ -143,6 +147,100 @@ export default async function AdminHealthPage() {
             Yalnızca bu uygulamanın kaydettiği çağrıları sayar. Hatalı çağrılar faturalanır ama cache&apos;lenmez ve{" "}
             <code className="font-mono">migrate reset</code> bu satırları siler — gerçek sayı için RapidAPI panosuna
             bakın. Geliştirme sırasındaki manuel denemeler burada görünmez.
+          </span>
+        </p>
+      </Section>
+
+      <Section title={`Google Maps maliyet koruması (${googleMapsUsage.period} · UTC)`}>
+        <div className="flex items-start gap-3 rounded-lg border border-success/20 bg-success/10 p-3">
+          <ShieldCheck className="mt-0.5 size-5 shrink-0 text-success-strong" />
+          <div>
+            <p className="text-sm font-semibold text-success-strong">Ücretli kullanıma otomatik geçiş kapalı</p>
+            <p className="mt-0.5 text-xs leading-5 text-muted-foreground-strong">
+              Her Google işlemi önce ortak sayaçtan hak ayırır. Aylık uygulama limiti dolarsa veya sayaç
+              doğrulanamazsa istek Google&apos;a gönderilmez. Google Cloud günlük kotaları ikinci sert katmandır.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          {googleMapsUsage.rows.map((row) => {
+            const pct = row.limit === 0 ? 100 : row.used / row.limit * 100
+            const tone = !row.allowed || row.blocked > 0 ? "danger" : pct >= 75 ? "warning" : "success"
+            const bar = tone === "danger" ? "bg-destructive" : tone === "warning" ? "bg-warning" : "bg-success"
+            const text = tone === "danger"
+              ? "text-destructive-strong"
+              : tone === "warning"
+                ? "text-warning-strong"
+                : "text-success-strong"
+            const lastEventAt = row.lastBlockedAt && (!row.lastReservedAt || row.lastBlockedAt > row.lastReservedAt)
+              ? row.lastBlockedAt
+              : row.lastReservedAt
+
+            return (
+              <div key={row.sku} className="rounded-lg border bg-card p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-2">
+                    <MapPinned className={cn("mt-0.5 size-4 shrink-0", text)} />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{row.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Google ücretsiz: {row.freeMonthlyCap.toLocaleString("tr-TR")}/ay
+                      </p>
+                    </div>
+                  </div>
+                  <span className={cn("text-sm font-semibold tabular-nums", text)}>%{pct.toFixed(1)}</span>
+                </div>
+
+                <div className="mt-3 flex items-baseline justify-between gap-3">
+                  <span className="text-lg font-bold tabular-nums text-foreground">
+                    {row.used.toLocaleString("tr-TR")}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {" "}/ {row.limit.toLocaleString("tr-TR")} rezerve
+                    </span>
+                  </span>
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {row.remaining.toLocaleString("tr-TR")} kaldı
+                  </span>
+                </div>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div className={cn("h-full rounded-full", bar)} style={{ width: `${Math.min(pct, 100)}%` }} />
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-md bg-muted p-2 text-muted-foreground-strong">
+                    Cloud sert kota
+                    <span className="mt-0.5 block font-semibold tabular-nums text-foreground">
+                      {row.cloudDailyLimit.toLocaleString("tr-TR")}/gün
+                    </span>
+                  </div>
+                  <div className="rounded-md bg-muted p-2 text-muted-foreground-strong">
+                    Engellenen
+                    <span
+                      className={cn(
+                        "mt-0.5 flex items-center gap-1 font-semibold tabular-nums",
+                        row.blocked > 0 ? "text-destructive-strong" : "text-foreground",
+                      )}
+                    >
+                      {row.blocked > 0 && <Ban className="size-3" />}
+                      {row.blocked.toLocaleString("tr-TR")}
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Son olay: {lastEventAt ? lastEventAt.toLocaleString("tr-TR") : "Henüz çağrı yok"}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+
+        <p className="flex items-start gap-1.5 pt-1 text-xs text-muted-foreground">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning-strong" />
+          <span>
+            Bunlar Google&apos;a gitmeden önce ayrılan uygulama haklarıdır; başarısız Google çağrıları da güvenli tarafta
+            kalmak için sayılır. Session token bir tüketim birimi değildir. Kesin faturalama verisi Google Cloud
+            Billing&apos;dedir ve gecikmeli olabilir; burada gösterilen sayaç ücret sınırını açamaz.
           </span>
         </p>
       </Section>

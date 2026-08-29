@@ -18,7 +18,11 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage, useFormField 
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { CitySelect, DistrictSelect } from "@/components/shared/location-select"
-import { loadSalesGoogleLibrary } from "@/lib/sales/google-maps-client"
+import {
+  googleMapsClientErrorMessage,
+  loadSalesGoogleLibrary,
+  reserveSalesGoogleMapsUsage,
+} from "@/lib/sales/google-maps-client"
 import {
   composeSalesAddress,
   matchesSelectedTurkishArea,
@@ -114,6 +118,7 @@ function GoogleAddressComponentCombobox({
         const context = kind === "route"
           ? [neighborhood, district, city].filter(Boolean).join(", ")
           : [district, city].filter(Boolean).join(", ")
+        await reserveSalesGoogleMapsUsage("autocomplete_requests")
         const result = await library.AutocompleteSuggestion.fetchAutocompleteSuggestions({
           input: [query, context].filter(Boolean).join(", "),
           includedPrimaryTypes: kind === "route"
@@ -137,10 +142,13 @@ function GoogleAddressComponentCombobox({
           }]
         }))
         setError(null)
-      } catch {
+      } catch (requestError) {
         if (requestId === newestRequestRef.current) {
           setSuggestions([])
-          setError("Google adres önerileri alınamadı. Birkaç saniye sonra tekrar deneyin.")
+          setError(googleMapsClientErrorMessage(
+            requestError,
+            "Google adres önerileri alınamadı. Birkaç saniye sonra tekrar deneyin.",
+          ))
         }
       } finally {
         if (requestId === newestRequestRef.current) setSearching(false)
@@ -154,6 +162,7 @@ function GoogleAddressComponentCombobox({
     try {
       setSelecting(true)
       const place = option.prediction.toPlace()
+      await reserveSalesGoogleMapsUsage("place_details_essentials")
       await place.fetchFields({ fields: ["formattedAddress", "addressComponents", "location"] })
       const parsed = parseTurkishSalesAddress(place.addressComponents ?? [])
       const formattedAddress = place.formattedAddress ?? option.label
@@ -177,8 +186,11 @@ function GoogleAddressComponentCombobox({
       setQueryTouched(false)
       sessionTokenRef.current = null
       setError(null)
-    } catch {
-      setError("Seçilen Google adresinin ayrıntıları alınamadı.")
+    } catch (selectionError) {
+      setError(googleMapsClientErrorMessage(
+        selectionError,
+        "Seçilen Google adresinin ayrıntıları alınamadı.",
+      ))
     } finally {
       setSelecting(false)
     }
@@ -260,7 +272,7 @@ function LocationPreviewMap({
   const mapRef = useRef<google.maps.Map | null>(null)
   const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null)
   const onMoveRef = useRef(onMove)
-  const [loadError, setLoadError] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     onMoveRef.current = onMove
@@ -272,6 +284,7 @@ function LocationPreviewMap({
 
     async function initialize() {
       try {
+        await reserveSalesGoogleMapsUsage("dynamic_maps")
         const [{ Map }, { AdvancedMarkerElement, PinElement }] = await Promise.all([
           loadSalesGoogleLibrary(apiKey, mapId, "maps"),
           loadSalesGoogleLibrary(apiKey, mapId, "marker"),
@@ -318,8 +331,10 @@ function LocationPreviewMap({
           if (!event.latLng) return
           onMoveRef.current({ latitude: event.latLng.lat(), longitude: event.latLng.lng() })
         }))
-      } catch {
-        if (!cancelled) setLoadError(true)
+      } catch (error) {
+        if (!cancelled) {
+          setLoadError(googleMapsClientErrorMessage(error, "Google Maps yapılandırmasını kontrol edip tekrar deneyin."))
+        }
       }
     }
 
@@ -357,7 +372,7 @@ function LocationPreviewMap({
       <Alert variant="destructive">
         <TriangleAlert className="size-4" />
         <AlertTitle>Konum haritası yüklenemedi</AlertTitle>
-        <AlertDescription>Google Maps yapılandırmasını kontrol edip tekrar deneyin.</AlertDescription>
+        <AlertDescription>{loadError}</AlertDescription>
       </Alert>
     )
   }
@@ -429,6 +444,7 @@ export function SalesLocationPicker({
       try {
         setSearching(true)
         sessionTokenRef.current ??= new placesLibrary.AutocompleteSessionToken()
+        await reserveSalesGoogleMapsUsage("autocomplete_requests")
         const result = await placesLibrary.AutocompleteSuggestion.fetchAutocompleteSuggestions({
           input: query.trim(),
           includedRegionCodes: ["tr"],
@@ -439,10 +455,13 @@ export function SalesLocationPicker({
         if (requestId !== newestRequestRef.current) return
         setSuggestions(result.suggestions.flatMap((suggestion) => suggestion.placePrediction ? [suggestion.placePrediction] : []))
         setMapsError(null)
-      } catch {
+      } catch (requestError) {
         if (requestId === newestRequestRef.current) {
           setSuggestions([])
-          setMapsError("İşletme ve adres önerileri alınamadı. Birkaç saniye sonra tekrar deneyin.")
+          setMapsError(googleMapsClientErrorMessage(
+            requestError,
+            "İşletme ve adres önerileri alınamadı. Birkaç saniye sonra tekrar deneyin.",
+          ))
         }
       } finally {
         if (requestId === newestRequestRef.current) setSearching(false)
@@ -522,6 +541,7 @@ export function SalesLocationPicker({
     try {
       setSelecting(true)
       const place = prediction.toPlace()
+      await reserveSalesGoogleMapsUsage("place_details_essentials")
       await place.fetchFields({
         fields: ["id", "formattedAddress", "addressComponents", "location", "viewport"],
       })
@@ -555,8 +575,11 @@ export function SalesLocationPicker({
       sessionTokenRef.current = null
       setMapsError(null)
       setShowMap(true)
-    } catch {
-      setMapsError("Seçilen işletmenin konum ayrıntıları alınamadı.")
+    } catch (selectionError) {
+      setMapsError(googleMapsClientErrorMessage(
+        selectionError,
+        "Seçilen işletmenin konum ayrıntıları alınamadı.",
+      ))
     } finally {
       setSelecting(false)
     }

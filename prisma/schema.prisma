@@ -3013,6 +3013,26 @@ model RateLimitCounter {
   @@index([resetAt])
 }
 
+/// Google Maps Platform billable SKU'ları için aylık, süreçler arası ortak
+/// maliyet kapısı. `reservedCount` gerçek Google faturasını değil çağrıdan önce
+/// ayrılan hakkı sayar; başarısız çağrının da sayılması bilinçli güvenlik payıdır.
+model GoogleMapsUsageCounter {
+  period String @db.VarChar(7)
+  sku    String @db.VarChar(40)
+
+  reservedCount Int @default(0) @map("reserved_count")
+  blockedCount  Int @default(0) @map("blocked_count")
+
+  lastReservedAt DateTime? @map("last_reserved_at")
+  lastBlockedAt  DateTime? @map("last_blocked_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@id([period, sku])
+  @@index([period])
+  @@map("google_maps_usage_counters")
+}
+
 /// Bir olayın ciddiyeti. `operational` bilerek burada YOK — bu enum yalnız aktif
 /// bir sorunu tanımlar; genel durum (`operational` dahil) `deriveOverallStatus`
 /// ile açık olay YOKLUĞUNDAN türetilir (bkz. `src/lib/status-page.ts`).

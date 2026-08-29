@@ -4,7 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { Building2, Loader2, MapPin, Radar, TriangleAlert } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { loadSalesGoogleLibrary } from "@/lib/sales/google-maps-client"
+import {
+  googleMapsClientErrorMessage,
+  loadSalesGoogleLibrary,
+  reserveSalesGoogleMapsUsage,
+} from "@/lib/sales/google-maps-client"
 import { parseTurkishSalesAddress, type SalesPlaceSelection } from "@/lib/sales/google-place"
 
 export type SalesTerritoryLead = {
@@ -73,7 +77,7 @@ export function SalesTerritoryMap({
   const onSelectLeadRef = useRef(onSelectLead)
   const fittedInitialLeadsRef = useRef(false)
   const [mapReady, setMapReady] = useState(false)
-  const [mapError, setMapError] = useState(false)
+  const [mapError, setMapError] = useState<string | null>(null)
   const [discovering, setDiscovering] = useState(false)
   const [discoveries, setDiscoveries] = useState<SalesPlaceSelection[]>([])
   const [selectedDiscovery, setSelectedDiscovery] = useState<SalesPlaceSelection | null>(null)
@@ -95,6 +99,7 @@ export function SalesTerritoryMap({
 
     async function initialize() {
       try {
+        await reserveSalesGoogleMapsUsage("dynamic_maps")
         const [{ Map }, markerLibrary] = await Promise.all([
           loadSalesGoogleLibrary(apiKey!, mapId!, "maps"),
           loadSalesGoogleLibrary(apiKey!, mapId!, "marker"),
@@ -116,8 +121,11 @@ export function SalesTerritoryMap({
           },
         })
         setMapReady(true)
-      } catch {
-        if (!cancelled) setMapError(true)
+        setMapError(null)
+      } catch (error) {
+        if (!cancelled) {
+          setMapError(googleMapsClientErrorMessage(error, "Google Maps haritası yüklenemedi."))
+        }
       }
     }
 
@@ -224,6 +232,7 @@ export function SalesTerritoryMap({
 
     try {
       setDiscovering(true)
+      await reserveSalesGoogleMapsUsage("nearby_search_pro")
       const placesLibrary = await loadSalesGoogleLibrary(apiKey, mapId, "places")
       const radius = Math.min(50_000, Math.max(1_000, haversineMeters(center, bounds.getNorthEast())))
       const { places } = await placesLibrary.Place.searchNearby({
@@ -256,8 +265,9 @@ export function SalesTerritoryMap({
       })
       setDiscoveries(nextDiscoveries)
       setSelectedDiscovery(nextDiscoveries[0] ?? null)
-    } catch {
-      setMapError(true)
+      setMapError(null)
+    } catch (error) {
+      setMapError(googleMapsClientErrorMessage(error, "Yakındaki servisler Google Maps'ten alınamadı."))
     } finally {
       setDiscovering(false)
     }
@@ -306,7 +316,7 @@ export function SalesTerritoryMap({
             <Alert variant="destructive" className="mx-auto max-w-lg bg-card/95 shadow-md">
               <TriangleAlert className="size-4" />
               <AlertTitle>Google Maps işlemi tamamlanamadı</AlertTitle>
-              <AlertDescription>API anahtarı, referrer kısıtı ve Places API (New) ayarlarını kontrol edin.</AlertDescription>
+              <AlertDescription>{mapError}</AlertDescription>
             </Alert>
           </div>
         )}
