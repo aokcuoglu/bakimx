@@ -50,6 +50,18 @@ GOOGLE_MAPS_MAP_ID=map-id
 - Google Places sonuçları topluca CRM'e aktarılmaz. Danışman haritada bir işletme
   seçip açıkça satış fırsatı oluşturur; kalıcı harici kimlik olarak `placeId`
   kullanılır.
+- Autocomplete seçiminin Place Details alan maskesi Essentials seviyesinde
+  kalır (`id`, adres bileşenleri, konum ve viewport). İşletme adı autocomplete
+  tahmininin `mainText` alanından alınır; `displayName` veya `primaryType` eklemek
+  çağrıyı daha pahalı bir SKU'ya taşır.
+- DEV Google Cloud projesindeki günlük sert kotalar ücretsiz aylık sınırların
+  altında fail-closed çalışır: Map loads `250`, Autocomplete `250`, GetPlace
+  `250`, SearchNearby `100`; kullanılmayan Places yöntemleri ile 3D/grounding
+  çağrıları `0`. Kota dolunca Google yüzeyi yanıt vermez, satış portföyü ve görev
+  akışları haritasız çalışmayı sürdürür.
+- Her ortam ayrı, origin ve API kapsamı kısıtlı anahtar kullanır. DEV anahtarı
+  yalnız `localhost:3000`, `127.0.0.1:3000` ve `app-dev.bakimx.com` için geçerlidir;
+  PROD bu anahtarı kullanmaz.
 
 #### Depolama (Storage) Ortam Değişkenleri
 
