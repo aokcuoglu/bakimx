@@ -36,11 +36,11 @@ const features: Feature[] = [
   },
   {
     kicker: "Parça Kataloğu",
-    title: "Şasiden araca uygun parçayı bulun",
+    title: "Şase numarasına göre araca uygun parçayı bulun",
     description:
       "İş emrine parça eklerken yalnız o araca uyanları görürsünüz — elle arama ve yanlış parça riski yok.",
     bullets: [
-      "VIN'den otomatik araç eşleşmesi",
+      "Şaseye göre otomatik araç tanıma",
       "Araca uygun parça listesi, elle arama yok",
       "Seçilen parça tek tıkla iş emri kalemi olur",
     ],

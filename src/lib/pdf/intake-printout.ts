@@ -193,7 +193,7 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
           intakeForm.fuelLevelAtIntake
         )}</span></div>`
       : "",
-    intakeForm.vehicle.vin ? `<div class="field-mono">VIN ${intakeForm.vehicle.vin}</div>` : "",
+    intakeForm.vehicle.vin ? `<div class="field-mono">Şase ${intakeForm.vehicle.vin}</div>` : "",
   ].join("")
 
   const partiesSection = section(
@@ -620,7 +620,7 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
     ${workshopSection}
 
     <div class="disclaimer">
-      Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, OCR verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
+      Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, ruhsat okuma verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
     </div>
 
     ${bakimxPdfFooterBar(createdAt)}

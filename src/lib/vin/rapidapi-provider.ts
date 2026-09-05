@@ -29,7 +29,7 @@ export class RapidApiVinProvider implements VinProvider {
     } catch (err) {
       throw new VinLookupError(
         "provider_error",
-        `VIN sorgulama servisine ulaşılamadı: ${err instanceof Error ? err.message : "ağ hatası"}`
+        `Şase sorgulama servisine ulaşılamadı: ${err instanceof Error ? err.message : "ağ hatası"}`
       )
     } finally {
       clearTimeout(timeout)
@@ -37,17 +37,17 @@ export class RapidApiVinProvider implements VinProvider {
 
     if (res.status === 404) return { status: "not_found", raw: null }
     if (res.status === 429) {
-      throw new VinLookupError("quota_exceeded", "VIN sorgulama servisi istek limitine ulaştı (RapidAPI 429).")
+      throw new VinLookupError("quota_exceeded", "Şase sorgulama servisi istek limitine ulaştı. Lütfen daha sonra tekrar deneyin.")
     }
     if (!res.ok) {
-      throw new VinLookupError("provider_error", `VIN sorgulama servisi hata döndürdü (HTTP ${res.status}).`)
+      throw new VinLookupError("provider_error", `Şase sorgulama servisi hata döndürdü (HTTP ${res.status}).`)
     }
 
     let raw: unknown
     try {
       raw = await res.json()
     } catch {
-      throw new VinLookupError("provider_error", "VIN sorgulama servisi geçersiz yanıt döndürdü (JSON değil).")
+      throw new VinLookupError("provider_error", "Şase sorgulama servisi geçersiz yanıt döndürdü.")
     }
 
     const sections = extractMatchSections(raw)

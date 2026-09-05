@@ -4,22 +4,34 @@ import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/reveal";
 
 const points = [
-  { icon: PhoneCall, title: "Sizi biz arayalım", description: "Servisinize göre kısa tanıtım, sorularınızın yanıtı." },
-  { icon: Clock, title: "Beklemeden başlayın", description: "İsterseniz aramayı beklemeden denemenizi hemen açın." },
-  { icon: ShieldCheck, title: "Baskı yok", description: "Bilgileriniz yalnızca iletişim için kullanılır — KVKK uyumlu." },
+  {
+    icon: PhoneCall,
+    title: "Sizi biz arayalım",
+    description: "Servisinize göre kısa tanıtım, sorularınızın yanıtı.",
+  },
+  {
+    icon: Clock,
+    title: "Beklemeden başlayın",
+    description: "İsterseniz aramayı beklemeden denemenizi hemen açın.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Karar vermeden önce deneyin",
+    description: "Servisinizin günlük işlerini kendi hesabınızda görün.",
+  },
 ];
 
 export function DemoFormSection() {
   return (
-    <section className="scroll-mt-24 bg-muted/30 py-16 sm:py-24">
+    <section className="scroll-mt-24 border-t bg-background py-20 sm:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
           <Reveal className="max-w-xl">
             <SectionHeading
               align="left"
               badge="Demo"
-              title="Servisiniz için birlikte bakalım"
-              subtitle="Bilgilerinizi bırakın; BakimX'i servisinizde gösterelim. Karar sizin."
+              title="Sizin serviste nasıl çalışır? Birlikte bakalım."
+              subtitle="Servisinizde günü nasıl geçirdiğinizi anlatın. BakımX'in hangi işinizi kolaylaştıracağını birlikte görelim."
             />
             <ul className="mt-8 space-y-5">
               {points.map(({ icon: Icon, title, description }) => (

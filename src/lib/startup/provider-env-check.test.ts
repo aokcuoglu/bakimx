@@ -79,7 +79,7 @@ test("buildProviderWarningBanner: one bullet + one fix line per issue", () => {
   const banner = buildProviderWarningBanner(
     findMockProviders(env({ ...allReal, VIN_PROVIDER: undefined }))
   )
-  expect(banner).toContain("VIN'den araç tanıma MOCK sağlayıcı kullanıyor")
+  expect(banner).toContain("Şaseden araç tanıma MOCK sağlayıcı kullanıyor")
   expect(banner).toContain("VIN_PROVIDER=rapidapi")
   expect(banner).toContain("RAPIDAPI_KEY=<anahtarınız>")
 })

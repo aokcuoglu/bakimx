@@ -69,7 +69,7 @@ export async function POST(request: Request) {
 
     if (!ocrLogId || !confirmedFields) {
       return NextResponse.json(
-        { error: "OCR log ID ve onaylanan alanlar zorunludur" },
+        { error: "Okuma kaydı ve onaylanan alanlar zorunludur" },
         { status: 400 }
       )
     }
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       where: { id: ocrLogId, workshopId: user.workshopId },
     })
     if (!ocrLog) {
-      return NextResponse.json({ error: "OCR kaydı bulunamadı" }, { status: 404 })
+      return NextResponse.json({ error: "Ruhsat okuma kaydı bulunamadı" }, { status: 404 })
     }
 
     const plate = normalizePlate(clean(confirmedFields.plate))

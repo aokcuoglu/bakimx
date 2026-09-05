@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     if (!hasWorkshopFeature(workshop, "ocrIntake")) {
       return NextResponse.json(
-        { error: "Bu pakette OCR özelliği bulunmuyor. Paketinizi yükseltin.", code: "feature_locked" },
+        { error: "Bu pakette ruhsat okuma özelliği bulunmuyor. Paketinizi yükseltin.", code: "feature_locked" },
         { status: 403 },
       )
     }

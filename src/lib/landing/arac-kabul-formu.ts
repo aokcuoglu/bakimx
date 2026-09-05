@@ -20,7 +20,7 @@ export const ARAC_KABUL_FORMU_CHECKLIST = [
   },
   {
     title: "Ruhsat bilgisini kontrol edin",
-    description: "Plaka, marka/model, şasi (VIN) ve model yılını ruhsattan doğrulayın.",
+    description: "Plaka, marka/model, şase numarası ve model yılını ruhsattan doğrulayın.",
   },
   {
     title: "Kilometre ve yakıt seviyesini not edin",

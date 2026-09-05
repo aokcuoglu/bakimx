@@ -1,5 +1,17 @@
-export const REGISTER_SECTOR_IDS = ["auto_service"] as const
+/** Kayıt sihirbazında seçilebilir (aktif) sektörler — sırayla listelenir. */
+export const REGISTER_SECTOR_IDS = [
+  "auto_service",
+  "mechanical_service",
+  "body_paint",
+  "spare_parts",
+  "tire_service",
+  "auto_electric",
+] as const
 export type RegisterSectorId = (typeof REGISTER_SECTOR_IDS)[number]
+
+export function isRegisterSectorEnabled(sectorId: string): sectorId is RegisterSectorId {
+  return (REGISTER_SECTOR_IDS as readonly string[]).includes(sectorId)
+}
 
 export const BUSINESS_FEATURE_IDS = [
   "stock",

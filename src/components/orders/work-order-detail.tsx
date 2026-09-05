@@ -989,7 +989,7 @@ export function WorkOrderDetail({
                       </span>
                     )}
                     {order.vehicle.mileage != null && <span>Kayıtlı: {order.vehicle.mileage.toLocaleString("tr-TR")} km</span>}
-                    {order.vehicle.vin && <span className="font-mono">VIN: {order.vehicle.vin}</span>}
+                    {order.vehicle.vin && <span className="font-mono">Şase: {order.vehicle.vin}</span>}
                   </div>
                 </div>
               </div>

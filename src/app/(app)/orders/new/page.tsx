@@ -19,8 +19,8 @@ export default async function NewOrderPage({
   })
 
   return (
-    <AppShell constrained workshopName={workshop?.name} pageTitle="Yeni İş Emri">
-      <div className="space-y-5 sm:space-y-6">
+    <AppShell workshopName={workshop?.name} pageTitle="Yeni İş Emri">
+      <div className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
         <div className="flex items-center text-sm text-muted-foreground">
           <Link href="/orders" className="hover:text-foreground">İş Emirleri</Link>
           <span className="mx-2">/</span>

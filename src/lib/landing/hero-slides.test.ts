@@ -13,7 +13,7 @@ describe("landing hero carousel", () => {
     expect(`${firstSlide.title} ${firstSlide.highlight}`).toBe(
       "Oto servisinizde iş emri açmak ve parça bulmak artık 10 saniye.",
     );
-    expect(firstSlide.description).toContain("VIN'e uyumlu parçaları");
+    expect(firstSlide.description).toContain("şaseye uygun parçaları");
   });
 
   test("uses three truthful, uniquely identified product stories", () => {

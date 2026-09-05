@@ -54,11 +54,11 @@ export const PLAN_PACKAGES: PlanPackage[] = [
     popular: true,
     seats: PLAN_SEATS.pro,
     highlights: [
-      "Mobil araç kabul + ruhsat OCR",
+      "Mobil araç kabul + ruhsat okuma",
       "Fotoğraf checklist'i & hasar haritası",
       "Tahsilat, kasa & alacak yaşlandırma",
       "Araç pasaportu & servis geçmişi",
-      "VIN'den araç tanıma & parça stok",
+      "Şaseden araç tanıma & parça stok",
       "Randevu & çok kanallı bildirim",
       "Analitik & raporlama (5.000 kota/ay)",
     ],

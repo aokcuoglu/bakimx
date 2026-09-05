@@ -121,7 +121,7 @@ export const PHOTO_TYPES = {
   fuel_gauge: { label: "Yakıt göstergesi", required: true },
   registration_front: { label: "Ruhsat ön", required: false },
   registration_back: { label: "Ruhsat arka", required: false },
-  vin_area: { label: "VIN alanı", required: false },
+  vin_area: { label: "Şase alanı", required: false },
   damage_detail: { label: "Hasar detayı", required: false },
   other: { label: "Diğer", required: false },
 } as const

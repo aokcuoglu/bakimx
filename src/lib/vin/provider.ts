@@ -37,7 +37,7 @@ export function getVinProvider(): VinProvider {
     if (!apiKey) {
       throw new VinLookupError(
         "config_error",
-        "VIN sorgulama için RAPIDAPI_KEY tanımlanmalıdır. " +
+        "Şase sorgulama için RAPIDAPI_KEY tanımlanmalıdır. " +
           "Demo verisi kullanmak için VIN_PROVIDER=mock (veya boş) ayarlayabilirsiniz."
       )
     }
@@ -47,7 +47,7 @@ export function getVinProvider(): VinProvider {
 
   throw new VinLookupError(
     "config_error",
-    `Bilinmeyen VIN sağlayıcısı: "${name}". Desteklenen değerler: mock (varsayılan), rapidapi.`
+    `Bilinmeyen şase sağlayıcısı: "${name}". Desteklenen değerler: mock (varsayılan), rapidapi.`
   )
 }
 

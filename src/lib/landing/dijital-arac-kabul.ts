@@ -19,7 +19,7 @@ export const DIJITAL_ARAC_KABUL_FAQS = [
   {
     question: "Ruhsat okuma gerçekten otomatik mi çalışıyor?",
     answer:
-      "Ruhsatı fotoğrafladığınızda plaka, marka/model, şasi (VIN) ve model yılı gibi alanlar otomatik doldurulur; düşük güvenle okunan alanlar kaydetmeden önce kontrol için işaretlenir.",
+      "Ruhsatı fotoğrafladığınızda plaka, marka/model, şase numarası ve model yılı gibi alanlar otomatik doldurulur; düşük güvenle okunan alanlar kaydetmeden önce kontrol için işaretlenir.",
   },
   {
     question: "Kabul fotoğraflarında hangi açılar zorunlu?",

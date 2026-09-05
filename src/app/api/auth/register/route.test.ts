@@ -242,11 +242,22 @@ afterAll(() => {
 describe("POST /api/auth/register onboarding and attribution", () => {
   test("rejects sectors that are still marked as coming soon", async () => {
     const response = await POST(
-      request({ ...validBody, sector: "mechanical_service" }, "198.51.100.70"),
+      request({ ...validBody, sector: "upholstery" }, "198.51.100.70"),
     )
 
     expect(response.status).toBe(400)
     expect(transactionCount).toBe(0)
+  })
+
+  test("accepts newly enabled mechanical service sector", async () => {
+    const response = await POST(
+      request({ ...validBody, sector: "mechanical_service" }, "198.51.100.75"),
+    )
+
+    expect(response.status).toBe(200)
+    expect(createdWorkshopData).toMatchObject({
+      onboardingProfile: expect.objectContaining({ sector: "mechanical_service" }),
+    })
   })
 
   test("rejects an unknown referral code before creating a workshop", async () => {

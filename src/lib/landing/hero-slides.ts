@@ -20,11 +20,11 @@ export const HERO_SLIDES = [
     title: "Oto servisinizde iş emri açmak ve parça bulmak",
     highlight: "artık 10 saniye.",
     description:
-      "Ruhsatı okutarak aracı saniyeler içinde tanıyın; dijital iş emrini başlatın ve VIN'e uyumlu parçaları aynı akışta bulun.",
+      "Ruhsatı taratarak aracı saniyeler içinde tanıyın; dijital iş emrini başlatın ve şaseye uygun parçaları aynı akışta bulun.",
     bullets: [
       "Ruhsattan otomatik araç tanıma",
       "10 saniyede dijital iş emri",
-      "VIN'e uyumlu parça eşleşmesi",
+      "Şaseye uygun parça bulma",
     ],
     image: "/landing/hero/digital-intake.webp",
     imagePosition: "72% center",
@@ -46,14 +46,14 @@ export const HERO_SLIDES = [
   },
   {
     id: "compatible-parts",
-    eyebrow: "VIN Uyumlu Parçalar",
+    eyebrow: "Araca Uygun Parçalar",
     title: "Araca uyan parçayı bulun,",
     highlight: "iş emrine tek tıkla ekleyin.",
     description:
-      "VIN eşleşmesiyle yalnızca araca uygun katalog parçalarını görün; elle arama ve yanlış parça riskini azaltın.",
+      "Şase numarasına göre yalnızca o araca uyan parçaları görün; elle arama ve yanlış parça riskini azaltın.",
     bullets: [
-      "VIN ile araç eşleşmesi",
-      "Araca uygun katalog parçaları",
+      "Şaseye göre araç tanıma",
+      "Araca uygun parça listesi",
       "Tek tıkla iş emrine ekleme",
     ],
     image: "/landing/hero/compatible-parts.webp",

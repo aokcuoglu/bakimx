@@ -280,7 +280,7 @@ export function CustomerDetail({
                         <p className="text-xs text-muted-foreground mt-1">
                           {v.modelYear ? `${v.modelYear} • ` : ""}
                           {v.mileage ? `${v.mileage.toLocaleString("tr-TR")} km • ` : ""}
-                          {v.vin ? `VIN: ${v.vin}` : "VIN girilmemiş"}
+                          {v.vin ? `Şase: ${v.vin}` : "Şase girilmemiş"}
                         </p>
                       </div>
                       <ChevronRight className="size-4 text-muted-foreground" />

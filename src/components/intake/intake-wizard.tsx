@@ -250,7 +250,7 @@ export function IntakeWizard({
           onStepClick={(id) => setStep(Number(id))}
         />
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {source === "registration" && selectedCustomerId && selectedVehicleId && (
             <Alert className="border-primary/30 bg-primary/5 text-primary">
               <Check className="size-4" />
@@ -286,7 +286,7 @@ export function IntakeWizard({
             detayları, sağ=aracın salt-görüntü geçmiş/bilgi özeti. Mobilde alt alta yığılır
             (araç bilgileri formun altına düşer). */}
         {step === 3 && (
-          <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
+          <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.9fr)]">
             {/* Bölüm-1: Kabul detayları */}
             <Card>
               <CardHeader><CardTitle>Kabul Detayları</CardTitle></CardHeader>
@@ -473,7 +473,7 @@ export function IntakeWizard({
                       <InfoRow label="Renk" value={vehicleInfo.color} />
                       <InfoRow label="İlk Tescil" value={vehicleInfo.firstRegistrationDate} />
                       <InfoRow label="Muayene Geçerlilik" value={vehicleInfo.inspectionValidUntil} />
-                      <InfoRow label="Şasi (VIN)" value={vehicleInfo.vin} className="col-span-2" />
+                      <InfoRow label="Şase no" value={vehicleInfo.vin} className="col-span-2" />
                     </dl>
                   </div>
                 ) : (

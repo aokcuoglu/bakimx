@@ -106,7 +106,7 @@ export default async function AdminHealthPage() {
         </Section>
       </div>
 
-      <Section title="RapidAPI Kotası (bu ay · VIN + parça kataloğu ortak)">
+      <Section title="RapidAPI Kotası (bu ay · şase + parça kataloğu ortak)">
         <div className="flex items-baseline justify-between">
           <span className="text-2xl font-bold text-foreground tabular-nums">
             {usage.total.toLocaleString("tr-TR")}
