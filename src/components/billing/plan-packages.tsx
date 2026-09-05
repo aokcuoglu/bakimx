@@ -71,7 +71,7 @@ export function PlanPackages({
         </div>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6">
         {PLAN_PACKAGES.map((pkg) => {
           const isOwned = ownedTier === pkg.tier
           const isCtaHighlighted = highlightedTier === pkg.tier || (highlightedTier === null && pkg.popular)
@@ -106,9 +106,17 @@ export function PlanPackages({
               </div>
 
               <div className="mb-3">
+                {pkg.listMonthlyLabel && (
+                  <s className="mr-2 text-sm font-medium text-muted-foreground">
+                    {billing === "monthly" ? pkg.listMonthlyLabel : pkg.listYearlyLabel}
+                  </s>
+                )}
                 <span className="text-2xl font-bold text-foreground">
                   {billing === "monthly" ? pkg.monthlyLabel : pkg.yearlyLabel}
                 </span>
+                {pkg.tier === "lite" && (
+                  <span className="mt-1 block text-xs font-medium text-primary">Açılışa özel · sınırlı süre</span>
+                )}
                 <span className="block text-[11px] text-muted-foreground mt-0.5">KDV dahil</span>
               </div>
 
@@ -162,7 +170,7 @@ export function PlanPackages({
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
-        Havale/EFT ile ödeyin; ödemeniz teyit edilince paketiniz aktifleşir.{" "}
+        Ücretli paketlerde Havale/EFT ile ödeyin; ödemeniz teyit edilince paketiniz aktifleşir.{" "}
         <a
           href={whatsappHref(`Merhaba, BakimX paket etkinleştirme hakkında bilgi almak istiyorum.${workshopName ? ` (${workshopName})` : ""}`)}
           target="_blank"

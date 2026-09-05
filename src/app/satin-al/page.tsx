@@ -1,6 +1,6 @@
 import { PurchaseWizard } from "@/components/billing/purchase-wizard"
 import { getHavaleInstructions } from "@/lib/billing/provider"
-import { isPlanTier } from "@/lib/plan"
+import { isSalePlanTier } from "@/lib/plan"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
 import { prisma } from "@/lib/db"
 
@@ -14,7 +14,7 @@ export default async function SatinAlPage({
   searchParams: Promise<{ tier?: string | string[]; cycle?: string | string[] }>
 }) {
   const sp = await searchParams
-  const tier = isPlanTier(sp.tier) ? sp.tier : "pro"
+  const tier = isSalePlanTier(sp.tier) ? sp.tier : "pro"
   const cycle = (sp.cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly"
 
   // Premium, odaklı checkout: landing Header/Footer yerine tam ekran markalı split.
