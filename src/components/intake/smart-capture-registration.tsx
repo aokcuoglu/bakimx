@@ -48,7 +48,7 @@ type FieldConfig = {
 
 const FIELD_CONFIGS: FieldConfig[] = [
   { key: "plate", label: "Plaka", required: true, uppercase: true },
-  { key: "vin", label: "Şase No (VIN)" },
+  { key: "vin", label: "Şase no" },
   { key: "ownerName", label: "Araç Sahibi Adı" },
   { key: "ownerSurname", label: "Araç Sahibi Soyadı" },
   {
@@ -126,7 +126,7 @@ export function SmartCaptureRegistration() {
         const data = await res.json()
 
         if (!res.ok) {
-          setError(data.error || "OCR işlemi başarısız oldu")
+          setError(data.error || "Ruhsat okuma başarısız oldu")
           setStep("upload")
           return
         }
@@ -273,7 +273,7 @@ export function SmartCaptureRegistration() {
                 {saveResult.catalogLinked && (
                   <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary-strong">
                     <CheckCircle2 className="size-3 shrink-0" />
-                    VIN eşleşti — araca uygun parçalar iş emrinde hazır
+                    Şase eşleşti — araca uygun parçalar iş emrinde hazır
                   </p>
                 )}
                 <Link href={`/vehicles/${saveResult.vehicleId}`} className="mt-3 flex text-sm font-medium text-primary hover:underline">
@@ -368,7 +368,7 @@ export function SmartCaptureRegistration() {
         {ocrProvider && (
           <div className="rounded-lg border border-primary/20 bg-primary/10 p-3 flex items-center gap-2 text-sm text-foreground">
             <Info className="size-4 text-primary shrink-0" />
-            <span>OCR sağlayıcı: <strong>{PROVIDER_LABELS[ocrProvider] || ocrProvider}</strong></span>
+            <span>Okuma servisi: <strong>{PROVIDER_LABELS[ocrProvider] || ocrProvider}</strong></span>
           </div>
         )}
 

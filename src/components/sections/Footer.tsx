@@ -28,9 +28,21 @@ function XIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const socialLinks = [
-  { label: "BakimX LinkedIn sayfası", href: "https://www.linkedin.com/company/bakimx/", icon: LinkedinIcon },
-  { label: "BakimX Instagram sayfası", href: "https://www.instagram.com/bakimxcom", icon: InstagramIcon },
-  { label: "BakimX X (Twitter) hesabı", href: "https://x.com/bakimxcom", icon: XIcon },
+  {
+    label: "BakimX LinkedIn sayfası",
+    href: "https://www.linkedin.com/company/bakimx/",
+    icon: LinkedinIcon,
+  },
+  {
+    label: "BakimX Instagram sayfası",
+    href: "https://www.instagram.com/bakimxcom",
+    icon: InstagramIcon,
+  },
+  {
+    label: "BakimX X (Twitter) hesabı",
+    href: "https://x.com/bakimxcom",
+    icon: XIcon,
+  },
 ];
 
 const footerLinks = {
@@ -38,7 +50,10 @@ const footerLinks = {
     { label: "Oto Servis Programı", href: "/oto-servis-programi" },
     { label: "Dijital Araç Kabul", href: "/dijital-arac-kabul" },
     { label: "İş Emri Programı", href: "/is-emri-programi" },
-    { label: "Defter, Excel ve Program", href: "/karsilastir/defter-excel-oto-servis-programi" },
+    {
+      label: "Defter, Excel ve Program",
+      href: "/karsilastir/defter-excel-oto-servis-programi",
+    },
     { label: "Canlı Demo", href: "/#ruhsat-demo" },
     { label: "Özellikler", href: "/#ozellikler" },
     { label: "Neden BakimX", href: "/#neden" },
@@ -47,7 +62,7 @@ const footerLinks = {
   ],
   company: [
     { label: "Demo Talep Et", href: "/demo" },
-    { label: "İletişim", href: "#" },
+    { label: "İletişim", href: "/#demo-form" },
     { label: "Sistem Durumu", href: "/status" },
   ],
   legal: [
@@ -65,10 +80,7 @@ export function Footer() {
     <footer className="border-t bg-navy text-navy-foreground">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-9 lg:py-10">
         <div className="grid gap-8 sm:gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          <Reveal
-            amount={0.15}
-            className="sm:col-span-2 lg:col-span-1"
-          >
+          <Reveal amount={0.15} className="sm:col-span-2 lg:col-span-1">
             <Link
               href="/"
               aria-label="BakimX ana sayfa"
@@ -77,7 +89,7 @@ export function Footer() {
               <BrandLogo variant="primary-dark" size="lg" alt="BakimX" />
             </Link>
             <p className="text-sm text-navy-foreground/70 leading-relaxed max-w-xs">
-              Oto servisler için eksiksiz servis yönetim platformu.
+              Serviste işler yolunda. Kontrol sizde.
             </p>
             <p className="mt-3 text-xs text-navy-foreground/50">
               Türkiye&apos;deki oto servisler için geliştiriliyor.
@@ -103,16 +115,17 @@ export function Footer() {
             { title: "Şirket", links: footerLinks.company },
             { title: "Yasal", links: footerLinks.legal },
           ].map((group, i) => (
-            <Reveal
-              key={group.title}
-              amount={0.15}
-              delay={(i + 1) * 80}
-            >
-              <h3 className="font-semibold mb-2.5 text-xs sm:text-sm uppercase tracking-wider text-navy-foreground/90">{group.title}</h3>
+            <Reveal key={group.title} amount={0.15} delay={(i + 1) * 80}>
+              <h3 className="font-semibold mb-2.5 text-xs sm:text-sm uppercase tracking-wider text-navy-foreground/90">
+                {group.title}
+              </h3>
               <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:block sm:space-y-2">
                 {group.links.map((link) => (
                   <li key={link.label}>
-                    <a href={link.href} className="text-sm text-navy-foreground/60 hover:text-navy-foreground transition-colors">
+                    <a
+                      href={link.href}
+                      className="text-sm text-navy-foreground/60 hover:text-navy-foreground transition-colors"
+                    >
                       {link.label}
                     </a>
                   </li>

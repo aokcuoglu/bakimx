@@ -22,7 +22,7 @@ export interface VinLookupResult {
 export async function lookupVin(input: string, workshopId?: string): Promise<VinLookupResult> {
   const vin = normalizeVin(input)
   if (!isValidVin(vin)) {
-    throw new VinLookupError("invalid_vin", "Geçersiz şase numarası (VIN 17 karakter olmalı, I/O/Q harfleri içeremez).")
+    throw new VinLookupError("invalid_vin", "Geçersiz şase numarası (17 karakter olmalı, I/O/Q harfleri içeremez).")
   }
 
   const provider = getVinProvider()
@@ -53,7 +53,7 @@ export async function lookupVin(input: string, workshopId?: string): Promise<Vin
 
   // Shared cap across the whole RapidAPI subscription (VIN + TecDoc catalog).
   if ((await countRapidApiCallsThisMonth()) >= rapidApiMonthlyCap()) {
-    throw new VinLookupError("quota_exceeded", "Aylık VIN sorgu limiti doldu. Lütfen daha sonra tekrar deneyin.")
+    throw new VinLookupError("quota_exceeded", "Aylık şase sorgu limiti doldu. Lütfen daha sonra tekrar deneyin.")
   }
 
   const result = await provider.lookup(vin)

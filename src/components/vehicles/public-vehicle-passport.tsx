@@ -242,7 +242,7 @@ export function PublicVehiclePassportPage({
                 {vehicle.fuelType && <span>{fuelTypeLabel(vehicle.fuelType)}</span>}
                 {vehicle.transmission && <span>{transmissionLabel(vehicle.transmission)}</span>}
                 {vehicle.mileage && <span>{formatMileage(vehicle.mileage)}</span>}
-                {vehicle.vin && <span className="font-mono">VIN: {vehicle.vin}</span>}
+                {vehicle.vin && <span className="font-mono">Şase: {vehicle.vin}</span>}
               </div>
             </div>
           </div>
@@ -464,7 +464,7 @@ export function PublicVehiclePassportPage({
         <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 print:border print:border-primary/30 text-center">
           <Shield className="size-4 text-primary mx-auto mb-1.5 print:hidden" />
           <p className="text-xs text-foreground">
-            Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, OCR verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
+            Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, ruhsat okuma verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
           </p>
         </div>
 
