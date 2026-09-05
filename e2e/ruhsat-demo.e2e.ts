@@ -26,3 +26,25 @@ for (const width of [360, 1440]) {
     await expect(section.getByText("PCX 125", { exact: true })).toHaveCount(0);
   });
 }
+
+test("quota state renders the public trial illustration", async ({ page }) => {
+  await page.route("**/api/demo-ocr", async (route) => {
+    await route.fulfill({
+      status: 429,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "used",
+        message: "Bu tarayıcıda ücretsiz ruhsat denemeniz kullanıldı.",
+      }),
+    });
+  });
+
+  await page.goto("/#ruhsat-demo");
+  await page.getByRole("tab", { name: "Kendi ruhsatını dene" }).click();
+
+  const illustration = page.locator('img[src*="demo-ocr-trial-complete"]');
+  await expect(illustration).toBeVisible();
+  await expect.poll(() => illustration.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+  await expect(page.getByRole("heading", { name: "Ücretsiz denemeniz tamamlandı" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Hesap oluştur" })).toBeVisible();
+});

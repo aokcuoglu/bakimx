@@ -234,12 +234,13 @@ export const config = {
   // çalıştırır) logolar kayboluyordu — hem doğrudan erişimde hem next/image'in
   // kaynak fetch'inde. Ayrıca transactional e-postaların logosu (02-bakimx-
   // primary-dark.png) anonim çekildiği için kök PNG'ler de PUBLIC olmalı.
-  // Kökteki tüm görsel dosyaları (svg/png/jpg/jpeg/webp/gif/ico) ve landing
-  // marketing asset'leri (/landing/**) hariç bırakılır.
+  // Kökteki tüm görsel dosyaları (svg/png/jpg/jpeg/webp/gif/ico), landing
+  // marketing asset'leri (/landing/**) ve ortak illüstrasyonlar
+  // (/illustrations/**) hariç bırakılır.
   //
   // /sw.js (BAK-129): service worker kökten servis edilmeli — auth kapısına
   // takılırsa /login'e 307'lenir, tarayıcı JavaScript yerine HTML alır ve
   // kayıt "unsupported MIME type" ile düşer. İçeriğinde kiracıya ait hiçbir
   // veri yok; payload'ı push mesajı taşır.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|landing/|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|landing/|illustrations/|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
 }

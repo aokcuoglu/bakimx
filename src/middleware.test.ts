@@ -1,8 +1,17 @@
 import { describe, expect, test } from "bun:test"
+import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server"
 import { NextRequest } from "next/server"
-import { middleware } from "./middleware"
+import { config, middleware } from "./middleware"
 
 describe("public landing routes", () => {
+  test("keeps nested public illustrations outside the auth middleware", () => {
+    expect(unstable_doesMiddlewareMatch({
+      config,
+      nextConfig: {},
+      url: "/illustrations/demo-ocr-trial-complete.webp",
+    })).toBe(false)
+  })
+
   test("allows anonymous local requests to /status", async () => {
     const response = await middleware(new NextRequest("http://localhost/status"))
 
