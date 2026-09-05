@@ -2,6 +2,7 @@ import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES, INTAKE_STATU
 import { escapeHtml } from "@/lib/html-escape"
 
 export type SafeIntakeData = {
+  photosVisible?: boolean
   bodyType?: string
   inspectionStatus?: string
   inspectedAt?: Date | null
@@ -169,6 +170,7 @@ export function sanitizeIntakeForPublic(
     : null
 
   return {
+    photosVisible: visibility.showPhotos !== false,
     bodyType: visibility.showDamage !== false ? intake.bodyType ?? "sedan" : undefined,
     inspectionStatus: visibility.showDamage !== false ? intake.inspectionStatus ?? "not_recorded" : undefined,
     inspectedAt: visibility.showDamage !== false ? intake.inspectedAt ?? null : undefined,

@@ -32,7 +32,7 @@ export function renderDamageReport(data: SafeIntakeData): string {
       const src = reportPhotoSrc(photo.fileUrl)
       return src ? `<figure><img src="${src}" alt="Hasar ${mark.number} fotoğrafı"/><figcaption>#${mark.number} · ${photo.label}</figcaption></figure>` : ""
     }).filter(Boolean)
-    return `<article class="damage-card"><h3>#${mark.number} · ${mark.zoneLabel}</h3><p>${mark.damageTypeLabel} · ${mark.severityLabel}</p>${mark.note ? `<p class="damage-note">${mark.note}</p>` : ""}${images.length ? `<div class="damage-images">${images.join("")}</div>` : `<p class="field-sub">Fotoğraf eklenmedi</p>`}</article>`
+    return `<article class="damage-card"><h3>#${mark.number} · ${mark.zoneLabel}</h3><p>${mark.damageTypeLabel} · ${mark.severityLabel}</p>${mark.note ? `<p class="damage-note">${mark.note}</p>` : ""}${images.length ? `<div class="damage-images">${images.join("")}</div>` : `<p class="field-sub">${data.photosVisible === false ? "Fotoğraflar bu paylaşımda gösterilmiyor" : "Fotoğraf eklenmedi"}</p>`}</article>`
   }).join("")
   return `<section class="damage-report"><h2 class="section-title">Araç Hasar Kontrolü</h2><p>${inspection}${data.inspectedAt ? ` · ${new Date(data.inspectedAt).toLocaleString("tr-TR")}` : ""}</p><p class="field-sub">${BODY_TYPES[body]} · Temsili şema. Sağ ve sol aracın sürüş yönüne göredir.</p>${views}${cards ? `<h2 class="section-title">Hasar Kayıtları</h2>${cards}` : ""}</section>`
 }

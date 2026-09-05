@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 import { DAMAGE_SEVERITY, DAMAGE_TYPES, VEHICLE_ZONES } from "@/lib/constants"
@@ -31,6 +31,8 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
   const [loaded, setLoaded] = useState(false)
   const [metadataBusy, setMetadataBusy] = useState(false)
   const [photoDirty, setPhotoDirty] = useState(false)
+  const backRequested = useRef(false)
+  const discardAndGoBack = useRef(false)
   const [discardOpen, setDiscardOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [removeId, setRemoveId] = useState<string | null>(null)
@@ -57,6 +59,31 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
     window.addEventListener("beforeunload", warn)
     return () => window.removeEventListener("beforeunload", warn)
   }, [dialogOpen, form.formState.isDirty, photoDirty])
+  const hasUnsavedDraft = dialogOpen && (form.formState.isDirty || photoDirty)
+  useEffect(() => {
+    if (!hasUnsavedDraft) return
+    // A same-URL entry protects only this editor. Preserve Next's private state
+    // and never intercept navigation outside the lifetime of this dirty draft.
+    const marker = crypto.randomUUID()
+    const url = window.location.href
+    window.history.pushState({ ...window.history.state, damageDraft: marker }, "", url)
+    const onBack = (event: PopStateEvent) => {
+      if (window.history.state?.damageDraft === marker) return
+      event.stopImmediatePropagation()
+      window.history.pushState({ ...event.state, damageDraft: marker }, "", url)
+      backRequested.current = true
+      setDiscardOpen(true)
+    }
+    window.addEventListener("popstate", onBack, true)
+    return () => {
+      window.removeEventListener("popstate", onBack, true)
+      if (window.history.state?.damageDraft === marker) {
+        window.history.go(discardAndGoBack.current ? -2 : -1)
+      }
+      backRequested.current = false
+      discardAndGoBack.current = false
+    }
+  }, [hasUnsavedDraft])
   function closeEditor() { if (form.formState.isDirty || photoDirty) setDiscardOpen(true); else setDialogOpen(false) }
   async function updateInspection(values: { bodyType?: BodyType; inspectionStatus?: string }) {
     setMetadataBusy(true)
@@ -144,7 +171,7 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
               <FormField control={form.control} name="damageType" render={({ field }) => <FormItem><FormLabel>Hasar türü</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger className="w-full"><SelectValue placeholder="Hasar türü seçin" /></SelectTrigger></FormControl><SelectContent>{Object.entries(DAMAGE_TYPES).map(([key, item]) => <SelectItem key={key} value={key}>{item.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />
               <FormField control={form.control} name="severity" render={({ field }) => <FormItem><FormLabel>Derece</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger className="w-full"><SelectValue placeholder="Derece seçin" /></SelectTrigger></FormControl><SelectContent>{Object.entries(DAMAGE_SEVERITY).map(([key, item]) => <SelectItem key={key} value={key}>{item.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />
               <FormField control={form.control} name="note" render={({ field }) => <FormItem><FormLabel>Not</FormLabel><FormControl><Input {...field} placeholder="Örn. 5 cm çizik" /></FormControl><FormMessage /></FormItem>} />
-              <FormField control={form.control} name="photoIds" render={({ field }) => <FormItem><FormLabel>Bağlı fotoğraflar</FormLabel><p className="text-xs text-muted-foreground">Bir fotoğraf birden fazla hasara bağlanabilir.</p><div className="grid grid-cols-2 gap-2">{photos.map(photo => <div key={photo.id} className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm"><label className="flex items-center gap-2"><Checkbox checked={field.value?.includes(photo.id) || false} onCheckedChange={checked=>field.onChange(checked ? [...(field.value || []),photo.id] : (field.value || []).filter(id=>id!==photo.id))} />{photo.label}</label><PersistedPhotoEditor photoId={photo.id} /></div>)}</div><FormMessage /></FormItem>} />
+              <FormField control={form.control} name="photoIds" render={({ field }) => <FormItem><FormLabel>Bağlı fotoğraflar</FormLabel><p className="text-xs text-muted-foreground">Bir fotoğraf birden fazla hasara bağlanabilir.</p><div className="grid grid-cols-2 gap-2">{photos.map(photo => <div key={photo.id} className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm"><label className="flex items-center gap-2"><Checkbox checked={field.value?.includes(photo.id) || false} onCheckedChange={checked=>field.onChange(checked ? [...(field.value || []),photo.id] : (field.value || []).filter(id=>id!==photo.id))} />{photo.label}</label><PersistedPhotoEditor photoId={photo.id} onDirtyChange={setPhotoDirty} /></div>)}</div><FormMessage /></FormItem>} />
               <PhotoAnnotate onDirtyChange={setPhotoDirty} intakeFormId={intakeFormId} onUploaded={photo=>{setPhotos(current=>[...current,{id:photo.id,label:"Hasar fotoğrafı",fileUrl:photo.fileUrl || `/api/photos?id=${photo.id}`}]);form.setValue("photoIds",[...(form.getValues("photoIds") || []),photo.id],{shouldDirty:true})}} />
               <DialogFooter><Button type="button" variant="outline" size="lg" onClick={closeEditor}>Vazgeç</Button><Button type="submit" size="lg" disabled={form.formState.isSubmitting || photoDirty}>{form.formState.isSubmitting ? <BrandSpinner size={18} label="Kaydediliyor…" /> : "Hasarı Kaydet"}</Button></DialogFooter>
             </form>
@@ -152,7 +179,7 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Kaydedilmemiş değişiklikler var</AlertDialogTitle><AlertDialogDescription>Çıkarsanız hasar düzenlemesi kaydedilmez. Yüklenen fotoğraflar kabul kaydında kalır.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Düzenlemeye dön</AlertDialogCancel><AlertDialogAction onClick={()=>{setDiscardOpen(false);setDialogOpen(false)}}>Değişiklikleri bırak</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+      <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Kaydedilmemiş değişiklikler var</AlertDialogTitle><AlertDialogDescription>Çıkarsanız hasar düzenlemesi kaydedilmez. Yüklenen fotoğraflar kabul kaydında kalır.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={()=>{backRequested.current=false}}>Düzenlemeye dön</AlertDialogCancel><AlertDialogAction onClick={()=>{discardAndGoBack.current=backRequested.current;setDiscardOpen(false);setDialogOpen(false)}}>Değişiklikleri bırak</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
       <AlertDialog open={removeId !== null} onOpenChange={(open) => { if (!open && !removing) setRemoveId(null) }}>
         <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Hasar işareti kaldırılsın mı?</AlertDialogTitle><AlertDialogDescription>Bu işlem kayıt geçmişine yazılır. Hasar fotoğrafları silinmez.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={removing}>Vazgeç</AlertDialogCancel><AlertDialogAction variant="destructive" disabled={removing} onClick={() => void remove()}>{removing ? <BrandSpinner size={18} label="Kaldırılıyor…" /> : "İşareti Kaldır"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>

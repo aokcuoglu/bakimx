@@ -168,6 +168,7 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
       hint: approval?.approvedAt ? fmtDate(approval.approvedAt) : "Onay tarihi yok",
     },
   ]
+    .filter((_, index) => index === 0 ? intakeForm.photosVisible !== false : index === 1 ? intakeForm.inspectionStatus !== undefined : true)
     .map(
       (cell) => `<div class="stat">
         <div class="stat-value tone-${cell.tone}">${cell.value}</div>

@@ -295,3 +295,17 @@ describe("damage evidence report", () => {
     }
   })
 })
+
+test("hidden photo and damage summaries do not claim missing evidence", () => {
+  const safe = buildIntake({inspectionStatus:"not_recorded",damageMarks:[{number:3,zone:"hood",damageType:"scratch",severity:"light",note:null}]})
+  safe.photosVisible=false
+  safe.photos=[]
+  const args={workshop:{name:"QA",phone:"",city:"",address:""},intakeForm:safe,createdAt:CREATED_AT,photoCompletion:{percentage:100,requiredCompleted:8,required:8,total:12,completed:12,missingLabels:[]}}
+  const html=renderIntakePrintoutHtml(args)
+  expect(html).toContain("Fotoğraflar bu paylaşımda gösterilmiyor")
+  expect(html).not.toContain("Fotoğraf kanıtı")
+  safe.damageMarks=[];safe.inspectionStatus=undefined;safe.bodyType=undefined
+  const hidden=renderIntakePrintoutHtml(args)
+  expect(hidden).not.toContain("Hasar kaydı")
+  expect(hidden).not.toContain("Kontrol kaydı yok")
+})

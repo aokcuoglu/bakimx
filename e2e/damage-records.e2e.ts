@@ -63,6 +63,11 @@ test("damage cards reload, preserve numbering, edit multiple marks and require e
     for (const view of ["Ön","Arka","Sol","Sağ","Üst"]) {
       await page.getByRole("tab",{name:view,exact:true}).click()
       await expect(page.getByRole("group",{name:`${view} araç görünüşü`})).toBeVisible()
+      const panel=page.getByRole("group",{name:`${view} araç görünüşü`}).getByRole("button").first()
+      const region=(await panel.getAttribute("aria-label"))!.split(" — ")[0]
+      await panel.click()
+      await expect(page.getByRole("dialog").getByRole("heading",{name:region,exact:true})).toBeVisible()
+      await page.getByRole("dialog").getByRole("button",{name:"Vazgeç",exact:true}).click()
     }
   }
   await page.locator('[data-damage-number="7"]').getByRole("button",{name:"Düzenle"}).click()
@@ -89,4 +94,16 @@ test("damage cards reload, preserve numbering, edit multiple marks and require e
   await page.getByRole("button",{name:"Kontrol edildi, görünür hasar gözlenmedi",exact:true}).click()
   await expect(page.getByText("Kontrol edildi, görünür hasar gözlenmedi",{exact:false}).last()).toBeVisible()
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1)
+  await page.goto("/orders")
+  await page.goto(`/orders/${orderId}?tab=kanit`)
+  await page.getByRole("button",{name:"Kaput — hasar ekle",exact:true}).click()
+  await page.getByLabel("Not",{exact:true}).fill("Geri dönüşte korunacak taslak")
+  await page.goBack()
+  await expect(page.getByRole("alertdialog")).toContainText("Kaydedilmemiş değişiklikler var")
+  await page.getByRole("button",{name:"Düzenlemeye dön",exact:true}).click()
+  await expect(page.getByLabel("Not",{exact:true})).toHaveValue("Geri dönüşte korunacak taslak")
+  await page.goBack()
+  await page.getByRole("button",{name:"Değişiklikleri bırak",exact:true}).click()
+  await expect(page).toHaveURL(/\/orders$/)
+
 })

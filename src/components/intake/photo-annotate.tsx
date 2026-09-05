@@ -112,7 +112,7 @@ export function PhotoAnnotate({ intakeFormId, label = "Hasar", phase = "intake",
 
 
 /** Existing JPEGs open as their own source; no attempt is made to undo baked-in legacy ink. */
-export function PersistedPhotoEditor({ photoId, onSaved, disabled = false }: { photoId: string; onSaved?: () => void; disabled?: boolean }) {
+export function PersistedPhotoEditor({ photoId, onSaved, onDirtyChange, disabled = false }: { photoId: string; onSaved?: () => void; onDirtyChange?: (dirty: boolean) => void; disabled?: boolean }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState<{ document: PhotoAnnotationDocument; version: number } | null>(null)
@@ -148,7 +148,7 @@ export function PersistedPhotoEditor({ photoId, onSaved, disabled = false }: { p
     <Dialog open={open} onOpenChange={next => { if (!next && window.confirm("Editörü kaydetmeden kapatmak istiyor musunuz?")) setOpen(false) }}>
       <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-4xl" onInteractOutside={event => event.preventDefault()}>
         <DialogHeader><DialogTitle>Fotoğraf çizimleri</DialogTitle><DialogDescription>İşaretsiz kaynak korunur; her kayıt yeni bir çizim sürümü oluşturur.</DialogDescription></DialogHeader>
-        {open && saved && <PhotoEditor sourceUrl={`/api/photos?id=${encodeURIComponent(photoId)}&variant=original`} initialAnnotation={saved.document} onSave={save} onCancel={() => setOpen(false)} />}
+        {open && saved && <PhotoEditor sourceUrl={`/api/photos?id=${encodeURIComponent(photoId)}&variant=original`} initialAnnotation={saved.document} onDirtyChange={onDirtyChange} onSave={save} onCancel={() => setOpen(false)} />}
       </DialogContent>
     </Dialog>
   </>

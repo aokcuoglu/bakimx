@@ -13,10 +13,11 @@ export interface PhotoEditorProps {
   initialAnnotation?: PhotoAnnotationDocument
   onSave: (result: { annotation: PhotoAnnotationDocument; derivative: Blob }) => Promise<void>
   onCancel: () => void
+  onDirtyChange?: (dirty: boolean) => void
 }
 const toolLabels = { select: "Seç / taşı", arrow: "Ok", ellipse: "Daire", rect: "Dikdörtgen", pen: "Kalem" } as const
 
-export default function PhotoEditor({ sourceUrl, initialAnnotation, onSave, onCancel }: PhotoEditorProps) {
+export default function PhotoEditor({ sourceUrl, initialAnnotation, onSave, onCancel, onDirtyChange }: PhotoEditorProps) {
   const [history, dispatch] = useReducer(annotationHistory, { past: [], present: (initialAnnotation ?? emptyAnnotation()).shapes, future: [] })
   const [tool, setTool] = useState<AnnotationTool | "select">("arrow")
   const [selected, setSelected] = useState<string | null>(null)
@@ -33,6 +34,7 @@ export default function PhotoEditor({ sourceUrl, initialAnnotation, onSave, onCa
   const transformer = useRef<Konva.Transformer>(null)
   const [baseline, setBaseline] = useState(JSON.stringify(history.present))
   const dirty = JSON.stringify(history.present) !== baseline
+  useEffect(() => { onDirtyChange?.(dirty); return () => onDirtyChange?.(false) }, [dirty, onDirtyChange])
   useEffect(() => {
     const image = new window.Image()
     image.onload = () => setImg(image)

@@ -9,6 +9,7 @@ const prefix = `damage603-${randomUUID()}`
 const workshops: string[] = []
 let intakeId: string, otherPhotoId: string, email: string, ownerId: string, orderId: string
 const image = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=", "base64")
+const annotatedImage = Buffer.concat([image, Buffer.from("qa-annotation")])
 const document = { version: 1, shapes: [{ id: "one", tool: "rect", color: "#000000", strokeWidth: 0.01, points: [0.1, 0.2, 0.7, 0.8] }] }
 
 test.beforeAll(async () => {
@@ -70,7 +71,7 @@ test("numbering, inspection, photo links, editable versions and visibility remai
   const photoId = (await uploaded.json()).id
   expect((await (await request.post("/api/intakes/photos", { multipart: uploadData })).json()).id).toBe(photoId)
   for (const id of new Set(records.map(r => r.mark.id as string))) expect((await request.patch("/api/intakes/damage", { data: { ...input, id, photoIds: [photoId] } })).ok()).toBeTruthy()
-  const annotate = { photoId, requestId: randomUUID(), expectedVersion: "0", document: JSON.stringify(document), file: { name: "annotated.png", mimeType: "image/png", buffer: image } }
+  const annotate = { photoId, requestId: randomUUID(), expectedVersion: "0", document: JSON.stringify(document), file: { name: "annotated.png", mimeType: "image/png", buffer: annotatedImage } }
   const version1 = await request.post("/api/intakes/photos/annotations", { multipart: annotate })
   expect(version1.ok(), await version1.text()).toBeTruthy()
   expect((await version1.json()).version).toBe(1)
@@ -95,6 +96,7 @@ test("numbering, inspection, photo links, editable versions and visibility remai
     expect(html).not.toContain('"points"')
     const photo = await request.get(`/s/${token}/photos/${photoId}`)
     expect(photo.status()).toBe(showPhotos ? 200 : 404)
+    if (showPhotos) expect(await photo.body()).toEqual(showDamage ? annotatedImage : image)
   }
   const expiredToken = randomUUID()
   await db.publicShareLink.create({ data: { workshopId: workshops[0], intakeFormId: intakeId, token: expiredToken, expiresAt: new Date(Date.now() - 1000) } })
@@ -112,5 +114,12 @@ test("numbering, inspection, photo links, editable versions and visibility remai
   await db.workshop.update({ where: { id: workshops[0] }, data: { planTier: "lite" } })
   expect((await request.get(url)).ok()).toBeFalsy()
   expect((await request.get(`/api/intakes/photos/annotations?photoId=${photoId}`)).status()).toBe(403)
-  expect((await request.post("/api/intakes/photos", { multipart: { ...uploadData, requestId: randomUUID() } })).ok()).toBeTruthy()
+  expect((await request.get(`/api/photos?id=${photoId}&variant=annotated`)).status()).toBe(403)
+  expect(await (await request.get(`/api/photos?id=${photoId}`)).body()).toEqual(image)
+  expect((await request.post("/api/intakes/photos", { multipart: { ...uploadData, requestId: randomUUID() } })).status()).toBe(403)
+  expect((await request.post("/api/intakes/photos", { multipart: { ...uploadData, type: "other", requestId: randomUUID() } })).ok()).toBeTruthy()
+  await db.workshop.update({ where: { id: workshops[0] }, data: { subscriptionStatus: "trialing", trialStartedAt: new Date(), trialEndsAt: new Date(Date.now() + 86400000) } })
+  expect((await request.get(url)).ok()).toBeTruthy()
+  expect((await request.get(`/api/intakes/photos/annotations?photoId=${photoId}`)).ok()).toBeTruthy()
+  expect(await (await request.get(`/api/photos?id=${photoId}&variant=annotated`)).body()).toEqual(annotatedImage)
 })

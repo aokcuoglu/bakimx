@@ -291,7 +291,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
         {shareLink.showDamage && (
           <section className="rounded-lg border bg-card p-4">
             <h3 className="mb-3 font-semibold">Hasar ve kontrol kaydı</h3>
-            <VehicleDamageMap damageMarks={intakeForm.damageMarks.map((mark,index)=>({...mark,id:mark.id || `damage-${index}`}))} bodyType={(intakeForm.bodyType || "sedan") as BodyType} inspectionStatus={intakeForm.inspectionStatus} inspectedAt={intakeForm.inspectedAt ? new Date(intakeForm.inspectedAt).toISOString() : null} photos={shareLink.showPhotos ? intakeForm.photos : []} />
+            <VehicleDamageMap damageMarks={intakeForm.damageMarks.map((mark,index)=>({...mark,id:mark.id || `damage-${index}`}))} bodyType={(intakeForm.bodyType || "sedan") as BodyType} inspectionStatus={intakeForm.inspectionStatus} inspectedAt={intakeForm.inspectedAt ? new Date(intakeForm.inspectedAt).toISOString() : null} photosVisible={shareLink.showPhotos} photos={shareLink.showPhotos ? intakeForm.photos : []} />
           </section>
         )}
 
