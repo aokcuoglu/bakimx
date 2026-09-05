@@ -1,8 +1,15 @@
 import { describe, expect, test } from "bun:test"
 import { NextRequest } from "next/server"
-import { middleware } from "./middleware"
+import { config, middleware } from "./middleware"
 
 describe("public landing routes", () => {
+  test("keeps nested public illustrations outside the auth middleware", () => {
+    const matcher = new RegExp(config.matcher[0])
+
+    expect(matcher.test("/illustrations/demo-ocr-trial-complete.webp")).toBe(false)
+    expect(matcher.test("/dashboard")).toBe(true)
+  })
+
   test("allows anonymous local requests to /status", async () => {
     const response = await middleware(new NextRequest("http://localhost/status"))
 
