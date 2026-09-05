@@ -1314,7 +1314,7 @@ export async function getOrderAction(orderId: string) {
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
     include: {
-      intakeForm: { include: { customer: true, vehicle: true, damageMarks: true, photos: { where: VISIBLE_PHOTO } } },
+      intakeForm: { include: { customer: true, vehicle: true, damageMarks: { where: { deletedAt: null } }, photos: { where: VISIBLE_PHOTO } } },
       items: true,
     },
   })

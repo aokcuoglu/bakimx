@@ -281,7 +281,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
           intakes: {
             include: {
               order: { include: { items: true } },
-              damageMarks: true,
+              damageMarks: { where: { deletedAt: null } },
               photos: {
                 // Dış alım (satın alma) fotoğrafları dahili-yalnız — pasaport PDF'ine sızmaz.
                 where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },

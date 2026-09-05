@@ -622,6 +622,13 @@ model VehicleIntakeForm {
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 
+  bodyType String @default("sedan")
+  schemaVersion Int @default(1)
+  inspectionStatus String @default("not_recorded")
+  inspectedById String?
+  inspectedAt DateTime?
+  nextDamageNumber Int @default(0)
+
   photos         VehiclePhoto[]
   damageMarks    DamageMark[]
   approvals      ApprovalRequest[]
@@ -677,6 +684,11 @@ model VehiclePhoto {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
+  requestId String?
+  damageLinks DamagePhoto[]
+  annotationVersions PhotoAnnotationVersion[]
+
+  @@unique([intakeFormId, requestId])
   @@index([workshopId])
   @@index([intakeFormId])
   @@index([phase])
@@ -716,8 +728,17 @@ model DamageMark {
   severity     DamageSeverity
   note         String?
   photoUrl     String?
+  number Int
+  requestId String?
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  deletedById String?
+  photos DamagePhoto[]
   createdAt    DateTime          @default(now())
 
+  @@unique([intakeFormId, number])
+  @@unique([intakeFormId, requestId])
+  @@index([deletedAt])
   @@index([workshopId])
   @@index([intakeFormId])
 }
@@ -3096,4 +3117,28 @@ model PushSubscription {
 
   @@index([workshopId, userId])
   @@index([userId])
+}
+
+model DamagePhoto {
+  damageMarkId String
+  photoId String
+  damageMark DamageMark @relation(fields: [damageMarkId], references: [id])
+  photo VehiclePhoto @relation(fields: [photoId], references: [id])
+  @@id([damageMarkId, photoId])
+  @@index([photoId])
+}
+
+model PhotoAnnotationVersion {
+  id String @id @default(cuid())
+  photoId String
+  photo VehiclePhoto @relation(fields: [photoId], references: [id])
+  version Int
+  requestId String
+  document Json
+  storageKey String
+  mimeType String @default("image/jpeg")
+  createdById String
+  createdAt DateTime @default(now())
+  @@unique([photoId, version])
+  @@unique([photoId, requestId])
 }

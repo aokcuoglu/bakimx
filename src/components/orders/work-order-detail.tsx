@@ -57,9 +57,6 @@ import {
   PHOTO_TYPES,
   PHOTO_PHASES,
   VEHICLE_PHOTO_TYPES,
-  DAMAGE_TYPES,
-  DAMAGE_SEVERITY,
-  VEHICLE_ZONES,
   type PhotoPhaseKey,
 } from "@/lib/constants"
 import { formatDate } from "@/lib/utils-client"
@@ -71,7 +68,7 @@ import { findUnpricedItems } from "@/lib/orders/pricing-guard"
 import { findUndecidedPartsRequests } from "@/lib/orders/parts-request-guard"
 import { canOpenTechnicianView, technicianOrderPath } from "@/lib/technician/cross-links"
 import type { OrderStatus, PaymentStatus } from "@prisma/client"
-import { PhotoAnnotate } from "@/components/intake/photo-annotate"
+import { DamageCapture } from "@/components/intake/damage-capture"
 import { PhotoGalleryGrid } from "@/components/intake/photo-gallery-grid"
 import { PhotoPhaseMatrix } from "@/components/intake/photo-phase-matrix"
 import { partitionIntakePhotos } from "@/lib/photos/phase-matrix"
@@ -1519,25 +1516,7 @@ export function WorkOrderDetail({
               <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-warning-strong" /> Hasar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {!orderLocked && <PhotoAnnotate intakeFormId={intake.id} onUploaded={() => router.refresh()} />}
-
-              {intake.damageMarks.length > 0 && (
-                <div className="pt-3 border-t">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Hasar İşaretleri ({intake.damageMarks.length})</p>
-                  <div className="space-y-1.5">
-                    {intake.damageMarks.map((d) => (
-                      <div key={d.id} className="flex items-center justify-between p-2.5 bg-muted rounded-lg text-sm">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: (DAMAGE_SEVERITY as Record<string, { color: string }>)[d.severity]?.color || "#9CA3AF" }} />
-                          <span className="font-medium truncate">{VEHICLE_ZONES[d.zone as keyof typeof VEHICLE_ZONES] || d.zone}</span>
-                          <span className="text-muted-foreground text-xs shrink-0">{DAMAGE_TYPES[d.damageType as keyof typeof DAMAGE_TYPES]?.label || d.damageType}</span>
-                        </div>
-                        {d.note && <span className="text-xs text-muted-foreground truncate max-w-[40%]">- {d.note}</span>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <DamageCapture reloadKey={JSON.stringify([intake.damageMarks,intake.photos])} intakeFormId={intake.id} vehicle={intake.vehicle} readOnly={orderLocked} />
 
               {damagePhotos.length > 0 && (
                 <div className="pt-3 border-t">

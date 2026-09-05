@@ -21,7 +21,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
           vehicle: true,
           // Dış alım (satın alma) fotoğrafları dahili-yalnızdır — müşteri PDF'ine sızmaz.
           photos: { where: { serviceOrderItemId: null, ...VISIBLE_PHOTO }, select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
-          damageMarks: { select: { zone: true, damageType: true, severity: true, note: true } },
+          damageMarks: { where: { deletedAt: null }, select: { number: true, photos: { where: { photo: { deletedAt: null, serviceOrderItemId: null } }, select: { photoId: true } }, zone: true, damageType: true, severity: true, note: true } },
           approvals: { select: { status: true, approvedAt: true }, orderBy: { createdAt: "desc" }, take: 1 },
           // Ekrandaki özetle aynı kırılımı basar — indirim/KDV alanları ve
           // satır bazlı `includeVat` bayrağı olmadan PDF KDV'yi düşürür.
@@ -66,6 +66,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
 
   const normalizedIntakeForm = {
     ...intakeForm,
+    photos: intakeForm.photos.map(p => ({ ...p, fileUrl: `/s/${encodeURIComponent(token)}/photos/${encodeURIComponent(p.id)}` })),
     order: intakeForm.order ? {
       ...intakeForm.order,
       items: intakeForm.order.items.map((item) => ({ ...item, quantity: quantityToNumber(item.quantity) })),

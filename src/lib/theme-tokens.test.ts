@@ -426,7 +426,6 @@ const SEPARATOR_DOT = "Ayraç noktası; kaldırılsa bilgi kaybı yok."
 
 const OPACITY_EXCEPTIONS: OpacityException[] = [
   // --- Dekoratif grafikler
-  { file: "components/damage/vehicle-damage-map.tsx", className: "text-border/40", decorative: true, reason: "Araç şemasının panel çizgileri; hasar işaretleri tam kontrastta ayrı katmanda." },
   { file: "components/shared/brand-spinner.tsx", className: "text-brand/70", decorative: true, reason: "aria-hidden çark grafiği; durumu sr-only 'Yükleniyor' metni bildiriyor." },
 
   // --- Ayraçlar
