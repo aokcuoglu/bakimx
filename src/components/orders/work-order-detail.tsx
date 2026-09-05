@@ -107,6 +107,7 @@ import type { LaborCatalogRow } from "@/lib/labor/types"
 import { MAX_BATCH_PHOTOS, describeUploadFailure, selectPhotoFiles } from "@/lib/photos/select-photo-files"
 import { InlineFeatureUpsell } from "@/components/billing/inline-feature-upsell"
 import type { GatedFeature, PlanTier } from "@/lib/plan"
+import { compressImagesForUpload } from "@/lib/image/compress-image"
 
 // Header aksiyon ikonları (eski orders ekranıyla aynı görünüm).
 const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
@@ -530,8 +531,9 @@ export function WorkOrderDetail({
   }
 
   // Seçilen kareleri listeye ekler (değiştirmez): kamera ve galeri girdileri
-  // arka arkaya kullanılabilsin diye seçim biriktirilir.
-  function addPickedPhotos(list: FileList | null) {
+  // arka arkaya kullanılabilsin diye seçim biriktirilir. Yüklemeden önce
+  // istemci sıkıştırması depolama ve mobil bant genişliğini düşürür.
+  async function addPickedPhotos(list: FileList | null) {
     if (!list || list.length === 0) return
     const { accepted, duplicates, overflow } = selectPhotoFiles(
       pendingPhotos.map((p) => p.file),
@@ -540,12 +542,19 @@ export function WorkOrderDetail({
     if (duplicates > 0) toast.info(`${duplicates} fotoğraf zaten seçiliydi`)
     if (overflow > 0) toast.warning(`Tek seferde en fazla ${MAX_BATCH_PHOTOS} fotoğraf; ${overflow} tanesi eklenmedi`)
     if (accepted.length === 0) return
-    const added = accepted.map((file, i) => {
+
+    const { accepted: compressed, failures } = await compressImagesForUpload(accepted)
+    for (const failure of failures) {
+      toast.error(`${failure.name}: ${failure.error}`)
+    }
+    if (compressed.length === 0) return
+
+    const added = compressed.map((file, i) => {
       const previewUrl = URL.createObjectURL(file)
       photoUrlsRef.current.push(previewUrl)
       return { key: `${file.name}-${file.size}-${file.lastModified}-${pendingPhotos.length + i}`, file, previewUrl }
     })
-    setPendingPhotos([...pendingPhotos, ...added])
+    setPendingPhotos((prev) => [...prev, ...added])
   }
 
   function removePendingPhoto(key: string) {

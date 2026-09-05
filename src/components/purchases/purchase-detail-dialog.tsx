@@ -19,6 +19,8 @@ import { Camera, Pencil, Trash2, ShoppingCart } from "lucide-react"
 import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
 import { PurchaseFormSheet } from "@/components/technician/purchase-form-sheet"
 import type { PickerVehicle } from "@/components/parts/tecdoc-part-picker"
+import { compressImageForUpload } from "@/lib/image/compress-image"
+import { toast } from "sonner"
 
 export type PurchaseDetailItem = {
   id: string
@@ -98,10 +100,23 @@ export function PurchaseDetailDialog({
     setError(null)
   }
 
-  function onPickFile(f: File | null) {
+  async function onPickFile(f: File | null) {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
-    setFile(f)
-    setPreviewUrl(f ? URL.createObjectURL(f) : null)
+    if (!f) {
+      setFile(null)
+      setPreviewUrl(null)
+      return
+    }
+    const prepared = await compressImageForUpload(f)
+    if (!prepared.ok) {
+      toast.error(prepared.error)
+      setFile(null)
+      setPreviewUrl(null)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+      return
+    }
+    setFile(prepared.file)
+    setPreviewUrl(URL.createObjectURL(prepared.file))
   }
 
   async function handleSave() {

@@ -9,10 +9,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { fitDimensions } from "@/lib/image/fit-dimensions"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { photoAnnotationDocumentSchema, type PhotoAnnotationDocument } from "@/lib/image/photo-annotation"
+import { MAX_BATCH_PHOTOS } from "@/lib/photos/limits"
 import type { PhotoEditorProps } from "./photo-editor"
 
 /** Konva is fetched only when a source is selected or a saved editor is opened. */
 export const PhotoEditor = dynamic<PhotoEditorProps>(() => import("./photo-editor"), { ssr: false, loading: () => <p>Fotoğraf editörü yükleniyor…</p> })
+
+/** Tek seçimde kuyruğa alınacak azami kare (bellekte blob + canvas maliyeti). */
+const MAX_QUEUE = MAX_BATCH_PHOTOS
 
 async function orientSource(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" })
@@ -59,7 +63,7 @@ export function PhotoAnnotate({ intakeFormId, label = "Hasar", phase = "intake",
     finally { setPreparing(false) }
   }
   async function choose(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []).slice(0, 20)
+    const files = Array.from(event.target.files ?? []).slice(0, MAX_QUEUE)
     event.target.value = ""
     if (!files.length) return
     setQueue(files.slice(1)); await prepare(files[0])

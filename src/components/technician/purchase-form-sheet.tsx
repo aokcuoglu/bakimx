@@ -19,6 +19,8 @@ import type { PartBoxOcrResult, PartNumberSuggestion } from "@/lib/ocr/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 import { usePartNumberMatch } from "@/lib/parts/use-part-number-match"
 import { purchaseMatchFields, type PurchaseMatch } from "@/lib/parts/purchase-match"
+import { compressImageForUpload } from "@/lib/image/compress-image"
+import { toast } from "sonner"
 
 export type TechnicianInfo = { id: string; fullName: string; role: string }
 export type SupplierInfo = { id: string; name: string }
@@ -219,13 +221,26 @@ export function PurchaseFormSheet({
     setDismissedNo(sku.trim())
   }
 
-  function onPickFile(f: File | null) {
+  async function onPickFile(f: File | null) {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
-    setFile(f)
-    setPreviewUrl(f ? URL.createObjectURL(f) : null)
     setOcrResult(null)
     setOcrError(null)
-    if (f) void runPartBoxOcr(f)
+    if (!f) {
+      setFile(null)
+      setPreviewUrl(null)
+      return
+    }
+    const prepared = await compressImageForUpload(f)
+    if (!prepared.ok) {
+      toast.error(prepared.error)
+      setFile(null)
+      setPreviewUrl(null)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+      return
+    }
+    setFile(prepared.file)
+    setPreviewUrl(URL.createObjectURL(prepared.file))
+    void runPartBoxOcr(prepared.file)
   }
 
   async function runPartBoxOcr(f: File) {
