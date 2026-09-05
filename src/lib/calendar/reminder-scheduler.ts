@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 import { processAppointmentReminders, processMaintenanceReminders } from "@/lib/communications/scheduler"
 import { notifyWorkOrderCompleted } from "@/lib/communications/triggers"
+import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
 
 interface SchedulerJobResult {
   jobType: string
@@ -11,7 +12,7 @@ interface SchedulerJobResult {
 }
 
 export async function runAppointmentReminderJob(workshopId: string): Promise<SchedulerJobResult> {
-  const result = await processAppointmentReminders()
+  const result = await processAppointmentReminders(workshopId)
 
   await prisma.reminderExecutionLog.create({
     data: {
@@ -30,7 +31,7 @@ export async function runAppointmentReminderJob(workshopId: string): Promise<Sch
 }
 
 export async function runMaintenanceReminderJob(workshopId: string): Promise<SchedulerJobResult> {
-  const result = await processMaintenanceReminders()
+  const result = await processMaintenanceReminders(workshopId)
 
   await prisma.reminderExecutionLog.create({
     data: {
@@ -59,6 +60,20 @@ export async function runDeliveryReminderJob(workshopId: string): Promise<Schedu
 
   const now = new Date()
   const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+
+  const workshop = await prisma.workshop.findUnique({
+    where: { id: workshopId },
+    select: {
+      planTier: true,
+      subscriptionStatus: true,
+      approvalStatus: true,
+      trialEndsAt: true,
+      currentPeriodEnd: true,
+    },
+  })
+  if (!workshop || !getPlanState(workshop).hasAccess || !hasWorkshopFeature(workshop, "communications")) {
+    return result
+  }
 
   const orders = await prisma.serviceOrder.findMany({
     where: {

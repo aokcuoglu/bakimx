@@ -10,6 +10,7 @@ import { getPlanPackage } from "@/lib/plans-catalog"
 import { getPlanState, isPlanExpiredLock, isPlanTier, type PlanTier } from "@/lib/plan"
 import { Button } from "@/components/ui/button"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
+import { getSeatUsage } from "@/lib/rbac"
 
 export const metadata = { title: "Satın Al", robots: PRIVATE_ROBOTS }
 
@@ -29,6 +30,7 @@ export default async function CheckoutPage({
   const tier = explicitTier ?? "pro"
   const cycle = (sp.cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly"
   const ownedTier = workshop?.subscriptionStatus === "active" ? (workshop.planTier as PlanTier) : null
+  const seatUsage = workshop ? await getSeatUsage(workshop.id) : null
   // Açık bir paketle gelindiyse (yükseltme VEYA aynı paketi yenileme) doğrudan
   // fatura adımına atla. Aynı paketin yenilenmesi kasıtlı olarak mümkündür
   // (bkz. deriveBillingOrderType → "renewal"); adım 0'da yine seçili görünür.
@@ -108,6 +110,8 @@ export default async function CheckoutPage({
         ownedTier={ownedTier}
         havale={HAVALE}
         defaultInvoiceTitle={workshop?.invoiceTitle || workshop?.name || ""}
+        seatUsage={seatUsage ?? undefined}
+        extraSeats={workshop?.extraSeats ?? 0}
       />
     </main>
   )

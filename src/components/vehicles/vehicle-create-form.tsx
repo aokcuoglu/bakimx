@@ -433,7 +433,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     <AlertDescription>{vinResolve.error}</AlertDescription>
                   </Alert>
                 )}
-                {vinResolve.locked && <VinLockedNotice />}
+                {vinResolve.locked && <VinLockedNotice currentTier={vinResolve.lockedTier} />}
                 {vinResolve.candidates.length > 0 && (
                   <VinCandidateList
                     candidates={vinResolve.candidates}

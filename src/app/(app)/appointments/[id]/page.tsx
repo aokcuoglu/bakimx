@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
@@ -6,6 +7,8 @@ import { AppointmentDetail } from "@/components/appointments/appointment-detail"
 import { formatAppointmentNo } from "@/lib/work-order-number"
 
 export default async function AppointmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const paywall = await getFeaturePaywall("appointments")
+  if (paywall) return paywall
   const { id } = await params
   const { user, workshop } = await getAppData()
 

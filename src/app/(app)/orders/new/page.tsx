@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { IntakeWizard } from "@/components/intake/intake-wizard"
 import Link from "next/link"
+import { getPlanState } from "@/lib/plan"
 
 export default async function NewOrderPage({
   searchParams,
@@ -34,7 +35,7 @@ export default async function NewOrderPage({
           prefillCustomerId={params.customerId}
           prefillVehicleId={params.vehicleId}
           source={params.source}
-          planTier={workshop?.planTier ?? "pro"}
+          planTier={workshop ? getPlanState(workshop).accessTier : "pro"}
         />
       </div>
     </AppShell>

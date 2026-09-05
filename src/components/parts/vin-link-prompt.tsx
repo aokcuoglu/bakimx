@@ -8,6 +8,7 @@ import { Loader2, ScanLine } from "lucide-react"
 import { VinCandidateList, VinLockedNotice } from "@/components/vehicles/vin-resolve"
 import { linkVehicleCatalogAction } from "@/app/(app)/vehicles/actions"
 import { isValidVin, type VinCandidate, type VinResolution } from "@/lib/vin/types"
+import { isPlanTier, type PlanTier } from "@/lib/plan"
 import type { PickerVehicle } from "./tecdoc-part-picker"
 
 /**
@@ -23,6 +24,7 @@ export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
   const [locked, setLocked] = useState(false)
+  const [lockedTier, setLockedTier] = useState<PlanTier>("lite")
   const [candidates, setCandidates] = useState<VinCandidate[]>([])
 
   const hasVin = isValidVin(vehicle.vin ?? "")
@@ -70,7 +72,10 @@ export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
       })
       const data = await res.json()
       if (!res.ok) {
-        if (res.status === 403 && data.code === "feature_locked") setLocked(true)
+        if (res.status === 403 && data.code === "feature_locked") {
+          setLocked(true)
+          setLockedTier(isPlanTier(data.currentTier) ? data.currentTier : "lite")
+        }
         else setError(data.error || "Şase sorgulanamadı.")
         setLoading(false)
         return
@@ -126,7 +131,7 @@ export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
       </div>
       {notice && <p className="text-xs text-muted-foreground">{notice}</p>}
       {error && <p className="text-xs text-destructive-strong">{error}</p>}
-      {locked && <VinLockedNotice />}
+      {locked && <VinLockedNotice currentTier={lockedTier} />}
       {candidates.length > 0 && (
         <VinCandidateList
           candidates={candidates}

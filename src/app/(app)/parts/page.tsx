@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { PartsList } from "@/components/parts/parts-list"
 import { LaborList } from "@/components/labor/labor-list"
@@ -10,6 +11,8 @@ import { getUniqueBrandsAction, getUniqueCategoriesAction } from "./actions"
 export default async function PartsPage(props: {
   searchParams?: Promise<{ tab?: string; q?: string; status?: string; category?: string; brand?: string }>
 }) {
+  const paywall = await getFeaturePaywall("partsInventory")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const searchParams = await props.searchParams
 

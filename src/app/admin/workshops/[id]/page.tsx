@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, ChevronLeft, ChevronRight, Handshake } from "lucide-react"
 import { can, getAdminContext } from "@/lib/admin"
 import { prisma } from "@/lib/db"
-import { getPlanState, getSeatLimit, type PlanTier } from "@/lib/plan"
+import { getEffectiveSeatLimit, getPlanState } from "@/lib/plan"
 import { formatMinor } from "@/lib/billing/pricing"
 import { cn } from "@/lib/utils"
 import { ROLE_LABELS } from "@/lib/roles"
@@ -123,7 +123,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
   const canSendReset = can(ctx, "sendPasswordReset")
   const plan = getPlanState(workshop)
   const activeUsers = workshop.users.filter((u) => u.isActive).length
-  const seatLimit = getSeatLimit(workshop.planTier as PlanTier, workshop.extraSeats)
+  const seatLimit = getEffectiveSeatLimit(workshop)
   const ownerEmail = workshop.users.find((u) => u.role === "owner")?.email ?? workshop.users[0]?.email ?? null
   const acquisitionAdvisorName = workshop.acquisitionAdvisor
     ? salesAdvisorDisplayName(workshop.acquisitionAdvisor.user)

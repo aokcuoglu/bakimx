@@ -10,7 +10,15 @@ interface AlertItem {
   color: string
 }
 
-export function AlertBanner({ stats }: { stats: DashboardStats }) {
+export function AlertBanner({
+  stats,
+  showQuotes,
+  showPhotoChecklist,
+}: {
+  stats: DashboardStats
+  showQuotes: boolean
+  showPhotoChecklist: boolean
+}) {
   const alerts: AlertItem[] = []
 
   if (stats.overdueDeliveries > 0) {
@@ -23,7 +31,7 @@ export function AlertBanner({ stats }: { stats: DashboardStats }) {
     })
   }
 
-  if (stats.missingPhotoIntakes > 0) {
+  if (showPhotoChecklist && stats.missingPhotoIntakes > 0) {
     alerts.push({
       count: stats.missingPhotoIntakes,
       message: `${stats.missingPhotoIntakes} araç kabulünde zorunlu fotoğraflar eksik.`,
@@ -33,7 +41,7 @@ export function AlertBanner({ stats }: { stats: DashboardStats }) {
     })
   }
 
-  if (stats.waitingApprovals > 0) {
+  if (showQuotes && stats.waitingApprovals > 0) {
     alerts.push({
       count: stats.waitingApprovals,
       message: `${stats.waitingApprovals} müşteri onayı bekleyen iş emri var.`,

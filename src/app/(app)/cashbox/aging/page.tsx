@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { getReceivableAging } from "@/lib/cashbox/queries"
 import Link from "next/link"
@@ -18,6 +19,8 @@ const bucketColors = [
 ]
 
 export default async function AgingReportPage() {
+  const paywall = await getFeaturePaywall("cashbox")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const aging = await getReceivableAging(user.workshopId)
 

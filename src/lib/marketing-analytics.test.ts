@@ -6,6 +6,7 @@ describe("marketing analytics contract", () => {
     expect(MARKETING_EVENT_NAMES).toEqual([
       "seo_landing_view", "trial_cta_click", "demo_cta_click", "register_started",
       "register_submitted", "demo_submitted", "purchase_started", "purchase_submitted",
+      "feature_paywall_viewed", "feature_upgrade_clicked",
     ])
   })
 
@@ -42,5 +43,24 @@ describe("marketing analytics contract", () => {
       billing_cycle: "monthly",
     } as never)
     expect(payload).toEqual({ sector: "auto_service", team_size: "2_5", module_count: "7" })
+  })
+
+  test("paywall analytics keeps only non-PII feature and plan dimensions", () => {
+    const payload = sanitizeMarketingPayload("feature_upgrade_clicked", {
+      feature_id: "appointments",
+      current_tier: "lite",
+      target_tier: "pro",
+      placement: "page",
+      destination: "checkout",
+      email: "secret@example.com",
+      workshop_name: "Private Garage",
+    } as never)
+    expect(payload).toEqual({
+      feature_id: "appointments",
+      current_tier: "lite",
+      target_tier: "pro",
+      placement: "page",
+      destination: "checkout",
+    })
   })
 })

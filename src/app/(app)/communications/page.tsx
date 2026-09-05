@@ -1,10 +1,13 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { CommunicationLogList } from "@/components/communications/communication-log-list"
 import { getCommunicationLogs, getCommunicationStats } from "./actions"
 import Link from "next/link"
 
 export default async function CommunicationsPage() {
+  const paywall = await getFeaturePaywall("communications")
+  if (paywall) return paywall
   const { workshop } = await getAppData()
 
   if (!workshop) {

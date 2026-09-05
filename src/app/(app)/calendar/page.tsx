@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { CalendarView } from "@/components/appointments/calendar-view"
 import { getCalendarEvents } from "@/lib/calendar/queries"
@@ -9,6 +10,8 @@ export default async function CalendarPage({
 }: {
   searchParams: Promise<{ view?: string; date?: string }>
 }) {
+  const paywall = await getFeaturePaywall("appointments")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const params = await searchParams
   const view = params.view || "week"

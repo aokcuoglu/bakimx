@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { Loader2, ScanLine, Check, BadgeCheck, Lock } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Loader2, ScanLine, Check, BadgeCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { InlineFeatureUpsell } from "@/components/billing/inline-feature-upsell"
+import { isPlanTier, type PlanTier } from "@/lib/plan"
 import { isValidVin, MOCK_VIN_PROVIDER, type RuhsatHints, type VinCandidate, type VinResolution } from "@/lib/vin/types"
 
 export type { VinCandidate }
@@ -17,6 +18,7 @@ export type VinResolveState = {
   candidates: VinCandidate[]
   /** API returned 403 feature_locked → show the upgrade upsell instead of a raw error. */
   locked: boolean
+  lockedTier: PlanTier
   /**
    * The demo (mock) provider answered "not_found" — i.e. VIN_PROVIDER is not
    * configured in this environment, so EVERY real VIN misses. Not a catalog miss;
@@ -26,7 +28,7 @@ export type VinResolveState = {
 }
 
 export const VIN_RESOLVE_IDLE: VinResolveState = {
-  loading: false, error: "", notice: "", candidates: [], locked: false, unconfigured: false,
+  loading: false, error: "", notice: "", candidates: [], locked: false, lockedTier: "lite", unconfigured: false,
 }
 
 export const VIN_NOT_FOUND_NOTICE = "Şase numarası katalogda bulunamadı — marka ve modeli elle seçin."
@@ -62,7 +64,11 @@ export async function performVinResolve(
     const data = await res.json()
     if (!res.ok) {
       if (res.status === 403 && data.code === "feature_locked") {
-        return { ...VIN_RESOLVE_IDLE, locked: true }
+        return {
+          ...VIN_RESOLVE_IDLE,
+          locked: true,
+          lockedTier: isPlanTier(data.currentTier) ? data.currentTier : "lite",
+        }
       }
       return { ...VIN_RESOLVE_IDLE, error: data.error || "Şase sorgulanamadı." }
     }
@@ -149,18 +155,8 @@ export function VinResolveButton({
  * is a Pro+ capability. Compact inline upsell (mobile-first) reused by every
  * VinResolveButton consumer so the message is consistent everywhere.
  */
-export function VinLockedNotice() {
-  return (
-    <div className="rounded-md border border-border bg-muted/40 p-2.5 space-y-2 text-sm">
-      <p className="flex items-start gap-1.5 text-muted-foreground">
-        <Lock className="size-3.5 mt-0.5 shrink-0" />
-        <span>Şaseden otomatik araç tanıma Pro ve üzeri paketlere özeldir.</span>
-      </p>
-      <Link href="/checkout?tier=pro&cycle=monthly" className={cn(buttonVariants({ size: "sm" }), "w-full")}>
-        Pro&apos;ya yükselt
-      </Link>
-    </div>
-  )
+export function VinLockedNotice({ currentTier }: { currentTier: PlanTier }) {
+  return <InlineFeatureUpsell feature="vinLookup" currentTier={currentTier} />
 }
 
 /**

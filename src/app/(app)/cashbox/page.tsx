@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { getCashboxStats, getRecentCollections, getOpenReceivables, getPaymentMethodBreakdown, getCashboxDailyCollections } from "@/lib/cashbox/queries"
 import Link from "next/link"
@@ -25,6 +26,8 @@ import {
 } from "lucide-react"
 
 export default async function CashboxPage() {
+  const paywall = await getFeaturePaywall("cashbox")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
 
   const [stats, recentCollections, openReceivables, methodBreakdown, dailyCollections] = await Promise.all([

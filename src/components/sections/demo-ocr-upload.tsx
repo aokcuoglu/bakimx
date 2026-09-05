@@ -150,11 +150,23 @@ export function DemoOcrUpload() {
 
   if (status.status !== "ready" && !fields) {
     return (
-      <div className="rounded-xl border bg-card p-6 sm:p-8 space-y-4">
-        <h3 className="font-semibold">{status.status === "used" ? "Ücretsiz denemeniz tamamlandı" : status.status === "limited" ? "Deneme sınırına ulaşıldı" : "Ruhsat okuma şu anda kullanılamıyor"}</h3>
-        <p role="status" className="text-sm text-muted-foreground">{status.message ?? "Ruhsat okuma deneyimine hesabınızla devam edebilirsiniz."}</p>
-        {status.retryAfterSeconds && <p className="text-xs text-muted-foreground">Yaklaşık {Math.ceil(status.retryAfterSeconds / 60)} dakika sonra yeniden deneyebilirsiniz.</p>}
-        <RegisterCta />
+      <div className="grid items-center overflow-hidden rounded-xl border bg-card lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.9fr)]">
+        <div className="order-2 space-y-4 p-6 sm:p-8 lg:order-1 lg:p-12">
+          <h3 className="text-lg font-semibold">{status.status === "used" ? "Ücretsiz denemeniz tamamlandı" : status.status === "limited" ? "Deneme sınırına ulaşıldı" : "Ruhsat okuma şu anda kullanılamıyor"}</h3>
+          <p role="status" className="max-w-lg text-sm leading-relaxed text-muted-foreground">{status.message ?? "Ruhsat okuma deneyimine hesabınızla devam edebilirsiniz."}</p>
+          {status.retryAfterSeconds && <p className="text-xs text-muted-foreground">Yaklaşık {Math.ceil(status.retryAfterSeconds / 60)} dakika sonra yeniden deneyebilirsiniz.</p>}
+          <RegisterCta />
+        </div>
+        <div className="order-1 flex min-h-64 items-center justify-center bg-primary/5 p-5 sm:min-h-72 sm:p-8 lg:order-2 lg:min-h-80" aria-hidden="true">
+          <Image
+            src="/illustrations/demo-ocr-trial-complete.webp"
+            alt=""
+            width={724}
+            height={543}
+            sizes="(max-width: 1023px) 90vw, 42vw"
+            className="h-auto max-h-72 w-auto max-w-full object-contain drop-shadow-sm lg:max-h-80"
+          />
+        </div>
       </div>
     );
   }

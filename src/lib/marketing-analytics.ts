@@ -1,11 +1,13 @@
 export const MARKETING_EVENT_NAMES = [
   "seo_landing_view", "trial_cta_click", "demo_cta_click", "register_started",
   "register_submitted", "demo_submitted", "purchase_started", "purchase_submitted",
+  "feature_paywall_viewed", "feature_upgrade_clicked",
 ] as const
 
 export type MarketingEventName = (typeof MARKETING_EVENT_NAMES)[number]
 export type PlanTier = "lite" | "starter" | "pro" | "premium"
 export type BillingCycle = "monthly" | "yearly"
+export type FeaturePlacement = "page" | "inline"
 
 type Common = {
   source_page?: string
@@ -37,6 +39,19 @@ export type MarketingEventPayloads = {
   }
   purchase_started: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle; cta_location: "pricing_card" }
   purchase_submitted: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle; payment_method: "card" | "havale" }
+  feature_paywall_viewed: Common & {
+    feature_id: string
+    current_tier: PlanTier
+    target_tier: "pro" | "premium"
+    placement: FeaturePlacement
+  }
+  feature_upgrade_clicked: Common & {
+    feature_id: string
+    current_tier: PlanTier
+    target_tier: "pro" | "premium"
+    placement: FeaturePlacement
+    destination: "checkout" | "plans"
+  }
 }
 
 export type MarketingEventDetail<N extends MarketingEventName = MarketingEventName> = {
@@ -58,6 +73,8 @@ const EVENT_FIELDS: Record<MarketingEventName, readonly string[]> = {
   demo_submitted: ["form_location"],
   purchase_started: ["plan_tier", "billing_cycle"],
   purchase_submitted: ["plan_tier", "billing_cycle", "payment_method"],
+  feature_paywall_viewed: ["feature_id", "current_tier", "target_tier", "placement"],
+  feature_upgrade_clicked: ["feature_id", "current_tier", "target_tier", "placement", "destination"],
 }
 
 export function sanitizeMarketingPayload<N extends MarketingEventName>(name: N, payload: MarketingEventPayloads[N]) {

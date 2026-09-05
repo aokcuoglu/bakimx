@@ -7,6 +7,7 @@ import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-ima
 import { parseOcrImageRequest } from "@/lib/ocr/parse-image-request"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
+import { hasWorkshopFeature } from "@/lib/plan"
 
 // Part-box dedup'ı ruhsat dedup'ından ayrı tutmak için imageHash'e namespace öneki koyulur:
 // aynı görsel iki akışa da yüklenirse cache'ler karışmaz (part-box JSON'u ruhsat JSON'una benzemez).
@@ -17,6 +18,12 @@ export async function POST(request: Request) {
     const { user, workshop } = await getCurrentUserWithWorkshop()
     const locked = assertWritableOr403(workshop)
     if (locked) return locked
+    if (!hasWorkshopFeature(workshop, "partsInventory")) {
+      return NextResponse.json(
+        { error: "Parça kutusu okuma Profesyonel pakette kullanılabilir.", code: "feature_locked" },
+        { status: 403 },
+      )
+    }
 
     const parsed = await parseOcrImageRequest(request)
     if (parsed instanceof NextResponse) return parsed

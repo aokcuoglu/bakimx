@@ -1,12 +1,17 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireWritableWorkshop } from "@/lib/auth"
+import { requireWritableFeatureWorkshop } from "@/lib/auth"
+import type { Permission } from "@/lib/roles"
 import { revalidatePath } from "next/cache"
 import { laborItemSchema } from "@/lib/validations/labor"
 import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
 import { LABOR_PRESETS, pickNewPresets } from "@/lib/labor/presets"
+
+function requireWritableWorkshop(permission: Permission) {
+  return requireWritableFeatureWorkshop(permission, "partsInventory")
+}
 
 const CODE_TAKEN = "Bu işçilik kodu zaten kullanılıyor"
 const NAME_TAKEN = "Bu isimde bir işçilik zaten var"

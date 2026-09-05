@@ -4,7 +4,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { getPlanState, hasFeature, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
+import { GATED_FEATURES, getPlanState, hasFeature, isPlanExpiredLock } from "@/lib/plan"
 import { LOGOUT_REASON_PARAM, SESSION_INVALID_REASON } from "@/lib/session-recovery"
 import { PlanLocked } from "@/components/billing/plan-locked"
 import { ForcePasswordChange } from "@/components/auth/force-password-change"
@@ -27,7 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // SONSUZ DÖNGÜ yapar: middleware çerezi görüp bizi /dashboard'a geri yollar.
   // `reason` parametresi middleware'e çerezi imha etmesini söyler.
   const user = await getCurrentUser()
-  if (!user) {
+  if (!user || !user.isActive) {
     redirect(`/login?${LOGOUT_REASON_PARAM}=${SESSION_INVALID_REASON}`)
   }
   // BAK-96 — ayrı bir çağrı YOK: etkin kimlik zaten overlay'den çözüldü ve orada
@@ -73,9 +73,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Kapısı olan menü satırları için (BAK-60: BakımX Siparişleri). Kapı SUNUCUDA
   // çözülür; istemciye yalnız "açık olanlar" listesi iner, kapının nasıl
   // hesaplandığı değil.
-  const enabledFeatures = hasFeature(workshop.planTier as PlanTier, "bakimxCatalog")
-    ? ["bakimxCatalog"]
-    : []
+  const enabledFeatures = GATED_FEATURES.filter((feature) => hasFeature(plan.accessTier, feature))
 
   // Full-screen lock: only the approval gate (pending/rejected) blocks the whole
   // app now. Plan-expiry reasons drop to read-only mode below (data visible,

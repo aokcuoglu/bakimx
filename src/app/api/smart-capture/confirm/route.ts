@@ -5,7 +5,7 @@ import { assertWritableOr403 } from "@/lib/plan-guard"
 import { prisma } from "@/lib/db"
 import { normalizePhone, normalizePlate } from "@/lib/format"
 import { AuditLogAction } from "@/lib/audit"
-import { hasFeature, type PlanTier } from "@/lib/plan"
+import { hasWorkshopFeature } from "@/lib/plan"
 import { resolveVinToCatalog } from "@/lib/vin/resolve"
 import { isValidVin } from "@/lib/vin/types"
 import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
@@ -58,6 +58,12 @@ export async function POST(request: Request) {
     const { user, workshop } = await getCurrentUserWithWorkshop()
     const locked = assertWritableOr403(workshop)
     if (locked) return locked
+    if (!hasWorkshopFeature(workshop, "ocrIntake")) {
+      return NextResponse.json(
+        { error: "Bu pakette OCR özelliği bulunmuyor. Paketinizi yükseltin.", code: "feature_locked" },
+        { status: 403 },
+      )
+    }
     const body = await request.json()
     const { ocrLogId, confirmedFields } = body
 
@@ -304,9 +310,15 @@ export async function POST(request: Request) {
       try {
         const workshop = await prisma.workshop.findUnique({
           where: { id: user.workshopId },
-          select: { planTier: true },
+          select: {
+            planTier: true,
+            subscriptionStatus: true,
+            approvalStatus: true,
+            trialEndsAt: true,
+            currentPeriodEnd: true,
+          },
         })
-        const entitled = workshop != null && hasFeature(workshop.planTier as PlanTier, "vinLookup")
+        const entitled = workshop != null && hasWorkshopFeature(workshop, "vinLookup")
         if (entitled) {
           const resolution = await resolveVinToCatalog(vin, buildVinHints(ocrLog.extractedJson, modelYear), user.workshopId)
           if (resolution.status === "resolved" && resolution.autoSelected != null) {
