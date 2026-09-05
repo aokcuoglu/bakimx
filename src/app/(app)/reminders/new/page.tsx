@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
@@ -10,6 +11,8 @@ export default async function NewReminderPage({
 }: {
   searchParams: Promise<{ customerId?: string; vehicleId?: string }>
 }) {
+  const paywall = await getFeaturePaywall("automatedReminders")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const sp = await searchParams
 

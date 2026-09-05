@@ -23,7 +23,7 @@ const collectionCreateSchema = z.object({
 })
 
 export async function createCollectionAction(formData: FormData) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/cashbox/feature-auth")
   const { user } = await requireWritableWorkshop("cashbox.manage")
 
   const raw = {
@@ -130,7 +130,7 @@ export async function createCollectionAction(formData: FormData) {
 }
 
 export async function cancelCollectionAction(collectionId: string, reason?: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/cashbox/feature-auth")
   const { user } = await requireWritableWorkshop("cashbox.manage")
 
   const collection = await prisma.collectionPayment.findFirst({
@@ -194,7 +194,7 @@ export async function cancelCollectionAction(collectionId: string, reason?: stri
 }
 
 export async function getCustomerOrdersForPayment(customerId: string) {
-  const { requireAuth } = await import("@/lib/auth")
+  const { requireAuth } = await import("@/lib/cashbox/feature-auth")
   const { workshopId } = await requireAuth()
   const intakes = await prisma.vehicleIntakeForm.findMany({
     where: { customerId, workshopId },

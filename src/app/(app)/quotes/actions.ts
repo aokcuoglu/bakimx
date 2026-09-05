@@ -1,7 +1,8 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
+import { requireFeatureWorkshop, requireWritableFeatureWorkshop } from "@/lib/auth"
+import type { Permission } from "@/lib/roles"
 import { revalidatePath } from "next/cache"
 import { quoteCreateSchema, quoteStatusUpdateSchema, quoteItemActionSchema } from "@/lib/validations/quote"
 import { getValidationError } from "@/lib/validations/shared"
@@ -11,6 +12,13 @@ import { AuditLogAction } from "@/lib/audit"
 import { notifyQuoteReady } from "@/lib/communications/triggers"
 import { calculateOrderTotals } from "@/lib/totals"
 import { reserveStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
+
+async function requireAuth() {
+  return (await requireFeatureWorkshop("quotes")).user
+}
+function requireWritableWorkshop(permission: Permission) {
+  return requireWritableFeatureWorkshop(permission, "quotes")
+}
 
 export async function createQuoteAction(formData: FormData) {
   const { user } = await requireWritableWorkshop("records.create")

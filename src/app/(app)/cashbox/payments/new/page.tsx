@@ -1,10 +1,13 @@
 import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { CollectionCreateForm } from "@/components/cashbox/collection-create-form"
 import { prisma } from "@/lib/db"
 
 export default async function NewPaymentPage({ searchParams }: { searchParams: Promise<{ customerId?: string; orderId?: string }> }) {
+  const paywall = await getFeaturePaywall("cashbox")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const params = await searchParams
 

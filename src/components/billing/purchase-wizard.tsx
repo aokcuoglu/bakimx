@@ -4,7 +4,7 @@ import { useRef, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { Controller, useForm } from "react-hook-form"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, CheckCircle2, Landmark, Copy, CreditCard, Clock } from "lucide-react"
+import { AlertTriangle, ChevronLeft, ChevronRight, CheckCircle2, Landmark, Copy, CreditCard, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -25,7 +25,7 @@ import {
 import { PLAN_PACKAGES } from "@/lib/plans-catalog"
 import { getPlanPriceMinor, formatMinor, isComplimentaryPlan } from "@/lib/billing/pricing"
 import { createBillingOrder } from "@/app/(app)/billing/actions"
-import type { PlanTier } from "@/lib/plan"
+import { getSeatLimit, type PlanTier } from "@/lib/plan"
 import type { HavaleInfo } from "@/lib/billing/provider"
 import { BrandRail } from "@/components/billing/brand-rail"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
@@ -56,6 +56,8 @@ export function PurchaseWizard({
   havale,
   defaultInvoiceTitle = "",
   advisors = [],
+  seatUsage,
+  extraSeats = 0,
 }: {
   mode: Mode
   initialTier?: PlanTier
@@ -66,6 +68,8 @@ export function PurchaseWizard({
   havale: HavaleInfo
   defaultInvoiceTitle?: string
   advisors?: { id: string; label: string }[]
+  seatUsage?: { activeUsers: number; pendingInvites: number; used: number }
+  extraSeats?: number
 }) {
   const isPublic = mode === "public"
   const STEPS = isPublic
@@ -120,6 +124,8 @@ export function PurchaseWizard({
   const { register, trigger, getValues, formState } = form
   const reduce = useReducedMotion()
   const complimentary = isComplimentaryPlan(tier, cycle)
+  const targetSeatLimit = getSeatLimit(tier, extraSeats)
+  const excessSeatCount = Math.max(0, (seatUsage?.used ?? 0) - targetSeatLimit)
 
   async function next(fields: string[]) {
     setError("")
@@ -311,6 +317,16 @@ export function PurchaseWizard({
                           )
                         })}
                       </div>
+                      {!isPublic && excessSeatCount > 0 && seatUsage && (
+                        <Alert variant="warning">
+                          <AlertTriangle />
+                          <AlertDescription>
+                            Bu paket toplam {targetSeatLimit} koltuk destekliyor. Etkinleştirmede{" "}
+                            {excessSeatCount} fazla kullanıcı veya davet devre dışı bırakılacak; en eski owner ve
+                            ardından en eski kullanıcılar korunacak. Kayıt geçmişleri silinmeyecek.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                       <div className="flex justify-end pt-2">
                         <Button
                           type="button"
@@ -529,6 +545,15 @@ export function PurchaseWizard({
                           Yükseltmede mevcut paketinizin kalan gün kredisi düşülür; kesin tutar onay ekranında
                           görünür.
                         </p>
+                      )}
+                      {!isPublic && excessSeatCount > 0 && (
+                        <Alert variant="warning">
+                          <AlertTriangle />
+                          <AlertDescription>
+                            Onaydan sonra koltuk limiti otomatik uygulanacak. Fazla hesaplar ve bağlı teknisyenler
+                            pasifleştirilecek, fazla bekleyen davetler iptal edilecek.
+                          </AlertDescription>
+                        </Alert>
                       )}
                       <div className="flex justify-between pt-1">
                         <Button type="button" variant="outline" size="lg" onClick={() => setStep(1)}>

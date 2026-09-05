@@ -214,7 +214,7 @@ export function EntryVehicleFields({
             )}
             <VinResolveNotice notice={vinResolve.notice} unconfigured={vinResolve.unconfigured} />
             {vinResolve.error && <p className="text-xs text-destructive-strong">{vinResolve.error}</p>}
-            {vinResolve.locked && <VinLockedNotice />}
+            {vinResolve.locked && <VinLockedNotice currentTier={vinResolve.lockedTier} />}
             {vinResolve.candidates.length > 0 && (
               <VinCandidateList
                 candidates={vinResolve.candidates}

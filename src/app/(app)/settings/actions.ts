@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
+import { requireAuth, requireWritableFeatureWorkshop, requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import {
   businessProfileSchema,
@@ -189,7 +189,7 @@ export async function updateBrandingAction(formData: FormData) {
 }
 
 export async function updateCommunicationSettingsAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("settings.manage")
+  const { user } = await requireWritableFeatureWorkshop("settings.manage", "communications")
 
   const raw = {
     smsProvider: formData.get("smsProvider") as string,
@@ -297,7 +297,7 @@ export async function updateWorkingHoursAction(formData: FormData) {
 }
 
 export async function updateAppointmentRulesAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("settings.manage")
+  const { user } = await requireWritableFeatureWorkshop("settings.manage", "appointments")
 
   const raw = {
     defaultAppointmentDuration: formData.get("defaultAppointmentDuration") as string,

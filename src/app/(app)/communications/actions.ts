@@ -1,7 +1,11 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireFeatureWorkshop } from "@/lib/auth"
+
+async function requireAuth() {
+  return (await requireFeatureWorkshop("communications")).user
+}
 
 export async function getCommunicationLogs(filters?: {
   type?: string

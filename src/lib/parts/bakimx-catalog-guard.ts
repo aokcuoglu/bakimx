@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { getCurrentUserWithWorkshop, requireWritableWorkshop } from "@/lib/auth"
-import { hasFeature, type PlanTier } from "@/lib/plan"
+import { getCurrentUserWithWorkshop, requireWritableFeatureWorkshop } from "@/lib/auth"
+import { hasWorkshopFeature, PlanFeatureLockedError } from "@/lib/plan"
 import { rateLimit } from "@/lib/rate-limit"
 import { type Permission } from "@/lib/roles"
 
@@ -17,7 +17,7 @@ import { type Permission } from "@/lib/roles"
 export async function bakimxCatalogRouteGuard(): Promise<NextResponse | { workshopId: string }> {
   const { user, workshop } = await getCurrentUserWithWorkshop()
 
-  if (!hasFeature(workshop.planTier as PlanTier, "bakimxCatalog")) {
+  if (!hasWorkshopFeature(workshop, "bakimxCatalog")) {
     return NextResponse.json(
       { error: "BakımX ürün kataloğu bu çalışma alanında kapalı.", code: "feature_locked" },
       { status: 403 },
@@ -53,9 +53,9 @@ export async function bakimxCatalogRouteGuard(): Promise<NextResponse | { worksh
 export async function bakimxCatalogWriteGuard(
   permission: Permission,
 ): Promise<NextResponse | { workshopId: string; userId: string }> {
-  const { user, workshop } = await requireWritableWorkshop(permission)
+  const { user, workshop } = await requireWritableFeatureWorkshop(permission, "procurement")
 
-  if (!hasFeature(workshop.planTier as PlanTier, "bakimxCatalog")) {
+  if (!hasWorkshopFeature(workshop, "bakimxCatalog")) {
     return NextResponse.json(
       { error: "BakımX ürün kataloğu bu çalışma alanında kapalı.", code: "feature_locked" },
       { status: 403 },
@@ -81,6 +81,12 @@ export async function bakimxCatalogWriteGuard(
  * "emin değilsen reddet" doğru varsayılan.
  */
 export function bakimxWriteGuardResponse(error: unknown): NextResponse {
+  if (error instanceof PlanFeatureLockedError) {
+    return NextResponse.json(
+      { error: error.message, code: error.code, feature: error.feature },
+      { status: 403 },
+    )
+  }
   const message =
     error instanceof Error && error.message
       ? error.message

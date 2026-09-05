@@ -77,8 +77,8 @@ export function isSalePlanTier(value: unknown): value is SalePlanTier {
   return typeof value === "string" && SALE_PLAN_TIERS.some((tier) => tier === value)
 }
 
-// Included login seats per plan tier. During the trial a workshop is on `pro`,
-// so it gets pro's seat allowance. Extra seats are granted per-workshop on top.
+// Included login seats per plan tier. getPlanState resolves active trials to a
+// Premium access tier, regardless of the stored sales/default tier.
 export const PLAN_SEATS: Record<PlanTier, number> = {
   lite: 1,
   starter: 1,
@@ -161,11 +161,6 @@ export function isPlanExpiredLock(
   return PLAN_EXPIRED_LOCK_REASONS.includes(reason as PlanExpiredLockReason)
 }
 
-const TIER_RANK: Record<PlanTier, number> = { lite: 0, starter: 1, pro: 2, premium: 3 }
-
-// Plan-gated capabilities. During the trial a workshop is on the `pro` tier,
-// so premium features remain locked behind an upgrade. `starter` min tier means
-// the capability is enabled for every paid plan.
 export type GatedFeature =
   | "ocrIntake"
   | "photoChecklist"
@@ -177,7 +172,27 @@ export type GatedFeature =
   | "partsCatalog"
   | "bakimxCatalog"
   | "getirbakimCatalog"
-const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
+  | "quotes"
+  | "appointments"
+  | "automatedReminders"
+  | "team"
+  | "partsInventory"
+  | "procurement"
+  | "cashbox"
+  | "analytics"
+  | "reports"
+  | "communications"
+  | "vehiclePassport"
+
+export const GATED_FEATURES: readonly GatedFeature[] = [
+  "ocrIntake", "photoChecklist", "damageMap", "eInvoice", "multiBranch", "rbac",
+  "vinLookup", "partsCatalog", "bakimxCatalog", "getirbakimCatalog", "quotes",
+  "appointments", "automatedReminders", "team", "partsInventory", "procurement",
+  "cashbox", "analytics", "reports", "communications", "vehiclePassport",
+] as const
+
+/** Lowest purchasable/legacy tier which owns a capability. */
+export const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   ocrIntake: "starter",
   photoChecklist: "starter",
   damageMap: "starter",
@@ -188,7 +203,31 @@ const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   partsCatalog: "starter",
   bakimxCatalog: "starter",
   getirbakimCatalog: "starter",
+  quotes: "pro",
+  appointments: "pro",
+  automatedReminders: "pro",
+  team: "pro",
+  partsInventory: "pro",
+  procurement: "pro",
+  cashbox: "starter",
+  analytics: "pro",
+  reports: "pro",
+  communications: "pro",
+  vehiclePassport: "starter",
 }
+
+const STARTER_FEATURES = new Set<GatedFeature>([
+  "ocrIntake",
+  "photoChecklist",
+  "damageMap",
+  "partsCatalog",
+  "bakimxCatalog",
+  "getirbakimCatalog",
+  "cashbox",
+  "vehiclePassport",
+])
+
+const PREMIUM_ONLY_FEATURES = new Set<GatedFeature>(["eInvoice", "multiBranch", "rbac"])
 
 type WorkshopPlanFields = Pick<
   Workshop,
@@ -196,7 +235,10 @@ type WorkshopPlanFields = Pick<
 >
 
 export interface PlanState {
+  /** Persisted billing tier. */
   tier: PlanTier
+  /** Entitlement tier used by feature, seat and quota checks. Trials are Premium. */
+  accessTier: PlanTier
   isApproved: boolean
   isTrialing: boolean
   trialEndsAt: Date | null
@@ -271,6 +313,7 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
 
   return {
     tier,
+    accessTier: hasAccess && isTrialing ? "premium" : tier,
     isApproved,
     isTrialing,
     trialEndsAt,
@@ -339,7 +382,38 @@ export function computeTrialEnd(from: Date): Date {
 }
 
 export function hasFeature(tier: PlanTier, feature: GatedFeature): boolean {
-  return TIER_RANK[tier] >= TIER_RANK[FEATURE_MIN_TIER[feature]]
+  if (tier === "premium") return true
+  if (tier === "pro") return !PREMIUM_ONLY_FEATURES.has(feature)
+  if (tier === "starter") return STARTER_FEATURES.has(feature)
+  return false
+}
+
+export function hasWorkshopFeature(
+  workshop: WorkshopPlanFields,
+  feature: GatedFeature
+): boolean {
+  return hasFeature(getPlanState(workshop).accessTier, feature)
+}
+
+export function getEffectiveSeatLimit(
+  workshop: WorkshopPlanFields & { extraSeats?: number | null }
+): number {
+  return getSeatLimit(getPlanState(workshop).accessTier, workshop.extraSeats ?? 0)
+}
+
+export class PlanFeatureLockedError extends Error {
+  readonly code = "feature_locked"
+  readonly feature: GatedFeature
+  readonly requiredTier: PlanTier
+
+  constructor(feature: GatedFeature) {
+    const requiredTier = FEATURE_MIN_TIER[feature]
+    const purchasableTier = requiredTier === "premium" ? "premium" : "pro"
+    super(`Bu özellik ${PLAN_LABELS[purchasableTier]} pakette kullanılabilir. Devam etmek için paketinizi yükseltin.`)
+    this.name = "PlanFeatureLockedError"
+    this.feature = feature
+    this.requiredTier = requiredTier
+  }
 }
 
 /**
@@ -351,9 +425,5 @@ export function assertFeature(
   workshop: WorkshopPlanFields,
   feature: GatedFeature
 ): void {
-  if (!hasFeature(workshop.planTier as PlanTier, feature)) {
-    throw new Error(
-      "Bu özellik mevcut paketinizde bulunmuyor. Yükseltmek için bizimle iletişime geçin."
-    )
-  }
+  if (!hasWorkshopFeature(workshop, feature)) throw new PlanFeatureLockedError(feature)
 }

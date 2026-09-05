@@ -1,10 +1,13 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { NotificationSettings } from "@/components/settings/notification-settings"
 import { getNotificationTemplates, getCommunicationProviders } from "./actions"
 import Link from "next/link"
 
 export default async function NotificationsPage() {
+  const paywall = await getFeaturePaywall("automatedReminders")
+  if (paywall) return paywall
   const { workshop } = await getAppData()
 
   if (!workshop) {

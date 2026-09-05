@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 import { notifyAppointmentReminder, notifyMaintenanceReminder } from "@/lib/communications/triggers"
 import { formatReminderType } from "@/lib/reminders/format"
+import { getPlanState, hasWorkshopFeature, type GatedFeature } from "@/lib/plan"
 
 interface SchedulerResult {
   processed: number
@@ -9,14 +10,34 @@ interface SchedulerResult {
   errors: string[]
 }
 
-export async function processAppointmentReminders(): Promise<SchedulerResult> {
+async function eligibleWorkshopIds(feature: GatedFeature, workshopId?: string): Promise<string[]> {
+  const workshops = await prisma.workshop.findMany({
+    where: workshopId ? { id: workshopId } : undefined,
+    select: {
+      id: true,
+      planTier: true,
+      subscriptionStatus: true,
+      approvalStatus: true,
+      trialEndsAt: true,
+      currentPeriodEnd: true,
+    },
+  })
+  return workshops
+    .filter((workshop) => getPlanState(workshop).hasAccess && hasWorkshopFeature(workshop, feature))
+    .map((workshop) => workshop.id)
+}
+
+export async function processAppointmentReminders(workshopId?: string): Promise<SchedulerResult> {
   const result: SchedulerResult = { processed: 0, sent: 0, failed: 0, errors: [] }
+  const workshopIds = await eligibleWorkshopIds("automatedReminders", workshopId)
+  if (workshopIds.length === 0) return result
 
   const now = new Date()
   const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
   const appointments = await prisma.appointment.findMany({
     where: {
+      workshopId: { in: workshopIds },
       status: { in: ["scheduled", "confirmed"] },
       appointmentAt: { gte: now, lte: in24h },
       reminderStatus: { not: "sent" },
@@ -100,13 +121,16 @@ export async function processAppointmentReminders(): Promise<SchedulerResult> {
   return result
 }
 
-export async function processMaintenanceReminders(): Promise<SchedulerResult> {
+export async function processMaintenanceReminders(workshopId?: string): Promise<SchedulerResult> {
   const result: SchedulerResult = { processed: 0, sent: 0, failed: 0, errors: [] }
+  const workshopIds = await eligibleWorkshopIds("automatedReminders", workshopId)
+  if (workshopIds.length === 0) return result
 
   const now = new Date()
 
   const reminders = await prisma.maintenanceReminder.findMany({
     where: {
+      workshopId: { in: workshopIds },
       status: { in: ["upcoming", "due_soon", "overdue"] },
       preferredChannel: { not: "none" },
       reminderStatus: { not: "sent" },

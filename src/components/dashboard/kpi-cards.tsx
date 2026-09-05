@@ -30,7 +30,15 @@ function KpiCard({ label, value, icon: Icon, href, accent, accentBg, subtitle }:
   )
 }
 
-export function KpiCards({ stats }: { stats: DashboardStats }) {
+export function KpiCards({
+  stats,
+  showQuotes,
+  showPhotoChecklist,
+}: {
+  stats: DashboardStats
+  showQuotes: boolean
+  showPhotoChecklist: boolean
+}) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       <KpiCard
@@ -49,22 +57,26 @@ export function KpiCards({ stats }: { stats: DashboardStats }) {
         accent="text-success-strong"
         accentBg="bg-success/10"
       />
-      <KpiCard
-        label="Onay Bekleyen"
-        value={stats.waitingApprovals}
-        icon={MessageCircle}
-        href="/orders?status=waiting_approval"
-        accent="text-warning-strong"
-        accentBg="bg-warning/10"
-      />
-      <KpiCard
-        label="Eksik Fotoğraf"
-        value={stats.missingPhotoIntakes}
-        icon={Camera}
-        href="/orders"
-        accent="text-destructive-strong"
-        accentBg="bg-destructive/10"
-      />
+      {showQuotes && (
+        <KpiCard
+          label="Onay Bekleyen"
+          value={stats.waitingApprovals}
+          icon={MessageCircle}
+          href="/orders?status=waiting_approval"
+          accent="text-warning-strong"
+          accentBg="bg-warning/10"
+        />
+      )}
+      {showPhotoChecklist && (
+        <KpiCard
+          label="Eksik Fotoğraf"
+          value={stats.missingPhotoIntakes}
+          icon={Camera}
+          href="/orders"
+          accent="text-destructive-strong"
+          accentBg="bg-destructive/10"
+        />
+      )}
       <KpiCard
         label="Geciken Teslim"
         value={stats.overdueDeliveries}

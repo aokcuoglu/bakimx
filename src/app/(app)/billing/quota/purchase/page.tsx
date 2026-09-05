@@ -2,7 +2,8 @@ import { ArrowLeft, Zap } from "lucide-react"
 import Link from "next/link"
 import { AppShell } from "@/components/layout/app-shell"
 import { getAppData } from "@/app/(app)/data"
-import { VIN_LOOKUP_QUOTA, type PlanTier } from "@/lib/plan"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
+import { getPlanState, VIN_LOOKUP_QUOTA } from "@/lib/plan"
 import { workshopMonthlyCap } from "@/lib/rapidapi-quota"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,6 +18,8 @@ const EXTRA_QUOTA_OPTIONS = [
 ]
 
 export default async function PurchaseQuotaPage() {
+  const paywall = await getFeaturePaywall("partsCatalog")
+  if (paywall) return paywall
   const { workshop } = await getAppData()
 
   if (!workshop) {
@@ -29,7 +32,7 @@ export default async function PurchaseQuotaPage() {
     )
   }
 
-  const tier = workshop.planTier as PlanTier
+  const tier = getPlanState(workshop).accessTier
   const baseQuota = VIN_LOOKUP_QUOTA[tier] ?? 0
   const extraQuota = workshop.extraVinQuota ?? 0
   const totalCap = workshopMonthlyCap(tier, extraQuota)

@@ -24,7 +24,7 @@ describe("GetirBakım explicit purchase UX", () => {
 
   test("server identity, feature gate, tenant scope and no-stock invariant remain authoritative", () => {
     expect(route).toContain('requireWritableWorkshop("parts.purchase")')
-    expect(route).toContain('"getirbakimCatalog"')
+    expect(route).toContain('assertFeature(workshop, "procurement")')
     expect(route).toContain("serviceOrder: { workshopId: workshop.id }")
     expect(service).toContain("item.partId !== null")
     expect(service).not.toMatch(/partStockItem\.(update|create)|stockMovement\.(update|create)/)

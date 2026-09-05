@@ -1,10 +1,13 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { AppointmentCreateForm } from "@/components/appointments/appointment-create-form"
 
 export default async function NewAppointmentPage() {
+  const paywall = await getFeaturePaywall("appointments")
+  if (paywall) return paywall
   const { workshop } = await getAppData()
 
   // Müşteri ve araç listeleri artık istemciye toptan indirilmiyor: müşteri

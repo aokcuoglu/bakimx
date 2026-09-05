@@ -53,7 +53,7 @@ const ALLOWLIST = new Map<string, string>([
 ])
 
 const MUTATION = /\.(create|createMany|update|updateMany|upsert|delete|deleteMany)\(/
-const GATE = "requireWritableWorkshop("
+const GATES = ["requireWritableWorkshop(", "requireWritableFeatureWorkshop("]
 
 function actionFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -76,7 +76,7 @@ test("yazma yapan her server action yetki kapısından geçer", () => {
     for (const block of source.split("\nexport async function ").slice(1)) {
       const name = block.split("(")[0]
       if (!MUTATION.test(block)) continue
-      if (block.includes(GATE)) continue
+      if (GATES.some((gate) => block.includes(gate))) continue
       if (ALLOWLIST.has(`${rel}::${name}`)) continue
       ungated.push(`${rel}::${name}`)
     }

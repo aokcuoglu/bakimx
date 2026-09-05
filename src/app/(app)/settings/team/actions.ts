@@ -5,7 +5,8 @@ import bcrypt from "bcryptjs"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import type { UserRole } from "@prisma/client"
-import { requireAuth, requireWritableWorkshop, assertWorkshopAccess } from "@/lib/auth"
+import { requireFeatureWorkshop, requireWritableFeatureWorkshop, assertWorkshopAccess } from "@/lib/auth"
+import type { Permission } from "@/lib/roles"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import {
@@ -17,7 +18,7 @@ import {
   ROLE_RANK,
 } from "@/lib/rbac"
 import { generateInviteToken, inviteExpiry, buildInviteUrl, isInviteExpired } from "@/lib/invite"
-import { getSeatLimit, type PlanTier } from "@/lib/plan"
+import { getEffectiveSeatLimit, getPlanState } from "@/lib/plan"
 import { escapeHtml } from "@/lib/html-escape"
 import { rateLimit } from "@/lib/rate-limit"
 import { isUniqueConstraintError } from "@/lib/prisma-errors"
@@ -31,6 +32,10 @@ import {
 } from "@/lib/user-identity"
 import { generateTempPassword } from "@/lib/temp-password"
 import { personnelName, technicianRoleForUser } from "@/lib/personnel"
+
+function requireWritableWorkshop(permission: Permission) {
+  return requireWritableFeatureWorkshop(permission, "team")
+}
 
 type Ok = { ok: true; inviteUrl?: string }
 /**
@@ -163,7 +168,15 @@ export async function inviteMemberAction(formData: FormData): Promise<Result> {
 
     const ws = await prisma.workshop.findUnique({
       where: { id: user.workshopId },
-      select: { name: true, planTier: true, extraSeats: true },
+      select: {
+        name: true,
+        planTier: true,
+        extraSeats: true,
+        subscriptionStatus: true,
+        approvalStatus: true,
+        trialEndsAt: true,
+        currentPeriodEnd: true,
+      },
     })
 
     const { token, tokenHash } = generateInviteToken()
@@ -188,8 +201,8 @@ export async function inviteMemberAction(formData: FormData): Promise<Result> {
           where: { workshopId: user.workshopId, status: "pending", expiresAt: { gt: now } },
         })
         const used = activeUsers + pendingInvites
-        const tier = (ws!.planTier as PlanTier) ?? "starter"
-        const limit = getSeatLimit(tier, ws!.extraSeats)
+        const tier = getPlanState(ws!).accessTier
+        const limit = getEffectiveSeatLimit(ws!)
         if (used >= limit) {
           throw new SeatLimitError(tier, used, limit)
         }
@@ -434,7 +447,7 @@ export async function setMemberActiveAction(userId: string, isActive: boolean): 
 export async function checkUsernameAvailabilityAction(
   value: string
 ): Promise<{ available: boolean; error?: string }> {
-  const user = await requireAuth()
+  const { user } = await requireFeatureWorkshop("team")
   try {
     assertCanManageTeam(user)
   } catch {

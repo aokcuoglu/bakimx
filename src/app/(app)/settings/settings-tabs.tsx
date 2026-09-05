@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
 import { BusinessProfileForm } from "@/components/settings/business-profile-form"
 import { BrandingForm } from "@/components/settings/branding-form"
 import { CommunicationSettingsForm } from "@/components/settings/communication-settings-form"
@@ -17,6 +18,7 @@ import {
   type TeamMember,
 } from "@/components/settings/team-management"
 import type { UserRole } from "@prisma/client"
+import type { GatedFeature } from "@/lib/plan"
 import {
   Building2,
   Palette,
@@ -26,6 +28,7 @@ import {
   FileText,
   Shield,
   Users,
+  LockKeyhole,
 } from "lucide-react"
 
 type TabKey = "profile" | "branding" | "communication" | "working-hours" | "appointment-rules" | "pdf-templates" | "team" | "security"
@@ -36,14 +39,14 @@ type TabKey = "profile" | "branding" | "communication" | "working-hours" | "appo
  * bilgi taşımıyor ama şeridi 1125px'e çıkarıp her masaüstünde kaydırma
  * gerektiriyordu. Kısaltma sonrası şerit `wide` (max-w-5xl) kaba sığıyor.
  */
-const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }>; feature?: GatedFeature }[] = [
   { key: "profile", label: "İş Yeri Profili", icon: Building2 },
   { key: "branding", label: "Marka", icon: Palette },
-  { key: "communication", label: "İletişim", icon: MessageSquare },
+  { key: "communication", label: "İletişim", icon: MessageSquare, feature: "communications" },
   { key: "working-hours", label: "Çalışma Saatleri", icon: Clock },
-  { key: "appointment-rules", label: "Randevu", icon: CalendarClock },
+  { key: "appointment-rules", label: "Randevu", icon: CalendarClock, feature: "appointments" },
   { key: "pdf-templates", label: "PDF", icon: FileText },
-  { key: "team", label: "Ekip", icon: Users },
+  { key: "team", label: "Ekip", icon: Users, feature: "team" },
   { key: "security", label: "Güvenlik", icon: Shield },
 ]
 
@@ -125,6 +128,7 @@ export function SettingsTabs({
   accountMissingPersonnel,
   seatUsed,
   seatLimit,
+  enabledFeatures,
 }: {
   tab: string
   workshop: WorkshopData
@@ -135,6 +139,7 @@ export function SettingsTabs({
   accountMissingPersonnel: AccountMissingPersonnel[]
   seatUsed: number
   seatLimit: number
+  enabledFeatures: GatedFeature[]
 }) {
   const canManageTeam = user.role === "owner" || user.role === "manager"
   const router = useRouter()
@@ -184,6 +189,7 @@ export function SettingsTabs({
             {TABS.map((t) => {
               const Icon = t.icon
               const isActive = activeTab === t.key
+              const isLocked = Boolean(t.feature && !enabledFeatures.includes(t.feature))
               return (
                 <TabsTrigger key={t.key} value={t.key} className="px-3 py-2.5 shrink-0 flex-none">
                   <Icon className="size-4" />
@@ -191,6 +197,11 @@ export function SettingsTabs({
                       birbirine yakın anlamda olduğu için hangi sekmede olunduğu
                       anlaşılmıyordu. Aktif sekmenin etiketi her genişlikte durur. */}
                   <span className={isActive ? "inline" : "hidden sm:inline"}>{t.label}</span>
+                  {isLocked && (
+                    <Badge variant="secondary" className="h-4 gap-1 px-1.5 text-[9px]">
+                      <LockKeyhole className="size-3" /> PRO
+                    </Badge>
+                  )}
                 </TabsTrigger>
               )
             })}

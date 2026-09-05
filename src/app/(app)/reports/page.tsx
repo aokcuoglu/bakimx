@@ -1,9 +1,12 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { ReportsLayout } from "@/components/reports/reports-layout"
 import { BarChart3 } from "lucide-react"
 
 export default async function ReportsPage() {
+  const paywall = await getFeaturePaywall("reports")
+  if (paywall) return paywall
   const { workshop } = await getAppData()
 
   return (

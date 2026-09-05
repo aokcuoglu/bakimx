@@ -1,10 +1,13 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { ReportsLayout } from "@/components/reports/reports-layout"
 import { PartsReport } from "@/components/reports/parts-report"
 import { getPartsReportStats, getMostUsedParts, getLowestStockParts } from "@/lib/reports/queries"
 
 export default async function PartsReportPage() {
+  const paywall = await getFeaturePaywall("reports")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const workshopId = user.workshopId
 

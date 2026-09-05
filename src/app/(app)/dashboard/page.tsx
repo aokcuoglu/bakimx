@@ -2,6 +2,7 @@ import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import Link from "next/link"
 import { Plus } from "lucide-react"
+import { getPlanState, hasFeature } from "@/lib/plan"
 
 import {
   getDashboardStats,
@@ -40,44 +41,62 @@ import { OperationalAlertsWidget } from "@/components/analytics/operational-aler
 
 export default async function DashboardPage() {
   const { user, workshop } = await getAppData()
+  const accessTier = getPlanState(workshop!).accessTier
+  const canQuotes = hasFeature(accessTier, "quotes")
+  const canPhotos = hasFeature(accessTier, "photoChecklist")
+  const canAppointments = hasFeature(accessTier, "appointments")
+  const canReminders = hasFeature(accessTier, "automatedReminders")
+  const canInventory = hasFeature(accessTier, "partsInventory")
+  const canProcurement = hasFeature(accessTier, "procurement")
+  const canCashbox = hasFeature(accessTier, "cashbox")
+  const canTeam = hasFeature(accessTier, "team")
+  const canReports = hasFeature(accessTier, "reports")
+  const canAnalytics = hasFeature(accessTier, "analytics")
 
-  const [
-    stats,
-    activeOrders,
-    todayDeliveries,
-    todayAppointments,
-    waitingApprovals,
-    missingPhotos,
-    recentCustomers,
-    weeklyOps,
-    statusDist,
-    remindersDueSoon,
-    remindersOverdue,
-    criticalStock,
-    criticalStockSuppliers,
-    technicianOverview,
-     reportWidgetData,
-     operationalAlerts,
-    unassignedOrderCount,
-  ] = await Promise.all([
-    getDashboardStats(user.workshopId),
+  const [stats, activeOrders, todayDeliveries, recentCustomers] = await Promise.all([
+    getDashboardStats(user.workshopId, {
+      quotes: canQuotes,
+      photoChecklist: canPhotos,
+      cashbox: canCashbox,
+    }),
     getActiveWorkOrders(user.workshopId, 10),
     getTodayDeliveries(user.workshopId),
-    getTodayAppointmentRows(user.workshopId),
-    getWaitingApprovals(user.workshopId),
-    getMissingPhotoItems(user.workshopId),
     getRecentCustomers(user.workshopId, 6),
-    getWeeklyOperations(user.workshopId),
-    getWorkStatusDistribution(user.workshopId),
-    getDueSoonReminders(user.workshopId, 10),
-    getOverdueReminders(user.workshopId, 10),
-    getCriticalStockItems(user.workshopId, 10),
-    getCriticalStockSuppliers(user.workshopId, 5),
-    getManagerTechnicianOverview(user.workshopId),
-    getDashboardWidgetData(user.workshopId),
-    getRecommendations(user.workshopId),
-    getUnassignedOrderCount(user.workshopId),
   ])
+
+  const [todayAppointments, waitingApprovals, missingPhotos] = await Promise.all([
+    canAppointments ? getTodayAppointmentRows(user.workshopId) : Promise.resolve([]),
+    canQuotes ? getWaitingApprovals(user.workshopId) : Promise.resolve([]),
+    canPhotos ? getMissingPhotoItems(user.workshopId) : Promise.resolve([]),
+  ])
+  const [remindersDueSoon, remindersOverdue] = canReminders
+    ? await Promise.all([
+        getDueSoonReminders(user.workshopId, 10),
+        getOverdueReminders(user.workshopId, 10),
+      ])
+    : [[], []]
+  const [criticalStock, criticalStockSuppliers] = await Promise.all([
+    canInventory ? getCriticalStockItems(user.workshopId, 10) : Promise.resolve([]),
+    canInventory && canProcurement
+      ? getCriticalStockSuppliers(user.workshopId, 5)
+      : Promise.resolve([]),
+  ])
+  const [technicianOverview, unassignedOrderCount] = canTeam
+    ? await Promise.all([
+        getManagerTechnicianOverview(user.workshopId),
+        getUnassignedOrderCount(user.workshopId),
+      ])
+    : [[], 0]
+  const [weeklyOps, statusDist, reportWidgetData] = canReports
+    ? await Promise.all([
+        getWeeklyOperations(user.workshopId),
+        getWorkStatusDistribution(user.workshopId),
+        getDashboardWidgetData(user.workshopId),
+      ])
+    : [null, null, null]
+  const operationalAlerts = canAnalytics
+    ? await getRecommendations(user.workshopId)
+    : null
 
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Genel Bakış">
@@ -110,45 +129,49 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <KpiCards stats={stats} />
+        <KpiCards stats={stats} showQuotes={canQuotes} showPhotoChecklist={canPhotos} />
 
-        <DashboardReportWidgets data={reportWidgetData} />
+        {reportWidgetData && <DashboardReportWidgets data={reportWidgetData} />}
 
-        <AlertBanner stats={stats} />
+        <AlertBanner stats={stats} showQuotes={canQuotes} showPhotoChecklist={canPhotos} />
 
-        <OperationalAlertsWidget recommendations={operationalAlerts} />
+        {operationalAlerts && <OperationalAlertsWidget recommendations={operationalAlerts} />}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-          <WeeklyChart data={weeklyOps} />
-          <StatusChart data={statusDist} />
-        </div>
+        {weeklyOps && statusDist && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+            <WeeklyChart data={weeklyOps} />
+            <StatusChart data={statusDist} />
+          </div>
+        )}
 
         <ActiveOrdersSection orders={activeOrders} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
           <TodayDeliveries deliveries={todayDeliveries} />
-          <WaitingApprovals approvals={waitingApprovals} />
-          <MissingPhotos items={missingPhotos} />
+          {canQuotes && <WaitingApprovals approvals={waitingApprovals} />}
+          {canPhotos && <MissingPhotos items={missingPhotos} />}
         </div>
 
-        <TodayAppointments appointments={todayAppointments} />
+        {canAppointments && <TodayAppointments appointments={todayAppointments} />}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-          <CriticalStockWidget items={criticalStock} />
+        {(canInventory || canCashbox || canReminders) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+          {canInventory && <CriticalStockWidget items={criticalStock} />}
           <div className="space-y-4 sm:space-y-5">
-            <CashWidget data={{
+            {canCashbox && <CashWidget data={{
               todayCollected: stats.todayCollected,
               openReceivable: stats.openReceivable,
               partialPayments: stats.partialPayments,
-            }} />
-            <CriticalStockSuppliersWidget suppliers={criticalStockSuppliers} />
-            <ReminderWidget dueSoon={remindersDueSoon} overdue={remindersOverdue} />
+            }} />}
+            {canInventory && canProcurement && <CriticalStockSuppliersWidget suppliers={criticalStockSuppliers} />}
+            {canReminders && <ReminderWidget dueSoon={remindersDueSoon} overdue={remindersOverdue} />}
           </div>
-        </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
           <RecentCustomers customers={recentCustomers} />
-          <TechnicianStatusWidget technicians={technicianOverview} unassignedCount={unassignedOrderCount} />
+          {canTeam && <TechnicianStatusWidget technicians={technicianOverview} unassignedCount={unassignedOrderCount} />}
         </div>
       </div>
     </AppShell>

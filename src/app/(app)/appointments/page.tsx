@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
@@ -14,6 +15,8 @@ export default async function AppointmentsPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; date?: string }>
 }) {
+  const paywall = await getFeaturePaywall("appointments")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const params = await searchParams
   const q = (params.q || "").trim()
@@ -220,5 +223,4 @@ export default async function AppointmentsPage({
     </AppShell>
   )
 }
-
 

@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { getCollections } from "@/lib/cashbox/queries"
 import { PaymentMethodBadge, CollectionStatusBadge } from "@/components/shared/status-badge"
@@ -69,6 +70,8 @@ function getDateRange(period: string, dateFromStr?: string, dateToStr?: string):
 }
 
 export default async function PaymentsListPage({ searchParams }: { searchParams: Promise<SP> }) {
+  const paywall = await getFeaturePaywall("cashbox")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const params = await searchParams
   const q = (params.q || "").trim()
