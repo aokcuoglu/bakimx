@@ -15,6 +15,7 @@ import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ACTIVE_CHECKLIST_ITEM } from "@/lib/technician/checklist-visibility"
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 import { quantityToNumber } from "@/lib/orders/quantity"
+import { GATED_FEATURES, getPlanState, hasFeature } from "@/lib/plan"
 
 export default async function OrderDetailPage({
   params,
@@ -29,6 +30,13 @@ export default async function OrderDetailPage({
   const sp = await searchParams
   const editInitially = sp.edit === "1"
   const { user, workshop } = await getAppData()
+  const plan = workshop ? getPlanState(workshop) : null
+  const enabledFeatures = GATED_FEATURES.filter((feature) =>
+    hasFeature(plan?.accessTier ?? "lite", feature),
+  )
+  const canCashbox = enabledFeatures.includes("cashbox")
+  const canTeam = enabledFeatures.includes("team")
+  const canUseInventory = enabledFeatures.includes("partsInventory")
   const order = await prisma.serviceOrder.findFirst({
     where: { id, workshopId: user.workshopId },
     include: {
@@ -96,10 +104,12 @@ export default async function OrderDetailPage({
     taxRate: order.taxRate,
   })
 
-  const collections = await prisma.collectionPayment.findMany({
-    where: { serviceOrderId: id, workshopId: user.workshopId, status: { in: ["completed", "cancelled"] } },
-    orderBy: { paymentDate: "desc" },
-  })
+  const collections = canCashbox
+    ? await prisma.collectionPayment.findMany({
+        where: { serviceOrderId: id, workshopId: user.workshopId, status: { in: ["completed", "cancelled"] } },
+        orderBy: { paymentDate: "desc" },
+      })
+    : []
 
   const totalPaid = collections.filter(c => c.status === "completed").reduce((sum, c) => sum + c.amount, 0)
   const paidAmount = order.paidAmount || totalPaid
@@ -342,7 +352,7 @@ export default async function OrderDetailPage({
     },
   }
 
-  const technicians = await getAssignableTechnicians(user.workshopId)
+  const technicians = canTeam ? await getAssignableTechnicians(user.workshopId) : []
 
   const activity = await getOrderActivity({
     workshopId: user.workshopId,
@@ -350,7 +360,9 @@ export default async function OrderDetailPage({
     intakeFormId: intakeForm.id,
   })
 
-  const laborCatalog = await getLaborCatalog(user.workshopId, { activeOnly: true })
+  const laborCatalog = canUseInventory
+    ? await getLaborCatalog(user.workshopId, { activeOnly: true })
+    : []
 
   return (
     <AppShell
@@ -364,6 +376,8 @@ export default async function OrderDetailPage({
         activity={activity}
         editInitially={editInitially}
         laborCatalog={laborCatalog}
+        enabledFeatures={enabledFeatures}
+        currentTier={plan?.tier ?? "lite"}
         canReopen={roleCan(user.role, "order.reopen")}
         canEditInfo={roleCan(user.role, "order.edit")}
       />

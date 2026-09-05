@@ -35,7 +35,7 @@ const PRODUCT_ROW = {
   leadTimeDays: null,
 }
 
-let planTier = "starter"
+let planTier = "pro"
 let guardError: Error | null = null
 let workshopId = "ws-1"
 let productExists = true
@@ -50,6 +50,15 @@ mock.module("@/lib/auth", () => ({
   requireWritableWorkshop: async (permission: string) => {
     // Kapı çağrılmadan uç çalışmamalı; hangi izinle çağrıldığı da sözleşmenin parçası.
     expect(permission).toBe("parts.purchase")
+    if (guardError) throw guardError
+    return {
+      user: { id: "user-1", workshopId },
+      workshop: { id: workshopId, planTier },
+    }
+  },
+  requireWritableFeatureWorkshop: async (permission: string, feature: string) => {
+    expect(permission).toBe("parts.purchase")
+    expect(feature).toBe("procurement")
     if (guardError) throw guardError
     return {
       user: { id: "user-1", workshopId },
@@ -105,7 +114,7 @@ function request(body: unknown): Request {
 }
 
 beforeEach(() => {
-  planTier = "starter"
+  planTier = "pro"
   guardError = null
   productExists = true
   discountBps = 1500

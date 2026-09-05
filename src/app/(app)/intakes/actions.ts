@@ -1,8 +1,7 @@
 "use server"
 
-import { hasFeature, type PlanTier } from "@/lib/plan"
 import { prisma } from "@/lib/db"
-import { requireAuth, requireWritableWorkshop, getCurrentUserWithWorkshop } from "@/lib/auth"
+import { requireAuth, requireWritableWorkshop, requireFeatureWorkshop, requireWritableFeatureWorkshop } from "@/lib/auth"
 import { damageMarkSchema, damageMarkUpdateSchema, damageInspectionSchema, photoUploadMetadataSchema, intakeCreateSchema, intakeUpdateSchema } from "@/lib/validations/intake"
 import { resolveHandoverField } from "@/lib/intake/handover"
 import { revalidatePath } from "next/cache"
@@ -15,6 +14,7 @@ import { nanoid } from "nanoid"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { isArrivalReason, type ArrivalReasonKey } from "@/lib/constants"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { assertFeature } from "@/lib/plan"
 
 export async function createIntakeAction(formData: FormData) {
   const { user } = await requireWritableWorkshop("records.create")
@@ -286,8 +286,7 @@ export async function updateIntakeDetailsAction(
 }
 
 export async function listDamageMarksAction(intakeFormId: string) {
-  const { user, workshop } = await getCurrentUserWithWorkshop()
-  if (!hasFeature(workshop.planTier as PlanTier, "damageMap")) return { error: "Hasar kaydı mevcut paketinizde bulunmuyor.", forbidden: true }
+  const { user } = await requireFeatureWorkshop("damageMap")
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
     include: { damageMarks: { where: { deletedAt: null }, orderBy: { number: "asc" }, include: DAMAGE_PHOTOS }, photos: { where: { ...VISIBLE_PHOTO, serviceOrderItemId: null }, select: { id: true, label: true } } },
@@ -297,8 +296,7 @@ export async function listDamageMarksAction(intakeFormId: string) {
 }
 
 export async function addDamageMarkAction(input: unknown) {
-  const { user, workshop } = await requireWritableWorkshop("records.create")
-  if (!hasFeature(workshop.planTier as PlanTier, "damageMap")) return { error: "Hasar kaydı mevcut paketinizde bulunmuyor.", forbidden: true }
+  const { user } = await requireWritableFeatureWorkshop("records.create", "damageMap")
   const parsed = damageMarkSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Hasar bilgileri geçersiz" }
   try {
@@ -321,8 +319,7 @@ export async function addDamageMarkAction(input: unknown) {
 }
 
 export async function updateDamageMarkAction(input: unknown) {
-  const { user, workshop } = await requireWritableWorkshop("order.edit")
-  if (!hasFeature(workshop.planTier as PlanTier, "damageMap")) return { error: "Hasar kaydı mevcut paketinizde bulunmuyor.", forbidden: true }
+  const { user } = await requireWritableFeatureWorkshop("order.edit", "damageMap")
   const parsed = damageMarkUpdateSchema.safeParse(input)
   if (!parsed.success) return { error: "Hasar bilgileri geçersiz" }
   try {
@@ -340,8 +337,7 @@ export async function updateDamageMarkAction(input: unknown) {
 }
 
 export async function updateDamageInspectionAction(input: unknown) {
-  const { user, workshop } = await requireWritableWorkshop("order.edit")
-  if (!hasFeature(workshop.planTier as PlanTier, "damageMap")) return { error: "Hasar kaydı mevcut paketinizde bulunmuyor.", forbidden: true }
+  const { user } = await requireWritableFeatureWorkshop("order.edit", "damageMap")
   const parsed = damageInspectionSchema.safeParse(input)
   if (!parsed.success) return { error: "Kontrol bilgileri geçersiz" }
   return prisma.$transaction(async tx => {
@@ -357,8 +353,7 @@ export async function updateDamageInspectionAction(input: unknown) {
 }
 
 export async function removeDamageMarkAction(id: string) {
-  const { user, workshop } = await requireWritableWorkshop("order.edit")
-  if (!hasFeature(workshop.planTier as PlanTier, "damageMap")) return { error: "Hasar kaydı mevcut paketinizde bulunmuyor.", forbidden: true }
+  const { user } = await requireWritableFeatureWorkshop("order.edit", "damageMap")
   const found = await prisma.damageMark.findFirst({ where: { id, workshopId: user.workshopId } })
   if (!found) return { error: "Hasar kaydı bulunamadı" }
   return prisma.$transaction(async tx => {
@@ -374,7 +369,7 @@ export async function removeDamageMarkAction(id: string) {
 }
 
 export async function addPhotoAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("records.create")
+  const { user, workshop } = await requireWritableWorkshop("records.create")
 
   const rawRequestId = formData.get("requestId")
   if (rawRequestId !== null && typeof rawRequestId !== "string") return { error: "Geçersiz istek kimliği" }
@@ -387,6 +382,12 @@ export async function addPhotoAction(formData: FormData) {
   const file = formData.get("file") as File | null
   const metadata = photoUploadMetadataSchema.safeParse({ intakeFormId, requestId, type, phase, label, note })
   if (!metadata.success || (file !== null && !(file instanceof File))) return { error: "Fotoğraf bilgileri geçersiz" }
+
+  if (type === "damage_detail") {
+    assertFeature(workshop, "damageMap")
+  } else if (type !== "other" || (phase && phase !== "intake")) {
+    assertFeature(workshop, "photoChecklist")
+  }
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
@@ -501,7 +502,7 @@ export async function replacePhotoAction(_formData: FormData) {
  * kural). Public timeline'a olay YAZILMAZ: silme dahili bir düzeltmedir.
  */
 export async function removePhotoAction(photoId: string) {
-  const { user } = await requireWritableWorkshop("order.edit")
+  const { user, workshop } = await requireWritableWorkshop("order.edit")
 
   if (!photoId) return { error: "Fotoğraf bulunamadı" }
 
@@ -513,6 +514,12 @@ export async function removePhotoAction(photoId: string) {
   })
   if (!photo) return { error: "Fotoğraf bulunamadı" }
   if (photo.deletedAt) return { success: true }
+
+  if (photo.type === "damage_detail") {
+    assertFeature(workshop, "damageMap")
+  } else if (photo.type !== "other" || photo.phase !== "intake") {
+    assertFeature(workshop, "photoChecklist")
+  }
 
   if (isIntakeWriteLocked(photo.intakeForm.status, photo.intakeForm.order?.status)) {
     return { error: "Teslim edilmiş veya iptal edilmiş iş emrinin fotoğrafı silinemez" }

@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
@@ -6,6 +7,8 @@ import { QuoteDetail } from "@/components/quotes/quote-detail"
 import { formatQuoteNo } from "@/lib/work-order-number"
 
 export default async function QuoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const paywall = await getFeaturePaywall("quotes")
+  if (paywall) return paywall
   const { id } = await params
   const { user, workshop } = await getAppData()
 

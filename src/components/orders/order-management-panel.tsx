@@ -264,6 +264,7 @@ export function PricingSummaryCard({
   setMetaDraft,
   saveMeta,
   loading,
+  showCashbox = true,
 }: {
   totals: Totals
   paymentStatus: string
@@ -276,6 +277,7 @@ export function PricingSummaryCard({
   setMetaDraft: (v: PricingMetaDraft) => void
   saveMeta: () => void
   loading: boolean
+  showCashbox?: boolean
 }) {
   return (
     <Card>
@@ -285,7 +287,7 @@ export function PricingSummaryCard({
             <Calculator className="size-4 text-muted-foreground" />
             Fiyatlandırma
           </CardTitle>
-          <PaymentBadge status={paymentStatus} size="md" />
+          {showCashbox && <PaymentBadge status={paymentStatus} size="md" />}
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -352,7 +354,7 @@ export function PricingSummaryCard({
 
         {/* Tahsilat satırları Genel Toplam'ın ALTINDA: hesap zinciri (kalemler →
             ara toplam → indirim/KDV → genel toplam) araya ödeme girmeden okunur. */}
-        {paidAmount > 0 && (
+        {showCashbox && paidAmount > 0 && (
           <>
             <SummaryRow label="Tahsil Edilen" value={formatTRY(paidAmount)} bold tone="emerald" />
             <SummaryRow label="Kalan Bakiye" value={formatTRY(remainingAmount)} bold tone={remainingAmount > 0 ? "rose" : "emerald"} />

@@ -9,6 +9,7 @@ import { escapeHtml } from "@/lib/html-escape"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { renderWorkshopContactHtml } from "@/lib/pdf/workshop-contact"
 import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact, type WorkshopPublicContact } from "@/lib/workshop-contact"
+import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
 
 export const dynamic = "force-dynamic"
 
@@ -244,6 +245,33 @@ async function generatePassportPdfHtml(data: {
 export async function GET(_request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
 
+  const tokenAccess = await prisma.vehiclePassportToken.findUnique({
+    where: { token },
+    select: {
+      isActive: true,
+      expiresAt: true,
+      workshop: {
+        select: {
+          planTier: true,
+          subscriptionStatus: true,
+          approvalStatus: true,
+          trialEndsAt: true,
+          currentPeriodEnd: true,
+        },
+      },
+    },
+  })
+  if (
+    !tokenAccess ||
+    !tokenAccess.isActive ||
+    (tokenAccess.expiresAt && tokenAccess.expiresAt < new Date())
+  ) {
+    return new Response(null, { status: 404 })
+  }
+  if (!getPlanState(tokenAccess.workshop).hasAccess || !hasWorkshopFeature(tokenAccess.workshop, "vehiclePassport")) {
+    return new Response(null, { status: 403 })
+  }
+
   const passportToken = await prisma.vehiclePassportToken.findUnique({
     where: { token },
     include: {
@@ -272,7 +300,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     },
   })
 
-  if (!passportToken || !passportToken.isActive || (passportToken.expiresAt && passportToken.expiresAt < new Date())) {
+  if (!passportToken) {
     return new Response(null, { status: 404 })
   }
 

@@ -2,9 +2,8 @@ import { NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
 import { nanoid } from "nanoid"
 import { prisma } from "@/lib/db"
-import { getCurrentUserWithWorkshop, requireWritableWorkshop } from "@/lib/auth"
+import { requireFeatureWorkshop, requireWritableFeatureWorkshop } from "@/lib/auth"
 import { apiErrorResponse } from "@/lib/api-errors"
-import { hasFeature, type PlanTier } from "@/lib/plan"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { isIntakeWriteLocked } from "@/lib/status-transitions"
 import { getStorageProvider, buildStoragePath, validateUploadFile } from "@/lib/storage"
@@ -14,8 +13,7 @@ const failure = (error: string, status: number) => NextResponse.json({ error }, 
 
 export async function GET(request: Request) {
   try {
-    const { user, workshop } = await getCurrentUserWithWorkshop()
-    if (!hasFeature(workshop.planTier as PlanTier, "photoChecklist")) return failure("Fotoğraf düzenleme paketinizde bulunmuyor.", 403)
+    const { user } = await requireFeatureWorkshop("photoChecklist")
     const photoId = new URL(request.url).searchParams.get("photoId")
     if (!photoId) return failure("Fotoğraf seçin.", 400)
     const photo = await prisma.vehiclePhoto.findFirst({
@@ -29,8 +27,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { user, workshop } = await requireWritableWorkshop("order.edit")
-    if (!hasFeature(workshop.planTier as PlanTier, "photoChecklist")) return failure("Fotoğraf düzenleme paketinizde bulunmuyor.", 403)
+    const { user } = await requireWritableFeatureWorkshop("order.edit", "photoChecklist")
     const form = await request.formData()
     const photoId = form.get("photoId")
     const requestId = form.get("requestId")

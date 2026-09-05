@@ -1,10 +1,13 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { ReminderList } from "@/components/reminders/reminder-list"
 import { getRemindersList } from "@/lib/reminders/queries"
 import { prisma } from "@/lib/db"
 
 export default async function RemindersPage() {
+  const paywall = await getFeaturePaywall("automatedReminders")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
 
   const reminders = await getRemindersList(user.workshopId)

@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
@@ -14,6 +15,8 @@ import { FilterSelect } from "@/components/shared/filter-select"
 type SP = { q?: string; type?: string }
 
 export default async function CustomerBalancesPage({ searchParams }: { searchParams: Promise<SP> }) {
+  const paywall = await getFeaturePaywall("cashbox")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const params = await searchParams
   const q = (params.q || "").trim()

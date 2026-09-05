@@ -1,10 +1,13 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { SmartCaptureRegistration } from "@/components/intake/smart-capture-registration"
 import Link from "next/link"
 import { ArrowLeft, ScanLine } from "lucide-react"
 
 export default async function SmartCaptureRegistrationPage() {
+  const paywall = await getFeaturePaywall("ocrIntake")
+  if (paywall) return paywall
   const { workshop } = await getAppData()
 
   return (

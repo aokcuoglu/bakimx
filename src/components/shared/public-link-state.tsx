@@ -3,7 +3,7 @@ import { AlertCircle, Clock3, Link2Off } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BrandLogo } from "@/components/shared/brand-logo"
 
-export type PublicLinkProblem = "invalid" | "expired" | "inactive" | "error"
+export type PublicLinkProblem = "invalid" | "expired" | "inactive" | "plan_locked" | "error"
 
 const CONTENT: Record<PublicLinkProblem, { title: string; description: string; Icon: typeof AlertCircle }> = {
   invalid: {
@@ -19,6 +19,11 @@ const CONTENT: Record<PublicLinkProblem, { title: string; description: string; I
   inactive: {
     title: "Bağlantı kapatılmış",
     description: "Bu bağlantı iş yeri tarafından kapatılmış. Güncel bağlantı için iş yerinizle iletişime geçin.",
+    Icon: Link2Off,
+  },
+  plan_locked: {
+    title: "Araç pasaportu geçici olarak kapalı",
+    description: "İş yerinin mevcut paketi bu paylaşımı içermiyor. Güncel servis bilgisi için iş yeriyle iletişime geçin.",
     Icon: Link2Off,
   },
   error: {

@@ -32,7 +32,7 @@ const PARTS_REQUEST_CANCELLED_ERROR = "Bu talep iptal edilmiş; önce iptali ger
 const PARTS_REQUEST_CONVERTED_ERROR = "Bu talep kaleme eklendi; değişiklik iş emri kalemi üzerinden yapılır"
 
 export async function assignTechnicianAction(orderId: string, technicianId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const order = await prisma.serviceOrder.findFirst({
@@ -77,7 +77,7 @@ export async function assignTechnicianAction(orderId: string, technicianId: stri
 }
 
 export async function unassignTechnicianAction(orderId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const order = await prisma.serviceOrder.findFirst({
@@ -110,7 +110,7 @@ export async function unassignTechnicianAction(orderId: string) {
 }
 
 export async function startWorkAction(orderId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.status")
 
   const order = await prisma.serviceOrder.findFirst({
@@ -145,7 +145,7 @@ export async function startWorkAction(orderId: string) {
 }
 
 export async function holdWorkAction(orderId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.status")
 
   const order = await prisma.serviceOrder.findFirst({
@@ -178,7 +178,7 @@ export async function holdWorkAction(orderId: string) {
 }
 
 export async function completeWorkAction(orderId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.status")
 
   const order = await prisma.serviceOrder.findFirst({
@@ -223,7 +223,7 @@ export async function completeWorkAction(orderId: string) {
 }
 
 export async function addChecklistItemAction(formData: FormData) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const raw = {
@@ -262,7 +262,7 @@ export async function addChecklistItemAction(formData: FormData) {
 }
 
 export async function toggleChecklistItemAction(itemId: string, checked: boolean) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.checklistItem.findFirst({
@@ -300,7 +300,7 @@ export async function toggleChecklistItemAction(itemId: string, checked: boolean
  * zaman damgası ve "kim tamamladı" bilgisi korunur.
  */
 export async function completeAllChecklistItemsAction(orderId: string, category: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const parsedCategory = checklistItemSchema.shape.category.safeParse(category)
@@ -346,7 +346,7 @@ export async function completeAllChecklistItemsAction(orderId: string, category:
 
 /** Bir kontrol listesi aşamasındaki işaretleri tek seferde kaldırır. */
 export async function uncompleteAllChecklistItemsAction(orderId: string, category: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const parsedCategory = checklistItemSchema.shape.category.safeParse(category)
@@ -387,7 +387,7 @@ export async function uncompleteAllChecklistItemsAction(orderId: string, categor
 }
 
 export async function updateChecklistNoteAction(itemId: string, note: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.checklistItem.findFirst({
@@ -423,7 +423,7 @@ export async function updateChecklistNoteAction(itemId: string, note: string) {
  * Bu bilinçli: maddeyi listeden çıkaran, o kontrolü istemediğini söylüyor.
  */
 export async function deleteChecklistItemAction(itemId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.checklistItem.findFirst({
@@ -459,7 +459,7 @@ export async function deleteChecklistItemAction(itemId: string) {
 
 /** Yanlışlıkla silinen maddeyi bu iş emrine geri alır (işaretli/notlu hâliyle). */
 export async function restoreChecklistItemAction(itemId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.checklistItem.findFirst({
@@ -493,7 +493,7 @@ export async function restoreChecklistItemAction(itemId: string) {
 }
 
 export async function addInternalNoteAction(formData: FormData) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const raw = {
@@ -526,7 +526,7 @@ export async function addInternalNoteAction(formData: FormData) {
 }
 
 export async function deleteInternalNoteAction(noteId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const note = await prisma.internalNote.findFirst({
@@ -549,7 +549,7 @@ export async function deleteInternalNoteAction(noteId: string) {
 }
 
 export async function createPartsRequestAction(formData: FormData) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("parts.purchase")
 
   const raw = {
@@ -619,7 +619,7 @@ export async function createPartsRequestAction(formData: FormData) {
  * ilerletilemez — önce `reopenPartsRequestAction` ile geri alınması gerekir.
  */
 export async function updatePartsRequestStatusAction(requestId: string, status: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("parts.purchase")
 
   if (!PHYSICAL_PARTS_REQUEST_STATUSES.includes(status)) return { error: "Geçersiz talep durumu" }
@@ -675,7 +675,7 @@ export async function updatePartsRequestStatusAction(requestId: string, status: 
 }
 
 export async function startLaborSessionAction(orderId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.status")
 
   const order = await prisma.serviceOrder.findFirst({
@@ -720,7 +720,7 @@ export async function startLaborSessionAction(orderId: string) {
  * bitirirken yazabilir, boş bırakıp sonradan da ekleyebilir (BAK-138).
  */
 export async function stopLaborSessionAction(orderId: string, note?: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.status")
 
   const parsed = laborSessionNoteSchema.safeParse({ note: note ?? "" })
@@ -787,7 +787,7 @@ export async function stopLaborSessionAction(orderId: string, note?: string) {
  * alınmaz, böylece saatler ile süre birbirinden ayrı düşemez.
  */
 export async function updateLaborSessionAction(sessionId: string, formData: FormData) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const parsed = laborSessionEditSchema.safeParse({
@@ -856,7 +856,7 @@ export async function updateLaborSessionAction(sessionId: string, formData: Form
 }
 
 export async function createTechnicianAction(formData: FormData) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("team.manage")
 
   const fullName = (formData.get("fullName") as string || "").trim()
@@ -886,7 +886,7 @@ export async function createTechnicianAction(formData: FormData) {
 }
 
 export async function toggleTechnicianActiveAction(technicianId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("team.manage")
 
   const technician = await prisma.technician.findFirst({
@@ -911,7 +911,7 @@ export async function toggleTechnicianActiveAction(technicianId: string) {
  * ATANMIŞ ustasıdır; eylemi yapan gerçek kullanıcı AuditLog'a yazılır.
  */
 export async function toggleOrderItemCompletedAction(itemId: string, done: boolean) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.serviceOrderItem.findFirst({
@@ -962,7 +962,7 @@ export async function toggleOrderItemCompletedAction(itemId: string, done: boole
  * emrinin atanmış ustası, eylemi yapan kullanıcı AuditLog'a yazılır.
  */
 export async function completeAllOrderItemsAction(orderId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const order = await prisma.serviceOrder.findFirst({
@@ -995,7 +995,7 @@ export async function completeAllOrderItemsAction(orderId: string) {
 
 /** İş emrindeki tüm tamamlanmış kalemleri tek seferde tekrar açık duruma alır. */
 export async function uncompleteAllOrderItemsAction(orderId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const order = await prisma.serviceOrder.findFirst({
@@ -1037,7 +1037,7 @@ export async function uncompleteAllOrderItemsAction(orderId: string) {
  * yalnız daha önce çevrilmiş (convertedAt dolu) talep tekrar çevrilemez.
  */
 export async function convertPartsRequestToOrderItemAction(requestId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("parts.purchase")
 
   const request = await prisma.partsRequest.findFirst({
@@ -1120,7 +1120,7 @@ export async function convertPartsRequestToOrderItemAction(requestId: string) {
  * İptal edilmiş talep de düzenlenmez; önce iptali geri alınır.
  */
 export async function updatePartsRequestAction(requestId: string, formData: FormData) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("parts.purchase")
 
   const parsed = partsRequestEditSchema.safeParse({
@@ -1206,7 +1206,7 @@ export async function updatePartsRequestAction(requestId: string, formData: Form
  * kalemi silmektir (iş emri kalem satırı). Gerekçe atölye içi kalır.
  */
 export async function cancelPartsRequestAction(requestId: string, reason: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("parts.purchase")
 
   const parsed = partsRequestCancelSchema.safeParse({ reason: reason ?? "" })
@@ -1259,7 +1259,7 @@ export async function cancelPartsRequestAction(requestId: string, reason: string
 
 /** İptali geri alır: talep yeniden karar bekleyen `requested` durumuna döner. */
 export async function reopenPartsRequestAction(requestId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("parts.purchase")
 
   const request = await prisma.partsRequest.findFirst({

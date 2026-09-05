@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Clock, CheckCircle2, Users } from "lucide-react"
 import { AppShell } from "@/components/layout/app-shell"
 import { getAppData } from "@/app/(app)/data"
-import { getPlanState, getSeatLimit, type PlanTier } from "@/lib/plan"
+import { getEffectiveSeatLimit, getPlanState, type PlanTier } from "@/lib/plan"
 import { getSeatUsage } from "@/lib/rbac"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { PlanPackages } from "@/components/billing/plan-packages"
@@ -43,7 +43,7 @@ export default async function BillingPage({
   const ownedPkg = ownedTier ? getPlanPackage(ownedTier) : null
 
   const seatUsage = await getSeatUsage(workshop.id)
-  const seatLimit = getSeatLimit(workshop.planTier as PlanTier, workshop.extraSeats)
+  const seatLimit = getEffectiveSeatLimit(workshop)
   const seatsAtLimit = seatUsage.used >= seatLimit
 
   return (

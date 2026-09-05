@@ -4,12 +4,19 @@ import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { assertWritableOr403 } from "@/lib/plan-guard"
 import { prisma } from "@/lib/db"
 import { notifyCollectionReminder } from "@/lib/communications/triggers"
+import { hasWorkshopFeature } from "@/lib/plan"
 
 export async function POST(request: Request) {
   try {
     const { user, workshop } = await getCurrentUserWithWorkshop()
     const locked = assertWritableOr403(workshop)
     if (locked) return locked
+    if (!hasWorkshopFeature(workshop, "cashbox")) {
+      return NextResponse.json(
+        { error: "Kasa ve tahsilat Profesyonel pakette kullanılabilir.", code: "feature_locked" },
+        { status: 403 },
+      )
+    }
     const body = await request.json()
     const { customerId, serviceOrderId, channels } = body as {
       customerId?: string

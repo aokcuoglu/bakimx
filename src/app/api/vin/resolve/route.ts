@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod/v4"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
-import { hasFeature, type PlanTier } from "@/lib/plan"
+import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
 import { assertWritableOr403 } from "@/lib/plan-guard"
 import { assertQuotaAvailable } from "@/lib/rapidapi-quota"
 import { rateLimit } from "@/lib/rate-limit"
@@ -27,9 +27,13 @@ export async function POST(request: Request) {
   const locked = assertWritableOr403(workshop)
   if (locked) return locked
 
-  if (!hasFeature(workshop.planTier as PlanTier, "vinLookup")) {
+  if (!hasWorkshopFeature(workshop, "vinLookup")) {
     return NextResponse.json(
-      { error: "VIN'den araç tanıma bu çalışma alanında kapalı.", code: "feature_locked" },
+      {
+        error: "VIN'den araç tanıma bu çalışma alanında kapalı.",
+        code: "feature_locked",
+        currentTier: getPlanState(workshop).tier,
+      },
       { status: 403 }
     )
   }
@@ -62,7 +66,7 @@ export async function POST(request: Request) {
   try {
     await assertQuotaAvailable(
       workshop.id,
-      workshop.planTier as PlanTier,
+      getPlanState(workshop).accessTier,
       workshop.extraVinQuota,
     )
   } catch (err) {
