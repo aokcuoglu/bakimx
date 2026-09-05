@@ -15,19 +15,19 @@ export const FAQ_ITEMS: FaqItem[] = [
     question: "BakimX mobilde çalışır mı? Kurulum gerekiyor mu?",
     showOnLanding: true,
     answer:
-      "Evet. Tarayıcı tabanlıdır; telefon, tablet veya bilgisayardan kurulumsuz erişilir. Teknik bilgi veya eğitim gerekmez.",
+      "Evet. Telefon, tablet veya bilgisayarınızın tarayıcısından kullanabilirsiniz. Program indirmeniz gerekmez; aynı hesabınızla servisinizdeki kayıtlara erişirsiniz.",
   },
   {
     question: "Ruhsat okuma nasıl çalışır?",
     showOnLanding: true,
     answer:
-      "Ruhsatın fotoğrafını yükleyin; plaka, marka/model, VIN ve model yılı otomatik dolsun, siz onaylamadan önce kontrol edersiniz. VIN'e uygun katalog parçalarını görürsünüz; fiyatlandırma kendi kataloğunuzdan gelir.",
+      "Ruhsat fotoğrafından plaka, marka/model, şasi numarası ve model yılı okunur. Bilgileri kontrol edip onaylarsınız. Araç eşleştirmesi yapıldığında ilgili katalog parçalarını inceleyebilirsiniz; fiyatlar kendi kataloğunuzdan gelir.",
   },
   {
     question: "Hangi modüller bugün hazır?",
     showOnLanding: true,
     answer:
-      "İş emri, teklif, randevu, stok/parça, tedarikçi, kasa, müşteri & araç yönetimi, bakım hatırlatmaları, raporlar ve iletişim.",
+      "İş emri, teklif, randevu, stok/parça, tedarikçi, kasa, müşteri ve araç yönetimi, bakım hatırlatmaları ve raporlar kullanıma hazır. Modül ve kullanım hakları pakete göre değişir. e-Fatura/e-Arşiv ve çoklu şube yönetimi planlanan geliştirmelerdir; henüz kullanıma açık değildir.",
   },
   {
     question: "Stok, tedarikçi ve tahsilat takibi var mı?",
@@ -38,7 +38,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     question: "Müşteriye WhatsApp ile çıktı gönderilebilir mi?",
     showOnLanding: true,
     answer:
-      "Evet. Teklif ve iş emri özetini WhatsApp veya link ile gönderir, tarayıcıdan yazdırırsınız. Markalı PDF dışa aktarma yakında ekleniyor.",
+      "Evet. Müşterinize takip linkini veya iş emri özetini WhatsApp üzerinden paylaşabilirsiniz. Müşteriniz linki tarayıcıda açar; uygulama indirmesi gerekmez. Yazdırılabilir çıktıları tarayıcınızdan PDF olarak da kaydedebilirsiniz.",
   },
   {
     question: "Birden fazla kullanıcı ekleyebilir miyim?",
@@ -58,13 +58,13 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Ücretsiz deneme nasıl başlar?",
     answer:
-      "\"Ücretsiz Dene\" ile paket veya kart seçmeden hesabınızı açarsınız. E-posta doğrulamasından sonra 7 iş günü ücretsiz kullanırsınız; satın alma yapılmazsa verileriniz korunarak üyeliğiniz dondurulur.",
+      '"Ücretsiz Dene" ile paket veya kart seçmeden hesabınızı açarsınız. E-posta doğrulamasından sonra 7 iş günü ücretsiz kullanırsınız; satın alma yapılmazsa verileriniz korunarak üyeliğiniz dondurulur.',
   },
   {
     question: "Fiyatlandırma nasıl çalışıyor?",
     showOnLanding: true,
     answer:
-      "Aylık sabit abonelik; araç ve kullanıcı sayısına göre kademeli paketler vardır. Detaylar Fiyatlar sayfasındadır.",
+      "Lite, Profesyonel ve Premium paketlerini Fiyatlar sayfasında karşılaştırabilirsiniz. Özellikler, dahil kullanıcı sayısı ve kullanım kotaları pakete göre değişir. Güncel aylık ve yıllık tutarlar aynı sayfada yer alır.",
   },
   {
     question: "Mevcut verilerimi içeri aktarabilir miyim?",
