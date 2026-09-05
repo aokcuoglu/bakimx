@@ -1,15 +1,13 @@
 import { describe, expect, test } from "bun:test"
-import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server"
 import { NextRequest } from "next/server"
 import { config, middleware } from "./middleware"
 
 describe("public landing routes", () => {
   test("keeps nested public illustrations outside the auth middleware", () => {
-    expect(unstable_doesMiddlewareMatch({
-      config,
-      nextConfig: {},
-      url: "/illustrations/demo-ocr-trial-complete.webp",
-    })).toBe(false)
+    const matcher = new RegExp(config.matcher[0])
+
+    expect(matcher.test("/illustrations/demo-ocr-trial-complete.webp")).toBe(false)
+    expect(matcher.test("/dashboard")).toBe(true)
   })
 
   test("allows anonymous local requests to /status", async () => {
