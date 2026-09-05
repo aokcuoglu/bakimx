@@ -385,7 +385,7 @@ export async function addPhotoAction(formData: FormData) {
 
   if (type === "damage_detail") {
     assertFeature(workshop, "damageMap")
-  } else if (type !== "other" || (phase && phase !== "intake")) {
+  } else {
     assertFeature(workshop, "photoChecklist")
   }
 
