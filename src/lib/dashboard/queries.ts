@@ -40,7 +40,14 @@ export interface DashboardStats {
   partialPayments: number
 }
 
-export async function getDashboardStats(workshopId: string): Promise<DashboardStats> {
+export async function getDashboardStats(
+  workshopId: string,
+  access: { quotes: boolean; photoChecklist: boolean; cashbox: boolean } = {
+    quotes: true,
+    photoChecklist: true,
+    cashbox: true,
+  }
+): Promise<DashboardStats> {
   const today = todayStart()
   const tomorrow = new Date(today.getTime() + 86400000)
   const sevenDaysAgo = daysAgo(7)
@@ -65,9 +72,9 @@ export async function getDashboardStats(workshopId: string): Promise<DashboardSt
         status: { notIn: NOT_DELIVERED_CANCELLED },
       },
     }),
-    prisma.serviceOrder.count({
-      where: { workshopId, status: "waiting_approval" },
-    }),
+    access.quotes
+      ? prisma.serviceOrder.count({ where: { workshopId, status: "waiting_approval" } })
+      : Promise.resolve(0),
     prisma.serviceOrder.count({
       where: {
         workshopId,
@@ -78,30 +85,34 @@ export async function getDashboardStats(workshopId: string): Promise<DashboardSt
     prisma.serviceOrder.count({
       where: { workshopId, createdAt: { gte: sevenDaysAgo } },
     }),
-    prisma.vehicleIntakeForm.findMany({
-      where: { workshopId, status: { notIn: NOT_DELIVERED_CANCELLED_INTAKE } },
-      select: { id: true },
-    }),
-    prisma.collectionPayment.aggregate({
-      where: { workshopId, status: "completed", paymentDate: { gte: today } },
-      _sum: { amount: true },
-    }),
-    prisma.serviceOrder.findMany({
-      where: {
-        workshopId,
-        status: { notIn: ["cancelled"] },
-        paymentStatus: { in: ["unpaid", "partial"] },
-      },
-      include: {
-        items: { select: ORDER_TOTALS_ITEM_SELECT },
-      },
-    }),
+    access.photoChecklist
+      ? prisma.vehicleIntakeForm.findMany({
+          where: { workshopId, status: { notIn: NOT_DELIVERED_CANCELLED_INTAKE } },
+          select: { id: true },
+        })
+      : Promise.resolve([]),
+    access.cashbox
+      ? prisma.collectionPayment.aggregate({
+          where: { workshopId, status: "completed", paymentDate: { gte: today } },
+          _sum: { amount: true },
+        })
+      : Promise.resolve({ _sum: { amount: null } }),
+    access.cashbox
+      ? prisma.serviceOrder.findMany({
+          where: {
+            workshopId,
+            status: { notIn: ["cancelled"] },
+            paymentStatus: { in: ["unpaid", "partial"] },
+          },
+          include: { items: { select: ORDER_TOTALS_ITEM_SELECT } },
+        })
+      : Promise.resolve([]),
   ])
 
   const intakeIds = allActiveIntakes.map((i) => i.id)
 
   let missingPhotoIntakes = 0
-  if (intakeIds.length > 0) {
+  if (access.photoChecklist && intakeIds.length > 0) {
     const photos = await prisma.vehiclePhoto.findMany({
       where: {
         workshopId,

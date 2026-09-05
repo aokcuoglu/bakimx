@@ -1,12 +1,20 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
+import { requireFeatureWorkshop, requireWritableFeatureWorkshop } from "@/lib/auth"
+import type { Permission } from "@/lib/roles"
 import { revalidatePath } from "next/cache"
 import { COMMUNICATION_TEMPLATES, getDefaultTemplate, sanitizeTemplate } from "@/lib/communications/templates"
 import { sendSMSDirect, sendWhatsAppDirect, sendEmailDirect, checkRateLimit, recordAttempt } from "@/lib/communications"
 import type { CommunicationTemplateKey, CommunicationType } from "@/lib/communications/types"
 import type { TemplateChannel } from "@/lib/communications/templates"
+
+async function requireAuth() {
+  return (await requireFeatureWorkshop("automatedReminders")).user
+}
+function requireWritableWorkshop(permission: Permission) {
+  return requireWritableFeatureWorkshop(permission, "automatedReminders")
+}
 
 export async function getNotificationTemplates() {
   const { workshopId } = await requireAuth()

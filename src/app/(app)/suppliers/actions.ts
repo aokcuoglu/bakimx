@@ -1,11 +1,16 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireWritableWorkshop } from "@/lib/auth"
+import { requireWritableFeatureWorkshop } from "@/lib/auth"
+import type { Permission } from "@/lib/roles"
 import { revalidatePath } from "next/cache"
 import { supplierCreateSchema, supplierUpdateSchema } from "@/lib/validations/supplier"
 import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
+
+function requireWritableWorkshop(permission: Permission) {
+  return requireWritableFeatureWorkshop(permission, "procurement")
+}
 
 export async function createSupplierAction(formData: FormData) {
   const { user } = await requireWritableWorkshop("catalog.manage")

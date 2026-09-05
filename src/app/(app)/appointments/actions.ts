@@ -1,7 +1,8 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
+import { requireFeatureWorkshop, requireWritableFeatureWorkshop } from "@/lib/auth"
+import type { Permission } from "@/lib/roles"
 import { revalidatePath } from "next/cache"
 import { appointmentCreateSchema, appointmentStatusUpdateSchema } from "@/lib/validations/appointment"
 import { getValidationError } from "@/lib/validations/shared"
@@ -10,6 +11,13 @@ import { generateUniqueWorkOrderNo } from "@/lib/work-order-number"
 import { AuditLogAction } from "@/lib/audit"
 import { notifyAppointmentCreated } from "@/lib/communications/triggers"
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync"
+
+async function requireAuth() {
+  return (await requireFeatureWorkshop("appointments")).user
+}
+function requireWritableWorkshop(permission: Permission) {
+  return requireWritableFeatureWorkshop(permission, "appointments")
+}
 
 export async function createAppointmentAction(formData: FormData) {
   const { user } = await requireWritableWorkshop("records.create")

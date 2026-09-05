@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
@@ -18,6 +19,8 @@ const methodIcons: Record<string, React.ComponentType<{ className?: string }>> =
 }
 
 export default async function PaymentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const paywall = await getFeaturePaywall("cashbox")
+  if (paywall) return paywall
   const { id } = await params
   const { user, workshop } = await getAppData()
 

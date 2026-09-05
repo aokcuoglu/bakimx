@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db"
 import type { UserRole, WorkshopKind } from "@prisma/client"
-import { assertWriteAccess } from "@/lib/plan"
+import { assertFeature, assertWriteAccess, type GatedFeature } from "@/lib/plan"
 import { isImpersonationRevoked } from "@/lib/impersonation"
 import type { Permission } from "@/lib/roles"
 import { isCustomerWorkshopKind } from "@/lib/workshop-kind"
@@ -186,6 +186,23 @@ export async function requireWritableWorkshop(permission: Permission) {
   const { assertCan } = await import("@/lib/rbac")
   assertCan(user, permission)
   return { user, workshop }
+}
+
+/** Read gate for plan-scoped pages, queries and read-only server actions. */
+export async function requireFeatureWorkshop(feature: GatedFeature) {
+  const { user, workshop } = await getCurrentUserWithWorkshop()
+  assertFeature(workshop, feature)
+  return { user, workshop }
+}
+
+/** Mutation gate: subscription, password, RBAC and feature checks in one call. */
+export async function requireWritableFeatureWorkshop(
+  permission: Permission,
+  feature: GatedFeature
+) {
+  const result = await requireWritableWorkshop(permission)
+  assertFeature(result.workshop, feature)
+  return result
 }
 
 /**

@@ -1,10 +1,13 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { PartDetail } from "@/components/parts/part-detail"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 
 export default async function PartDetailPage(props: { params: Promise<{ id: string }> }) {
+  const paywall = await getFeaturePaywall("partsInventory")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const { id } = await props.params
 

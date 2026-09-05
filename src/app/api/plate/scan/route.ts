@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server"
 import { PSM } from "tesseract.js"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
-import { assertWritableOr403 } from "@/lib/plan-guard"
+import { apiErrorResponse } from "@/lib/api-errors"
 import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-image"
 import { extractRegistrationText } from "@/lib/ocr/tesseract-text-extractor"
 import { parsePlateFromText } from "@/lib/ocr/plate"
 import { MAX_IMAGE_SIZE_BYTES, MAX_BODY_SIZE_BYTES, SUPPORTED_IMAGE_MIME_TYPES } from "@/lib/ocr/types"
+import { assertFeature } from "@/lib/plan"
+import { assertWritableOr403 } from "@/lib/plan-guard"
 
 // OCR yavaş paylaşımlı VPS CPU'sunda birkaç saniye sürebilir; Next'in varsayılan
 // fonksiyon süresini gevşet (proxy timeout ~60s'in altında kalır).
@@ -21,6 +23,7 @@ export async function POST(request: Request) {
     const { workshop } = await getCurrentUserWithWorkshop()
     const locked = assertWritableOr403(workshop)
     if (locked) return locked
+    assertFeature(workshop, "ocrIntake")
 
     const contentLength = request.headers.get("content-length")
     if (contentLength && Number(contentLength) > MAX_BODY_SIZE_BYTES) {
@@ -83,8 +86,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ plate })
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Bir hata oluştu"
-    console.error("[PLATE SCAN ERROR]", err)
-    return NextResponse.json({ error: message }, { status: 500 })
+    const response = apiErrorResponse(err)
+    if (response.status >= 500) console.error("[PLATE SCAN ERROR]", err)
+    return response
   }
 }

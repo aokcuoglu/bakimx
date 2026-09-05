@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth } from "@/lib/cashbox/feature-auth"
 import { getCollections, getOpenReceivables, getReceivableAging } from "@/lib/cashbox/queries"
 
 export async function GET(request: Request) {

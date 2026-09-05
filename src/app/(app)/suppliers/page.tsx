@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { SuppliersList } from "@/components/suppliers/suppliers-list"
 import { prisma } from "@/lib/db"
@@ -8,6 +9,8 @@ import { matchingSupplierCategories } from "@/lib/supplier-categories"
 export default async function SuppliersPage(props: {
   searchParams?: Promise<{ q?: string; status?: string }>
 }) {
+  const paywall = await getFeaturePaywall("procurement")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const searchParams = await props.searchParams
   const q = searchParams?.q

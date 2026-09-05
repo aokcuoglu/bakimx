@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
+import { requireAuth, requireWritableFeatureWorkshop, requireWritableWorkshop } from "@/lib/auth"
 import { damageMarkSchema, intakeCreateSchema, intakeUpdateSchema } from "@/lib/validations/intake"
 import { resolveHandoverField } from "@/lib/intake/handover"
 import { revalidatePath } from "next/cache"
@@ -13,6 +13,7 @@ import { nanoid } from "nanoid"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { isArrivalReason, type ArrivalReasonKey } from "@/lib/constants"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { assertFeature } from "@/lib/plan"
 
 export async function createIntakeAction(formData: FormData) {
   const { user } = await requireWritableWorkshop("records.create")
@@ -283,7 +284,7 @@ export async function updateIntakeDetailsAction(
 }
 
 export async function addDamageMarkAction(input: unknown) {
-  const { user } = await requireWritableWorkshop("records.create")
+  const { user } = await requireWritableFeatureWorkshop("records.create", "damageMap")
   const parsed = damageMarkSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Hasar bilgileri geçersiz" }
 
@@ -302,7 +303,7 @@ export async function addDamageMarkAction(input: unknown) {
 }
 
 export async function removeDamageMarkAction(id: string) {
-  const { user } = await requireWritableWorkshop("order.edit")
+  const { user } = await requireWritableFeatureWorkshop("order.edit", "damageMap")
   const mark = await prisma.damageMark.findFirst({
     where: { id, workshopId: user.workshopId },
     include: { intakeForm: { include: { order: { select: { id: true, status: true } } } } },
@@ -315,7 +316,7 @@ export async function removeDamageMarkAction(id: string) {
 }
 
 export async function addPhotoAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("records.create")
+  const { user, workshop } = await requireWritableWorkshop("records.create")
 
   const intakeFormId = formData.get("intakeFormId") as string
   const type = formData.get("type") as string
@@ -323,6 +324,12 @@ export async function addPhotoAction(formData: FormData) {
   const phase = formData.get("phase") as string | null
   const note = formData.get("note") as string | null
   const file = formData.get("file") as File | null
+
+  if (type === "damage_detail") {
+    assertFeature(workshop, "damageMap")
+  } else if (type !== "other" || (phase && phase !== "intake")) {
+    assertFeature(workshop, "photoChecklist")
+  }
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
@@ -420,7 +427,7 @@ export async function replacePhotoAction(_formData: FormData) {
  * kural). Public timeline'a olay YAZILMAZ: silme dahili bir düzeltmedir.
  */
 export async function removePhotoAction(photoId: string) {
-  const { user } = await requireWritableWorkshop("order.edit")
+  const { user, workshop } = await requireWritableWorkshop("order.edit")
 
   if (!photoId) return { error: "Fotoğraf bulunamadı" }
 
@@ -432,6 +439,12 @@ export async function removePhotoAction(photoId: string) {
   })
   if (!photo) return { error: "Fotoğraf bulunamadı" }
   if (photo.deletedAt) return { success: true }
+
+  if (photo.type === "damage_detail") {
+    assertFeature(workshop, "damageMap")
+  } else if (photo.type !== "other" || photo.phase !== "intake") {
+    assertFeature(workshop, "photoChecklist")
+  }
 
   if (isIntakeWriteLocked(photo.intakeForm.status, photo.intakeForm.order?.status)) {
     return { error: "Teslim edilmiş veya iptal edilmiş iş emrinin fotoğrafı silinemez" }

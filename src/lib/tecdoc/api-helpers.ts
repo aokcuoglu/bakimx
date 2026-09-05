@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
-import { hasFeature, type PlanTier } from "@/lib/plan"
+import { hasWorkshopFeature } from "@/lib/plan"
 import { rateLimit } from "@/lib/rate-limit"
 import { TecdocError } from "./types"
 
@@ -8,7 +8,7 @@ import { TecdocError } from "./types"
 export async function tecdocRouteGuard(): Promise<NextResponse | { workshopId: string }> {
   const { user, workshop } = await getCurrentUserWithWorkshop()
 
-  if (!hasFeature(workshop.planTier as PlanTier, "partsCatalog")) {
+  if (!hasWorkshopFeature(workshop, "partsCatalog")) {
     return NextResponse.json(
       { error: "Parça kataloğu bu çalışma alanında kapalı.", code: "feature_locked" },
       { status: 403 }

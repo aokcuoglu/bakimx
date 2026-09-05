@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
-import { hasFeature, type PlanTier } from "@/lib/plan"
+import { hasWorkshopFeature } from "@/lib/plan"
 import { rateLimit } from "@/lib/rate-limit"
 
 /**
@@ -21,7 +21,7 @@ export async function getirbakimRouteGuard(): Promise<
 > {
   const { user, workshop } = await getCurrentUserWithWorkshop()
 
-  if (!hasFeature(workshop.planTier as PlanTier, "getirbakimCatalog")) {
+  if (!hasWorkshopFeature(workshop, "getirbakimCatalog")) {
     return NextResponse.json(
       { error: "GetirBakım stok/fiyat sorgusu bu çalışma alanında kapalı.", code: "feature_locked" },
       { status: 403 },

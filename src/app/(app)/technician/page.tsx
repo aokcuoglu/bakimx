@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,6 +24,8 @@ export default async function TechnicianPage({
 }: {
   searchParams: Promise<{ technician?: string }>
 }) {
+  const paywall = await getFeaturePaywall("team")
+  if (paywall) return paywall
   const params = await searchParams
   const { user, workshop } = await getAppData()
 

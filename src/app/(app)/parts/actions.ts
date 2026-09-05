@@ -1,7 +1,8 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
+import { requireFeatureWorkshop, requireWritableFeatureWorkshop } from "@/lib/auth"
+import type { Permission } from "@/lib/roles"
 import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
@@ -10,6 +11,13 @@ import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
 import { normalizeSupplierPriceRows, derivePartPricing, shouldPreserveDerivedPricing, type SupplierPriceRow } from "@/lib/parts/supplier-prices"
 import type { QuickPartCreateResult } from "@/lib/parts/quick-part-draft"
+
+async function requireAuth() {
+  return (await requireFeatureWorkshop("partsInventory")).user
+}
+function requireWritableWorkshop(permission: Permission) {
+  return requireWritableFeatureWorkshop(permission, "partsInventory")
+}
 
 type SupplierPricesResult =
   | { error: string }

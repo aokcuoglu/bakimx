@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/auth"
 import { apiErrorResponse } from "@/lib/api-errors"
 import { prisma } from "@/lib/db"
 import { getVapidConfig } from "@/lib/push/config"
+import { requireAuth } from "@/lib/technician/feature-auth"
 import { pushSubscriptionSchema, pushUnsubscribeSchema } from "@/lib/validations/push"
 
 /**

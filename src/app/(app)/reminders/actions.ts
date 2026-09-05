@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/db"
-import { requireWritableWorkshop, assertWorkshopAccess } from "@/lib/auth"
+import { requireWritableFeatureWorkshop, assertWorkshopAccess } from "@/lib/auth"
+import type { Permission } from "@/lib/roles"
 import { reminderCreateSchema } from "@/lib/validations/reminder"
 import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
@@ -11,6 +12,10 @@ import { deriveReminderStatus } from "@/lib/reminders/status"
 import { notifyMaintenanceReminder } from "@/lib/communications/triggers"
 import { syncMaintenanceReminderToCalendar } from "@/lib/calendar/sync"
 import type { MaintenanceReminderStatus, MaintenanceReminderType, MaintenanceChannel } from "@prisma/client"
+
+function requireWritableWorkshop(permission: Permission) {
+  return requireWritableFeatureWorkshop(permission, "automatedReminders")
+}
 
 export async function createReminderAction(formData: FormData) {
   const { user } = await requireWritableWorkshop("records.create")
