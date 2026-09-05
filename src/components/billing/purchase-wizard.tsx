@@ -23,7 +23,7 @@ import {
   type CheckoutPublicValues,
 } from "@/lib/validations/billing"
 import { PLAN_PACKAGES } from "@/lib/plans-catalog"
-import { getPlanPriceMinor, formatMinor } from "@/lib/billing/pricing"
+import { getPlanPriceMinor, formatMinor, isComplimentaryPlan } from "@/lib/billing/pricing"
 import { createBillingOrder } from "@/app/(app)/billing/actions"
 import type { PlanTier } from "@/lib/plan"
 import type { HavaleInfo } from "@/lib/billing/provider"
@@ -81,6 +81,7 @@ export function PurchaseWizard({
     reference: string
     amountMinor: number
     method: PayMethod
+    complimentary: boolean
   } | null>(null)
   const submitRef = useRef(false)
 
@@ -118,6 +119,7 @@ export function PurchaseWizard({
   })
   const { register, trigger, getValues, formState } = form
   const reduce = useReducedMotion()
+  const complimentary = isComplimentaryPlan(tier, cycle)
 
   async function next(fields: string[]) {
     setError("")
@@ -134,10 +136,11 @@ export function PurchaseWizard({
     setError("")
     setLoading(true)
     try {
+      const effectiveMethod: PayMethod = complimentary ? "havale" : method
       const values = getValues() as Record<string, unknown>
       values.tier = tier
       values.cycle = cycle
-      values.method = method
+      values.method = effectiveMethod
       if (isPublic) {
         const res = await fetch("/api/checkout", {
           method: "POST",
@@ -146,21 +149,21 @@ export function PurchaseWizard({
         })
         const data = await res.json()
         if (data.success) {
-          trackMarketingEvent("purchase_submitted", { plan_tier: tier, billing_cycle: cycle, payment_method: method })
-          setDone({ reference: data.reference, amountMinor: data.amountMinor, method })
+          trackMarketingEvent("purchase_submitted", { plan_tier: tier, billing_cycle: cycle, payment_method: effectiveMethod })
+          setDone({ reference: data.reference, amountMinor: data.amountMinor, method: effectiveMethod, complimentary: Boolean(data.complimentary) })
         } else setError(data.error || "Satın alma başarısız")
       } else {
         const res = await createBillingOrder({
           tier,
           cycle,
-          method,
+          method: effectiveMethod,
           invoiceTitle: String(values.invoiceTitle ?? ""),
           taxNumber: String(values.taxNumber ?? ""),
           taxOffice: String(values.taxOffice ?? ""),
         })
         if (res.ok) {
           trackMarketingEvent("purchase_submitted", { plan_tier: tier, billing_cycle: cycle, payment_method: res.method })
-          setDone({ reference: res.reference, amountMinor: res.amountMinor, method: res.method })
+          setDone({ reference: res.reference, amountMinor: res.amountMinor, method: res.method, complimentary: res.complimentary })
         }
         else setError(res.error)
       }
@@ -186,7 +189,9 @@ export function PurchaseWizard({
         {/* my-auto: boş alan varsa dikey ortalar, içerik taşarsa kırpmadan üstten başlar */}
         <div className="mx-auto w-full max-w-md md:my-auto">
           {done ? (
-            done.method === "card" ? (
+            done.complimentary ? (
+              <ComplimentaryDonePanel mode={mode} />
+            ) : done.method === "card" ? (
               <CardPaymentPanel
                 reference={done.reference}
                 amountMinor={done.amountMinor}
@@ -292,9 +297,14 @@ export function PurchaseWizard({
                                 </p>
                               </div>
                               <div className="ml-3 shrink-0 text-right">
+                                {pkg.listMonthlyLabel && (
+                                  <s className="block text-xs text-muted-foreground">
+                                    {cycle === "monthly" ? pkg.listMonthlyLabel : pkg.listYearlyLabel}
+                                  </s>
+                                )}
                                 <p className="font-bold text-foreground">{formatMinor(minor)}</p>
                                 <p className="text-[11px] text-muted-foreground">
-                                  {cycle === "monthly" ? "/ay" : "/yıl"} · KDV dahil
+                                  {pkg.tier === "lite" ? "Açılışa özel · sınırlı süre" : cycle === "monthly" ? "/ay · KDV dahil" : "/yıl · KDV dahil"}
                                 </p>
                               </div>
                             </Button>
@@ -470,7 +480,7 @@ export function PurchaseWizard({
                       <h2 className="text-lg font-bold text-foreground">Özet</h2>
 
                       {/* Ödeme yöntemi seçimi — kart görünümlü iki seçenek */}
-                      <div>
+                      {!complimentary && <div>
                         <Label className="text-xs">Ödeme yöntemi</Label>
                         <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
                           {(
@@ -501,10 +511,12 @@ export function PurchaseWizard({
                             )
                           })}
                         </div>
-                      </div>
+                      </div>}
 
                       <p className="text-sm text-muted-foreground">
-                        {method === "card"
+                        {complimentary
+                          ? "Lite paketiniz açılışa özel kampanya kapsamında ücretsiz etkinleştirilecek. Kart veya havale bilgisi gerekmiyor."
+                          : method === "card"
                           ? isPublic
                             ? "Onayladığınızda 3D Secure ödeme adımına geçersiniz. Ödeme onaylanınca paketiniz hemen aktifleşir."
                             : "Onayladığınızda 3D Secure ödeme adımına geçersiniz. Ödeme onaylanınca paketiniz hemen güncellenir."
@@ -532,6 +544,8 @@ export function PurchaseWizard({
                             <>
                               <BrandSpinner size={20} /> Gönderiliyor…
                             </>
+                          ) : complimentary ? (
+                            "Ücretsiz etkinleştir"
                           ) : method === "card" ? (
                             "Ödemeye geç"
                           ) : (
@@ -548,6 +562,25 @@ export function PurchaseWizard({
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function ComplimentaryDonePanel({ mode }: { mode: Mode }) {
+  return (
+    <div className="space-y-4 text-center">
+      <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10">
+        <CheckCircle2 className="size-7 text-primary" />
+      </div>
+      <div>
+        <h2 className="text-lg font-bold text-foreground">Lite paketiniz etkin</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Açılışa özel kampanya uygulandı; ödeme yapmanız gerekmiyor.
+        </p>
+      </div>
+      <Link href={mode === "public" ? "/login" : "/billing"} className="inline-block text-sm text-primary hover:underline">
+        {mode === "public" ? "Giriş sayfasına git" : "Paket sayfasına dön"}
+      </Link>
     </div>
   )
 }

@@ -17,3 +17,7 @@ test("ödeme şeması Lite paket siparişini kabul eder", () => {
 test("ödeme şeması bilinmeyen paketleri reddeder", () => {
   expect(checkoutInAppSchema.safeParse({ ...validOrder, tier: "enterprise" }).success).toBe(false)
 })
+
+test("ödeme şeması yeni satışa kapalı Başlangıç paketini reddeder", () => {
+  expect(checkoutInAppSchema.safeParse({ ...validOrder, tier: "starter" }).success).toBe(false)
+})

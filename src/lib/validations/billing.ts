@@ -1,9 +1,9 @@
 import { z } from "zod/v4"
-import { PLAN_TIERS } from "@/lib/plan"
+import { SALE_PLAN_TIERS } from "@/lib/plan"
 import { isValidWorkshopCode } from "@/lib/workshop-code"
 import { ACQUISITION_SOURCES } from "@/lib/acquisition-sources"
 
-const tier = z.enum(PLAN_TIERS)
+const tier = z.enum(SALE_PLAN_TIERS)
 const cycle = z.enum(["monthly", "yearly"])
 // Ödeme yöntemi — eski istemciler alanı göndermezse `havale` (geriye uyumlu).
 const method = z.enum(["card", "havale"]).default("havale")

@@ -1,17 +1,25 @@
 import { expect, test } from "bun:test"
-import { getPlanPriceMinor, formatMinor } from "@/lib/billing/pricing"
+import { getPlanPriceMinor, formatMinor, isComplimentaryPlan } from "@/lib/billing/pricing"
 
 test("getPlanPriceMinor returns VAT-included kuruş for monthly", () => {
-  expect(getPlanPriceMinor("starter", "monthly")).toBe(74900)
-  expect(getPlanPriceMinor("pro", "monthly")).toBe(129900)
-  expect(getPlanPriceMinor("premium", "monthly")).toBe(219900)
+  expect(getPlanPriceMinor("lite", "monthly")).toBe(0)
+  expect(getPlanPriceMinor("pro", "monthly")).toBe(179900)
+  expect(getPlanPriceMinor("premium", "monthly")).toBe(299900)
 })
 
 test("getPlanPriceMinor returns VAT-included kuruş for yearly", () => {
-  expect(getPlanPriceMinor("pro", "yearly")).toBe(1299000)
-  expect(getPlanPriceMinor("premium", "yearly")).toBe(2199000)
+  expect(getPlanPriceMinor("lite", "yearly")).toBe(0)
+  expect(getPlanPriceMinor("pro", "yearly")).toBe(1799000)
+  expect(getPlanPriceMinor("premium", "yearly")).toBe(2999000)
 })
 
 test("formatMinor renders Turkish Lira", () => {
-  expect(formatMinor(129900)).toContain("1.299")
+  expect(formatMinor(179900)).toContain("1.799")
+})
+
+test("yalnız ücretsiz Lite kampanyası ödeme toplamayı atlar", () => {
+  expect(isComplimentaryPlan("lite", "monthly")).toBe(true)
+  expect(isComplimentaryPlan("lite", "yearly")).toBe(true)
+  expect(isComplimentaryPlan("pro", "monthly")).toBe(false)
+  expect(isComplimentaryPlan("premium", "yearly")).toBe(false)
 })

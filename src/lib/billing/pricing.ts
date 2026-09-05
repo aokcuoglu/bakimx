@@ -13,6 +13,11 @@ export function getPlanPriceMinor(tier: PlanTier, cycle: BillingCycle): number {
   return Math.round(lira * 100)
 }
 
+/** Complimentary catalog offers bypass payment collection and activate immediately. */
+export function isComplimentaryPlan(tier: PlanTier, cycle: BillingCycle): boolean {
+  return getPlanPriceMinor(tier, cycle) === 0
+}
+
 /** Format a kuruş amount as Turkish Lira, e.g. 129900 -> "₺1.299,00". */
 export function formatMinor(minor: number): string {
   return new Intl.NumberFormat("tr-TR", {

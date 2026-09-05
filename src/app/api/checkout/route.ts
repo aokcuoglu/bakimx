@@ -5,12 +5,13 @@ import { checkoutPublicSchema } from "@/lib/validations/billing"
 import { normalizeAcquisitionAdvisorId } from "@/lib/acquisition-sources"
 import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
-import { getPlanPriceMinor } from "@/lib/billing/pricing"
+import { getPlanPriceMinor, isComplimentaryPlan } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
 import { createBillingTaxSnapshot } from "@/lib/billing/tax"
 import { workshopCodeCandidate } from "@/lib/workshop-code"
 import type { BillingCycle } from "@prisma/client"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
+import { activateBillingOrder } from "@/lib/billing/activate"
 
 const MAX_ATTEMPTS = 5
 const MAX_REF_RETRIES = 5
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
       // P2002-yeniden-dene döngüsünü paylaşır.
       const loginCode = workshopCodeCandidate(data.workshopName, attempt)
       try {
-        await prisma.$transaction(async (tx) => {
+        const order = await prisma.$transaction(async (tx) => {
           const workshop = await tx.workshop.create({
             data: {
               loginCode,
@@ -152,7 +153,7 @@ export async function POST(request: Request) {
               technicianId: ownerTechnician.id,
             },
           })
-          await tx.billingOrder.create({
+          return tx.billingOrder.create({
             data: {
               workshopId: workshop.id,
               type: "new_purchase",
@@ -167,7 +168,17 @@ export async function POST(request: Request) {
             },
           })
         })
-        return NextResponse.json({ success: true, reference, amountMinor, method: data.method })
+        const complimentary = isComplimentaryPlan(tier, cycle)
+        if (complimentary) {
+          const activation = await activateBillingOrder(order.id, {
+            actor: "payment",
+            confirmedByEmail: "opening-promotion",
+          })
+          if (!activation.ok) {
+            return NextResponse.json({ error: activation.error }, { status: 500 })
+          }
+        }
+        return NextResponse.json({ success: true, reference, amountMinor, method: data.method, complimentary })
       } catch (err) {
         const e = err as { code?: string; meta?: { target?: string[] | string } }
         if (e.code === "P2002") {

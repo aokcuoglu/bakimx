@@ -65,8 +65,16 @@ export function businessDaysUntil(from: Date, until: Date): number {
 export const PLAN_TIERS = ["lite", "starter", "pro", "premium"] as const
 export type PlanTier = (typeof PLAN_TIERS)[number]
 
+/** Tiers offered for new purchases. `starter` remains readable for legacy workshops. */
+export const SALE_PLAN_TIERS = ["lite", "pro", "premium"] as const
+export type SalePlanTier = (typeof SALE_PLAN_TIERS)[number]
+
 export function isPlanTier(value: unknown): value is PlanTier {
   return typeof value === "string" && PLAN_TIERS.some((tier) => tier === value)
+}
+
+export function isSalePlanTier(value: unknown): value is SalePlanTier {
+  return typeof value === "string" && SALE_PLAN_TIERS.some((tier) => tier === value)
 }
 
 // Included login seats per plan tier. During the trial a workshop is on `pro`,
