@@ -36,7 +36,7 @@ export default async function OrderDetailPage({
         include: {
           customer: true,
           vehicle: { include: { customer: true } },
-          damageMarks: { orderBy: { createdAt: "asc" } },
+          damageMarks: { where: { deletedAt: null }, orderBy: { number: "asc" }, include: { photos: { where: { photo: { deletedAt: null, serviceOrderItemId: null } }, select: { photoId: true } } } },
           photos: {
             // Dış alım fotoğrafları buradaki genel foto galerisine girmez; parça
             // kaleminin satın-alma modalından (items.photos) erişilir.
@@ -307,7 +307,12 @@ export default async function OrderDetailPage({
       vin: intakeForm.vehicle.vin,
     },
     photos: intakeForm.photos,
+    bodyType: intakeForm.bodyType,
+    inspectionStatus: intakeForm.inspectionStatus,
+    inspectedAt: intakeForm.inspectedAt,
     damageMarks: intakeForm.damageMarks.map((d) => ({
+      number: d.number,
+      photoIds: d.photos.map(p => p.photoId),
       id: d.id,
       zone: d.zone,
       damageType: d.damageType,

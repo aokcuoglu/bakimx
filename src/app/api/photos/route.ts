@@ -18,18 +18,21 @@ export async function GET(request: Request) {
     const photo = await prisma.vehiclePhoto.findFirst({
       // Silinmiş kare artık servis edilmez (bayat <img src> ile de çekilemesin).
       where: { id: photoId, workshopId: user.workshopId, ...VISIBLE_PHOTO },
+      include: { annotationVersions: { orderBy: { version: "desc" }, take: 1, select: { storageKey: true, mimeType: true } } },
     })
 
     if (!photo) {
       return NextResponse.json({ error: "Fotoğraf bulunamadı" }, { status: 404 })
     }
 
-    if (!photo.storageKey) {
+    const rendition = url.searchParams.get("variant") !== "original" ? photo.annotationVersions[0] : undefined
+    const storageKey = rendition?.storageKey ?? photo.storageKey
+    if (!storageKey) {
       return NextResponse.json({ error: "Fotoğraf dosyası mevcut değil" }, { status: 404 })
     }
 
     const provider = await getStorageProvider()
-    const signedUrl = await provider.getSignedUrl(photo.storageKey, 3600)
+    const signedUrl = await provider.getSignedUrl(storageKey, 3600)
 
     if (!signedUrl) {
       return NextResponse.json({ error: "Fotoğraf URL alınamadı" }, { status: 404 })
@@ -44,8 +47,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Fotoğraf alınamadı" }, { status: 502 })
     }
     const headers = new Headers()
-    headers.set("Content-Type", photo.mimeType || upstream.headers.get("content-type") || "image/jpeg")
-    headers.set("Cache-Control", "private, max-age=300")
+    headers.set("Content-Type", rendition?.mimeType || photo.mimeType || upstream.headers.get("content-type") || "image/jpeg")
+    headers.set("Cache-Control", "private, no-store")
     if (size === "thumb") {
       headers.set("X-Photo-Size", "thumb")
     }

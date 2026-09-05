@@ -2,6 +2,9 @@ import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES, INTAKE_STATU
 import { escapeHtml } from "@/lib/html-escape"
 
 export type SafeIntakeData = {
+  bodyType?: string
+  inspectionStatus?: string
+  inspectedAt?: Date | null
   status: string
   statusLabel: string
   mileageAtIntake: number | null
@@ -27,7 +30,7 @@ export type SafeIntakeData = {
     vin: string | null
   }
   photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string }[]
-  damageMarks: { zone: string; zoneLabel: string; damageType: string; damageTypeLabel: string; severity: string; severityLabel: string; severityColor: string; note: string | null }[]
+  damageMarks: { number: number; photoIds: string[]; zone: string; zoneLabel: string; damageType: string; damageTypeLabel: string; severity: string; severityLabel: string; severityColor: string; note: string | null }[]
   approvals: { status: string; approvedAt: Date | null }[]
   /**
    * `discountAmount` (kuruş) ve `taxRate` (bps) müşteri belgesinin kırılımını
@@ -59,6 +62,9 @@ const NEVER_PUBLIC_FIELDS = [
 
 export function sanitizeIntakeForPublic(
   intake: {
+    bodyType?: string
+    inspectionStatus?: string
+    inspectedAt?: Date | null
     status: string
     mileageAtIntake: number | null
     fuelLevelAtIntake: number | null
@@ -84,7 +90,7 @@ export function sanitizeIntakeForPublic(
       vin: string | null
     }
     photos: { id: string; type: string; label: string; fileUrl: string | null; phase?: string }[]
-    damageMarks: { zone: string; damageType: string; severity: string; note: string | null }[]
+    damageMarks: { number?: number; deletedAt?: Date | null; photos?: { photoId: string }[]; zone: string; damageType: string; severity: string; note: string | null }[]
     approvals: { status: string; approvedAt: Date | null }[]
     order: {
       status: string
@@ -115,7 +121,9 @@ export function sanitizeIntakeForPublic(
   const showMoney = visibility.showOrderItems !== false
 
   const damageMarks = (visibility.showDamage !== false)
-    ? intake.damageMarks.map((dm) => ({
+    ? intake.damageMarks.filter(dm => !dm.deletedAt).map((dm, index) => ({
+        number: dm.number ?? index + 1,
+        photoIds: visibility.showPhotos !== false ? (dm.photos ?? []).map(p => p.photoId).filter(id => intake.photos.some(p => p.id === id)) : [],
         zone: dm.zone,
         zoneLabel: VEHICLE_ZONES[dm.zone as keyof typeof VEHICLE_ZONES] || dm.zone,
         damageType: dm.damageType,
@@ -161,6 +169,9 @@ export function sanitizeIntakeForPublic(
     : null
 
   return {
+    bodyType: visibility.showDamage !== false ? intake.bodyType ?? "sedan" : undefined,
+    inspectionStatus: visibility.showDamage !== false ? intake.inspectionStatus ?? "not_recorded" : undefined,
+    inspectedAt: visibility.showDamage !== false ? intake.inspectedAt ?? null : undefined,
     status: intake.status,
     statusLabel,
     mileageAtIntake: intake.mileageAtIntake,

@@ -1,5 +1,7 @@
 "use client"
 
+import { VehicleDamageMap } from "@/components/damage/vehicle-damage-map"
+import type { BodyType } from "@/components/damage/vehicle-geometry"
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
@@ -35,7 +37,10 @@ type SafeIntakeData = {
   }
   vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
   photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string }[]
-  damageMarks: { zone: string; zoneLabel: string; damageType: string; damageTypeLabel: string; severity: string; severityLabel: string; severityColor: string; note: string | null }[]
+  bodyType?: string
+  inspectionStatus?: string
+  inspectedAt?: Date | string | null
+  damageMarks: { id?: string; number?: number; photoIds?: string[]; zone: string; zoneLabel: string; damageType: string; damageTypeLabel: string; severity: string; severityLabel: string; severityColor: string; note: string | null }[]
   approvals: { status: string; approvedAt: Date | null }[]
   order: {
     status: string
@@ -283,33 +288,11 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
         )}
 
         {/* Damage Summary */}
-        {shareLink.showDamage && intakeForm.damageMarks.length > 0 && (
-          <div className="bg-card border border-border rounded-lg overflow-hidden print:border print:border-border print:shadow-none">
-            <div className="h-[3px] bg-brand" />
-            <div className="p-4 space-y-3">
-              <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">
-                Hasar Kayıtları ({intakeForm.damageMarks.length})
-              </h3>
-              <div className="space-y-2">
-                {intakeForm.damageMarks.map((mark, idx) => (
-                  <div key={`dm-${idx}-${mark.zone}`} className="flex items-start gap-2.5 text-sm py-1.5 border-b border-border last:border-0">
-                    <span
-                      className="w-3 h-3 rounded-full shrink-0 mt-0.5 print:border print:border-black"
-                      style={{ backgroundColor: mark.severityColor }}
-                    />
-                    <div>
-                      <span className="font-medium">{mark.zoneLabel}</span>
-                      <span className="text-muted-foreground"> — {mark.damageTypeLabel}</span>
-                      <span className="text-xs ml-1 px-1.5 py-0.5 bg-muted rounded-full print:border print:border-border">
-                        {mark.severityLabel}
-                      </span>
-                      {mark.note && <p className="text-muted-foreground text-xs mt-0.5">{mark.note}</p>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+        {shareLink.showDamage && (
+          <section className="rounded-lg border bg-card p-4">
+            <h3 className="mb-3 font-semibold">Hasar ve kontrol kaydı</h3>
+            <VehicleDamageMap damageMarks={intakeForm.damageMarks.map((mark,index)=>({...mark,id:mark.id || `damage-${index}`}))} bodyType={(intakeForm.bodyType || "sedan") as BodyType} inspectionStatus={intakeForm.inspectionStatus} inspectedAt={intakeForm.inspectedAt ? new Date(intakeForm.inspectedAt).toISOString() : null} photos={shareLink.showPhotos ? intakeForm.photos : []} />
+          </section>
         )}
 
         {/* Approval Status */}

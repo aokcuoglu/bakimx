@@ -224,7 +224,7 @@ export async function getTechnicianOrderDetail(
         include: {
           customer: true,
           vehicle: true,
-          damageMarks: { orderBy: { createdAt: "asc" } },
+          damageMarks: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
           photos: {
             where: VISIBLE_PHOTO,
             orderBy: { createdAt: "asc" },

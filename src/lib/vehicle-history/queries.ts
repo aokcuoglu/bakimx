@@ -69,6 +69,7 @@ export async function getCrossWorkshopVehicleHistory({
           mileageAtIntake: true,
           customerComplaint: true,
           damageMarks: {
+            where: { deletedAt: null },
             select: { zone: true, damageType: true, severity: true, createdAt: true },
           },
           order: {

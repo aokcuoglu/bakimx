@@ -29,7 +29,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
         include: {
           customer: true,
           vehicle: { include: { customer: true } },
-          damageMarks: { orderBy: { createdAt: "asc" } },
+          damageMarks: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
           photos: {
             where: VISIBLE_PHOTO,
             orderBy: { createdAt: "asc" },

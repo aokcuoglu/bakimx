@@ -24,7 +24,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
               items: { select: { name: true, ...ORDER_TOTALS_ITEM_SELECT } },
             },
           },
-          damageMarks: true,
+          damageMarks: { where: { deletedAt: null } },
           photos: {
             // Dış alım fotoğrafları araç foto geçmişine karışmaz (dahili-yalnız).
             where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },

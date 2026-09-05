@@ -50,6 +50,8 @@ export const TENANT_TABLES = [
   "Customer",
   "Vehicle",
   "VehicleIntakeForm",
+  "DamagePhoto",
+  "PhotoAnnotationVersion",
   "VehiclePhoto",
   "DamageMark",
   "ApprovalRequest",

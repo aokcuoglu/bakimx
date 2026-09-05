@@ -56,8 +56,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
           _count: true,
         }),
         prisma.damageMark.aggregate({
-          where: intakeScope,
-          _max: { createdAt: true },
+          where: { ...intakeScope, deletedAt: null },
+          _max: { updatedAt: true },
           _count: true,
         }),
         prisma.intakeTimelineEvent.aggregate({
@@ -85,7 +85,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       `${items._count}:${ms(items._max.updatedAt)}`,
       `${collections._count}:${ms(collections._max.updatedAt)}`,
       `${photos._count}:${ms(photos._max.updatedAt)}`,
-      `${damageMarks._count}:${ms(damageMarks._max.createdAt)}`,
+      `${damageMarks._count}:${ms(damageMarks._max.updatedAt)}`,
       `${timeline._count}:${ms(timeline._max.createdAt)}`,
       `${approvals._count}:${ms(approvals._max.updatedAt)}`,
       `${activity._count}:${ms(activity._max.createdAt)}`,

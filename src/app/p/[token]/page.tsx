@@ -20,7 +20,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
           intakes: {
             include: {
               order: { include: { items: true } },
-              damageMarks: true,
+              damageMarks: { where: { deletedAt: null } },
               photos: {
                 // Dış alım (satın alma) fotoğrafları dahili-yalnız — araç pasaportuna sızmaz.
                 where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },

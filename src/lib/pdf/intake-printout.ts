@@ -1,3 +1,4 @@
+import { renderDamageReport } from "@/lib/pdf/damage-report"
 import { PHOTO_PHASES } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
 import { fuelGaugeSvgMarkup, formatFuelLevel } from "@/lib/fuel-level"
@@ -155,10 +156,10 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
       hint: `${photoCompletion.requiredCompleted}/${photoCompletion.required} zorunlu kare`,
     },
     {
-      tone: intakeForm.damageMarks.length > 0 ? "warn" : "ok",
+      tone: intakeForm.damageMarks.length > 0 || intakeForm.inspectionStatus !== "no_visible_damage" ? "warn" : "ok",
       value: String(intakeForm.damageMarks.length),
       label: "Hasar kaydı",
-      hint: intakeForm.damageMarks.length > 0 ? "Detaylar aşağıda" : "Kayıt yok",
+      hint: intakeForm.damageMarks.length > 0 ? "Detaylar aşağıda" : intakeForm.inspectionStatus === "no_visible_damage" ? "Görünür hasar gözlenmedi" : "Kontrol kaydı yok",
     },
     {
       tone: isApproved ? "ok" : "warn",
@@ -254,38 +255,7 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
       : ""
 
   // ---- Hasar -------------------------------------------------------------
-  const damageSection =
-    intakeForm.damageMarks.length > 0
-      ? section(
-          "Hasar Kayıtları",
-          `<table class="table">
-            <thead>
-              <tr>
-                <th class="th">Bölge</th>
-                <th class="th">Tip</th>
-                <th class="th">Şiddet</th>
-                <th class="th">Not</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${intakeForm.damageMarks
-                .map(
-                  (mark) => `<tr>
-                    <td class="cell cell-name"><span class="dot" style="background:${safeHexColor(
-                      mark.severityColor,
-                      "#9CA3AF"
-                    )}"></span>${mark.zoneLabel || mark.zone}</td>
-                    <td class="cell">${mark.damageTypeLabel || mark.damageType}</td>
-                    <td class="cell">${mark.severityLabel || mark.severity}</td>
-                    <td class="cell cell-muted">${mark.note || "—"}</td>
-                  </tr>`
-                )
-                .join("")}
-            </tbody>
-          </table>`,
-          `${intakeForm.damageMarks.length} kayıt`
-        )
-      : ""
+  const damageSection = renderDamageReport(intakeForm)
 
   // ---- Fotoğraf kontrol listesi -----------------------------------------
   const photoSection =
@@ -533,6 +503,18 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
     .total-row { display: flex; justify-content: space-between; gap: 16px; font-size: 10.5px; color: var(--muted); }
     .total-row span:last-child { font-variant-numeric: tabular-nums; }
     .total-grand { margin-top: 5px; font-size: 13px; font-weight: 700; color: var(--ink); }
+
+    .damage-report { margin-bottom: 18px; }
+    .damage-views { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .damage-views figure, .damage-images figure { margin: 0; break-inside: avoid; }
+    .damage-views svg { display: block; width: 100%; height: 42mm; }
+    .damage-views figcaption, .damage-images figcaption { text-align: center; font-size: 10px; color: var(--muted); }
+    .damage-card { margin-top: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; break-inside: avoid; }
+    .damage-card h3 { margin: 0; font-size: 12px; }
+    .damage-card p { margin: 4px 0; }
+    .damage-note { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .damage-images { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .damage-images img { width: 100%; height: 46mm; object-fit: contain; }
 
     /* Fotoğraf kontrol listesi */
     .checklist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; }

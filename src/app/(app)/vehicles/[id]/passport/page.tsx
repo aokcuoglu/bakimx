@@ -21,7 +21,7 @@ export default async function VehiclePassportPage({ params }: { params: Promise<
       intakes: {
         include: {
           order: { include: { items: true, assignedTechnician: { select: { id: true, fullName: true } } } },
-          damageMarks: true,
+          damageMarks: { where: { deletedAt: null } },
           photos: {
             // Dış alım fotoğrafları araç pasaportuna girmez (dahili-yalnız).
             where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },

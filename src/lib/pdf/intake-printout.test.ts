@@ -268,3 +268,30 @@ describe("renderIntakePrintoutHtml", () => {
     expect(html).not.toContain("Faks")
   })
 })
+
+describe("damage evidence report", () => {
+  const mark = { number: 17, zone: "hood", damageType: "scratch", severity: "light", note: '<script>unsafe</script>', photos: [{ photoId: "p1" }] }
+  test("keeps permanent numbers across all views and linked photo captions", () => {
+    const html = render({ bodyType: "suv", inspectionStatus: "not_recorded", damageMarks: [mark], photos: [{ id: "p1", type: "damage_detail", label: "Hasar", fileUrl: "/s/test-token/photos/p1", phase: "intake" }] })
+    for (const view of ["Ön", "Arka", "Sol", "Sağ", "Üst"]) expect(html).toContain(`aria-label="${view} görünüş"`)
+    expect(html).toContain("#17 · Kaput")
+    expect(html).toContain('alt="Hasar 17 fotoğrafı"')
+    expect(html).toContain('src="/s/test-token/photos/p1"')
+    expect(html).not.toContain("<script>unsafe</script>")
+    expect(html).toContain("&lt;script&gt;unsafe&lt;/script&gt;")
+  })
+  test("missing photo does not infer a clean inspection", () => {
+    const html = render({ inspectionStatus: "not_recorded", damageMarks: [mark] })
+    expect(html).toContain("Fotoğraf eklenmedi")
+    expect(html).not.toContain("Kontrol edildi, görünür hasar gözlenmedi")
+    expect(render({ inspectionStatus: "not_recorded" })).toContain("Kontrol kaydı yok")
+    expect(render({ inspectionStatus: "no_visible_damage", inspectedAt: CREATED_AT })).toContain("Kontrol edildi, görünür hasar gözlenmedi")
+  })
+  test("report rejects storage and malicious image URLs", () => {
+    for (const fileUrl of ['https://storage.example/private.jpg', 'javascript:alert(1)', '//evil.example/x', '/s/token/photos/p1" onerror="alert(1)']) {
+      const html = render({ damageMarks: [mark], photos: [{ id: "p1", type: "damage_detail", label: "Hasar", fileUrl }] })
+      expect(html).not.toContain(`src="${fileUrl}"`)
+      expect(html).not.toContain(' onerror="alert(1)"')
+    }
+  })
+})
