@@ -524,7 +524,7 @@ export function VehicleEntryWizard({
             />
           ) : (
             <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              OCR ile ruhsat okuma özelliği paketinizde bulunmuyor.
+              Ruhsat okuma özelliği paketinizde bulunmuyor.
               <br />
               Bilgileri elle girerek devam edebilirsiniz.
             </div>
@@ -541,7 +541,7 @@ export function VehicleEntryWizard({
         <div className="space-y-5">
           <WizardHeading
             eyebrow={`Adım ${stepIndex + 1}`}
-            title="Şase (VIN) numarasını okutun"
+            title="Şase numarasını okutun"
             description="Ön camın altındaki 17 haneli şase numarasını kamerayla okutun veya elle yazın."
           />
           <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-6 text-center sm:p-10">

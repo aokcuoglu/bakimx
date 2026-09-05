@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const provider = await getOcrProvider()
     if (typeof provider.extractPartBox !== "function") {
       return NextResponse.json(
-        { error: "Aktif OCR sağlayıcısı parça kutusu okumayı desteklemiyor." },
+        { error: "Aktif okuma servisi parça kutusu okumayı desteklemiyor." },
         { status: 400 }
       )
     }

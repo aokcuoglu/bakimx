@@ -4,6 +4,7 @@
 
 import {
   type ComponentType,
+  type FormEvent,
   Fragment,
   useEffect,
   useRef,
@@ -36,6 +37,7 @@ import {
   Hammer,
   Handshake,
   Headphones,
+  Loader2,
   Lock,
   Mail,
   MapPin,
@@ -59,6 +61,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Form,
   FormControl,
   FormField,
@@ -67,6 +77,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -76,6 +87,7 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { toast } from "sonner"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { CitySelect, DistrictSelect } from "@/components/shared/location-select"
 import { ACQUISITION_SOURCES, ACQUISITION_SOURCE_OPTIONS } from "@/lib/acquisition-sources"
@@ -88,6 +100,7 @@ import {
   REGISTER_STEPS,
   SETUP_PREFERENCE_IDS,
   TEAM_SIZE_IDS,
+  isRegisterSectorEnabled,
   recommendedRegisterModules,
   type BusinessFeatureId,
   type RegisterModuleId,
@@ -101,25 +114,39 @@ import { typedResolver } from "@/lib/validations/resolver"
 
 type IconType = ComponentType<{ className?: string }>
 
-const SECTORS: {
+type SectorOption = {
   id: string
   label: string
   description: string
   icon: IconType
   enabled: boolean
-}[] = [
-  { id: "auto_service", label: "Oto Servis", description: "Araç bakım, onarım ve periyodik servis", icon: Car, enabled: true },
-  { id: "mechanical_service", label: "Mekanik Servis", description: "Motor, şanzıman ve mekanik onarım", icon: Wrench, enabled: false },
-  { id: "body_paint", label: "Kaporta & Boya", description: "Kaporta, boya ve kaplama hizmetleri", icon: Paintbrush, enabled: false },
-  { id: "upholstery", label: "Oto Döşeme", description: "Koltuk, deri ve iç mekân", icon: CircleDot, enabled: false },
-  { id: "spare_parts", label: "Yedek Parça", description: "Parça satışı, stok ve sipariş", icon: Package, enabled: false },
-  { id: "tire_service", label: "Lastik / Rot / Balans", description: "Lastik, rot ve balans hizmetleri", icon: CircleDot, enabled: false },
-  { id: "hardware", label: "Hırdavat", description: "Hırdavat ve yapı malzemeleri", icon: Hammer, enabled: false },
-  { id: "auto_electric", label: "Oto Elektrik", description: "Elektrik arıza, akü ve aydınlatma", icon: Zap, enabled: false },
-  { id: "car_wash", label: "Oto Yıkama", description: "Yıkama ve detaylı temizlik", icon: Droplets, enabled: false },
-  { id: "steering", label: "Direksiyon Sistemleri", description: "Hidrolik ve elektrikli direksiyon", icon: Settings, enabled: false },
-  { id: "other", label: "Diğer", description: "Farklı sektör veya karma işletme", icon: MoreHorizontal, enabled: false },
+}
+
+const SECTOR_CATALOG: Omit<SectorOption, "enabled">[] = [
+  { id: "auto_service", label: "Oto Servis", description: "Araç bakım, onarım ve periyodik servis", icon: Car },
+  { id: "mechanical_service", label: "Mekanik Servis", description: "Motor, şanzıman ve mekanik onarım", icon: Wrench },
+  { id: "body_paint", label: "Kaporta & Boya", description: "Kaporta, boya ve kaplama hizmetleri", icon: Paintbrush },
+  { id: "spare_parts", label: "Yedek Parça", description: "Parça satışı, stok ve sipariş", icon: Package },
+  { id: "tire_service", label: "Lastik / Rot / Balans", description: "Lastik, rot ve balans hizmetleri", icon: CircleDot },
+  { id: "auto_electric", label: "Oto Elektrik", description: "Elektrik arıza, akü ve aydınlatma", icon: Zap },
+  { id: "upholstery", label: "Oto Döşeme", description: "Koltuk, deri ve iç mekân", icon: CircleDot },
+  { id: "hardware", label: "Hırdavat", description: "Hırdavat ve yapı malzemeleri", icon: Hammer },
+  { id: "car_wash", label: "Oto Yıkama", description: "Yıkama ve detaylı temizlik", icon: Droplets },
+  { id: "steering", label: "Direksiyon Sistemleri", description: "Hidrolik ve elektrikli direksiyon", icon: Settings },
+  { id: "other", label: "Diğer", description: "Farklı sektör veya karma işletme", icon: MoreHorizontal },
 ]
+
+const SECTORS: SectorOption[] = SECTOR_CATALOG.map((sector) => ({
+  ...sector,
+  enabled: isRegisterSectorEnabled(sector.id),
+})).sort((a, b) => Number(b.enabled) - Number(a.enabled))
+
+const ENABLED_SECTORS = SECTORS.filter((sector) => sector.enabled)
+const COMING_SOON_SECTORS = SECTORS.filter((sector) => !sector.enabled)
+const SECTOR_LABEL_BY_ID = Object.fromEntries(SECTORS.map((sector) => [sector.id, sector.label])) as Record<
+  string,
+  string
+>
 
 const BUSINESS_QUESTIONS: {
   id: BusinessFeatureId
@@ -381,7 +408,7 @@ export function RegisterForm({
       }
 
       trackMarketingEvent("register_submitted", {
-        sector: "auto_service",
+        sector: values.sector || "auto_service",
         team_size: values.teamSize || "solo",
         module_count: String(values.selectedModules.length),
       })
@@ -555,6 +582,8 @@ function StepHeading({ title, description }: { title: string; description: React
 }
 
 function SectorStep({ form }: { form: WizardForm }) {
+  const [interestSector, setInterestSector] = useState<SectorOption | null>(null)
+
   return (
     <div>
       <StepHeading title="Sektörünüzü seçin" description="İşletmenize en uygun kategoriyi belirleyin; sisteminizi buna göre hazırlayalım." />
@@ -563,49 +592,269 @@ function SectorStep({ form }: { form: WizardForm }) {
         name="sector"
         render={({ field }) => (
           <FormItem>
-            <ToggleGroup
-              type="single"
-              value={field.value}
-              onValueChange={(value) => value && field.onChange(value)}
-              className="grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-3"
-              aria-label="Sektör seçimi"
-            >
-              {SECTORS.map((sector) => {
+            <div className="grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <ToggleGroup
+                type="single"
+                value={field.value}
+                onValueChange={(value) => value && field.onChange(value)}
+                className="contents"
+                aria-label="Sektör seçimi"
+              >
+                {ENABLED_SECTORS.map((sector) => {
+                  const Icon = sector.icon
+                  return (
+                    <ToggleGroupItem
+                      key={sector.id}
+                      value={sector.id}
+                      variant="outline"
+                      className="relative h-auto min-h-28 w-full items-start justify-start rounded-xl p-3 text-left whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-foreground"
+                    >
+                      <span className="flex w-full flex-col items-start">
+                        <span className="mb-3 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
+                          <Icon className="size-4.5" />
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{sector.label}</span>
+                        <span className="mt-1 text-xs leading-4 text-muted-foreground">{sector.description}</span>
+                      </span>
+                    </ToggleGroupItem>
+                  )
+                })}
+              </ToggleGroup>
+
+              {COMING_SOON_SECTORS.map((sector) => {
                 const Icon = sector.icon
                 return (
-                  <ToggleGroupItem
+                  <Button
                     key={sector.id}
-                    value={sector.id}
-                    disabled={!sector.enabled}
+                    type="button"
                     variant="outline"
-                    className="relative h-auto min-h-28 w-full items-start justify-start rounded-xl p-3 text-left whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={() => setInterestSector(sector)}
+                    className="relative h-auto min-h-28 w-full items-start justify-start rounded-xl border-dashed bg-muted/40 p-3 text-left whitespace-normal hover:bg-muted/60"
                   >
                     <span className="flex w-full flex-col items-start">
-                      <span className="mb-3 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
+                      <span className="mb-3 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                         <Icon className="size-4.5" />
                       </span>
                       <span className="text-sm font-semibold text-foreground">{sector.label}</span>
                       <span className="mt-1 text-xs leading-4 text-muted-foreground">{sector.description}</span>
+                      <span className="mt-2 text-[11px] font-medium text-primary-strong">
+                        İlgileniyorum — bizimle iletişime geçin
+                      </span>
                     </span>
-                    {!sector.enabled && <Badge variant="secondary" className="absolute right-2 top-2">Yakında</Badge>}
-                  </ToggleGroupItem>
+                    <Badge variant="secondary" className="absolute right-2 top-2">
+                      Yakında
+                    </Badge>
+                  </Button>
                 )
               })}
-            </ToggleGroup>
+            </div>
             <FormMessage />
           </FormItem>
         )}
       />
+
+      <Dialog
+        open={interestSector !== null}
+        onOpenChange={(open) => {
+          if (!open) setInterestSector(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          {interestSector ? (
+            <ComingSoonSectorInterestForm
+              key={interestSector.id}
+              sector={interestSector}
+              onClose={() => setInterestSector(null)}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
 
+type SectorInterestForm = {
+  name: string
+  businessName: string
+  phone: string
+  city: string
+}
+
+const EMPTY_SECTOR_INTEREST: SectorInterestForm = {
+  name: "",
+  businessName: "",
+  phone: "",
+  city: "",
+}
+
+function ComingSoonSectorInterestForm({
+  sector,
+  onClose,
+}: {
+  sector: SectorOption
+  onClose: () => void
+}) {
+  const [formData, setFormData] = useState<SectorInterestForm>(EMPTY_SECTOR_INTEREST)
+  const [errors, setErrors] = useState<Partial<Record<keyof SectorInterestForm | "_general", string>>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const submitRef = useRef(false)
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    if (submitRef.current) return
+
+    const nextErrors: Partial<Record<keyof SectorInterestForm | "_general", string>> = {}
+    if (formData.name.trim().length < 2) nextErrors.name = "Ad Soyad en az 2 karakter olmalıdır"
+    if (formData.businessName.trim().length < 2) nextErrors.businessName = "İşletme adı en az 2 karakter olmalıdır"
+    if (!formData.phone.trim()) {
+      nextErrors.phone = "Telefon gerekli"
+    } else if (!/^[0-9+\-\s()]{7,15}$/.test(formData.phone.trim())) {
+      nextErrors.phone = "Telefon numarası geçersiz görünüyor"
+    }
+    if (!formData.city.trim()) nextErrors.city = "Şehir seçin"
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
+
+    submitRef.current = true
+    setIsSubmitting(true)
+    try {
+      const res = await fetch("/api/demo-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          businessName: formData.businessName.trim(),
+          phone: formData.phone.trim(),
+          city: formData.city.trim(),
+          monthlyVehicles: "belirtilmedi",
+          notes: `[Sektör talebi: ${sector.label}] Yakında listesinden erken erişim talebi (kayıt sihirbazı).`,
+        }),
+      })
+      if (res.ok) {
+        trackMarketingEvent("demo_submitted", {
+          form_location: "register_coming_soon_sector",
+        })
+        setIsSuccess(true)
+        toast.success("Talebiniz alındı. En kısa sürede sizinle iletişime geçeceğiz.")
+      } else {
+        try {
+          const data = (await res.json()) as { errors?: Record<string, string> }
+          setErrors(data.errors ?? { _general: "Form gönderilemedi. Lütfen alanları kontrol edin." })
+        } catch {
+          setErrors({ _general: "Form gönderilemedi. Lütfen alanları kontrol edin." })
+        }
+      }
+    } catch {
+      setErrors({ _general: "Bağlantı hatası oluştu. Lütfen tekrar deneyin." })
+    } finally {
+      submitRef.current = false
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>{sector.label} — Yakında</DialogTitle>
+        <DialogDescription>
+          Bu sektör henüz kayıtta açık değil. Kısa formu doldurun; talebinizi önceliklendirip sizi haberdar edelim.
+        </DialogDescription>
+      </DialogHeader>
+
+      {isSuccess ? (
+        <div className="space-y-4 py-2">
+          <div className="rounded-xl border border-success/20 bg-success/10 p-4 text-sm text-success-strong">
+            Talebiniz kaydedildi. Ekibimiz sizinle iletişime geçecek.
+          </div>
+          <DialogFooter>
+            <Button type="button" onClick={onClose}>
+              Tamam
+            </Button>
+          </DialogFooter>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="sector-interest-name">Ad Soyad</Label>
+            <Input
+              id="sector-interest-name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              autoComplete="name"
+              aria-invalid={errors.name ? true : undefined}
+            />
+            {errors.name ? <p className="text-xs text-destructive-strong">{errors.name}</p> : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sector-interest-business">İşletme adı</Label>
+            <Input
+              id="sector-interest-business"
+              value={formData.businessName}
+              onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+              autoComplete="organization"
+              aria-invalid={errors.businessName ? true : undefined}
+            />
+            {errors.businessName ? (
+              <p className="text-xs text-destructive-strong">{errors.businessName}</p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sector-interest-phone">Telefon</Label>
+            <Input
+              id="sector-interest-phone"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: formatPhoneTR(e.target.value) })}
+              inputMode="tel"
+              autoComplete="tel"
+              aria-invalid={errors.phone ? true : undefined}
+            />
+            {errors.phone ? <p className="text-xs text-destructive-strong">{errors.phone}</p> : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sector-interest-city">Şehir</Label>
+            <CitySelect
+              id="sector-interest-city"
+              value={formData.city}
+              onValueChange={(city) => setFormData({ ...formData, city })}
+            />
+            {errors.city ? <p className="text-xs text-destructive-strong">{errors.city}</p> : null}
+          </div>
+          {errors._general ? (
+            <p role="alert" className="text-sm text-destructive-strong">
+              {errors._general}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Vazgeç
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Gönderiliyor...
+                </>
+              ) : (
+                "Beni haberdar et"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      )}
+    </>
+  )
+}
+
 function BusinessDetailsStep({ form }: { form: WizardForm }) {
+  const sector = form.watch("sector")
+  const sectorLabel = SECTOR_LABEL_BY_ID[sector] ?? "Seçtiğiniz sektör"
+
   return (
     <div>
       <StepHeading
         title="İş detayları"
-        description={<><span className="font-semibold text-primary">Oto Servis</span> için birkaç soru — yanıtlarınıza göre başlangıç modüllerini önerelim.</>}
+        description={<><span className="font-semibold text-primary">{sectorLabel}</span> için birkaç soru — yanıtlarınıza göre başlangıç modüllerini önerelim.</>}
       />
       <FormField
         control={form.control}

@@ -126,7 +126,7 @@ export function PlanPackages({
 
               {VIN_LOOKUP_QUOTA[pkg.tier] > 0 && (
                 <p className="mb-3 text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{VIN_LOOKUP_QUOTA[pkg.tier].toLocaleString("tr-TR")} kota/ay</span> VIN & katalog sorgusu
+                  <span className="font-medium text-foreground">{VIN_LOOKUP_QUOTA[pkg.tier].toLocaleString("tr-TR")} kota/ay</span> şase ve parça sorgusu
                 </p>
               )}
 

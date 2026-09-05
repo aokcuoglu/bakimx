@@ -9,6 +9,7 @@ describe("marketing conversion instrumentation", () => {
   test("success events stay behind their API success boundaries", () => {
     for (const [file, success, event] of [
       ["components/auth/register-form.tsx", "if (data.ok)", "register_submitted"],
+      ["components/auth/register-form.tsx", "if (res.ok)", "demo_submitted"],
       ["components/sections/HeroLeadForm.tsx", "if (res.ok)", "demo_submitted"],
       ["components/sections/DemoRequestSection.tsx", "if (res.ok)", "demo_submitted"],
       ["components/site-assistant/views/demo-form-view.tsx", "if (res.ok)", "demo_submitted"],

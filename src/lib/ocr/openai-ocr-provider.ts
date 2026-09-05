@@ -1,5 +1,5 @@
 import { z } from "zod"
-import type { OcrProvider, RegistrationOcrResult } from "./types"
+import type { OcrProvider, OcrRequestOptions, RegistrationOcrResult } from "./types"
 import { RegistrationFieldsSchema, toRegistrationResult } from "./registration-result"
 
 const OpenAiRegistrationSchema = RegistrationFieldsSchema.extend({
@@ -77,10 +77,13 @@ export class OpenAiOcrProvider implements OcrProvider {
     private readonly model: string
   ) {}
 
-  async extractRegistration(imageBuffer: Buffer, mimeType: string): Promise<RegistrationOcrResult> {
+  async extractRegistration(imageBuffer: Buffer, mimeType: string, options?: OcrRequestOptions): Promise<RegistrationOcrResult> {
     const imageDataUrl = `data:${mimeType};base64,${imageBuffer.toString("base64")}`
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
+      ...(options?.signal || options?.timeoutMs
+        ? { signal: options.signal ?? AbortSignal.timeout(options.timeoutMs!) }
+        : {}),
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
         "Content-Type": "application/json",

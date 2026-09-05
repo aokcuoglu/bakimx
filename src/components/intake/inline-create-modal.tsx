@@ -422,7 +422,7 @@ export function InlineCreateModal({
                 </Select>
               </div>
               <div className="space-y-1 col-span-2">
-                <Label className="flex items-center gap-1">Şase No (VIN) {lowConf("vin") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
+                <Label className="flex items-center gap-1">Şase no {lowConf("vin") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <div className="flex gap-2">
                   <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className={fieldClass("vin")} />
                   <VinResolveButton
@@ -441,7 +441,7 @@ export function InlineCreateModal({
                 </div>
                 {vinResolve.loading && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Loader2 className="size-3 animate-spin" /> VIN sorgulanıyor…
+                    <Loader2 className="size-3 animate-spin" /> Şase sorgulanıyor…
                   </p>
                 )}
                 <VinResolveNotice notice={vinResolve.notice} unconfigured={vinResolve.unconfigured} />

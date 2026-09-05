@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk"
 import type {
   OcrProvider,
+  OcrRequestOptions,
   RegistrationOcrResult,
   OcrFieldConfidence,
   PartBoxOcrResult,
@@ -208,7 +209,7 @@ export class AnthropicOcrProvider implements OcrProvider {
     this.client = new Anthropic({ apiKey })
   }
 
-  async extractRegistration(imageBuffer: Buffer, mimeType: string): Promise<RegistrationOcrResult> {
+  async extractRegistration(imageBuffer: Buffer, mimeType: string, options?: OcrRequestOptions): Promise<RegistrationOcrResult> {
     const mediaType = SUPPORTED_MEDIA_TYPES.has(mimeType) ? mimeType : "image/jpeg"
 
     const response = await this.client.messages.create({
@@ -242,7 +243,7 @@ export class AnthropicOcrProvider implements OcrProvider {
           ],
         },
       ],
-    })
+    }, options ? { signal: options.signal, timeout: options.timeoutMs, maxRetries: options.maxRetries } : undefined)
 
     const toolUse = response.content.find(
       (block): block is Anthropic.ToolUseBlock => block.type === "tool_use" && block.name === TOOL_NAME

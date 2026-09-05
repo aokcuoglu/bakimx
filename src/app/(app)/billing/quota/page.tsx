@@ -38,7 +38,7 @@ export default async function QuotaPage() {
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Kota Yönetimi</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            VIN ve katalog sorgu kota durumunuzu görüntüleyin
+            Şase ve parça sorgu kota durumunuzu görüntüleyin
           </p>
         </div>
 
@@ -131,7 +131,7 @@ export default async function QuotaPage() {
         {/* Info */}
         <div className="rounded-lg bg-muted/50 p-4 text-xs text-muted-foreground space-y-1">
           <p>Kota, her ayın başında sıfırlanır.</p>
-          <p>VIN ve katalog sorguları aynı kota dahildir.</p>
+          <p>Şase ve parça sorguları aynı kota dahildir.</p>
           <p>Ek kota satin alma islemi onaydan sonra 24 saat icinde aktiflesir.</p>
         </div>
       </div>

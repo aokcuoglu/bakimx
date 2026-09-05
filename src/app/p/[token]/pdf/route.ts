@@ -200,7 +200,7 @@ async function generatePassportPdfHtml(data: {
         <div style="font-weight:700;">${safePlate}</div>
         <div style="font-size:9px;color:#666;">${safeVehicleLabel}${safeVehicleColor ? ` • ${safeVehicleColor}` : ""}${safeVehicleFuel ? ` • ${safeVehicleFuel}` : ""}</div>
         ${vehicle.mileage ? `<div style="font-size:9px;color:#666;">Kilometre: ${formatMileage(vehicle.mileage)}</div>` : ""}
-        ${safeVin ? `<div style="font-size:8px;color:#999;font-family:monospace;">VIN: ${safeVin}</div>` : ""}
+        ${safeVin ? `<div style="font-size:8px;color:#999;font-family:monospace;">Şase: ${safeVin}</div>` : ""}
       </div>
       <div style="flex:1;">
         <div style="font-size:10px;color:#666;">Müşteri</div>
@@ -233,7 +233,7 @@ async function generatePassportPdfHtml(data: {
   </div>
 
   <div style="text-align:center;margin-top:10px;padding:8px;border:1px solid #DBEAFE;border-radius:6px;background:#EFF6FF;color:#1E40AF;font-size:8px;">
-    Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, OCR verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
+    Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, ruhsat okuma verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
   </div>
 
   ${bakimxPdfFooterBar(createdAt)}

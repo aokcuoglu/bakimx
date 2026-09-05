@@ -118,7 +118,7 @@ export default async function PurchasesPage({
             <Input
               name="q"
               defaultValue={q}
-              placeholder="İş emri no, plaka, VIN veya tedarikçi ile ara..."
+              placeholder="İş emri no, plaka, şase veya tedarikçi ile ara..."
               className="pl-10"
             />
           </div>

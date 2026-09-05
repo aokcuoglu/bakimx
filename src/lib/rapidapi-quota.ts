@@ -69,7 +69,7 @@ export async function assertQuotaAvailable(
 ): Promise<void> {
   const cap = workshopMonthlyCap(tier, extraVinQuota)
   if (cap <= 0) {
-    throw new Error("Bu pakette katalog/VIN sorgusu bulunmuyor. Paketinizi yükseltin.")
+    throw new Error("Bu pakette şase/parça sorgusu bulunmuyor. Paketinizi yükseltin.")
   }
   const used = await countWorkshopCallsThisMonth(workshopId)
   if (used >= cap) {
@@ -109,7 +109,7 @@ export async function getRapidApiUsage(): Promise<RapidApiUsage> {
   ])
 
   const breakdown = [
-    { label: "VIN sorgu", billed: vinRows, served: vinServed._sum.hitCount ?? 0 },
+    { label: "Şase sorgu", billed: vinRows, served: vinServed._sum.hitCount ?? 0 },
     ...tecdocByEndpoint
       .map((e) => ({
         label: `Katalog · ${e.endpoint}`,

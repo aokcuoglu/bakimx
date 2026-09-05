@@ -24,12 +24,12 @@ test("product tour works with the keyboard and core destinations remain availabl
   await expect(
     page.getByRole("tab", { name: "Araç kabul", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("tabpanel")).toBeVisible();
+  await expect(page.getByRole("tabpanel", { name: "Araç kabul", exact: true })).toBeVisible();
   await page.keyboard.press("ArrowRight");
   await expect(
     page.getByRole("tab", { name: "Müşteri takibi", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
-  const productImage = page.getByRole("tabpanel").locator("img").first();
+  const productImage = page.getByRole("tabpanel", { name: "Müşteri takibi", exact: true }).locator("img").first();
   await expect(productImage).toBeVisible();
   await expect
     .poll(() =>

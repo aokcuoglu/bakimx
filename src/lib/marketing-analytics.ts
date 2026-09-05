@@ -22,11 +22,19 @@ export type MarketingEventPayloads = {
   demo_cta_click: Common & { cta_location: string; destination: "form" | "assistant" }
   register_started: Common & { entry_step: "sector" }
   register_submitted: Common & {
-    sector: "auto_service"
+    sector:
+      | "auto_service"
+      | "mechanical_service"
+      | "body_paint"
+      | "spare_parts"
+      | "tire_service"
+      | "auto_electric"
     team_size: "solo" | "2_5" | "6_10" | "11_25" | "26_50" | "50_plus"
     module_count: string
   }
-  demo_submitted: Common & { form_location: "home" | "demo_page" | "assistant" }
+  demo_submitted: Common & {
+    form_location: "home" | "demo_page" | "assistant" | "register_coming_soon_sector"
+  }
   purchase_started: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle; cta_location: "pricing_card" }
   purchase_submitted: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle; payment_method: "card" | "havale" }
 }

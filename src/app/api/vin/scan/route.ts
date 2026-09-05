@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const provider = await getOcrProvider()
     if (typeof provider.extractVin !== "function") {
       return NextResponse.json(
-        { error: "Aktif OCR sağlayıcısı şase okumayı desteklemiyor." },
+        { error: "Aktif okuma servisi şase okumayı desteklemiyor." },
         { status: 400 }
       )
     }

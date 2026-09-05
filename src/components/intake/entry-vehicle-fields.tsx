@@ -168,7 +168,7 @@ export function EntryVehicleFields({
             </Select>
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label className="flex items-center gap-1">Şase no (VIN) {warn("vin")}</Label>
+            <Label className="flex items-center gap-1">Şase no {warn("vin")}</Label>
             <div className="flex flex-wrap gap-2">
               <Input
                 value={fields.vin}
@@ -209,7 +209,7 @@ export function EntryVehicleFields({
             )}
             {vinResolve.loading && (
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Loader2 className="size-3 animate-spin" /> VIN sorgulanıyor…
+                <Loader2 className="size-3 animate-spin" /> Şase sorgulanıyor…
               </p>
             )}
             <VinResolveNotice notice={vinResolve.notice} unconfigured={vinResolve.unconfigured} />

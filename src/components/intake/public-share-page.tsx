@@ -228,7 +228,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                   </div>
                 )}
                 {intakeForm.vehicle.vin && (
-                  <p className="text-muted-foreground text-xs font-mono mt-0.5">VIN: {intakeForm.vehicle.vin}</p>
+                  <p className="text-muted-foreground text-xs font-mono mt-0.5">Şase: {intakeForm.vehicle.vin}</p>
                 )}
               </div>
             </div>
@@ -505,7 +505,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
         <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 print:border print:border-primary/30 text-center">
           <Shield className="size-4 text-primary mx-auto mb-1.5 print:hidden" />
           <p className="text-xs text-foreground">
-            Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, OCR verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
+            Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, ruhsat okuma verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
           </p>
         </div>
 

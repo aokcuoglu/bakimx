@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     if (!hasFeature(workshop.planTier as PlanTier, "ocrIntake")) {
       return NextResponse.json(
-        { error: "Bu pakette OCR özelliği bulunmuyor. Paketinizi yükseltin." },
+        { error: "Bu pakette ruhsat okuma özelliği bulunmuyor. Paketinizi yükseltin." },
         { status: 403 },
       )
     }
