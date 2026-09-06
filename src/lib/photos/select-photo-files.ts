@@ -9,8 +9,10 @@
  * dosyaların blob URL'leri sızardı).
  */
 
+import { MAX_BATCH_PHOTOS } from "@/lib/photos/limits"
+
 /** Tek seferde kuyruğa alınabilecek azami fotoğraf sayısı. */
-export const MAX_BATCH_PHOTOS = 20
+export { MAX_BATCH_PHOTOS }
 
 export type PhotoSelection = {
   /** Listeye eklenecek dosyalar (sıra korunur). */

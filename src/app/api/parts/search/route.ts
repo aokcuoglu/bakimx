@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/auth"
+import { requireFeatureWorkshop } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 export async function GET(request: Request) {
-  const user = await requireAuth()
+  const { user } = await requireFeatureWorkshop("partsInventory")
   const { searchParams } = new URL(request.url)
   const q = (searchParams.get("q") || "").trim()
   const limit = Math.min(Number(searchParams.get("limit")) || 20, 50)

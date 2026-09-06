@@ -20,6 +20,59 @@ const ADMIN_DIR = join(import.meta.dir, "..", "app", "admin")
 /** Kapıdan bilerek muaf mutasyonlar. Anahtar: "dosya::fonksiyon". */
 const ALLOWLIST = new Map<string, string>([
   [
+    "sales/actions.ts::createSalesLead",
+    "Satış yüzeyi PlatformAdmin yetkisini değil getSalesAccess() ile danışman profili ya da yönetici kimliğini doğrular; tenant-admin yetenek kapısı burada yanlış güvenlik modelidir.",
+  ],
+  [
+    "sales/actions.ts::updateSalesLeadLocation",
+    "Konum güncellemesi getSalesAccess(manageSalesPipeline) ve assertSalesLeadAccess() ile danışman sahipliğini birlikte doğrular; tenant-admin kapısı danışman modelini bozar.",
+  ],
+  [
+    "sales/actions.ts::setSalesLeadStatus",
+    "Satış yüzeyi PlatformAdmin yetkisini değil getSalesAccess() ile danışman profili ya da yönetici kimliğini doğrular; tenant-admin yetenek kapısı burada yanlış güvenlik modelidir.",
+  ],
+  [
+    "sales/actions.ts::addSalesActivity",
+    "Satış yüzeyi PlatformAdmin yetkisini değil getSalesAccess() ile danışman profili ya da yönetici kimliğini doğrular; tenant-admin yetenek kapısı burada yanlış güvenlik modelidir.",
+  ],
+  [
+    "sales/actions.ts::assignSalesLead",
+    "Aday atama/devir action'ı getSalesAccess(manageSalesPipeline) sonrasında yalnız platform admin türünü kabul eder ve kazanım sonrası atfı kilitler.",
+  ],
+  [
+    "sales/actions.ts::createSalesTask",
+    "Satış görevi getSalesAccess(manageSalesPipeline) ve aday sahiplik kontrolüyle yalnız yetkili yöneticiye veya adayın danışmanına açılır.",
+  ],
+  [
+    "sales/actions.ts::resolveSalesTask",
+    "Görev sonucu getSalesAccess(manageSalesPipeline) ve görev üzerinden aday sahiplik kontrolüyle korunur.",
+  ],
+  ["sales/commissions/actions.ts::approveSalesCommission", "Hakediş onayı getSalesAccess(manageSalesCommissions) ile yalnız founder/finance yöneticiye açıktır ve transaction içinde durum guard'ı uygular."],
+  ["sales/commissions/actions.ts::markSalesCommissionPaid", "Ödendi geçişi getSalesAccess(manageSalesCommissions) ile yalnız founder/finance yöneticiye açıktır ve transaction içinde durum guard'ı uygular."],
+  ["sales/commissions/actions.ts::voidSalesCommission", "Hakediş iptali getSalesAccess(manageSalesCommissions) ile yalnız founder/finance yöneticiye açıktır ve zorunlu gerekçeyi denetim olayına yazar."],
+  ["sales/settings/actions.ts::createSalesCommissionRule", "Append-only hakediş kuralı yalnız getSalesAccess(manageSalesCommissions) yeteneğine sahip founder/finance yöneticilerince eklenebilir."],
+  ["sales/performance/actions.ts::setSalesMonthlyTarget", "Aylık satış hedefi yalnız getSalesAccess(manageSalesAdvisors) yeteneğine sahip kurucu tarafından danışman ve ay anahtarı doğrulandıktan sonra yazılır."],
+  [
+    "sales/actions.ts::generateSalesRegistrationLink",
+    "Kayıt linki getSalesAccess(manageSalesPipeline), aday sahipliği ve dondurulmuş atıf kontrolleriyle korunur; tenant yalnız müşteri kayıt akışında oluşur.",
+  ],
+  ["sales/actions.ts::setSalesReferralStatus", "Satış referansı getSalesAccess() ve danışman sahiplik kontrolüyle korunur."],
+  ["sales/actions.ts::generateSalesDiscountCode", "İndirim kodu getSalesAccess() ve bağlı aday sahiplik kontrolüyle korunur."],
+  ["sales/actions.ts::updateSalesDiscountCode", "İndirim kodu güncellemesi satış erişimi ve sahiplik kontrolüyle korunur."],
+  ["sales/actions.ts::deactivateSalesDiscountCode", "İndirim kodu pasifleştirmesi satış erişimi ve sahiplik kontrolüyle korunur."],
+  [
+    "sales/advisors/actions.ts::inviteSalesAdvisor",
+    "Danışman daveti yalnız getSalesAccess(manageSalesAdvisors) yeteneğiyle kurucuya açılır; satış yüzeyinin ortak kapısı kullanılır.",
+  ],
+  [
+    "sales/advisors/actions.ts::resendSalesAdvisorInvite",
+    "Yeniden davet yalnız getSalesAccess(manageSalesAdvisors) yeteneğiyle kurucuya açılır ve önceki tokenı değiştirir.",
+  ],
+  [
+    "sales/advisors/actions.ts::setSalesAdvisorActive",
+    "Danışman erişimi yalnız getSalesAccess(manageSalesAdvisors) yeteneğiyle kurucuya açılır ve açık oturumları iptal eder.",
+  ],
+  [
     "impersonation-actions.ts::stopImpersonation",
     "Kendi impersonation oturumunu KAPATMA işlemi. Yetki kapısına bağlansaydı, yetkisi geri alınmış bir yönetici açık oturumdan çıkamaz hâle gelirdi; işlem yalnız çerezdeki kendi oturumunu sonlandırır.",
   ],

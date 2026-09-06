@@ -39,8 +39,11 @@ export function ActionsMenu({
 }: ActionsMenuProps) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex items-center justify-center size-7 rounded-md hover:bg-muted transition-colors touch-manipulation cursor-pointer">
-        <MoreHorizontal className="size-4 text-muted-foreground" />
+      <DropdownMenuTrigger
+        className="inline-flex items-center justify-center size-8 rounded-md hover:bg-muted transition-colors touch-manipulation cursor-pointer"
+        aria-label="Diğer işlemler"
+      >
+        <MoreHorizontal className="size-4 text-muted-foreground" aria-hidden="true" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem>
@@ -116,8 +119,11 @@ export function MobileActionsMenu({
 }: MobileActionsMenuProps) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex items-center justify-center size-8 rounded-md hover:bg-muted transition-colors touch-manipulation cursor-pointer">
-        <MoreHorizontal className="size-4 text-muted-foreground" />
+      <DropdownMenuTrigger
+        className="inline-flex items-center justify-center size-8 rounded-md hover:bg-muted transition-colors touch-manipulation cursor-pointer"
+        aria-label="Diğer işlemler"
+      >
+        <MoreHorizontal className="size-4 text-muted-foreground" aria-hidden="true" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem>

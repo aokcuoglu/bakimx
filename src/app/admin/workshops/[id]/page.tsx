@@ -1,48 +1,55 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, ChevronLeft, ChevronRight, Handshake } from "lucide-react"
 import { can, getAdminContext } from "@/lib/admin"
 import { prisma } from "@/lib/db"
-import { getPlanState, getSeatLimit, type PlanTier } from "@/lib/plan"
-import { getEffectiveFeatures } from "@/lib/features"
+import { getEffectiveSeatLimit, getPlanState } from "@/lib/plan"
 import { formatMinor } from "@/lib/billing/pricing"
 import { cn } from "@/lib/utils"
 import { ROLE_LABELS } from "@/lib/roles"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { WorkshopActions } from "@/app/admin/workshop-actions"
-import { WorkshopFlags } from "@/app/admin/workshop-flags"
 import { ImpersonateButton } from "@/app/admin/impersonate-button"
 import { BakimxDiscountForm } from "@/app/admin/bakimx-discount-form"
-import { SendPasswordResetButton } from "@/app/admin/workshop-user-actions"
+import { WorkshopUserActions } from "@/app/admin/workshop-user-actions"
+import { DeleteWorkshopButton } from "@/app/admin/delete-workshop-button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { WorkshopActivityTables } from "@/app/admin/workshop-activity-tables"
+import { AcquisitionEditor } from "@/app/admin/acquisition-editor"
+import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisition-sources"
+import { salesAdvisorDisplayName, salesLeadAdminHref, workshopAdminHref } from "@/lib/sales/links"
+import { UsageDateFilter, WorkshopOrderFilters } from "@/app/admin/workshop-detail-filters"
+import {
+  hasWorkshopOrderFilters,
+  normalizeWorkshopOrderPage,
+  parseWorkshopDateRange,
+  parseWorkshopOrderFilters,
+  type WorkshopDetailSearchParams,
+  WORKSHOP_ORDER_PAGE_SIZE,
+} from "@/lib/admin/workshop-detail-query"
 
 export const dynamic = "force-dynamic"
 
-const TIER_LABELS: Record<string, string> = { starter: "Başlangıç", pro: "Profesyonel", premium: "Premium" }
+const TIER_LABELS: Record<string, string> = { lite: "Lite", starter: "Başlangıç", pro: "Profesyonel", premium: "Premium" }
 const CYCLE_LABELS: Record<string, string> = { monthly: "Aylık", yearly: "Yıllık" }
 const ORDER_STATUS_LABELS: Record<string, string> = {
   pending_payment: "Ödeme bekliyor",
   confirmed: "Teyit edildi",
   cancelled: "İptal",
 }
-const ACTION_LABELS: Record<string, string> = {
-  admin_workshop_approved: "İş yeri onaylandı",
-  admin_workshop_rejected: "İş yeri reddedildi",
-  admin_plan_activated: "Plan etkinleştirildi",
-  admin_extra_seats_set: "Ek koltuk ayarlandı",
-  billing_order_confirmed: "Havale teyit edildi",
-  billing_order_cancelled: "Sipariş iptal edildi",
-  workshop_bakimx_discount_updated: "BakımX iskontosu güncellendi",
-  password_reset_sent: "Şifre sıfırlama bağlantısı gönderildi",
-}
 const APPROVAL_LABELS: Record<string, string> = { pending: "Onay bekliyor", approved: "Onaylı", rejected: "Reddedildi" }
 const SUB_LABELS: Record<string, string> = { trialing: "Denemede", active: "Aktif", past_due: "Ödeme gecikti", canceled: "İptal" }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className="rounded-lg border bg-card p-4 space-y-3">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-      {children}
-    </section>
+    <Card size="sm" className={className}>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">{children}</CardContent>
+    </Card>
   )
 }
 
@@ -55,50 +62,76 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
-export default async function WorkshopDetailPage({ params }: { params: Promise<{ id: string }> }) {
+function pageHref(id: string, searchParams: WorkshopDetailSearchParams, page: number): string {
+  const query = new URLSearchParams()
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (Array.isArray(value)) value.forEach((item) => query.append(key, item))
+    else if (value) query.set(key, value)
+  }
+  if (page > 1) query.set("orderPage", String(page))
+  else query.delete("orderPage")
+  const suffix = query.toString()
+  return `/admin/workshops/${id}${suffix ? `?${suffix}` : ""}`
+}
+
+export default async function WorkshopDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<WorkshopDetailSearchParams> }) {
   const ctx = await getAdminContext()
   const { id } = await params
+  const query = await searchParams
+  const usageRange = parseWorkshopDateRange(query.from, query.to)
+  const orderFilters = parseWorkshopOrderFilters(query)
+  const periodWhere = { workshopId: id, ...(usageRange.range ? { createdAt: usageRange.range } : {}) }
+  const billingOrderWhere = {
+    workshopId: id,
+    ...(orderFilters.range ? { createdAt: orderFilters.range } : {}),
+    ...(orderFilters.status ? { status: orderFilters.status } : {}),
+    ...(orderFilters.plan ? { planTier: orderFilters.plan } : {}),
+    ...(orderFilters.cycle ? { billingCycle: orderFilters.cycle } : {}),
+  }
 
-  const workshop = await prisma.workshop.findUnique({
-    where: { id },
-    include: { users: { orderBy: { createdAt: "asc" } } },
+  const workshop = await prisma.workshop.findFirst({
+    where: { id, kind: "customer" },
+    include: {
+      users: { orderBy: { createdAt: "asc" } },
+      acquisitionAdvisor: {
+        include: { user: { select: { firstName: true, lastName: true, email: true } } },
+      },
+      referredByWorkshop: { select: { id: true, name: true } },
+    },
   })
   if (!workshop) notFound()
 
-  const [customerCount, vehicleCount, orderCount, appointmentCount, orders, auditLogs, commLogs, reminderLogs, syncLogs, features] =
+  const [customerTotal, vehicleTotal, serviceOrderTotal, appointmentTotal, customerCount, vehicleCount, orderCount, appointmentCount, billingOrderFilteredCount, salesLead, advisors] =
     await Promise.all([
-      prisma.customer.count({ where: { workshopId: id } }),
-      prisma.vehicle.count({ where: { workshopId: id } }),
-      prisma.serviceOrder.count({ where: { workshopId: id } }),
-      prisma.appointment.count({ where: { workshopId: id } }),
-      prisma.billingOrder.findMany({ where: { workshopId: id }, orderBy: { createdAt: "desc" }, take: 10 }),
-      prisma.auditLog.findMany({
-        where: { workshopId: id },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-        include: { actorUser: { select: { email: true } } },
-      }),
-      prisma.communicationLog.findMany({ where: { workshopId: id }, orderBy: { sentAt: "desc" }, take: 10 }),
-      prisma.reminderExecutionLog.findMany({ where: { workshopId: id }, orderBy: { executedAt: "desc" }, take: 5 }),
-      prisma.calendarSyncLog.findMany({ where: { workshopId: id }, orderBy: { syncedAt: "desc" }, take: 5 }),
-      getEffectiveFeatures(id, workshop.planTier as PlanTier),
+      prisma.customer.count({ where: { workshopId: id } }), prisma.vehicle.count({ where: { workshopId: id } }), prisma.serviceOrder.count({ where: { workshopId: id } }), prisma.appointment.count({ where: { workshopId: id } }),
+      prisma.customer.count({ where: periodWhere }), prisma.vehicle.count({ where: periodWhere }), prisma.serviceOrder.count({ where: periodWhere }), prisma.appointment.count({ where: periodWhere }),
+      prisma.billingOrder.count({ where: billingOrderWhere }),
+      prisma.salesLead.findUnique({ where: { workshopId: id }, select: { id: true } }),
+      prisma.salesAdvisor.findMany({ where: { disabledAt: null }, include: { user: { select: { firstName: true, lastName: true, email: true } } }, orderBy: { createdAt: "asc" } }),
     ])
 
-  const flagRows = features.map((f) => ({
-    key: f.key,
-    label: f.label,
-    tierGrants: f.tierGrants,
-    effective: f.effective,
-    override: f.override
-      ? { enabled: f.override.enabled, expiresAt: f.override.expiresAt?.toISOString() ?? null, reason: f.override.reason }
-      : null,
-  }))
-
+  const orderPage = normalizeWorkshopOrderPage(orderFilters.requestedPage, billingOrderFilteredCount)
+  const orderPageCount = Math.max(1, Math.ceil(billingOrderFilteredCount / WORKSHOP_ORDER_PAGE_SIZE))
+  const orderFiltersActive = hasWorkshopOrderFilters(orderFilters)
+  const orders = await prisma.billingOrder.findMany({
+    where: billingOrderWhere,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip: (orderPage - 1) * WORKSHOP_ORDER_PAGE_SIZE,
+    take: WORKSHOP_ORDER_PAGE_SIZE,
+  })
+  const canManageTeam = can(ctx, "manageWorkshops")
   const canSendReset = can(ctx, "sendPasswordReset")
   const plan = getPlanState(workshop)
   const activeUsers = workshop.users.filter((u) => u.isActive).length
-  const seatLimit = getSeatLimit(workshop.planTier as PlanTier, workshop.extraSeats)
+  const seatLimit = getEffectiveSeatLimit(workshop)
   const ownerEmail = workshop.users.find((u) => u.role === "owner")?.email ?? workshop.users[0]?.email ?? null
+  const acquisitionAdvisorName = workshop.acquisitionAdvisor
+    ? salesAdvisorDisplayName(workshop.acquisitionAdvisor.user)
+    : null
+  const [billingCount, paymentCount, supportCount] = await Promise.all([
+    prisma.billingOrder.count({ where: { workshopId: id } }), prisma.paymentTransaction.count({ where: { workshopId: id } }), prisma.supportRequest.count({ where: { workshopId: id } }),
+  ])
+  const deleteBlockers = [[customerTotal, "müşteri"], [vehicleTotal, "araç"], [serviceOrderTotal, "iş emri"], [appointmentTotal, "randevu"], [billingCount, "fatura/sipariş"], [paymentCount, "ödeme"], [supportCount, "destek kaydı"]].filter(([count]) => Number(count) > 0).map(([, label]) => label as string)
 
   const APPROVAL_BADGE: Record<string, string> = {
     pending: "bg-warning/10 text-warning-strong",
@@ -139,13 +172,31 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
               {ownerEmail && <span> · {ownerEmail}</span>}
             </p>
             {plan.isTrialing && plan.trialDaysLeft != null && (
-              <p className="text-sm text-primary mt-1">Deneme: {plan.trialDaysLeft} gün kaldı</p>
+              <p className="text-sm text-primary mt-1">Deneme: {plan.trialDaysLeft} iş günü kaldı</p>
             )}
             {plan.subscriptionDaysLeft != null && (
               <p className={cn("text-sm mt-1", plan.subscriptionDaysLeft <= 7 ? "text-warning-strong" : "text-muted-foreground")}>
                 Abonelik: {plan.subscriptionDaysLeft} gün kaldı
               </p>
             )}
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Handshake className="size-4 shrink-0" />
+              <span>Satış temsilcisi:</span>
+              {acquisitionAdvisorName ? (
+                salesLead ? (
+                  <Link
+                    href={salesLeadAdminHref(salesLead.id)}
+                    className="font-medium text-primary hover:underline"
+                  >
+                    {acquisitionAdvisorName}
+                  </Link>
+                ) : (
+                  <span className="font-medium text-foreground">{acquisitionAdvisorName}</span>
+                )
+              ) : (
+                <span className="font-medium text-foreground">Atanmadı</span>
+              )}
+            </p>
           </div>
           {can(ctx, "impersonate") && (
             <div className="shrink-0">
@@ -160,9 +211,14 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
               approvalStatus: workshop.approvalStatus,
               requestedPlanTier: workshop.requestedPlanTier,
               extraSeats: workshop.extraSeats,
+              planTier: workshop.planTier,
+              subscriptionStatus: workshop.subscriptionStatus,
+              currentPeriodEnd: workshop.currentPeriodEnd?.toISOString() ?? null,
+              activeUsers,
             }}
           />
         )}
+        {can(ctx, "manageWorkshops") && <DeleteWorkshopButton workshopId={workshop.id} name={workshop.name} blockers={deleteBlockers} />}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -181,177 +237,162 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
           <Field label="VKN" value={workshop.taxNumber} />
         </Section>
 
-        <Section title="Ekip & Koltuk">
-          <Field label="Aktif kullanıcı" value={`${activeUsers} / ${seatLimit}`} />
-          <Field label="Ek koltuk" value={String(workshop.extraSeats)} />
-          <div className="pt-1 space-y-2.5">
-            {workshop.users.map((u) => (
-              <div key={u.id} className="flex items-start justify-between gap-2 text-sm">
-                <span className={cn("min-w-0 break-words text-foreground", !u.isActive && "text-muted-foreground line-through")}>
-                  {/* E-postasız üye kullanıcı adıyla listelenir (BAK-40). */}
-                  {u.email ?? u.username ?? "—"}
-                </span>
-                <span className="flex shrink-0 flex-col items-end gap-1.5">
-                  <span className="flex items-center gap-1.5">
-                    <Badge variant="outline" className="text-[11px] bg-muted text-muted-foreground">{ROLE_LABELS[u.role]}</Badge>
-                    {!u.isActive && (
-                      <Badge variant="outline" className="text-[11px] bg-destructive/10 text-destructive-strong">
-                        pasif
-                      </Badge>
-                    )}
-                  </span>
-                  {/* Buton yalnız akışa GİREBİLEN koltuklarda: e-postasız veya pasif
-                      hesap token almaz (canReceivePasswordReset), aksiyon zaten reddeder. */}
-                  {canSendReset && u.isActive && u.email && (
-                    <SendPasswordResetButton workshopId={workshop.id} userId={u.id} label={u.email} />
-                  )}
-                </span>
-              </div>
-            ))}
+        <Section title="Referans Kaynağı">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground">Referans</p>
+              <Badge variant="outline" className="bg-muted text-muted-foreground">
+                {ACQUISITION_SOURCE_LABELS[workshop.acquisitionSource]}
+              </Badge>
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground">Temsilci</p>
+              <Badge
+                variant="outline"
+                className={acquisitionAdvisorName ? "bg-primary/10 text-primary-strong" : "bg-muted text-muted-foreground"}
+              >
+                {acquisitionAdvisorName ?? "Atanmadı"}
+              </Badge>
+            </div>
+          </div>
+          {(workshop.referralCodeUsed || workshop.referredByWorkshop) && (
+            <div className="space-y-3 border-t pt-3">
+              {workshop.referralCodeUsed && (
+                <Field label="Kullanılan referans kodu" value={<span className="font-mono">{workshop.referralCodeUsed}</span>} />
+              )}
+              {workshop.referredByWorkshop && (
+                <Field
+                  label="Davet eden iş yeri"
+                  value={
+                    <Link href={workshopAdminHref(workshop.referredByWorkshop.id)} className="text-primary hover:underline">
+                      {workshop.referredByWorkshop.name}
+                    </Link>
+                  }
+                />
+              )}
+            </div>
+          )}
+          {can(ctx, "manageWorkshops") && <AcquisitionEditor workshopId={id} source={workshop.acquisitionSource} advisorId={workshop.acquisitionAdvisorId} advisors={advisors.map((a) => ({ id: a.id, label: [a.user.firstName, a.user.lastName].filter(Boolean).join(" ") || a.user.email || "—" }))} />}
+        </Section>
+
+        <Section title="Ekip & Koltuk" className="w-full md:col-span-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-muted p-3"><p className="text-xs text-muted-foreground">Aktif koltuk</p><p className="mt-1 text-xl font-semibold tabular-nums">{activeUsers} <span className="text-sm font-medium text-muted-foreground">/ {seatLimit}</span></p></div>
+            <div className="rounded-lg bg-muted p-3"><p className="text-xs text-muted-foreground">Ek koltuk</p><p className="mt-1 text-xl font-semibold tabular-nums">{workshop.extraSeats}</p></div>
+          </div>
+          <div className="overflow-hidden rounded-lg border">
+            <Table>
+              <TableHeader><TableRow><TableHead>Kullanıcı</TableHead><TableHead>Rol</TableHead><TableHead>Durum</TableHead><TableHead className="text-right">İşlem</TableHead></TableRow></TableHeader>
+              <TableBody>{workshop.users.map((u) => (
+                <TableRow key={u.id}>
+                  <TableCell className={cn("max-w-48 truncate font-medium", !u.isActive && "text-muted-foreground line-through")}>{u.email ?? u.username ?? "—"}</TableCell>
+                  <TableCell><Badge variant="outline" className="bg-muted text-muted-foreground">{ROLE_LABELS[u.role]}</Badge></TableCell>
+                  <TableCell><Badge variant="outline" className={u.isActive ? "bg-success/10 text-success-strong" : "bg-destructive/10 text-destructive-strong"}>{u.isActive ? "Aktif" : "Pasif"}</Badge></TableCell>
+                  <TableCell className="text-right">{(canManageTeam || (canSendReset && u.isActive && u.email)) && <WorkshopUserActions workshopId={workshop.id} user={{ id: u.id, email: u.email, isActive: u.isActive, role: u.role }} canManage={canManageTeam} canSendReset={canSendReset} />}</TableCell>
+                </TableRow>
+              ))}</TableBody>
+            </Table>
           </div>
         </Section>
 
-        {can(ctx, "manageFlags") && (
-          <Section title="Özellik Bayrakları">
-            <WorkshopFlags workshopId={workshop.id} flags={flagRows} />
-          </Section>
-        )}
-
         {can(ctx, "manageWorkshops") && (
-          <Section title="BakımX İskontosu">
+          <Section title="GetirBakım İskontosu">
             <BakimxDiscountForm workshopId={workshop.id} currentDiscountBps={workshop.bakimxDiscountBps} />
           </Section>
         )}
 
         <Section title="Kullanım">
+          <UsageDateFilter key={`usage-${usageRange.from}-${usageRange.to}`} from={usageRange.from} to={usageRange.to} />
           <Field label="Müşteri" value={String(customerCount)} />
           <Field label="Araç" value={String(vehicleCount)} />
           <Field label="İş emri" value={String(orderCount)} />
           <Field label="Randevu" value={String(appointmentCount)} />
         </Section>
 
-        <Section title="Sipariş Geçmişi">
+        <Section title="Sipariş Geçmişi" className="w-full md:col-span-2">
+          <WorkshopOrderFilters
+            key={`orders-${orderFilters.from}-${orderFilters.to}-${orderFilters.status}-${orderFilters.plan}-${orderFilters.cycle}`}
+            from={orderFilters.from}
+            to={orderFilters.to}
+            status={orderFilters.status}
+            plan={orderFilters.plan}
+            cycle={orderFilters.cycle}
+            hasFilters={orderFiltersActive}
+          />
           {orders.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sipariş yok.</p>
+            <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+              {orderFiltersActive ? "Filtrelere uyan sipariş bulunamadı." : "Sipariş yok."}
+            </p>
           ) : (
-            <div className="space-y-2">
-              {orders.map((o) => (
-                <div key={o.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="text-muted-foreground">
-                    {o.createdAt.toLocaleDateString("tr-TR")} · {TIER_LABELS[o.planTier] ?? o.planTier}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span className="font-medium text-foreground">{formatMinor(o.amountMinor)}</span>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-[11px]",
-                        o.status === "confirmed"
-                          ? "bg-success/10 text-success-strong"
-                          : o.status === "cancelled"
-                            ? "bg-muted text-muted-foreground"
-                            : "bg-warning/10 text-warning-strong"
-                      )}
-                    >
-                      {ORDER_STATUS_LABELS[o.status] ?? o.status}
-                    </Badge>
-                  </span>
-                </div>
-              ))}
+            <div className="overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tarih</TableHead>
+                    <TableHead>Paket</TableHead>
+                    <TableHead>Faturalama</TableHead>
+                    <TableHead className="text-right">Tutar</TableHead>
+                    <TableHead>Durum</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell>{order.createdAt.toLocaleDateString("tr-TR")}</TableCell>
+                      <TableCell className="font-medium">{TIER_LABELS[order.planTier] ?? order.planTier}</TableCell>
+                      <TableCell>{CYCLE_LABELS[order.billingCycle] ?? order.billingCycle}</TableCell>
+                      <TableCell className="text-right font-medium">{formatMinor(order.amountMinor)}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[11px]",
+                            order.status === "confirmed"
+                              ? "bg-success/10 text-success-strong"
+                              : order.status === "cancelled"
+                                ? "bg-muted text-muted-foreground"
+                                : "bg-warning/10 text-warning-strong",
+                          )}
+                        >
+                          {ORDER_STATUS_LABELS[order.status] ?? order.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
-        </Section>
-      </div>
-
-      <Section title="Son İşlemler (Denetim)">
-        {auditLogs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">İşlem kaydı yok.</p>
-        ) : (
-          <div className="space-y-1.5">
-            {auditLogs.map((l) => (
-              <div key={l.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-foreground">{ACTION_LABELS[l.action] ?? l.action}</span>
-                <span className="text-right text-xs text-muted-foreground">
-                  {l.actorUser?.email ?? "sistem"} · {l.createdAt.toLocaleString("tr-TR")}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </Section>
-
-      <Section title="İletişim & İşler">
-        <div className="space-y-3">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground mb-1.5">Son iletişim</p>
-            {commLogs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Kayıt yok.</p>
-            ) : (
-              <div className="space-y-1">
-                {commLogs.map((c) => (
-                  <div key={c.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-foreground">
-                      {c.type} · {c.templateKey ?? "—"}
-                    </span>
-                    <span className="flex items-center gap-2 text-xs">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "text-[11px]",
-                          c.status === "failed"
-                            ? "bg-destructive/10 text-destructive-strong"
-                            : c.status === "sent"
-                              ? "bg-success/10 text-success-strong"
-                              : "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {c.status}
-                      </Badge>
-                      <span className="text-muted-foreground">{c.sentAt.toLocaleDateString("tr-TR")}</span>
-                    </span>
-                  </div>
-                ))}
+          <div className="flex flex-col gap-2 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">Toplam {billingOrderFilteredCount} kayıt</p>
+            {orderPageCount > 1 && (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" asChild={orderPage > 1} disabled={orderPage <= 1}>
+                  {orderPage > 1 ? (
+                    <Link href={pageHref(id, query, orderPage - 1)}>
+                      <ChevronLeft /> Önceki
+                    </Link>
+                  ) : (
+                    <span><ChevronLeft /> Önceki</span>
+                  )}
+                </Button>
+                <span className="text-xs text-muted-foreground">{orderPage} / {orderPageCount}</span>
+                <Button variant="outline" size="sm" asChild={orderPage < orderPageCount} disabled={orderPage >= orderPageCount}>
+                  {orderPage < orderPageCount ? (
+                    <Link href={pageHref(id, query, orderPage + 1)}>
+                      Sonraki <ChevronRight />
+                    </Link>
+                  ) : (
+                    <span>Sonraki <ChevronRight /></span>
+                  )}
+                </Button>
               </div>
             )}
           </div>
-          {reminderLogs.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1.5">Hatırlatma işleri</p>
-              <div className="space-y-1">
-                {reminderLogs.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-foreground">{r.jobType}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {r.sentCount} gönderildi · {r.failedCount} başarısız · {r.executedAt.toLocaleDateString("tr-TR")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {syncLogs.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1.5">Takvim senkron</p>
-              <div className="space-y-1">
-                {syncLogs.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-foreground">{s.provider} · {s.direction}</span>
-                    <span className="flex items-center gap-2 text-xs">
-                      <Badge
-                        variant="outline"
-                        className={cn("text-[11px]", s.status === "failed" ? "bg-destructive/10 text-destructive-strong" : "bg-muted text-muted-foreground")}
-                      >
-                        {s.status}
-                      </Badge>
-                      <span className="text-muted-foreground">{s.syncedAt.toLocaleDateString("tr-TR")}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </Section>
+        </Section>
+      </div>
+
+      <WorkshopActivityTables workshopId={id} />
     </div>
   )
 }

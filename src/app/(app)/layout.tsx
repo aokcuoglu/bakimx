@@ -4,8 +4,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { getPlanState, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
-import { resolveFeature } from "@/lib/features"
+import { GATED_FEATURES, getPlanState, hasFeature, isPlanExpiredLock } from "@/lib/plan"
 import { LOGOUT_REASON_PARAM, SESSION_INVALID_REASON } from "@/lib/session-recovery"
 import { PlanLocked } from "@/components/billing/plan-locked"
 import { ForcePasswordChange } from "@/components/auth/force-password-change"
@@ -28,7 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // SONSUZ DÖNGÜ yapar: middleware çerezi görüp bizi /dashboard'a geri yollar.
   // `reason` parametresi middleware'e çerezi imha etmesini söyler.
   const user = await getCurrentUser()
-  if (!user) {
+  if (!user || !user.isActive) {
     redirect(`/login?${LOGOUT_REASON_PARAM}=${SESSION_INVALID_REASON}`)
   }
   // BAK-96 — ayrı bir çağrı YOK: etkin kimlik zaten overlay'den çözüldü ve orada
@@ -46,10 +45,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       trialEndsAt: true,
       currentPeriodEnd: true,
       requestedPlanTier: true,
+      kind: true,
     },
   })
   if (!workshop) {
     redirect(`/login?${LOGOUT_REASON_PARAM}=${SESSION_INVALID_REASON}`)
+  }
+  if (workshop.kind === "internal") {
+    redirect("/admin/sales")
   }
 
   const plan = getPlanState(workshop)
@@ -70,11 +73,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Kapısı olan menü satırları için (BAK-60: BakımX Siparişleri). Kapı SUNUCUDA
   // çözülür; istemciye yalnız "açık olanlar" listesi iner, kapının nasıl
   // hesaplandığı değil.
-  const featureChecks = await Promise.all([
-    resolveFeature(user.workshopId, workshop.planTier as PlanTier, "bakimxCatalog"),
-    resolveFeature(user.workshopId, workshop.planTier as PlanTier, "marketResearch"),
-  ])
-  const enabledFeatures = ["bakimxCatalog", "marketResearch"].filter((_, index) => featureChecks[index])
+  const enabledFeatures = GATED_FEATURES.filter((feature) => hasFeature(plan.accessTier, feature))
 
   // Full-screen lock: only the approval gate (pending/rejected) blocks the whole
   // app now. Plan-expiry reasons drop to read-only mode below (data visible,
@@ -134,7 +133,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null && (
         <div className="bg-primary/10 text-primary-strong text-xs sm:text-sm px-4 py-2 text-center">
           Deneme sürenizin bitmesine{" "}
-          <span className="font-semibold">{plan.trialDaysLeft} gün</span> kaldı.{" "}
+          <span className="font-semibold">{plan.trialDaysLeft} iş günü</span> kaldı.{" "}
           <Link href="/billing" className="font-semibold underline underline-offset-2">
             Paketi etkinleştir
           </Link>

@@ -1,7 +1,9 @@
 import { expect, test } from "bun:test"
 import {
   hasFeature,
+  hasWorkshopFeature,
   getPlanState,
+  getEffectiveSeatLimit,
   assertWriteAccess,
   isPlanExpiredLock,
   PlanWriteLockedError,
@@ -9,6 +11,15 @@ import {
   PLAN_SEATS,
   getSeatLimit,
   seatLimitMessage,
+  VIN_LOOKUP_QUOTA,
+  PLAN_LABELS,
+  PLAN_TIERS,
+  isPlanTier,
+  businessDaysUntil,
+  computeTrialEnd,
+  GATED_FEATURES,
+  assertFeature,
+  PlanFeatureLockedError,
 } from "@/lib/plan"
 
 function wsFields(over: Partial<Parameters<typeof getPlanState>[0]> = {}) {
@@ -29,6 +40,18 @@ test("active subscription past currentPeriodEnd locks as subscription_expired", 
   expect(s.lockReason).toBe("subscription_expired")
 })
 
+test("trial end skips weekends and preserves the verification time", () => {
+  const friday = new Date("2026-08-28T07:30:00.000Z") // İstanbul 10:30
+  expect(computeTrialEnd(friday).toISOString()).toBe("2026-09-08T07:30:00.000Z")
+})
+
+test("trial countdown reports business days instead of calendar days", () => {
+  const start = new Date("2026-08-28T07:30:00.000Z")
+  const end = computeTrialEnd(start)
+  expect(businessDaysUntil(start, end)).toBe(7)
+  expect(businessDaysUntil(new Date("2026-08-29T07:30:00.000Z"), end)).toBe(7)
+})
+
 test("active subscription within period has access and reports days left", () => {
   const future = new Date(Date.now() + 5 * 86_400_000)
   const s = getPlanState(wsFields({ currentPeriodEnd: future }))
@@ -43,22 +66,8 @@ test("active subscription with null period keeps access (legacy/admin-provisione
   expect(s.subscriptionDaysLeft).toBe(null)
 })
 
-// AI Servis Danışmanı is a Premium-only capability. Trial workshops run on the
-// `pro` tier, so the advisor stays locked until they upgrade.
-test("aiAdvisor is gated to the premium tier", () => {
-  expect(hasFeature("premium", "aiAdvisor")).toBe(true)
-  expect(hasFeature("pro", "aiAdvisor")).toBe(false)
-  expect(hasFeature("starter", "aiAdvisor")).toBe(false)
-})
-
-test("marketResearch is gated to the premium tier", () => {
-  expect(hasFeature("premium", "marketResearch")).toBe(true)
-  expect(hasFeature("pro", "marketResearch")).toBe(false)
-  expect(hasFeature("starter", "marketResearch")).toBe(false)
-})
-
 // VIN'den araç tanıma (rapidapi) is a Pro+ capability: billed external lookups,
-// so starter is locked out while trial (pro) and premium keep access.
+// so starter is locked out while an active Premium-equivalent trial keeps access.
 test("vinLookup is gated to the pro tier and above", () => {
   expect(hasFeature("starter", "vinLookup")).toBe(false)
   expect(hasFeature("pro", "vinLookup")).toBe(true)
@@ -66,7 +75,7 @@ test("vinLookup is gated to the pro tier and above", () => {
 })
 
 test("all premium-gated features are locked below the premium tier", () => {
-  const premiumOnly = ["eInvoice", "aiAdvisor", "multiBranch", "rbac", "marketResearch"] as const
+  const premiumOnly = ["eInvoice", "multiBranch", "rbac"] as const
   for (const feature of premiumOnly) {
     expect(hasFeature("starter", feature)).toBe(false)
     expect(hasFeature("pro", feature)).toBe(false)
@@ -111,7 +120,7 @@ test("canWrite is false when the subscription is past_due (inactive)", () => {
 // pending/rejected MUST also block writes: the full-screen PlanLocked view is
 // only HTML — a pending session can call server actions / API routes directly
 // with its cookie, so canWrite (server-side enforcement) is the real gate.
-test("canWrite is false for a pending workshop (card not verified — server-side gate)", () => {
+test("canWrite is false for a pending workshop (e-mail not verified — server-side gate)", () => {
   const s = getPlanState(wsFields({ approvalStatus: "pending", subscriptionStatus: "trialing" }))
   expect(s.hasAccess).toBe(false)
   expect(s.lockReason).toBe("pending")
@@ -155,7 +164,7 @@ test("assertWriteAccess throws the subscription message for an expired subscript
   }
 })
 
-test("assertWriteAccess throws the card-verification message for a pending workshop", () => {
+test("assertWriteAccess throws the e-mail verification message for a pending workshop", () => {
   try {
     assertWriteAccess(wsFields({ approvalStatus: "pending", subscriptionStatus: "trialing" }))
     throw new Error("expected throw")
@@ -163,7 +172,7 @@ test("assertWriteAccess throws the card-verification message for a pending works
     expect(e).toBeInstanceOf(PlanWriteLockedError)
     expect((e as PlanWriteLockedError).lockReason).toBe("pending")
     expect((e as Error).message).toBe(
-      "Hesabınız kart doğrulaması bekliyor. Devam etmek için kartınızı doğrulayın."
+      "Hesabınız e-posta doğrulaması bekliyor. Devam etmek için e-posta adresinizi doğrulayın."
     )
   }
 })
@@ -225,4 +234,122 @@ test("tek koltuklu pakette mesaj nedeni açıkça anlatır", () => {
   expect(message).toContain("Başlangıç")
   expect(message).toContain("tek kullanıcı")
   expect(message).toContain("yükseltmeniz")
+})
+
+// --- Lite tier tests ---------------------------------------------------------
+
+test("lite tier has rank 0 (below starter)", () => {
+  expect(PLAN_SEATS.lite).toBe(1)
+  expect(PLAN_LABELS.lite).toBe("Lite")
+  expect(VIN_LOOKUP_QUOTA.lite).toBe(0)
+})
+
+test("checkout tier doğrulaması Lite dahil merkezi paket listesini kullanır", () => {
+  expect(PLAN_TIERS).toEqual(["lite", "starter", "pro", "premium"])
+  for (const tier of PLAN_TIERS) expect(isPlanTier(tier)).toBe(true)
+  expect(isPlanTier("enterprise")).toBe(false)
+  expect(isPlanTier(["lite"])).toBe(false)
+})
+
+test("ocrIntake is gated to starter tier and above", () => {
+  expect(hasFeature("lite", "ocrIntake")).toBe(false)
+  expect(hasFeature("starter", "ocrIntake")).toBe(true)
+  expect(hasFeature("pro", "ocrIntake")).toBe(true)
+  expect(hasFeature("premium", "ocrIntake")).toBe(true)
+})
+
+test("photoChecklist is gated to starter tier and above", () => {
+  expect(hasFeature("lite", "photoChecklist")).toBe(false)
+  expect(hasFeature("starter", "photoChecklist")).toBe(true)
+  expect(hasFeature("pro", "photoChecklist")).toBe(true)
+  expect(hasFeature("premium", "photoChecklist")).toBe(true)
+})
+
+test("damageMap is gated to starter tier and above", () => {
+  expect(hasFeature("lite", "damageMap")).toBe(false)
+  expect(hasFeature("starter", "damageMap")).toBe(true)
+  expect(hasFeature("pro", "damageMap")).toBe(true)
+  expect(hasFeature("premium", "damageMap")).toBe(true)
+})
+
+test("partsCatalog is available from starter tier (not lite)", () => {
+  expect(hasFeature("lite", "partsCatalog")).toBe(false)
+  expect(hasFeature("starter", "partsCatalog")).toBe(true)
+})
+
+test("vinLookup requires pro tier (not available in lite or starter)", () => {
+  expect(hasFeature("lite", "vinLookup")).toBe(false)
+  expect(hasFeature("starter", "vinLookup")).toBe(false)
+  expect(hasFeature("pro", "vinLookup")).toBe(true)
+})
+
+test("Lite has only the manual core and no gated capabilities", () => {
+  for (const feature of GATED_FEATURES) {
+    expect(hasFeature("lite", feature)).toBe(false)
+  }
+})
+
+test("legacy Starter keeps its existing OCR, photo, catalog, cashbox and passport rights", () => {
+  const starterFeatures = GATED_FEATURES.filter((feature) => hasFeature("starter", feature))
+  expect(starterFeatures).toEqual([
+    "ocrIntake",
+    "photoChecklist",
+    "damageMap",
+    "partsCatalog",
+    "bakimxCatalog",
+    "getirbakimCatalog",
+    "cashbox",
+    "vehiclePassport",
+  ])
+})
+
+test("Pro has every operational capability while Premium adds premium-only controls", () => {
+  const premiumOnly = ["eInvoice", "multiBranch", "rbac"]
+  expect(GATED_FEATURES.filter((feature) => !hasFeature("pro", feature))).toEqual(premiumOnly)
+  expect(GATED_FEATURES.every((feature) => hasFeature("premium", feature))).toBe(true)
+})
+
+test("an active trial gets Premium features, seats and quotas regardless of stored tier", () => {
+  const trial = wsFields({
+    planTier: "lite",
+    subscriptionStatus: "trialing",
+    trialEndsAt: new Date(Date.now() + 86_400_000),
+  })
+  expect(getPlanState(trial).accessTier).toBe("premium")
+  expect(hasWorkshopFeature(trial, "rbac")).toBe(true)
+  expect(getEffectiveSeatLimit({ ...trial, extraSeats: 2 })).toBe(17)
+})
+
+test("a pending workshop does not gain trial entitlements before approval", () => {
+  const pending = wsFields({
+    planTier: "lite",
+    subscriptionStatus: "trialing",
+    approvalStatus: "pending",
+    trialEndsAt: new Date(Date.now() + 86_400_000),
+  })
+  expect(getPlanState(pending).accessTier).toBe("lite")
+  expect(hasWorkshopFeature(pending, "rbac")).toBe(false)
+})
+
+test("feature errors point to a purchasable upgrade while retaining the entitlement tier", () => {
+  const lite = wsFields({ planTier: "lite" })
+  expect(() => assertFeature(lite, "ocrIntake")).toThrow("Profesyonel pakette")
+
+  try {
+    assertFeature(lite, "ocrIntake")
+  } catch (error) {
+    expect(error).toBeInstanceOf(PlanFeatureLockedError)
+    expect((error as PlanFeatureLockedError).requiredTier).toBe("starter")
+  }
+
+  expect(() => assertFeature(wsFields({ planTier: "pro" }), "eInvoice")).toThrow("Premium pakette")
+})
+
+// --- VIN quota tests ---------------------------------------------------------
+
+test("VIN quotas increase by tier", () => {
+  expect(VIN_LOOKUP_QUOTA.lite).toBe(0)
+  expect(VIN_LOOKUP_QUOTA.starter).toBe(1_000)
+  expect(VIN_LOOKUP_QUOTA.pro).toBe(5_000)
+  expect(VIN_LOOKUP_QUOTA.premium).toBe(15_000)
 })

@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
 import { PackageSearch } from "lucide-react"
 import { getAppData } from "@/app/(app)/data"
 import { getWorkshopBakimxOrders } from "@/app/(app)/bakimx-orders/data"
@@ -10,10 +9,11 @@ import {
   BAKIMX_ORDER_STATUS_LABELS,
   type BakimxOrderStatusValue,
 } from "@/lib/catalog/bakimx-order"
-import { resolveFeature } from "@/lib/features"
 import { formatTRY } from "@/lib/format"
-import { type PlanTier } from "@/lib/plan"
+import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
 import { formatDiscountLabel } from "@/lib/parts/bakimx-price"
+import { FeaturePaywall } from "@/components/billing/feature-paywall"
+import { InlineFeatureUpsell } from "@/components/billing/inline-feature-upsell"
 
 export const dynamic = "force-dynamic"
 
@@ -25,8 +25,8 @@ export const dynamic = "force-dynamic"
  * arkasında bir sipariş modeli yok. İkisini tek ekranda toplamak "dış tedarikçi"
  * ile "BakımX'ten talep"i aynı şey gibi gösterirdi.
  *
- * Kapı: `bakimxCatalog`. Kapalı atölyede sayfa 404 verir — yan menüdeki bağlantı
- * da aynı bayrakla gizlenir (bkz. (app)/layout.tsx → AppShellChrome).
+ * Yeni sipariş kapısı `procurement` özelliğidir. Paket küçüldüğünde daha önce
+ * taahhüt edilmiş siparişler mutabakat için okunabilir kalır.
  */
 const STATUS_BADGE: Record<BakimxOrderStatusValue, { variant: "default" | "secondary" | "outline" | "destructive"; className?: string }> = {
   requested: { variant: "outline" },
@@ -37,13 +37,14 @@ const STATUS_BADGE: Record<BakimxOrderStatusValue, { variant: "default" | "secon
 
 export default async function BakimxOrdersPage() {
   const { user, workshop } = await getAppData()
-
-  const gateOpen =
-    !!workshop && (await resolveFeature(workshop.id, workshop.planTier as PlanTier, "bakimxCatalog"))
-  if (!gateOpen) notFound()
-
   // Sorgu daima oturumdaki atölyeyle süzülür — başka atölyenin siparişi görünmez.
   const orders = await getWorkshopBakimxOrders(user.workshopId)
+  const canCreate = !!workshop && hasWorkshopFeature(workshop, "procurement")
+  const currentTier = workshop ? getPlanState(workshop).tier : "lite"
+
+  if (!canCreate && orders.length === 0) {
+    return <FeaturePaywall feature="procurement" currentTier={currentTier} itemCount={0} />
+  }
 
   return (
     <AppShell workshopName={workshop?.name} pageTitle="BakımX Siparişleri" wide>
@@ -62,6 +63,10 @@ export default async function BakimxOrdersPage() {
             BakımX kataloğundan istediğiniz ürünler ve talebin durumu
           </p>
         </div>
+
+        {!canCreate && (
+          <InlineFeatureUpsell feature="procurement" currentTier={currentTier} />
+        )}
 
         {orders.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">

@@ -9,6 +9,7 @@ import { CreateCenterDialog } from "@/components/layout/create-center-dialog"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
 import { ROLE_LABELS } from "@/lib/roles"
+import type { GatedFeature } from "@/lib/plan"
 import type { UserRole } from "@prisma/client"
 import {
   LayoutDashboard,
@@ -35,14 +36,15 @@ import {
   Calendar,
   Receipt,
   PackageSearch,
-  Telescope,
   UserCircle,
   Search,
   X,
   QrCode,
+  LockKeyhole,
 } from "lucide-react"
 import { createContext, useContext, useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import {
   Sidebar,
@@ -79,7 +81,7 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>
   badge?: string
   children?: NavItem[]
-  feature?: string
+  feature?: GatedFeature
 }
 
 type NavGroup = {
@@ -96,60 +98,61 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Servis",
     items: [
       { href: "/orders", label: "İş Emirleri", icon: WrenchIcon },
-      { href: "/technician", label: "Teknisyen Paneli", icon: HardHat },
+      { href: "/technician", label: "Teknisyen Paneli", icon: HardHat, feature: "team" },
       { href: "/customers", label: "Müşteriler", icon: Users },
       { href: "/vehicles", label: "Araçlar", icon: Car },
-      { href: "/quotes", label: "Teklifler", icon: FileText },
-      { href: "/appointments", label: "Randevular", icon: CalendarClock },
-      { href: "/calendar", label: "Takvim", icon: Calendar },
-      { href: "/reminders", label: "Bakım Hatırlatmaları", icon: BellRing },
-      { href: "/smart-capture/registration", label: "Ruhsat Okuma", icon: ScanLine },
+      { href: "/quotes", label: "Teklifler", icon: FileText, feature: "quotes" },
+      { href: "/appointments", label: "Randevular", icon: CalendarClock, feature: "appointments" },
+      { href: "/calendar", label: "Takvim", icon: Calendar, feature: "appointments" },
+      { href: "/reminders", label: "Bakım Hatırlatmaları", icon: BellRing, feature: "automatedReminders" },
+      { href: "/smart-capture/registration", label: "Ruhsat Okuma", icon: ScanLine, feature: "ocrIntake" },
     ],
   },
   {
     label: "Depo & Finans",
     items: [
-      { href: "/parts", label: "Stok / Parçalar", icon: Boxes },
-      {
-        href: "/market-research",
-        label: "Piyasa Araştırması",
-        icon: Telescope,
-        feature: "marketResearch",
-      },
-      { href: "/purchases", label: "Dış Alımlar", icon: ShoppingCart },
+      { href: "/parts", label: "Stok / Parçalar", icon: Boxes, feature: "partsInventory" },
+      { href: "/purchases", label: "Dış Alımlar", icon: ShoppingCart, feature: "procurement" },
       {
         href: "/bakimx-orders",
         label: "BakımX Siparişleri",
         icon: PackageSearch,
-        feature: "bakimxCatalog",
+        feature: "procurement",
       },
-      { href: "/suppliers", label: "Tedarikçiler", icon: Truck },
+      { href: "/suppliers", label: "Tedarikçiler", icon: Truck, feature: "procurement" },
       { href: "/cashbox", label: "Kasa", icon: Wallet, children: [
         { href: "/cashbox/payments", label: "Tahsilatlar", icon: Receipt },
         { href: "/cashbox/aging", label: "Yaşlandırma", icon: BarChart3 },
-      ] },
+      ], feature: "cashbox" },
     ],
   },
   {
     label: "Analiz",
     items: [
-      { href: "/analytics", label: "Operasyonel Analiz", icon: Activity },
-      { href: "/reports", label: "Raporlar", icon: BarChart3 },
+      { href: "/analytics", label: "Operasyonel Analiz", icon: Activity, feature: "analytics" },
+      { href: "/reports", label: "Raporlar", icon: BarChart3, feature: "reports" },
     ],
   },
   {
     label: "İletişim",
     items: [
-      { href: "/communications", label: "İletişim Kayıtları", icon: MessageSquare },
+      { href: "/communications", label: "İletişim Kayıtları", icon: MessageSquare, feature: "communications" },
     ],
   },
   {
     label: "Ayarlar",
     items: [
       { href: "/settings?tab=profile", label: "Ayarlar", icon: Settings },
-      { href: "/settings?tab=team", label: "Ekip", icon: Users },
-      { href: "/settings/notifications", label: "Bildirim Ayarları", icon: Bell },
-      { href: "/settings/calendar", label: "Takvim Ayarları", icon: Calendar },
+      { href: "/settings/team", label: "Ekip", icon: Users, feature: "team" },
+      { href: "/settings/notifications", label: "Bildirim Ayarları", icon: Bell, feature: "automatedReminders" },
+      { href: "/settings/calendar", label: "Takvim Ayarları", icon: Calendar, feature: "appointments" },
+    ],
+  },
+  {
+    label: "Abonelik",
+    items: [
+      { href: "/billing", label: "Paket & Faturalandırma", icon: Receipt },
+      { href: "/billing/quota", label: "Kota Yönetimi", icon: BarChart3, feature: "partsCatalog" },
     ],
   },
 ]
@@ -204,7 +207,7 @@ export function AppShellChrome({
 }: {
   children: React.ReactNode
   initialSidebarCollapsed?: boolean
-  enabledFeatures?: string[]
+  enabledFeatures?: GatedFeature[]
   userIdentity?: UserIdentity
 }) {
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
@@ -214,10 +217,10 @@ export function AppShellChrome({
       <SidebarProvider defaultOpen={!initialSidebarCollapsed}>
         <AppSidebar enabledFeatures={enabledFeatures} userIdentity={userIdentity} />
         <SidebarInset className="min-h-screen bg-muted">
-          <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} />
+          <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} enabledFeatures={enabledFeatures} />
           <main className="flex-1 px-4 sm:px-6 py-4 sm:py-6 pb-24 lg:pb-8">{children}</main>
         </SidebarInset>
-        <MobileBottomNav userIdentity={userIdentity} />
+        <MobileBottomNav userIdentity={userIdentity} enabledFeatures={enabledFeatures} />
       </SidebarProvider>
     </SetPageHeaderContext.Provider>
   )
@@ -226,9 +229,11 @@ export function AppShellChrome({
 function AppHeader({
   pageHeader,
   userIdentity,
+  enabledFeatures,
 }: {
   pageHeader: PageHeaderState
   userIdentity?: UserIdentity
+  enabledFeatures: GatedFeature[]
 }) {
   const { pageTitle, pageActions, showGlobalSearch = true } = pageHeader
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
@@ -310,7 +315,7 @@ function AppHeader({
             mobileSearchOpen && "hidden sm:flex",
           )}
         >
-          <CreateCenterDialog />
+          <CreateCenterDialog enabledFeatures={enabledFeatures} />
           {isTechRole ? (
             <TechnicianNotificationsBell />
           ) : (
@@ -340,7 +345,7 @@ function AppSidebar({
   enabledFeatures = [],
   userIdentity,
 }: {
-  enabledFeatures?: string[]
+  enabledFeatures?: GatedFeature[]
   userIdentity?: UserIdentity
 }) {
   const pathname = usePathname()
@@ -348,7 +353,7 @@ function AppSidebar({
 
   const visibleGroups = (isTechRole ? TECHNICIAN_NAV_GROUPS : NAV_GROUPS).map((group) => ({
     ...group,
-    items: group.items.filter((item) => !item.feature || enabledFeatures.includes(item.feature)),
+    items: group.items,
   })).filter((group) => group.items.length > 0)
 
   return (
@@ -370,7 +375,7 @@ function AppSidebar({
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => (
-                  <NavMenuItem key={item.href} item={item} pathname={pathname} />
+                  <NavMenuItem key={item.href} item={item} pathname={pathname} enabledFeatures={enabledFeatures} />
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
@@ -414,7 +419,15 @@ function AppSidebar({
   )
 }
 
-function NavMenuItem({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavMenuItem({
+  item,
+  pathname,
+  enabledFeatures,
+}: {
+  item: NavItem
+  pathname: string
+  enabledFeatures: GatedFeature[]
+}) {
   const Icon = item.icon
   const hasChildren = item.children && item.children.length > 0
   const isParentActive =
@@ -426,6 +439,7 @@ function NavMenuItem({ item, pathname }: { item: NavItem; pathname: string }) {
     : false
   const isActive = hasChildren ? isAnyChildActive || isParentActive : isParentActive
   const isSoon = isComingSoon(item.href)
+  const isLocked = Boolean(item.feature && !enabledFeatures.includes(item.feature))
 
   const [expanded, setExpanded] = useState(isActive && hasChildren)
 
@@ -435,12 +449,20 @@ function NavMenuItem({ item, pathname }: { item: NavItem; pathname: string }) {
         <SidebarMenuButton
           asChild
           isActive={isActive}
-          tooltip={item.label}
+          tooltip={isLocked ? `${item.label} · Profesyonel` : item.label}
           className={cn(isSoon && !isActive && "opacity-60")}
         >
           <Link href={item.href}>
             <Icon className="size-4" />
-            <span>{item.label}</span>
+            <span className="flex-1">{item.label}</span>
+            {isLocked && (
+              <>
+                <LockKeyhole className="size-3.5 shrink-0" />
+                <Badge variant="secondary" className="h-4 px-1.5 text-[9px] group-data-[collapsible=icon]:hidden">
+                  PRO
+                </Badge>
+              </>
+            )}
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -452,11 +474,17 @@ function NavMenuItem({ item, pathname }: { item: NavItem; pathname: string }) {
       <SidebarMenuButton
         onClick={() => setExpanded(!expanded)}
         isActive={isActive}
-        tooltip={item.label}
+        tooltip={isLocked ? `${item.label} · Profesyonel` : item.label}
         className={cn(isSoon && !isActive && "opacity-60")}
       >
         <Icon className="size-4" />
         <span className="flex-1">{item.label}</span>
+        {isLocked && <LockKeyhole className="size-3.5 shrink-0" />}
+        {isLocked && (
+          <Badge variant="secondary" className="h-4 px-1.5 text-[9px] group-data-[collapsible=icon]:hidden">
+            PRO
+          </Badge>
+        )}
         {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
       </SidebarMenuButton>
       {expanded && (
@@ -466,6 +494,7 @@ function NavMenuItem({ item, pathname }: { item: NavItem; pathname: string }) {
               <Link href={item.href}>
                 <Icon className="size-3.5" />
                 <span>{item.label} Özeti</span>
+                {isLocked && <LockKeyhole className="size-3" />}
               </Link>
             </SidebarMenuSubButton>
           </SidebarMenuSubItem>
@@ -478,6 +507,7 @@ function NavMenuItem({ item, pathname }: { item: NavItem; pathname: string }) {
                   <Link href={child.href}>
                     <ChildIcon className="size-3.5" />
                     <span>{child.label}</span>
+                    {isLocked && <LockKeyhole className="size-3" />}
                   </Link>
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>
@@ -489,7 +519,13 @@ function NavMenuItem({ item, pathname }: { item: NavItem; pathname: string }) {
   )
 }
 
-function MobileBottomNav({ userIdentity }: { userIdentity?: UserIdentity }) {
+function MobileBottomNav({
+  userIdentity,
+  enabledFeatures,
+}: {
+  userIdentity?: UserIdentity
+  enabledFeatures: GatedFeature[]
+}) {
   const pathname = usePathname()
   const { isMobile } = useSidebar()
   const [createOpen, setCreateOpen] = useState(false)
@@ -525,7 +561,7 @@ function MobileBottomNav({ userIdentity }: { userIdentity?: UserIdentity }) {
               active={pathname === "/account" || pathname.startsWith("/account/")}
             />
           </div>
-          <CreateCenterDialog open={createOpen} onOpenChange={setCreateOpen} />
+          <CreateCenterDialog open={createOpen} onOpenChange={setCreateOpen} enabledFeatures={enabledFeatures} />
         </>
       ) : (
         <div className="grid grid-cols-4 gap-1 px-2 py-1.5">
@@ -541,6 +577,7 @@ function MobileBottomNav({ userIdentity }: { userIdentity?: UserIdentity }) {
             label="Teknisyen"
             icon={HardHat}
             active={pathname === "/technician" || pathname.startsWith("/technician/")}
+            locked={!enabledFeatures.includes("team")}
           />
           <MobileNavLink
             href="/customers"
@@ -559,11 +596,13 @@ function MobileNavLink({
   label,
   icon: Icon,
   active,
+  locked = false,
 }: {
   href: string
   label: string
   icon: React.ComponentType<{ className?: string }>
   active: boolean
+  locked?: boolean
 }) {
   return (
     <Link
@@ -573,8 +612,11 @@ function MobileNavLink({
         active ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"
       )}
     >
-      <Icon className="size-5" />
-      <span className="truncate">{label}</span>
+      <span className="relative">
+        <Icon className="size-5" />
+        {locked && <LockKeyhole className="absolute -right-2 -top-1 size-3 rounded-full bg-background" />}
+      </span>
+      <span className="truncate">{label}{locked ? " · Pro" : ""}</span>
     </Link>
   )
 }

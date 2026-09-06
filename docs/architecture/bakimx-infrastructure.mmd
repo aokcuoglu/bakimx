@@ -47,7 +47,7 @@ flowchart TB
     subgraph ext["External / Managed Services — provider-abstracted, 'mock' by default"]
         direction LR
         r2["Cloudflare R2<br/>S3-compatible media bucket<br/>bakimx-media"]
-        ai["OpenAI API / DeepSeek API<br/>AI advisor + registration OCR"]
+        ai["OpenAI API / Anthropic API<br/>landing assistant + registration OCR"]
         sms["Netgsm<br/>SMS gateway"]
         wa["WhatsApp Business<br/>Meta Graph API v18"]
         mail["Resend<br/>transactional email"]
@@ -55,7 +55,7 @@ flowchart TB
     end
 
     app -->|"@aws-sdk/client-s3 · PutObject / presigned GET"| r2
-    app -->|"HTTPS /v1/chat/completions"| ai
+    app -->|"HTTPS provider APIs"| ai
     app -->|"HTTPS"| sms
     app -->|"HTTPS"| wa
     app -->|"HTTPS"| mail

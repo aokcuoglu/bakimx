@@ -291,7 +291,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                           <div className="inline-flex items-center gap-1">
                             <Link
                               href={`/reminders/${r.id}`}
-                              className="inline-flex items-center h-7 px-2 rounded-md text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+                              className="inline-flex items-center h-8 px-2 rounded-md text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
                             >
                               Görüntüle
                             </Link>

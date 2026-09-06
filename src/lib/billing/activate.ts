@@ -1,8 +1,17 @@
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { addPeriod, periodStartFrom } from "@/lib/billing/period"
+import { createCommissionDraftForBillingOrderTx } from "@/lib/sales/commission"
+import { getSeatLimit } from "@/lib/plan"
+import { selectSeatAdjustment } from "@/lib/billing/seat-adjustment"
 
-type Result = { ok: true } | { ok: false; error: string }
+export type SeatAdjustmentResult = {
+  limit: number
+  deactivatedUsers: number
+  deactivatedTechnicians: number
+  revokedInvites: number
+}
+type Result = { ok: true; seatAdjustment: SeatAdjustmentResult } | { ok: false; error: string }
 
 export type ActivateBillingOrderOpts = {
   /** Who triggered the confirmation — recorded in the audit metadata so admin
@@ -32,17 +41,24 @@ export async function activateBillingOrder(
 
   const workshop = await prisma.workshop.findUnique({
     where: { id: order.workshopId },
-    select: { currentPeriodEnd: true },
+    select: { currentPeriodEnd: true, planTier: true, extraSeats: true },
   })
   const now = new Date()
-  // Renewal extends from the current period end (no lost days); upgrade /
-  // new_purchase start a fresh period now (upgrades were proration-credited).
+  // Renewal extends from the current period end (no lost days); package changes
+  // and new purchases start a fresh period now (changes were proration-credited).
   const periodStart =
     order.type === "renewal" ? periodStartFrom(workshop?.currentPeriodEnd ?? null, now) : now
   const periodEnd = addPeriod(periodStart, order.billingCycle)
 
+  let seatAdjustment: SeatAdjustmentResult = {
+    limit: getSeatLimit(order.planTier, workshop?.extraSeats ?? 0),
+    deactivatedUsers: 0,
+    deactivatedTechnicians: 0,
+    revokedInvites: 0,
+  }
   try {
     await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Workshop" WHERE id = ${order.workshopId} FOR UPDATE`
       const claimed = await tx.billingOrder.updateMany({
         where: { id: order.id, status: "pending_payment" },
         data: {
@@ -57,6 +73,52 @@ export async function activateBillingOrder(
         // Another confirm already processed this order — abort the whole tx.
         throw new Error("ALREADY_PROCESSED")
       }
+      const nowForSeats = new Date()
+      const [activeUsers, pendingInvites] = await Promise.all([
+        tx.user.findMany({
+          where: { workshopId: order.workshopId, isActive: true },
+          select: { id: true, role: true, createdAt: true, technicianId: true },
+        }),
+        tx.invite.findMany({
+          where: {
+            workshopId: order.workshopId,
+            status: "pending",
+            expiresAt: { gt: nowForSeats },
+          },
+          select: { id: true, createdAt: true },
+        }),
+      ])
+      const selection = selectSeatAdjustment(activeUsers, pendingInvites, seatAdjustment.limit)
+      if (selection.deactivatedUserIds.length > 0) {
+        await tx.user.updateMany({
+          where: { id: { in: selection.deactivatedUserIds }, workshopId: order.workshopId },
+          data: { isActive: false },
+        })
+      }
+      if (selection.revokedInviteIds.length > 0) {
+        await tx.invite.updateMany({
+          where: { id: { in: selection.revokedInviteIds }, workshopId: order.workshopId },
+          data: { status: "revoked" },
+        })
+      }
+      let deactivatedTechnicians = 0
+      if (selection.technicianIdsToReview.length > 0) {
+        const technicianUpdate = await tx.technician.updateMany({
+          where: {
+            id: { in: selection.technicianIdsToReview },
+            workshopId: order.workshopId,
+            linkedUsers: { none: { isActive: true } },
+          },
+          data: { isActive: false },
+        })
+        deactivatedTechnicians = technicianUpdate.count
+      }
+      seatAdjustment = {
+        ...seatAdjustment,
+        deactivatedUsers: selection.deactivatedUserIds.length,
+        deactivatedTechnicians,
+        revokedInvites: selection.revokedInviteIds.length,
+      }
       await tx.workshop.update({
         where: { id: order.workshopId },
         data: {
@@ -69,6 +131,12 @@ export async function activateBillingOrder(
           planRequestedAt: null,
         },
       })
+      await createCommissionDraftForBillingOrderTx(
+        tx,
+        order,
+        workshop?.planTier ?? null,
+        { userId: opts.actorUserId, label: opts.confirmedByEmail },
+      )
     })
   } catch (err) {
     if (err instanceof Error && err.message === "ALREADY_PROCESSED") {
@@ -89,7 +157,22 @@ export async function activateBillingOrder(
       cycle: order.billingCycle,
       amountMinor: order.amountMinor,
       actor: opts.actor,
+      seatAdjustment,
     })
   )
-  return { ok: true }
+  if (
+    seatAdjustment.deactivatedUsers > 0 ||
+    seatAdjustment.deactivatedTechnicians > 0 ||
+    seatAdjustment.revokedInvites > 0
+  ) {
+    await AuditLogAction(
+      order.workshopId,
+      opts.actorUserId ?? undefined,
+      "Workshop",
+      order.workshopId,
+      "plan_seat_limit_applied",
+      JSON.stringify({ tier: order.planTier, ...seatAdjustment }),
+    )
+  }
+  return { ok: true, seatAdjustment }
 }

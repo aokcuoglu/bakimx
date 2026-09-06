@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
+import { requireAuth, requireWritableFeatureWorkshop, requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import {
   businessProfileSchema,
@@ -15,6 +15,7 @@ import {
   normalizeEmailProvider,
 } from "@/lib/validations/settings"
 import { normalizeContactNumber, normalizeSocialUrl } from "@/lib/workshop-contact"
+import { isUniqueConstraintError } from "@/lib/prisma-errors"
 
 async function auditLog(workshopId: string, actorUserId: string | null, action: string, entityType: string) {
   await prisma.auditLog.create({
@@ -74,6 +75,7 @@ export async function updateBusinessProfileAction(formData: FormData) {
     taxOffice: formData.get("taxOffice") as string,
     invoiceTitle: formData.get("invoiceTitle") as string,
     logoUrl: formData.get("logoUrl") as string,
+    referralCode: String(formData.get("referralCode") ?? ""),
     instagramUrl: formData.get("instagramUrl") as string,
     facebookUrl: formData.get("facebookUrl") as string,
     xUrl: formData.get("xUrl") as string,
@@ -107,29 +109,37 @@ export async function updateBusinessProfileAction(formData: FormData) {
 
   // Tek form iki tabloya yazıyor (Workshop + WorkshopSettings); yarısı kaydedilip
   // yarısı kaydedilmemiş bir profil kalmasın diye ikisi tek işlemde gider.
-  await prisma.$transaction([
-    prisma.workshop.update({
-      where: { id: user.workshopId },
-      data: {
-        name: parsed.data.name,
-        phone: parsed.data.phone,
-        city: parsed.data.city,
-        district: parsed.data.district || null,
-        address: parsed.data.address,
-        email: parsed.data.email || null,
-        website: parsed.data.website || null,
-        taxNumber: parsed.data.taxNumber || null,
-        taxOffice: parsed.data.taxOffice || null,
-        invoiceTitle: parsed.data.invoiceTitle || null,
-        logoUrl: parsed.data.logoUrl || null,
-      },
-    }),
-    prisma.workshopSettings.upsert({
-      where: { workshopId: user.workshopId },
-      update: publicContact,
-      create: { workshopId: user.workshopId, ...publicContact },
-    }),
-  ])
+  try {
+    await prisma.$transaction([
+      prisma.workshop.update({
+        where: { id: user.workshopId },
+        data: {
+          name: parsed.data.name,
+          phone: parsed.data.phone,
+          city: parsed.data.city,
+          district: parsed.data.district || null,
+          address: parsed.data.address,
+          email: parsed.data.email || null,
+          website: parsed.data.website || null,
+          taxNumber: parsed.data.taxNumber || null,
+          taxOffice: parsed.data.taxOffice || null,
+          invoiceTitle: parsed.data.invoiceTitle || null,
+          logoUrl: parsed.data.logoUrl || null,
+          referralCode: parsed.data.referralCode || null,
+        },
+      }),
+      prisma.workshopSettings.upsert({
+        where: { workshopId: user.workshopId },
+        update: publicContact,
+        create: { workshopId: user.workshopId, ...publicContact },
+      }),
+    ])
+  } catch (error) {
+    if (isUniqueConstraintError(error, "referralcode")) {
+      return { error: "Bu referans kodu başka bir iş yeri tarafından kullanılıyor." }
+    }
+    throw error
+  }
 
   await auditLog(user.workshopId, user.id, "update_business_profile", "Workshop")
 
@@ -179,7 +189,7 @@ export async function updateBrandingAction(formData: FormData) {
 }
 
 export async function updateCommunicationSettingsAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("settings.manage")
+  const { user } = await requireWritableFeatureWorkshop("settings.manage", "communications")
 
   const raw = {
     smsProvider: formData.get("smsProvider") as string,
@@ -287,7 +297,7 @@ export async function updateWorkingHoursAction(formData: FormData) {
 }
 
 export async function updateAppointmentRulesAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("settings.manage")
+  const { user } = await requireWritableFeatureWorkshop("settings.manage", "appointments")
 
   const raw = {
     defaultAppointmentDuration: formData.get("defaultAppointmentDuration") as string,

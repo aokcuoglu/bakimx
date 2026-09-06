@@ -179,7 +179,7 @@ export async function getVehicleAction(vehicleId: string) {
       intakes: {
         include: {
           order: { include: { items: true } },
-          damageMarks: true,
+          damageMarks: { where: { deletedAt: null } },
           photos: { where: VISIBLE_PHOTO, select: { id: true, type: true, label: true, fileUrl: true, createdAt: true } },
           approvals: { orderBy: { createdAt: "desc" }, take: 1 },
         },

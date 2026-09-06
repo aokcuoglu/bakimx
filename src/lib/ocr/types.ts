@@ -70,9 +70,11 @@ export interface VinOcrResult {
   provider: OcrProviderName
 }
 
+export type OcrRequestOptions = { signal?: AbortSignal; timeoutMs?: number; maxRetries?: number }
+
 export interface OcrProvider {
   readonly name: OcrProviderName
-  extractRegistration(imageBuffer: Buffer, mimeType: string): Promise<RegistrationOcrResult>
+  extractRegistration(imageBuffer: Buffer, mimeType: string, options?: OcrRequestOptions): Promise<RegistrationOcrResult>
   extractPartBox?(imageBuffer: Buffer, mimeType: string): Promise<PartBoxOcrResult>
   extractVin?(imageBuffer: Buffer, mimeType: string): Promise<VinOcrResult>
 }

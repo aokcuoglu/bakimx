@@ -7,7 +7,7 @@ test("oto servis programı sayfası mobilde taşmadan ve erişilebilir açılır
   await expect(page).toHaveTitle(/Oto Servis Programı: Araç Kabulden Teslimata/)
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://bakimx.com/oto-servis-programi")
   await expect(page.getByRole("heading", { level: 1, name: /Oto servis programı/ })).toBeVisible()
-  await expect(page.getByRole("link", { name: "7 gün ücretsiz deneyin" })).toHaveCount(2)
+  await expect(page.getByRole("link", { name: "Ücretsiz deneyin" })).toHaveCount(2)
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   expect(overflow, "360 px görünümde yatay taşma").toBeLessThanOrEqual(1)
@@ -18,7 +18,7 @@ test("oto servis programı sayfası mobilde taşmadan ve erişilebilir açılır
 
 test("ana CTA klavyeyle odaklanabilir", async ({ page }) => {
   await page.goto("/oto-servis-programi")
-  const primaryCtas = page.getByRole("link", { name: "7 gün ücretsiz deneyin" })
+  const primaryCtas = page.getByRole("link", { name: "Ücretsiz deneyin" })
 
   await primaryCtas.first().focus()
   await expect(primaryCtas.first()).toBeFocused()

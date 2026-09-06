@@ -22,7 +22,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           vehicle: true,
           // Dış alım (satın alma) fotoğrafları dahili-yalnızdır — müşteri özetine sızmaz.
           photos: { where: { serviceOrderItemId: null, ...VISIBLE_PHOTO }, select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
-          damageMarks: { select: { id: true, zone: true, damageType: true, severity: true, note: true } },
+          damageMarks: { where: { deletedAt: null }, select: { id: true, number: true, photos: { where: { photo: { deletedAt: null, serviceOrderItemId: null } }, select: { photoId: true } }, zone: true, damageType: true, severity: true, note: true } },
           approvals: { select: { status: true, approvedAt: true }, orderBy: { createdAt: "desc" }, take: 1 },
           // `discountAmount` + `taxRate` müşteri özetinin KDV/indirim kırılımını
           // besler; kalem select'i ORDER_TOTALS_ITEM_SELECT'ten gelir (BAK-53).
@@ -62,6 +62,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
 
   const normalizedIntakeForm = {
     ...intakeForm,
+    photos: intakeForm.photos.map(p => ({ ...p, fileUrl: `/s/${encodeURIComponent(token)}/photos/${encodeURIComponent(p.id)}` })),
     order: intakeForm.order ? {
       ...intakeForm.order,
       items: intakeForm.order.items.map((item) => ({ ...item, quantity: quantityToNumber(item.quantity) })),
@@ -70,7 +71,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
   const safeIntakeForm = sanitizeIntakeForPublic(normalizedIntakeForm, visibility)
 
   const photoGroups = groupPhotosByPhase(
-    intakeForm.photos.map((p) => ({
+    safeIntakeForm.photos.map((p) => ({
       id: p.id,
       type: p.type,
       label: p.label,

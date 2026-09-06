@@ -17,6 +17,7 @@ import {
   missingRequiredPhotoTypes,
   suggestPhotoPhase,
 } from "@/lib/technician/photo-upload"
+import { compressImageForUpload } from "@/lib/image/compress-image"
 
 /**
  * Teknisyen ekranında fotoğraf ekleme — iş emri ekranındaki akışın mobil
@@ -57,13 +58,29 @@ export function TechnicianPhotoUpload({
     setError(null)
   }
 
-  function onPickFile(next: File | null) {
+  async function onPickFile(next: File | null) {
+    if (!next) {
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev)
+        return null
+      })
+      setFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+      return
+    }
+
+    const prepared = await compressImageForUpload(next)
+    if (!prepared.ok) {
+      toast.error(prepared.error)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+      return
+    }
+
     setPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev)
-      return next ? URL.createObjectURL(next) : null
+      return URL.createObjectURL(prepared.file)
     })
-    setFile(next)
-    if (!next && fileInputRef.current) fileInputRef.current.value = ""
+    setFile(prepared.file)
   }
 
   function openWith(preselectedType?: PhotoTypeKey) {
@@ -113,7 +130,7 @@ export function TechnicianPhotoUpload({
               variant="outline"
               size="sm"
               onClick={() => openWith(key)}
-              className="h-7 rounded-full border-destructive/20 bg-destructive/10 px-2 text-[11px] font-medium text-destructive-strong touch-manipulation"
+              className="h-8 rounded-full border-destructive/20 bg-destructive/10 px-2 text-[11px] font-medium text-destructive-strong touch-manipulation"
             >
               <Camera className="size-3" />
               {PHOTO_TYPES[key].label}

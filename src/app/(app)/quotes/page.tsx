@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import Link from "next/link"
 import { Plus, Search } from "lucide-react"
@@ -10,6 +11,8 @@ import { Button } from "@/components/ui/button"
 type SP = { q?: string; status?: string }
 
 export default async function QuotesPage({ searchParams }: { searchParams: Promise<SP> }) {
+  const paywall = await getFeaturePaywall("quotes")
+  if (paywall) return paywall
   const { workshop } = await getAppData()
   const params = await searchParams
   const q = (params.q || "").trim()

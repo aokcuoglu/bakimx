@@ -4,9 +4,9 @@ import type { Workshop } from "@prisma/client"
  * Plan / subscription / trial logic for the SaaS access model.
  *
  * Two orthogonal gates exist:
- *  - approvalStatus: card-verification gate. Self sign-ups (/register) create a
+ *  - approvalStatus: e-mail-verification gate. Self sign-ups (/register) create a
  *    `pending` workshop with NO trial; the workshop flips to `approved` and its
- *    7-day trial starts only when 1 TL card verification succeeds
+ *    7-business-day trial starts only when e-mail verification succeeds
  *    (activateVerifiedWorkshop). Pending users CAN sign in — they land on the
  *    full-screen PlanLocked verify screen ((app)/layout.tsx). `rejected` is the
  *    admin kill switch (blocks login entirely); admin approveWorkshop remains a
@@ -18,7 +18,7 @@ import type { Workshop } from "@prisma/client"
  *    SERVER-SIDE enforcement: every mutating server action / API route must be
  *    blocked when ANY lockReason is set — pending/rejected included, since a
  *    pending session could otherwise call actions/APIs directly with its
- *    cookie and use the app without ever verifying a card.
+ *    cookie and use the app without ever verifying its e-mail address.
  *  - `hasAccess` + PlanLocked ((app)/layout.tsx) is the UX layer: full-screen
  *    lock for pending/rejected. Plan-EXPIRY reasons (see
  *    {@link isPlanExpiredLock}) are a hard paywall instead: (app)/layout.tsx
@@ -27,10 +27,6 @@ import type { Workshop } from "@prisma/client"
  *    founder impersonation, so a locked tenant can still be inspected.
  *
  * Per-feature gating:
- *  - `aiAdvisor`: WIRED via `hasFeature` in the `/api/advisor` and
- *    `/api/orders/advisor` API routes (return 403 + feature_locked). The UI
- *    conditionally renders the panel/`AdvisorPremiumLock` CTA based on
- *    `hasFeature(workshop.planTier, "aiAdvisor")`.
  *  - `assertFeature` (throw-based) is ready to adopt inside server actions as
  *    further premium features ship.
  *  - `eInvoice`: planned gate on e-Fatura issuance when the integration lands
@@ -40,17 +36,62 @@ import type { Workshop } from "@prisma/client"
  *    are available across all tiers, so the gate is informational only.
  */
 
-export const TRIAL_DAYS = 7
+export const TRIAL_BUSINESS_DAYS = 7
 const DAY_MS = 86_400_000
+const ISTANBUL_WEEKDAY = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Europe/Istanbul",
+  weekday: "short",
+})
 
-export type PlanTier = "starter" | "pro" | "premium"
+function isBusinessDay(date: Date): boolean {
+  const weekday = ISTANBUL_WEEKDAY.format(date)
+  return weekday !== "Sat" && weekday !== "Sun"
+}
 
-// Included login seats per plan tier. During the trial a workshop is on `pro`,
-// so it gets pro's seat allowance. Extra seats are granted per-workshop on top.
+/** Cumartesi/pazar günlerini saymadan başlangıçtan sonraki iş günlerini sayar. */
+export function businessDaysUntil(from: Date, until: Date): number {
+  if (until.getTime() <= from.getTime()) return 0
+
+  let count = 0
+  const cursor = new Date(from)
+  while (true) {
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+    if (cursor.getTime() > until.getTime()) break
+    if (isBusinessDay(cursor)) count += 1
+  }
+  return count
+}
+
+export const PLAN_TIERS = ["lite", "starter", "pro", "premium"] as const
+export type PlanTier = (typeof PLAN_TIERS)[number]
+
+/** Tiers offered for new purchases. `starter` remains readable for legacy workshops. */
+export const SALE_PLAN_TIERS = ["lite", "pro", "premium"] as const
+export type SalePlanTier = (typeof SALE_PLAN_TIERS)[number]
+
+export function isPlanTier(value: unknown): value is PlanTier {
+  return typeof value === "string" && PLAN_TIERS.some((tier) => tier === value)
+}
+
+export function isSalePlanTier(value: unknown): value is SalePlanTier {
+  return typeof value === "string" && SALE_PLAN_TIERS.some((tier) => tier === value)
+}
+
+// Included login seats per plan tier. getPlanState resolves active trials to a
+// Premium access tier, regardless of the stored sales/default tier.
 export const PLAN_SEATS: Record<PlanTier, number> = {
+  lite: 1,
   starter: 1,
   pro: 5,
   premium: 15,
+}
+
+/** Per-tier monthly VIN/katalog kotası (atölye başına). Ek kota Workshop.extraVinQuota ile eklenir. */
+export const VIN_LOOKUP_QUOTA: Record<PlanTier, number> = {
+  lite: 0,
+  starter: 1_000,
+  pro: 5_000,
+  premium: 15_000,
 }
 
 /** Effective seat limit = tier-included seats + founder-granted extra seats. */
@@ -60,6 +101,7 @@ export function getSeatLimit(tier: PlanTier, extraSeats: number = 0): number {
 
 /** Pakete göre okunur ad — hata metinlerinde "starter" değil "Başlangıç" geçsin. */
 export const PLAN_LABELS: Record<PlanTier, string> = {
+  lite: "Lite",
   starter: "Başlangıç",
   pro: "Profesyonel",
   premium: "Premium",
@@ -101,7 +143,7 @@ export type LockReason =
 /**
  * Lock reasons that mean "the workshop has to pay to continue" — as opposed to
  * the approval gate (`pending`/`rejected`), which is recovered by verifying a
- * card or contacting support. These three are enforced as a hard paywall:
+ * e-mail or contacting support. These three are enforced as a hard paywall:
  * (app)/layout.tsx signs the session out (GET /api/auth/logout) and the next
  * login is redirected to /checkout instead of /dashboard.
  */
@@ -119,44 +161,73 @@ export function isPlanExpiredLock(
   return PLAN_EXPIRED_LOCK_REASONS.includes(reason as PlanExpiredLockReason)
 }
 
-const TIER_RANK: Record<PlanTier, number> = { starter: 1, pro: 2, premium: 3 }
-
-// Gated capabilities. Used by assertFeature() as these features come online.
-// During the trial a workshop is on the `pro` tier, so premium features remain
-// locked behind an upgrade. `starter` min tier = enabled for every plan (the
-// gate then only serves as a per-tenant kill switch via feature overrides).
 export type GatedFeature =
+  | "ocrIntake"
+  | "photoChecklist"
+  | "damageMap"
   | "eInvoice"
-  | "aiAdvisor"
   | "multiBranch"
   | "rbac"
   | "vinLookup"
   | "partsCatalog"
   | "bakimxCatalog"
   | "getirbakimCatalog"
-  | "marketResearch"
-const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
+  | "quotes"
+  | "appointments"
+  | "automatedReminders"
+  | "team"
+  | "partsInventory"
+  | "procurement"
+  | "cashbox"
+  | "analytics"
+  | "reports"
+  | "communications"
+  | "vehiclePassport"
+
+export const GATED_FEATURES: readonly GatedFeature[] = [
+  "ocrIntake", "photoChecklist", "damageMap", "eInvoice", "multiBranch", "rbac",
+  "vinLookup", "partsCatalog", "bakimxCatalog", "getirbakimCatalog", "quotes",
+  "appointments", "automatedReminders", "team", "partsInventory", "procurement",
+  "cashbox", "analytics", "reports", "communications", "vehiclePassport",
+] as const
+
+/** Lowest purchasable/legacy tier which owns a capability. */
+export const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
+  ocrIntake: "starter",
+  photoChecklist: "starter",
+  damageMap: "starter",
   eInvoice: "premium",
-  aiAdvisor: "premium",
   multiBranch: "premium",
   rbac: "premium",
   vinLookup: "pro",
   partsCatalog: "starter",
-  // BakımX'in KENDİ kataloğu: sorgu bizim DB'mize gidiyor, dış kota yakmıyor —
-  // bu yüzden `partsCatalog` (TecDoc/RapidAPI) kapısının arkasına konmaz ve
-  // taban katman `starter`. Kapı yalnız atölye bazında kapatma düğmesi olarak
-  // durur (bkz. /admin/flags, resolveFeature).
   bakimxCatalog: "starter",
-  // GetirBakım kataloğu (BAK-183): `bakimxCatalog`tan AYRI bir kapı. Sorgu
-  // DIŞARI, GetirBakım partner API'sine gidiyor — tek kapıya bağlansaydı, yalnız
-  // kendi kataloğunu isteyen bir atölye farkında olmadan dış trafik de üretirdi.
-  // Aynı gerekçeyle `partsCatalog` (TecDoc) kapısının da arkasında değil; bkz.
-  // src/lib/parts/bakimx-catalog-guard.ts'teki aynı ayrım.
   getirbakimCatalog: "starter",
-  // Kaynaklı web araştırması her istekte ücretli sağlayıcı ve web-search kotası
-  // tüketir; bu nedenle katalog aramasından ayrı, Premium'a özgü bir kapıdır.
-  marketResearch: "premium",
+  quotes: "pro",
+  appointments: "pro",
+  automatedReminders: "pro",
+  team: "pro",
+  partsInventory: "pro",
+  procurement: "pro",
+  cashbox: "starter",
+  analytics: "pro",
+  reports: "pro",
+  communications: "pro",
+  vehiclePassport: "starter",
 }
+
+const STARTER_FEATURES = new Set<GatedFeature>([
+  "ocrIntake",
+  "photoChecklist",
+  "damageMap",
+  "partsCatalog",
+  "bakimxCatalog",
+  "getirbakimCatalog",
+  "cashbox",
+  "vehiclePassport",
+])
+
+const PREMIUM_ONLY_FEATURES = new Set<GatedFeature>(["eInvoice", "multiBranch", "rbac"])
 
 type WorkshopPlanFields = Pick<
   Workshop,
@@ -164,11 +235,14 @@ type WorkshopPlanFields = Pick<
 >
 
 export interface PlanState {
+  /** Persisted billing tier. */
   tier: PlanTier
+  /** Entitlement tier used by feature, seat and quota checks. Trials are Premium. */
+  accessTier: PlanTier
   isApproved: boolean
   isTrialing: boolean
   trialEndsAt: Date | null
-  /** Whole days left in the trial (ceil), or null when not trialing. */
+  /** Remaining business days in the trial, or null when not trialing. */
   trialDaysLeft: number | null
   isTrialExpired: boolean
   /** Paid period end (active subs only), or null. */
@@ -184,7 +258,7 @@ export interface PlanState {
    * `lockReason` is set (i.e. `canWrite === hasAccess`). This is the
    * server-side enforcement (assertWriteAccess / requireWritableWorkshop);
    * PlanLocked / the read-only banner are only the UX layer on top. In
-   * particular `pending` (card not verified yet) and `rejected` MUST block
+   * particular `pending` (e-mail not verified yet) and `rejected` MUST block
    * writes here too: those sessions can reach server actions / API routes
    * directly with their cookie, bypassing the full-screen lock HTML.
    */
@@ -206,7 +280,7 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
 
   const trialDaysLeft =
     isTrialing && trialEndsAt != null
-      ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now) / DAY_MS))
+      ? businessDaysUntil(new Date(now), trialEndsAt)
       : null
 
   const subscriptionDaysLeft =
@@ -239,6 +313,7 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
 
   return {
     tier,
+    accessTier: hasAccess && isTrialing ? "premium" : tier,
     isApproved,
     isTrialing,
     trialEndsAt,
@@ -269,7 +344,7 @@ export class PlanWriteLockedError extends Error {
 
 /**
  * Central write guard. Throws {@link PlanWriteLockedError} whenever the
- * workshop may not mutate data: card verification not completed (`pending`),
+ * workshop may not mutate data: e-mail verification not completed (`pending`),
  * suspended (`rejected`), or plan expired (read-only mode). Server
  * actions/routes that mutate tenant data should call this after auth. The
  * billing/purchase flow and auth actions are intentionally exempt so a locked
@@ -281,7 +356,7 @@ export function assertWriteAccess(workshop: WorkshopPlanFields): void {
   let message: string
   switch (lockReason) {
     case "pending":
-      message = "Hesabınız kart doğrulaması bekliyor. Devam etmek için kartınızı doğrulayın."
+      message = "Hesabınız e-posta doğrulaması bekliyor. Devam etmek için e-posta adresinizi doğrulayın."
       break
     case "rejected":
       message = "Hesabınız askıya alınmış. Destek ile iletişime geçin."
@@ -295,13 +370,50 @@ export function assertWriteAccess(workshop: WorkshopPlanFields): void {
   throw new PlanWriteLockedError(message, lockReason)
 }
 
-/** Trial end timestamp computed from a start date (used when a workshop is approved). */
+/** Deneme bitişi: doğrulama anından sonraki yedinci İstanbul iş günü. */
 export function computeTrialEnd(from: Date): Date {
-  return new Date(from.getTime() + TRIAL_DAYS * DAY_MS)
+  const result = new Date(from)
+  let added = 0
+  while (added < TRIAL_BUSINESS_DAYS) {
+    result.setUTCDate(result.getUTCDate() + 1)
+    if (isBusinessDay(result)) added += 1
+  }
+  return result
 }
 
 export function hasFeature(tier: PlanTier, feature: GatedFeature): boolean {
-  return TIER_RANK[tier] >= TIER_RANK[FEATURE_MIN_TIER[feature]]
+  if (tier === "premium") return true
+  if (tier === "pro") return !PREMIUM_ONLY_FEATURES.has(feature)
+  if (tier === "starter") return STARTER_FEATURES.has(feature)
+  return false
+}
+
+export function hasWorkshopFeature(
+  workshop: WorkshopPlanFields,
+  feature: GatedFeature
+): boolean {
+  return hasFeature(getPlanState(workshop).accessTier, feature)
+}
+
+export function getEffectiveSeatLimit(
+  workshop: WorkshopPlanFields & { extraSeats?: number | null }
+): number {
+  return getSeatLimit(getPlanState(workshop).accessTier, workshop.extraSeats ?? 0)
+}
+
+export class PlanFeatureLockedError extends Error {
+  readonly code = "feature_locked"
+  readonly feature: GatedFeature
+  readonly requiredTier: PlanTier
+
+  constructor(feature: GatedFeature) {
+    const requiredTier = FEATURE_MIN_TIER[feature]
+    const purchasableTier = requiredTier === "premium" ? "premium" : "pro"
+    super(`Bu özellik ${PLAN_LABELS[purchasableTier]} pakette kullanılabilir. Devam etmek için paketinizi yükseltin.`)
+    this.name = "PlanFeatureLockedError"
+    this.feature = feature
+    this.requiredTier = requiredTier
+  }
 }
 
 /**
@@ -313,9 +425,5 @@ export function assertFeature(
   workshop: WorkshopPlanFields,
   feature: GatedFeature
 ): void {
-  if (!hasFeature(workshop.planTier as PlanTier, feature)) {
-    throw new Error(
-      "Bu özellik mevcut paketinizde bulunmuyor. Yükseltmek için bizimle iletişime geçin."
-    )
-  }
+  if (!hasWorkshopFeature(workshop, feature)) throw new PlanFeatureLockedError(feature)
 }

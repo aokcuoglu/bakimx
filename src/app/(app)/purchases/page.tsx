@@ -1,5 +1,7 @@
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
+import { FeaturePaywall } from "@/components/billing/feature-paywall"
+import { InlineFeatureUpsell } from "@/components/billing/inline-feature-upsell"
 import { prisma } from "@/lib/db"
 import { quantityToNumber } from "@/lib/orders/quantity"
 import Link from "next/link"
@@ -12,6 +14,7 @@ import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus, Prisma } from "@prisma/client"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
 
 export const dynamic = "force-dynamic"
 
@@ -20,12 +23,23 @@ export default async function PurchasesPage({
 }: {
   searchParams: Promise<{ q?: string; from?: string; to?: string }>
 }) {
+  const { user, workshop } = await getAppData()
+  const canCreate = !!workshop && hasWorkshopFeature(workshop, "procurement")
+  const currentTier = workshop ? getPlanState(workshop).tier : "lite"
+
+  if (!canCreate) {
+    const preservedCount = await prisma.serviceOrderItem.count({
+      where: { workshopId: user.workshopId, source: "purchase" },
+    })
+    if (preservedCount === 0) {
+      return <FeaturePaywall feature="procurement" currentTier={currentTier} itemCount={0} />
+    }
+  }
+
   const params = await searchParams
   const q = (params.q || "").trim()
   const from = (params.from || "").trim()
   const to = (params.to || "").trim()
-
-  const { user, workshop } = await getAppData()
 
   const fromDate = trDateToDate(from)
   const toDate = trDateToDate(to)
@@ -112,13 +126,17 @@ export default async function PurchasesPage({
           <p className="text-sm text-muted-foreground mt-0.5">Teknisyenlerin iş emrine dışarıdan aldığı parçalar</p>
         </div>
 
+        {!canCreate && (
+          <InlineFeatureUpsell feature="procurement" currentTier={currentTier} />
+        )}
+
         <form action="/purchases" method="get" className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               name="q"
               defaultValue={q}
-              placeholder="İş emri no, plaka, VIN veya tedarikçi ile ara..."
+              placeholder="İş emri no, plaka, şase veya tedarikçi ile ara..."
               className="pl-10"
             />
           </div>

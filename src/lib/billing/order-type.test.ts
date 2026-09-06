@@ -36,9 +36,7 @@ test("aktif + farklı paket → yükseltme", () => {
   ).toBe("upgrade")
 })
 
-test("aktif değil ama dönem sonu var + aynı paket → yükseltme (yenileme değil)", () => {
-  // Aktif olmayan (ör. past_due) aynı-paket talebi renewal değildir; yalnız
-  // subscriptionStatus === "active" yenilemeyi tetikler.
+test("aktif değil ama dönem sonu var + aynı paket → yenileme", () => {
   expect(
     deriveBillingOrderType({
       subscriptionStatus: "past_due",
@@ -46,5 +44,38 @@ test("aktif değil ama dönem sonu var + aynı paket → yükseltme (yenileme de
       currentPeriodEnd: future,
       targetTier: "pro",
     })
+  ).toBe("renewal")
+})
+
+test("lite paketinden yükseltme → upgrade", () => {
+  expect(
+    deriveBillingOrderType({
+      subscriptionStatus: "active",
+      planTier: "lite",
+      currentPeriodEnd: future,
+      targetTier: "starter",
+    })
   ).toBe("upgrade")
+})
+
+test("lite paketinde ilk alım → new_purchase", () => {
+  expect(
+    deriveBillingOrderType({
+      subscriptionStatus: "trialing",
+      planTier: "lite",
+      currentPeriodEnd: null,
+      targetTier: "lite",
+    })
+  ).toBe("new_purchase")
+})
+
+test("daha alt pakete geçiş → downgrade", () => {
+  expect(
+    deriveBillingOrderType({
+      subscriptionStatus: "active",
+      planTier: "premium",
+      currentPeriodEnd: future,
+      targetTier: "starter",
+    })
+  ).toBe("downgrade")
 })

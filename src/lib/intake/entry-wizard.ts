@@ -30,7 +30,7 @@ export const ENTRY_METHODS: EntryMethodOption[] = [
   },
   {
     value: "vin",
-    title: "Camdan şase (VIN)",
+    title: "Camdan şase",
     description: "Ön camdaki şase numarasını kamerayla okutun veya elle yazın.",
     captureLabel: "Şase",
   },
@@ -118,7 +118,7 @@ export function identityConflicts(
   }
   const vin = { current: normalizeVin(current.vin), scanned: normalizeVin(scanned.vin) }
   if (vin.current && vin.scanned && vin.current !== vin.scanned) {
-    conflicts.push({ key: "vin", label: "Şase (VIN)", current: vin.current, scanned: vin.scanned })
+    conflicts.push({ key: "vin", label: "Şase no", current: vin.current, scanned: vin.scanned })
   }
   return conflicts
 }

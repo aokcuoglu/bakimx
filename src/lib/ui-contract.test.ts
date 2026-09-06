@@ -16,6 +16,8 @@ const SHELL_FILES = [
   join(SRC, "components", "ui", "sidebar.tsx"),
 ]
 
+const COMBOBOX_SOURCE = readFileSync(join(SRC, "components", "ui", "combobox.tsx"), "utf8")
+
 function tsxFiles(dir: string, files: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry)
@@ -36,6 +38,10 @@ test("yönetim yüzeylerinde görünür ham interaktif kontrol yok", () => {
     })
   }
   expect(offenders).toEqual([])
+})
+
+test("Base UI combobox listesi Radix dialog katmanının üstünde kalıyor", () => {
+  expect(COMBOBOX_SOURCE).toContain('className="pointer-events-auto isolate z-[60]"')
 })
 
 test("yönetim yüzeylerinde sabit durum rengi yok", () => {

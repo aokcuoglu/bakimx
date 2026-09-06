@@ -8,6 +8,7 @@ import { parseOcrImageRequest } from "@/lib/ocr/parse-image-request"
 import { parseVinFromText } from "@/lib/ocr/vin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
+import { hasWorkshopFeature } from "@/lib/plan"
 
 // Vision çağrısı birkaç saniye sürebilir; Next'in varsayılan süresini gevşet
 // (proxy timeout ~60s'in altında kalır).
@@ -31,6 +32,12 @@ export async function POST(request: Request) {
     const { user, workshop } = await getCurrentUserWithWorkshop()
     const locked = assertWritableOr403(workshop)
     if (locked) return locked
+    if (!hasWorkshopFeature(workshop, "vinLookup")) {
+      return NextResponse.json(
+        { error: "VIN okuma bu çalışma alanında kapalı.", code: "feature_locked" },
+        { status: 403 },
+      )
+    }
 
     const parsed = await parseOcrImageRequest(request)
     if (parsed instanceof NextResponse) return parsed
@@ -39,7 +46,7 @@ export async function POST(request: Request) {
     const provider = await getOcrProvider()
     if (typeof provider.extractVin !== "function") {
       return NextResponse.json(
-        { error: "Aktif OCR sağlayıcısı şase okumayı desteklemiyor." },
+        { error: "Aktif okuma servisi şase okumayı desteklemiyor." },
         { status: 400 }
       )
     }

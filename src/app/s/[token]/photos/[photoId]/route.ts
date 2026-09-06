@@ -16,6 +16,7 @@ export async function GET(
         isActive: true,
         expiresAt: true,
         showPhotos: true,
+        showDamage: true,
         intakeForm: {
           select: {
             workshopId: true,
@@ -23,6 +24,7 @@ export async function GET(
               // Dış alım fotoğrafı public token ile servis edilemez (dahili-yalnız).
               where: { id: photoId, serviceOrderItemId: null, ...VISIBLE_PHOTO },
               select: {
+                annotationVersions: { orderBy: { version: "desc" }, take: 1, select: { storageKey: true, mimeType: true } },
                 workshopId: true,
                 storageKey: true,
                 storageProvider: true,
@@ -48,12 +50,14 @@ export async function GET(
       notFound()
     }
 
-    if (!photo.storageKey) {
+    const rendition = shareLink.showDamage ? photo.annotationVersions[0] : undefined
+    const storageKey = rendition?.storageKey ?? photo.storageKey
+    if (!storageKey) {
       notFound()
     }
 
     const provider = await getStorageProvider()
-    const signedUrl = await provider.getSignedUrl(photo.storageKey, 3600)
+    const signedUrl = await provider.getSignedUrl(storageKey, 3600)
 
     if (!signedUrl) {
       notFound()
@@ -66,8 +70,8 @@ export async function GET(
       notFound()
     }
     const headers = new Headers()
-    headers.set("Content-Type", photo.mimeType || upstream.headers.get("content-type") || "image/jpeg")
-    headers.set("Cache-Control", "public, max-age=300")
+    headers.set("Content-Type", rendition?.mimeType || photo.mimeType || upstream.headers.get("content-type") || "image/jpeg")
+    headers.set("Cache-Control", "private, no-store")
     return new Response(upstream.body, { headers })
   } catch {
     notFound()

@@ -76,6 +76,8 @@ export const intakeUpdateSchema = z.object({
 
 export const damageMarkSchema = z.object({
   intakeFormId: z.string().min(1, "Kabul kaydı bulunamadı"),
+  requestId: z.string().min(1).max(100).optional(),
+  photoIds: z.array(z.string().min(1)).max(30).optional(),
   zone: z.enum([
     "front_bumper", "rear_bumper", "hood", "trunk", "roof", "windshield", "rear_window",
     "left_front_door", "left_rear_door", "right_front_door", "right_rear_door",
@@ -87,8 +89,25 @@ export const damageMarkSchema = z.object({
   note: z.string().trim().max(500, "Not en fazla 500 karakter olabilir").optional(),
 })
 
+export const damageMarkUpdateSchema = damageMarkSchema.extend({ id: z.string().min(1) })
+
 export type DamageMarkValues = z.infer<typeof damageMarkSchema>
 
 export const otpVerifySchema = z.object({
   otpCode: z.string().min(4, "Doğrulama kodu gerekli").max(6, "Doğrulama kodu en fazla 6 haneli olmalıdır"),
+})
+
+export const damageInspectionSchema = z.object({
+  intakeFormId: z.string().min(1),
+  bodyType: z.enum(["sedan", "suv", "van", "unsupported"]).optional(),
+  inspectionStatus: z.enum(["not_recorded", "no_visible_damage"]).optional(),
+})
+
+export const photoUploadMetadataSchema = z.object({
+  intakeFormId: z.string().min(1),
+  requestId: z.string().min(1).max(100).optional(),
+  type: z.enum(["front", "rear", "left_side", "right_side", "dashboard_mileage", "fuel_gauge", "registration_front", "registration_back", "vin_area", "damage_detail", "other"]),
+  phase: z.enum(["intake", "repair_progress", "delivery"]).nullable(),
+  label: z.string().max(200).nullable(),
+  note: z.string().max(1000).nullable(),
 })

@@ -39,7 +39,7 @@ export function WaitingApprovals({ approvals }: { approvals: WaitingApprovalItem
               <div className="flex items-center gap-2 mt-2">
                 <Link
                   href={`/orders/${a.id}`}
-                  className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-warning/10 hover:bg-warning/20 text-xs font-medium text-warning-foreground transition-colors touch-manipulation"
+                  className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md bg-warning/10 hover:bg-warning/20 text-xs font-medium text-warning-foreground transition-colors touch-manipulation"
                 >
                   <ExternalLink className="size-3" />
                   İş Emri Detayı

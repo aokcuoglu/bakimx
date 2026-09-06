@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { RecommendationsList } from "@/components/analytics/recommendations-list"
 import { HealthScoreCard, HealthMetricCards } from "@/components/analytics/health-score-card"
@@ -20,6 +21,8 @@ import {
 } from "@/lib/analytics/queries"
 
 export default async function AnalyticsPage() {
+  const paywall = await getFeaturePaywall("analytics")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
 
   const [

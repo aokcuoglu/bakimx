@@ -4,9 +4,11 @@ import { useState } from "react"
 import { Check, CircleCheck, MessageCircle, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { PLAN_PACKAGES } from "@/lib/plans-catalog"
+import { VIN_LOOKUP_QUOTA } from "@/lib/plan"
 import type { PlanTier } from "@/lib/plan"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 
@@ -32,6 +34,7 @@ export function PlanPackages({
   hasPendingOrder?: boolean
 }) {
   const [billing, setBilling] = useState<BillingCycle>("monthly")
+  const [highlightedTier, setHighlightedTier] = useState<PlanTier | null>(null)
   const router = useRouter()
 
   function handleSelect(tier: PlanTier) {
@@ -41,42 +44,51 @@ export function PlanPackages({
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-center">
-        <ToggleGroup
-          type="single"
-          spacing={1}
-          className="rounded-lg border bg-card p-1"
-          value={billing}
-          onValueChange={(v) => {
-            if (v) setBilling(v as BillingCycle)
-          }}
-        >
-          {(["monthly", "yearly"] as const).map((cycle) => (
-            <ToggleGroupItem
-              key={cycle}
-              value={cycle}
-              className="rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm hover:text-foreground"
-            >
-              {cycle === "monthly" ? "Aylık" : "Yıllık"}
-              {cycle === "yearly" && billing === "yearly" && (
-                <span className="text-[10px] font-semibold bg-primary/15 text-foreground px-1.5 py-0.5 rounded-full">
-                  2 ay bedava
-                </span>
-              )}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+      <div className="flex justify-center pt-2">
+        <div className="relative">
+          <Badge className="absolute -top-3 left-3/4 z-10 -translate-x-1/2 whitespace-nowrap px-2.5 py-0.5 text-[10px]">
+            <Sparkles className="size-3" /> Yıllıkta 2 ay bedava
+          </Badge>
+          <ToggleGroup
+            type="single"
+            spacing={1}
+            className="grid w-64 grid-cols-2 rounded-lg border bg-card p-1"
+            value={billing}
+            onValueChange={(v) => {
+              if (v) setBilling(v as BillingCycle)
+            }}
+          >
+            {(["monthly", "yearly"] as const).map((cycle) => (
+              <ToggleGroupItem
+                key={cycle}
+                value={cycle}
+                className="w-full rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm hover:text-foreground"
+              >
+                {cycle === "monthly" ? "Aylık" : "Yıllık"}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6">
         {PLAN_PACKAGES.map((pkg) => {
           const isOwned = ownedTier === pkg.tier
+          const isCtaHighlighted = highlightedTier === pkg.tier || (highlightedTier === null && pkg.popular)
 
           return (
             <div
               key={pkg.tier}
+              onMouseEnter={() => setHighlightedTier(pkg.tier)}
+              onMouseLeave={() => setHighlightedTier(null)}
+              onFocusCapture={() => setHighlightedTier(pkg.tier)}
+              onBlurCapture={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                  setHighlightedTier(null)
+                }
+              }}
               className={cn(
-                "relative flex flex-col rounded-xl border bg-card p-5 transition-shadow",
+                "group/card relative flex flex-col rounded-xl border bg-card p-6 transition-[transform,box-shadow,border-color] duration-200 ease-out motion-safe:hover:-translate-y-1 hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10 focus-within:border-primary/60 focus-within:shadow-lg focus-within:shadow-primary/10",
                 pkg.popular ? "border-primary shadow-sm" : "border-border"
               )}
             >
@@ -87,14 +99,24 @@ export function PlanPackages({
               )}
 
               <div className="mb-3">
-                <h3 className="font-semibold text-base text-foreground">{pkg.name}</h3>
+                <h3 className="font-semibold text-base text-foreground transition-colors duration-200 group-hover/card:text-primary group-focus-within/card:text-primary">
+                  {pkg.name}
+                </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">{pkg.tagline}</p>
               </div>
 
               <div className="mb-3">
+                {pkg.listMonthlyLabel && (
+                  <s className="mr-2 text-sm font-medium text-muted-foreground">
+                    {billing === "monthly" ? pkg.listMonthlyLabel : pkg.listYearlyLabel}
+                  </s>
+                )}
                 <span className="text-2xl font-bold text-foreground">
                   {billing === "monthly" ? pkg.monthlyLabel : pkg.yearlyLabel}
                 </span>
+                {pkg.tier === "lite" && (
+                  <span className="mt-1 block text-xs font-medium text-primary">Açılışa özel · sınırlı süre</span>
+                )}
                 <span className="block text-[11px] text-muted-foreground mt-0.5">KDV dahil</span>
               </div>
 
@@ -102,10 +124,16 @@ export function PlanPackages({
                 <span className="font-medium text-foreground">{pkg.seats} kullanıcı</span> dahil · ek koltuk eklenebilir
               </p>
 
+              {VIN_LOOKUP_QUOTA[pkg.tier] > 0 && (
+                <p className="mb-3 text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">{VIN_LOOKUP_QUOTA[pkg.tier].toLocaleString("tr-TR")} kota/ay</span> şase ve parça sorgusu
+                </p>
+              )}
+
               <ul className="space-y-2 mb-5 flex-1">
                 {pkg.highlights.map((h) => (
                   <li key={h} className="flex items-start gap-2 text-sm text-foreground">
-                    <CircleCheck className="size-4 text-primary shrink-0 mt-0.5" />
+                    <CircleCheck className="size-4 text-primary shrink-0 mt-0.5 transition-transform duration-200 motion-safe:group-hover/card:scale-110 motion-safe:group-focus-within/card:scale-110" />
                     <span className="leading-snug">{h}</span>
                   </li>
                 ))}
@@ -128,9 +156,9 @@ export function PlanPackages({
               ) : (
                 <Button
                   type="button"
-                  variant={pkg.popular ? "default" : "outline"}
+                  variant={isCtaHighlighted ? "default" : "outline"}
                   size="lg"
-                  className="w-full"
+                  className="w-full transition-[transform,box-shadow,background-color,border-color,color] duration-200 group-hover/card:border-primary group-hover/card:bg-primary group-hover/card:text-primary-foreground group-hover/card:shadow-sm group-focus-within/card:border-primary group-focus-within/card:bg-primary group-focus-within/card:text-primary-foreground group-focus-within/card:shadow-sm motion-safe:active:scale-[0.98]"
                   onClick={() => handleSelect(pkg.tier)}
                 >
                   Bu paketi seç
@@ -142,7 +170,9 @@ export function PlanPackages({
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
-        Havale/EFT ile ödeyin; ödemeniz teyit edilince paketiniz aktifleşir.{" "}
+        {checkoutBasePath.startsWith("/register")
+          ? "Kart bilgisi istemiyoruz. Önce ücretsiz deneyin; deneme bitince uygulama içinden paketinizi etkinleştirirsiniz. "
+          : "Ücretli paketlerde Havale/EFT veya kart ile ödeyin; ödemeniz teyit edilince paketiniz aktifleşir. "}
         <a
           href={whatsappHref(`Merhaba, BakimX paket etkinleştirme hakkında bilgi almak istiyorum.${workshopName ? ` (${workshopName})` : ""}`)}
           target="_blank"

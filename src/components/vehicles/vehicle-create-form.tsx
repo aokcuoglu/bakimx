@@ -398,7 +398,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                   name="vin"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Şase No (VIN)</FormLabel>
+                      <FormLabel>Şase no</FormLabel>
                       <div className="flex gap-2">
                         <FormControl>
                           <Input {...field} placeholder="1HGBH41JXMN109186" />
@@ -424,7 +424,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
 
                 {vinResolve.loading && (
                   <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Loader2 className="size-3.5 animate-spin" /> VIN sorgulanıyor…
+                    <Loader2 className="size-3.5 animate-spin" /> Şase sorgulanıyor…
                   </p>
                 )}
                 <VinResolveNotice notice={vinResolve.notice} unconfigured={vinResolve.unconfigured} />
@@ -433,7 +433,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     <AlertDescription>{vinResolve.error}</AlertDescription>
                   </Alert>
                 )}
-                {vinResolve.locked && <VinLockedNotice />}
+                {vinResolve.locked && <VinLockedNotice currentTier={vinResolve.lockedTier} />}
                 {vinResolve.candidates.length > 0 && (
                   <VinCandidateList
                     candidates={vinResolve.candidates}
@@ -676,7 +676,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                 </div>
                 <div className="flex items-start gap-2">
                   <ScanLine className="size-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <span>Şase numarası (VIN) ruhsattan otomatik okunabilir veya manuel girilebilir.</span>
+                  <span>Şase numarası ruhsattan otomatik okunabilir veya elle girilebilir.</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="size-4 text-muted-foreground mt-0.5 shrink-0 flex items-center justify-center text-xs font-bold">i</span>

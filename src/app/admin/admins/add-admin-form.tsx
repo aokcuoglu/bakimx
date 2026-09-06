@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { Loader2, UserPlus } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -54,9 +55,12 @@ export function AddPlatformAdminForm() {
       const result = await addPlatformAdmin(values)
       if (!result.ok) {
         setServerError(result.error)
+        toast.error(result.error)
         return
       }
-      setSuccessMessage(`${values.email} yönetici olarak eklendi.`)
+      const message = `${values.email} yönetici olarak eklendi.`
+      setSuccessMessage(message)
+      toast.success(message)
       form.reset({ email: "", role: "readonly" })
     })
   }

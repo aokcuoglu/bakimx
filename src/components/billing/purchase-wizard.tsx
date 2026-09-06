@@ -4,7 +4,7 @@ import { useRef, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { Controller, useForm } from "react-hook-form"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, CheckCircle2, Landmark, Copy, CreditCard } from "lucide-react"
+import { AlertTriangle, ChevronLeft, ChevronRight, CheckCircle2, Landmark, Copy, CreditCard, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Form } from "@/components/ui/form"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
@@ -21,18 +23,29 @@ import {
   type CheckoutPublicValues,
 } from "@/lib/validations/billing"
 import { PLAN_PACKAGES } from "@/lib/plans-catalog"
-import { getPlanPriceMinor, formatMinor } from "@/lib/billing/pricing"
+import { getPlanPriceMinor, formatMinor, isComplimentaryPlan } from "@/lib/billing/pricing"
 import { createBillingOrder } from "@/app/(app)/billing/actions"
-import type { PlanTier } from "@/lib/plan"
+import { getSeatLimit, type PlanTier } from "@/lib/plan"
 import type { HavaleInfo } from "@/lib/billing/provider"
 import { BrandRail } from "@/components/billing/brand-rail"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
+import { ACQUISITION_SOURCE_OPTIONS } from "@/lib/acquisition-sources"
 
 type Mode = "public" | "inapp"
 type Cycle = "monthly" | "yearly"
 type PayMethod = "card" | "havale"
+
+const DAY_LABELS = [
+  { value: "1", short: "Pzt" },
+  { value: "2", short: "Sal" },
+  { value: "3", short: "Çar" },
+  { value: "4", short: "Per" },
+  { value: "5", short: "Cum" },
+  { value: "6", short: "Cmt" },
+  { value: "0", short: "Paz" },
+]
 
 export function PurchaseWizard({
   mode,
@@ -42,6 +55,9 @@ export function PurchaseWizard({
   ownedTier = null,
   havale,
   defaultInvoiceTitle = "",
+  advisors = [],
+  seatUsage,
+  extraSeats = 0,
 }: {
   mode: Mode
   initialTier?: PlanTier
@@ -51,6 +67,9 @@ export function PurchaseWizard({
   ownedTier?: PlanTier | null
   havale: HavaleInfo
   defaultInvoiceTitle?: string
+  advisors?: { id: string; label: string }[]
+  seatUsage?: { activeUsers: number; pendingInvites: number; used: number }
+  extraSeats?: number
 }) {
   const isPublic = mode === "public"
   const STEPS = isPublic
@@ -66,6 +85,7 @@ export function PurchaseWizard({
     reference: string
     amountMinor: number
     method: PayMethod
+    complimentary: boolean
   } | null>(null)
   const submitRef = useRef(false)
 
@@ -76,6 +96,8 @@ export function PurchaseWizard({
       tier: initialTier,
       cycle: initialCycle,
       invoiceTitle: defaultInvoiceTitle,
+      acquisitionSource: "unknown",
+      acquisitionAdvisorId: "",
       taxNumber: "",
       taxOffice: "",
       ...(isPublic
@@ -87,7 +109,12 @@ export function PurchaseWizard({
             workshopName: "",
             phone: "",
             city: "",
+            district: "",
             address: "",
+            workshopEmail: "",
+            workingDays: "1,2,3,4,5",
+            weekdayStart: "09:00",
+            weekdayEnd: "18:00",
             kvkkConsent: false,
           }
         : {}),
@@ -96,6 +123,9 @@ export function PurchaseWizard({
   })
   const { register, trigger, getValues, formState } = form
   const reduce = useReducedMotion()
+  const complimentary = isComplimentaryPlan(tier, cycle)
+  const targetSeatLimit = getSeatLimit(tier, extraSeats)
+  const excessSeatCount = Math.max(0, (seatUsage?.used ?? 0) - targetSeatLimit)
 
   async function next(fields: string[]) {
     setError("")
@@ -112,10 +142,11 @@ export function PurchaseWizard({
     setError("")
     setLoading(true)
     try {
+      const effectiveMethod: PayMethod = complimentary ? "havale" : method
       const values = getValues() as Record<string, unknown>
       values.tier = tier
       values.cycle = cycle
-      values.method = method
+      values.method = effectiveMethod
       if (isPublic) {
         const res = await fetch("/api/checkout", {
           method: "POST",
@@ -124,21 +155,21 @@ export function PurchaseWizard({
         })
         const data = await res.json()
         if (data.success) {
-          trackMarketingEvent("purchase_submitted", { plan_tier: tier, billing_cycle: cycle, payment_method: method })
-          setDone({ reference: data.reference, amountMinor: data.amountMinor, method })
+          trackMarketingEvent("purchase_submitted", { plan_tier: tier, billing_cycle: cycle, payment_method: effectiveMethod })
+          setDone({ reference: data.reference, amountMinor: data.amountMinor, method: effectiveMethod, complimentary: Boolean(data.complimentary) })
         } else setError(data.error || "Satın alma başarısız")
       } else {
         const res = await createBillingOrder({
           tier,
           cycle,
-          method,
+          method: effectiveMethod,
           invoiceTitle: String(values.invoiceTitle ?? ""),
           taxNumber: String(values.taxNumber ?? ""),
           taxOffice: String(values.taxOffice ?? ""),
         })
         if (res.ok) {
           trackMarketingEvent("purchase_submitted", { plan_tier: tier, billing_cycle: cycle, payment_method: res.method })
-          setDone({ reference: res.reference, amountMinor: res.amountMinor, method: res.method })
+          setDone({ reference: res.reference, amountMinor: res.amountMinor, method: res.method, complimentary: res.complimentary })
         }
         else setError(res.error)
       }
@@ -164,7 +195,9 @@ export function PurchaseWizard({
         {/* my-auto: boş alan varsa dikey ortalar, içerik taşarsa kırpmadan üstten başlar */}
         <div className="mx-auto w-full max-w-md md:my-auto">
           {done ? (
-            done.method === "card" ? (
+            done.complimentary ? (
+              <ComplimentaryDonePanel mode={mode} />
+            ) : done.method === "card" ? (
               <CardPaymentPanel
                 reference={done.reference}
                 amountMinor={done.amountMinor}
@@ -270,15 +303,30 @@ export function PurchaseWizard({
                                 </p>
                               </div>
                               <div className="ml-3 shrink-0 text-right">
+                                {pkg.listMonthlyLabel && (
+                                  <s className="block text-xs text-muted-foreground">
+                                    {cycle === "monthly" ? pkg.listMonthlyLabel : pkg.listYearlyLabel}
+                                  </s>
+                                )}
                                 <p className="font-bold text-foreground">{formatMinor(minor)}</p>
                                 <p className="text-[11px] text-muted-foreground">
-                                  {cycle === "monthly" ? "/ay" : "/yıl"} · KDV dahil
+                                  {pkg.tier === "lite" ? "Açılışa özel · sınırlı süre" : cycle === "monthly" ? "/ay · KDV dahil" : "/yıl · KDV dahil"}
                                 </p>
                               </div>
                             </Button>
                           )
                         })}
                       </div>
+                      {!isPublic && excessSeatCount > 0 && seatUsage && (
+                        <Alert variant="warning">
+                          <AlertTriangle />
+                          <AlertDescription>
+                            Bu paket toplam {targetSeatLimit} koltuk destekliyor. Etkinleştirmede{" "}
+                            {excessSeatCount} fazla kullanıcı veya davet devre dışı bırakılacak; en eski owner ve
+                            ardından en eski kullanıcılar korunacak. Kayıt geçmişleri silinmeyecek.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                       <div className="flex justify-end pt-2">
                         <Button
                           type="button"
@@ -302,6 +350,17 @@ export function PurchaseWizard({
                           <Field label="İş yeri adı" error={fieldError(formState, "workshopName")}>
                             <Input {...register("workshopName" as never)} />
                           </Field>
+                          <Field label="BakımX&apos;ı nereden duydunuz?" error={fieldError(formState, "acquisitionSource")}>
+                            <Controller control={form.control} name={"acquisitionSource" as never} render={({ field }) => (
+                              <Select value={String(field.value ?? "unknown")} onValueChange={field.onChange}>
+                                <SelectTrigger><SelectValue placeholder="Seçiniz" /></SelectTrigger>
+                                <SelectContent>{ACQUISITION_SOURCE_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+                              </Select>
+                            )} />
+                          </Field>
+                          <Field label="Satış temsilcisi" error={fieldError(formState, "acquisitionAdvisorId")}>
+                            <Controller control={form.control} name={"acquisitionAdvisorId" as never} render={({ field }) => <Select value={String(field.value ?? "")} onValueChange={field.onChange}><SelectTrigger><SelectValue placeholder="Atanmadı" /></SelectTrigger><SelectContent><SelectItem value="">Atanmadı</SelectItem>{advisors.map((a) => <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>)}</SelectContent></Select>} />
+                          </Field>
                           <div className="grid gap-3 sm:grid-cols-2">
                             <Field label="Ad" error={fieldError(formState, "firstName")}>
                               <Input {...register("firstName" as never)} />
@@ -324,8 +383,14 @@ export function PurchaseWizard({
                               <Input {...register("city" as never)} />
                             </Field>
                           </div>
+                          <Field label="İlçe (opsiyonel)" error={fieldError(formState, "district")}>
+                            <Input {...register("district" as never)} placeholder="Örnek: Kadıköy" />
+                          </Field>
                           <Field label="Adres" error={fieldError(formState, "address")}>
                             <Input {...register("address" as never)} />
+                          </Field>
+                          <Field label="İşletme e-postası (opsiyonel)" error={fieldError(formState, "workshopEmail")}>
+                            <Input type="email" {...register("workshopEmail" as never)} placeholder="servis@isyeri.com" />
                           </Field>
                         </>
                       )}
@@ -340,6 +405,50 @@ export function PurchaseWizard({
                           <Input {...register("taxOffice" as never)} />
                         </Field>
                       </div>
+                      {isPublic && (
+                        <div className="space-y-3 pt-2">
+                          <div className="flex items-center gap-2">
+                            <Clock className="size-4 text-muted-foreground" />
+                            <span className="text-sm font-medium text-foreground">Çalışma Günleri</span>
+                          </div>
+                          <Controller
+                            control={form.control}
+                            name={"workingDays" as never}
+                            render={({ field }) => {
+                              const selectedDays = field.value ? String(field.value).split(",").filter(Boolean) : []
+                              return (
+                                <ToggleGroup
+                                  type="multiple"
+                                  value={selectedDays}
+                                  onValueChange={(vals) => field.onChange(vals.join(","))}
+                                  className="flex-wrap"
+                                >
+                                  {DAY_LABELS.map((day) => (
+                                    <ToggleGroupItem
+                                      key={day.value}
+                                      value={day.value}
+                                      variant="outline"
+                                      className="rounded-lg px-3 py-1.5 text-sm font-medium data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong hover:border-primary/40"
+                                    >
+                                      {day.short}
+                                    </ToggleGroupItem>
+                                  ))}
+                                </ToggleGroup>
+                              )
+                            }}
+                          />
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-muted-foreground shrink-0">Saat:</span>
+                            <Field label="" error={undefined} className="flex-1">
+                              <Input {...register("weekdayStart" as never)} type="time" />
+                            </Field>
+                            <span className="text-muted-foreground">-</span>
+                            <Field label="" error={undefined} className="flex-1">
+                              <Input {...register("weekdayEnd" as never)} type="time" />
+                            </Field>
+                          </div>
+                        </div>
+                      )}
                       {isPublic && (
                         <label className="flex items-start gap-2 pt-1 text-xs text-muted-foreground">
                           <Controller
@@ -387,7 +496,7 @@ export function PurchaseWizard({
                       <h2 className="text-lg font-bold text-foreground">Özet</h2>
 
                       {/* Ödeme yöntemi seçimi — kart görünümlü iki seçenek */}
-                      <div>
+                      {!complimentary && <div>
                         <Label className="text-xs">Ödeme yöntemi</Label>
                         <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
                           {(
@@ -418,10 +527,12 @@ export function PurchaseWizard({
                             )
                           })}
                         </div>
-                      </div>
+                      </div>}
 
                       <p className="text-sm text-muted-foreground">
-                        {method === "card"
+                        {complimentary
+                          ? "Lite paketiniz açılışa özel kampanya kapsamında ücretsiz etkinleştirilecek. Kart veya havale bilgisi gerekmiyor."
+                          : method === "card"
                           ? isPublic
                             ? "Onayladığınızda 3D Secure ödeme adımına geçersiniz. Ödeme onaylanınca paketiniz hemen aktifleşir."
                             : "Onayladığınızda 3D Secure ödeme adımına geçersiniz. Ödeme onaylanınca paketiniz hemen güncellenir."
@@ -434,6 +545,15 @@ export function PurchaseWizard({
                           Yükseltmede mevcut paketinizin kalan gün kredisi düşülür; kesin tutar onay ekranında
                           görünür.
                         </p>
+                      )}
+                      {!isPublic && excessSeatCount > 0 && (
+                        <Alert variant="warning">
+                          <AlertTriangle />
+                          <AlertDescription>
+                            Onaydan sonra koltuk limiti otomatik uygulanacak. Fazla hesaplar ve bağlı teknisyenler
+                            pasifleştirilecek, fazla bekleyen davetler iptal edilecek.
+                          </AlertDescription>
+                        </Alert>
                       )}
                       <div className="flex justify-between pt-1">
                         <Button type="button" variant="outline" size="lg" onClick={() => setStep(1)}>
@@ -449,6 +569,8 @@ export function PurchaseWizard({
                             <>
                               <BrandSpinner size={20} /> Gönderiliyor…
                             </>
+                          ) : complimentary ? (
+                            "Ücretsiz etkinleştir"
                           ) : method === "card" ? (
                             "Ödemeye geç"
                           ) : (
@@ -465,6 +587,25 @@ export function PurchaseWizard({
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function ComplimentaryDonePanel({ mode }: { mode: Mode }) {
+  return (
+    <div className="space-y-4 text-center">
+      <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10">
+        <CheckCircle2 className="size-7 text-primary" />
+      </div>
+      <div>
+        <h2 className="text-lg font-bold text-foreground">Lite paketiniz etkin</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Açılışa özel kampanya uygulandı; ödeme yapmanız gerekmiyor.
+        </p>
+      </div>
+      <Link href={mode === "public" ? "/login" : "/billing"} className="inline-block text-sm text-primary hover:underline">
+        {mode === "public" ? "Giriş sayfasına git" : "Paket sayfasına dön"}
+      </Link>
     </div>
   )
 }
@@ -530,10 +671,10 @@ function DonePanel({
   )
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({ label, error, children, className }: { label: string; error?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-xs">{label}</Label>
+    <div className={cn("space-y-1", className)}>
+      {label && <Label className="text-xs">{label}</Label>}
       {children}
       {/* Sabit yükseklikli validation slotu — mesaj gelince/gidince layout kaymaz */}
       <p className="min-h-[16px] text-xs leading-4 text-destructive-strong">{error ?? ""}</p>

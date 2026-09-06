@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Clock, CheckCircle2, Users } from "lucide-react"
 import { AppShell } from "@/components/layout/app-shell"
 import { getAppData } from "@/app/(app)/data"
-import { getPlanState, getSeatLimit, type PlanTier } from "@/lib/plan"
+import { getEffectiveSeatLimit, getPlanState, type PlanTier } from "@/lib/plan"
 import { getSeatUsage } from "@/lib/rbac"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { PlanPackages } from "@/components/billing/plan-packages"
@@ -43,7 +43,7 @@ export default async function BillingPage({
   const ownedPkg = ownedTier ? getPlanPackage(ownedTier) : null
 
   const seatUsage = await getSeatUsage(workshop.id)
-  const seatLimit = getSeatLimit(workshop.planTier as PlanTier, workshop.extraSeats)
+  const seatLimit = getEffectiveSeatLimit(workshop)
   const seatsAtLimit = seatUsage.used >= seatLimit
 
   return (
@@ -79,7 +79,7 @@ export default async function BillingPage({
                   </p>
                   <Link
                     href={`/payment/result?ref=${encodeURIComponent(pendingOrder.reference)}`}
-                    className="mt-2 inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                    className="mt-2 inline-flex h-8 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
                   >
                     Ödemeye devam et
                   </Link>
@@ -99,7 +99,7 @@ export default async function BillingPage({
             <Clock className="size-5 text-primary shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="font-medium text-foreground">
-                Ücretsiz deneme · {plan.trialDaysLeft} gün kaldı
+                Ücretsiz deneme · {plan.trialDaysLeft} iş günü kaldı
               </p>
               <p className="text-muted-foreground mt-0.5">
                 Deneme süreniz boyunca tüm özellikler açık. Kesintisiz devam için bir paket seçin.

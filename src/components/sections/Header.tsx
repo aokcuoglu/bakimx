@@ -1,119 +1,132 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/shared/brand-logo";
-import { Menu, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { trackMarketingEvent } from "@/lib/marketing-analytics";
 
 const navItems = [
-  { label: "Canlı Demo", href: "/#ruhsat-demo" },
   { label: "Özellikler", href: "/#ozellikler" },
-  { label: "Neden BakimX", href: "/#neden" },
-  { label: "SSS", href: "/#sss" },
+  { label: "Neden BakımX?", href: "/#neden" },
   { label: "Fiyatlar", href: "/fiyatlar" },
+  { label: "Sorularınız", href: "/#sss" },
 ];
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const pathname = usePathname();
-
-  function handleLogoClick(e: React.MouseEvent<HTMLAnchorElement>) {
-    // On the landing page, smooth-scroll to top; elsewhere let the link navigate home.
-    if (pathname === "/") {
-      e.preventDefault();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-    setMobileOpen(false);
-  }
-
+  const menuButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+        menuButton.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", close);
+    return () => document.removeEventListener("keydown", close);
+  }, [mobileOpen]);
   return (
-    <header
-      style={{ "--enter-from": "-0.75rem", "--enter-duration": "0.35s" } as CSSProperties}
-      className="enter-up sticky top-0 z-50 w-full border-b border-brand/10 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
-    >
-      <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8 lg:justify-between relative">
+    <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-lg">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
         <Link
           href="/"
-          onClick={handleLogoClick}
-          aria-label="BakimX ana sayfa"
-          className="flex items-center shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 lg:mr-4 absolute lg:static left-1/2 -translate-x-1/2 lg:translate-x-0"
+          aria-label="BakımX ana sayfa"
+          className="flex shrink-0 items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-ring"
+          onClick={() => setMobileOpen(false)}
         >
-          <BrandLogo variant="primary-light" size="lg" priority alt="BakimX" />
+          <BrandLogo variant="primary-light" size="lg" priority alt="BakımX" />
+          <span className="border-l pl-3 text-xs font-medium leading-4 text-muted-foreground">
+            Servisinizin
+            <br />
+            yeni düzeni.
+          </span>
         </Link>
-
-        <nav className="hidden lg:flex items-center gap-6">
+        <nav
+          aria-label="Ana menü"
+          className="hidden items-center gap-7 lg:flex"
+        >
           {navItems.map((item) => (
-            <a
+            <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-navy"
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
-
-        <div className="hidden lg:flex items-center gap-3">
-          <Link
-            href="/login"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Giriş Yap
+        <div className="hidden items-center gap-5 lg:flex">
+          <Link href="/login" className="text-sm font-medium text-navy">
+            Giriş yap
           </Link>
-          <Link
-            href="/register"
-            onClick={() => trackMarketingEvent("trial_cta_click", { cta_location: "header_desktop" })}
-            className={buttonVariants({ size: "default", className: "bg-primary text-primary-foreground hover:bg-primary/90" })}
-          >
-            Ücretsiz Dene
-          </Link>
+          <Button asChild size="xl" className="h-10">
+            <Link
+              href="/register"
+              onClick={() =>
+                trackMarketingEvent("trial_cta_click", {
+                  cta_location: "header_desktop",
+                })
+              }
+            >
+              Ücretsiz dene <ArrowRight />
+            </Link>
+          </Button>
         </div>
-
         <Button
-          variant="ghost"
+          ref={menuButton}
+          variant="outline"
           size="icon"
-          className="lg:hidden ml-auto"
-          onClick={() => setMobileOpen(!mobileOpen)}
+          className="size-10 lg:hidden"
           aria-label={mobileOpen ? "Menüyü kapat" : "Menüyü aç"}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-menu"
+          onClick={() => setMobileOpen(!mobileOpen)}
         >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {mobileOpen ? <X /> : <Menu />}
         </Button>
       </div>
-
       {mobileOpen && (
-        <div className="lg:hidden border-t bg-background">
-          <div className="flex flex-col gap-1 px-4 py-4">
+        <nav
+          id="mobile-menu"
+          aria-label="Mobil menü"
+          className="border-t bg-card px-5 py-5 lg:hidden"
+        >
+          <div className="mx-auto flex max-w-7xl flex-col gap-1">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
-                className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground py-2.5"
+                className="rounded-md px-2 py-3 text-sm font-medium"
                 onClick={() => setMobileOpen(false)}
               >
                 {item.label}
-              </a>
-            ))}
-            <div className="flex flex-col gap-2 mt-3 pt-3 border-t">
-              <Link
-                href="/login"
-                className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground py-2.5 text-center"
-                onClick={() => setMobileOpen(false)}
-              >
-                Giriş Yap
               </Link>
+            ))}
+            <Link
+              href="/login"
+              className="px-2 py-3 text-sm font-medium"
+              onClick={() => setMobileOpen(false)}
+            >
+              Giriş yap
+            </Link>
+            <Button asChild size="xl" className="mt-2 h-12">
               <Link
                 href="/register"
-                onClick={() => { setMobileOpen(false); trackMarketingEvent("trial_cta_click", { cta_location: "header_mobile" }) }}
-                className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 w-full text-center" })}
+                onClick={() => {
+                  setMobileOpen(false);
+                  trackMarketingEvent("trial_cta_click", {
+                    cta_location: "header_mobile",
+                  });
+                }}
               >
-                Ücretsiz Dene
+                Ücretsiz dene <ArrowRight />
               </Link>
-            </div>
+            </Button>
           </div>
-        </div>
+        </nav>
       )}
     </header>
   );

@@ -1,11 +1,13 @@
 export const MARKETING_EVENT_NAMES = [
   "seo_landing_view", "trial_cta_click", "demo_cta_click", "register_started",
   "register_submitted", "demo_submitted", "purchase_started", "purchase_submitted",
+  "feature_paywall_viewed", "feature_upgrade_clicked",
 ] as const
 
 export type MarketingEventName = (typeof MARKETING_EVENT_NAMES)[number]
-export type PlanTier = "starter" | "pro" | "premium"
+export type PlanTier = "lite" | "starter" | "pro" | "premium"
 export type BillingCycle = "monthly" | "yearly"
+export type FeaturePlacement = "page" | "inline"
 
 type Common = {
   source_page?: string
@@ -20,11 +22,36 @@ export type MarketingEventPayloads = {
   seo_landing_view: Common & { landing_type: "home" | "product" | "pricing" | "demo" }
   trial_cta_click: Common & { cta_location: string; plan_tier?: PlanTier }
   demo_cta_click: Common & { cta_location: string; destination: "form" | "assistant" }
-  register_started: Common & { entry_step: "plan"; plan_tier: PlanTier; billing_cycle: BillingCycle }
-  register_submitted: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle }
-  demo_submitted: Common & { form_location: "home" | "demo_page" | "assistant" }
+  register_started: Common & { entry_step: "sector" }
+  register_submitted: Common & {
+    sector:
+      | "auto_service"
+      | "mechanical_service"
+      | "body_paint"
+      | "spare_parts"
+      | "tire_service"
+      | "auto_electric"
+    team_size: "solo" | "2_5" | "6_10" | "11_25" | "26_50" | "50_plus"
+    module_count: string
+  }
+  demo_submitted: Common & {
+    form_location: "home" | "demo_page" | "assistant" | "register_coming_soon_sector"
+  }
   purchase_started: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle; cta_location: "pricing_card" }
   purchase_submitted: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle; payment_method: "card" | "havale" }
+  feature_paywall_viewed: Common & {
+    feature_id: string
+    current_tier: PlanTier
+    target_tier: "pro" | "premium"
+    placement: FeaturePlacement
+  }
+  feature_upgrade_clicked: Common & {
+    feature_id: string
+    current_tier: PlanTier
+    target_tier: "pro" | "premium"
+    placement: FeaturePlacement
+    destination: "checkout" | "plans"
+  }
 }
 
 export type MarketingEventDetail<N extends MarketingEventName = MarketingEventName> = {
@@ -41,11 +68,13 @@ const EVENT_FIELDS: Record<MarketingEventName, readonly string[]> = {
   seo_landing_view: ["landing_type"],
   trial_cta_click: ["plan_tier"],
   demo_cta_click: ["destination"],
-  register_started: ["entry_step", "plan_tier", "billing_cycle"],
-  register_submitted: ["plan_tier", "billing_cycle"],
+  register_started: ["entry_step"],
+  register_submitted: ["sector", "team_size", "module_count"],
   demo_submitted: ["form_location"],
   purchase_started: ["plan_tier", "billing_cycle"],
   purchase_submitted: ["plan_tier", "billing_cycle", "payment_method"],
+  feature_paywall_viewed: ["feature_id", "current_tier", "target_tier", "placement"],
+  feature_upgrade_clicked: ["feature_id", "current_tier", "target_tier", "placement", "destination"],
 }
 
 export function sanitizeMarketingPayload<N extends MarketingEventName>(name: N, payload: MarketingEventPayloads[N]) {

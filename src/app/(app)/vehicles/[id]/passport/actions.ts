@@ -1,10 +1,15 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireWritableWorkshop } from "@/lib/auth"
+import { requireWritableFeatureWorkshop } from "@/lib/auth"
+import type { Permission } from "@/lib/roles"
 import { revalidatePath } from "next/cache"
 import { nanoid } from "nanoid"
 import { AuditLogAction } from "@/lib/audit"
+
+function requireWritableWorkshop(permission: Permission) {
+  return requireWritableFeatureWorkshop(permission, "vehiclePassport")
+}
 
 export async function createPassportTokenAction(vehicleId: string, data: {
   label?: string

@@ -195,14 +195,14 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                 <button
                   onClick={() => handleAction("complete")}
                   disabled={actionLoading}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-success hover:bg-success/90 text-white text-sm font-medium transition-colors disabled:opacity-50 touch-manipulation"
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-success hover:bg-success/90 text-white text-sm font-medium transition-colors disabled:opacity-50 touch-manipulation"
                 >
                   {actionLoading ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
                   <span className="hidden sm:inline">Tamamlandı</span>
                 </button>
                 <button
                   onClick={() => setShowPostpone(!showPostpone)}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-card text-foreground hover:bg-muted text-sm font-medium transition-colors touch-manipulation"
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border bg-card text-foreground hover:bg-muted text-sm font-medium transition-colors touch-manipulation"
                 >
                   <Clock className="size-4" />
                   <span className="hidden sm:inline">Ertele</span>
@@ -213,7 +213,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               <button
                 onClick={() => handleAction("cancel")}
                 disabled={actionLoading}
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-card text-destructive-strong hover:bg-destructive/10 text-sm font-medium transition-colors disabled:opacity-50 touch-manipulation"
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border bg-card text-destructive-strong hover:bg-destructive/10 text-sm font-medium transition-colors disabled:opacity-50 touch-manipulation"
               >
                 <XCircle className="size-4" />
                 <span className="hidden sm:inline">İptal</span>

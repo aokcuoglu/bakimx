@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,19 @@ interface FormData {
 
 type FormErrors = Partial<Record<keyof FormData | "_general", string>>;
 
+/**
+ * Alan hatası — `role="alert"` ile ekran okuyucuya anons edilir; Input ise
+ * `aria-invalid` + `aria-describedby` ile bu paragrafa bağlanır.
+ */
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <p id={id} role="alert" className="text-xs text-destructive-strong">
+      {message}
+    </p>
+  );
+}
+
 const EMPTY_FORM: FormData = {
   name: "",
   businessName: "",
@@ -38,7 +51,7 @@ const EMPTY_FORM: FormData = {
 const trustBadges = [
   { icon: ShieldCheck, label: "KVKK uyumlu" },
   { icon: Zap, label: "Kurulumsuz" },
-  { icon: CalendarCheck, label: "7 gün ücretsiz" },
+  { icon: CalendarCheck, label: "7 iş günü ücretsiz" },
 ];
 
 export function HeroLeadForm() {
@@ -47,6 +60,13 @@ export function HeroLeadForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const submitRef = useRef(false);
+  const successRef = useRef<HTMLDivElement>(null);
+
+  // Form DOM'dan kalkıp başarı kartına dönüşürken odağı da taşı; aksi halde
+  // odak <body>'ye düşer ve "Talebiniz alındı!" hiç duyulmaz.
+  useEffect(() => {
+    if (isSuccess) successRef.current?.focus();
+  }, [isSuccess]);
 
   function validate(): FormErrors {
     const errs: FormErrors = {};
@@ -100,7 +120,13 @@ export function HeroLeadForm() {
 
   if (isSuccess) {
     return (
-      <div id="demo-form" className="rounded-xl border bg-card p-8 shadow-xl text-center scroll-mt-24">
+      <div
+        ref={successRef}
+        id="demo-form"
+        tabIndex={-1}
+        role="status"
+        className="rounded-xl border bg-card p-8 shadow-xl text-center scroll-mt-24 outline-none"
+      >
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-success/10">
           <CheckCircle2 className="h-7 w-7 text-success-strong" />
         </div>
@@ -112,7 +138,7 @@ export function HeroLeadForm() {
           href="/register"
           className={buttonVariants({ size: "default", className: "mt-5 w-full gap-2" })}
         >
-          7 Gün Ücretsiz Dene
+          Ücretsiz Dene
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -134,7 +160,10 @@ export function HeroLeadForm() {
         Bilgilerinizi bırakın, sizi arayalım.
       </p>
       {errors._general && (
-        <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/5 px-4 py-3 text-sm">
+        <div
+          role="alert"
+          className="mt-4 rounded-lg border border-destructive/50 bg-destructive/5 px-4 py-3 text-sm"
+        >
           {errors._general}
         </div>
       )}
@@ -147,8 +176,10 @@ export function HeroLeadForm() {
               placeholder="Ahmet Yılmaz"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              aria-invalid={errors.name ? true : undefined}
+              aria-describedby={errors.name ? "hero-name-error" : undefined}
             />
-            {errors.name && <p className="text-xs text-destructive-strong">{errors.name}</p>}
+            <FieldError id="hero-name-error" message={errors.name} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="hero-phone">Telefon</Label>
@@ -159,8 +190,10 @@ export function HeroLeadForm() {
               placeholder="0532 123 4567"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              aria-invalid={errors.phone ? true : undefined}
+              aria-describedby={errors.phone ? "hero-phone-error" : undefined}
             />
-            {errors.phone && <p className="text-xs text-destructive-strong">{errors.phone}</p>}
+            <FieldError id="hero-phone-error" message={errors.phone} />
           </div>
         </div>
         <div className="space-y-1.5">
@@ -170,8 +203,10 @@ export function HeroLeadForm() {
             placeholder="Yılmaz Oto Servis"
             value={formData.businessName}
             onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+            aria-invalid={errors.businessName ? true : undefined}
+            aria-describedby={errors.businessName ? "hero-businessName-error" : undefined}
           />
-          {errors.businessName && <p className="text-xs text-destructive-strong">{errors.businessName}</p>}
+          <FieldError id="hero-businessName-error" message={errors.businessName} />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -180,7 +215,12 @@ export function HeroLeadForm() {
               value={formData.city}
               onValueChange={(value) => setFormData({ ...formData, city: value })}
             >
-              <SelectTrigger id="hero-city" className="w-full">
+              <SelectTrigger
+                id="hero-city"
+                className="w-full"
+                aria-invalid={errors.city ? true : undefined}
+                aria-describedby={errors.city ? "hero-city-error" : undefined}
+              >
                 <SelectValue placeholder="Şehir seçin" />
               </SelectTrigger>
               <SelectContent className="max-h-72">
@@ -193,7 +233,7 @@ export function HeroLeadForm() {
                 </SelectGroup>
               </SelectContent>
             </Select>
-            {errors.city && <p className="text-xs text-destructive-strong">{errors.city}</p>}
+            <FieldError id="hero-city-error" message={errors.city} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="hero-monthlyVehicles">Aylık araç adedi</Label>
@@ -201,7 +241,12 @@ export function HeroLeadForm() {
               value={formData.monthlyVehicles}
               onValueChange={(value) => setFormData({ ...formData, monthlyVehicles: value })}
             >
-              <SelectTrigger id="hero-monthlyVehicles" className="w-full">
+              <SelectTrigger
+                id="hero-monthlyVehicles"
+                className="w-full"
+                aria-invalid={errors.monthlyVehicles ? true : undefined}
+                aria-describedby={errors.monthlyVehicles ? "hero-monthlyVehicles-error" : undefined}
+              >
                 <SelectValue placeholder="Seçin" />
               </SelectTrigger>
               <SelectContent>
@@ -213,9 +258,7 @@ export function HeroLeadForm() {
                 </SelectGroup>
               </SelectContent>
             </Select>
-            {errors.monthlyVehicles && (
-              <p className="text-xs text-destructive-strong">{errors.monthlyVehicles}</p>
-            )}
+            <FieldError id="hero-monthlyVehicles-error" message={errors.monthlyVehicles} />
           </div>
         </div>
         <Button type="submit" size="default" className="w-full" disabled={isSubmitting}>
@@ -237,7 +280,7 @@ export function HeroLeadForm() {
       </form>
       <div className="mt-4 border-t pt-4 text-center">
         <Link href="/register" className="text-sm font-medium text-primary hover:underline">
-          Ya da beklemeden 7 gün ücretsiz deneyin →
+          Ya da beklemeden 7 iş günü ücretsiz deneyin →
         </Link>
       </div>
     </div>

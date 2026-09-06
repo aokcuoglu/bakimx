@@ -1,5 +1,6 @@
 import { z } from "zod/v4"
 import { normalizeContactNumber, normalizeSocialUrl } from "@/lib/workshop-contact"
+import { optionalReferralCodeSchema } from "@/lib/validations/referral-code"
 
 /**
  * Sosyal medya alanı: boş bırakılabilir, şemasız yazılabilir ("instagram.com/x").
@@ -50,6 +51,7 @@ export const businessProfileFormSchema = z.object({
   taxNumber: z.string().optional().default(""),
   taxOffice: z.string().optional().default(""),
   invoiceTitle: z.string().optional().default(""),
+  referralCode: optionalReferralCodeSchema,
   ...workshopPublicContactShape,
 })
 export type BusinessProfileFormValues = z.infer<typeof businessProfileFormSchema>
@@ -160,6 +162,7 @@ export const businessProfileSchema = z.object({
   taxOffice: z.string().optional().or(z.literal("")),
   invoiceTitle: z.string().optional().or(z.literal("")),
   logoUrl: z.url("Geçerli bir URL giriniz").optional().or(z.literal("")),
+  referralCode: optionalReferralCodeSchema,
   ...workshopPublicContactShape,
 })
 

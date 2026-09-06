@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
-import { TR_DISTRICTS, getDistricts } from "./tr-districts"
-import { TR_CITIES } from "./tr-cities"
+import { TR_DISTRICTS, canonicalizeTurkishDistrict, getDistricts } from "./tr-districts"
+import { TR_CITIES, canonicalizeTurkishCity } from "./tr-cities"
 
 test("TR_DISTRICTS 81 ili kapsar ve anahtarlar TR_CITIES ile birebir eşleşir", () => {
   const keys = Object.keys(TR_DISTRICTS)
@@ -29,6 +29,14 @@ test("bilinen il/ilçe eşleşmeleri (spot-check)", () => {
 test("getDistricts bilinmeyen il için boş dizi döner", () => {
   expect(getDistricts("Bilinmeyen")).toEqual([])
   expect(getDistricts("")).toEqual([])
+})
+
+test("eski ve ASCII konum yazımlarını kanonik il/ilçeye taşır", () => {
+  expect(canonicalizeTurkishCity("istanbul")).toBe("İstanbul")
+  expect(canonicalizeTurkishCity("SANLIURFA")).toBe("Şanlıurfa")
+  expect(getDistricts("istanbul")).toContain("Şişli")
+  expect(canonicalizeTurkishDistrict("istanbul", "sisli")).toBe("Şişli")
+  expect(canonicalizeTurkishDistrict("İstanbul", "kadikoy")).toBe("Kadıköy")
 })
 
 test("her ilçe listesi Türkçe alfabetik sıralı", () => {

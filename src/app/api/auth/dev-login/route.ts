@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { establishSession } from "@/lib/session"
 import { prisma } from "@/lib/db"
 import { isDevLoginAllowed, safeRedirectPath } from "@/lib/dev-login"
+import { resolveSessionSurface } from "@/lib/sales/session-surface"
 
 /**
  * Yerel QA oturum kısayolu — parola girmeden seed kullanıcısıyla oturum açar.
@@ -33,9 +34,10 @@ export async function GET(request: Request) {
     )
   }
 
-  await establishSession(user.id, user.workshopId, user.role, "development")
+  const surface = await resolveSessionSurface(user.id, user.workshopId)
+  await establishSession(user.id, user.workshopId, user.role, "development", surface)
 
   return NextResponse.redirect(
-    new URL(safeRedirectPath(url.searchParams.get("redirect")), request.url)
+    new URL(safeRedirectPath(url.searchParams.get("redirect"), surface === "sales" ? "/admin/sales" : "/dashboard"), request.url)
   )
 }

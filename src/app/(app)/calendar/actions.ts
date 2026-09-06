@@ -1,9 +1,17 @@
 "use server"
 
-import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
+import { requireFeatureWorkshop, requireWritableFeatureWorkshop } from "@/lib/auth"
+import type { Permission } from "@/lib/roles"
 import { runAllReminderJobs } from "@/lib/calendar/reminder-scheduler"
 import { getCalendarSyncLogs, getReminderExecutionLogs } from "@/lib/calendar"
 import { revalidatePath } from "next/cache"
+
+async function requireAuth() {
+  return (await requireFeatureWorkshop("appointments")).user
+}
+function requireWritableWorkshop(permission: Permission) {
+  return requireWritableFeatureWorkshop(permission, "appointments")
+}
 
 export async function checkRemindersAction() {
   const { user } = await requireWritableWorkshop("records.manage")

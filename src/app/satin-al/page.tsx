@@ -1,26 +1,22 @@
-import { PurchaseWizard } from "@/components/billing/purchase-wizard"
-import { getHavaleInstructions } from "@/lib/billing/provider"
-import type { PlanTier } from "@/lib/plan"
+import { redirect } from "next/navigation"
+import { isSalePlanTier } from "@/lib/plan"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
 
 export const metadata = { title: "Satın Al", robots: PRIVATE_ROBOTS }
 
-const HAVALE = getHavaleInstructions()
-
+/**
+ * Public paid checkout used to live here as PurchaseWizard. New signups now
+ * share the same /register wizard as "Ücretsiz Dene"; keep this route as a
+ * deep-link redirect so old /satin-al?tier=&cycle= bookmarks still work.
+ * In-app upgrades continue on /checkout.
+ */
 export default async function SatinAlPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tier?: string; cycle?: string }>
+  searchParams: Promise<{ tier?: string | string[]; cycle?: string | string[] }>
 }) {
   const sp = await searchParams
-  const tier = (["starter", "pro", "premium"].includes(sp.tier ?? "") ? sp.tier : "pro") as PlanTier
-  const cycle = (sp.cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly"
-
-  // Premium, odaklı checkout: landing Header/Footer yerine tam ekran markalı split.
-  // Marka + yasal linkler sol BrandRail içinde yaşar.
-  return (
-    <main className="min-h-[100dvh] bg-background">
-      <PurchaseWizard mode="public" initialTier={tier} initialCycle={cycle} havale={HAVALE} />
-    </main>
-  )
+  const tier = isSalePlanTier(sp.tier) ? sp.tier : "pro"
+  const cycle = sp.cycle === "yearly" ? "yearly" : "monthly"
+  redirect(`/register?tier=${tier}&cycle=${cycle}`)
 }

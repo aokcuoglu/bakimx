@@ -230,8 +230,8 @@ export function resolveModelLevelCandidates(
  * ARE TecDoc ids (VehicleBrand.id == manuId, VehicleModel.id == modelId,
  * VehicleType.id == vehicleId) — and ruhsat hints pick the engine variant.
  */
-export async function resolveVinToCatalog(vin: string, hints: RuhsatHints = {}): Promise<VinResolution> {
-  const lookup = await lookupVin(vin)
+export async function resolveVinToCatalog(vin: string, hints: RuhsatHints = {}, workshopId?: string): Promise<VinResolution> {
+  const lookup = await lookupVin(vin, workshopId)
   const notFound: VinResolution = {
     status: "not_found", brand: null, model: null, autoSelected: null, candidates: [],
     cached: lookup.cached, provider: lookup.provider,

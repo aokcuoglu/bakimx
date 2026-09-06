@@ -5,6 +5,7 @@ import { getCatalogBrandOptions, getProductAuditTrail } from "@/app/admin/catalo
 import { CatalogProductForm } from "@/app/admin/catalog/product-form"
 import { formatCatalogAuditChanges } from "@/lib/catalog/bakimx-catalog"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export const dynamic = "force-dynamic"
 
@@ -63,30 +64,34 @@ export default async function EditCatalogProductPage(props: { params: Promise<{ 
     <div className="space-y-6">
       <CatalogProductForm product={productFormData} brands={brands} />
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">Denetim kaydı</h2>
-        {audit.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Bu ürün için kayıt yok.</p>
-        ) : (
-          <ul className="space-y-2">
-            {audit.map((entry) => (
-              <li key={entry.id} className="rounded-lg border bg-card p-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary">{AUDIT_ACTION_LABELS[entry.action] ?? entry.action}</Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(entry.createdAt).toLocaleString("tr-TR")} · {entry.actorLabel}
-                  </span>
-                </div>
-                <ul className="mt-1.5 space-y-0.5 text-sm text-muted-foreground">
-                  {formatCatalogAuditChanges(entry.beforeJson, entry.afterJson).map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold">Denetim kaydı</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {audit.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Bu ürün için kayıt yok.</p>
+          ) : (
+            <ul className="space-y-2">
+              {audit.map((entry) => (
+                <li key={entry.id} className="rounded-lg border bg-card p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">{AUDIT_ACTION_LABELS[entry.action] ?? entry.action}</Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(entry.createdAt).toLocaleString("tr-TR")} · {entry.actorLabel}
+                    </span>
+                  </div>
+                  <ul className="mt-1.5 space-y-0.5 text-sm text-muted-foreground">
+                    {formatCatalogAuditChanges(entry.beforeJson, entry.afterJson).map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

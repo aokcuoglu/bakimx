@@ -4,15 +4,28 @@ import { AppShell } from "@/components/layout/app-shell"
 import { SettingsTabs } from "./settings-tabs"
 import { prisma } from "@/lib/db"
 import { getSeatUsage } from "@/lib/rbac"
-import { getSeatLimit, type PlanTier } from "@/lib/plan"
+import { GATED_FEATURES, getEffectiveSeatLimit, hasWorkshopFeature } from "@/lib/plan"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 
 export const metadata = {
   title: "Ayarlar",
 }
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-  const { user, workshop } = await getAppData()
   const params = await searchParams
+  const gatedTabFeature =
+    params.tab === "team"
+      ? "team"
+      : params.tab === "appointment-rules"
+        ? "appointments"
+        : params.tab === "communication"
+          ? "communications"
+          : null
+  if (gatedTabFeature) {
+    const paywall = await getFeaturePaywall(gatedTabFeature)
+    if (paywall) return paywall
+  }
+  const { user, workshop } = await getAppData()
 
   if (!workshop) {
     return (
@@ -40,6 +53,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     taxNumber: workshop.taxNumber,
     taxOffice: workshop.taxOffice,
     invoiceTitle: workshop.invoiceTitle,
+    referralCode: workshop.referralCode,
     createdAt: workshop.createdAt.toISOString(),
   }
 
@@ -92,7 +106,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   }
 
   // Team data — scoped to this tenant.
-  const [members, invites, technicians] = await Promise.all([
+  const canTeam = hasWorkshopFeature(workshop, "team")
+  const [members, invites, technicians] = canTeam ? await Promise.all([
     prisma.user.findMany({
       where: { workshopId: user.workshopId },
       // `username` de çekiliyor: e-postasız üye listede kimliksiz görünmesin.
@@ -119,7 +134,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       include: { linkedUsers: { select: { id: true } } },
       orderBy: [{ isActive: "desc" }, { fullName: "asc" }],
     }),
-  ])
+  ]) : [[], [], []]
 
   const serializedInvites = invites.map((i) => ({
     id: i.id,
@@ -137,8 +152,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     createdAt: t.createdAt.toISOString(),
   }))
 
-  const seatUsage = await getSeatUsage(user.workshopId)
-  const seatLimit = getSeatLimit(workshop.planTier as PlanTier, workshop.extraSeats)
+  const seatUsage = canTeam
+    ? await getSeatUsage(user.workshopId)
+    : { activeUsers: 0, pendingInvites: 0, used: 0 }
+  const seatLimit = getEffectiveSeatLimit(workshop)
+  const enabledFeatures = GATED_FEATURES.filter((feature) => hasWorkshopFeature(workshop, feature))
 
   // `wide` (max-w-5xl): sekiz sekmelik şerit `constrained` (768px) genişliğe
   // sığmıyordu ve her masaüstünde kaydırma gerektiriyordu (#278).
@@ -159,6 +177,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           accountMissingPersonnel={accountMissingPersonnel}
           seatUsed={seatUsage.used}
           seatLimit={seatLimit}
+          enabledFeatures={enabledFeatures}
         />
       </div>
     </AppShell>

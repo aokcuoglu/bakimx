@@ -4,11 +4,10 @@ import { revalidatePath } from "next/cache"
 import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
-import { isGatedFeature } from "@/lib/features"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
 import { activateBillingOrder } from "@/lib/billing/activate"
 import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
-import type { DemoRequestStatus, SupportRequestStatus } from "@prisma/client"
+import type { DemoRequestStatus, SupportRequestStatus, UserRole } from "@prisma/client"
 import { workshopApprovedEmail, workshopRejectedEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
 import { issuePasswordReset } from "@/lib/password-reset-delivery"
@@ -18,8 +17,32 @@ import {
   resendCooldownRemainingMs,
 } from "@/lib/password-reset"
 import { canReceivePasswordReset } from "@/lib/user-identity"
+import { ASSIGNABLE_ROLES, roleRequiresEmail } from "@/lib/roles"
+import { ACQUISITION_SOURCES, normalizeAcquisitionAdvisorId } from "@/lib/acquisition-sources"
+import type { AcquisitionSource } from "@prisma/client"
 
 type Result = { ok: true } | { ok: false; error: string }
+
+export async function updateWorkshopAcquisition(
+  workshopId: string,
+  input: { acquisitionSource: string; acquisitionAdvisorId?: string },
+): Promise<Result> {
+  const ctx = await requireAdminCapability("manageWorkshops")
+  if (!ACQUISITION_SOURCES.includes(input.acquisitionSource as AcquisitionSource)) return { ok: false, error: "Geçersiz edinim kaynağı." }
+  const acquisitionAdvisorId = normalizeAcquisitionAdvisorId(input.acquisitionAdvisorId)
+  if (input.acquisitionSource === "sales_advisor" && !acquisitionAdvisorId) return { ok: false, error: "Satış temsilcisi seçimi zorunludur." }
+  if (acquisitionAdvisorId) {
+    const advisor = await prisma.salesAdvisor.findFirst({ where: { id: acquisitionAdvisorId, disabledAt: null }, select: { id: true } })
+    if (!advisor) return { ok: false, error: "Etkin satış temsilcisi bulunamadı." }
+  }
+  const before = await prisma.workshop.findUnique({ where: { id: workshopId }, select: { acquisitionSource: true, acquisitionAdvisorId: true } })
+  if (!before) return { ok: false, error: "İş yeri bulunamadı." }
+  await prisma.workshop.update({ where: { id: workshopId }, data: { acquisitionSource: input.acquisitionSource as AcquisitionSource, acquisitionAdvisorId } })
+  await AuditLogAction(workshopId, ctx.user.id, "Workshop", workshopId, "workshop_acquisition_updated", JSON.stringify({ before, after: { ...input, acquisitionAdvisorId } }))
+  revalidatePath(`/admin/workshops/${workshopId}`, "page")
+  revalidatePath("/admin/workshops", "page")
+  return { ok: true }
+}
 
 /** İş yeri sahibine onay/red bildirimi gönderir. Best-effort — hata aksiyonu bozmaz.
  *  Alıcı: owner User'ın e-postası (yoksa workshop.email fallback). Tenant izolasyonu:
@@ -64,7 +87,7 @@ type SubStatus = (typeof STATUSES)[number]
 const DEMO_STATUSES: DemoRequestStatus[] = ["new", "contacted", "qualified", "converted", "archived"]
 const SUPPORT_STATUSES: SupportRequestStatus[] = ["new", "in_progress", "resolved", "archived"]
 
-/** Approve a workshop and (re)start its 7-day trial. Legacy / manual escape
+/** Approve a workshop and (re)start its 7-business-day trial. Legacy / manual escape
  *  hatch: self sign-ups now flip to approved automatically when card
  *  verification succeeds (activateVerifiedWorkshop), so this is only reached to
  *  approve a `pending` row without a card (manual admin override) or to
@@ -115,6 +138,14 @@ export async function activateWorkshopPlan(
   if (!TIERS.includes(tier as PlanTier)) return { ok: false, error: "Geçersiz paket." }
   if (!STATUSES.includes(status as SubStatus)) return { ok: false, error: "Geçersiz durum." }
 
+  const current = await prisma.workshop.findUnique({ where: { id: workshopId }, select: { currentPeriodEnd: true, subscriptionStatus: true } })
+  if (!current) return { ok: false, error: "İş yeri bulunamadı." }
+  // A confirmed paid period is a commercial commitment: changing or downgrading
+  // it midway must go through the renewal/billing flow, not this manual tool.
+  if (current.subscriptionStatus === "active" && current.currentPeriodEnd && current.currentPeriodEnd > new Date()) {
+    return { ok: false, error: "Aktif ücretli abonelik dönem ortasında değiştirilemez. Yenileme/faturalandırma akışını kullanın." }
+  }
+
   await prisma.workshop.update({
     where: { id: workshopId },
     data: {
@@ -133,6 +164,47 @@ export async function activateWorkshopPlan(
     "admin_plan_activated",
     JSON.stringify({ tier, status })
   )
+  revalidatePath("/admin", "layout")
+  return { ok: true }
+}
+
+export async function deleteEmptyWorkshop(workshopId: string, confirmationName: string): Promise<Result> {
+  await requireAdminCapability("manageWorkshops")
+  const workshop = await prisma.workshop.findUnique({ where: { id: workshopId }, select: { name: true } })
+  if (!workshop) return { ok: false, error: "İş yeri bulunamadı." }
+  if (confirmationName.trim() !== workshop.name) return { ok: false, error: "Silmek için iş yeri adını eksiksiz yazın." }
+  const [customers, vehicles, orders, appointments, billingOrders, payments, support] = await Promise.all([
+    prisma.customer.count({ where: { workshopId } }), prisma.vehicle.count({ where: { workshopId } }),
+    prisma.serviceOrder.count({ where: { workshopId } }), prisma.appointment.count({ where: { workshopId } }),
+    prisma.billingOrder.count({ where: { workshopId } }), prisma.paymentTransaction.count({ where: { workshopId } }),
+    prisma.supportRequest.count({ where: { workshopId } }),
+  ])
+  if (customers + vehicles + orders + appointments + billingOrders + payments + support > 0) {
+    return { ok: false, error: "Operasyonel, finansal veya destek geçmişi olan iş yeri silinemez." }
+  }
+  await prisma.$transaction(async (tx) => {
+    await tx.auditLog.deleteMany({ where: { workshopId } })
+    await tx.communicationLog.deleteMany({ where: { workshopId } })
+    // OCR/cron logs are technical bootstrap history, not an operational
+    // dependency. They still carry a required workshop FK and must disappear
+    // in the same transaction as the audit/communication history.
+    await tx.ocrLog.deleteMany({ where: { workshopId } })
+    // Ruhsat okutulduğunda araç henüz oluşturulmadan da erişim izi kalabilir.
+    // Bu iz, araç geçmişi olmadığı doğrulanmış boş iş yeriyle birlikte silinir.
+    await tx.vehicleHistoryGrant.deleteMany({ where: { workshopId } })
+    await tx.calendarSyncLog.deleteMany({ where: { workshopId } })
+    await tx.reminderExecutionLog.deleteMany({ where: { workshopId } })
+    await tx.communicationTemplate.deleteMany({ where: { workshopId } })
+    await tx.invite.deleteMany({ where: { workshopId } })
+    await tx.pushSubscription.deleteMany({ where: { workshopId } })
+    await tx.workshopSettings.deleteMany({ where: { workshopId } })
+    // İlk kullanıcılar teknik olarak bir Technician kaydına bağlanmış olabilir.
+    // İş emri olan atölyeler zaten yukarıdaki koruma tarafından reddedilir;
+    // burada yalnız boş başlangıç ekip kaydını temizliyoruz.
+    await tx.user.deleteMany({ where: { workshopId } })
+    await tx.technician.deleteMany({ where: { workshopId } })
+    await tx.workshop.delete({ where: { id: workshopId } })
+  })
   revalidatePath("/admin", "layout")
   return { ok: true }
 }
@@ -591,62 +663,38 @@ export async function sendUserPasswordReset(workshopId: string, userId: string):
   return { ok: true }
 }
 
-/** Set (upsert) a per-tenant feature override. `enabled` forces the feature on/off
- *  for this workshop regardless of plan tier (resolveFeature composes with this).
- *  Optional ISO `expiresAt` auto-expires the grant (e.g. time-boxed beta). */
-export async function setWorkshopFeatureOverride(
-  workshopId: string,
-  featureKey: string,
-  enabled: boolean,
-  expiresAtIso?: string | null,
-): Promise<Result> {
-  const ctx = await requireAdminCapability("manageFlags")
-  if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
-  if (!isGatedFeature(featureKey)) return { ok: false, error: "Geçersiz özellik." }
-
-  let expiresAt: Date | null = null
-  if (expiresAtIso) {
-    const d = new Date(expiresAtIso)
-    if (Number.isNaN(d.getTime())) return { ok: false, error: "Geçersiz bitiş tarihi." }
-    expiresAt = d
+/** Yönetim konsolundaki ekip satırı aksiyonları. Son aktif yönetici korunur;
+ * tenant ve e-posta gereksinimleri sunucuda yeniden doğrulanır. */
+export async function updateWorkshopUserRole(workshopId: string, userId: string, role: UserRole): Promise<Result> {
+  const ctx = await requireAdminCapability("manageWorkshops")
+  if (!workshopId || !userId || !ASSIGNABLE_ROLES.includes(role)) return { ok: false, error: "Geçersiz kullanıcı veya rol." }
+  const user = await prisma.user.findFirst({ where: { id: userId, workshopId }, select: { id: true, role: true, email: true, isActive: true } })
+  if (!user) return { ok: false, error: "Kullanıcı bu iş yerinde bulunamadı." }
+  if (roleRequiresEmail(role) && !user.email) return { ok: false, error: "Yönetici ve servis danışmanı rolleri için e-posta zorunludur." }
+  if (user.role === "owner" && role !== "owner" && user.isActive) {
+    const owners = await prisma.user.count({ where: { workshopId, role: "owner", isActive: true } })
+    if (owners <= 1) return { ok: false, error: "Son aktif yönetici farklı bir role alınamaz." }
   }
-
-  await prisma.workshopFeatureOverride.upsert({
-    where: { workshopId_featureKey: { workshopId, featureKey } },
-    create: { workshopId, featureKey, enabled, expiresAt, createdBy: ctx.user.id },
-    update: { enabled, expiresAt, createdBy: ctx.user.id },
-  })
-  await AuditLogAction(
-    workshopId,
-    ctx.user.id,
-    "WorkshopFeatureOverride",
-    featureKey,
-    "feature_override_set",
-    JSON.stringify({ featureKey, enabled, expiresAt: expiresAt?.toISOString() ?? null }),
-  )
-  revalidatePath("/admin", "layout")
+  if (user.role === role) return { ok: true }
+  await prisma.user.update({ where: { id: user.id }, data: { role } })
+  await AuditLogAction(workshopId, ctx.user.id, "User", user.id, "workshop_user_role_updated", JSON.stringify({ before: user.role, after: role }))
+  revalidatePath(`/admin/workshops/${workshopId}`, "page")
   return { ok: true }
 }
 
-/** Remove a per-tenant override → the feature falls back to the plan tier. */
-export async function clearWorkshopFeatureOverride(
-  workshopId: string,
-  featureKey: string,
-): Promise<Result> {
-  const ctx = await requireAdminCapability("manageFlags")
-  if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
-  if (!isGatedFeature(featureKey)) return { ok: false, error: "Geçersiz özellik." }
-
-  await prisma.workshopFeatureOverride.deleteMany({ where: { workshopId, featureKey } })
-  await AuditLogAction(
-    workshopId,
-    ctx.user.id,
-    "WorkshopFeatureOverride",
-    featureKey,
-    "feature_override_cleared",
-    JSON.stringify({ featureKey }),
-  )
-  revalidatePath("/admin", "layout")
+export async function setWorkshopUserActive(workshopId: string, userId: string, isActive: boolean): Promise<Result> {
+  const ctx = await requireAdminCapability("manageWorkshops")
+  if (!workshopId || !userId) return { ok: false, error: "Kullanıcı seçilmedi." }
+  const user = await prisma.user.findFirst({ where: { id: userId, workshopId }, select: { id: true, role: true, isActive: true } })
+  if (!user) return { ok: false, error: "Kullanıcı bu iş yerinde bulunamadı." }
+  if (user.role === "owner" && user.isActive && !isActive) {
+    const owners = await prisma.user.count({ where: { workshopId, role: "owner", isActive: true } })
+    if (owners <= 1) return { ok: false, error: "Son aktif yönetici pasifleştirilemez." }
+  }
+  if (user.isActive === isActive) return { ok: true }
+  await prisma.user.update({ where: { id: user.id }, data: { isActive } })
+  await AuditLogAction(workshopId, ctx.user.id, "User", user.id, "workshop_user_active_changed", JSON.stringify({ isActive }))
+  revalidatePath(`/admin/workshops/${workshopId}`, "page")
   return { ok: true }
 }
 

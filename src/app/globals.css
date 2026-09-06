@@ -418,6 +418,159 @@
   }
 }
 
+/* Hero'nun hareketli atölye fonu (`components/sections/hero-workshop.tsx`).
+   Üç katman: sürüklenen marka blob'ları (yalnız desktop — 1lookup.io
+   referansındaki `animate-drift` deseninin karşılığı), blueprint ızgara ve
+   atölye sahnesi. Sahnenin lit kopyası `--spot-x/y` ile konumlanan radial
+   maskeyle yalnız imlecin çevresinde belirir; `--spot-strength` JS'te lerp
+   ile yumuşatılır (değişkenler rAF'ta yazılır, React render tetiklenmez).
+   İnce imleci olmayan cihazda ve hareket azaltma tercihinde değişkenler
+   başlangıç değerinde kalır: lit katman ve halo görünmez, fon statik. */
+.hero-workshop {
+  --spot-x: 62%;
+  --spot-y: 38%;
+  --spot-strength: 0;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-workshop-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 46% at 50% 0%,
+    color-mix(in srgb, var(--color-brand) 9%, transparent),
+    transparent 70%
+  );
+}
+
+.hero-workshop-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-navy) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-navy) 7%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 82% at 50% 18%, #000 35%, transparent 78%);
+  mask-image: radial-gradient(ellipse 90% 82% at 50% 18%, #000 35%, transparent 78%);
+}
+
+.hero-workshop-blob {
+  display: none;
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  filter: blur(80px);
+  will-change: transform;
+}
+
+.hero-workshop-blob-a {
+  left: -10%;
+  top: -18%;
+  width: 46%;
+  background: color-mix(in srgb, var(--color-brand) 14%, transparent);
+  animation: workshop-drift-a 26s ease-in-out infinite alternate;
+}
+
+.hero-workshop-blob-b {
+  right: -12%;
+  bottom: -25%;
+  width: 40%;
+  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
+  animation: workshop-drift-b 32s ease-in-out infinite alternate;
+}
+
+@keyframes workshop-drift-a {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(9%, 12%, 0) scale(1.12);
+  }
+}
+
+@keyframes workshop-drift-b {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.08);
+  }
+  to {
+    transform: translate3d(-8%, -10%, 0) scale(0.96);
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-workshop-blob {
+    display: block;
+  }
+}
+
+.hero-workshop-particles {
+  position: absolute;
+  inset: 0;
+  opacity: var(--spot-strength);
+  -webkit-mask-image: radial-gradient(
+    circle 22rem at var(--spot-x) var(--spot-y),
+    #000 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    transparent 75%
+  );
+  mask-image: radial-gradient(
+    circle 22rem at var(--spot-x) var(--spot-y),
+    #000 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    transparent 75%
+  );
+}
+
+.hero-particle {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.hero-particle-dot {
+  width: 3px;
+  height: 3px;
+  background: var(--color-navy);
+  opacity: 0.1;
+  animation: ws-float var(--particle-dur, 16s) ease-in-out var(--particle-delay, 0s) infinite alternate;
+}
+
+.hero-particle-line {
+  width: 1px;
+  height: 16px;
+  background: var(--color-navy);
+  opacity: 0.06;
+  animation: ws-float var(--particle-dur, 18s) ease-in-out var(--particle-delay, 0s) infinite alternate;
+}
+
+@keyframes ws-float {
+  from { transform: translate3d(0, 0, 0) rotate(0deg); }
+  to   { transform: translate3d(4px, -14px, 0) rotate(6deg); }
+}
+
+.hero-workshop-halo {
+  position: absolute;
+  inset: 0;
+  opacity: var(--spot-strength);
+  background: radial-gradient(
+    circle 24rem at var(--spot-x) var(--spot-y),
+    color-mix(in srgb, var(--color-brand) 10%, transparent),
+    transparent 70%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-workshop-blob-a,
+  .hero-workshop-blob-b,
+  .hero-particle {
+    animation: none;
+  }
+}
+
 /* Mobil-öncelikli yardımcı sınıflar — gerçek safe-area inset'leri (önceden no-op'tu). */
 @utility safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
@@ -596,28 +749,48 @@
   --sidebar-ring: oklch(0.54 0.20 258);
 }
 
-/* Toast şekillendirmesi — sürüm güncelleme bildirimi (BAK-51).
-   Sonner toastları mobil ekranda okunmuş değildi: çok dar, metin sıkışmış,
-   düğmeler ve başlık okunaksız boyuttaydı. Güncellenmiş tasarım:
-   - Geniş padding ve boşluk
-   - Kontrastlı başlık ve açıklama metni
-   - Büyür, okunabilir düğmeler
-   - Düzgün metin kaydırma ve hizalama */
+/* Geçici Sonner bildirimleri, sayfa içi Alert ile aynı yoğunluk ve semantik
+   renk dilini kullanır. Toast davranışı (otomatik kapanma, kuyruk, swipe) için
+   Sonner kalır; kalıcı bağlam ve form hatalarıysa <Alert> olarak render edilir. */
 .cn-toast {
-  @apply gap-3 rounded-lg border border-border bg-popover px-4 py-3 shadow-lg;
-  min-width: 20rem;
+  @apply gap-2 rounded-lg border border-border bg-popover px-2.5 py-2 text-sm text-popover-foreground shadow-none;
+  min-width: 18rem;
 }
 
 .cn-toast[data-sonner-toast][data-styled="true"] [data-title] {
-  @apply font-semibold text-base text-foreground;
+  @apply font-medium text-sm text-current;
 }
 
 .cn-toast[data-sonner-toast][data-styled="true"] [data-description] {
-  @apply text-sm text-foreground/85 leading-relaxed;
+  @apply text-sm leading-relaxed text-current;
+}
+
+.cn-toast[data-sonner-toast][data-type="success"] {
+  @apply border-success/30 bg-popover text-success-strong;
+}
+
+.cn-toast[data-sonner-toast][data-type="info"] {
+  @apply border-primary/30 bg-popover text-primary-strong;
+}
+
+.cn-toast[data-sonner-toast][data-type="warning"] {
+  @apply border-warning/30 bg-popover text-warning-strong;
+}
+
+.cn-toast[data-sonner-toast][data-type="error"] {
+  @apply border-destructive/30 bg-popover text-destructive-strong;
 }
 
 .cn-toast button:has(svg) {
-  @apply size-6 rounded-md p-0 transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80;
+  @apply size-6 rounded-md p-0 transition-colors hover:bg-muted active:bg-muted/80;
+}
+
+.cn-toast[data-sonner-toast] [data-close-button] {
+  @apply !border-border !bg-popover !text-popover-foreground;
+}
+
+.cn-toast[data-sonner-toast] [data-close-button]:hover {
+  @apply !border-primary !bg-primary !text-primary-foreground;
 }
 
 .cn-toast[data-sonner-toast] [data-action] {

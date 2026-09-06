@@ -114,19 +114,19 @@ test("ambiguous response returns the candidate list, calls no onCandidate", asyn
 })
 
 test("HTTP error response returns the server error message", async () => {
-  stubFetch(429, { error: "Çok fazla VIN sorgusu yapıldı. Lütfen biraz bekleyip tekrar deneyin." })
+  stubFetch(429, { error: "Çok fazla şase sorgusu yapıldı. Lütfen biraz bekleyip tekrar deneyin." })
   const state = await performVinResolve(VIN, {}, { onCandidate: () => {} })
-  expect(state.error).toBe("Çok fazla VIN sorgusu yapıldı. Lütfen biraz bekleyip tekrar deneyin.")
+  expect(state.error).toBe("Çok fazla şase sorgusu yapıldı. Lütfen biraz bekleyip tekrar deneyin.")
 })
 
 test("network failure falls back to the generic retry message", async () => {
   global.fetch = (async () => { throw new Error("network down") }) as unknown as typeof fetch
   const state = await performVinResolve(VIN, {}, { onCandidate: () => {} })
-  expect(state.error).toBe("VIN sorgulama sırasında bir hata oluştu. Lütfen tekrar deneyin.")
+  expect(state.error).toBe("Şase sorgulama sırasında bir hata oluştu. Lütfen tekrar deneyin.")
 })
 
 test("VIN_RESOLVE_IDLE is the zero state", () => {
   expect(VIN_RESOLVE_IDLE).toEqual({
-    loading: false, error: "", notice: "", candidates: [], locked: false, unconfigured: false,
+    loading: false, error: "", notice: "", candidates: [], locked: false, lockedTier: "lite", unconfigured: false,
   })
 })

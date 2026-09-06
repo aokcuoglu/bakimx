@@ -39,6 +39,10 @@ const ALLOWLIST = new Map<string, string>([
     "Daveti kabul eden kullanıcı henüz atölye üyesi değildir; rol kapısı uygulanamaz.",
   ],
   [
+    "invite/sales/[token]/actions.ts::acceptSalesAdvisorInvite",
+    "Satış danışmanı davetini kabul eden kişi henüz kullanıcı değildir; tek kullanımlık token ve transaction kapısı kimliği kurar.",
+  ],
+  [
     "(app)/account/actions.ts::changeOwnPasswordAction",
     "Kendi şifresini değiştirme kimlik işlemidir, izin gerektirmez. Kapı geçici şifreli kullanıcıyı reddettiği için (assertPasswordChanged) buradan geçseydi kilit hiç açılamazdı; mevcut şifre bcrypt ile ayrıca doğrulanır.",
   ],
@@ -49,7 +53,7 @@ const ALLOWLIST = new Map<string, string>([
 ])
 
 const MUTATION = /\.(create|createMany|update|updateMany|upsert|delete|deleteMany)\(/
-const GATE = "requireWritableWorkshop("
+const GATES = ["requireWritableWorkshop(", "requireWritableFeatureWorkshop("]
 
 function actionFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -72,7 +76,7 @@ test("yazma yapan her server action yetki kapısından geçer", () => {
     for (const block of source.split("\nexport async function ").slice(1)) {
       const name = block.split("(")[0]
       if (!MUTATION.test(block)) continue
-      if (block.includes(GATE)) continue
+      if (GATES.some((gate) => block.includes(gate))) continue
       if (ALLOWLIST.has(`${rel}::${name}`)) continue
       ungated.push(`${rel}::${name}`)
     }

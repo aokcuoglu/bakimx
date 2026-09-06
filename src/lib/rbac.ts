@@ -2,7 +2,7 @@ import { Prisma, type UserRole } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import type { AuthUser } from "@/lib/auth"
 import { ROLE_RANK, roleCan, type Permission } from "@/lib/roles"
-import { getSeatLimit, seatLimitMessage, type PlanTier } from "@/lib/plan"
+import { getEffectiveSeatLimit, getPlanState, seatLimitMessage, type PlanTier } from "@/lib/plan"
 
 /**
  * Workshop-scoped role-based access control (server-only — imports prisma).
@@ -154,15 +154,22 @@ export async function assertSeatAvailableTx(
 ): Promise<void> {
   const ws = await tx.workshop.findUnique({
     where: { id: workshopId },
-    select: { planTier: true, extraSeats: true },
+    select: {
+      planTier: true,
+      extraSeats: true,
+      subscriptionStatus: true,
+      approvalStatus: true,
+      trialEndsAt: true,
+      currentPeriodEnd: true,
+    },
   })
   if (!ws) return
   const activeUsers = await tx.user.count({ where: { workshopId, isActive: true } })
   const livePending = await tx.invite.count({
     where: { workshopId, status: "pending", expiresAt: { gt: new Date() } },
   })
-  const tier = (ws.planTier as PlanTier) ?? "starter"
-  const limit = getSeatLimit(tier, ws.extraSeats)
+  const tier = getPlanState(ws).accessTier
+  const limit = getEffectiveSeatLimit(ws)
   const used = activeUsers + livePending
   if (used >= limit) {
     throw new SeatLimitError(tier, used, limit)

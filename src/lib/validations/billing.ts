@@ -1,7 +1,9 @@
 import { z } from "zod/v4"
+import { SALE_PLAN_TIERS } from "@/lib/plan"
 import { isValidWorkshopCode } from "@/lib/workshop-code"
+import { ACQUISITION_SOURCES } from "@/lib/acquisition-sources"
 
-const tier = z.enum(["starter", "pro", "premium"])
+const tier = z.enum(SALE_PLAN_TIERS)
 const cycle = z.enum(["monthly", "yearly"])
 // Ödeme yöntemi — eski istemciler alanı göndermezse `havale` (geriye uyumlu).
 const method = z.enum(["card", "havale"]).default("havale")
@@ -19,6 +21,8 @@ export type CheckoutInAppValues = z.infer<typeof checkoutInAppSchema>
 
 // Public: also create the workshop + owner (mirrors registerSchema fields).
 export const checkoutPublicSchema = z.object({
+  acquisitionSource: z.enum(ACQUISITION_SOURCES).default("unknown"),
+  acquisitionAdvisorId: z.string().optional().default(""),
   tier,
   cycle,
   method,
@@ -32,7 +36,12 @@ export const checkoutPublicSchema = z.object({
   workshopName: z.string().min(2, "İş yeri adı zorunludur"),
   phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
   city: z.string().min(1, "Şehir zorunludur"),
+  district: z.string().optional().default(""),
   address: z.string().min(1, "Adres zorunludur"),
+  workshopEmail: z.string().optional().default(""),
+  workingDays: z.string().optional().default("1,2,3,4,5"),
+  weekdayStart: z.string().optional().default("09:00"),
+  weekdayEnd: z.string().optional().default("18:00"),
   loginCode: z
     .string()
     .min(1, "İş yeri giriş kodu zorunludur")

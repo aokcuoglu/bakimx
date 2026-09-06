@@ -44,13 +44,14 @@ const CONFIRM_FLAG = "--confirm"
 export const TENANT_TABLES = [
   "Workshop",
   "WorkshopSettings",
-  "WorkshopFeatureOverride",
   "User",
   "Invite",
   "PasswordResetToken",
   "Customer",
   "Vehicle",
   "VehicleIntakeForm",
+  "DamagePhoto",
+  "PhotoAnnotationVersion",
   "VehiclePhoto",
   "DamageMark",
   "ApprovalRequest",
@@ -92,6 +93,23 @@ export const TENANT_TABLES = [
   // listede olmasaydı zaten iptal ederdi. Sıfırlama sonrası üyelik `ADMIN_EMAILS`
   // bootstrap'ından yeniden kurulur (bkz. dosya başı, `src/lib/admin.ts`).
   "PlatformAdmin",
+  // Satış danışmanı profilleri personel User'ına, satış kayıtları ise demo ve
+  // dönüşmüş Workshop satırlarına FK taşır. Bu reset tüm tenant/user verisini
+  // sildiği için aynı transaction içinde bunlar da temizlenmelidir.
+  "SalesAdvisor",
+  "SalesAdvisorMonthlyTarget",
+  "SalesAdvisorInvite",
+  "SalesLead",
+  "SalesRegistrationLink",
+  "SalesLeadAssignment",
+  "SalesActivity",
+  "SalesTask",
+  "SalesDemoSession",
+  "SalesCommissionRule",
+  "SalesCommission",
+  "SalesCommissionEvent",
+  "SalesDiscountCode",
+  "SalesReferral",
   "CronRun",
   // Web Push abonelikleri (BAK-129): kiracının kullanıcılarına bağlı cihaz
   // kayıtları. Kalıcı iş verisi değil — silinince kullanıcılar bildirimleri
@@ -112,10 +130,7 @@ export const TENANT_TABLES = [
   // Sağlayıcı webhook inbox'ı sipariş kimliği üzerinden kiracı operasyon
   // geçmişidir; kiracı siparişleri silinirken yetim dedupe kayıtları kalmamalı.
   "ExternalProcurementEvent",
-  // Şirkete ait BYOK sırrı ve kullanım defteri tenant verisidir. Global platform
-  // harcama tavanı aşağıdaki market_research_budgets tablosunda ayrıca korunur.
-  "market_research_credentials",
-  "market_research_usages",
+  "quota_usage",
 ]
 
 /** Dokunulmayanlar. Satır sayıları öncesi/sonrası karşılaştırılarak doğrulanır. */
@@ -147,9 +162,10 @@ export const KEEP_TABLES = [
   // Herkese açık durum sayfası (BAK-128) platform geneli olay geçmişidir;
   // hiçbir atölyeye ait olmadığı için kiracı sıfırlamasında korunur.
   "status_incidents",
-  // Piyasa araştırması bütçesi platform genelidir. Kiracı resetinde silinirse
-  // aynı ayın harcaması unutulur ve onaylı USD tavanı yeniden harcanabilir.
-  "market_research_budgets",
+  // Google Maps maliyet kapısı platformun aylık ortak sayacıdır. Kiracı reseti
+  // bunu sıfırlarsa aynı ay içinde yeniden hak açılır ve ücretsiz SKU sınırı
+  // aşılabilir; bu nedenle faturalama dönemi boyunca mutlaka korunur.
+  "google_maps_usage_counters",
   "_prisma_migrations",
 ]
 

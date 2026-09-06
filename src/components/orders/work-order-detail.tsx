@@ -45,37 +45,30 @@ import {
   Wallet,
   History,
   ArrowRight,
-  Sparkles,
-  Lock,
   Calculator,
   TriangleAlert,
   Images,
   X,
   Wrench,
   HardHat,
+  LockKeyhole,
 } from "lucide-react"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import {
   PHOTO_TYPES,
   PHOTO_PHASES,
   VEHICLE_PHOTO_TYPES,
-  DAMAGE_TYPES,
-  DAMAGE_SEVERITY,
-  VEHICLE_ZONES,
   type PhotoPhaseKey,
 } from "@/lib/constants"
 import { formatDate } from "@/lib/utils-client"
 import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
 import { STANDARD_TAX_BPS } from "@/lib/orders/line-vat"
-import { ServiceAdvisorPanel } from "@/components/advisor/service-advisor-panel"
-import { AdvisorPremiumLock } from "@/components/advisor/advisor-premium-lock"
 import { isOrderLocked, isCollectionLockedForOrder } from "@/lib/status-transitions"
 import { findUnpricedItems } from "@/lib/orders/pricing-guard"
 import { findUndecidedPartsRequests } from "@/lib/orders/parts-request-guard"
 import { canOpenTechnicianView, technicianOrderPath } from "@/lib/technician/cross-links"
 import type { OrderStatus, PaymentStatus } from "@prisma/client"
-import { PhotoAnnotate } from "@/components/intake/photo-annotate"
+import { DamageCapture } from "@/components/intake/damage-capture"
 import { PhotoGalleryGrid } from "@/components/intake/photo-gallery-grid"
 import { PhotoPhaseMatrix } from "@/components/intake/photo-phase-matrix"
 import { partitionIntakePhotos } from "@/lib/photos/phase-matrix"
@@ -112,8 +105,9 @@ import { TechnicianAssign, type AssignableTechnician } from "@/components/orders
 import { PartsRequestPanel } from "@/components/orders/parts-request-panel"
 import type { LaborCatalogRow } from "@/lib/labor/types"
 import { MAX_BATCH_PHOTOS, describeUploadFailure, selectPhotoFiles } from "@/lib/photos/select-photo-files"
-import { AiPartSearch } from "@/components/parts/ai-part-search"
-import type { AiPartSuggestion } from "@/lib/parts/ai-search"
+import { InlineFeatureUpsell } from "@/components/billing/inline-feature-upsell"
+import type { GatedFeature, PlanTier } from "@/lib/plan"
+import { compressImagesForUpload } from "@/lib/image/compress-image"
 
 // Header aksiyon ikonları (eski orders ekranıyla aynı görünüm).
 const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
@@ -131,12 +125,12 @@ const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
 // `?tab=` ile tutulur; settings-tabs deseniyle aynı.
 type TabKey = "ozet" | "parca" | "tahsilat" | "kanit" | "teknisyen" | "gecmis"
 
-const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }>; feature?: GatedFeature }[] = [
   { key: "ozet", label: "Özet", icon: Info },
   { key: "parca", label: "Parça & İşçilik", icon: Package },
-  { key: "tahsilat", label: "Tahsilat", icon: Wallet },
+  { key: "tahsilat", label: "Tahsilat", icon: Wallet, feature: "cashbox" },
   { key: "kanit", label: "Kanıt", icon: Camera },
-  { key: "teknisyen", label: "Teknisyen", icon: Wrench },
+  { key: "teknisyen", label: "Teknisyen", icon: Wrench, feature: "team" },
   { key: "gecmis", label: "Geçmiş", icon: History },
 ]
 
@@ -236,19 +230,17 @@ export function WorkOrderDetail({
   intake,
   order,
   technicians,
-  hasAiAdvisor,
-  canUseAiPartSearch,
   activity = [],
   editInitially = false,
   laborCatalog,
   canReopen = false,
   canEditInfo = false,
+  enabledFeatures,
+  currentTier,
 }: {
   intake: IntakeDetailProps
   order: OrderDetailData
   technicians?: AssignableTechnician[]
-  hasAiAdvisor: boolean
-  canUseAiPartSearch: boolean
   activity?: OrderActivityEntry[]
   // Listeden "Düzenle" ile gelindiğinde (?edit=1) Şikayet & Notlar kartı
   // doğrudan düzenleme modunda açılır. Kilitli emirde yok sayılır.
@@ -262,6 +254,8 @@ export function WorkOrderDetail({
   // (`order.edit`). Karar SUNUCUDA verilir (`updateIntakeDetailsAction` →
   // `requireWritableWorkshop("order.edit")`); burada yalnız görünürlük.
   canEditInfo?: boolean
+  enabledFeatures: readonly GatedFeature[]
+  currentTier: PlanTier
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -277,6 +271,11 @@ export function WorkOrderDetail({
   const [error, setError] = useState("")
 
   const orderLocked = isOrderLocked(order.status as OrderStatus)
+  const canCashbox = enabledFeatures.includes("cashbox")
+  const canTeam = enabledFeatures.includes("team")
+  const canUseInventory = enabledFeatures.includes("partsInventory")
+  const canUsePhotoChecklist = enabledFeatures.includes("photoChecklist")
+  const canUseDamageMap = enabledFeatures.includes("damageMap")
 
   // Order-side pricing/meta edit
   const [editingMeta, setEditingMeta] = useState(false)
@@ -532,8 +531,9 @@ export function WorkOrderDetail({
   }
 
   // Seçilen kareleri listeye ekler (değiştirmez): kamera ve galeri girdileri
-  // arka arkaya kullanılabilsin diye seçim biriktirilir.
-  function addPickedPhotos(list: FileList | null) {
+  // arka arkaya kullanılabilsin diye seçim biriktirilir. Yüklemeden önce
+  // istemci sıkıştırması depolama ve mobil bant genişliğini düşürür.
+  async function addPickedPhotos(list: FileList | null) {
     if (!list || list.length === 0) return
     const { accepted, duplicates, overflow } = selectPhotoFiles(
       pendingPhotos.map((p) => p.file),
@@ -542,12 +542,19 @@ export function WorkOrderDetail({
     if (duplicates > 0) toast.info(`${duplicates} fotoğraf zaten seçiliydi`)
     if (overflow > 0) toast.warning(`Tek seferde en fazla ${MAX_BATCH_PHOTOS} fotoğraf; ${overflow} tanesi eklenmedi`)
     if (accepted.length === 0) return
-    const added = accepted.map((file, i) => {
+
+    const { accepted: compressed, failures } = await compressImagesForUpload(accepted)
+    for (const failure of failures) {
+      toast.error(`${failure.name}: ${failure.error}`)
+    }
+    if (compressed.length === 0) return
+
+    const added = compressed.map((file, i) => {
       const previewUrl = URL.createObjectURL(file)
       photoUrlsRef.current.push(previewUrl)
       return { key: `${file.name}-${file.size}-${file.lastModified}-${pendingPhotos.length + i}`, file, previewUrl }
     })
-    setPendingPhotos([...pendingPhotos, ...added])
+    setPendingPhotos((prev) => [...prev, ...added])
   }
 
   function removePendingPhoto(key: string) {
@@ -692,47 +699,6 @@ export function WorkOrderDetail({
     }
   }
 
-  // AI danışman önerilerini iş emrine kalem olarak ekle.
-  async function handleAddAiItems(items: Array<{ type: "labor" | "part"; name: string }>) {
-    setLoading(true)
-    setError("")
-    try {
-      for (const item of items) {
-        const formData = new FormData()
-        formData.set("serviceOrderId", order.id)
-        formData.set("type", item.type)
-        formData.set("name", item.name)
-        formData.set("quantity", "1")
-        const res = await fetch("/api/orders/items", { method: "POST", body: formData })
-        const data = await res.json()
-        if (!data.success) { setError(data.error || "Kalem eklenemedi"); break }
-      }
-      router.refresh()
-    } catch {
-      setError("AI önerileri eklenirken hata oluştu")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleAddAiPart(item: AiPartSuggestion) {
-    setLoading(true); setError("")
-    try {
-      const formData = new FormData()
-      formData.set("serviceOrderId", order.id); formData.set("type", "part"); formData.set("name", item.name); formData.set("quantity", "1")
-      if (item.sku) formData.set("sku", item.sku)
-      if (item.brand) formData.set("brand", item.brand)
-      if (item.partId) formData.set("partId", item.partId)
-      if (item.tecdocArticleId != null) { formData.set("tecdocArticleId", String(item.tecdocArticleId)); formData.set("source", "catalog") }
-      if (item.bakimxProductId) { formData.set("bakimxProductId", item.bakimxProductId); formData.set("source", "bakimx") }
-      if (item.getirbakimProductId) { formData.set("getirbakimProductId", item.getirbakimProductId); formData.set("source", "getirbakim") }
-      const response = await fetch("/api/orders/items", { method: "POST", body: formData })
-      const data = await response.json() as { success?: boolean; error?: string }
-      if (!response.ok || !data.success) throw new Error(data.error || "Parça eklenemedi")
-      toast.success(`${item.name} kaleme eklendi`); router.refresh()
-    } finally { setLoading(false) }
-  }
-
   const customerName =
     order.customer.type === "corporate"
       ? order.customer.companyName || "Kurumsal Müşteri"
@@ -784,6 +750,18 @@ export function WorkOrderDetail({
   // Eksik/istenen foto akışı: Kanıt sekmesine geç (paneli mount et), tipini
   // seç ve dialog'u aç; scroll useEffect ile panel render olunca yapılır.
   function focusPhoto(typeKey?: string, phase?: PhotoPhaseKey) {
+    // Lite'ta eksik-fotoğraf kısayolları diyaloğu açamaz; kullanıcıyı ortak
+    // yükseltme kartının bulunduğu Fotoğraflar bölümüne taşır.
+    if (!canUsePhotoChecklist) {
+      if (activeTab === "kanit") {
+        photosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      } else {
+        pendingPhotoScrollRef.current = true
+        handleTabChange("kanit")
+      }
+      return
+    }
+
     if (typeKey) setPhotoType(typeKey)
     if (phase) setPhotoPhase(phase)
     // İkisi de biliniyorsa hücre bağlamıdır (matris karesi / karşılaştır "+")
@@ -809,19 +787,21 @@ export function WorkOrderDetail({
         meta={
           /* Atanan usta bir *durum* değil, işin kime ait olduğu bilgisi —
              bu yüzden müşteri satırının yanında, rozetlerle yarışmadan durur. */
-          <TechnicianAssign
-            orderId={order.id}
-            assignedTechnicianId={order.assignedTechnicianId}
-            assignedTechnicianName={order.assignedTechnicianName}
-            technicians={technicians ?? []}
-            locked={orderLocked}
-            variant="meta"
-          />
+          canTeam ? (
+            <TechnicianAssign
+              orderId={order.id}
+              assignedTechnicianId={order.assignedTechnicianId}
+              assignedTechnicianName={order.assignedTechnicianName}
+              technicians={technicians ?? []}
+              locked={orderLocked}
+              variant="meta"
+            />
+          ) : undefined
         }
         badges={
           <>
             <StatusBadge status={order.status} size="lg" />
-            <PaymentBadge status={order.paymentStatus} size="lg" />
+            {canCashbox && <PaymentBadge status={order.paymentStatus} size="lg" />}
           </>
         }
         actions={headerActions}
@@ -938,8 +918,12 @@ export function WorkOrderDetail({
             </>
           ) : null}
           <span className="text-muted-foreground">Genel Toplam: <span className="font-semibold text-foreground">{formatTRY(order.totals.grandTotal)}</span></span>
-          <span className="text-muted-foreground">Ödenen: <span className="font-semibold text-success-strong">{formatTRY(order.paidAmount)}</span></span>
-          <span className="text-muted-foreground">Kalan: <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>{formatTRY(order.remainingAmount)}</span></span>
+          {canCashbox && (
+            <>
+              <span className="text-muted-foreground">Ödenen: <span className="font-semibold text-success-strong">{formatTRY(order.paidAmount)}</span></span>
+              <span className="text-muted-foreground">Kalan: <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>{formatTRY(order.remainingAmount)}</span></span>
+            </>
+          )}
         </div>
       )}
 
@@ -947,10 +931,12 @@ export function WorkOrderDetail({
         <TabsList variant="line" className="flex w-full flex-nowrap gap-1 sm:gap-2 border-b border-border pb-0 -mb-px overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((t) => {
             const Icon = t.icon
+            const locked = Boolean(t.feature && !enabledFeatures.includes(t.feature))
             return (
               <TabsTrigger key={t.key} value={t.key} className="px-3 py-2.5 shrink-0 flex-none">
                 <Icon className="size-4" />
                 <span>{t.label}</span>
+                {locked && <LockKeyhole className="size-3" aria-label="Profesyonel paket özelliği" />}
               </TabsTrigger>
             )
           })}
@@ -975,7 +961,7 @@ export function WorkOrderDetail({
             </Card>
           )}
           {/* Müşteri & Araç */}
-          <Card>
+          {(canUsePhotoChecklist || canUseDamageMap) && <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base">Müşteri & Araç</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1024,7 +1010,7 @@ export function WorkOrderDetail({
                       </span>
                     )}
                     {order.vehicle.mileage != null && <span>Kayıtlı: {order.vehicle.mileage.toLocaleString("tr-TR")} km</span>}
-                    {order.vehicle.vin && <span className="font-mono">VIN: {order.vehicle.vin}</span>}
+                    {order.vehicle.vin && <span className="font-mono">Şase: {order.vehicle.vin}</span>}
                   </div>
                 </div>
               </div>
@@ -1033,7 +1019,7 @@ export function WorkOrderDetail({
                 {order.intake.approvedAt && <span>Onay: {formatDate(order.intake.approvedAt)}</span>}
               </div>
             </CardContent>
-          </Card>
+          </Card>}
 
           {/* İş Emri Bilgileri */}
           <OrderInfoCard
@@ -1183,6 +1169,7 @@ export function WorkOrderDetail({
               setMetaDraft={setMetaDraft}
               saveMeta={saveMeta}
               loading={loading}
+              showCashbox={canCashbox}
             />
           </div>
 
@@ -1268,6 +1255,9 @@ export function WorkOrderDetail({
 
         {/* PARÇA & İŞÇİLİK */}
         <TabsContent value="parca" className="space-y-5">
+          {!canUseInventory && (
+            <InlineFeatureUpsell feature="partsInventory" currentTier={currentTier} />
+          )}
           <PartsRequestPanel
             requests={order.partsRequests}
             locked={isOrderLocked(order.status as OrderStatus)}
@@ -1279,33 +1269,6 @@ export function WorkOrderDetail({
               görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
               Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
           <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} />
-
-          {/* AI Danışman: kapalı başlar — ekran kalabalığını azaltır. Premium
-              kilidi accordion İÇİNDE aynen korunur (gating advisor API'lerinde). */}
-          <Accordion type="single" collapsible>
-            <AccordionItem value="ai-advisor" className="border-0">
-              <AccordionTrigger className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card px-4 py-3 hover:no-underline">
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  <Sparkles className="size-4 text-primary" /> AI Öneri Al
-                  {!hasAiAdvisor && <Lock className="size-3.5 text-muted-foreground" />}
-                </span>
-              </AccordionTrigger>
-              <AccordionContent className="pt-3 pb-0">
-                {hasAiAdvisor ? (
-                  <div className="space-y-3">{canUseAiPartSearch && <AiPartSearch vehicleTypeId={order.vehicle.catalogVehicleTypeId} disabled={orderLocked || loading} onAdd={handleAddAiPart} />}<ServiceAdvisorPanel
-                    intakeFormId={intake.id}
-                    customerComplaint={order.intake.customerComplaint}
-                    vehicleBrand={order.vehicle.brand}
-                    vehicleModel={order.vehicle.model}
-                    mileage={order.intake.mileageAtIntake ?? order.vehicle.mileage}
-                    onAddItems={handleAddAiItems}
-                  /></div>
-                ) : (
-                  <AdvisorPremiumLock />
-                )}
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
 
           {/* Mobil yapışkan toplam: kalem eklerken genel toplam hep görünür;
               dokununca Fiyatlandırma kartına kaydırır. Alt navigasyonun (fixed,
@@ -1319,6 +1282,10 @@ export function WorkOrderDetail({
 
         {/* TAHSİLAT */}
         <TabsContent value="tahsilat" className="space-y-5">
+          {!canCashbox ? (
+            <InlineFeatureUpsell feature="cashbox" currentTier={currentTier} />
+          ) : (
+          <>
           {/* Kompakt ödeme özeti */}
           <Card>
             <CardHeader className="pb-3">
@@ -1356,6 +1323,8 @@ export function WorkOrderDetail({
             customerId={order.customer.id}
             customerName={customerName}
           />
+          </>
+          )}
         </TabsContent>
 
         {/* KANIT (Foto & Hasar) */}
@@ -1366,14 +1335,16 @@ export function WorkOrderDetail({
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center justify-between">
                 <span className="flex items-center gap-2"><Camera className="size-4" /> Fotoğraflar</span>
-                <span className="text-sm font-normal text-muted-foreground">
-                  {photoCompletion.requiredCompleted} / {photoCompletion.required} zorunlu açı
-                </span>
+                {canUsePhotoChecklist && (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    {photoCompletion.requiredCompleted} / {photoCompletion.required} zorunlu açı
+                  </span>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {/* Tip × aşama matrisi — hasar detayı alt kartta, burada yok */}
-              {vehiclePhotos.length > 0 || missingRequired.length > 0 ? (
+              {canUsePhotoChecklist && (vehiclePhotos.length > 0 || missingRequired.length > 0) ? (
                 <PhotoPhaseMatrix
                   photos={vehiclePhotos}
                   canDelete={!orderLocked}
@@ -1384,12 +1355,14 @@ export function WorkOrderDetail({
                       : (type, phase) => focusPhoto(type, phase)
                   }
                 />
+              ) : vehiclePhotos.length > 0 ? (
+                <PhotoGalleryGrid photos={vehiclePhotos} canDelete={!orderLocked} onDeleted={() => router.refresh()} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-3">Henüz araç fotoğrafı eklenmedi</p>
               )}
 
               {/* Missing required chips */}
-              {missingRequired.length > 0 ? (
+              {canUsePhotoChecklist && (missingRequired.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-xs text-muted-foreground">Eksik:</span>
                   {missingRequired.map(([key, val]) => (
@@ -1405,11 +1378,18 @@ export function WorkOrderDetail({
                 </div>
               ) : (
                 <p className="text-xs text-success-strong flex items-center gap-1.5"><CheckCircle2 className="size-3.5" /> Tüm zorunlu fotoğraflar tamam</p>
+              ))}
+
+              {!canUsePhotoChecklist && (
+                <InlineFeatureUpsell feature="photoChecklist" currentTier={currentTier} />
               )}
 
               {/* Add photo trigger + dialog */}
-              {!orderLocked && (<>
-              <Button variant="outline" onClick={() => { setPhotoContextLocked(false); setAddingPhoto(true) }} className="w-full">
+              {!orderLocked && canUsePhotoChecklist && (<>
+              <Button variant="outline" onClick={() => {
+                setPhotoContextLocked(false)
+                setAddingPhoto(true)
+              }} className="w-full">
                 <Plus className="size-3.5 mr-1" /> Fotoğraf Ekle
               </Button>
 
@@ -1432,7 +1412,7 @@ export function WorkOrderDetail({
                     <DialogTitle className="flex items-center gap-2"><Camera className="size-4 text-primary" /> Fotoğraf Ekle</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-3">
-                <div className="space-y-1.5">
+                {canUsePhotoChecklist && <div className="space-y-1.5">
                   <Label>Fotoğraf Türü</Label>
                   <Select value={photoType} onValueChange={(v) => setPhotoType(v)} disabled={photoContextLocked}>
                     <SelectTrigger className="w-full">
@@ -1448,8 +1428,8 @@ export function WorkOrderDetail({
                   <p className="text-xs text-muted-foreground">
                     Hasar detayı görselleri alttaki Hasar bölümünden eklenir.
                   </p>
-                </div>
-                <div className="space-y-1.5">
+                </div>}
+                {canUsePhotoChecklist && <div className="space-y-1.5">
                   <Label>Aşama</Label>
                   <Select value={photoPhase} onValueChange={(v) => setPhotoPhase(v)} disabled={photoContextLocked}>
                     <SelectTrigger className="w-full">
@@ -1461,7 +1441,7 @@ export function WorkOrderDetail({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </div>}
                 <div className="space-y-1.5">
                   <Label>Fotoğraf Çek / Yükle</Label>
                   {/* İki ayrı girdi: `capture` bulunan girdi mobilde galeri
@@ -1548,30 +1528,12 @@ export function WorkOrderDetail({
           </div>
 
           {/* Hasar */}
-          <Card>
+          {canUseDamageMap ? <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-warning-strong" /> Hasar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {!orderLocked && <PhotoAnnotate intakeFormId={intake.id} onUploaded={() => router.refresh()} />}
-
-              {intake.damageMarks.length > 0 && (
-                <div className="pt-3 border-t">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Hasar İşaretleri ({intake.damageMarks.length})</p>
-                  <div className="space-y-1.5">
-                    {intake.damageMarks.map((d) => (
-                      <div key={d.id} className="flex items-center justify-between p-2.5 bg-muted rounded-lg text-sm">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: (DAMAGE_SEVERITY as Record<string, { color: string }>)[d.severity]?.color || "#9CA3AF" }} />
-                          <span className="font-medium truncate">{VEHICLE_ZONES[d.zone as keyof typeof VEHICLE_ZONES] || d.zone}</span>
-                          <span className="text-muted-foreground text-xs shrink-0">{DAMAGE_TYPES[d.damageType as keyof typeof DAMAGE_TYPES]?.label || d.damageType}</span>
-                        </div>
-                        {d.note && <span className="text-xs text-muted-foreground truncate max-w-[40%]">- {d.note}</span>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <DamageCapture reloadKey={JSON.stringify([intake.damageMarks,intake.photos])} intakeFormId={intake.id} vehicle={intake.vehicle} readOnly={orderLocked} />
 
               {damagePhotos.length > 0 && (
                 <div className="pt-3 border-t">
@@ -1580,11 +1542,15 @@ export function WorkOrderDetail({
                 </div>
               )}
             </CardContent>
-          </Card>
+          </Card> : <InlineFeatureUpsell feature="damageMap" currentTier={currentTier} />}
         </TabsContent>
 
         {/* TEKNİSYEN — teknisyen panelindeki ilerleme, salt okunur */}
         <TabsContent value="teknisyen" className="space-y-4">
+          {!canTeam ? (
+            <InlineFeatureUpsell feature="team" currentTier={currentTier} />
+          ) : (
+          <>
           {/* Panelin kendisi bilinçli olarak aksiyonsuz (bkz. technician-progress-panel).
               İşaretleme teknisyen panelinde yapıldığı için geçiş linki panelin
               dışında, sekmenin başında durur (BAK-23). */}
@@ -1604,6 +1570,8 @@ export function WorkOrderDetail({
             internalNotes={order.internalNotes}
             technicianName={order.assignedTechnicianName}
           />
+          </>
+          )}
         </TabsContent>
 
         {/* GEÇMİŞ */}

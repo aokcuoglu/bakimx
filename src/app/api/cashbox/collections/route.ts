@@ -1,5 +1,5 @@
 import { createCollectionAction } from "@/app/(app)/cashbox/actions"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth } from "@/lib/cashbox/feature-auth"
 import { NextResponse } from "next/server"
 import { apiErrorResponse } from "@/lib/api-errors"
 

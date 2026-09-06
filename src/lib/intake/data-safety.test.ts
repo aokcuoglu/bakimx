@@ -104,3 +104,28 @@ describe("sanitizeIntakeForPublic — KDV / indirim kırılımı", () => {
     expect(safe.order?.items[0].includeVat).toBeNull()
   })
 })
+
+describe("damage/photo visibility is independent", () => {
+  const intake = {
+    ...baseIntake(), bodyType: "suv", inspectionStatus: "not_recorded", inspectedAt: null,
+    photos: [{ id: "visible", type: "damage_detail", label: "Foto", fileUrl: "/s/token/photos/visible" }],
+    damageMarks: [
+      { number: 7, zone: "hood", damageType: "dent", severity: "light", note: "Kaput", photos: [{ photoId: "visible" }, { photoId: "hidden" }] },
+      { number: 8, zone: "roof", damageType: "dent", severity: "light", note: "Silinen", deletedAt: CREATED_AT },
+    ],
+  }
+  for (const showDamage of [false, true]) for (const showPhotos of [false, true]) {
+    test(`damage=${showDamage}, photos=${showPhotos}`, () => {
+      const result = sanitizeIntakeForPublic(intake, { showDamage, showPhotos })
+      expect(result.damageMarks.length).toBe(showDamage ? 1 : 0)
+      expect(result.photos.length).toBe(showPhotos ? 1 : 0)
+      expect(result.inspectionStatus).toBe(showDamage ? "not_recorded" : undefined)
+      if (showDamage) {
+        expect(result.damageMarks[0].number).toBe(7)
+        expect(result.damageMarks[0].photoIds).toEqual(showPhotos ? ["visible"] : [])
+      }
+      expect(JSON.stringify(result)).not.toContain('"hidden"')
+      expect(JSON.stringify(result)).not.toContain("Silinen")
+    })
+  }
+})

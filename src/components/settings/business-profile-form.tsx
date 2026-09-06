@@ -3,7 +3,7 @@
 
 import { useState } from "react"
 import { toast } from "sonner"
-import { Loader2, Save } from "lucide-react"
+import { Hash, Loader2, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -39,6 +39,7 @@ type WorkshopData = {
   taxNumber: string | null
   taxOffice: string | null
   invoiceTitle: string | null
+  referralCode: string | null
 }
 
 /**
@@ -59,6 +60,7 @@ function toDefaults(workshop: WorkshopData, contact: WorkshopPublicContact | nul
     taxNumber: workshop.taxNumber || "",
     taxOffice: workshop.taxOffice || "",
     invoiceTitle: workshop.invoiceTitle || "",
+    referralCode: workshop.referralCode || "",
     instagramUrl: contact?.instagramUrl || "",
     facebookUrl: contact?.facebookUrl || "",
     xUrl: contact?.xUrl || "",
@@ -234,6 +236,37 @@ export function BusinessProfileForm({
                     <FormControl>
                       <Input {...field} type="url" placeholder="https://..." />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="mt-4 border-t border-border pt-4">
+              <h3 className="text-sm font-semibold text-foreground">Referans kodu</h3>
+              <p className="mb-3 mt-1 text-xs text-muted-foreground">
+                Yeni bir iş yerini davet ederken bu kodu paylaşın. Kod kayıt formuna girildiğinde davet sizin iş yerinizle eşleşir.
+              </p>
+              <FormField
+                control={form.control}
+                name="referralCode"
+                render={({ field }) => (
+                  <FormItem className="max-w-md">
+                    <FormLabel>Paylaşılacak kod</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Hash className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          {...field}
+                          autoCapitalize="characters"
+                          autoComplete="off"
+                          placeholder="ÖRN: ORNEK-OTO"
+                          className="pl-9 uppercase"
+                          onChange={(event) => field.onChange(event.target.value.toUpperCase())}
+                        />
+                      </div>
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">4-24 karakter; yalnızca harf, rakam ve tire.</p>
                     <FormMessage />
                   </FormItem>
                 )}

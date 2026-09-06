@@ -100,7 +100,7 @@ test("addOrderItemAction GetirBakım kaleminde partId bağlamaz ve fiyatı sağl
 
   expect(body).toContain("resolveGetirbakimProduct(")
   expect(body).toContain("getirbakimLineItemFields(product)")
-  expect(body).toContain("getirbakimCatalog")
+  expect(body).toContain('hasWorkshopFeature(workshop, "getirbakimCatalog")')
   expect(body).toContain("partId: bakimxFields || getirbakimFields ? null : partId")
   expect(body).toContain("if (!bakimxFields && !getirbakimFields && partId && parsed.data.type === \"part\")")
 })

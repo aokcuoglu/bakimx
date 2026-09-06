@@ -1,7 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
 import { roleCan } from "@/lib/roles"
-import { type PlanTier } from "@/lib/plan"
-import { resolveFeature } from "@/lib/features"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
@@ -17,7 +15,7 @@ import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ACTIVE_CHECKLIST_ITEM } from "@/lib/technician/checklist-visibility"
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 import { quantityToNumber } from "@/lib/orders/quantity"
-import { aiPartSearchAllowedRole } from "@/lib/parts/ai-search"
+import { GATED_FEATURES, getPlanState, hasFeature } from "@/lib/plan"
 
 export default async function OrderDetailPage({
   params,
@@ -32,9 +30,13 @@ export default async function OrderDetailPage({
   const sp = await searchParams
   const editInitially = sp.edit === "1"
   const { user, workshop } = await getAppData()
-  const hasAiAdvisor = !!workshop && (await resolveFeature(workshop.id, workshop.planTier as PlanTier, "aiAdvisor"))
-  const canUseAiPartSearch = hasAiAdvisor && aiPartSearchAllowedRole(user.role)
-
+  const plan = workshop ? getPlanState(workshop) : null
+  const enabledFeatures = GATED_FEATURES.filter((feature) =>
+    hasFeature(plan?.accessTier ?? "lite", feature),
+  )
+  const canCashbox = enabledFeatures.includes("cashbox")
+  const canTeam = enabledFeatures.includes("team")
+  const canUseInventory = enabledFeatures.includes("partsInventory")
   const order = await prisma.serviceOrder.findFirst({
     where: { id, workshopId: user.workshopId },
     include: {
@@ -42,7 +44,7 @@ export default async function OrderDetailPage({
         include: {
           customer: true,
           vehicle: { include: { customer: true } },
-          damageMarks: { orderBy: { createdAt: "asc" } },
+          damageMarks: { where: { deletedAt: null }, orderBy: { number: "asc" }, include: { photos: { where: { photo: { deletedAt: null, serviceOrderItemId: null } }, select: { photoId: true } } } },
           photos: {
             // Dış alım fotoğrafları buradaki genel foto galerisine girmez; parça
             // kaleminin satın-alma modalından (items.photos) erişilir.
@@ -102,10 +104,12 @@ export default async function OrderDetailPage({
     taxRate: order.taxRate,
   })
 
-  const collections = await prisma.collectionPayment.findMany({
-    where: { serviceOrderId: id, workshopId: user.workshopId, status: { in: ["completed", "cancelled"] } },
-    orderBy: { paymentDate: "desc" },
-  })
+  const collections = canCashbox
+    ? await prisma.collectionPayment.findMany({
+        where: { serviceOrderId: id, workshopId: user.workshopId, status: { in: ["completed", "cancelled"] } },
+        orderBy: { paymentDate: "desc" },
+      })
+    : []
 
   const totalPaid = collections.filter(c => c.status === "completed").reduce((sum, c) => sum + c.amount, 0)
   const paidAmount = order.paidAmount || totalPaid
@@ -313,7 +317,12 @@ export default async function OrderDetailPage({
       vin: intakeForm.vehicle.vin,
     },
     photos: intakeForm.photos,
+    bodyType: intakeForm.bodyType,
+    inspectionStatus: intakeForm.inspectionStatus,
+    inspectedAt: intakeForm.inspectedAt,
     damageMarks: intakeForm.damageMarks.map((d) => ({
+      number: d.number,
+      photoIds: d.photos.map(p => p.photoId),
       id: d.id,
       zone: d.zone,
       damageType: d.damageType,
@@ -343,7 +352,7 @@ export default async function OrderDetailPage({
     },
   }
 
-  const technicians = await getAssignableTechnicians(user.workshopId)
+  const technicians = canTeam ? await getAssignableTechnicians(user.workshopId) : []
 
   const activity = await getOrderActivity({
     workshopId: user.workshopId,
@@ -351,7 +360,9 @@ export default async function OrderDetailPage({
     intakeFormId: intakeForm.id,
   })
 
-  const laborCatalog = await getLaborCatalog(user.workshopId, { activeOnly: true })
+  const laborCatalog = canUseInventory
+    ? await getLaborCatalog(user.workshopId, { activeOnly: true })
+    : []
 
   return (
     <AppShell
@@ -362,11 +373,11 @@ export default async function OrderDetailPage({
         intake={intakeProp}
         order={safeOrder}
         technicians={technicians}
-        hasAiAdvisor={hasAiAdvisor}
-        canUseAiPartSearch={canUseAiPartSearch}
         activity={activity}
         editInitially={editInitially}
         laborCatalog={laborCatalog}
+        enabledFeatures={enabledFeatures}
+        currentTier={plan?.tier ?? "lite"}
         canReopen={roleCan(user.role, "order.reopen")}
         canEditInfo={roleCan(user.role, "order.edit")}
       />

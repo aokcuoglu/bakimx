@@ -1,151 +1,245 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { ShieldCheck, Zap, CalendarCheck, ArrowRight } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
-import { ObjectionCards } from "@/components/sections/ObjectionCards";
-import { HeroAskBar } from "@/components/sections/HeroAskBar";
+import {
+  ArrowRight,
+  Check,
+  ClipboardList,
+  LayoutDashboard,
+  CalendarDays,
+  Users,
+  Package,
+  Wallet,
+  CarFront,
+  ChevronRight,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { trackMarketingEvent } from "@/lib/marketing-analytics";
 
-const trustBadges = [
-  { icon: ShieldCheck, label: "KVKK uyumlu" },
-  { icon: Zap, label: "Kurulumsuz" },
-  { icon: CalendarCheck, label: "7 gün ücretsiz" },
+const vehicles = [
+  {
+    plate: "34 ABC 123",
+    car: "Volkswagen Golf",
+    task: "Periyodik bakım",
+    status: "İşlemde",
+    color: "bg-primary/10 text-primary-strong",
+  },
+  {
+    plate: "06 DEF 456",
+    car: "Renault Clio",
+    task: "Fren kontrolü",
+    status: "Onay bekliyor",
+    color: "bg-warning/10 text-warning-strong",
+  },
+  {
+    plate: "35 GHK 789",
+    car: "Fiat Egea",
+    task: "Yağ ve filtre değişimi",
+    status: "Teslime hazır",
+    color: "bg-success/10 text-success-strong",
+  },
 ];
 
 export function HeroSection() {
-  // Ask bar'ın metni hero'da tutulur: Faz 2'nin itiraz kartları ona yazar.
-  const [askQuery, setAskQuery] = useState("");
-  const [askFocusSignal, setAskFocusSignal] = useState(0);
-
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-brand/10 via-background to-background pt-10 pb-16 sm:pt-14 sm:pb-20 lg:pt-20 lg:pb-24">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-32 right-[-8%] h-[440px] w-[440px] rounded-full bg-brand/10 blur-3xl"
-      />
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/*
-          Hero kompozisyonu (BAK-78 planı):
-          - üst satır: sol kolon (mesaj + CTA) + sağ kolon (soru→cevap şeridi)
-          - ikinci satır: iki kolona yayılan "BakımX'e sorun" ask bar.
-          DOM sırası görsel grid sırasından bağımsız olarak klavye akışını korur.
-        */}
-        <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-x-14 lg:gap-y-12">
-          {/* Sol: mesaj + CTA */}
-          <div className="flex max-w-xl flex-col gap-6">
-            <span
-              style={{ "--enter-from": "0.75rem", "--enter-duration": "0.4s" } as CSSProperties}
-              className="enter-up inline-flex w-fit items-center gap-2 rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-primary"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-              Erken üyelere özel başlangıç fiyatları
-            </span>
-
-            <h1
-              className="text-3xl font-bold leading-[1.12] tracking-tight text-navy sm:text-4xl lg:text-[3rem] lg:leading-[1.08] dark:text-foreground"
-            >
-              Ruhsatı okutun, servis{" "}
-              <span className="text-primary">kendi kendine</span> yazılsın
-            </h1>
-
-            <p
-              style={{ "--enter-delay": "150ms" } as CSSProperties}
-              className="enter-up text-base leading-relaxed text-muted-foreground sm:text-lg"
-            >
-              Plaka, marka, model ve şasi ruhsattan dolar; iş emri, fotoğraf
-              kanıtı ve teklif aynı panelde ilerler.
+    <section
+      aria-labelledby="hero-title"
+      className="overflow-hidden border-b border-border bg-background"
+    >
+      <div className="mx-auto max-w-7xl px-5 pb-12 pt-14 sm:px-8 sm:pb-16 sm:pt-20 lg:pt-24">
+        <div className="grid items-center gap-12 lg:grid-cols-[0.95fr_1.15fr] lg:gap-12">
+          <div>
+            <p className="mb-6 flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Oto
+              servisler için yönetim programı
             </p>
-
-            <div
-              style={{ "--enter-delay": "250ms" } as CSSProperties}
-              className="enter-up flex flex-col gap-3 sm:flex-row sm:items-center"
+            <h1
+              id="hero-title"
+              className="max-w-xl text-[2.8rem] font-semibold leading-[1.08] tracking-[-0.055em] text-navy sm:text-6xl lg:text-[4rem]"
             >
-              <Link
-                href="/register"
-                onClick={() => trackMarketingEvent("trial_cta_click", { cta_location: "hero_primary" })}
-                className={buttonVariants({
-                  size: "lg",
-                  className: "gap-2 px-7 text-base shadow-lg shadow-primary/25",
-                })}
-              >
-                7 Gün Ücretsiz Dene
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <a
-                href="#demo-form"
-                onClick={() => trackMarketingEvent("demo_cta_click", { cta_location: "hero_secondary", destination: "form" })}
-                className={buttonVariants({
-                  variant: "outline",
-                  size: "lg",
-                  className: "border-primary/25 px-7 text-base",
-                })}
-              >
-                Demo İste
-              </a>
-            </div>
-
-            {/* Kanıtlanabilir tek satır: hero'yu sayfadaki canlı ruhsat demosuna bağlar. */}
-            <a
-              href="#ruhsat-demo"
-              style={{ "--enter-from": "0.75rem", "--enter-delay": "300ms" } as CSSProperties}
-              className="enter-up group inline-flex w-fit items-center gap-1.5 rounded-md text-sm font-medium text-primary underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
-            >
-              Örnek bir ruhsatı hemen aşağıda deneyin
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
-            </a>
-
-            <ul
-              style={{ "--enter-from": "0", "--enter-delay": "350ms" } as CSSProperties}
-              className="enter-up flex flex-wrap items-center gap-x-5 gap-y-2 pt-1"
-            >
-              {trustBadges.map(({ icon: Icon, label }) => (
-                <li
-                  key={label}
-                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground"
+              Serviste işler
+              <br />
+              yolunda.
+              <br />
+              <span className="text-primary">Kontrol sizde.</span>
+            </h1>
+            <p className="mt-7 max-w-md text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+              Hangi araç ne bekliyor, hangi iş tamamlandı, kim ne kadar
+              ödeyecek? İş emirlerini, müşterilerinizi ve kasanızı tek yerden
+              takip edin.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Button asChild size="xl" className="h-12 px-5">
+                <Link
+                  href="/register"
+                  onClick={() =>
+                    trackMarketingEvent("trial_cta_click", {
+                      cta_location: "hero_primary",
+                    })
+                  }
                 >
-                  <Icon className="h-4 w-4 text-primary" />
-                  {label}
-                </li>
-              ))}
-            </ul>
+                  Ücretsiz denemeye başlayın <ArrowRight />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="xl" className="h-12 px-5">
+                <a
+                  href="#demo-form"
+                  onClick={() =>
+                    trackMarketingEvent("demo_cta_click", {
+                      cta_location: "hero_secondary",
+                      destination: "form",
+                    })
+                  }
+                >
+                  Birlikte inceleyelim
+                </a>
+              </Button>
+            </div>
+            <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <Check className="size-3.5" />7 iş günü ücretsiz
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="size-3.5" />
+                Kredi kartı gerekmez
+              </span>
+            </p>
           </div>
-
-          {/* DOM sırası klavye akışını belirler: hero CTA'larından sonra ask bar
-              ve çipler, ardından kart şeridi gelir. Desktop grid kartları yine
-              sağ kolonda, ask bar'ı iki kolonun altında gösterir. */}
-          <div
-            style={{ "--enter-delay": "400ms" } as CSSProperties}
-            className="enter-up lg:col-span-2 lg:row-start-2"
-          >
-            <HeroAskBar
-              value={askQuery}
-              onValueChange={setAskQuery}
-              focusSignal={askFocusSignal}
-            />
+          <div className="relative min-w-0 lg:-mr-24 xl:-mr-32">
+            <div className="rounded-2xl border border-border bg-muted p-2.5 shadow-xl shadow-navy/5 sm:p-3.5">
+              <div className="overflow-hidden rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between border-b px-4 py-3">
+                  <span className="flex items-center gap-2 text-xs font-semibold text-navy">
+                    <span className="size-2 rounded-full bg-primary" /> BakımX ·
+                    Servis paneli
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    Örnek servis verileri
+                  </span>
+                </div>
+                <div className="flex min-h-[390px] sm:min-h-[450px]">
+                  <aside
+                    aria-hidden="true"
+                    className="hidden w-36 shrink-0 border-r bg-navy px-3 py-5 text-navy-foreground sm:block"
+                  >
+                    <p className="mb-7 px-2 text-xs font-medium">
+                      Merkez Oto Servis
+                    </p>
+                    {[
+                      { icon: LayoutDashboard, label: "Genel bakış" },
+                      { icon: ClipboardList, label: "İş emirleri" },
+                      { icon: Users, label: "Müşteriler" },
+                      { icon: CalendarDays, label: "Randevular" },
+                      { icon: Package, label: "Stok / Parçalar" },
+                      { icon: Wallet, label: "Kasa" },
+                    ].map(({ icon: Icon, label }, i) => (
+                      <div
+                        key={label}
+                        className={`mb-2 flex items-center gap-2 rounded-md px-2 py-2.5 text-[11px] ${i === 1 ? "bg-navy-foreground/15" : ""}`}
+                      >
+                        <Icon className="size-3.5" />
+                        {label}
+                      </div>
+                    ))}
+                  </aside>
+                  <div className="min-w-0 flex-1 bg-background p-4 sm:p-5">
+                    <div className="mb-5 flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground">
+                          SERVİSİNİZDE BUGÜN
+                        </p>
+                        <p className="mt-1 text-lg font-semibold tracking-tight text-navy">
+                          Her iş gözünüzün önünde.
+                        </p>
+                      </div>
+                      <CalendarDays className="size-5 text-muted-foreground" />
+                    </div>
+                    <div className="mb-5 grid grid-cols-3 gap-2">
+                      {[
+                        { label: "Aktif iş emri", value: "12" },
+                        { label: "Onay bekleyen", value: "3" },
+                        { label: "Teslime hazır", value: "4" },
+                      ].map((item) => (
+                        <div
+                          key={item.label}
+                          className="rounded-lg border bg-card p-3"
+                        >
+                          <p className="text-[10px] text-muted-foreground">
+                            {item.label}
+                          </p>
+                          <p className="mt-2 text-2xl font-semibold tracking-tight text-navy">
+                            {item.value}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="overflow-hidden rounded-lg border bg-card">
+                      <div className="flex justify-between border-b px-3 py-3 text-xs">
+                        <span className="font-semibold">Günün iş emirleri</span>
+                        <span className="text-muted-foreground">3 araç</span>
+                      </div>
+                      {vehicles.map((vehicle) => (
+                        <div
+                          key={vehicle.plate}
+                          className="flex items-center justify-between gap-2 border-b px-3 py-4 last:border-0"
+                        >
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <div className="hidden rounded-md bg-muted p-2 sm:block">
+                              <CarFront className="size-4 text-navy" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-navy">
+                                {vehicle.plate}
+                                <span className="ml-2 hidden text-[10px] font-normal text-muted-foreground xl:inline">
+                                  {vehicle.car}
+                                </span>
+                              </p>
+                              <p className="mt-1 text-[10px] text-muted-foreground">
+                                {vehicle.task}
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-medium ${vehicle.color}`}
+                          >
+                            {vehicle.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <Check className="size-3.5 text-success-strong" /> Araç
+                      kabulünden teslimata, aynı kayıt üzerinden.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="relative ml-8 -mt-5 flex max-w-xs items-center gap-3 rounded-xl border bg-card p-4 shadow-lg shadow-navy/5 sm:ml-20">
+              <div className="rounded-full bg-success/10 p-2 text-success-strong">
+                <Check className="size-4" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-navy">
+                  Müşteri onayı alındı
+                </p>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  06 DEF 456 · Fren kontrolü · Örnek
+                </p>
+              </div>
+              <ChevronRight className="ml-auto size-4 text-muted-foreground" />
+            </div>
           </div>
-
-          {/* Sağ: soru→cevap kart şeridi (BAK-80). Faz 1'deki tek statik ürün
-              görselinin yerini aldı. Artık hero'nun en büyük elemanı bir görsel
-              değil H1 metni; şeritteki görsellerin hiçbiri `priority` almaz. */}
-          <div
-            style={{
-              "--enter-from": "1.5rem",
-              "--enter-duration": "0.6s",
-              "--enter-delay": "200ms",
-            } as CSSProperties}
-            className="enter-up w-full min-w-0 lg:col-start-2 lg:row-start-1"
-          >
-            {/* Faz 2'de açık bırakılan bağ (BAK-81): kart tıklaması artık SSS'e
-                gitmek yerine ask bar'ı o soruyla doldurup odağı oraya taşır.
-                `href` yerinde kalır, JS'siz yol bozulmaz. */}
-            <ObjectionCards
-              onSelect={(objection) => {
-                setAskQuery(objection.question);
-                setAskFocusSignal((signal) => signal + 1);
-              }}
-            />
+        </div>
+        <div className="mt-14 flex flex-col gap-4 border-t pt-7 sm:flex-row sm:items-center sm:justify-between lg:mt-20">
+          <p className="text-xs text-muted-foreground">
+            Küçük bir atölyeden büyüyen servis ekiplerine.
+          </p>
+          <div className="flex flex-wrap gap-x-6 gap-y-3 text-xs font-medium text-navy">
+            <span>Özel servisler</span>
+            <span>Bakım & onarım</span>
+            <span>Lastik & hızlı servis</span>
+            <span>Kaporta & boya</span>
           </div>
         </div>
       </div>

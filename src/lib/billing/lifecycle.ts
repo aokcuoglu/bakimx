@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import { INTERNAL_OPERATIONS_WORKSHOP_ID } from "@/lib/workshop-kind"
 import { getPlanState } from "@/lib/plan"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { getAdminEmails } from "@/lib/admin"
@@ -118,6 +119,7 @@ export async function sweepTrialWarnings(): Promise<LifecycleSweepResult> {
 
   const workshops = await prisma.workshop.findMany({
     where: {
+      kind: "customer",
       subscriptionStatus: "trialing",
       approvalStatus: "approved",
       trialEndsAt: { not: null, gt: notTooOld },
@@ -189,6 +191,7 @@ export async function sweepSubscriptionWarnings(): Promise<LifecycleSweepResult>
 
   const workshops = await prisma.workshop.findMany({
     where: {
+      kind: "customer",
       subscriptionStatus: "active",
       currentPeriodEnd: { not: null, gt: notTooOld },
     },
@@ -345,7 +348,7 @@ export async function sweepStalePaymentArtifacts(): Promise<LifecycleSweepResult
   try {
     const stalePendingCutoff = new Date(now.getTime() - SWEEP_LOOKBACK_MS)
     const candidates = await prisma.billingOrder.findMany({
-      where: { method: "card", status: "pending_payment", createdAt: { lt: stalePendingCutoff } },
+      where: { method: "card", status: "pending_payment", createdAt: { lt: stalePendingCutoff }, workshop: { kind: "customer" } },
       select: {
         id: true,
         createdAt: true,
@@ -377,7 +380,7 @@ export async function sweepStalePaymentArtifacts(): Promise<LifecycleSweepResult
   try {
     const stuckCutoff = new Date(now.getTime() - HOUR_MS)
     const stuckTxns = await prisma.paymentTransaction.findMany({
-      where: { status: "callback_received", createdAt: { lt: stuckCutoff } },
+      where: { status: "callback_received", createdAt: { lt: stuckCutoff }, workshopId: { not: INTERNAL_OPERATIONS_WORKSHOP_ID } },
       select: { id: true, workshopId: true, providerOrderId: true, createdAt: true },
     })
     for (const txn of stuckTxns) {
@@ -482,8 +485,8 @@ export function shouldPurgeUnverifiedWorkshop(w: PurgeCandidateWorkshop, now: Da
  *
  * Silme sırası FK'lere uyar (çocuktan ebeveyne): PaymentTransaction (denormalize
  * workshopId, gerçek FK yok ama tutarlılık için) → CommunicationLog → AuditLog →
- * WorkshopFeatureOverride → Invite (User'a da FK'li, User'dan ÖNCE silinir) →
- * WorkshopSettings → User → Workshop. schema.prisma'daki Workshop'a FK'li ~30
+ * Invite (User'a da FK'li, User'dan ÖNCE silinir) → WorkshopSettings → User →
+ * Workshop. schema.prisma'daki Workshop'a FK'li diğer modeller
  * diğer model (Customer/Vehicle/ServiceOrder/...) uygulamaya erişim gerektirir;
  * pending+doğrulamasız bir workshop hiçbir zaman bu tabloları dolduramaz
  * (approval gate uygulamayı kilitler) — yine de beklenmedik bir FK çakışması
@@ -510,6 +513,7 @@ export async function sweepUnverifiedRegistrations(): Promise<LifecycleSweepResu
   try {
     candidates = await prisma.workshop.findMany({
       where: {
+        kind: "customer",
         approvalStatus: "pending",
         trialStartedAt: null,
         createdAt: { gte: PURGE_LEGACY_CUTOFF, lt: staleCutoff },
@@ -579,7 +583,6 @@ export async function sweepUnverifiedRegistrations(): Promise<LifecycleSweepResu
         await tx.paymentTransaction.deleteMany({ where: { workshopId: w.id } })
         await tx.communicationLog.deleteMany({ where: { workshopId: w.id } })
         await tx.auditLog.deleteMany({ where: { workshopId: w.id } })
-        await tx.workshopFeatureOverride.deleteMany({ where: { workshopId: w.id } })
         await tx.invite.deleteMany({ where: { workshopId: w.id } })
         await tx.workshopSettings.deleteMany({ where: { workshopId: w.id } })
         await tx.user.deleteMany({ where: { workshopId: w.id } })

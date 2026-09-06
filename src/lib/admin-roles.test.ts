@@ -40,7 +40,6 @@ describe("can() yetki matrisi", () => {
       "impersonate",
       "confirmBilling",
       "manageWorkshops",
-      "manageFlags",
       "manageCatalog",
       "manageLiveChat",
       "manageLeads",
@@ -85,6 +84,16 @@ describe("can() yetki matrisi", () => {
   test("her rol konsolu görebilir", () => {
     for (const role of ADMIN_ROLES) {
       expect(can(ctx(role), "viewConsole")).toBe(true)
+    }
+  })
+
+  test("satış yetenekleri rol sorumluluklarına göre ayrılır", () => {
+    for (const role of ADMIN_ROLES) {
+      expect(can(ctx(role), "viewSales")).toBe(true)
+      expect(can(ctx(role), "manageSalesAdvisors")).toBe(role === "founder")
+      expect(can(ctx(role), "manageSalesPipeline")).toBe(role === "founder" || role === "support")
+      expect(can(ctx(role), "viewSalesCommissions")).toBe(role === "founder" || role === "finance")
+      expect(can(ctx(role), "manageSalesCommissions")).toBe(role === "founder" || role === "finance")
     }
   })
 })

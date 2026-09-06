@@ -5,13 +5,15 @@ import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { checkoutInAppSchema } from "@/lib/validations/billing"
-import { getPlanPriceMinor } from "@/lib/billing/pricing"
+import { getPlanPriceMinor, isComplimentaryPlan } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
 import { computeUpgradeAmountMinor } from "@/lib/billing/proration"
 import { deriveBillingOrderType } from "@/lib/billing/order-type"
+import { createBillingTaxSnapshot } from "@/lib/billing/tax"
 import type { BillingCycle } from "@prisma/client"
 import type { PlanTier } from "@/lib/plan"
 import { roleCan } from "@/lib/roles"
+import { activateBillingOrder } from "@/lib/billing/activate"
 
 /**
  * Creates a pending-payment BillingOrder for the current workshop (upgrade /
@@ -27,7 +29,7 @@ export async function createBillingOrder(input: {
   taxNumber: string
   taxOffice?: string
 }): Promise<
-  | { ok: true; reference: string; amountMinor: number; method: "card" | "havale" }
+  | { ok: true; reference: string; amountMinor: number; method: "card" | "havale"; complimentary: boolean }
   | { ok: false; error: string }
 > {
   const { user, workshop } = await getCurrentUserWithWorkshop()
@@ -76,10 +78,10 @@ export async function createBillingOrder(input: {
     targetTier: tier,
   })
 
-  // Upgrades credit the unused portion of the current plan against the new
-  // plan's price (and get a fresh period on confirm); new_purchase/renewal pay full.
+  // Paket değişimleri mevcut davranışı koruyarak kullanılmayan dönem kredisini
+  // uygular; tip alanı hakediş için gerçek yükseltme/düşürmeyi ayrıca ayırır.
   const amountMinor =
-    type === "upgrade"
+    type === "upgrade" || type === "downgrade"
       ? computeUpgradeAmountMinor({
           currentTier: workshop.planTier as PlanTier,
           currentCycle: (workshop.billingCycle ?? "monthly") as BillingCycle,
@@ -89,6 +91,7 @@ export async function createBillingOrder(input: {
           now: new Date(),
         })
       : getPlanPriceMinor(tier, cycle)
+  const taxSnapshot = createBillingTaxSnapshot(amountMinor)
 
   const billingSnapshot = {
     invoiceTitle: data.invoiceTitle,
@@ -106,7 +109,7 @@ export async function createBillingOrder(input: {
   for (let attempt = 0; attempt < 5; attempt++) {
     const reference = generateOrderReference()
     try {
-      await prisma.$transaction(async (tx) => {
+      const order = await prisma.$transaction(async (tx) => {
         await tx.workshop.update({
           where: { id: workshop.id },
           data: {
@@ -117,13 +120,15 @@ export async function createBillingOrder(input: {
             planRequestedAt: new Date(),
           },
         })
-        await tx.billingOrder.create({
+        return tx.billingOrder.create({
           data: {
             workshopId: workshop.id,
             type,
             planTier: tier,
+            previousPlanTier: type === "new_purchase" ? null : workshop.planTier,
             billingCycle: cycle,
             amountMinor,
+            ...taxSnapshot,
             status: "pending_payment",
             method: data.method,
             reference,
@@ -138,11 +143,19 @@ export async function createBillingOrder(input: {
         "BillingOrder",
         reference,
         "billing_order_created",
-        JSON.stringify({ tier, cycle, amountMinor, type, method: data.method })
+        JSON.stringify({ tier, cycle, amountMinor, netAmountMinor: taxSnapshot.netAmountMinor, type, method: data.method })
       )
+      const complimentary = isComplimentaryPlan(tier, cycle)
+      if (complimentary) {
+        const activation = await activateBillingOrder(order.id, {
+          actor: "payment",
+          confirmedByEmail: "opening-promotion",
+        })
+        if (!activation.ok) return activation
+      }
       revalidatePath("/billing")
       revalidatePath("/admin")
-      return { ok: true, reference, amountMinor, method: data.method }
+      return { ok: true, reference, amountMinor, method: data.method, complimentary }
     } catch (err) {
       if ((err as { code?: string })?.code === "P2002") continue // reference collision → retry
       console.error("[createBillingOrder] failed:", err)

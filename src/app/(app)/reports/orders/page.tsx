@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { ReportsLayout } from "@/components/reports/reports-layout"
 import { OrdersReport } from "@/components/reports/orders-report"
@@ -17,6 +18,8 @@ export default async function OrdersReportPage({
 }: {
   searchParams: Promise<{ dateFrom?: string; dateTo?: string; technician?: string; status?: string; customer?: string }>
 }) {
+  const paywall = await getFeaturePaywall("reports")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const params = await searchParams
   const workshopId = user.workshopId

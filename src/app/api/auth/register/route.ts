@@ -9,13 +9,17 @@ import { newApplicationAdminEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
 import { canResumeVerification } from "@/lib/billing/verify-resume"
 import { sendVerifyEmail } from "@/lib/billing/verify-email"
+import {
+  hashSalesRegistrationToken,
+  salesRegistrationLinkState,
+} from "@/lib/sales/registration-link"
 import { isLoginCodeConflict, workshopCodeCandidate } from "@/lib/workshop-code"
 
 /**
  * Self-serve workshop registration (email-verification gated trial).
  *
  * Creates a new isolated Workshop + its first owner User in `pending` status
- * with NO trial started yet — the 7-day trial begins only after the owner
+ * with NO trial started yet — the 7-business-day trial begins only after the owner
  * verifies their e-mail address (see activateVerifiedWorkshop). The welcome
  * e-mail also moved there (single-send). This route sends a verification
  * e-mail via `sendVerifyEmail` and returns `{ ok: true }`; no token is
@@ -30,6 +34,8 @@ const MAX_LOGIN_CODE_RETRIES = 5
 const GENERIC_ERROR = "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin."
 const EMAIL_IN_USE_ERROR = "Bu e-posta adresi ile zaten bir hesap mevcut. Giriş yapmayı deneyin."
 const EMAIL_SEND_ERROR = "Doğrulama e-postası gönderilemedi. Lütfen tekrar deneyin."
+
+class SalesRegistrationError extends Error {}
 
 export async function POST(request: Request) {
   const ip = clientIpFromHeaders(request.headers)
@@ -55,6 +61,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 })
   }
 
+  // Danışman atfı yalnız opak satış kayıt token'ından çözülür. Eski veya sahte
+  // istemcilerin ham advisor kimliği göndermesi sessizce kabul edilmez.
+  if (typeof raw.acquisitionAdvisorId === "string" && raw.acquisitionAdvisorId.trim()) {
+    return NextResponse.json(
+      { error: "Satış danışmanı atfı yalnız güvenli kayıt bağlantısıyla yapılabilir." },
+      { status: 400 },
+    )
+  }
+
   const normalized = {
     ...raw,
     email: typeof raw.email === "string" ? raw.email.trim().toLowerCase() : raw.email,
@@ -69,6 +84,9 @@ export async function POST(request: Request) {
   }
 
   const data = parsed.data
+  const salesRegistrationTokenHash = data.salesRegistrationToken
+    ? hashSalesRegistrationToken(data.salesRegistrationToken)
+    : null
 
   // Existing e-mail: either an AUTH-BOUNDED resume of an interrupted registration
   // or the ordinary "e-posta kullanımda" rejection. RESUME only when the supplied
@@ -84,6 +102,12 @@ export async function POST(request: Request) {
     },
   })
   if (existing) {
+    // Güvenli satış linki mevcut bir yarım kaydın doğrulama-resume yoluna
+    // düşerse lead sessizce açık kalmamalı. Mevcut hesabı bu transaction dışında
+    // yeniden atfetmek yerine açıkça girişe yönlendiririz.
+    if (salesRegistrationTokenHash) {
+      return NextResponse.json({ error: EMAIL_IN_USE_ERROR }, { status: 409 })
+    }
     const passwordValid = await bcrypt.compare(data.password, existing.password)
     if (
       canResumeVerification({
@@ -99,6 +123,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, resumed: true })
     }
     return NextResponse.json({ error: EMAIL_IN_USE_ERROR }, { status: 409 })
+  }
+
+  // Referans kodu yalnız yeni kayıt için çözülür. Yarım kalmış bir kaydın
+  // doğrulama e-postasını yeniden gönderen resume yolu, sonradan girilen başka
+  // bir kodla mevcut atfı değiştiremez.
+  const referrerWorkshop = !salesRegistrationTokenHash && data.referralCode
+    ? await prisma.workshop.findUnique({
+        where: { referralCode: data.referralCode },
+        select: { id: true },
+      })
+    : null
+  if (!salesRegistrationTokenHash && data.referralCode && !referrerWorkshop) {
+    return NextResponse.json({ error: "Referans kodu geçerli değil." }, { status: 400 })
   }
 
   try {
@@ -118,6 +155,66 @@ export async function POST(request: Request) {
         const loginCode = workshopCodeCandidate(data.workshopName, attempt)
         try {
           return await prisma.$transaction(async (tx) => {
+            const conversionAt = new Date()
+            const salesLink = salesRegistrationTokenHash
+              ? await tx.salesRegistrationLink.findUnique({
+                  where: { tokenHash: salesRegistrationTokenHash },
+                  select: {
+                    id: true,
+                    advisorId: true,
+                    createdById: true,
+                    expiresAt: true,
+                    usedAt: true,
+                    revokedAt: true,
+                    lead: {
+                      select: {
+                        id: true,
+                        source: true,
+                        status: true,
+                        advisorId: true,
+                        workshopId: true,
+                        attributionFrozenAt: true,
+                      },
+                    },
+                    advisor: {
+                      select: { disabledAt: true, user: { select: { isActive: true } } },
+                    },
+                  },
+                })
+              : null
+
+            if (salesRegistrationTokenHash) {
+              if (!salesLink || salesRegistrationLinkState(salesLink, conversionAt) !== "active") {
+                throw new SalesRegistrationError("Bu kayıt bağlantısı artık geçerli değil.")
+              }
+              if (salesLink.advisor.disabledAt || !salesLink.advisor.user.isActive) {
+                throw new SalesRegistrationError("Bu kayıt bağlantısı artık etkin bir danışmana bağlı değil.")
+              }
+              if (
+                salesLink.lead.advisorId !== salesLink.advisorId ||
+                salesLink.lead.workshopId ||
+                salesLink.lead.attributionFrozenAt ||
+                ["won", "lost"].includes(salesLink.lead.status)
+              ) {
+                throw new SalesRegistrationError("Satış adayı değiştiği için bu kayıt bağlantısı artık kullanılamaz.")
+              }
+
+              // Koşullu tüketim eşzamanlı iki POST'tan yalnız birini içeri alır.
+              // Transaction daha sonra başarısız olursa bu işaret de geri alınır.
+              const claimed = await tx.salesRegistrationLink.updateMany({
+                where: {
+                  id: salesLink.id,
+                  usedAt: null,
+                  revokedAt: null,
+                  expiresAt: { gt: conversionAt },
+                },
+                data: { usedAt: conversionAt },
+              })
+              if (claimed.count !== 1) {
+                throw new SalesRegistrationError("Bu kayıt bağlantısı başka bir işlem tarafından kullanıldı.")
+              }
+            }
+
             const ws = await tx.workshop.create({
               data: {
                 loginCode,
@@ -129,7 +226,14 @@ export async function POST(request: Request) {
                 email: data.workshopEmail || data.email,
                 taxOffice: data.taxOffice || null,
                 taxNumber: data.taxNumber || null,
-                invoiceTitle: data.invoiceTitle || null,
+                invoiceTitle: data.invoiceTitle || data.workshopName,
+                onboardingProfile: {
+                  sector: data.sector,
+                  businessFeatures: data.businessFeatures,
+                  teamSize: data.teamSize,
+                  selectedModules: data.selectedModules,
+                  setupPreference: data.setupPreference,
+                },
                 // Approval-gated trial: pending until the e-mail is verified. The trial
                 // (trialStartedAt/EndsAt) starts in activateVerifiedWorkshop, not here.
                 approvalStatus: "pending",
@@ -137,6 +241,10 @@ export async function POST(request: Request) {
                 trialStartedAt: null,
                 trialEndsAt: null,
                 planTier: "pro",
+                acquisitionSource: salesLink ? "sales_advisor" : referrerWorkshop ? "referral" : data.acquisitionSource,
+                acquisitionAdvisorId: salesLink?.advisorId ?? null,
+                referredByWorkshopId: referrerWorkshop?.id ?? null,
+                referralCodeUsed: salesLink ? null : data.referralCode || null,
                 settings: {
                   create: {
                     weekdayStart: data.weekdayStart || "09:00",
@@ -170,6 +278,52 @@ export async function POST(request: Request) {
                 technicianId: ownerTechnician.id,
               },
             })
+
+            if (salesLink) {
+              const converted = await tx.salesLead.updateMany({
+                where: {
+                  id: salesLink.lead.id,
+                  advisorId: salesLink.advisorId,
+                  workshopId: null,
+                  attributionFrozenAt: null,
+                  status: { notIn: ["won", "lost"] },
+                },
+                data: {
+                  workshopId: ws.id,
+                  status: "won",
+                  attributionFrozenAt: conversionAt,
+                  nextActionAt: null,
+                  lostReason: null,
+                },
+              })
+              if (converted.count !== 1) {
+                throw new SalesRegistrationError("Satış adayı başka bir işlem tarafından dönüştürüldü.")
+              }
+              await tx.salesTask.updateMany({
+                where: { leadId: salesLink.lead.id, status: "scheduled" },
+                data: { status: "cancelled", resolvedAt: conversionAt },
+              })
+              await tx.salesActivity.create({
+                data: {
+                  leadId: salesLink.lead.id,
+                  type: "note",
+                  result: "won",
+                  summary: "Müşteri güvenli kayıt bağlantısıyla hesabını oluşturdu.",
+                  occurredAt: conversionAt,
+                  createdById: salesLink.createdById,
+                },
+              })
+              if (salesLink.lead.source === "customer_referral") {
+                await tx.salesReferral.updateMany({
+                  where: { leadId: salesLink.lead.id },
+                  data: { status: "won" },
+                })
+              }
+              await tx.salesRegistrationLink.update({
+                where: { id: salesLink.id },
+                data: { workshopId: ws.id },
+              })
+            }
 
             return ws
           })
@@ -226,6 +380,9 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ ok: true })
   } catch (err) {
+    if (err instanceof SalesRegistrationError) {
+      return NextResponse.json({ error: err.message }, { status: 410 })
+    }
     // Unique-constraint race (duplicate e-mail) or any other failure.
     const code = (err as { code?: string })?.code
     if (code === "P2002") {

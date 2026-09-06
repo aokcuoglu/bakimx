@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db"
-import { countRapidApiCallsThisMonth, rapidApiMonthlyCap } from "@/lib/rapidapi-quota"
+import { countRapidApiCallsThisMonth, rapidApiMonthlyCap, recordQuotaUsage } from "@/lib/rapidapi-quota"
 import { getVinProvider } from "./provider"
 import { VinLookupError, isValidVin, normalizeVin, vinModelKey } from "./types"
 
@@ -19,10 +19,10 @@ export interface VinLookupResult {
  * Monthly billed usage == vin_lookups rows created this month, checked against
  * VIN_LOOKUP_MONTHLY_CAP before any provider call.
  */
-export async function lookupVin(input: string): Promise<VinLookupResult> {
+export async function lookupVin(input: string, workshopId?: string): Promise<VinLookupResult> {
   const vin = normalizeVin(input)
   if (!isValidVin(vin)) {
-    throw new VinLookupError("invalid_vin", "Geçersiz şase numarası (VIN 17 karakter olmalı, I/O/Q harfleri içeremez).")
+    throw new VinLookupError("invalid_vin", "Geçersiz şase numarası (17 karakter olmalı, I/O/Q harfleri içeremez).")
   }
 
   const provider = getVinProvider()
@@ -53,7 +53,7 @@ export async function lookupVin(input: string): Promise<VinLookupResult> {
 
   // Shared cap across the whole RapidAPI subscription (VIN + TecDoc catalog).
   if ((await countRapidApiCallsThisMonth()) >= rapidApiMonthlyCap()) {
-    throw new VinLookupError("quota_exceeded", "Aylık VIN sorgu limiti doldu. Lütfen daha sonra tekrar deneyin.")
+    throw new VinLookupError("quota_exceeded", "Aylık şase sorgu limiti doldu. Lütfen daha sonra tekrar deneyin.")
   }
 
   const result = await provider.lookup(vin)
@@ -69,6 +69,11 @@ export async function lookupVin(input: string): Promise<VinLookupResult> {
     },
     update: { hitCount: { increment: 1 } },
   })
+
+  // Record per-workshop quota usage (fire-and-forget — never block the lookup)
+  if (workshopId) {
+    recordQuotaUsage(workshopId, "vin").catch(() => {})
+  }
 
   return { vin, status: row.status, raw: row.rawResponse, cached: false, provider: provider.name }
 }

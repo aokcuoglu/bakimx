@@ -70,14 +70,18 @@ const SERVICE_ORDER = {
   workOrderNo: "IS-1",
 }
 
+mock.module("server-only", () => ({}))
 mock.module("@/lib/auth", () => ({
   requireWritableWorkshop: async () => ({
     user: { id: "user-1", workshopId: "ws-1" },
     workshop: { id: "ws-1", planTier: "pro" },
   }),
+  getCurrentUserWithWorkshop: async () => ({
+    user: { id: "user-1", workshopId: "ws-1" },
+    workshop: { id: "ws-1", planTier: "pro" },
+  }),
 }))
 
-mock.module("@/lib/features", () => ({ resolveFeature: async () => true }))
 mock.module("next/cache", () => ({ revalidatePath: () => {} }))
 mock.module("@/lib/audit", () => ({ AuditLogAction: async () => {} }))
 mock.module("@/lib/cashbox/recalc", () => ({ recalcOrderPayment: async () => null }))

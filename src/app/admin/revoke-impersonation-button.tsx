@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { Loader2, ShieldOff } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { revokeImpersonation } from "@/app/admin/impersonation-actions"
 
@@ -23,7 +24,12 @@ export function RevokeImpersonationButton({
     setError("")
     startTransition(async () => {
       const res = await revokeImpersonation(sessionId)
-      if (!res.ok) setError(res.error)
+      if (!res.ok) {
+        setError(res.error)
+        toast.error(res.error)
+      } else {
+        toast.success("Taklit oturumu iptal edildi")
+      }
     })
   }
 

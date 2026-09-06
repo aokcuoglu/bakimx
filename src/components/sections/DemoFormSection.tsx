@@ -1,28 +1,38 @@
 import { PhoneCall, Clock, ShieldCheck } from "lucide-react";
 import { HeroLeadForm } from "@/components/sections/HeroLeadForm";
-import { BrandEyebrow } from "@/components/shared/brand-decor";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/reveal";
 
 const points = [
-  { icon: PhoneCall, title: "Sizi biz arayalım", description: "Servisinize göre kısa bir tanıtım yapalım, sorularınızı yanıtlayalım." },
-  { icon: Clock, title: "Beklemeden başlayın", description: "İsterseniz aramayı beklemeden 7 günlük denemenizi hemen açabilirsiniz." },
-  { icon: ShieldCheck, title: "Baskı yok", description: "Bilgileriniz yalnızca sizinle iletişim için kullanılır — KVKK uyumlu." },
+  {
+    icon: PhoneCall,
+    title: "Sizi biz arayalım",
+    description: "Servisinize göre kısa tanıtım, sorularınızın yanıtı.",
+  },
+  {
+    icon: Clock,
+    title: "Beklemeden başlayın",
+    description: "İsterseniz aramayı beklemeden denemenizi hemen açın.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Karar vermeden önce deneyin",
+    description: "Servisinizin günlük işlerini kendi hesabınızda görün.",
+  },
 ];
 
 export function DemoFormSection() {
   return (
-    <section className="scroll-mt-24 bg-background py-16 sm:py-24">
+    <section className="scroll-mt-24 border-t bg-background py-20 sm:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
           <Reveal className="max-w-xl">
-            <BrandEyebrow>Demo</BrandEyebrow>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-              Servisiniz için birlikte bakalım
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              Bilgilerinizi bırakın; BakimX&apos;in servisinize nasıl oturduğunu
-              gösterelim. Karar tamamen sizin.
-            </p>
+            <SectionHeading
+              align="left"
+              badge="Demo"
+              title="Sizin serviste nasıl çalışır? Birlikte bakalım."
+              subtitle="Servisinizde günü nasıl geçirdiğinizi anlatın. BakımX'in hangi işinizi kolaylaştıracağını birlikte görelim."
+            />
             <ul className="mt-8 space-y-5">
               {points.map(({ icon: Icon, title, description }) => (
                 <li key={title} className="flex items-start gap-3.5">

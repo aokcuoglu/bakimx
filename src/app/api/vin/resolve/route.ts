@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { z } from "zod/v4"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
-import { type PlanTier } from "@/lib/plan"
+import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
 import { assertWritableOr403 } from "@/lib/plan-guard"
-import { resolveFeature } from "@/lib/features"
+import { assertQuotaAvailable } from "@/lib/rapidapi-quota"
 import { rateLimit } from "@/lib/rate-limit"
 import { resolveVinToCatalog } from "@/lib/vin/resolve"
 import { VinLookupError, isValidVin } from "@/lib/vin/types"
@@ -27,9 +27,13 @@ export async function POST(request: Request) {
   const locked = assertWritableOr403(workshop)
   if (locked) return locked
 
-  if (!(await resolveFeature(workshop.id, workshop.planTier as PlanTier, "vinLookup"))) {
+  if (!hasWorkshopFeature(workshop, "vinLookup")) {
     return NextResponse.json(
-      { error: "VIN'den araç tanıma bu çalışma alanında kapalı.", code: "feature_locked" },
+      {
+        error: "Şaseden araç tanıma bu çalışma alanında kapalı.",
+        code: "feature_locked",
+        currentTier: getPlanState(workshop).tier,
+      },
       { status: 403 }
     )
   }
@@ -39,7 +43,7 @@ export async function POST(request: Request) {
   const limit = await rateLimit(`vin:${user.workshopId}`, 10, 60_000)
   if (!limit.allowed) {
     return NextResponse.json(
-      { error: "Çok fazla VIN sorgusu yapıldı. Lütfen biraz bekleyip tekrar deneyin." },
+      { error: "Çok fazla şase sorgusu yapıldı. Lütfen biraz bekleyip tekrar deneyin." },
       { status: 429, headers: { "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)) } }
     )
   }
@@ -53,13 +57,27 @@ export async function POST(request: Request) {
 
   if (!isValidVin(body.vin)) {
     return NextResponse.json(
-      { error: "Geçersiz şase numarası (VIN 17 karakter olmalı, I/O/Q harfleri içeremez)." },
+      { error: "Geçersiz şase numarası (17 karakter olmalı, I/O/Q harfleri içeremez)." },
       { status: 400 }
     )
   }
 
+  // Per-workshop quota check
   try {
-    const resolution = await resolveVinToCatalog(body.vin, body.hints ?? {})
+    await assertQuotaAvailable(
+      workshop.id,
+      getPlanState(workshop).accessTier,
+      workshop.extraVinQuota,
+    )
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Kota limitiniz dolu.", code: "quota_exceeded" },
+      { status: 429 }
+    )
+  }
+
+  try {
+    const resolution = await resolveVinToCatalog(body.vin, body.hints ?? {}, workshop.id)
     return NextResponse.json(resolution)
   } catch (err) {
     if (err instanceof VinLookupError) {
@@ -69,7 +87,7 @@ export async function POST(request: Request) {
     }
     console.error("[vin/resolve]", err instanceof Error ? err.message : err)
     return NextResponse.json(
-      { error: "VIN sorgulama sırasında beklenmeyen bir hata oluştu. Lütfen tekrar deneyin." },
+      { error: "Şase sorgulama sırasında beklenmeyen bir hata oluştu. Lütfen tekrar deneyin." },
       { status: 500 }
     )
   }

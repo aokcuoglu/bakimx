@@ -16,6 +16,7 @@ import {
 import { isEmailIdentifier } from "@/lib/user-identity"
 import { redirect } from "next/navigation"
 import { auditBreakGlassLogin } from "@/lib/admin-break-glass"
+import { resolveSessionSurface } from "@/lib/sales/session-surface"
 
 // NOTE: self-serve signup (see /register) creates a workshop in `pending` status.
 // Pending workshops CAN sign in — they land on the full-screen card-verification
@@ -68,7 +69,8 @@ export async function loginAction(formData: FormData) {
   }
 
   // Rotate the session on login (clear any pre-existing data first).
-  await establishSession(result.userId, result.workshopId, result.role)
+  const surface = await resolveSessionSurface(result.userId, result.workshopId)
+  await establishSession(result.userId, result.workshopId, result.role, "password", surface)
   await auditBreakGlassLogin({
     identifier: parsed.data.identifier,
     userId: result.userId,
@@ -78,7 +80,11 @@ export async function loginAction(formData: FormData) {
   // API rotasıyla aynı sözleşme: planı bitmişse hedef /checkout.
   return {
     success: true,
-    redirect: result.planExpiredReason ? PLAN_EXPIRED_LOGIN_REDIRECT : null,
+    redirect: surface === "sales"
+      ? "/admin/sales"
+      : result.planExpiredReason
+        ? PLAN_EXPIRED_LOGIN_REDIRECT
+        : null,
     mustChangePassword: result.mustChangePassword,
   }
 }

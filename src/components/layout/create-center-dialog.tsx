@@ -2,8 +2,9 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { BellRing, CalendarClock, FileText, Plus, Wrench, X } from "lucide-react"
+import { BellRing, CalendarClock, FileText, LockKeyhole, Plus, Wrench, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogClose,
@@ -14,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { CREATE_OPTIONS } from "@/components/layout/create-center"
+import type { GatedFeature } from "@/lib/plan"
 
 const OPTION_ICONS = {
   order: Wrench,
@@ -22,12 +24,20 @@ const OPTION_ICONS = {
   reminder: BellRing,
 } as const
 
+const OPTION_FEATURES: Partial<Record<(typeof CREATE_OPTIONS)[number]["id"], GatedFeature>> = {
+  quote: "quotes",
+  appointment: "appointments",
+  reminder: "automatedReminders",
+}
+
 export function CreateCenterDialog({
   open,
   onOpenChange,
+  enabledFeatures = [],
 }: {
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  enabledFeatures?: GatedFeature[]
 } = {}) {
   const [internalOpen, setInternalOpen] = useState(false)
   const isControlled = open !== undefined
@@ -68,6 +78,8 @@ export function CreateCenterDialog({
         <div className="grid gap-2 sm:grid-cols-2" role="list" aria-label="Oluşturulabilecek kayıtlar">
           {CREATE_OPTIONS.map((option) => {
             const Icon = OPTION_ICONS[option.id]
+            const feature = OPTION_FEATURES[option.id]
+            const locked = Boolean(feature && !enabledFeatures.includes(feature))
             return (
               <div key={option.id} role="listitem">
                 <Button
@@ -81,7 +93,14 @@ export function CreateCenterDialog({
                       <Icon className="size-5" aria-hidden />
                     </span>
                     <span className="min-w-0">
-                      <span className="block font-semibold text-foreground">{option.title}</span>
+                      <span className="flex items-center gap-2 font-semibold text-foreground">
+                        {option.title}
+                        {locked && (
+                          <Badge variant="secondary" className="gap-1 text-[10px]">
+                            <LockKeyhole className="size-3" /> PRO
+                          </Badge>
+                        )}
+                      </span>
                       <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
                         {option.description}
                       </span>

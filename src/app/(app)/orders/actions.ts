@@ -22,9 +22,9 @@ import { bakimxLineItemFields, type BakimxLineItemFields } from "@/lib/parts/bak
 import { getirbakimLineItemFields, type GetirbakimLineItemFields, isGetirbakimSelectable } from "@/lib/parts/getirbakim-item"
 import { resolveGetirbakimProduct } from "@/lib/parts/getirbakim/search"
 import { validateBakimxProductFitment } from "@/lib/parts/bakimx-fitment"
-import { resolveFeature } from "@/lib/features"
-import type { PlanTier } from "@/lib/plan"
+import { assertFeature, hasWorkshopFeature } from "@/lib/plan"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
+import { assertIntakePhotoQuota } from "@/lib/photos/quota"
 import { trDateToDate } from "@/lib/format"
 import { nanoid } from "nanoid"
 import { computeStockDelta } from "@/lib/parts/stock-delta"
@@ -35,6 +35,7 @@ import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communica
 import { syncDeliveryToCalendar } from "@/lib/calendar/sync"
 import { z } from "zod/v4"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { lockDamageIntake } from "@/lib/intake/damage"
 
 export async function createServiceOrderAction(intakeFormId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
@@ -147,6 +148,7 @@ export async function addOrderItemAction(formData: FormData) {
   // doğrula, stok düş ve StockMovement (type=out) oluştur.
   const partId = parsed.data.partId || null
   if (partId) {
+    assertFeature(workshop, "partsInventory")
     const part = await getActiveWorkshopPart(user.workshopId, partId)
     if (!part) return { error: "Parça bulunamadı veya pasif" }
   }
@@ -161,11 +163,7 @@ export async function addOrderItemAction(formData: FormData) {
     // Katalog ürünü yalnız PARÇA kalemi olabilir; işçiliğe ürün bağı takılırsa
     // rozet ve raporlama anlamsızlaşır.
     if (parsed.data.type !== "part") return { error: "BakımX ürünü yalnız parça kalemine eklenebilir" }
-    const gateOpen = await resolveFeature(
-      workshop.id,
-      workshop.planTier as PlanTier,
-      "bakimxCatalog",
-    )
+    const gateOpen = hasWorkshopFeature(workshop, "bakimxCatalog")
     if (!gateOpen) return { error: "BakımX ürün kataloğu bu çalışma alanında kapalı." }
     // Araç süzgeci burada BİLEREK boş: araç uyumluluğu aşağıda siparişin kendi
     // aracıyla ayrıca doğrulanır (BAK-46). `workshop.id` iskonto için gerekir
@@ -179,11 +177,7 @@ export async function addOrderItemAction(formData: FormData) {
   if (parsed.data.getirbakimProductId) {
     if (parsed.data.type !== "part") return { error: "GetirBakım ürünü yalnız parça kalemine eklenebilir" }
     if (bakimxFields) return { error: "Bir kalem hem BakımX hem GetirBakım kaynağı olamaz" }
-    const gateOpen = await resolveFeature(
-      workshop.id,
-      workshop.planTier as PlanTier,
-      "getirbakimCatalog",
-    )
+    const gateOpen = hasWorkshopFeature(workshop, "getirbakimCatalog")
     if (!gateOpen) return { error: "GetirBakım kataloğu bu çalışma alanında kapalı." }
     const product = await resolveGetirbakimProduct(
       parsed.data.getirbakimProductId,
@@ -298,8 +292,8 @@ export async function addOrderItemAction(formData: FormData) {
  * takılmamak için /api/orders/purchases route'undan çağrılır (fetch + FormData).
  */
 export async function addPurchaseItemAction(formData: FormData) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop("parts.purchase")
+  const { requireWritableFeatureWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableFeatureWorkshop("parts.purchase", "procurement")
 
   const serviceOrderId = formData.get("serviceOrderId") as string
   const rawPurchasedAt = (formData.get("purchasedAt") as string) || ""
@@ -357,6 +351,8 @@ export async function addPurchaseItemAction(formData: FormData) {
   const photoId = nanoid()
   let photoUpload: { url: string; key: string; fileName: string; mimeType: string; sizeBytes: number; storageProvider: string } | null = null
   if (file && file.size > 0 && file.name) {
+    const quota = await assertIntakePhotoQuota(user.workshopId, order.intakeFormId, 1)
+    if (!quota.ok) return { error: quota.error }
     const validation = validateUploadFile(file)
     if (!validation.valid) return { error: validation.error }
     try {
@@ -380,6 +376,11 @@ export async function addPurchaseItemAction(formData: FormData) {
   let createdItemId: string | null = null
   try {
     createdItemId = await prisma.$transaction(async (tx) => {
+      if (photoUpload) {
+        await lockDamageIntake(tx, order.intakeFormId, user.workshopId)
+        const lockedQuota = await assertIntakePhotoQuota(user.workshopId, order.intakeFormId, 1, tx)
+        if (!lockedQuota.ok) throw new Error(lockedQuota.error)
+      }
       const created = await tx.serviceOrderItem.create({
         data: {
           workshopId: user.workshopId,
@@ -551,6 +552,8 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
   const file = formData.get("file") as File | null
   let photoUpload: { url: string; key: string; fileName: string; mimeType: string; sizeBytes: number; storageProvider: string; id: string } | null = null
   if (file && file.size > 0 && file.name) {
+    const quota = await assertIntakePhotoQuota(user.workshopId, order.intakeFormId, 1)
+    if (!quota.ok) return { error: quota.error }
     const validation = validateUploadFile(file)
     if (!validation.valid) return { error: validation.error }
     try {
@@ -579,6 +582,11 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
 
   try {
     await prisma.$transaction(async (tx) => {
+      if (photoUpload) {
+        await lockDamageIntake(tx, order.intakeFormId, user.workshopId)
+        const lockedQuota = await assertIntakePhotoQuota(user.workshopId, order.intakeFormId, 1, tx)
+        if (!lockedQuota.ok) throw new Error(lockedQuota.error)
+      }
       if (Object.keys(data).length > 0) {
         const updRes = await tx.serviceOrderItem.updateMany({
           where: { id: itemId, workshopId: user.workshopId },
@@ -734,12 +742,13 @@ async function deleteOrderItemRecord(
 
 export async function removeOrderItemAction(itemId: string, orderId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop("order.edit")
+  const { user, workshop } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.serviceOrderItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
   })
   if (!item) return { error: "Kalem bulunamadı" }
+  if (item.partId) assertFeature(workshop, "partsInventory")
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
@@ -785,12 +794,13 @@ export async function removePurchaseItemAction(itemId: string, orderId: string) 
 
 export async function updateOrderItemAction(itemId: string, orderId: string, formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop("order.edit")
+  const { user, workshop } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.serviceOrderItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
   })
   if (!item) return { error: "Kalem bulunamadı" }
+  if (item.partId) assertFeature(workshop, "partsInventory")
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
@@ -964,9 +974,10 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
 
 export async function updateOrderStatusAction(orderId: string, status: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop("order.status")
+  const { user, workshop } = await requireWritableWorkshop("order.status")
 
   if (!isOrderStatus(status)) return { error: "Geçersiz durum" }
+  if (status === "waiting_approval") assertFeature(workshop, "quotes")
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
@@ -1060,7 +1071,7 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
     }
   }
 
-  if (status === "ready_for_delivery") {
+  if (status === "ready_for_delivery" && hasWorkshopFeature(workshop, "communications")) {
     try {
       const order = await prisma.serviceOrder.findFirst({
         where: { id: orderId, workshopId: user.workshopId },
@@ -1082,7 +1093,12 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
     }
   }
 
-  if (status === "delivered" && order?.paymentStatus === "unpaid") {
+  if (
+    status === "delivered" &&
+    order?.paymentStatus === "unpaid" &&
+    hasWorkshopFeature(workshop, "cashbox") &&
+    hasWorkshopFeature(workshop, "communications")
+  ) {
     try {
       const fullOrder = await prisma.serviceOrder.findFirst({
         where: { id: orderId, workshopId: user.workshopId },
@@ -1119,7 +1135,7 @@ const orderMetaSchema = z.object({
 
 export async function updateOrderMetaAction(orderId: string, formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop("order.edit")
+  const { user, workshop } = await requireWritableWorkshop("order.edit")
 
   const raw = {
     technicianName: formData.get("technicianName") as string,
@@ -1168,7 +1184,7 @@ export async function updateOrderMetaAction(orderId: string, formData: FormData)
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "order_meta_updated", undefined, orderId)
 
-  if (estimatedDeliveryAt) {
+  if (estimatedDeliveryAt && hasWorkshopFeature(workshop, "appointments")) {
     try {
       await syncDeliveryToCalendar(orderId, user.workshopId)
     } catch (e) {
@@ -1314,7 +1330,7 @@ export async function getOrderAction(orderId: string) {
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
     include: {
-      intakeForm: { include: { customer: true, vehicle: true, damageMarks: true, photos: { where: VISIBLE_PHOTO } } },
+      intakeForm: { include: { customer: true, vehicle: true, damageMarks: { where: { deletedAt: null } }, photos: { where: VISIBLE_PHOTO } } },
       items: true,
     },
   })

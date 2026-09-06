@@ -9,13 +9,18 @@
 export function BrandEyebrow({
   children,
   className = "",
+  tone = "default",
 }: {
   children: React.ReactNode;
   className?: string;
+  /** "on-dark": lacivert bantlar (final CTA) için — metin yüzeyin ön planına döner. */
+  tone?: "default" | "on-dark";
 }) {
   return (
     <span
-      className={`font-mono text-xs font-medium uppercase tracking-[0.18em] text-foreground ${className}`}
+      className={`font-mono text-xs font-medium uppercase tracking-[0.18em] ${
+        tone === "on-dark" ? "text-navy-foreground" : "text-foreground"
+      } ${className}`}
     >
       {children}
     </span>

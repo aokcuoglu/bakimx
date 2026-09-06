@@ -1,83 +1,85 @@
 export interface FaqItem {
   question: string;
   answer: string;
+  /** Landing'de öne çıkarılacak temel sorular; tüm maddeler Asistan'da kalır. */
+  showOnLanding?: boolean;
 }
 
+/**
+ * Landing SSS + site asistanı + FAQPage JSON-LD tek kaynağı.
+ * Editoryal kural: her madde TEK kısa cevap; aynı konuyu ikinci bir madde
+ * tekrar etmez (mükerrer sorular tek başlıkta birleşir).
+ */
 export const FAQ_ITEMS: FaqItem[] = [
   {
-    question: "BakimX mobilde çalışır mı?",
+    question: "BakimX mobilde çalışır mı? Kurulum gerekiyor mu?",
+    showOnLanding: true,
     answer:
-      "Evet, BakimX tamamen mobil öncelikli tasarlanmıştır. Telefonunuzdan araç kabul edebilir, fotoğraf çekebilir, iş emri ve teklif oluşturabilirsiniz. Masaüstü cihazlardan da erişim mümkündür.",
+      "Evet. Telefon, tablet veya bilgisayarınızın tarayıcısından kullanabilirsiniz. Program indirmeniz gerekmez; aynı hesabınızla servisinizdeki kayıtlara erişirsiniz.",
   },
   {
-    question: "Ruhsat okuma nasıl çalışır? Parça fiyatı veriyor musunuz?",
+    question: "Ruhsat okuma nasıl çalışır?",
+    showOnLanding: true,
     answer:
-      "Ruhsatın fotoğrafını yükleyin; plaka, marka/model, VIN, model yılı ve sahibi gibi bilgiler otomatik doldurulsun, siz onaylamadan önce kontrol edin. Aracın VIN'iyle eşleşen, ona uygun katalog parçalarını görürsünüz. Parça fiyatlarını biz belirlemeyiz; fiyatlandırma tamamen sizin kendi kataloğunuzdan gelir.",
+      "Ruhsat fotoğrafından plaka, marka/model, şasi numarası ve model yılı okunur. Bilgileri kontrol edip onaylarsınız. Araç eşleştirmesi yapıldığında ilgili katalog parçalarını inceleyebilirsiniz; fiyatlar kendi kataloğunuzdan gelir.",
   },
   {
     question: "Hangi modüller bugün hazır?",
+    showOnLanding: true,
     answer:
-      "İş emri, teklif, randevu, takvim, stok/parça, tedarikçi, kasa (tahsilat ve yaşlandırma), müşteri & araç yönetimi, bakım hatırlatmaları, raporlar ve iletişim modülleri bugün kullanıma hazırdır. AI servis danışmanı Premium pakette yer alır.",
+      "İş emri, teklif, randevu, stok/parça, tedarikçi, kasa, müşteri ve araç yönetimi, bakım hatırlatmaları ve raporlar kullanıma hazır. Modül ve kullanım hakları pakete göre değişir. e-Fatura/e-Arşiv ve çoklu şube yönetimi planlanan geliştirmelerdir; henüz kullanıma açık değildir.",
   },
   {
     question: "Stok, tedarikçi ve tahsilat takibi var mı?",
     answer:
-      "Evet. Parça stoğunuzu kritik eşiklerle takip eder, tedarikçilerinizi yönetir, tahsilatları kasada toplar ve yaşlandırma (alacak) raporu alırsınız.",
+      "Evet. Stoğu kritik eşiklerle takip eder, tedarikçilerinizi yönetir, tahsilatları kasada toplar ve yaşlandırma raporu alırsınız.",
   },
   {
     question: "Müşteriye WhatsApp ile çıktı gönderilebilir mi?",
+    showOnLanding: true,
     answer:
-      "Evet. Teklif ve iş emri özetini WhatsApp veya link ile doğrudan müşteriye gönderebilir, tarayıcıdan yazdırabilirsiniz. Markalı PDF dışa aktarma yakında ekleniyor.",
+      "Evet. Müşterinize takip linkini veya iş emri özetini WhatsApp üzerinden paylaşabilirsiniz. Müşteriniz linki tarayıcıda açar; uygulama indirmesi gerekmez. Yazdırılabilir çıktıları tarayıcınızdan PDF olarak da kaydedebilirsiniz.",
   },
   {
     question: "Birden fazla kullanıcı ekleyebilir miyim?",
     answer:
-      "Evet. Ekibinizi davet edip rol verebilirsiniz; teknisyen, servis danışmanı ve yönetici farklı yetkilerle çalışır.",
+      "Evet. Teknisyen, servis danışmanı ve yönetici rolleri farklı yetkilerle çalışır.",
   },
   {
     question: "Verilerim güvende mi?",
     answer:
-      "Her servis yalnızca kendi verisini görür ve erişim rol bazlıdır (sahip / yönetici / personel). Platform KVKK uyumlu olacak şekilde geliştiriliyor.",
+      "Her servis yalnızca kendi verisini görür; erişim rol bazlıdır. Veriler şifreli saklanır ve açık rıza, aydınlatma metni ile çerez politikası KVKK'ya uygundur.",
   },
   {
     question: "Küçük oto tamircileri için uygun mu?",
     answer:
-      "Kesinlikle. BakimX, küçük ve orta ölçekli oto tamir atölyeleri için tasarlanmıştır. Tek kişilik kullanıma uygundur ve kurulum için teknik bilgi gerektirmez.",
+      "Evet. Tek kişilik kullanımdan ekip çalışmasına kadar ölçeklenir; kurulum için teknik bilgi gerektirmez.",
   },
   {
-    question: "Nasıl başlarım? Ücretsiz deneme var mı?",
+    question: "Ücretsiz deneme nasıl başlar?",
     answer:
-      "\"Ücretsiz Dene\" diyerek iş yeri bilgilerinizle hesabınızı oluşturur ve kartınızı doğrularsınız. Doğrulama sırasında kartınızdan yalnızca 1 TL'lik provizyon alınır ve anında iade edilir; kart doğrulamasının ardından hesabınız anında açılır ve 7 günlük ücretsiz deneme süreniz başlar. Deneme süresince ücret ödemezsiniz; beğenirseniz size uygun pakete geçersiniz.",
+      '"Ücretsiz Dene" ile paket veya kart seçmeden hesabınızı açarsınız. E-posta doğrulamasından sonra 7 iş günü ücretsiz kullanırsınız; satın alma yapılmazsa verileriniz korunarak üyeliğiniz dondurulur.',
   },
   {
-    question: "Kurulum için bilgisayar gerekir mi?",
+    question: "Fiyatlandırma nasıl çalışıyor?",
+    showOnLanding: true,
     answer:
-      "Hayır. BakimX tarayıcı tabanlı bir platformdur. Telefonunuzun internet tarayıcısından doğrudan erişebilirsiniz. Herhangi bir kurulum veya indirme gerekmez.",
+      "Lite, Profesyonel ve Premium paketlerini Fiyatlar sayfasında karşılaştırabilirsiniz. Özellikler, dahil kullanıcı sayısı ve kullanım kotaları pakete göre değişir. Güncel aylık ve yıllık tutarlar aynı sayfada yer alır.",
   },
   {
-    question: "Fiyatlandırma nasıl çalışıyor? Kullanıcı başı mı, araç başı mı?",
+    question: "Mevcut verilerimi içeri aktarabilir miyim?",
     answer:
-      "Aylık sabit abonelik modeli sunuyoruz; araç veya kullanıcı sayısına göre kademeli paketlerimiz var. Detaylı fiyatlar için Fiyatlar sayfamızı inceleyin veya bizimle iletişime geçin.",
+      "Evet. Excel veya eski programınızdan veri göçü için ekibimiz sizinle birlikte planlar.",
   },
   {
-    question:
-      "Mevcut müşterilerimin ve araçlarımın verisini içeri aktarabilir miyim?",
+    question: "İstediğim zaman iptal edebilir miyim?",
     answer:
-      "Evet. Eski sisteminizden (Excel, başka bir program) veri göçü için ekibimiz size yardımcı olur. İletişime geçtiğinizde göç sürecini birlikte planlarız.",
-  },
-  {
-    question: "Verilerim güvende mi? KVKK uyumluluğu nasıl sağlanıyor?",
-    answer:
-      "Verileriniz güvenli bulut altyapısında, şifreli olarak saklanır. Açık rıza metni, aydınlatma metni ve çerez politikamız KVKK düzenlemelerine uygundur; verilerinizi talep üzerine dışa aktarabilirsiniz.",
-  },
-  {
-    question: "Kullanmak için teknik bilgi veya eğitim gerekiyor mu?",
-    answer:
-      "Hayır. BakimX tarayıcı tabanlıdır; her cihazın internet tarayıcısından, kurulum gerektirmeden aynı gün kullanmaya başlarsınız. Arayüz atölye kullanımına göre sadeleştirilmiştir.",
-  },
-  {
-    question: "İstediğim zaman aboneliği iptal edebilir miyim?",
-    answer:
-      "Evet. Taahhüt yoktur; aylık abonelik modelinde istediğiniz zaman panel üzerinden iptal edebilirsiniz. Verileriniz talep üzerine dışa aktarılır.",
+      "Evet. Taahhüt yoktur; panel üzerinden iptal edersiniz, verileriniz talep üzerine dışa aktarılır.",
   },
 ];
+
+/**
+ * Ana sayfada kısa tutulan editoryal seçim. Diğer maddeler silinmez;
+ * Asistan'ın arama ve tam SSS görünümünde kullanılmaya devam eder.
+ */
+export const LANDING_FAQ_ITEMS = FAQ_ITEMS.filter((item) => item.showOnLanding);

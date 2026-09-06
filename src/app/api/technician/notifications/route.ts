@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/auth"
 import { apiErrorResponse } from "@/lib/api-errors"
+import { requireAuth } from "@/lib/technician/feature-auth"
 import { getTechnicianNotifications } from "@/lib/technician/notifications"
 
 /**

@@ -7,6 +7,7 @@ import {
   getAppHomeRoute,
   isTechnicianRestrictedRole,
   isRouteAllowedForTechnician,
+  isRouteAllowedForSalesSurface,
 } from "./technician-route-access"
 
 /**
@@ -33,7 +34,6 @@ const TECHNICIAN_DENIED_ROUTES: string[] = [
   "/dashboard",
   "/intakes",
   "/inventory",
-  "/market-research",
   "/orders",
   "/parts",
   "/purchases",
@@ -121,6 +121,15 @@ describe("technician-route-access", () => {
     expect(getAppHomeRoute("owner")).toBe("/dashboard")
     expect(getAppHomeRoute("manager")).toBe("/dashboard")
     expect(getAppHomeRoute(undefined)).toBe("/dashboard")
+    expect(getAppHomeRoute("staff", "sales")).toBe("/admin/sales")
+  })
+
+  test("satış yüzeyi yalnız satış konsolu altına erişir", () => {
+    expect(isRouteAllowedForSalesSurface("/admin/sales")).toBe(true)
+    expect(isRouteAllowedForSalesSurface("/admin/sales/account")).toBe(true)
+    expect(isRouteAllowedForSalesSurface("/admin/workshops")).toBe(false)
+    expect(isRouteAllowedForSalesSurface("/account")).toBe(false)
+    expect(isRouteAllowedForSalesSurface("/api/customers")).toBe(false)
   })
 
   test("TECHNICIAN_RESTRICTED_ROLES matches expected roles", () => {

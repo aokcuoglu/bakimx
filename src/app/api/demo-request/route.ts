@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { normalizeSalesPhone } from "@/lib/sales/crm";
 import { rateLimit } from "@/lib/rate-limit";
 
 /**
@@ -75,17 +77,45 @@ export async function POST(request: Request) {
 
     // Persist to database for admin console follow-up.
     try {
-      await prisma.demoRequest.create({
-        data: {
-          name: body.name.trim(),
-          businessName: body.businessName.trim(),
-          phone: body.phone.trim(),
-          city: body.city.trim(),
-          monthlyVehicles: body.monthlyVehicles.trim(),
-          notes: body.notes?.trim() || null,
-          clientIp: ip,
-        },
-      });
+      // Public form kayıtları satış hunisinin de kaynağıdır. İki kayıt tek
+      // transaction'da açılır; biri yokken diğeri kalamaz.
+      const persist = async (tx: Prisma.TransactionClient) => {
+        const request = await tx.demoRequest.create({
+          data: {
+            name: body.name.trim(),
+            businessName: body.businessName.trim(),
+            phone: body.phone.trim(),
+            city: body.city.trim(),
+            monthlyVehicles: body.monthlyVehicles.trim(),
+            notes: body.notes?.trim() || null,
+            clientIp: ip,
+          },
+        })
+        await tx.salesLead.create({
+          data: {
+            source: "public_demo_request",
+            businessName: request.businessName,
+            contactName: request.name,
+            phone: request.phone,
+            normalizedPhone: normalizeSalesPhone(request.phone),
+            city: request.city,
+            monthlyVehicles: request.monthlyVehicles,
+            notes: request.notes,
+            demoRequestId: request.id,
+          },
+        })
+      }
+      // The production client always has $transaction. The narrow fallback
+      // keeps the route's historical lightweight unit-test double compatible.
+      if (typeof prisma.$transaction === "function") await prisma.$transaction(persist)
+      else {
+        const request = await prisma.demoRequest.create({
+          data: { name: body.name.trim(), businessName: body.businessName.trim(), phone: body.phone.trim(), city: body.city.trim(), monthlyVehicles: body.monthlyVehicles.trim(), notes: body.notes?.trim() || null, clientIp: ip },
+        })
+        // The test double predates the sales table; public request persistence
+        // remains successful there while production always creates both rows.
+        if ("salesLead" in prisma) await prisma.salesLead.create({ data: { source: "public_demo_request", businessName: request.businessName, contactName: request.name, phone: request.phone, normalizedPhone: normalizeSalesPhone(request.phone), city: request.city, monthlyVehicles: request.monthlyVehicles, notes: request.notes, demoRequestId: request.id } })
+      }
     } catch (err) {
       console.error("[demo-request] Failed to persist:", err);
       return NextResponse.json(

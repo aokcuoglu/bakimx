@@ -91,7 +91,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts /migrate/prisma.
 # pg-connection.ts (the DB_SSL_NO_VERIFY / RDS TLS workaround — without it the task dies with
 # "self-signed certificate in certificate chain"). Keep these in sync with the imports.
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate-vehicle-catalog.ts /migrate/scripts/migrate-vehicle-catalog.ts
-COPY --from=builder --chown=nextjs:nodejs /app/scripts/activate-stage2a-pilot.ts /migrate/scripts/activate-stage2a-pilot.ts
 COPY --from=builder --chown=nextjs:nodejs /app/src/lib/catalog/row-mappers.ts /migrate/src/lib/catalog/row-mappers.ts
 COPY --from=builder --chown=nextjs:nodejs /app/src/lib/catalog/ndjson-stream.ts /migrate/src/lib/catalog/ndjson-stream.ts
 COPY --from=builder --chown=nextjs:nodejs /app/src/lib/pg-connection.ts /migrate/src/lib/pg-connection.ts

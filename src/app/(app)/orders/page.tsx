@@ -1,6 +1,4 @@
 import { getAppData } from "@/app/(app)/data"
-import { type PlanTier } from "@/lib/plan"
-import { resolveFeature } from "@/lib/features"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
@@ -9,8 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { OrderList } from "@/components/orders/order-list"
 import { FilterSelect } from "@/components/shared/filter-select"
-import { StandaloneServiceAdvisor } from "@/components/advisor/standalone-service-advisor"
-import { AdvisorPremiumLock } from "@/components/advisor/advisor-premium-lock"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
@@ -39,8 +35,6 @@ export default async function OrdersPage({
   const invoiceFilter = resolveInvoiceFilter(params.invoice)
 
   const { user, workshop } = await getAppData()
-  const hasAiAdvisor = !!workshop && (await resolveFeature(workshop.id, workshop.planTier as PlanTier, "aiAdvisor"))
-
   // Usta filtresi, atölyenin kendi usta listesine karşı doğrulanır; client'tan
   // gelen ham id doğrudan sorguya girmez.
   const technicians = await getAssignableTechnicians(user.workshopId)
@@ -281,8 +275,6 @@ export default async function OrdersPage({
           </div>
         )}
 
-        {/* AI Servis Danışmanı — şikayetten önerilen iş kalemleri (Premium). */}
-        {hasAiAdvisor ? <StandaloneServiceAdvisor /> : <AdvisorPremiumLock />}
       </div>
     </AppShell>
   )

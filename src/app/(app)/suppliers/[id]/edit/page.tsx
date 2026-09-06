@@ -1,10 +1,13 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { SupplierForm } from "@/components/suppliers/supplier-form"
 import { getSupplierById } from "@/lib/suppliers/queries"
 import { notFound } from "next/navigation"
 
 export default async function EditSupplierPage(props: { params: Promise<{ id: string }> }) {
+  const paywall = await getFeaturePaywall("procurement")
+  if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const { id } = await props.params
 

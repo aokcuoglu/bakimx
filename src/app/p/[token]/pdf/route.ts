@@ -9,6 +9,7 @@ import { escapeHtml } from "@/lib/html-escape"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { renderWorkshopContactHtml } from "@/lib/pdf/workshop-contact"
 import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact, type WorkshopPublicContact } from "@/lib/workshop-contact"
+import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
 
 export const dynamic = "force-dynamic"
 
@@ -200,7 +201,7 @@ async function generatePassportPdfHtml(data: {
         <div style="font-weight:700;">${safePlate}</div>
         <div style="font-size:9px;color:#666;">${safeVehicleLabel}${safeVehicleColor ? ` • ${safeVehicleColor}` : ""}${safeVehicleFuel ? ` • ${safeVehicleFuel}` : ""}</div>
         ${vehicle.mileage ? `<div style="font-size:9px;color:#666;">Kilometre: ${formatMileage(vehicle.mileage)}</div>` : ""}
-        ${safeVin ? `<div style="font-size:8px;color:#999;font-family:monospace;">VIN: ${safeVin}</div>` : ""}
+        ${safeVin ? `<div style="font-size:8px;color:#999;font-family:monospace;">Şase: ${safeVin}</div>` : ""}
       </div>
       <div style="flex:1;">
         <div style="font-size:10px;color:#666;">Müşteri</div>
@@ -233,7 +234,7 @@ async function generatePassportPdfHtml(data: {
   </div>
 
   <div style="text-align:center;margin-top:10px;padding:8px;border:1px solid #DBEAFE;border-radius:6px;background:#EFF6FF;color:#1E40AF;font-size:8px;">
-    Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, OCR verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
+    Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, ruhsat okuma verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
   </div>
 
   ${bakimxPdfFooterBar(createdAt)}
@@ -244,6 +245,33 @@ async function generatePassportPdfHtml(data: {
 export async function GET(_request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
 
+  const tokenAccess = await prisma.vehiclePassportToken.findUnique({
+    where: { token },
+    select: {
+      isActive: true,
+      expiresAt: true,
+      workshop: {
+        select: {
+          planTier: true,
+          subscriptionStatus: true,
+          approvalStatus: true,
+          trialEndsAt: true,
+          currentPeriodEnd: true,
+        },
+      },
+    },
+  })
+  if (
+    !tokenAccess ||
+    !tokenAccess.isActive ||
+    (tokenAccess.expiresAt && tokenAccess.expiresAt < new Date())
+  ) {
+    return new Response(null, { status: 404 })
+  }
+  if (!getPlanState(tokenAccess.workshop).hasAccess || !hasWorkshopFeature(tokenAccess.workshop, "vehiclePassport")) {
+    return new Response(null, { status: 403 })
+  }
+
   const passportToken = await prisma.vehiclePassportToken.findUnique({
     where: { token },
     include: {
@@ -253,7 +281,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
           intakes: {
             include: {
               order: { include: { items: true } },
-              damageMarks: true,
+              damageMarks: { where: { deletedAt: null } },
               photos: {
                 // Dış alım (satın alma) fotoğrafları dahili-yalnız — pasaport PDF'ine sızmaz.
                 where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },
@@ -272,7 +300,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     },
   })
 
-  if (!passportToken || !passportToken.isActive || (passportToken.expiresAt && passportToken.expiresAt < new Date())) {
+  if (!passportToken) {
     return new Response(null, { status: 404 })
   }
 

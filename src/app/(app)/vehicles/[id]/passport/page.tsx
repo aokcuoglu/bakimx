@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
@@ -11,6 +12,8 @@ import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 export const dynamic = "force-dynamic"
 
 export default async function VehiclePassportPage({ params }: { params: Promise<{ id: string }> }) {
+  const paywall = await getFeaturePaywall("vehiclePassport")
+  if (paywall) return paywall
   const { id } = await params
   const { user, workshop } = await getAppData()
 
@@ -21,7 +24,7 @@ export default async function VehiclePassportPage({ params }: { params: Promise<
       intakes: {
         include: {
           order: { include: { items: true, assignedTechnician: { select: { id: true, fullName: true } } } },
-          damageMarks: true,
+          damageMarks: { where: { deletedAt: null } },
           photos: {
             // Dış alım fotoğrafları araç pasaportuna girmez (dahili-yalnız).
             where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },

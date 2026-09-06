@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { requireWritableWorkshop } from "@/lib/auth"
-import { resolveFeature } from "@/lib/features"
-import type { PlanTier } from "@prisma/client"
+import { assertFeature } from "@/lib/plan"
 import { prisma } from "@/lib/db"
 import { getProcurementProvider } from "@/lib/external-procurement/provider"
 import { cancelExternalProcurement, startExternalProcurement } from "@/lib/external-procurement/service"
@@ -24,15 +23,13 @@ const purchaseSchema = z.object({
 export async function POST(request: Request) {
   try {
     const { user, workshop } = await requireWritableWorkshop("parts.purchase")
-    if (!(await resolveFeature(workshop.id, workshop.planTier as PlanTier, "getirbakimCatalog"))) {
-      return NextResponse.json({ error: "GetirBakım satın alma bu çalışma alanında kapalı.", code: "feature_locked" }, { status: 403 })
-    }
     const body: unknown = await request.json()
-    const quote = quoteSchema.safeParse(body)
     const provider = getProcurementProvider()
-    if (quote.success) return NextResponse.json({ quote: await provider.quoteOrder(quote.data.selectedOfferId, quote.data.quantity) })
     const cancel = cancelSchema.safeParse(body)
     if (cancel.success) return NextResponse.json({ procurement: await cancelExternalProcurement(provider, workshop.id, cancel.data.procurementId) })
+    assertFeature(workshop, "procurement")
+    const quote = quoteSchema.safeParse(body)
+    if (quote.success) return NextResponse.json({ quote: await provider.quoteOrder(quote.data.selectedOfferId, quote.data.quantity) })
     const purchase = purchaseSchema.safeParse(body)
     if (!purchase.success) return NextResponse.json({ error: "Geçersiz satın alma isteği." }, { status: 400 })
     const data = purchase.data

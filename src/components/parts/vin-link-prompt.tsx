@@ -8,6 +8,7 @@ import { Loader2, ScanLine } from "lucide-react"
 import { VinCandidateList, VinLockedNotice } from "@/components/vehicles/vin-resolve"
 import { linkVehicleCatalogAction } from "@/app/(app)/vehicles/actions"
 import { isValidVin, type VinCandidate, type VinResolution } from "@/lib/vin/types"
+import { isPlanTier, type PlanTier } from "@/lib/plan"
 import type { PickerVehicle } from "./tecdoc-part-picker"
 
 /**
@@ -23,6 +24,7 @@ export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
   const [locked, setLocked] = useState(false)
+  const [lockedTier, setLockedTier] = useState<PlanTier>("lite")
   const [candidates, setCandidates] = useState<VinCandidate[]>([])
 
   const hasVin = isValidVin(vehicle.vin ?? "")
@@ -70,14 +72,17 @@ export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
       })
       const data = await res.json()
       if (!res.ok) {
-        if (res.status === 403 && data.code === "feature_locked") setLocked(true)
-        else setError(data.error || "VIN sorgulanamadı.")
+        if (res.status === 403 && data.code === "feature_locked") {
+          setLocked(true)
+          setLockedTier(isPlanTier(data.currentTier) ? data.currentTier : "lite")
+        }
+        else setError(data.error || "Şase sorgulanamadı.")
         setLoading(false)
         return
       }
       const result = data as VinResolution
       if (result.status === "not_found") {
-        setNotice("VIN katalogda bulunamadı — Araç düzenle sayfasından marka/model seçin.")
+        setNotice("Şase numarası katalogda bulunamadı — Araç düzenle sayfasından marka/model seçin.")
         setLoading(false)
         return
       }
@@ -100,7 +105,7 @@ export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
       setNotice("Marka/model tanındı ama katalogda bu modele ait motor varyantı bulunamadı.")
       setLoading(false)
     } catch {
-      setError("VIN sorgulama sırasında bir hata oluştu. Lütfen tekrar deneyin.")
+      setError("Şase sorgulama sırasında bir hata oluştu. Lütfen tekrar deneyin.")
       setLoading(false)
     }
   }
@@ -108,14 +113,14 @@ export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
   return (
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">
-        Araç henüz kataloğa bağlı değil. Şase (VIN) numarasından araca uygun parçaları getirmek için{" "}
-        <span className="font-medium text-foreground">VIN&apos;den bağla</span>&apos;ya basın
+        Araç henüz kataloğa bağlı değil. Şase numarasından araca uygun parçaları getirmek için{" "}
+        <span className="font-medium text-foreground">Şaseden bağla</span>&apos;ya basın
         {hasVin ? "." : " — önce Araç düzenle sayfasından geçerli bir şase numarası girin."}
       </p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <Button type="button" size="sm" variant="outline" disabled={!hasVin || loading} onClick={resolve} className="gap-1.5">
           {loading ? <Loader2 className="size-3.5 animate-spin" /> : <ScanLine className="size-3.5" />}
-          VIN&apos;den bağla
+          Şaseden bağla
         </Button>
         <Link
           href={`/vehicles/${vehicle.id}/edit`}
@@ -126,7 +131,7 @@ export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
       </div>
       {notice && <p className="text-xs text-muted-foreground">{notice}</p>}
       {error && <p className="text-xs text-destructive-strong">{error}</p>}
-      {locked && <VinLockedNotice />}
+      {locked && <VinLockedNotice currentTier={lockedTier} />}
       {candidates.length > 0 && (
         <VinCandidateList
           candidates={candidates}

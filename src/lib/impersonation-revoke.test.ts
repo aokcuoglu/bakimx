@@ -35,8 +35,8 @@ function mockDb(impersonationRow: { endedAt: Date | null; revokedAt: Date | null
       user: {
         findUnique: async ({ where }: { where: { id: string } }) =>
           where.id === TARGET.id
-            ? { ...TARGET, email: "t@x.com", username: null, firstName: null, lastName: null, role: "owner", isActive: true, mustChangePassword: false, technicianId: null }
-            : { ...ADMIN, email: "a@x.com", username: null, firstName: null, lastName: null, role: "owner", isActive: true, mustChangePassword: false, technicianId: null },
+            ? { ...TARGET, email: "t@x.com", username: null, firstName: null, lastName: null, role: "owner", isActive: true, mustChangePassword: false, technicianId: null, workshop: { kind: "customer" } }
+            : { ...ADMIN, email: "a@x.com", username: null, firstName: null, lastName: null, role: "owner", isActive: true, mustChangePassword: false, technicianId: null, workshop: { kind: "customer" } },
       },
     },
   }))

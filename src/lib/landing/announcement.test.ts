@@ -47,4 +47,15 @@ describe("landing duyuru barı", () => {
     expect(component).not.toContain(landingAnnouncement.text);
     expect(component).not.toContain(landingAnnouncement.linkLabel);
   });
+
+  test("kapatma script'i client bileşende değil kök layout'ta çalışır", () => {
+    const component = read("../../components/sections/AnnouncementBar.tsx");
+    const layout = read("../../app/layout.tsx");
+
+    expect(component).not.toContain("<script");
+    expect(component).not.toContain("announcementDismissScript");
+    expect(layout).toContain('import Script from "next/script"');
+    expect(layout).toContain('strategy="beforeInteractive"');
+    expect(layout).toContain("announcementDismissScript()");
+  });
 });

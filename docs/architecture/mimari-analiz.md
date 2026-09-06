@@ -9,7 +9,7 @@
 
 > **🔄 Güncelleme — 2026-06-23:** v0.5.9 anlık görüntüsünden sonra gelen işlerle uzlaştırıldı:
 > **v0.5.10** (RBAC/ekipler, admin konsolu, faturalama iskeleti, landing sadeleştirme, migrate-deploy DB),
-> **v0.5.11** (`app.bakimx.com` subdomain ayrımı + temiz URL'ler, AI danışmanın **Premium'a kilitlenmesi**,
+> **v0.5.11** (`app.bakimx.com` subdomain ayrımı + temiz URL'ler,
 > register-flow doküman uzlaştırması) ve **yayınlanmamış (etiketsiz)** bir `HEAD` commit'i `37cad36`
 > ("Phase-1 teknik borç kapatma") — 2026-06-23'te `origin/main`'e push edildi; henüz sürüm etiketi yok.
 > Güncel durumlar §2 ve §3.3'te işlendi.
@@ -31,7 +31,7 @@
 | Oturum/Güvenlik | **iron-session + bcryptjs** | Şifreli oturum çerezi ve parola hash'leme (parolaları düz metin saklamama) |
 | Doğrulama | **Zod + react-hook-form** | Kullanıcı girdilerini sunucuda ve formda kurallara göre denetleme |
 | Dosya depolama | **AWS S3 SDK → Cloudflare R2** | Fotoğrafların bulut depoda saklanması (S3 uyumlu) |
-| OCR | **tesseract.js** (+ OpenAI/DeepSeek opsiyonel) | Ruhsat fotoğrafından metin okuma |
+| OCR | **tesseract.js** (+ OpenAI/Anthropic opsiyonel) | Ruhsat fotoğrafından metin okuma |
 | PDF | **Yazdırmaya hazır HTML** (`/p/[token]/pdf`, `/s/[token]/pdf`) | Müşteriye sunulan çıktıların PDF/yazdırma hâli |
 | Diğer | **nanoid, qrcode.react, heic-convert** | Güvenli token üretimi, QR kod, iPhone HEIC fotoğraf dönüşümü |
 | Paket yöneticisi | **Bun** (Node 18+ uyumlu) | Bağımlılık kurulumu ve script çalıştırma |
@@ -47,7 +47,7 @@ bakimx/
 │   ├── s/[token]/      → Müşteriye açık servis özeti (tokenlı, public)
 │   └── p/[token]/      → Araç servis pasaportu (tokenlı, public)
 ├── src/components/     → Arayüz bileşenleri (ui/ + uygulamaya özel)
-├── src/lib/            → İş mantığı: auth, money, storage, ocr, advisor,
+├── src/lib/            → İş mantığı: auth, money, storage, ocr,
 │                          communications, calendar, reports, validations…
 ├── prisma/             → Veritabanı şeması (33 model), migration, seed
 ├── scripts/            → VPS kurulum, OCR yardımcıları
@@ -56,7 +56,7 @@ bakimx/
 ```
 
 **Öne çıkan organizasyon kararları:**
-- **İş mantığı `src/lib/` altında modüllere ayrılmış** (storage, ocr, advisor, communications, calendar). Her biri "provider abstraction" (sağlayıcı soyutlaması) deseni kullanır — yani gerçek servis (ör. NetGSM SMS) ile sahte/test servisi (mock) aynı arayüzün arkasındadır ve `.env` değişkeniyle değiştirilebilir.
+- **İş mantığı `src/lib/` altında modüllere ayrılmış** (storage, ocr, communications, calendar). Harici servis kullanan modüller "provider abstraction" (sağlayıcı soyutlaması) desenini izler — yani gerçek servis (ör. NetGSM SMS) ile sahte/test servisi (mock) aynı arayüzün arkasındadır ve `.env` değişkeniyle değiştirilebilir.
 - **Doğrulama kuralları tek yerde** (`src/lib/validations/`, Zod şemaları, Türkçe hata mesajları).
 - **Çok kiracılı (multi-tenant) izolasyon**: her sorgu `workshopId` (işyeri kimliği) ile sınırlanır — bir servisin verisi diğerine sızmaz.
 
@@ -109,7 +109,6 @@ bakimx/
 | Özellik | Ne yapar | Modül / Dosya | Durum |
 |---------|----------|---------------|-------|
 | OCR akıllı yakalama | Ruhsat fotoğrafından müşteri/araç oluşturma | `app/smart-capture`, `lib/ocr/` | 🟡 (gerçek OCR doğrulanmamış) |
-| AI servis danışmanı | Şikâyetten öneri (onay zorunlu); artık **Premium'a kilitli** (`hasFeature`→403, UI upsell) | `api/advisor`, `lib/advisor/` | 🟡 (gating ✅, mock varsayılan) |
 | Dijital araç pasaportu | Aracın tüm servis geçmişi + QR + public özet | `vehicles/[id]/passport`, `lib/passport/` | ✅ |
 | Teknisyen mobil çalışma alanı | Teknisyene iş emri, parça talebi, işçilik kaydı | `app/technician`, `lib/technician/` | 🟡 (en yeni, en az test edilmiş) |
 | İletişim altyapısı | SMS/WhatsApp/E-posta sağlayıcı soyutlaması | `lib/communications/` (NetGSM, Resend, WhatsApp Business) | 🟡 (varsayılan mock) |
@@ -141,7 +140,7 @@ Bu, basit bir prototipin çok ötesinde, ancak tam ölçekli üretime geçişten
 
 **Olgunluğu destekleyen güçlü göstergeler:**
 - ✅ TypeScript **strict** mod — tip güvenliği yüksek, `any` kullanımı sınırlı (proje kuralı).
-- ✅ **Tutarlı sağlayıcı soyutlaması** (storage/ocr/advisor/communications/calendar) — gerçek servisleri risksiz takıp çıkarmaya uygun, profesyonel bir desen.
+- ✅ **Tutarlı sağlayıcı soyutlaması** (storage/ocr/communications/calendar) — gerçek servisleri risksiz takıp çıkarmaya uygun, profesyonel bir desen.
 - ✅ **Sunucu tarafı doğrulama** her yerde Zod ile yapılıyor.
 - ✅ **Çok kiracılı izolasyon** disiplinli: `workshopId` oturumdan türetiliyor (v0.5.8'de istemciye güven kaldırıldı).
 - ✅ **Güvenlik P0 (kritik) açıkları kapatılmış** (v0.5.7–v0.5.8) ve **veri bütünlüğü** sağlanmış (v0.5.9 ile `$transaction` ve para tutarlılığı).
@@ -150,7 +149,7 @@ Bu, basit bir prototipin çok ötesinde, ancak tam ölçekli üretime geçişten
 
 ### 3.2. Eksik veya Yarım Kalmış Bileşenler
 
-- 🟡 **Gerçek entegrasyonlar doğrulanmamış:** İletişim (SMS/WhatsApp/E-posta), OCR ve AI danışmanı kod olarak hazır ama **varsayılanları "mock" (sahte)**; production'da uçtan uca kanıtlanmış değil.
+- 🟡 **Gerçek entegrasyonlar doğrulanmamış:** İletişim (SMS/WhatsApp/E-posta) ve OCR kod olarak hazır ama **varsayılanları "mock" (sahte)**; production'da uçtan uca kanıtlanmış değil.
 - 🟡 **Bakım hatırlatmalarının gerçek gönderimi** garanti altında değil (kayıt tutuluyor, otomatik dağıtım tamamlanmamış).
 - 🟡 **Takvim senkronizasyonu** Google OAuth ile çift yönlü çalışacak seviyede değil (iskelet mevcut).
 - 🔵 **"Yakında" etiketli vaatler:** Excel içe aktarma ve sesle doldurma landing/arayüzde stub (içi boş) durumda.
@@ -176,7 +175,7 @@ Bu, basit bir prototipin çok ötesinde, ancak tam ölçekli üretime geçişten
 
 ### 4.1. Ürünün Mevcut Yetenekleri (tek paragraf)
 
-BakımX, oto servislerin günlük operasyonunu uçtan uca yönetebilecek olgunlukta, mobil öncelikli bir SaaS platformudur: işyeri müşteri ve aracını kaydeder, fotoğraflı ve 2D hasar işaretlemeli dijital araç kabulü yapar, müşteriden OTP ile dijital onay alır, parça/işçilik kalemleriyle iş emri yürütür, kasa-tahsilat ve teklif/randevu süreçlerini takip eder, parça-stok ve tedarikçi yönetir, raporlama ve kural tabanlı analitik sunar, ve müşteriye tokenlı public servis özeti ile araç servis pasaportunu PDF/WhatsApp üzerinden paylaşır. Tüm bunlar çok kiracılı (her servisin verisi izole) bir yapıda, sunucu tarafı doğrulama ve kapatılmış kritik güvenlik açıklarıyla, üretime dağıtılabilir bir altyapı üzerinde çalışmaktadır; SMS/WhatsApp, OCR ve AI gibi "akıllı" yetenekler ise mimari olarak hazırdır ancak henüz çoğunlukla demo (mock) modunda olup gerçek üretim entegrasyonu doğrulanmayı beklemektedir.
+BakımX, oto servislerin günlük operasyonunu uçtan uca yönetebilecek olgunlukta, mobil öncelikli bir SaaS platformudur: işyeri müşteri ve aracını kaydeder, fotoğraflı ve 2D hasar işaretlemeli dijital araç kabulü yapar, müşteriden OTP ile dijital onay alır, parça/işçilik kalemleriyle iş emri yürütür, kasa-tahsilat ve teklif/randevu süreçlerini takip eder, parça-stok ve tedarikçi yönetir, raporlama ve kural tabanlı analitik sunar, ve müşteriye tokenlı public servis özeti ile araç servis pasaportunu PDF/WhatsApp üzerinden paylaşır. Tüm bunlar çok kiracılı (her servisin verisi izole) bir yapıda, sunucu tarafı doğrulama ve kapatılmış kritik güvenlik açıklarıyla, üretime dağıtılabilir bir altyapı üzerinde çalışmaktadır; SMS/WhatsApp ve OCR entegrasyonları ise henüz çoğunlukla demo (mock) modunda olup gerçek üretim doğrulamasını beklemektedir.
 
 ### 4.2. Öne Çıkan Güçlü Yönler
 
@@ -188,13 +187,13 @@ BakımX, oto servislerin günlük operasyonunu uçtan uca yönetebilecek olgunlu
 
 ### 4.3. Geliştirme Önceliği Önerilen Alanlar
 
-> **2026-06-23 ilerleme notu:** v0.5.10 (RBAC/ekipler + admin + faturalama iskeleti) ve v0.5.11 (subdomain ayrımı + AI danışman Premium gating) geldi; yerel/yayınlanmamış Phase-1 işi ise bakım borcunu (validation, migration) kapatıp lead yönetimi ekledi. Ancak bu işlerin **hiçbiri aşağıdaki 1. maddeye dokunmadı** — bu yüzden öncelik sırası aynen geçerli ve **v0.6.0 hâlâ sıradaki adım**.
+> **2026-06-23 ilerleme notu:** v0.5.10 (RBAC/ekipler + admin + faturalama iskeleti) ve v0.5.11 (subdomain ayrımı) geldi; yerel/yayınlanmamış Phase-1 işi ise bakım borcunu (validation, migration) kapatıp lead yönetimi ekledi. Ancak bu işlerin **hiçbiri aşağıdaki 1. maddeye dokunmadı** — bu yüzden öncelik sırası aynen geçerli ve **v0.6.0 hâlâ sıradaki adım**.
 
 1. **Dağıtık dayanıklılık (en yüksek öncelik):** Hız sınırlama ve OTP saklamayı Redis/DB tabanlı paylaşımlı yapıya taşı; bu hem en kritik açık güvenlik borcunu kapatır hem de yatay ölçeklemeyi açar.
 2. **Gerçek iletişim entegrasyonunu canlıya alma:** SMS/WhatsApp/E-posta'yı production'da doğrula, teslim günlüğü, yeniden deneme ve KVKK/opt-out kurallarıyla — "Yakında" denen en görünür vaadi aktive eder.
 3. **Test & CI sertleştirme:** intake → onay → iş emri → tahsilat akışı için E2E testler ve CI kapsam eşiği — regresyon riskini ciddi düşürür.
 4. **Para modeli düzeltmesi:** Faturalama eklemeden önce parayı `Decimal`/tam sayı (kuruş) tabanına geçir.
-5. **OCR/AI üretim doğrulaması:** Gerçek sağlayıcılarda doğruluk ve maliyet ölçümü, güvenli geri-düşüş (fallback) zinciri.
+5. **OCR üretim doğrulaması:** Gerçek sağlayıcılarda doğruluk ve maliyet ölçümü, güvenli geri-düşüş (fallback) zinciri.
 
 > **Tek cümlelik tavsiye:** Ürün ticari pilota çok yakın; bir sonraki adım yeni özellik eklemek değil, **mevcut "temelleri" gerçek, ölçeklenebilir ve test edilmiş üretim yeteneğine dönüştürmek** olmalı — `v0.6.0` olarak dağıtık dayanıklılık + OTP sertleştirmesiyle başlamak en yüksek getiriyi sağlar.
 

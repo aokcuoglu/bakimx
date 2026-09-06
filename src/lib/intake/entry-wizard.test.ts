@@ -73,7 +73,7 @@ test("identityConflicts: farklı şase bildirilir", () => {
     { plate: "", vin: "WF0MXXGCHMRT73174" }
   )
   expect(conflicts).toEqual([
-    { key: "vin", label: "Şase (VIN)", current: "WF0MXXGCHMRT73173", scanned: "WF0MXXGCHMRT73174" },
+    { key: "vin", label: "Şase no", current: "WF0MXXGCHMRT73173", scanned: "WF0MXXGCHMRT73174" },
   ])
 })
 

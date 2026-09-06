@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { IntakeWizard } from "@/components/intake/intake-wizard"
 import Link from "next/link"
+import { getPlanState } from "@/lib/plan"
 
 export default async function NewOrderPage({
   searchParams,
@@ -18,8 +19,8 @@ export default async function NewOrderPage({
   })
 
   return (
-    <AppShell constrained workshopName={workshop?.name} pageTitle="Yeni İş Emri">
-      <div className="space-y-5 sm:space-y-6">
+    <AppShell workshopName={workshop?.name} pageTitle="Yeni İş Emri">
+      <div className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
         <div className="flex items-center text-sm text-muted-foreground">
           <Link href="/orders" className="hover:text-foreground">İş Emirleri</Link>
           <span className="mx-2">/</span>
@@ -34,6 +35,7 @@ export default async function NewOrderPage({
           prefillCustomerId={params.customerId}
           prefillVehicleId={params.vehicleId}
           source={params.source}
+          planTier={workshop ? getPlanState(workshop).accessTier : "pro"}
         />
       </div>
     </AppShell>

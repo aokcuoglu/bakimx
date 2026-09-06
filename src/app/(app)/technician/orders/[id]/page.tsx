@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/db"
@@ -19,6 +20,8 @@ import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 export const dynamic = "force-dynamic"
 
 export default async function TechnicianOrderPage({ params }: { params: Promise<{ id: string }> }) {
+  const paywall = await getFeaturePaywall("team")
+  if (paywall) return paywall
   const { id } = await params
   const { user, workshop } = await getAppData()
 
@@ -29,7 +32,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
         include: {
           customer: true,
           vehicle: { include: { customer: true } },
-          damageMarks: { orderBy: { createdAt: "asc" } },
+          damageMarks: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
           photos: {
             where: VISIBLE_PHOTO,
             orderBy: { createdAt: "asc" },

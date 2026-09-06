@@ -81,7 +81,7 @@ export default function DijitalAracKabulPage() {
               <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
                 <Button asChild size="lg">
                   <Link href="/register">
-                    7 gün ücretsiz deneyin
+                    Ücretsiz deneyin
                     <ArrowRight aria-hidden="true" />
                   </Link>
                 </Button>
@@ -246,11 +246,11 @@ export default function DijitalAracKabulPage() {
           <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-7 px-4 sm:px-6 md:flex-row md:items-center lg:px-8">
             <div>
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Kabul kaydınızı kağıttan kurtarmaya başlayın</h2>
-              <p className="mt-2 text-sm leading-6 text-primary-foreground sm:text-base">Kart doğrulamasından sonra 7 günlük ücretsiz denemeniz başlar.</p>
+              <p className="mt-2 text-sm leading-6 text-primary-foreground sm:text-base">E-posta doğrulamasından sonra 7 iş günlük ücretsiz kullanımınız başlar.</p>
             </div>
             <Button asChild size="lg" variant="secondary">
               <Link href="/register">
-                7 gün ücretsiz deneyin
+                Ücretsiz deneyin
                 <ArrowRight aria-hidden="true" />
               </Link>
             </Button>

@@ -1,52 +1,27 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const appDir = import.meta.dir;
-const sectionsDir = join(appDir, "..", "components", "sections");
-const pageSource = readFileSync(join(appDir, "page.tsx"), "utf8");
+const sectionsDir = join(import.meta.dir, "..", "components", "sections");
 const heroSource = readFileSync(join(sectionsDir, "HeroSection.tsx"), "utf8");
 
-const landingOrder = [
-  "AnnouncementBar",
-  "Header",
-  "HeroSection",
-  "PartnersStrip",
-  "RuhsatDemoSection",
-  "FeatureShowcaseSection",
-  "StandOutSection",
-  "SegmentsSection",
-  "BeforeAfterSection",
-  "TrustOnboardingSection",
-  "FAQSection",
-  "DemoFormSection",
-  "FinalCTASection",
-  "Footer",
-];
-
-describe("landing page composition", () => {
-  test("renders the approved sections in order", () => {
-    const renderPositions = landingOrder.map((section) =>
-      pageSource.indexOf(`<${section} />`, pageSource.indexOf("return (")),
-    );
-
-    expect(renderPositions.every((position) => position >= 0)).toBe(true);
-    expect(renderPositions).toEqual([...renderPositions].sort((a, b) => a - b));
-  });
-
-  test("does not keep the removed duplicate and unmeasured-metric sections", () => {
-    expect(pageSource).not.toContain("PillarsSection");
-    expect(pageSource).not.toContain("MetricsBand");
-    expect(existsSync(join(sectionsDir, "PillarsSection.tsx"))).toBe(false);
-    expect(existsSync(join(sectionsDir, "MetricsBand.tsx"))).toBe(false);
-  });
-
-  test("keeps the LCP heading visible on the initial server paint", () => {
+describe("landing performance and conversion contracts", () => {
+  // Browser tests exercise the rendered page, keyboard navigation, mobile
+  // overflow, FAQ data and demo submission. These guards retain regressions
+  // that cannot be detected after hydration alone.
+  test("hero heading is not gated behind an animation or a rotating slide", () => {
     const heading = heroSource.match(/<h1([\s\S]*?)<\/h1>/)?.[0];
-
     expect(heading).toBeDefined();
-    expect(heading).not.toContain("initial=");
-    expect(heading).not.toContain("animate=");
-    expect(heading).not.toContain("enter-up");
+    expect(heading).not.toMatch(/initial=|animate=|enter-up|opacity-0/);
+    expect(heroSource).not.toContain("framer-motion");
+    expect(heroSource).not.toContain("<Carousel");
+    expect(heroSource).not.toContain("setInterval");
+  });
+
+  test("redesign preserves the hero conversion attribution", () => {
+    expect(heroSource).toContain('cta_location: "hero_primary"');
+    expect(heroSource).toContain('cta_location: "hero_secondary"');
+    expect(heroSource).toContain('"trial_cta_click"');
+    expect(heroSource).toContain('"demo_cta_click"');
   });
 });

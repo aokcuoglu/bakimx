@@ -1,10 +1,13 @@
 import { getAppData } from "@/app/(app)/data"
+import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { CalendarSettings } from "@/components/settings/calendar-settings"
 import { getCalendarSettings } from "./actions"
 import Link from "next/link"
 
 export default async function CalendarSettingsPage() {
+  const paywall = await getFeaturePaywall("appointments")
+  if (paywall) return paywall
   const { user: _user, workshop } = await getAppData()
 
   if (!workshop) {

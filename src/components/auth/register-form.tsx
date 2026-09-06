@@ -1,42 +1,73 @@
 "use client"
 
-/* eslint-disable react-hooks/incompatible-library -- react-hook-form watch() cannot be memoized by React Compiler; usage is safe */
+/* eslint-disable react-hooks/incompatible-library -- react-hook-form watch() is the project-standard wizard pattern */
 
-import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react"
-import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
-import { useForm, useFieldArray, type UseFormReturn } from "react-hook-form"
-import { z } from "zod/v4"
-import { typedResolver } from "@/lib/validations/resolver"
 import {
+  type ComponentType,
+  type FormEvent,
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
+import Link from "next/link"
+import { AnimatePresence, motion } from "framer-motion"
+import { useForm, type UseFormReturn } from "react-hook-form"
+import { z } from "zod/v4"
+import {
+  ArrowLeft,
+  ArrowRight,
+  BarChart3,
+  Bell,
+  BookOpen,
+  Boxes,
+  Building2,
+  CalendarDays,
+  Car,
+  Check,
+  CircleCheck,
+  CircleDot,
+  CreditCard,
+  Database,
+  Droplets,
   Eye,
   EyeOff,
-  Mail,
-  Lock,
-  Building2,
-  User,
-  Phone,
-  Check,
-  ChevronRight,
-  ChevronLeft,
-  Users,
-  Clock,
   FileText,
-  Plus,
-  Trash2,
+  Hammer,
+  Handshake,
+  Headphones,
+  Loader2,
+  Lock,
+  Mail,
+  MapPin,
+  MessageSquare,
+  MoreHorizontal,
+  Package,
+  Paintbrush,
+  Phone,
+  ScanLine,
+  Settings,
+  Shield,
+  Sparkles,
+  Truck,
+  User,
+  Users,
+  Wallet,
+  Wrench,
+  Zap,
 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { BrandSpinner } from "@/components/shared/brand-spinner"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Form,
   FormControl,
@@ -45,89 +76,218 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { toast } from "sonner"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { CitySelect, DistrictSelect } from "@/components/shared/location-select"
+import { ACQUISITION_SOURCES, ACQUISITION_SOURCE_OPTIONS } from "@/lib/acquisition-sources"
 import { formatPhoneTR } from "@/lib/format"
-import { PLAN_PACKAGES, type PlanPackage } from "@/lib/plans-catalog"
-import { slugifyWorkshopCode } from "@/lib/workshop-code"
-import { cn } from "@/lib/utils"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
+import {
+  BUSINESS_FEATURE_IDS,
+  REGISTER_MODULE_IDS,
+  REGISTER_SECTOR_IDS,
+  REGISTER_STEPS,
+  SETUP_PREFERENCE_IDS,
+  TEAM_SIZE_IDS,
+  isRegisterSectorEnabled,
+  recommendedRegisterModules,
+  type BusinessFeatureId,
+  type RegisterModuleId,
+  type RegisterWizardSnapshot,
+  type SetupPreferenceId,
+  type TeamSizeId,
+} from "@/lib/register-onboarding"
+import { cn } from "@/lib/utils"
+import { getPlanPackage } from "@/lib/plans-catalog"
+import { optionalReferralCodeSchema } from "@/lib/validations/referral-code"
+import { typedResolver } from "@/lib/validations/resolver"
 
-const STEPS = [
-  { label: "Paket Seçimi" },
-  { label: "İşletme Bilgileri" },
-  { label: "Vergi & Çalışma" },
-  { label: "Ekip" },
-  { label: "Hesap Bilgileri" },
-  { label: "Onay" },
-] as const
+type IconType = ComponentType<{ className?: string }>
 
-const registerWizardSchema = z.object({
-  selectedPlan: z.enum(["starter", "pro", "premium"]),
-  billingPeriod: z.enum(["monthly", "yearly"]),
-  workshopName: z.string().min(2, "İş yeri adı zorunludur"),
-  phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
-  city: z.string().min(1, "Şehir zorunludur"),
-  district: z.string().optional().default(""),
-  address: z.string().min(1, "Adres zorunludur"),
-  workshopEmail: z.string().optional().default(""),
-  taxOffice: z.string().optional().default(""),
-  taxNumber: z.string().optional().default(""),
-  invoiceTitle: z.string().optional().default(""),
-  weekdayStart: z.string().default("09:00"),
-  weekdayEnd: z.string().default("18:00"),
-  workingDays: z.string().default("1,2,3,4,5,6"),
-  teamMembers: z
-    .array(
-      z.object({
-        fullName: z.string().min(1, "İsim zorunludur"),
-        role: z.enum(["usta", "teknisyen", "servis_danismani"]),
-      }),
-    )
-    .default([]),
-  firstName: z.string().min(1, "Ad zorunludur"),
-  lastName: z.string().min(1, "Soyad zorunludur"),
-  email: z.email("Geçerli bir e-posta adresi giriniz"),
-  password: z.string().min(8, "Şifre en az 8 karakter olmalıdır"),
-  kvkkConsent: z.literal(true, { message: "Devam etmek için aydınlatma metnini onaylamanız gerekir" }),
-})
+type SectorOption = {
+  id: string
+  label: string
+  description: string
+  icon: IconType
+  enabled: boolean
+}
+
+const SECTOR_CATALOG: Omit<SectorOption, "enabled">[] = [
+  { id: "auto_service", label: "Oto Servis", description: "Araç bakım, onarım ve periyodik servis", icon: Car },
+  { id: "mechanical_service", label: "Mekanik Servis", description: "Motor, şanzıman ve mekanik onarım", icon: Wrench },
+  { id: "body_paint", label: "Kaporta & Boya", description: "Kaporta, boya ve kaplama hizmetleri", icon: Paintbrush },
+  { id: "spare_parts", label: "Yedek Parça", description: "Parça satışı, stok ve sipariş", icon: Package },
+  { id: "tire_service", label: "Lastik / Rot / Balans", description: "Lastik, rot ve balans hizmetleri", icon: CircleDot },
+  { id: "auto_electric", label: "Oto Elektrik", description: "Elektrik arıza, akü ve aydınlatma", icon: Zap },
+  { id: "upholstery", label: "Oto Döşeme", description: "Koltuk, deri ve iç mekân", icon: CircleDot },
+  { id: "hardware", label: "Hırdavat", description: "Hırdavat ve yapı malzemeleri", icon: Hammer },
+  { id: "car_wash", label: "Oto Yıkama", description: "Yıkama ve detaylı temizlik", icon: Droplets },
+  { id: "steering", label: "Direksiyon Sistemleri", description: "Hidrolik ve elektrikli direksiyon", icon: Settings },
+  { id: "other", label: "Diğer", description: "Farklı sektör veya karma işletme", icon: MoreHorizontal },
+]
+
+const SECTORS: SectorOption[] = SECTOR_CATALOG.map((sector) => ({
+  ...sector,
+  enabled: isRegisterSectorEnabled(sector.id),
+})).sort((a, b) => Number(b.enabled) - Number(a.enabled))
+
+const ENABLED_SECTORS = SECTORS.filter((sector) => sector.enabled)
+const COMING_SOON_SECTORS = SECTORS.filter((sector) => !sector.enabled)
+const SECTOR_LABEL_BY_ID = Object.fromEntries(SECTORS.map((sector) => [sector.id, sector.label])) as Record<
+  string,
+  string
+>
+
+const BUSINESS_QUESTIONS: {
+  id: BusinessFeatureId
+  label: string
+  description: string
+  icon: IconType
+}[] = [
+  { id: "stock", label: "Yedek parça / malzeme stoku tutuyor musunuz?", description: "Stok ve tedarikçi araçlarını öneririz.", icon: Boxes },
+  { id: "fleet", label: "Filo veya kurumsal müşterileriniz var mı?", description: "Hatırlatma ve iletişim araçlarını öne çıkarırız.", icon: Building2 },
+  { id: "insurance", label: "Sigorta şirketleriyle çalışıyor musunuz?", description: "Teklif ve servis geçmişi araçlarını öneririz.", icon: Shield },
+  { id: "pickup_delivery", label: "Araç teslim alma / bırakma hizmetiniz var mı?", description: "Randevu ve müşteri iletişimini öne çıkarırız.", icon: Truck },
+  { id: "virtual_pos", label: "Dijital ödeme takibi yapıyor musunuz?", description: "Kasa ve tahsilat araçlarını öneririz.", icon: CreditCard },
+]
+
+const TEAM_OPTIONS: { id: TeamSizeId; label: string; description: string }[] = [
+  { id: "solo", label: "Sadece Ben", description: "Tek kişilik işletme" },
+  { id: "2_5", label: "2–5 Kişi", description: "Küçük ekip" },
+  { id: "6_10", label: "6–10 Kişi", description: "Orta ölçekli" },
+  { id: "11_25", label: "11–25 Kişi", description: "Büyüyen işletme" },
+  { id: "26_50", label: "26–50 Kişi", description: "Büyük işletme" },
+  { id: "50_plus", label: "50+ Kişi", description: "Kurumsal" },
+]
+
+const MODULES: {
+  id: RegisterModuleId
+  label: string
+  description: string
+  icon: IconType
+}[] = [
+  { id: "customers_vehicles", label: "Müşteri & Araç", description: "Müşteri ve araç geçmişi", icon: Users },
+  { id: "work_orders", label: "İş Emirleri", description: "Uçtan uca servis operasyonu", icon: FileText },
+  { id: "appointments", label: "Randevular", description: "Takvim ve randevu takibi", icon: CalendarDays },
+  { id: "reports", label: "Raporlar", description: "Operasyon ve müşteri raporları", icon: BarChart3 },
+  { id: "stock_parts", label: "Stok & Parça", description: "Parça stoku ve hareketleri", icon: Boxes },
+  { id: "quotes", label: "Teklifler", description: "Müşteri teklif ve onayları", icon: FileText },
+  { id: "cashbox", label: "Kasa & Tahsilat", description: "Ödeme ve yaşlandırma takibi", icon: Wallet },
+  { id: "suppliers", label: "Tedarikçiler", description: "Tedarikçi ve fiyat yönetimi", icon: Handshake },
+  { id: "reminders", label: "Hatırlatmalar", description: "Periyodik bakım hatırlatmaları", icon: Bell },
+  { id: "communications", label: "İletişim", description: "SMS, WhatsApp ve e-posta kayıtları", icon: MessageSquare },
+  { id: "digital_intake", label: "Dijital Araç Kabul", description: "Ruhsat, fotoğraf ve hasar kaydı", icon: ScanLine },
+  { id: "service_passport", label: "Servis Pasaportu", description: "Paylaşılabilir araç geçmişi", icon: BookOpen },
+]
+
+const SETUP_OPTIONS: { id: SetupPreferenceId; label: string; description: string; icon: IconType }[] = [
+  { id: "self_service", label: "Kendim kuracağım", description: "Hemen başlayın; yardım merkezi yanınızda.", icon: Sparkles },
+  { id: "data_migration", label: "Verilerimi taşıyalım", description: "Müşteri ve araç kayıtlarınızı birlikte aktaralım.", icon: Database },
+  { id: "call_me", label: "Beni arayın", description: "Kurulum için ücretsiz destek isteyin.", icon: Headphones },
+]
+
+const registerWizardSchema = z
+  .object({
+    sector: z.union([z.literal(""), z.enum(REGISTER_SECTOR_IDS)]).refine(Boolean, "Sektör seçimi zorunludur"),
+    businessFeatures: z.array(z.enum(BUSINESS_FEATURE_IDS)).default([]),
+    teamSize: z.union([z.literal(""), z.enum(TEAM_SIZE_IDS)]).refine(Boolean, "Ekip büyüklüğü seçimi zorunludur"),
+    selectedModules: z.array(z.enum(REGISTER_MODULE_IDS)).min(1, "En az bir modül seçin"),
+    setupPreference: z.enum(SETUP_PREFERENCE_IDS),
+    acquisitionSource: z.enum(ACQUISITION_SOURCES).default("unknown"),
+    referralCode: optionalReferralCodeSchema,
+    workshopName: z.string().min(2, "Firma / servis adı zorunludur"),
+    phone: z.string().min(10, "Geçerli bir telefon numarası girin"),
+    city: z.string().min(1, "İl seçimi zorunludur"),
+    district: z.string().optional().default(""),
+    address: z.string().min(3, "Açık adres zorunludur"),
+    taxOffice: z.string().optional().default(""),
+    taxNumber: z
+      .string()
+      .optional()
+      .default("")
+      .refine((value) => !value || /^\d{10,11}$/.test(value), "Vergi / TC kimlik no 10 veya 11 haneli olmalıdır"),
+    firstName: z.string().min(1, "Ad zorunludur"),
+    lastName: z.string().min(1, "Soyad zorunludur"),
+    email: z.email("Geçerli bir e-posta adresi girin"),
+    password: z.string().min(8, "Şifre en az 8 karakter olmalıdır"),
+    confirmPassword: z.string().min(8, "Şifrenizi tekrar girin"),
+    kvkkConsent: z.boolean().refine(Boolean, "Devam etmek için aydınlatma metnini onaylayın"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({ code: "custom", path: ["confirmPassword"], message: "Şifreler eşleşmiyor" })
+    }
+    if (data.acquisitionSource === "referral" && !data.referralCode) {
+      ctx.addIssue({ code: "custom", path: ["referralCode"], message: "Referans kodu zorunludur" })
+    }
+  })
 
 type WizardFormValues = z.infer<typeof registerWizardSchema>
 type WizardForm = UseFormReturn<WizardFormValues, unknown, WizardFormValues>
 
 const STEP_FIELDS: Record<number, (keyof WizardFormValues)[]> = {
-  0: ["selectedPlan", "billingPeriod"],
-  1: ["workshopName", "phone", "city", "address"],
-  2: ["taxOffice", "taxNumber", "invoiceTitle", "weekdayStart", "weekdayEnd", "workingDays"],
-  3: ["teamMembers"],
-  4: ["firstName", "lastName", "email", "password"],
-  5: ["kvkkConsent"],
+  0: ["sector"],
+  1: [],
+  2: ["teamSize"],
+  3: ["selectedModules"],
+  4: [
+    "workshopName",
+    "phone",
+    "city",
+    "address",
+    "taxNumber",
+    "firstName",
+    "lastName",
+    "email",
+    "password",
+    "confirmPassword",
+    "acquisitionSource",
+    "referralCode",
+    "kvkkConsent",
+  ],
 }
 
 const stepVariants = {
-  enter: (direction: number) => ({ x: direction > 0 ? 80 : -80, opacity: 0 }),
+  enter: (direction: number) => ({ x: direction > 0 ? 48 : -48, opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit: (direction: number) => ({ x: direction > 0 ? -80 : 80, opacity: 0 }),
+  exit: (direction: number) => ({ x: direction > 0 ? -48 : 48, opacity: 0 }),
 }
 
 const noopSubscribe = () => () => {}
 
-const DAY_LABELS = [
-  { value: "1", short: "Pzt" },
-  { value: "2", short: "Sal" },
-  { value: "3", short: "Çar" },
-  { value: "4", short: "Per" },
-  { value: "5", short: "Cum" },
-  { value: "6", short: "Cmt" },
-  { value: "0", short: "Paz" },
-]
+export type SalesRegistrationPrefill = {
+  token: string
+  advisorName: string
+  workshopName: string
+  phone: string
+  city: string
+  district: string
+  address: string
+  firstName: string
+  lastName: string
+  email: string
+}
 
-const ROLE_OPTIONS = [
-  { value: "usta", label: "Usta" },
-  { value: "teknisyen", label: "Teknisyen" },
-  { value: "servis_danismani", label: "Servis Danışmanı" },
-]
-
-export function RegisterForm() {
+export function RegisterForm({
+  salesRegistration,
+  preferredPlan,
+  onSnapshotChange,
+}: {
+  salesRegistration?: SalesRegistrationPrefill
+  preferredPlan?: { tier: string; cycle: "monthly" | "yearly" }
+  onSnapshotChange?: (snapshot: RegisterWizardSnapshot) => void
+}) {
   const [currentStep, setCurrentStep] = useState(0)
   const [direction, setDirection] = useState(1)
   const [error, setError] = useState("")
@@ -141,55 +301,73 @@ export function RegisterForm() {
   const form = useForm<WizardFormValues, unknown, WizardFormValues>({
     resolver: typedResolver(registerWizardSchema),
     defaultValues: {
-      selectedPlan: "pro",
-      billingPeriod: "monthly",
-      workshopName: "",
-      phone: "",
-      city: "",
-      district: "",
-      address: "",
-      workshopEmail: "",
+      sector: "",
+      businessFeatures: [],
+      teamSize: "",
+      selectedModules: recommendedRegisterModules([]),
+      setupPreference: "self_service",
+      acquisitionSource: salesRegistration ? "sales_advisor" : "unknown",
+      referralCode: "",
+      workshopName: salesRegistration?.workshopName ?? "",
+      phone: salesRegistration?.phone ?? "",
+      city: salesRegistration?.city ?? "",
+      district: salesRegistration?.district ?? "",
+      address: salesRegistration?.address ?? "",
       taxOffice: "",
       taxNumber: "",
-      invoiceTitle: "",
-      weekdayStart: "09:00",
-      weekdayEnd: "18:00",
-      workingDays: "1,2,3,4,5,6",
-      teamMembers: [],
-      firstName: "",
-      lastName: "",
-      email: "",
+      firstName: salesRegistration?.firstName ?? "",
+      lastName: salesRegistration?.lastName ?? "",
+      email: salesRegistration?.email ?? "",
       password: "",
-      kvkkConsent: undefined as unknown as true,
+      confirmPassword: "",
+      kvkkConsent: false,
     },
     mode: "onTouched",
   })
 
-  const billingPeriod = form.watch("billingPeriod")
-  const selectedPlan = form.watch("selectedPlan")
-  const workshopName = form.watch("workshopName")
+  const sector = form.watch("sector")
+  const businessFeatures = form.watch("businessFeatures")
+  const teamSize = form.watch("teamSize")
+  const selectedModules = form.watch("selectedModules")
   const city = form.watch("city")
+  const acquisitionSource = form.watch("acquisitionSource")
+
+  useEffect(() => {
+    onSnapshotChange?.({
+      currentStep,
+      sector,
+      businessFeatureCount: businessFeatures.length,
+      teamSize,
+      moduleCount: selectedModules.length,
+    })
+  }, [
+    acquisitionSource,
+    businessFeatures.length,
+    currentStep,
+    onSnapshotChange,
+    sector,
+    selectedModules.length,
+    teamSize,
+  ])
 
   async function goNext() {
     const fields = STEP_FIELDS[currentStep]
-    // Step 3 (Ekip) has no required fields — always passes if array is empty
-    if (currentStep === 3) {
-      const members = form.getValues("teamMembers")
-      if (members.length > 0) {
-        const valid = await form.trigger("teamMembers")
-        if (!valid) return
-      }
-    } else {
-      const valid = await form.trigger(fields)
-      if (!valid) return
+    const valid = fields.length === 0 || (await form.trigger(fields))
+    if (!valid) return
+
+    if (currentStep === 1 && !form.getFieldState("selectedModules").isDirty) {
+      form.setValue("selectedModules", recommendedRegisterModules(form.getValues("businessFeatures")))
     }
+    if (currentStep === 3) form.clearErrors(STEP_FIELDS[4])
     setDirection(1)
-    setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1))
+    setCurrentStep((step) => Math.min(step + 1, REGISTER_STEPS.length - 1))
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  function goPrev() {
+  function goPrevious() {
     setDirection(-1)
-    setCurrentStep((s) => Math.max(s - 1, 0))
+    setCurrentStep((step) => Math.max(step - 1, 0))
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   async function handleSubmit(values: WizardFormValues) {
@@ -197,39 +375,47 @@ export function RegisterForm() {
     submitRef.current = true
     setError("")
     setLoading(true)
-    try {
-      const body = {
-        workshopName: values.workshopName,
-        firstName: values.firstName,
-        lastName: values.lastName,
-        email: values.email,
-        phone: values.phone,
-        city: values.city,
-        district: values.district || undefined,
-        address: values.address,
-        password: values.password,
-        workshopEmail: values.workshopEmail || undefined,
-        taxOffice: values.taxOffice || undefined,
-        taxNumber: values.taxNumber || undefined,
-        invoiceTitle: values.invoiceTitle || undefined,
-        weekdayStart: values.weekdayStart,
-        weekdayEnd: values.weekdayEnd,
-        workingDays: values.workingDays,
-        kvkkConsent: true,
-      }
 
-      const res = await fetch("/api/auth/register", {
+    try {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          sector: values.sector || "auto_service",
+          businessFeatures: values.businessFeatures,
+          teamSize: values.teamSize || "solo",
+          selectedModules: values.selectedModules,
+          setupPreference: values.setupPreference,
+          acquisitionSource: values.acquisitionSource,
+          salesRegistrationToken: salesRegistration?.token,
+          referralCode: values.referralCode || undefined,
+          workshopName: values.workshopName,
+          phone: values.phone,
+          city: values.city,
+          district: values.district || undefined,
+          address: values.address,
+          taxOffice: values.taxOffice || undefined,
+          taxNumber: values.taxNumber || undefined,
+          invoiceTitle: values.workshopName,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          password: values.password,
+          kvkkConsent: true,
+        }),
       })
-      const data = await res.json()
-      if (data.ok) {
-        trackMarketingEvent("register_submitted", { plan_tier: values.selectedPlan, billing_cycle: values.billingPeriod })
-        setSubmitted(values.email.trim())
-      } else {
-        setError(data.error || "Kayıt başarısız")
+      const data = await response.json()
+      if (!data.ok) {
+        setError(data.error || "Kayıt tamamlanamadı")
+        return
       }
+
+      trackMarketingEvent("register_submitted", {
+        sector: values.sector || "auto_service",
+        team_size: values.teamSize || "solo",
+        module_count: String(values.selectedModules.length),
+      })
+      setSubmitted(values.email.trim())
     } catch {
       setError("Bir hata oluştu. Lütfen tekrar deneyin.")
     } finally {
@@ -240,37 +426,28 @@ export function RegisterForm() {
 
   if (submitted) {
     return (
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-        <div className="mb-2 text-center">
-          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10">
-            <Mail className="size-7 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            E-postanızı kontrol edin
-          </h1>
-          <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
-            <span className="font-medium text-foreground">{submitted}</span> adresine bir doğrulama
-            bağlantısı gönderdik. Bağlantıya tıkladığınızda 7 günlük ücretsiz denemeniz başlar ve
-            otomatik olarak giriş yaparsınız.
-          </p>
-          <p className="mt-4 text-muted-foreground text-xs leading-relaxed">
-            E-posta birkaç dakika içinde gelmezse spam/gereksiz klasörünü kontrol edin. Bağlantı 48
-            saat geçerlidir.
-          </p>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-xl py-12 text-center">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10">
+          <Mail className="size-7 text-primary" />
         </div>
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          Zaten hesabınız var mı?{" "}
-          <Link href="/login" className="text-primary hover:underline transition-colors font-medium">
-            Giriş yapın
-          </Link>
-        </div>
+        <h1 className="mt-5 text-2xl font-bold tracking-tight text-foreground">E-postanızı kontrol edin</h1>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+          <span className="font-medium text-foreground">{submitted}</span> adresine doğrulama bağlantısı gönderdik. Bağlantıya tıkladığınızda ücretsiz 7 iş günlük kullanımınız başlar.
+        </p>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Kart bilgisi gerekmez. Süre sonunda paket satın alınmazsa hesabınız ve verileriniz korunarak erişim dondurulur.
+        </p>
+        <Button asChild className="mt-7">
+          <Link href="/login">Giriş sayfasına dön</Link>
+        </Button>
       </motion.div>
     )
   }
 
   return (
     <div className="w-full">
-      <StepIndicator currentStep={currentStep} />
+      <MobileStepIndicator currentStep={currentStep} />
+      {preferredPlan && <PreferredPlanBanner tier={preferredPlan.tier} cycle={preferredPlan.cycle} />}
 
       <Form {...form}>
         <form
@@ -278,18 +455,17 @@ export function RegisterForm() {
           onChange={() => {
             if (startedRef.current) return
             startedRef.current = true
-            trackMarketingEvent("register_started", { entry_step: "plan", plan_tier: selectedPlan, billing_cycle: billingPeriod })
+            trackMarketingEvent("register_started", { entry_step: "sector" })
           }}
           method="post"
-          className="mt-8"
         >
           {error && (
-            <div role="alert" aria-live="polite" className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
+            <div role="alert" aria-live="polite" className="mb-5 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive-strong">
               {error}
             </div>
           )}
 
-          <div className="relative min-h-[380px]">
+          <div className="relative min-h-[440px]">
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
                 key={currentStep}
@@ -298,63 +474,70 @@ export function RegisterForm() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.25, ease: "easeInOut" }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
               >
-                {currentStep === 0 && (
-                  <StepPlanSelection
-                    form={form}
-                    billingPeriod={billingPeriod}
-                  />
-                )}
-                {currentStep === 1 && (
-                  <StepBusinessInfo form={form} workshopName={workshopName} city={city} />
-                )}
-                {currentStep === 2 && <StepTaxAndHours form={form} />}
-                {currentStep === 3 && <StepTeam form={form} />}
+                {currentStep === 0 && <SectorStep form={form} />}
+                {currentStep === 1 && <BusinessDetailsStep form={form} />}
+                {currentStep === 2 && <TeamSizeStep form={form} />}
+                {currentStep === 3 && <ModulesStep form={form} />}
                 {currentStep === 4 && (
-                  <StepAccountInfo
+                  <AccountStep
                     form={form}
+                    city={city}
+                    acquisitionSource={acquisitionSource}
+                    salesAdvisorName={salesRegistration?.advisorName}
                     showPassword={showPassword}
-                    setShowPassword={setShowPassword}
+                    onShowPasswordChange={setShowPassword}
                   />
                 )}
-                {currentStep === 5 && <StepConfirmation form={form} />}
               </motion.div>
             </AnimatePresence>
           </div>
 
-          <div className="mt-6 flex items-center gap-3">
-            {currentStep > 0 && (
-              <Button type="button" variant="outline" onClick={goPrev} className="gap-1.5">
-                <ChevronLeft className="size-4" />
+          <div className="mt-7 flex items-center gap-3 border-t border-border pt-5">
+            {currentStep === 0 ? (
+              <Button asChild type="button" variant="outline">
+                <Link href="/">
+                  <ArrowLeft data-icon="inline-start" />
+                  Ana Sayfa
+                </Link>
+              </Button>
+            ) : (
+              <Button type="button" variant="outline" onClick={goPrevious}>
+                <ArrowLeft data-icon="inline-start" />
                 Geri
               </Button>
             )}
             <div className="flex-1" />
-            {currentStep < STEPS.length - 1 ? (
-              <Button type="button" onClick={goNext} className="gap-1.5">
-                {currentStep === 3 ? "Atla / Devam" : "Devam"}
-                <ChevronRight className="size-4" />
+            {currentStep < REGISTER_STEPS.length - 1 ? (
+              <Button type="button" onClick={goNext} disabled={currentStep === 0 && !sector}>
+                Devam Et
+                <ArrowRight data-icon="inline-end" />
               </Button>
             ) : (
-              <Button type="submit" disabled={loading || !hydrated} className="gap-1.5">
+              <Button type="submit" disabled={loading || !hydrated} size="xl">
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <BrandSpinner size={18} />
                     Hesap oluşturuluyor...
                   </span>
                 ) : (
-                  "Hesap Oluştur"
+                  <>
+                    <User data-icon="inline-start" />
+                    Ücretsiz Hesabımı Oluştur
+                  </>
                 )}
               </Button>
             )}
           </div>
 
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            Zaten hesabınız var mı?{" "}
-            <Link href="/login" className="text-primary hover:underline transition-colors font-medium">
-              Giriş yapın
-            </Link>
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5 text-xs text-muted-foreground">
+            <span>© 2026 BakimX · Servisiniz kontrol altında</span>
+            <span className="flex gap-4">
+              <Link href="/kvkk" target="_blank" className="hover:text-foreground hover:underline">KVKK</Link>
+              <Link href="/privacy" target="_blank" className="hover:text-foreground hover:underline">Gizlilik</Link>
+              <Link href="/terms" target="_blank" className="hover:text-foreground hover:underline">Kullanım Koşulları</Link>
+            </span>
           </div>
         </form>
       </Form>
@@ -362,763 +545,645 @@ export function RegisterForm() {
   )
 }
 
-function StepIndicator({ currentStep }: { currentStep: number }) {
+function PreferredPlanBanner({
+  tier,
+  cycle,
+}: {
+  tier: string
+  cycle: "monthly" | "yearly"
+}) {
+  const pkg = getPlanPackage(tier as "lite" | "pro" | "premium" | "starter")
+  if (!pkg) return null
   return (
-    <nav aria-label="Kayıt adımları" className="flex items-start justify-between">
-      {STEPS.map((step, i) => (
-        <Fragment key={step.label}>
-          <div className="flex shrink-0 flex-col items-center gap-1.5">
-            <div
-              className={cn(
-                "flex size-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors",
-                i < currentStep && "border-primary bg-primary text-primary-foreground",
-                i === currentStep && "border-primary bg-primary/10 text-primary-strong",
-                i > currentStep && "border-muted-foreground/30 text-muted-foreground",
-              )}
-              aria-current={i === currentStep ? "step" : undefined}
-            >
-              {i < currentStep ? <Check className="size-4" /> : i + 1}
-            </div>
+    <div className="mb-5 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 lg:hidden">
+      <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary-strong">
+        <Sparkles className="size-3.5" />
+        İlgilendiğiniz paket
+      </p>
+      <p className="mt-1 text-sm font-semibold text-foreground">
+        {pkg.name}
+        <span className="ml-1.5 font-normal text-muted-foreground-strong">
+          · {cycle === "yearly" ? pkg.yearlyLabel : pkg.monthlyLabel}
+        </span>
+      </p>
+      <p className="mt-0.5 text-xs text-muted-foreground-strong">
+        Önce ücretsiz deneyin; deneme bitince bu paketi etkinleştirebilirsiniz.
+      </p>
+    </div>
+  )
+}
+
+function MobileStepIndicator({ currentStep }: { currentStep: number }) {
+  return (
+    <nav aria-label="Kayıt adımları" className="mb-7 lg:hidden">
+      <div className="flex items-center gap-2">
+        {REGISTER_STEPS.map((step, index) => (
+          <Fragment key={step.label}>
             <span
               className={cn(
-                "text-[11px] font-medium hidden sm:block whitespace-nowrap",
-                i <= currentStep ? "text-foreground" : "text-muted-foreground",
+                "flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
+                index < currentStep && "border-primary bg-primary text-primary-foreground",
+                index === currentStep && "border-primary bg-primary/10 text-primary-strong",
+                index > currentStep && "border-border text-muted-foreground",
               )}
+              aria-current={index === currentStep ? "step" : undefined}
+              aria-label={`${index + 1}. ${step.label}`}
             >
-              {step.label}
+              {index < currentStep ? <Check className="size-3.5" /> : index + 1}
             </span>
-          </div>
-          {i < STEPS.length - 1 && (
-            <div
-              className={cn(
-                "mt-[15px] h-0.5 min-w-4 flex-1 mx-1.5 rounded-full transition-colors",
-                i < currentStep ? "bg-primary" : "bg-muted-foreground/20",
-              )}
-            />
-          )}
-        </Fragment>
-      ))}
+            {index < REGISTER_STEPS.length - 1 && (
+              <span className={cn("h-px flex-1 bg-border", index < currentStep && "bg-primary")} />
+            )}
+          </Fragment>
+        ))}
+      </div>
+      <p className="mt-2 text-center text-xs font-medium text-muted-foreground">
+        {REGISTER_STEPS[currentStep].label}
+      </p>
     </nav>
   )
 }
 
-function StepPlanSelection({
-  form,
-  billingPeriod,
-}: {
-  form: WizardForm
-  billingPeriod: "monthly" | "yearly"
-}) {
+function StepHeading({ title, description }: { title: string; description: React.ReactNode }) {
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground">Paketinizi seçin</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          E-posta doğrulamasının ardından 7 günlük ücretsiz deneme başlar.
-        </p>
-      </div>
+    <div className="mb-6 text-center">
+      <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{title}</h1>
+      <p className="mx-auto mt-2 max-w-2xl text-sm leading-5 text-muted-foreground">{description}</p>
+    </div>
+  )
+}
 
+function SectorStep({ form }: { form: WizardForm }) {
+  const [interestSector, setInterestSector] = useState<SectorOption | null>(null)
+
+  return (
+    <div>
+      <StepHeading title="Sektörünüzü seçin" description="İşletmenize en uygun kategoriyi belirleyin; sisteminizi buna göre hazırlayalım." />
       <FormField
         control={form.control}
-        name="billingPeriod"
+        name="sector"
         render={({ field }) => (
           <FormItem>
-            <ToggleGroup
-              type="single"
-              spacing={1}
-              className="w-full items-stretch gap-2 rounded-lg bg-muted p-1"
-              value={field.value}
-              onValueChange={(v) => {
-                if (v) field.onChange(v)
-              }}
-            >
-              <ToggleGroupItem
-                value="monthly"
-                className="flex-1 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm hover:text-foreground"
+            <div className="grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <ToggleGroup
+                type="single"
+                value={field.value}
+                onValueChange={(value) => value && field.onChange(value)}
+                className="contents"
+                aria-label="Sektör seçimi"
               >
-                Aylık
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="yearly"
-                className="flex-1 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm hover:text-foreground"
-              >
-                Yıllık
-                <span className="ml-1 text-xs text-success-strong font-semibold">2 ay bedava</span>
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </FormItem>
-        )}
-      />
+                {ENABLED_SECTORS.map((sector) => {
+                  const Icon = sector.icon
+                  return (
+                    <ToggleGroupItem
+                      key={sector.id}
+                      value={sector.id}
+                      variant="outline"
+                      className="relative h-auto min-h-28 w-full items-start justify-start rounded-xl p-3 text-left whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-foreground"
+                    >
+                      <span className="flex w-full flex-col items-start">
+                        <span className="mb-3 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
+                          <Icon className="size-4.5" />
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{sector.label}</span>
+                        <span className="mt-1 text-xs leading-4 text-muted-foreground">{sector.description}</span>
+                      </span>
+                    </ToggleGroupItem>
+                  )
+                })}
+              </ToggleGroup>
 
-      <FormField
-        control={form.control}
-        name="selectedPlan"
-        render={({ field }) => (
-          <FormItem>
-            <div className="grid gap-3">
-              {PLAN_PACKAGES.map((pkg) => (
-                <PlanCard
-                  key={pkg.tier}
-                  pkg={pkg}
-                  billingPeriod={billingPeriod}
-                  selected={field.value === pkg.tier}
-                  onSelect={() => field.onChange(pkg.tier)}
-                />
-              ))}
+              {COMING_SOON_SECTORS.map((sector) => {
+                const Icon = sector.icon
+                return (
+                  <Button
+                    key={sector.id}
+                    type="button"
+                    variant="outline"
+                    onClick={() => setInterestSector(sector)}
+                    className="relative h-auto min-h-28 w-full items-start justify-start rounded-xl border-dashed bg-muted/40 p-3 text-left whitespace-normal hover:bg-muted/60"
+                  >
+                    <span className="flex w-full flex-col items-start">
+                      <span className="mb-3 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                        <Icon className="size-4.5" />
+                      </span>
+                      <span className="text-sm font-semibold text-foreground">{sector.label}</span>
+                      <span className="mt-1 text-xs leading-4 text-muted-foreground">{sector.description}</span>
+                      <span className="mt-2 text-[11px] font-medium text-primary-strong">
+                        İlgileniyorum — bizimle iletişime geçin
+                      </span>
+                    </span>
+                    <Badge variant="secondary" className="absolute right-2 top-2">
+                      Yakında
+                    </Badge>
+                  </Button>
+                )
+              })}
             </div>
             <FormMessage />
           </FormItem>
         )}
       />
-    </div>
-  )
-}
 
-function PlanCard({
-  pkg,
-  billingPeriod,
-  selected,
-  onSelect,
-}: {
-  pkg: PlanPackage
-  billingPeriod: "monthly" | "yearly"
-  selected: boolean
-  onSelect: () => void
-}) {
-  const price = billingPeriod === "monthly" ? pkg.monthlyLabel : pkg.yearlyLabel
-
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={cn(
-        "relative flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all",
-        selected
-          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-          : "border-border hover:border-primary/40",
-      )}
-    >
-      <div
-        className={cn(
-          "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-          selected ? "border-primary bg-primary" : "border-muted-foreground/40",
-        )}
+      <Dialog
+        open={interestSector !== null}
+        onOpenChange={(open) => {
+          if (!open) setInterestSector(null)
+        }}
       >
-        {selected && <Check className="size-3 text-primary-foreground" />}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-foreground">{pkg.name}</span>
-          {pkg.popular && (
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary-strong">
-              Popüler
-            </span>
-          )}
-        </div>
-        <p className="mt-0.5 text-sm text-muted-foreground">{pkg.tagline}</p>
-      </div>
-      <span className="shrink-0 text-sm font-semibold text-foreground">{price}</span>
-    </button>
+        <DialogContent className="sm:max-w-md">
+          {interestSector ? (
+            <ComingSoonSectorInterestForm
+              key={interestSector.id}
+              sector={interestSector}
+              onClose={() => setInterestSector(null)}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }
 
-function StepBusinessInfo({
-  form,
-  workshopName,
-  city,
-}: {
-  form: WizardForm
-  workshopName: string
+type SectorInterestForm = {
+  name: string
+  businessName: string
+  phone: string
   city: string
-}) {
-  const slug = workshopName.length >= 2 ? slugifyWorkshopCode(workshopName) : ""
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground">İşletme bilgileri</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Servisiniz hakkında temel bilgileri girin.
-        </p>
-      </div>
-
-      <FormField
-        control={form.control}
-        name="workshopName"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>İş yeri adı</FormLabel>
-            <FormControl>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                <Input {...field} placeholder="Örnek Oto Servis" className="pl-9" />
-              </div>
-            </FormControl>
-            {slug && (
-              <p className="text-xs text-muted-foreground mt-1">
-                bakimx.com/w/<span className="font-medium text-foreground">{slug}</span>
-              </p>
-            )}
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="phone"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Telefon</FormLabel>
-            <FormControl>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  {...field}
-                  type="tel"
-                  inputMode="tel"
-                  placeholder="0544 515 74 08"
-                  className="pl-9"
-                  onChange={(e) => {
-                    field.onChange(formatPhoneTR(e.target.value))
-                  }}
-                />
-              </div>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <div className="grid grid-cols-2 gap-3">
-        <FormField
-          control={form.control}
-          name="city"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Şehir</FormLabel>
-              <FormControl>
-                <CitySelect
-                  value={field.value}
-                  onValueChange={(v) => field.onChange(v)}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="district"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>İlçe</FormLabel>
-              <FormControl>
-                <DistrictSelect
-                  city={city}
-                  value={field.value || ""}
-                  onValueChange={(v) => field.onChange(v)}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
-      <FormField
-        control={form.control}
-        name="address"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Adres</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder="Sanayi Mah. 1. Cad. No:5" />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="workshopEmail"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>
-              İşletme e-postası <span className="text-muted-foreground font-normal">(opsiyonel)</span>
-            </FormLabel>
-            <FormControl>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                <Input {...field} type="email" placeholder="servis@isyeri.com" className="pl-9" />
-              </div>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </div>
-  )
 }
 
-function StepTaxAndHours({ form }: { form: WizardForm }) {
-  const workingDays = form.watch("workingDays")
-  const selectedDays = workingDays ? workingDays.split(",").filter(Boolean) : []
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-          <FileText className="size-5" />
-          Vergi & Çalışma Saatleri
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Fatura ve çalışma bilgileriniz (tümü opsiyonel, sonradan da ayarlanabilir)
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <FormField
-          control={form.control}
-          name="taxOffice"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Vergi dairesi</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Kadıköy VD" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="taxNumber"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Vergi numarası</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="1234567890" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
-      <FormField
-        control={form.control}
-        name="invoiceTitle"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Fatura ünvanı</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder="Örnek Oto Tamir Ltd. Şti." />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <div className="space-y-3 pt-2">
-        <div className="flex items-center gap-2">
-          <Clock className="size-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">Çalışma Günleri</span>
-        </div>
-        <ToggleGroup
-          type="multiple"
-          spacing={2}
-          className="flex-wrap"
-          value={selectedDays}
-          onValueChange={(vals) => {
-            form.setValue("workingDays", vals.join(","), { shouldDirty: true })
-          }}
-        >
-          {DAY_LABELS.map((day) => (
-            <ToggleGroupItem
-              key={day.value}
-              value={day.value}
-              variant="outline"
-              className="rounded-lg px-3 py-1.5 text-sm font-medium data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong hover:border-primary/40"
-            >
-              {day.short}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground shrink-0">Saat:</span>
-          <FormField
-            control={form.control}
-            name="weekdayStart"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormControl>
-                  <Input {...field} type="time" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <span className="text-muted-foreground">-</span>
-          <FormField
-            control={form.control}
-            name="weekdayEnd"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormControl>
-                  <Input {...field} type="time" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        </div>
-      </div>
-    </div>
-  )
+const EMPTY_SECTOR_INTEREST: SectorInterestForm = {
+  name: "",
+  businessName: "",
+  phone: "",
+  city: "",
 }
 
-function StepTeam({ form }: { form: WizardForm }) {
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "teamMembers",
-  })
-
-  // BAK-107: Personel kaydı artık giriş hesabından ayrı açılamaz. İlk kayıt
-  // sırasında geçici şifre/davet teslimi yapılamadığı için ekip, kurulumdan
-  // sonra Ayarlar > Ekip'teki tek yüzeyden eklenir.
-  const maxMembers = 0
-  const canAdd = maxMembers > 0 && fields.length < maxMembers
-
-  useEffect(() => {
-    if (fields.length > maxMembers) {
-      for (let i = fields.length - 1; i >= maxMembers; i--) {
-        remove(i)
-      }
-    }
-  }, [maxMembers, fields.length, remove])
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-          <Users className="size-5" />
-          Ekibiniz
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          İş yerini kurduktan sonra personelinizi Ayarlar &gt; Ekip ekranından ekleyin. Her personele giriş hesabı birlikte açılır.
-        </p>
-      </div>
-
-      {maxMembers === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-6 text-center">
-          <Users className="mx-auto size-8 text-muted-foreground/50" />
-          <p className="mt-2 text-sm text-muted-foreground">
-            Personel ekleme, hesap bilgilerinin güvenle teslim edilebilmesi için kurulumdan sonra yapılır.
-          </p>
-        </div>
-      ) : fields.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-6 text-center">
-          <Users className="mx-auto size-8 text-muted-foreground/50" />
-          <p className="mt-2 text-sm text-muted-foreground">
-            Henüz ekip üyesi eklenmedi
-          </p>
-        </div>
-      ) : null}
-
-      {maxMembers > 0 && (
-        <>
-          <div className="space-y-3">
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex items-start gap-2">
-                <FormField
-                  control={form.control}
-                  name={`teamMembers.${index}.fullName`}
-                  render={({ field: f }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input {...f} placeholder="Ad Soyad" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`teamMembers.${index}.role`}
-                  render={({ field: f }) => (
-                    <FormItem className="w-40">
-                      <Select value={f.value} onValueChange={(v) => f.onChange(v)}>
-                        <FormControl>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Rol" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {ROLE_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => remove(index)}
-                  className="shrink-0 text-muted-foreground hover:text-destructive-strong"
-                  aria-label="Üyeyi kaldır"
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => append({ fullName: "", role: "usta" })}
-            disabled={!canAdd}
-            className="gap-1.5"
-          >
-            <Plus className="size-4" />
-            {canAdd
-              ? "Ekip üyesi ekle"
-              : `Limit doldu (${maxMembers}/${maxMembers})`}
-          </Button>
-        </>
-      )}
-    </div>
-  )
-}
-
-function StepAccountInfo({
-  form,
-  showPassword,
-  setShowPassword,
+function ComingSoonSectorInterestForm({
+  sector,
+  onClose,
 }: {
-  form: WizardForm
-  showPassword: boolean
-  setShowPassword: (v: boolean) => void
+  sector: SectorOption
+  onClose: () => void
 }) {
+  const [formData, setFormData] = useState<SectorInterestForm>(EMPTY_SECTOR_INTEREST)
+  const [errors, setErrors] = useState<Partial<Record<keyof SectorInterestForm | "_general", string>>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const submitRef = useRef(false)
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    if (submitRef.current) return
+
+    const nextErrors: Partial<Record<keyof SectorInterestForm | "_general", string>> = {}
+    if (formData.name.trim().length < 2) nextErrors.name = "Ad Soyad en az 2 karakter olmalıdır"
+    if (formData.businessName.trim().length < 2) nextErrors.businessName = "İşletme adı en az 2 karakter olmalıdır"
+    if (!formData.phone.trim()) {
+      nextErrors.phone = "Telefon gerekli"
+    } else if (!/^[0-9+\-\s()]{7,15}$/.test(formData.phone.trim())) {
+      nextErrors.phone = "Telefon numarası geçersiz görünüyor"
+    }
+    if (!formData.city.trim()) nextErrors.city = "Şehir seçin"
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
+
+    submitRef.current = true
+    setIsSubmitting(true)
+    try {
+      const res = await fetch("/api/demo-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          businessName: formData.businessName.trim(),
+          phone: formData.phone.trim(),
+          city: formData.city.trim(),
+          monthlyVehicles: "belirtilmedi",
+          notes: `[Sektör talebi: ${sector.label}] Yakında listesinden erken erişim talebi (kayıt sihirbazı).`,
+        }),
+      })
+      if (res.ok) {
+        trackMarketingEvent("demo_submitted", {
+          form_location: "register_coming_soon_sector",
+        })
+        setIsSuccess(true)
+        toast.success("Talebiniz alındı. En kısa sürede sizinle iletişime geçeceğiz.")
+      } else {
+        try {
+          const data = (await res.json()) as { errors?: Record<string, string> }
+          setErrors(data.errors ?? { _general: "Form gönderilemedi. Lütfen alanları kontrol edin." })
+        } catch {
+          setErrors({ _general: "Form gönderilemedi. Lütfen alanları kontrol edin." })
+        }
+      }
+    } catch {
+      setErrors({ _general: "Bağlantı hatası oluştu. Lütfen tekrar deneyin." })
+    } finally {
+      submitRef.current = false
+      setIsSubmitting(false)
+    }
+  }
+
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground">Hesap bilgileri</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Giriş yapacağınız kişisel bilgilerinizi girin.
-        </p>
-      </div>
+    <>
+      <DialogHeader>
+        <DialogTitle>{sector.label} — Yakında</DialogTitle>
+        <DialogDescription>
+          Bu sektör henüz kayıtta açık değil. Kısa formu doldurun; talebinizi önceliklendirip sizi haberdar edelim.
+        </DialogDescription>
+      </DialogHeader>
 
-      <div className="grid grid-cols-2 gap-3">
-        <FormField
-          control={form.control}
-          name="firstName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Ad</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                  <Input {...field} placeholder="Adınız" className="pl-9" />
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="lastName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Soyad</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Soyadınız" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
-      <FormField
-        control={form.control}
-        name="email"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>E-posta</FormLabel>
-            <FormControl>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                <Input {...field} type="email" autoComplete="email" placeholder="ornek@email.com" className="pl-9" />
-              </div>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="password"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Şifre</FormLabel>
-            <FormControl>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  {...field}
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  placeholder="En az 8 karakter"
-                  className="pl-9 pr-9"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
-                >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </Button>
-              </div>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </div>
+      {isSuccess ? (
+        <div className="space-y-4 py-2">
+          <div className="rounded-xl border border-success/20 bg-success/10 p-4 text-sm text-success-strong">
+            Talebiniz kaydedildi. Ekibimiz sizinle iletişime geçecek.
+          </div>
+          <DialogFooter>
+            <Button type="button" onClick={onClose}>
+              Tamam
+            </Button>
+          </DialogFooter>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="sector-interest-name">Ad Soyad</Label>
+            <Input
+              id="sector-interest-name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              autoComplete="name"
+              aria-invalid={errors.name ? true : undefined}
+            />
+            {errors.name ? <p className="text-xs text-destructive-strong">{errors.name}</p> : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sector-interest-business">İşletme adı</Label>
+            <Input
+              id="sector-interest-business"
+              value={formData.businessName}
+              onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+              autoComplete="organization"
+              aria-invalid={errors.businessName ? true : undefined}
+            />
+            {errors.businessName ? (
+              <p className="text-xs text-destructive-strong">{errors.businessName}</p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sector-interest-phone">Telefon</Label>
+            <Input
+              id="sector-interest-phone"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: formatPhoneTR(e.target.value) })}
+              inputMode="tel"
+              autoComplete="tel"
+              aria-invalid={errors.phone ? true : undefined}
+            />
+            {errors.phone ? <p className="text-xs text-destructive-strong">{errors.phone}</p> : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sector-interest-city">Şehir</Label>
+            <CitySelect
+              id="sector-interest-city"
+              value={formData.city}
+              onValueChange={(city) => setFormData({ ...formData, city })}
+            />
+            {errors.city ? <p className="text-xs text-destructive-strong">{errors.city}</p> : null}
+          </div>
+          {errors._general ? (
+            <p role="alert" className="text-sm text-destructive-strong">
+              {errors._general}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Vazgeç
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Gönderiliyor...
+                </>
+              ) : (
+                "Beni haberdar et"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      )}
+    </>
   )
 }
 
-function StepConfirmation({ form }: { form: WizardForm }) {
-  const values = form.getValues()
-  const planPkg = PLAN_PACKAGES.find((p) => p.tier === values.selectedPlan)
-  const priceLabel = values.billingPeriod === "monthly" ? planPkg?.monthlyLabel : planPkg?.yearlyLabel
+function BusinessDetailsStep({ form }: { form: WizardForm }) {
+  const sector = form.watch("sector")
+  const sectorLabel = SECTOR_LABEL_BY_ID[sector] ?? "Seçtiğiniz sektör"
 
-  const workingDaysArr = values.workingDays ? values.workingDays.split(",").filter(Boolean) : []
-  const dayNames = workingDaysArr
-    .map((d) => DAY_LABELS.find((dl) => dl.value === d)?.short)
-    .filter(Boolean)
-    .join(", ")
-
-  const hasTaxInfo = values.taxOffice || values.taxNumber || values.invoiceTitle
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground">Bilgilerinizi onaylayın</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Aşağıdaki bilgilerin doğruluğunu kontrol edin.
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <SummarySection title="Paket">
-          <SummaryRow label="Paket" value={`${planPkg?.name} — ${priceLabel}`} />
-        </SummarySection>
-
-        <SummarySection title="İşletme Bilgileri">
-          <SummaryRow label="İş yeri" value={values.workshopName} />
-          <SummaryRow label="Telefon" value={values.phone} />
-          <SummaryRow
-            label="Konum"
-            value={[values.city, values.district].filter(Boolean).join(", ")}
-          />
-          <SummaryRow label="Adres" value={values.address} />
-          {values.workshopEmail && (
-            <SummaryRow label="İşletme e-postası" value={values.workshopEmail} />
-          )}
-        </SummarySection>
-
-        {hasTaxInfo && (
-          <SummarySection title="Vergi Bilgileri">
-            {values.taxOffice && <SummaryRow label="Vergi dairesi" value={values.taxOffice} />}
-            {values.taxNumber && <SummaryRow label="Vergi no" value={values.taxNumber} />}
-            {values.invoiceTitle && <SummaryRow label="Fatura ünvanı" value={values.invoiceTitle} />}
-          </SummarySection>
-        )}
-
-        <SummarySection title="Çalışma Saatleri">
-          <SummaryRow label="Günler" value={dayNames || "Belirtilmedi"} />
-          <SummaryRow label="Saat" value={`${values.weekdayStart} - ${values.weekdayEnd}`} />
-        </SummarySection>
-
-        <SummarySection title="Ekip">
-          {values.teamMembers.length > 0 ? (
-            values.teamMembers.map((m, i) => (
-              <SummaryRow
-                key={i}
-                label={m.fullName}
-                value={ROLE_OPTIONS.find((r) => r.value === m.role)?.label || m.role}
-              />
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground px-3 py-1.5">Henüz eklenmedi</p>
-          )}
-        </SummarySection>
-
-        <SummarySection title="Hesap Bilgileri">
-          <SummaryRow label="Ad Soyad" value={`${values.firstName} ${values.lastName}`} />
-          <SummaryRow label="E-posta" value={values.email} />
-        </SummarySection>
-      </div>
-
-      <FormField
-        control={form.control}
-        name="kvkkConsent"
-        render={({ field }) => (
-          <FormItem>
-            <label className="flex items-start gap-2.5 text-sm text-muted-foreground cursor-pointer">
-              <FormControl>
-                <Checkbox
-                  checked={field.value === true}
-                  onCheckedChange={(checked) => field.onChange(checked === true ? true : undefined)}
-                  className="mt-0.5"
-                  aria-label="Kullanım koşulları ve aydınlatma metinlerini onayla"
-                />
-              </FormControl>
-              <span>
-                <Link href="/terms" target="_blank" className="text-primary hover:underline">Kullanım koşulları</Link>,{" "}
-                <Link href="/kvkk" target="_blank" className="text-primary hover:underline">aydınlatma metni</Link> ve{" "}
-                <Link href="/acik-riza" target="_blank" className="text-primary hover:underline">açık rıza metnini</Link> okudum, onaylıyorum.
-              </span>
-            </label>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </div>
-  )
-}
-
-function SummarySection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-        {title}
-      </h3>
-      <div className="space-y-1">{children}</div>
+      <StepHeading
+        title="İş detayları"
+        description={<><span className="font-semibold text-primary">{sectorLabel}</span> için birkaç soru — yanıtlarınıza göre başlangıç modüllerini önerelim.</>}
+      />
+      <FormField
+        control={form.control}
+        name="businessFeatures"
+        render={({ field }) => (
+          <FormItem>
+            <div className="space-y-3">
+              {BUSINESS_QUESTIONS.map((question) => {
+                const Icon = question.icon
+                const checked = field.value.includes(question.id)
+                return (
+                  <div key={question.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-xs">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <Icon className="size-4.5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold text-foreground">{question.label}</span>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">{question.description}</span>
+                    </span>
+                    <Switch
+                      checked={checked}
+                      onCheckedChange={(next) => {
+                        field.onChange(next ? [...field.value, question.id] : field.value.filter((id) => id !== question.id))
+                      }}
+                      aria-label={question.label}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+            <p className="mt-4 text-center text-xs text-muted-foreground">Seçimleriniz yalnız ilk kurulum önerisini belirler; daha sonra değiştirebilirsiniz.</p>
+          </FormItem>
+        )}
+      />
     </div>
   )
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
+function TeamSizeStep({ form }: { form: WizardForm }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-lg bg-muted/50 px-3 py-2">
-      <span className="text-sm text-muted-foreground shrink-0">{label}</span>
-      <span className="text-sm font-medium text-foreground text-right">{value}</span>
+    <div>
+      <StepHeading title="Ekip büyüklüğünüz" description="Başlangıç görünümünü ekibinizin çalışma biçimine göre optimize edelim." />
+      <FormField
+        control={form.control}
+        name="teamSize"
+        render={({ field }) => (
+          <FormItem>
+            <ToggleGroup
+              type="single"
+              value={field.value}
+              onValueChange={(value) => value && field.onChange(value)}
+              className="grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-3"
+              aria-label="Ekip büyüklüğü seçimi"
+            >
+              {TEAM_OPTIONS.map((option) => (
+                <ToggleGroupItem
+                  key={option.id}
+                  value={option.id}
+                  variant="outline"
+                  className="h-auto min-h-32 w-full flex-col rounded-xl p-4 text-center data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-foreground"
+                >
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
+                    <Users className="size-5" />
+                  </span>
+                  <span className="mt-3 text-sm font-semibold">{option.label}</span>
+                  <span className="mt-1 text-xs font-normal text-muted-foreground">{option.description}</span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
+  )
+}
+
+function ModulesStep({ form }: { form: WizardForm }) {
+  return (
+    <div>
+      <StepHeading
+        title="Modüllerinizi seçin"
+        description={<><span className="font-semibold text-primary">Oto Servis</span> için önerilenleri işaretledik — istediğinizi ekleyip çıkarabilirsiniz.</>}
+      />
+      <FormField
+        control={form.control}
+        name="selectedModules"
+        render={({ field }) => (
+          <FormItem>
+            <ToggleGroup
+              type="multiple"
+              value={field.value}
+              onValueChange={field.onChange}
+              className="grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-2 xl:grid-cols-4"
+              aria-label="Modül seçimi"
+            >
+              {MODULES.map((module) => {
+                const Icon = module.icon
+                const selected = field.value.includes(module.id)
+                return (
+                  <ToggleGroupItem
+                    key={module.id}
+                    value={module.id}
+                    variant="outline"
+                    className="h-auto min-h-18 w-full justify-start rounded-xl p-2.5 text-left whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-foreground"
+                  >
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-semibold">{module.label}</span>
+                      <span className="mt-0.5 block text-[10px] font-normal leading-3 text-muted-foreground">{module.description}</span>
+                    </span>
+                    {selected ? <CircleCheck className="size-4 shrink-0 text-primary" /> : <span className="size-4 shrink-0 rounded-full border border-border" />}
+                  </ToggleGroupItem>
+                )
+              })}
+            </ToggleGroup>
+            <FormMessage />
+            <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-xs font-semibold text-primary-strong">
+              <Sparkles className="size-4" />
+              {field.value.length} modül seçildi
+            </div>
+          </FormItem>
+        )}
+      />
+    </div>
+  )
+}
+
+function AccountStep({
+  form,
+  city,
+  acquisitionSource,
+  salesAdvisorName,
+  showPassword,
+  onShowPasswordChange,
+}: {
+  form: WizardForm
+  city: string
+  acquisitionSource: WizardFormValues["acquisitionSource"]
+  salesAdvisorName?: string
+  showPassword: boolean
+  onShowPasswordChange: (value: boolean) => void
+}) {
+  useEffect(() => {
+    // Resolver tüm şemayı değerlendirir; önceki adımın `trigger` çağrısından
+    // kalan, henüz ziyaret edilmemiş hesap alanı hatalarını ilk girişte gösterme.
+    form.clearErrors(STEP_FIELDS[4])
+  }, [form])
+
+  return (
+    <div>
+      <StepHeading title="Hesap bilgileriniz" description="Son adım — firma ve giriş bilgilerinizi tamamlayın. Kart bilgisi istemiyoruz." />
+
+      <div className="space-y-4">
+        <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+          <h2 className="mb-4 text-xs font-bold uppercase tracking-wide text-primary">Firma bilgileri</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField control={form.control} name="workshopName" render={({ field }) => (
+              <FormItem className="sm:col-span-2"><FormLabel>Firma / servis adı *</FormLabel><div className="relative"><Building2 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><FormControl><Input {...field} placeholder="Örn: Kaya Oto Servis" className="pl-9" /></FormControl></div><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="taxOffice" render={({ field }) => (
+              <FormItem><FormLabel>Vergi dairesi <span className="font-normal text-muted-foreground">(opsiyonel)</span></FormLabel><FormControl><Input {...field} placeholder="Örn: Kadıköy" /></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="taxNumber" render={({ field }) => (
+              <FormItem><FormLabel>Vergi / TC kimlik no <span className="font-normal text-muted-foreground">(opsiyonel)</span></FormLabel><FormControl><Input {...field} inputMode="numeric" placeholder="10 veya 11 haneli numara" onChange={(event) => field.onChange(event.target.value.replace(/\D/g, "").slice(0, 11))} /></FormControl><FormMessage /></FormItem>
+            )} />
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+          <h2 className="mb-4 text-xs font-bold uppercase tracking-wide text-primary">İletişim bilgileri</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField control={form.control} name="phone" render={({ field }) => (
+              <FormItem><FormLabel>Cep telefonu *</FormLabel><div className="relative"><Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><FormControl><Input {...field} type="tel" inputMode="tel" autoComplete="tel" placeholder="05XX XXX XX XX" className="pl-9" onChange={(event) => field.onChange(formatPhoneTR(event.target.value))} /></FormControl></div><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="email" render={({ field }) => (
+              <FormItem><FormLabel>E-posta *</FormLabel><div className="relative"><Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><FormControl><Input {...field} type="email" autoComplete="email" placeholder="ornek@servis.com" className="pl-9" /></FormControl></div><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="city" render={({ field }) => (
+              <FormItem><FormLabel>İl *</FormLabel><FormControl><CitySelect value={field.value} onValueChange={field.onChange} /></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="district" render={({ field }) => (
+              <FormItem><FormLabel>İlçe <span className="font-normal text-muted-foreground">(opsiyonel)</span></FormLabel><FormControl><DistrictSelect city={city} value={field.value || ""} onValueChange={field.onChange} /></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="address" render={({ field }) => (
+              <FormItem className="sm:col-span-2"><FormLabel>Açık adres *</FormLabel><div className="relative"><MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><FormControl><Input {...field} autoComplete="street-address" placeholder="Mahalle, cadde / sokak, kapı no" className="pl-9" /></FormControl></div><FormMessage /></FormItem>
+            )} />
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+          <h2 className="mb-4 text-xs font-bold uppercase tracking-wide text-primary">Giriş bilgileri</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField control={form.control} name="firstName" render={({ field }) => (
+              <FormItem><FormLabel>Ad *</FormLabel><FormControl><Input {...field} autoComplete="given-name" placeholder="Adınız" /></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="lastName" render={({ field }) => (
+              <FormItem><FormLabel>Soyad *</FormLabel><FormControl><Input {...field} autoComplete="family-name" placeholder="Soyadınız" /></FormControl><FormMessage /></FormItem>
+            )} />
+            <PasswordField form={form} name="password" label="Şifre *" showPassword={showPassword} onShowPasswordChange={onShowPasswordChange} />
+            <PasswordField form={form} name="confirmPassword" label="Şifre tekrar *" showPassword={showPassword} onShowPasswordChange={onShowPasswordChange} />
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-success/30 bg-success/10 p-4 sm:p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Sparkles className="size-4 text-success-strong" />
+            <h2 className="text-xs font-bold uppercase tracking-wide text-success-strong">Kurulum & veri taşıma yardımı</h2>
+            <Badge variant="outline" className="border-success/30 text-success-strong">Ücretsiz</Badge>
+          </div>
+          <p className="mb-3 text-xs leading-5 text-muted-foreground-strong">Hesabı kendiniz kurabilir veya ekibimizden ücretsiz destek isteyebilirsiniz.</p>
+          <FormField control={form.control} name="setupPreference" render={({ field }) => (
+            <FormItem>
+              <ToggleGroup type="single" value={field.value} onValueChange={(value) => value && field.onChange(value)} className="grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-3" aria-label="Kurulum desteği tercihi">
+                {SETUP_OPTIONS.map((option) => {
+                  const Icon = option.icon
+                  return (
+                    <ToggleGroupItem key={option.id} value={option.id} variant="outline" className="h-auto min-h-20 w-full justify-start rounded-lg bg-background p-3 text-left whitespace-normal data-[state=on]:border-success data-[state=on]:bg-success/10 data-[state=on]:text-foreground">
+                      <Icon className="size-4 shrink-0 text-success-strong" />
+                      <span><span className="block text-xs font-semibold">{option.label}</span><span className="mt-0.5 block text-[10px] font-normal leading-3 text-muted-foreground-strong">{option.description}</span></span>
+                    </ToggleGroupItem>
+                  )
+                })}
+              </ToggleGroup>
+            </FormItem>
+          )} />
+        </section>
+
+        {salesAdvisorName ? (
+          <section className="rounded-xl border border-primary/20 bg-primary/10 p-4 text-primary-strong sm:p-5">
+            <div className="flex items-start gap-3">
+              <Shield className="mt-0.5 size-5 shrink-0" />
+              <div>
+                <h2 className="text-sm font-semibold">Güvenli danışman bağlantısı</h2>
+                <p className="mt-1 text-xs leading-5">Bu kayıt {salesAdvisorName} tarafından size özel oluşturuldu. Firma bilgilerinizi kontrol edip hesabınızı tamamlayın.</p>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField control={form.control} name="acquisitionSource" render={({ field }) => (
+                <FormItem><FormLabel>Bizi nereden duydunuz?</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger className="w-full"><SelectValue /></SelectTrigger></FormControl><SelectContent>{ACQUISITION_SOURCE_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+              )} />
+              {acquisitionSource === "referral" && (
+                <FormField control={form.control} name="referralCode" render={({ field }) => (
+                  <FormItem className="sm:col-span-2"><FormLabel>Referans kodu *</FormLabel><FormControl><Input {...field} autoCapitalize="characters" autoComplete="off" placeholder="ÖRN: ORNEK-OTO" className="uppercase" onChange={(event) => field.onChange(event.target.value.toUpperCase())} /></FormControl><FormMessage /></FormItem>
+                )} />
+              )}
+            </div>
+          </section>
+        )}
+
+        <FormField control={form.control} name="kvkkConsent" render={({ field }) => (
+          <FormItem>
+            <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
+              <FormControl><Checkbox checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} aria-label="Aydınlatma metni onayı" /></FormControl>
+              <div className="text-xs leading-5 text-muted-foreground">
+                <Link href="/kvkk" target="_blank" className="font-medium text-primary hover:underline">KVKK Aydınlatma Metni</Link>&apos;ni okudum. Hesabımın ücretsiz 7 iş günü kullanılacağını, satın alma yapılmazsa verilerim korunarak erişimin dondurulacağını biliyorum.
+                <FormMessage />
+              </div>
+            </div>
+          </FormItem>
+        )} />
+      </div>
+    </div>
+  )
+}
+
+function PasswordField({
+  form,
+  name,
+  label,
+  showPassword,
+  onShowPasswordChange,
+}: {
+  form: WizardForm
+  name: "password" | "confirmPassword"
+  label: string
+  showPassword: boolean
+  onShowPasswordChange: (value: boolean) => void
+}) {
+  return (
+    <FormField control={form.control} name={name} render={({ field }) => (
+      <FormItem>
+        <FormLabel>{label}</FormLabel>
+        <div className="relative">
+            <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <FormControl><Input {...field} type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="En az 8 karakter" className="pl-9 pr-9" /></FormControl>
+            <Button type="button" variant="ghost" size="icon" onClick={() => onShowPasswordChange(!showPassword)} className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground" aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}>
+              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </Button>
+        </div>
+        <FormMessage />
+      </FormItem>
+    )} />
   )
 }

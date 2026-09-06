@@ -5,11 +5,35 @@ import { PublicLinkState } from "@/components/shared/public-link-state"
 import { sanitizePassportForPublic } from "@/lib/passport/data-safety"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
+import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
 
 export const dynamic = "force-dynamic"
 
 export default async function PublicPassportPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
+
+  const tokenAccess = await prisma.vehiclePassportToken.findUnique({
+    where: { token },
+    select: {
+      isActive: true,
+      expiresAt: true,
+      workshop: {
+        select: {
+          planTier: true,
+          subscriptionStatus: true,
+          approvalStatus: true,
+          trialEndsAt: true,
+          currentPeriodEnd: true,
+        },
+      },
+    },
+  })
+  if (!tokenAccess) return <PublicLinkState problem="invalid" />
+  if (!tokenAccess.isActive) return <PublicLinkState problem="inactive" />
+  if (tokenAccess.expiresAt && tokenAccess.expiresAt < new Date()) return <PublicLinkState problem="expired" />
+  if (!getPlanState(tokenAccess.workshop).hasAccess || !hasWorkshopFeature(tokenAccess.workshop, "vehiclePassport")) {
+    return <PublicLinkState problem="plan_locked" />
+  }
 
   const passportToken = await prisma.vehiclePassportToken.findUnique({
     where: { token },
@@ -20,7 +44,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
           intakes: {
             include: {
               order: { include: { items: true } },
-              damageMarks: true,
+              damageMarks: { where: { deletedAt: null } },
               photos: {
                 // Dış alım (satın alma) fotoğrafları dahili-yalnız — araç pasaportuna sızmaz.
                 where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },
@@ -40,8 +64,6 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
   })
 
   if (!passportToken) return <PublicLinkState problem="invalid" />
-  if (!passportToken.isActive) return <PublicLinkState problem="inactive" />
-  if (passportToken.expiresAt && passportToken.expiresAt < new Date()) return <PublicLinkState problem="expired" />
 
   const { vehicle, workshop } = passportToken
 

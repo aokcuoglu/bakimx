@@ -218,7 +218,7 @@ export function ManualPartDialog({
               <span className="block text-xs font-medium text-muted-foreground">Birim</span>
               <OrderItemUnitCombobox
                 value={unit}
-                className="h-9 w-full"
+                className="h-8 w-full"
                 onValueChange={(next) => {
                   setUnit(next)
                   if (!isDivisibleOrderItemUnit(next)) setQuantity((q) => Math.max(1, Math.round(q)))
@@ -228,7 +228,7 @@ export function ManualPartDialog({
             </div>
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">Birim Fiyat</span>
-              <InputGroup className="h-9 w-32">
+              <InputGroup className="h-8 w-32">
                 <InputGroupAddon className="text-muted-foreground">₺</InputGroupAddon>
                 <InputGroupInput
                   type="text"

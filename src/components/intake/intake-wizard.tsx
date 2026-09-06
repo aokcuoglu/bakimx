@@ -28,6 +28,7 @@ import { PhotoAnnotate } from "@/components/intake/photo-annotate"
 import { DamageCapture } from "@/components/intake/damage-capture"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS } from "@/lib/constants"
+import { hasFeature, type PlanTier } from "@/lib/plan"
 
 type Customer = {
   id: string
@@ -67,11 +68,13 @@ export function IntakeWizard({
   prefillCustomerId,
   prefillVehicleId,
   source,
+  planTier,
 }: {
   customers: Customer[]
   prefillCustomerId?: string
   prefillVehicleId?: string
   source?: string
+  planTier?: string
 }) {
   const [step, setStep] = useState(1)
   const [error, setError] = useState("")
@@ -247,7 +250,7 @@ export function IntakeWizard({
           onStepClick={(id) => setStep(Number(id))}
         />
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {source === "registration" && selectedCustomerId && selectedVehicleId && (
             <Alert className="border-primary/30 bg-primary/5 text-primary">
               <Check className="size-4" />
@@ -273,6 +276,7 @@ export function IntakeWizard({
                   syncSelectionToUrl(v.customerId, v.vehicleId)
                 }}
                 onComplete={() => setStep(3)}
+                planTier={planTier}
               />
             </CardContent>
           </Card>
@@ -282,7 +286,7 @@ export function IntakeWizard({
             detayları, sağ=aracın salt-görüntü geçmiş/bilgi özeti. Mobilde alt alta yığılır
             (araç bilgileri formun altına düşer). */}
         {step === 3 && (
-          <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
+          <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.9fr)]">
             {/* Bölüm-1: Kabul detayları */}
             <Card>
               <CardHeader><CardTitle>Kabul Detayları</CardTitle></CardHeader>
@@ -469,7 +473,7 @@ export function IntakeWizard({
                       <InfoRow label="Renk" value={vehicleInfo.color} />
                       <InfoRow label="İlk Tescil" value={vehicleInfo.firstRegistrationDate} />
                       <InfoRow label="Muayene Geçerlilik" value={vehicleInfo.inspectionValidUntil} />
-                      <InfoRow label="Şasi (VIN)" value={vehicleInfo.vin} className="col-span-2" />
+                      <InfoRow label="Şase no" value={vehicleInfo.vin} className="col-span-2" />
                     </dl>
                   </div>
                 ) : (
@@ -487,15 +491,27 @@ export function IntakeWizard({
           <Card className={step === 4 ? undefined : "hidden"}>
             <CardHeader><CardTitle>Fotoğraf & Hasar İşaretleme</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <DamageCapture
-                intakeFormId={intakeId}
-                vehicle={vehicleInfo ? { plate: vehicleInfo.plate, brand: vehicleInfo.brand, model: vehicleInfo.model } : null}
-              />
-              <div className="border-t pt-4">
-                <h3 className="font-medium">Hasar fotoğrafları</h3>
-                <p className="mb-3 text-sm text-muted-foreground">Hasarı yakından çekin. Yükleme başarısız olursa fotoğrafı yeniden seçip tekrar deneyebilirsiniz.</p>
-              </div>
-              <PhotoAnnotate intakeFormId={intakeId} />
+              {hasFeature((planTier ?? "pro") as PlanTier, "damageMap") && (
+                <DamageCapture
+                  intakeFormId={intakeId}
+                  vehicle={vehicleInfo ? { plate: vehicleInfo.plate, brand: vehicleInfo.brand, model: vehicleInfo.model } : null}
+                />
+              )}
+              {hasFeature((planTier ?? "pro") as PlanTier, "photoChecklist") && (
+                <>
+                  <div className="border-t pt-4">
+                    <h3 className="font-medium">Hasar fotoğrafları</h3>
+                    <p className="mb-3 text-sm text-muted-foreground">Hasarı yakından çekin. Yükleme başarısız olursa fotoğrafı yeniden seçip tekrar deneyebilirsiniz.</p>
+                  </div>
+                  <PhotoAnnotate intakeFormId={intakeId} />
+                </>
+              )}
+              {!hasFeature((planTier ?? "pro") as PlanTier, "damageMap") &&
+               !hasFeature((planTier ?? "pro") as PlanTier, "photoChecklist") && (
+                <p className="text-sm text-muted-foreground">
+                  Hasar işaretleme ve fotoğraf annotation özellikleri paketinizde bulunmuyor. Paketinizi yükselterek bu özelliklere erişebilirsiniz.
+                </p>
+              )}
               <div className="pt-4 flex flex-wrap items-center justify-between gap-2">
                 <Button type="button" variant="outline" onClick={() => setStep(3)} size="lg">
                   Geri

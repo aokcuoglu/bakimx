@@ -815,7 +815,7 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog }: {
             gereksiz. Tutar NET yazılır, tick yalnız üstüne ne bineceğini söyler. */}
         {vat.perLine && (
           <Field label="KDV">
-            <div className="flex h-9 items-center">
+            <div className="flex h-8 items-center">
               <VatCell row={draft} ed={ed} onCell={onCell} />
             </div>
           </Field>
@@ -1401,7 +1401,7 @@ function PartNameField({ row, onCell, oneLine }: { row: Row; onCell: OnCell; one
         placeholder="Parça tanımı"
         aria-label="Parça tanımı"
         title={hint}
-        className="h-9 min-w-0 flex-1 text-sm font-medium"
+        className="h-8 min-w-0 flex-1 text-sm font-medium"
       />
     </div>
   )
@@ -1442,7 +1442,7 @@ function PartField({ row, ed, onCell, oneLine }: {
 
 function QtyStepper({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
   return (
-    <div data-slot="qty-stepper" className="inline-flex h-9 items-center rounded-lg border border-input bg-background transition-colors">
+    <div data-slot="qty-stepper" className="inline-flex h-8 items-center rounded-lg border border-input bg-background transition-colors">
       <Button type="button" variant="ghost" size="icon-xs" className="rounded-r-none" aria-label="Azalt"
         disabled={!editable || row.quantity <= 1}
         onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })}>
@@ -1484,7 +1484,7 @@ function QuantityField({ row, editable, onCell }: { row: Row; editable: boolean;
       inputMode="decimal"
       value={draft}
       aria-label={`${row.name || "Satır"} miktarı`}
-      className="h-9 w-24 text-center text-sm tabular-nums"
+      className="h-8 w-24 text-center text-sm tabular-nums"
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur() }}
@@ -1500,7 +1500,7 @@ function UnitField({ row, editable, onCell }: { row: Row; editable: boolean; onC
     <OrderItemUnitCombobox
       value={unit}
       ariaLabel={`${row.name || "Parça"} birimi`}
-      className="h-9 w-24"
+      className="h-8 w-24"
       isOptionDisabled={(candidate) =>
         (row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}
       onValueChange={(next) => {
@@ -1561,7 +1561,7 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
       autoComplete="off"
       placeholder="₺0,00"
       aria-label="Birim fiyat"
-      className={cn("h-9 px-2.5 text-right text-sm tabular-nums", tone, wide ? "w-32" : "w-28")}
+      className={cn("h-8 px-2.5 text-right text-sm tabular-nums", tone, wide ? "w-32" : "w-28")}
       value={ed.editingPrice ? ed.priceDraft : row.unitPrice != null ? formatTRY(row.unitPrice) : ""}
       onFocus={(e) => { if (!ed.editingPrice) ed.startPrice(); e.currentTarget.select() }}
       onChange={(e) => { if (!ed.editingPrice) ed.startPrice(); ed.setPriceDraft(e.target.value) }}

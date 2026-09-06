@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import { VIN_LOOKUP_QUOTA, type PlanTier } from "@/lib/plan"
 
 const DEFAULT_MONTHLY_CAP = 18_000 // headroom under the 20k RapidAPI plan
 
@@ -10,6 +11,11 @@ export function rapidApiMonthlyCap(): number {
   return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_MONTHLY_CAP
 }
 
+/** Atölyenin teorik aylık kotası = tier kotası + ek kota (UI gösterimi için). */
+export function workshopMonthlyCap(tier: PlanTier, extraVinQuota: number): number {
+  return (VIN_LOOKUP_QUOTA[tier] ?? 0) + Math.max(0, extraVinQuota)
+}
+
 /** Start of the current UTC month (billing window boundary). */
 function monthStartUtc(): Date {
   const d = new Date()
@@ -17,6 +23,10 @@ function monthStartUtc(): Date {
   d.setUTCHours(0, 0, 0, 0)
   return d
 }
+
+// ---------------------------------------------------------------------------
+// Global RapidAPI usage (admin dashboard)
+// ---------------------------------------------------------------------------
 
 /** Billed RapidAPI calls this month == cache rows created this month across
  *  both cache tables (errors are never cached, hits never create rows). */
@@ -28,6 +38,50 @@ export async function countRapidApiCallsThisMonth(): Promise<number> {
   ])
   return vin + tecdoc
 }
+
+// ---------------------------------------------------------------------------
+// Per-workshop quota tracking
+// ---------------------------------------------------------------------------
+
+/** Record a billable call for a specific workshop. */
+export async function recordQuotaUsage(
+  workshopId: string,
+  source: "vin" | "tecdoc",
+): Promise<void> {
+  await prisma.quotaUsage.create({
+    data: { workshopId, source },
+  })
+}
+
+/** Count billable calls this month for a specific workshop. */
+export async function countWorkshopCallsThisMonth(workshopId: string): Promise<number> {
+  const monthStart = monthStartUtc()
+  return prisma.quotaUsage.count({
+    where: { workshopId, createdAt: { gte: monthStart } },
+  })
+}
+
+/** Check if a workshop has quota available. Throws if exceeded. */
+export async function assertQuotaAvailable(
+  workshopId: string,
+  tier: PlanTier,
+  extraVinQuota: number,
+): Promise<void> {
+  const cap = workshopMonthlyCap(tier, extraVinQuota)
+  if (cap <= 0) {
+    throw new Error("Bu pakette şase/parça sorgusu bulunmuyor. Paketinizi yükseltin.")
+  }
+  const used = await countWorkshopCallsThisMonth(workshopId)
+  if (used >= cap) {
+    throw new Error(
+      "Aylık katalog sorgu limitiniz doldu. Ek kota satın almak için Kota Yönetimi sayfasını kullanın."
+    )
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Admin observability
+// ---------------------------------------------------------------------------
 
 export interface RapidApiUsage {
   monthStart: Date
@@ -55,7 +109,7 @@ export async function getRapidApiUsage(): Promise<RapidApiUsage> {
   ])
 
   const breakdown = [
-    { label: "VIN sorgu", billed: vinRows, served: vinServed._sum.hitCount ?? 0 },
+    { label: "Şase sorgu", billed: vinRows, served: vinServed._sum.hitCount ?? 0 },
     ...tecdocByEndpoint
       .map((e) => ({
         label: `Katalog · ${e.endpoint}`,
