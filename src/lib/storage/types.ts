@@ -1,10 +1,12 @@
+import { MAX_FILE_SIZE_BYTES, maxFileSizeLabelMb } from "@/lib/photos/limits"
+
 export const ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
 ] as const
 
-export const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024
+export { MAX_FILE_SIZE_BYTES }
 
 export const STORAGE_PATH_PREFIX = "workshops"
 
@@ -38,7 +40,10 @@ export function validateUploadFile(file: File): UploadValidation {
 
   if (file.size > MAX_FILE_SIZE_BYTES) {
     const sizeMB = (file.size / (1024 * 1024)).toFixed(1)
-    return { valid: false, error: `Dosya boyutu (${sizeMB} MB) çok büyük. Maksimum 8 MB olmalıdır.` }
+    return {
+      valid: false,
+      error: `Dosya boyutu (${sizeMB} MB) çok büyük. Maksimum ${maxFileSizeLabelMb()} MB olmalıdır.`,
+    }
   }
 
   return { valid: true, error: null }

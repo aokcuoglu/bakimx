@@ -24,6 +24,7 @@ import { resolveGetirbakimProduct } from "@/lib/parts/getirbakim/search"
 import { validateBakimxProductFitment } from "@/lib/parts/bakimx-fitment"
 import { assertFeature, hasWorkshopFeature } from "@/lib/plan"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
+import { assertIntakePhotoQuota } from "@/lib/photos/quota"
 import { trDateToDate } from "@/lib/format"
 import { nanoid } from "nanoid"
 import { computeStockDelta } from "@/lib/parts/stock-delta"
@@ -34,6 +35,7 @@ import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communica
 import { syncDeliveryToCalendar } from "@/lib/calendar/sync"
 import { z } from "zod/v4"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { lockDamageIntake } from "@/lib/intake/damage"
 
 export async function createServiceOrderAction(intakeFormId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
@@ -349,6 +351,8 @@ export async function addPurchaseItemAction(formData: FormData) {
   const photoId = nanoid()
   let photoUpload: { url: string; key: string; fileName: string; mimeType: string; sizeBytes: number; storageProvider: string } | null = null
   if (file && file.size > 0 && file.name) {
+    const quota = await assertIntakePhotoQuota(user.workshopId, order.intakeFormId, 1)
+    if (!quota.ok) return { error: quota.error }
     const validation = validateUploadFile(file)
     if (!validation.valid) return { error: validation.error }
     try {
@@ -372,6 +376,11 @@ export async function addPurchaseItemAction(formData: FormData) {
   let createdItemId: string | null = null
   try {
     createdItemId = await prisma.$transaction(async (tx) => {
+      if (photoUpload) {
+        await lockDamageIntake(tx, order.intakeFormId, user.workshopId)
+        const lockedQuota = await assertIntakePhotoQuota(user.workshopId, order.intakeFormId, 1, tx)
+        if (!lockedQuota.ok) throw new Error(lockedQuota.error)
+      }
       const created = await tx.serviceOrderItem.create({
         data: {
           workshopId: user.workshopId,
@@ -543,6 +552,8 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
   const file = formData.get("file") as File | null
   let photoUpload: { url: string; key: string; fileName: string; mimeType: string; sizeBytes: number; storageProvider: string; id: string } | null = null
   if (file && file.size > 0 && file.name) {
+    const quota = await assertIntakePhotoQuota(user.workshopId, order.intakeFormId, 1)
+    if (!quota.ok) return { error: quota.error }
     const validation = validateUploadFile(file)
     if (!validation.valid) return { error: validation.error }
     try {
@@ -571,6 +582,11 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
 
   try {
     await prisma.$transaction(async (tx) => {
+      if (photoUpload) {
+        await lockDamageIntake(tx, order.intakeFormId, user.workshopId)
+        const lockedQuota = await assertIntakePhotoQuota(user.workshopId, order.intakeFormId, 1, tx)
+        if (!lockedQuota.ok) throw new Error(lockedQuota.error)
+      }
       if (Object.keys(data).length > 0) {
         const updRes = await tx.serviceOrderItem.updateMany({
           where: { id: itemId, workshopId: user.workshopId },

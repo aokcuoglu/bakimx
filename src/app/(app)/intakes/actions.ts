@@ -15,6 +15,7 @@ import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { isArrivalReason, type ArrivalReasonKey } from "@/lib/constants"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { assertFeature } from "@/lib/plan"
+import { assertIntakePhotoQuota } from "@/lib/photos/quota"
 
 export async function createIntakeAction(formData: FormData) {
   const { user } = await requireWritableWorkshop("records.create")
@@ -402,6 +403,10 @@ export async function addPhotoAction(formData: FormData) {
     const existing = await prisma.vehiclePhoto.findFirst({ where: { intakeFormId, workshopId: user.workshopId, requestId } })
     if (existing) return existing.deletedAt ? { error: "Fotoğraf kaldırılmış" } : { success: true, id: existing.id }
   }
+
+  const quota = await assertIntakePhotoQuota(user.workshopId, intakeFormId, 1)
+  if (!quota.ok) return { error: quota.error }
+
   const photoId = nanoid()
   let fileUrl: string | null = null
   let fileName: string | null = null
@@ -442,6 +447,8 @@ export async function addPhotoAction(formData: FormData) {
       const existing = await tx.vehiclePhoto.findFirst({ where: { intakeFormId, requestId } })
       if (existing) { if (existing.deletedAt) throw new Error("Fotoğraf kaldırılmış"); return existing }
     }
+    const lockedQuota = await assertIntakePhotoQuota(user.workshopId, intakeFormId, 1, tx)
+    if (!lockedQuota.ok) throw new Error(lockedQuota.error)
     return tx.vehiclePhoto.create({
     data: {
       id: photoId,
