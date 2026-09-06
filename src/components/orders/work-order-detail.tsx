@@ -750,6 +750,18 @@ export function WorkOrderDetail({
   // Eksik/istenen foto akışı: Kanıt sekmesine geç (paneli mount et), tipini
   // seç ve dialog'u aç; scroll useEffect ile panel render olunca yapılır.
   function focusPhoto(typeKey?: string, phase?: PhotoPhaseKey) {
+    // Lite'ta eksik-fotoğraf kısayolları diyaloğu açamaz; kullanıcıyı ortak
+    // yükseltme kartının bulunduğu Fotoğraflar bölümüne taşır.
+    if (!canUsePhotoChecklist) {
+      if (activeTab === "kanit") {
+        photosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      } else {
+        pendingPhotoScrollRef.current = true
+        handleTabChange("kanit")
+      }
+      return
+    }
+
     if (typeKey) setPhotoType(typeKey)
     if (phase) setPhotoPhase(phase)
     // İkisi de biliniyorsa hücre bağlamıdır (matris karesi / karşılaştır "+")
@@ -1373,13 +1385,9 @@ export function WorkOrderDetail({
               )}
 
               {/* Add photo trigger + dialog */}
-              {!orderLocked && (<>
+              {!orderLocked && canUsePhotoChecklist && (<>
               <Button variant="outline" onClick={() => {
                 setPhotoContextLocked(false)
-                if (!canUsePhotoChecklist) {
-                  setPhotoType("other")
-                  setPhotoPhase("intake")
-                }
                 setAddingPhoto(true)
               }} className="w-full">
                 <Plus className="size-3.5 mr-1" /> Fotoğraf Ekle
