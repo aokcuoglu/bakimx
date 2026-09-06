@@ -170,7 +170,9 @@ export function PlanPackages({
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
-        Ücretli paketlerde Havale/EFT ile ödeyin; ödemeniz teyit edilince paketiniz aktifleşir.{" "}
+        {checkoutBasePath.startsWith("/register")
+          ? "Kart bilgisi istemiyoruz. Önce ücretsiz deneyin; deneme bitince uygulama içinden paketinizi etkinleştirirsiniz. "
+          : "Ücretli paketlerde Havale/EFT veya kart ile ödeyin; ödemeniz teyit edilince paketiniz aktifleşir. "}
         <a
           href={whatsappHref(`Merhaba, BakimX paket etkinleştirme hakkında bilgi almak istiyorum.${workshopName ? ` (${workshopName})` : ""}`)}
           target="_blank"

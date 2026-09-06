@@ -1,13 +1,20 @@
 import Image from "next/image"
 import Link from "next/link"
-import { Check, CircleCheck } from "lucide-react"
+import { Check, CircleCheck, Sparkles } from "lucide-react"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import {
   REGISTER_STEPS,
   type RegisterWizardSnapshot,
   type TeamSizeId,
 } from "@/lib/register-onboarding"
+import type { SalePlanTier } from "@/lib/plan"
+import { getPlanPackage } from "@/lib/plans-catalog"
 import { cn } from "@/lib/utils"
+
+type PreferredPlan = {
+  tier: SalePlanTier
+  cycle: "monthly" | "yearly"
+}
 
 const TEAM_SIZE_LABELS: Record<TeamSizeId, string> = {
   solo: "Sadece ben",
@@ -18,7 +25,15 @@ const TEAM_SIZE_LABELS: Record<TeamSizeId, string> = {
   "50_plus": "50+ kişi",
 }
 
-export function RegisterSidebar({ snapshot }: { snapshot: RegisterWizardSnapshot }) {
+export function RegisterSidebar({
+  snapshot,
+  preferredPlan,
+}: {
+  snapshot: RegisterWizardSnapshot
+  preferredPlan?: PreferredPlan
+}) {
+  const preferredPkg = preferredPlan ? getPlanPackage(preferredPlan.tier) : undefined
+
   return (
     <aside className="relative isolate hidden min-h-full overflow-hidden bg-navy text-navy-foreground lg:flex lg:w-80 lg:shrink-0 lg:flex-col xl:w-[360px]">
       <Image
@@ -49,6 +64,23 @@ export function RegisterSidebar({ snapshot }: { snapshot: RegisterWizardSnapshot
           <p className="mt-2 max-w-xs text-sm leading-5 text-navy-foreground/70">
             5 adımda oto servisinize göre hazırlanmış ücretsiz hesabınızı kurun.
           </p>
+          {preferredPkg && preferredPlan && (
+            <div className="mt-4 rounded-xl border border-brand/30 bg-brand/10 px-3 py-2.5">
+              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-brand">
+                <Sparkles className="size-3" />
+                İlgilendiğiniz paket
+              </p>
+              <p className="mt-1 text-sm font-semibold text-navy-foreground">
+                {preferredPkg.name}
+                <span className="ml-1.5 font-normal text-navy-foreground/70">
+                  · {preferredPlan.cycle === "yearly" ? preferredPkg.yearlyLabel : preferredPkg.monthlyLabel}
+                </span>
+              </p>
+              <p className="mt-0.5 text-xs text-navy-foreground/60">
+                Önce ücretsiz deneyin; deneme bitince bu paketi etkinleştirebilirsiniz.
+              </p>
+            </div>
+          )}
         </div>
 
         <ol className="mt-7 space-y-4" aria-label="Kayıt adımları">

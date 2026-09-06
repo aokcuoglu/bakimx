@@ -109,6 +109,7 @@ import {
   type TeamSizeId,
 } from "@/lib/register-onboarding"
 import { cn } from "@/lib/utils"
+import { getPlanPackage } from "@/lib/plans-catalog"
 import { optionalReferralCodeSchema } from "@/lib/validations/referral-code"
 import { typedResolver } from "@/lib/validations/resolver"
 
@@ -280,9 +281,11 @@ export type SalesRegistrationPrefill = {
 
 export function RegisterForm({
   salesRegistration,
+  preferredPlan,
   onSnapshotChange,
 }: {
   salesRegistration?: SalesRegistrationPrefill
+  preferredPlan?: { tier: string; cycle: "monthly" | "yearly" }
   onSnapshotChange?: (snapshot: RegisterWizardSnapshot) => void
 }) {
   const [currentStep, setCurrentStep] = useState(0)
@@ -444,6 +447,7 @@ export function RegisterForm({
   return (
     <div className="w-full">
       <MobileStepIndicator currentStep={currentStep} />
+      {preferredPlan && <PreferredPlanBanner tier={preferredPlan.tier} cycle={preferredPlan.cycle} />}
 
       <Form {...form}>
         <form
@@ -537,6 +541,34 @@ export function RegisterForm({
           </div>
         </form>
       </Form>
+    </div>
+  )
+}
+
+function PreferredPlanBanner({
+  tier,
+  cycle,
+}: {
+  tier: string
+  cycle: "monthly" | "yearly"
+}) {
+  const pkg = getPlanPackage(tier as "lite" | "pro" | "premium" | "starter")
+  if (!pkg) return null
+  return (
+    <div className="mb-5 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 lg:hidden">
+      <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary-strong">
+        <Sparkles className="size-3.5" />
+        İlgilendiğiniz paket
+      </p>
+      <p className="mt-1 text-sm font-semibold text-foreground">
+        {pkg.name}
+        <span className="ml-1.5 font-normal text-muted-foreground-strong">
+          · {cycle === "yearly" ? pkg.yearlyLabel : pkg.monthlyLabel}
+        </span>
+      </p>
+      <p className="mt-0.5 text-xs text-muted-foreground-strong">
+        Önce ücretsiz deneyin; deneme bitince bu paketi etkinleştirebilirsiniz.
+      </p>
     </div>
   )
 }

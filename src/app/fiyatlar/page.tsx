@@ -28,7 +28,7 @@ const softwareApplicationStructuredData = {
     name: `${plan.name} aylık plan`,
     price: plan.monthlyPrice.toString(),
     priceCurrency: "TRY",
-    url: `${SITE_URL}/satin-al?tier=${plan.tier}&cycle=monthly`,
+    url: `${SITE_URL}/register?tier=${plan.tier}&cycle=monthly`,
   })),
 }
 
@@ -41,11 +41,12 @@ export default function FiyatlarPage() {
         <div className="text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Oto servis programı paketleri ve fiyatları</h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">
-            İş yerinize uygun paketi seçin. 7 iş günü ücretsiz denemek için{" "}
-            <Link href="/register" className="text-primary underline underline-offset-2">kayıt olun</Link>, ya da doğrudan satın alın.
+            İş yerinize uygun paketi seçin. Kart bilgisi olmadan{" "}
+            <Link href="/register" className="text-primary underline underline-offset-2">ücretsiz deneyin</Link>
+            ; deneme bitince uygulama içinden paketinizi etkinleştirirsiniz.
           </p>
         </div>
-        <PlanPackages checkoutBasePath="/satin-al" />
+        <PlanPackages checkoutBasePath="/register" />
       </main>
       <Footer />
     </>

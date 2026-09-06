@@ -110,8 +110,8 @@ export default async function PaymentResultPage({
             Ödeme referansı eksik. Lütfen satın alma adımlarını yeniden başlatın.
           </p>
           <Button asChild variant="link" size="lg" className="mt-6">
-            <Link href="/satin-al">
-              Satın alma sayfasına git
+            <Link href="/fiyatlar">
+              Paketlere git
             </Link>
           </Button>
         </div>
@@ -130,8 +130,8 @@ export default async function PaymentResultPage({
             Bu referansa ait bir sipariş bulunamadı. Bağlantıyı kontrol edin veya yeniden deneyin.
           </p>
           <Button asChild variant="link" size="lg" className="mt-6">
-            <Link href="/satin-al">
-              Satın alma sayfasına git
+            <Link href="/fiyatlar">
+              Paketlere git
             </Link>
           </Button>
         </div>
@@ -194,8 +194,8 @@ export default async function PaymentResultPage({
             Bu sipariş iptal edilmiş. Dilerseniz yeni bir satın alma başlatabilirsiniz.
           </p>
           <Button asChild variant="link" size="lg" className="mt-6">
-            <Link href="/satin-al">
-              Yeni satın alma başlat
+            <Link href="/fiyatlar">
+              Paketlere git
             </Link>
           </Button>
         </div>
