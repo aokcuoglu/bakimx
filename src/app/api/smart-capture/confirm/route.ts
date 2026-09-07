@@ -12,6 +12,7 @@ import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
 import type { RuhsatHints } from "@/lib/vin/types"
 import type { Customer, Prisma, Vehicle } from "@prisma/client"
 import { classifyCustomerTaxIdentity } from "@/lib/ocr/customer-tax-identity"
+import { getWorkshopQuotaContext } from "@/lib/rapidapi-quota"
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : ""
@@ -311,16 +312,22 @@ export async function POST(request: Request) {
         const workshop = await prisma.workshop.findUnique({
           where: { id: user.workshopId },
           select: {
+            id: true,
             planTier: true,
             subscriptionStatus: true,
             approvalStatus: true,
             trialEndsAt: true,
             currentPeriodEnd: true,
+            extraVinQuota: true,
           },
         })
-        const entitled = workshop != null && hasWorkshopFeature(workshop, "vinLookup")
-        if (entitled) {
-          const resolution = await resolveVinToCatalog(vin, buildVinHints(ocrLog.extractedJson, modelYear), user.workshopId)
+        if (workshop != null && hasWorkshopFeature(workshop, "vinLookup")) {
+          const quotaContext = getWorkshopQuotaContext(workshop)
+          const resolution = await resolveVinToCatalog(
+            vin,
+            buildVinHints(ocrLog.extractedJson, modelYear),
+            quotaContext,
+          )
           if (resolution.status === "resolved" && resolution.autoSelected != null) {
             await prisma.vehicle.update({
               where: { id: vehicle.id },
@@ -333,7 +340,7 @@ export async function POST(request: Request) {
             catalogLinked = true
             // Tip daralmasını (autoSelected != null) closure'a taşımak için yakala.
             const linkedVehicleTypeId = resolution.autoSelected
-            after(() => prefetchCommonVehicleParts(linkedVehicleTypeId))
+            after(() => prefetchCommonVehicleParts(linkedVehicleTypeId, quotaContext))
             await AuditLogAction(
               user.workshopId,
               user.id,

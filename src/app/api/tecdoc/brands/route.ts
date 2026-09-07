@@ -20,11 +20,11 @@ export async function GET(request: Request) {
   try {
     let brands
     if (vehicleId != null && categoryId != null) {
-      brands = await getCategoryBrands(vehicleId, categoryId)
+      brands = await getCategoryBrands(vehicleId, categoryId, guard)
     } else if (vehicleId != null) {
       brands = await getVehicleBrands(vehicleId)
     } else {
-      brands = await getPartBrands()
+      brands = await getPartBrands(guard)
     }
     return NextResponse.json({ brands })
   } catch (err) {

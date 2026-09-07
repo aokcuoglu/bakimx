@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/db"
-import { countRapidApiCallsThisMonth, rapidApiMonthlyCap, recordQuotaUsage } from "@/lib/rapidapi-quota"
+import {
+  WorkshopQuotaExceededError,
+  countRapidApiCallsThisMonth,
+  rapidApiMonthlyCap,
+  reserveWorkshopQuota,
+  type WorkshopQuotaContext,
+} from "@/lib/rapidapi-quota"
 import { getVinProvider } from "./provider"
 import { VinLookupError, isValidVin, normalizeVin, vinModelKey } from "./types"
 
@@ -16,10 +22,10 @@ export interface VinLookupResult {
  * given model hits the paid provider once; later VINs sharing that prefix reuse
  * the cached decode and hit the provider ZERO times (found/not_found are
  * terminal facts). Transport errors are NOT cached so they stay retryable.
- * Monthly billed usage == vin_lookups rows created this month, checked against
- * VIN_LOOKUP_MONTHLY_CAP before any provider call.
+ * Tenant usage is reserved atomically immediately before a real provider miss;
+ * cache hits and mock calls do not consume tenant quota.
  */
-export async function lookupVin(input: string, workshopId?: string): Promise<VinLookupResult> {
+export async function lookupVin(input: string, quotaContext?: WorkshopQuotaContext): Promise<VinLookupResult> {
   const vin = normalizeVin(input)
   if (!isValidVin(vin)) {
     throw new VinLookupError("invalid_vin", "Geçersiz şase numarası (17 karakter olmalı, I/O/Q harfleri içeremez).")
@@ -56,6 +62,18 @@ export async function lookupVin(input: string, workshopId?: string): Promise<Vin
     throw new VinLookupError("quota_exceeded", "Aylık şase sorgu limiti doldu. Lütfen daha sonra tekrar deneyin.")
   }
 
+  if (!quotaContext) {
+    throw new VinLookupError("config_error", "Şase sorgusu için iş yeri kota bağlamı bulunamadı.")
+  }
+  try {
+    await reserveWorkshopQuota(quotaContext, "vin")
+  } catch (error) {
+    if (error instanceof WorkshopQuotaExceededError) {
+      throw new VinLookupError("quota_exceeded", error.message)
+    }
+    throw error
+  }
+
   const result = await provider.lookup(vin)
 
   const row = await prisma.vinLookup.upsert({
@@ -69,11 +87,6 @@ export async function lookupVin(input: string, workshopId?: string): Promise<Vin
     },
     update: { hitCount: { increment: 1 } },
   })
-
-  // Record per-workshop quota usage (fire-and-forget — never block the lookup)
-  if (workshopId) {
-    recordQuotaUsage(workshopId, "vin").catch(() => {})
-  }
 
   return { vin, status: row.status, raw: row.rawResponse, cached: false, provider: provider.name }
 }

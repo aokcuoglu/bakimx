@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const articles = await getArticlesByCategory(vehicleId, categoryId)
+    const articles = await getArticlesByCategory(vehicleId, categoryId, guard)
     return NextResponse.json({ articles })
   } catch (err) {
     return tecdocErrorResponse(err)
