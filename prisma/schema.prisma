@@ -120,6 +120,8 @@ model Workshop {
 
   @@index([referredByWorkshopId])
   @@index([kind])
+  @@index([acquisitionSource])
+  @@index([acquisitionAdvisorId])
 }
 
 enum WorkshopKind {
@@ -1061,6 +1063,7 @@ model ServiceOrderItem {
   @@index([supplierId])
   @@index([serviceOrderId, completedAt])
   @@index([bakimxProductId])
+  @@index([getirbakimProductId])
 }
 
 /// Provider-neutral audit/projection record for a purchase fulfilled outside
@@ -1123,7 +1126,7 @@ model ExternalProcurementEvent {
   processedAt     DateTime?
 
   @@unique([provider, eventId])
-  @@index([provider, externalOrderId, partnerVersion])
+  @@index([provider, externalOrderId, partnerVersion], map: "ExternalProcurementEvent_provider_externalOrderId_partnerVersio")
   @@index([status, receivedAt])
 }
 
@@ -2289,7 +2292,6 @@ model SalesDiscountCode {
   createdBy       User?                      @relation("SalesDiscountCodeCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   createdAt       DateTime                   @default(now())
 
-  @@index([code])
   @@index([advisorId, createdAt])
   @@index([fundingSource, createdAt])
   @@index([createdByUserId])
