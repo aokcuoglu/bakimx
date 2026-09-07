@@ -12,7 +12,7 @@ test("hero leads with registration reading and exposes keyboard-operable feature
   const activeSlide = carousel.locator('[aria-hidden="false"]');
   const heading = page.getByRole("heading", {
     level: 1,
-    name: /Ruhsatı okutun\. Aracı ilk temasta tanıyın\./,
+    name: /Oto servisinizde iş emri açmak ve parça bulmak artık 10 saniye\./,
   });
 
   await expect(carousel).toBeVisible();
@@ -22,7 +22,9 @@ test("hero leads with registration reading and exposes keyboard-operable feature
     "data-hero-slide",
     "digital-intake",
   );
-  await expect(activeSlide.getByText("Telefondan ruhsat okuma")).toBeVisible();
+  await expect(
+    activeSlide.getByText("%100 uyumlu yedek parça sonuçları"),
+  ).toBeVisible();
 
   const [carouselBox, imageBox] = await Promise.all([
     carousel.boundingBox(),
@@ -68,6 +70,21 @@ test("reduced-motion keeps autoplay stopped while manual carousel navigation wor
     page.getByRole("button", { name: "Carousel otomatik geçişini başlat" }),
   ).toBeVisible();
   await expect(firstIndicator).toHaveAttribute("aria-current", "true");
+
+  const [primaryCtaBox, assistantBox] = await Promise.all([
+    carousel
+      .getByRole("link", { name: "Ücretsiz denemeye başlayın", exact: true })
+      .boundingBox(),
+    page
+      .getByRole("button", { name: "BakımX Asistanı'nı aç", exact: true })
+      .boundingBox(),
+  ]);
+  expect(primaryCtaBox).not.toBeNull();
+  expect(assistantBox).not.toBeNull();
+  expect(primaryCtaBox!.x + primaryCtaBox!.width).toBeLessThanOrEqual(
+    assistantBox!.x,
+  );
+
   await page.waitForTimeout(7_250);
   await expect(firstIndicator).toHaveAttribute("aria-current", "true");
 

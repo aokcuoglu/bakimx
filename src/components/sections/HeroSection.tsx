@@ -75,7 +75,7 @@ export function HeroSection() {
           {HERO_SLIDES.map((slide, index) => {
             const isActive = selectedIndex === index;
             const headingClassName =
-              "max-w-3xl text-balance text-[2.8rem] font-semibold leading-[1.05] tracking-[-0.05em] text-navy-foreground sm:text-6xl lg:text-[4.35rem]";
+              "max-w-3xl text-balance text-[2.55rem] font-semibold leading-[1.05] tracking-[-0.05em] text-navy-foreground sm:text-6xl lg:text-[4.35rem]";
 
             return (
               <CarouselItem
@@ -150,7 +150,7 @@ export function HeroSection() {
                         ))}
                       </ul>
 
-                      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                      <div className="mt-8 flex flex-col gap-3 pr-16 sm:flex-row sm:flex-wrap sm:pr-0">
                         <Button asChild size="xl" className="h-12 px-5">
                           <Link
                             href="/register"

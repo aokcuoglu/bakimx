@@ -9,7 +9,7 @@ test("product tour works with the keyboard and core destinations remain availabl
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    /Ruhsatı okutun\.\s*Aracı ilk temasta tanıyın\./,
+    /Oto servisinizde iş emri açmak ve parça bulmak\s*artık 10 saniye\./,
   );
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   await expect(

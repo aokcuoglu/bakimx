@@ -7,15 +7,16 @@ const publicFile = (path: string) =>
   new URL(`../../../public${path}`, import.meta.url);
 
 describe("landing hero carousel", () => {
-  test("leads with mobile intake and registration reading", () => {
+  test("leads with the ten-second work-order and compatible-parts promise", () => {
     const firstSlide = HERO_SLIDES[0];
 
     expect(`${firstSlide.title} ${firstSlide.highlight}`).toBe(
-      "Ruhsatı okutun. Aracı ilk temasta tanıyın.",
+      "Oto servisinizde iş emri açmak ve parça bulmak artık 10 saniye.",
     );
     expect(firstSlide.eyebrow).toContain("Mobil Araç Kabul");
-    expect(firstSlide.description).toContain("ruhsat fotoğrafını taratın");
-    expect(firstSlide.bullets).toContain("Telefondan ruhsat okuma");
+    expect(firstSlide.description).toContain("%100 uyumlu yedek parçaları");
+    expect(firstSlide.description).toContain("tek tıkla iş emrine ekleyin");
+    expect(firstSlide.description).toContain("Yanlış parça siparişi");
   });
 
   test("puts chassis identification and workshop stock in the second story", () => {
@@ -54,6 +55,5 @@ describe("landing hero carousel", () => {
     expect(copy).not.toContain("fiyat karşılaştır");
     expect(copy).not.toContain("en ucuz");
     expect(copy).not.toContain("stokta");
-    expect(copy).not.toContain("10 saniye");
   });
 });

@@ -17,14 +17,14 @@ export const HERO_SLIDES = [
   {
     id: "digital-intake",
     eyebrow: "Mobil Araç Kabul + Ruhsat Okuma",
-    title: "Ruhsatı okutun.",
-    highlight: "Aracı ilk temasta tanıyın.",
+    title: "Oto servisinizde iş emri açmak ve parça bulmak",
+    highlight: "artık 10 saniye.",
     description:
-      "Telefondan ruhsat fotoğrafını taratın; plaka, marka-model ve şase bilgilerini kontrol ederek araç kabulünü ve dijital iş emrini aynı akışta başlatın.",
+      "Ruhsat okutarak araca %100 uyumlu yedek parçaları anında bulun, tek tıkla iş emrine ekleyin. Yanlış parça siparişi ve zaman kaybına son verin.",
     bullets: [
-      "Telefondan ruhsat okuma",
-      "Bilgileri onaylamadan önce kontrol",
-      "Araç kabulünden iş emrine tek akış",
+      "Ruhsattan şase ve araç tanıma",
+      "%100 uyumlu yedek parça sonuçları",
+      "Tek tıkla iş emrine ekleme",
     ],
     image: "/landing/hero/digital-intake.webp",
     imagePosition: "72% center",
