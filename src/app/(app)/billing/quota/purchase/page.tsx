@@ -5,6 +5,7 @@ import { getAppData } from "@/app/(app)/data"
 import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { getPlanState, VIN_LOOKUP_QUOTA } from "@/lib/plan"
 import { workshopMonthlyCap } from "@/lib/rapidapi-quota"
+import { canManageBilling } from "@/lib/rbac"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -20,7 +21,7 @@ const EXTRA_QUOTA_OPTIONS = [
 export default async function PurchaseQuotaPage() {
   const paywall = await getFeaturePaywall("partsCatalog")
   if (paywall) return paywall
-  const { workshop } = await getAppData()
+  const { user, workshop } = await getAppData()
 
   if (!workshop) {
     return (
@@ -36,6 +37,7 @@ export default async function PurchaseQuotaPage() {
   const baseQuota = VIN_LOOKUP_QUOTA[tier] ?? 0
   const extraQuota = workshop.extraVinQuota ?? 0
   const totalCap = workshopMonthlyCap(tier, extraQuota)
+  const canPurchase = canManageBilling(user.role)
 
   return (
     <AppShell workshopName={workshop.name} pageTitle="Ek Kota Satın Al">
@@ -43,7 +45,7 @@ export default async function PurchaseQuotaPage() {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Button asChild variant="ghost" size="sm">
-              <Link href="/billing/quota">
+              <Link href="/billing#kullanim">
                 <ArrowLeft className="size-4" />
                 Geri
               </Link>
@@ -100,7 +102,13 @@ export default async function PurchaseQuotaPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-lg font-bold text-foreground">{option.priceLabel}</span>
-                  <Button size="sm">Satın Al</Button>
+                  {canPurchase ? (
+                    <Button size="sm">Satın Al</Button>
+                  ) : (
+                    <p className="max-w-40 text-right text-xs text-muted-foreground">
+                      Paket değişikliği için yöneticinizle görüşün.
+                    </p>
+                  )}
                 </div>
               </div>
             ))}

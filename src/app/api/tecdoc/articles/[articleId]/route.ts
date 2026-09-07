@@ -30,7 +30,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ arti
   const vehicleId = parsePositiveInt(new URL(request.url).searchParams.get("vehicleId"))
 
   try {
-    const detail = await getArticleDetail(articleId)
+    const detail = await getArticleDetail(articleId, guard)
     const compatibility = vehicleId != null ? await getArticleCompatibility(vehicleId, detail) : null
 
     const { compatibleCars: _compatibleCars, ...publicDetail } = detail

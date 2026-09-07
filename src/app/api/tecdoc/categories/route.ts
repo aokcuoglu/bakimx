@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const supplierId = parsePositiveInt(params.get("supplierId"))
 
   try {
-    const categories = await getVehicleCategories(vehicleId)
+    const categories = await getVehicleCategories(vehicleId, guard)
     if (supplierId == null) {
       return NextResponse.json({ categories })
     }

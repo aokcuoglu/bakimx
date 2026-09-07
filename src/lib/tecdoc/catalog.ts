@@ -1,7 +1,13 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { FOLD_FROM, FOLD_TO, normalizePartSearchTerm } from "@/lib/tr-search"
-import { countRapidApiCallsThisMonth, rapidApiMonthlyCap } from "@/lib/rapidapi-quota"
+import {
+  WorkshopQuotaExceededError,
+  countRapidApiCallsThisMonth,
+  rapidApiMonthlyCap,
+  reserveWorkshopQuota,
+  type WorkshopQuotaContext,
+} from "@/lib/rapidapi-quota"
 import { getTecdocProvider } from "./provider"
 import { buildArticleOemRows } from "./oems"
 import {
@@ -36,6 +42,7 @@ async function cachedFetch(
   key: string,
   endpoint: string,
   providerName: string,
+  quotaContext: WorkshopQuotaContext | undefined,
   fetcher: () => Promise<unknown>
 ): Promise<unknown> {
   // Mock responses are free and deterministic — never persist them, otherwise
@@ -54,6 +61,18 @@ async function cachedFetch(
     throw new TecdocError("quota_exceeded", "Aylık katalog sorgu limiti doldu. Lütfen daha sonra tekrar deneyin.")
   }
 
+  if (!quotaContext) {
+    throw new TecdocError("config_error", "Katalog sorgusu için iş yeri kota bağlamı bulunamadı.")
+  }
+  try {
+    await reserveWorkshopQuota(quotaContext, "tecdoc")
+  } catch (error) {
+    if (error instanceof WorkshopQuotaExceededError) {
+      throw new TecdocError("quota_exceeded", error.message)
+    }
+    throw error
+  }
+
   const raw = await fetcher()
   await prisma.tecdocCache.upsert({
     where: { key }, // upsert: concurrent first-fetches must not crash
@@ -63,7 +82,10 @@ async function cachedFetch(
   return raw
 }
 
-export async function getVehicleCategories(vehicleId: number): Promise<CategoryNode[]> {
+export async function getVehicleCategories(
+  vehicleId: number,
+  quotaContext?: WorkshopQuotaContext,
+): Promise<CategoryNode[]> {
   if (!Number.isInteger(vehicleId) || vehicleId <= 0) {
     throw new TecdocError("invalid_params", "Geçersiz araç katalog kimliği.")
   }
@@ -72,12 +94,17 @@ export async function getVehicleCategories(vehicleId: number): Promise<CategoryN
     `categories:v2:${TYPE_ID}:${vehicleId}:${LANG_ID}`,
     "categories",
     provider.name,
+    quotaContext,
     () => provider.getCategories(vehicleId)
   )
   return normalizeCategories(raw)
 }
 
-export async function getArticlesByCategory(vehicleId: number, categoryId: number): Promise<ArticleSummary[]> {
+export async function getArticlesByCategory(
+  vehicleId: number,
+  categoryId: number,
+  quotaContext?: WorkshopQuotaContext,
+): Promise<ArticleSummary[]> {
   if (!Number.isInteger(vehicleId) || vehicleId <= 0 || !Number.isInteger(categoryId) || categoryId <= 0) {
     throw new TecdocError("invalid_params", "Geçersiz katalog parametreleri.")
   }
@@ -105,6 +132,7 @@ export async function getArticlesByCategory(vehicleId: number, categoryId: numbe
     `articles:${TYPE_ID}:${vehicleId}:${categoryId}:${LANG_ID}`,
     "articles",
     provider.name,
+    quotaContext,
     () => provider.getArticles(vehicleId, categoryId)
   )
   const articles = normalizeArticles(raw)
@@ -177,7 +205,10 @@ export async function persistArticles(
  * Dönen `compatibleCars` 300+ kayıt olabilir — istemciye gönderilmez, yalnız
  * getArticleCompatibility içinde eşleşme aramak için kullanılır.
  */
-export async function getArticleDetail(articleId: number): Promise<ArticleDetail> {
+export async function getArticleDetail(
+  articleId: number,
+  quotaContext?: WorkshopQuotaContext,
+): Promise<ArticleDetail> {
   if (!Number.isInteger(articleId) || articleId <= 0) {
     throw new TecdocError("invalid_params", "Geçersiz parça kimliği.")
   }
@@ -186,6 +217,7 @@ export async function getArticleDetail(articleId: number): Promise<ArticleDetail
     `article-detail:${articleId}:${COUNTRY_FILTER_ID}:${LANG_ID}`,
     "article-detail",
     provider.name,
+    quotaContext,
     () => provider.getArticleDetail(articleId)
   )
   const detail = normalizeArticleDetail(raw, articleId)
@@ -221,7 +253,10 @@ export async function persistArticleOems(articleId: number, oems: ArticleOem[]):
 }
 
 /** Muadil / çapraz referanslar — ayrı (tembel) çağrı, kullanıcı bölümü açınca. */
-export async function getArticleCrossRefs(articleId: number): Promise<ArticleCrossRef[]> {
+export async function getArticleCrossRefs(
+  articleId: number,
+  quotaContext?: WorkshopQuotaContext,
+): Promise<ArticleCrossRef[]> {
   if (!Number.isInteger(articleId) || articleId <= 0) {
     throw new TecdocError("invalid_params", "Geçersiz parça kimliği.")
   }
@@ -230,6 +265,7 @@ export async function getArticleCrossRefs(articleId: number): Promise<ArticleCro
     `article-xref:${articleId}:${LANG_ID}`,
     "article-xref",
     provider.name,
+    quotaContext,
     () => provider.getArticleCrossRefs(articleId)
   )
   return normalizeCrossRefs(raw)
@@ -266,12 +302,13 @@ export async function getArticleCompatibility(
  * provider cachedFetch içinde cache'ye yazılmaz (mock→rapidapi geçişinde
  * gerçek veri gelir).
  */
-export async function getPartBrands(): Promise<PartBrandSummary[]> {
+export async function getPartBrands(quotaContext?: WorkshopQuotaContext): Promise<PartBrandSummary[]> {
   const provider = getTecdocProvider()
   const raw = await cachedFetch(
     "suppliers:list",
     "suppliers",
     provider.name,
+    quotaContext,
     () => provider.getSuppliers()
   )
   return normalizeSuppliers(raw)
@@ -297,8 +334,12 @@ export async function getVehicleBrands(vehicleId: number): Promise<PartBrandSumm
  * Kategori-scoped markalar — GÜVENİLİR yol. getArticlesByCategory o kategorinin
  * makalelerini (yoksa provider'dan çekip persist ederek) döner; distinct supplier.
  */
-export async function getCategoryBrands(vehicleId: number, categoryId: number): Promise<PartBrandSummary[]> {
-  const articles = await getArticlesByCategory(vehicleId, categoryId)
+export async function getCategoryBrands(
+  vehicleId: number,
+  categoryId: number,
+  quotaContext?: WorkshopQuotaContext,
+): Promise<PartBrandSummary[]> {
+  const articles = await getArticlesByCategory(vehicleId, categoryId, quotaContext)
   return dedupeBrands(articles.map((a) => ({ supplierId: a.supplierId, supplierName: a.supplierName })))
 }
 

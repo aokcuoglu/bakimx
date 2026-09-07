@@ -17,7 +17,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ art
   }
 
   try {
-    return NextResponse.json({ crossRefs: await getArticleCrossRefs(articleId) })
+    return NextResponse.json({ crossRefs: await getArticleCrossRefs(articleId, guard) })
   } catch (err) {
     return tecdocErrorResponse(err)
   }

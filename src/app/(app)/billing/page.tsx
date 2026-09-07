@@ -1,28 +1,30 @@
 import Link from "next/link"
-import { Clock, CheckCircle2, Users } from "lucide-react"
+import { Clock } from "lucide-react"
 import { AppShell } from "@/components/layout/app-shell"
 import { getAppData } from "@/app/(app)/data"
-import { getEffectiveSeatLimit, getPlanState, type PlanTier } from "@/lib/plan"
-import { getSeatUsage } from "@/lib/rbac"
+import { PLAN_SEATS, getPlanState, hasFeature, type PlanTier } from "@/lib/plan"
+import { canManageBilling, getSeatUsage } from "@/lib/rbac"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { PlanPackages } from "@/components/billing/plan-packages"
+import { BillingUsageCards } from "@/components/billing/usage-cards"
 import { PendingOrderAlert } from "@/components/billing/pending-order-alert"
 import { prisma } from "@/lib/db"
 import { formatMinor } from "@/lib/billing/pricing"
+import { getWorkshopQuotaContext, getWorkshopQuotaUsage } from "@/lib/rapidapi-quota"
 
-export const metadata = { title: "Paket & Abonelik" }
+export const metadata = { title: "Paketler & Kullanım" }
 
 export default async function BillingPage({
   searchParams,
 }: {
   searchParams: Promise<{ pendingBlocked?: string }>
 }) {
-  const { workshop } = await getAppData()
+  const { user, workshop } = await getAppData()
   const sp = await searchParams
 
   if (!workshop) {
     return (
-      <AppShell pageTitle="Paket & Abonelik">
+      <AppShell pageTitle="Paketler & Kullanım">
         <div className="text-center py-12 text-muted-foreground">
           <p>İş yeri bilgisi bulunamadı</p>
         </div>
@@ -31,23 +33,25 @@ export default async function BillingPage({
   }
 
   const plan = getPlanState(workshop)
-  const pendingOrder = await prisma.billingOrder.findFirst({
-    where: { workshopId: workshop.id, status: "pending_payment" },
-    orderBy: { createdAt: "desc" },
-  })
-  const lastConfirmedOrder = await prisma.billingOrder.findFirst({
-    where: { workshopId: workshop.id, status: "confirmed" },
-    orderBy: { confirmedAt: "desc" },
-  })
+  const quotaContext = getWorkshopQuotaContext(workshop)
+  const [pendingOrder, lastConfirmedOrder, seatUsage, quotaUsage] = await Promise.all([
+    prisma.billingOrder.findFirst({
+      where: { workshopId: workshop.id, status: "pending_payment" },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.billingOrder.findFirst({
+      where: { workshopId: workshop.id, status: "confirmed" },
+      orderBy: { confirmedAt: "desc" },
+    }),
+    getSeatUsage(workshop.id),
+    getWorkshopQuotaUsage(quotaContext),
+  ])
   const ownedTier = workshop.subscriptionStatus === "active" ? (workshop.planTier as PlanTier) : null
   const ownedPkg = ownedTier ? getPlanPackage(ownedTier) : null
-
-  const seatUsage = await getSeatUsage(workshop.id)
-  const seatLimit = getEffectiveSeatLimit(workshop)
-  const seatsAtLimit = seatUsage.used >= seatLimit
+  const canPurchase = canManageBilling(user.role)
 
   return (
-    <AppShell workshopName={workshop.name} pageTitle="Paket & Abonelik">
+    <AppShell workshopName={workshop.name} pageTitle="Paketler & Kullanım">
       {sp.pendingBlocked === "1" && pendingOrder && (
         <PendingOrderAlert reference={pendingOrder.reference} method={pendingOrder.method} />
       )}
@@ -55,13 +59,13 @@ export default async function BillingPage({
         <div className="flex items-center text-sm text-muted-foreground">
           <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Paket &amp; Abonelik</span>
+          <span className="text-foreground font-medium">Paketler &amp; Kullanım</span>
         </div>
 
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Paket &amp; Abonelik</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Paketler &amp; Kullanım</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            İş yerinize uygun paketi seçin. İhtiyacınız değiştikçe yükseltebilirsiniz.
+            Mevcut haklarınızı ve bu ayki gerçek kullanımınızı görün; paketleri aynı katalogdan karşılaştırın.
           </p>
         </div>
 
@@ -93,65 +97,27 @@ export default async function BillingPage({
           </div>
         )}
 
-        {/* Current status */}
-        {plan.isTrialing ? (
-          <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
-            <Clock className="size-5 text-primary shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium text-foreground">
-                Ücretsiz deneme · {plan.trialDaysLeft} iş günü kaldı
-              </p>
-              <p className="text-muted-foreground mt-0.5">
-                Deneme süreniz boyunca tüm özellikler açık. Kesintisiz devam için bir paket seçin.
-              </p>
-            </div>
-          </div>
-        ) : ownedPkg ? (
-          <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
-            <CheckCircle2 className="size-5 text-primary shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium text-foreground">Aktif paket: {ownedPkg.name}</p>
-              <p className="text-muted-foreground mt-0.5">
-                Aboneliğiniz aktif. Daha fazla özellik için paketinizi yükseltebilirsiniz.
-              </p>
-              {lastConfirmedOrder && (
-                <a
-                  href={`/api/billing/orders/${lastConfirmedOrder.id}/receipt`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline"
-                >
-                  Son ödeme makbuzunu görüntüle
-                </a>
-              )}
-            </div>
-          </div>
-        ) : null}
-
-        {/* Seat usage */}
-        <div className="flex items-start gap-3 rounded-lg border bg-card p-4">
-          <Users className="size-5 text-muted-foreground shrink-0 mt-0.5" />
-          <div className="text-sm flex-1">
-            <p className="font-medium text-foreground">
-              Koltuk kullanımı: {seatUsage.used} / {seatLimit}
-            </p>
-            <p className="text-muted-foreground mt-0.5">
-              {seatUsage.activeUsers} aktif kullanıcı
-              {seatUsage.pendingInvites > 0 && `, ${seatUsage.pendingInvites} bekleyen davet`}
-              {workshop.extraSeats > 0 && ` · ${workshop.extraSeats} ek koltuk dahil`}.
-              {seatsAtLimit && " Limit dolu — yükseltin veya ek koltuk için iletişime geçin."}
-            </p>
-          </div>
-          <Link href="/settings?tab=team" className="text-sm text-primary hover:underline shrink-0">
-            Ekibi yönet
-          </Link>
-        </div>
-
-        <PlanPackages
-          ownedTier={ownedTier}
-          workshopName={workshop.name}
-          hasPendingOrder={!!pendingOrder}
+        <BillingUsageCards
+          plan={plan}
+          planName={ownedPkg?.name ?? getPlanPackage(plan.tier)?.name ?? plan.tier}
+          billingCycle={workshop.billingCycle}
+          seatUsage={seatUsage}
+          includedSeats={PLAN_SEATS[plan.accessTier]}
+          extraSeats={Math.max(0, workshop.extraSeats)}
+          quota={quotaUsage}
+          photoEnabled={hasFeature(plan.accessTier, "photoChecklist")}
+          canPurchase={canPurchase}
+          receiptHref={lastConfirmedOrder ? `/api/billing/orders/${lastConfirmedOrder.id}/receipt` : undefined}
         />
+
+        <div id="paketler" className="scroll-mt-24 pt-2">
+          <PlanPackages
+            ownedTier={ownedTier}
+            workshopName={workshop.name}
+            hasPendingOrder={!!pendingOrder}
+            canPurchase={canPurchase}
+          />
+        </div>
       </div>
     </AppShell>
   )
