@@ -80,6 +80,60 @@ test("mobile navigation closes after choosing a section and page fits narrow scr
   }
 });
 
+test("landing controls return a scrolled page to the top", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+
+  const scrollToTop = page.getByRole("button", {
+    name: "Sayfanın başına dön",
+  });
+  await expect(scrollToTop).toHaveCount(0);
+
+  await page.locator("footer").scrollIntoViewIfNeeded();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(80);
+  await expect(scrollToTop).toBeVisible();
+  const assistantLauncher = page.getByRole("button", {
+    name: "BakımX Asistanı'nı aç",
+  });
+  await expect(assistantLauncher).toBeVisible();
+  const [scrollButtonBox, assistantButtonBox] = await Promise.all([
+    scrollToTop.boundingBox(),
+    assistantLauncher.boundingBox(),
+  ]);
+  expect(scrollButtonBox).not.toBeNull();
+  expect(assistantButtonBox).not.toBeNull();
+  expect(scrollButtonBox!.x + scrollButtonBox!.width).toBeLessThan(
+    assistantButtonBox!.x,
+  );
+  await scrollToTop.click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(scrollToTop).toHaveCount(0);
+
+  await page.locator("footer").scrollIntoViewIfNeeded();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(80);
+  await page
+    .getByRole("link", { name: "BakımX ana sayfa", exact: true })
+    .first()
+    .click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.locator("footer").scrollIntoViewIfNeeded();
+  await expect(scrollToTop).toBeVisible();
+  const [mobileScrollButtonBox, mobileAssistantButtonBox] = await Promise.all([
+    scrollToTop.boundingBox(),
+    assistantLauncher.boundingBox(),
+  ]);
+  expect(mobileScrollButtonBox).not.toBeNull();
+  expect(mobileAssistantButtonBox).not.toBeNull();
+  expect(
+    mobileScrollButtonBox!.x + mobileScrollButtonBox!.width,
+  ).toBeLessThan(mobileAssistantButtonBox!.x);
+  await scrollToTop.click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
+
 test("demo request validation and confirmation work without sending a real lead", async ({
   page,
 }) => {

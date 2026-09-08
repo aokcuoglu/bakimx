@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 import { lookupVin } from "./lookup"
 import { extractMatchSections, type RuhsatHints, type VinCandidate, type VinResolution } from "./types"
+import type { WorkshopQuotaContext } from "@/lib/rapidapi-quota"
 
 /** Slim VehicleType row (joined w/ model+brand) — pure-scoring input, no Prisma types. */
 export interface CandidateTypeRow {
@@ -230,8 +231,12 @@ export function resolveModelLevelCandidates(
  * ARE TecDoc ids (VehicleBrand.id == manuId, VehicleModel.id == modelId,
  * VehicleType.id == vehicleId) — and ruhsat hints pick the engine variant.
  */
-export async function resolveVinToCatalog(vin: string, hints: RuhsatHints = {}, workshopId?: string): Promise<VinResolution> {
-  const lookup = await lookupVin(vin, workshopId)
+export async function resolveVinToCatalog(
+  vin: string,
+  hints: RuhsatHints = {},
+  quotaContext?: WorkshopQuotaContext,
+): Promise<VinResolution> {
+  const lookup = await lookupVin(vin, quotaContext)
   const notFound: VinResolution = {
     status: "not_found", brand: null, model: null, autoSelected: null, candidates: [],
     cached: lookup.cached, provider: lookup.provider,

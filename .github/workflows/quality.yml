@@ -30,6 +30,20 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: bakimx
+          POSTGRES_PASSWORD: bakimx
+          POSTGRES_DB: bakimx
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bakimx -d bakimx"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       DATABASE_URL: postgresql://bakimx:bakimx@127.0.0.1:5432/bakimx
       SESSION_SECRET: ci_only_placeholder_at_least_32_chars_long
@@ -58,6 +72,14 @@ jobs:
 
       - name: Generate Prisma Client
         run: bun run db:generate
+
+      - name: Apply migrations and detect schema drift
+        run: |
+          bun run db:deploy
+          bunx prisma migrate diff \
+            --from-config-datasource \
+            --to-schema=prisma/schema.prisma \
+            --exit-code
 
       - name: Test
         run: bun test

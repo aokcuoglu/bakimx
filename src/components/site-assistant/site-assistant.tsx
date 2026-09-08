@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { isPublicAssistantPath } from "@/lib/site-assistant-visibility";
 import dynamic from "next/dynamic";
 import { AssistantLauncher } from "./assistant-launcher";
+import { ScrollToTopButton } from "./scroll-to-top-button";
 
 /**
  * Panel ve altındaki tüm görünümler ayrı bir parçaya alınır (BAK-165).
@@ -131,19 +132,22 @@ export function SiteAssistant({ aiEnabled = false }: { aiEnabled?: boolean }) {
     <>
       {/* Ask bar ekrandayken FAB gizlenir — iki asistan girişi aynı anda durmaz. */}
       {!bridge.askBarVisible && (
-        <AssistantLauncher
-          open={open}
-          onClick={() => {
-            if (open) {
-              close();
-            } else {
-              setView("menu");
-              setOpen(true);
-              setTransient(false);
-              persist(true);
-            }
-          }}
-        />
+        <>
+          {pathname === "/" && <ScrollToTopButton />}
+          <AssistantLauncher
+            open={open}
+            onClick={() => {
+              if (open) {
+                close();
+              } else {
+                setView("menu");
+                setOpen(true);
+                setTransient(false);
+                persist(true);
+              }
+            }}
+          />
+        </>
       )}
       {open && (
         <AssistantPanel

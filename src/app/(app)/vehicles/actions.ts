@@ -11,6 +11,7 @@ import { isValidVin } from "@/lib/vin/types"
 import { deriveVinConfirmed } from "@/lib/vin/confirm"
 import { prefetchCommonVehicleParts, eagerPrefetchTarget } from "@/lib/tecdoc/prefetch"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { getWorkshopQuotaContext } from "@/lib/rapidapi-quota"
 
 /**
  * The catalog id columns have no DB foreign keys (the catalog is re-importable
@@ -59,7 +60,7 @@ async function validateCatalogSelection(data: {
 }
 
 export async function createVehicleAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("records.create")
+  const { user, workshop } = await requireWritableWorkshop("records.create")
 
   const raw = {
     customerId: formData.get("customerId") as string,
@@ -139,7 +140,7 @@ export async function createVehicleAction(formData: FormData) {
       vinConfirmed,
     })
     if (prefetchId != null) {
-      after(() => prefetchCommonVehicleParts(prefetchId))
+      after(() => prefetchCommonVehicleParts(prefetchId, getWorkshopQuotaContext(workshop)))
     }
 
     revalidatePath("/vehicles")
@@ -192,7 +193,7 @@ export async function getVehicleAction(vehicleId: string) {
 }
 
 export async function updateVehicleAction(vehicleId: string, formData: FormData) {
-  const { user } = await requireWritableWorkshop("records.manage")
+  const { user, workshop } = await requireWritableWorkshop("records.manage")
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
@@ -280,7 +281,7 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
     vinConfirmed,
   })
   if (prefetchId != null) {
-    after(() => prefetchCommonVehicleParts(prefetchId))
+    after(() => prefetchCommonVehicleParts(prefetchId, getWorkshopQuotaContext(workshop)))
   }
 
   revalidatePath("/vehicles")
@@ -298,7 +299,7 @@ export async function linkVehicleCatalogAction(
   vehicleId: string,
   data: { catalogBrandId?: number; catalogModelId?: number; catalogVehicleTypeId: number }
 ) {
-  const { user } = await requireWritableWorkshop("records.manage")
+  const { user, workshop } = await requireWritableWorkshop("records.manage")
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
@@ -332,7 +333,7 @@ export async function linkVehicleCatalogAction(
   }
 
   // Arka planda yaygın bakım parçalarını cache'e doldur (response'u bloklamaz).
-  after(() => prefetchCommonVehicleParts(data.catalogVehicleTypeId))
+  after(() => prefetchCommonVehicleParts(data.catalogVehicleTypeId, getWorkshopQuotaContext(workshop)))
 
   revalidatePath("/vehicles")
   revalidatePath(`/vehicles/${vehicleId}`)
@@ -340,7 +341,7 @@ export async function linkVehicleCatalogAction(
 }
 
 export async function confirmVehicleVinAction(vehicleId: string) {
-  const { user } = await requireWritableWorkshop("records.manage")
+  const { user, workshop } = await requireWritableWorkshop("records.manage")
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
@@ -359,7 +360,7 @@ export async function confirmVehicleVinAction(vehicleId: string) {
   // Araç zaten kataloğa bağlıysa, teyit anında yaygın parçaları arka planda doldur.
   if (vehicle.catalogVehicleTypeId) {
     const vehicleTypeId = vehicle.catalogVehicleTypeId
-    after(() => prefetchCommonVehicleParts(vehicleTypeId))
+    after(() => prefetchCommonVehicleParts(vehicleTypeId, getWorkshopQuotaContext(workshop)))
   }
 
   revalidatePath("/vehicles")

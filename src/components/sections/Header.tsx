@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { trackMarketingEvent } from "@/lib/marketing-analytics";
+import { scrollToPageTop } from "@/lib/scroll-to-page-top";
 
 const navItems = [
   { label: "Özellikler", href: "/#ozellikler" },
@@ -36,6 +37,13 @@ export function Header() {
           aria-label="BakımX ana sayfa"
           className="flex shrink-0 items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-ring"
           onClick={() => setMobileOpen(false)}
+          onNavigate={(event) => {
+            if (window.location.pathname !== "/") return;
+
+            event.preventDefault();
+            window.history.replaceState(window.history.state, "", "/");
+            scrollToPageTop();
+          }}
         >
           <BrandLogo variant="primary-light" size="lg" priority alt="BakımX" />
           <span className="border-l pl-3 text-xs font-medium leading-4 text-muted-foreground">
