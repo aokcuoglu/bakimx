@@ -11,15 +11,9 @@ import { PLAN_PACKAGES } from "@/lib/plans-catalog"
 import { VIN_LOOKUP_QUOTA } from "@/lib/plan"
 import type { PlanTier } from "@/lib/plan"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
+import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
 
 type BillingCycle = "monthly" | "yearly"
-
-const SUPPORT_WA = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP // digits only, e.g. 905551112233
-
-function whatsappHref(message: string) {
-  const text = encodeURIComponent(message)
-  return SUPPORT_WA ? `https://wa.me/${SUPPORT_WA}?text=${text}` : `https://wa.me/?text=${text}`
-}
 
 export function PlanPackages({
   ownedTier = null,
@@ -174,7 +168,7 @@ export function PlanPackages({
           ? "Kart bilgisi istemiyoruz. Önce ücretsiz deneyin; deneme bitince uygulama içinden paketinizi etkinleştirirsiniz. "
           : "Ücretli paketlerde Havale/EFT veya kart ile ödeyin; ödemeniz teyit edilince paketiniz aktifleşir. "}
         <a
-          href={whatsappHref(`Merhaba, BakimX paket etkinleştirme hakkında bilgi almak istiyorum.${workshopName ? ` (${workshopName})` : ""}`)}
+          href={getSupportWhatsAppUrl(`Merhaba, BakimX paket etkinleştirme hakkında bilgi almak istiyorum.${workshopName ? ` (${workshopName})` : ""}`)}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-primary hover:underline"
