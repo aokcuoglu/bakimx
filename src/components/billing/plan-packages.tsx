@@ -24,16 +24,10 @@ import {
 } from "@/lib/plans-catalog"
 import type { PlanTier, SalePlanTier } from "@/lib/plan"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
+import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
 import { cn } from "@/lib/utils"
 
 type BillingCycle = "monthly" | "yearly"
-
-const SUPPORT_WA = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP
-
-function whatsappHref(message: string) {
-  const text = encodeURIComponent(message)
-  return SUPPORT_WA ? `https://wa.me/${SUPPORT_WA}?text=${text}` : `https://wa.me/?text=${text}`
-}
 
 function ComparisonValue({ value }: { value: PlanComparisonValue }) {
   if (value.state === "coming-soon") {
@@ -333,7 +327,7 @@ export function PlanPackages({
           ? "Lite süresiz ücretsizdir; kart gerekmez ve otomatik ücretliye dönüşmez. Profesyonel ve Premium kayıtlarında mevcut 7 iş günlük deneme geçerlidir. "
           : "Ücretli paketlerde Havale/EFT veya kart ile ödeyin; ödemeniz teyit edilince paketiniz aktifleşir. "}
         <a
-          href={whatsappHref(`Merhaba, BakimX paket etkinleştirme hakkında bilgi almak istiyorum.${workshopName ? ` (${workshopName})` : ""}`)}
+          href={getSupportWhatsAppUrl(`Merhaba, BakimX paket etkinleştirme hakkında bilgi almak istiyorum.${workshopName ? ` (${workshopName})` : ""}`)}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-primary hover:underline"
