@@ -1,6 +1,6 @@
 # Lite acquisition review — issue #626
 
-Review branch: `feature/lite-acquisition`, based on `d223fe89` (dev). No push, merge, deployment, production configuration/database write or ad publication. The original checkout and its uncommitted demo/marketing changes were preserved; this branch must be reconciled with that separate marketing work before integration.
+Implementation branch: `issue/626-lite-acquisition`, based on `d223fe89` (dev). The initial review-ready commit was `77c524f9`. The user subsequently authorized PR/dev integration and localhost:3000 preview. Production configuration/database writes and ad publication remain out of scope. The original checkout and its uncommitted demo/marketing changes were preserved; this branch must be reconciled with that separate marketing work before integration.
 
 ## Result
 
@@ -26,7 +26,7 @@ See [campaign operations](lite-campaign.md) for `LITE_REGISTRATION_OPEN=true/fal
 
 See [analytics operations](marketing-analytics.md). No external tracking account/ID was invented. Live GA4 delivery and real card-provider settlement were not tested. Durable transaction conversion rows are authoritative; the one-time browser delivery can undercount if blocked or interrupted. Current unpublished original marketing changes overlap the schema/config/analytics files and require integration review.
 
-Recommended next owner: Atlas for review and reconciliation, followed by separately authorized deployment. Issue remains open; production is not marked complete.
+Delivery owner: Atlas for PR/dev integration and preserving the primary checkout’s draft marketing work as uncommitted local changes. Cloud deployment remains separately authorized; this PR must not opt in to cloud deployment because the user excluded live database changes. Apply the reviewed migration before any later cloud rollout.
 
 ## Changed files
 
@@ -52,7 +52,6 @@ Recommended next owner: Atlas for review and reconciliation, followed by separat
 - `src/app/api/auth/register/route.test.ts`
 - `src/app/api/auth/register/route.ts`
 - `src/app/api/checkout/route.ts`
-- `src/app/api/payments/tami/initiate/route.ts`
 - `src/app/api/payments/tami/initiate/route.ts`
 - `src/app/api/smart-capture/confirm/route.ts`
 - `src/app/fiyatlar/page.tsx`
