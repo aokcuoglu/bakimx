@@ -77,7 +77,7 @@ export function RegisterSidebar({
                 </span>
               </p>
               <p className="mt-0.5 text-xs text-navy-foreground/60">
-                Önce ücretsiz deneyin; deneme bitince bu paketi etkinleştirebilirsiniz.
+                {preferredPlan.tier === "lite" ? "Lite kapsamı süresiz ücretsizdir. Kart gerekmez; otomatik ücretliye dönüşmez." : "Önce 7 iş günü ücretsiz deneyin; deneme bitince bu paketi kendi onayınızla etkinleştirebilirsiniz."}
               </p>
             </div>
           )}

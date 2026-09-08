@@ -1,5 +1,7 @@
 "use server"
 
+import { recordFirstWorkOrderConversion } from "@/lib/marketing-conversion-outbox"
+
 import { prisma } from "@/lib/db"
 import { requireFeatureWorkshop, requireWritableFeatureWorkshop } from "@/lib/auth"
 import type { Permission } from "@/lib/roles"
@@ -171,6 +173,8 @@ export async function convertAppointmentToWorkOrderAction(formData: FormData) {
         notes: appointment.customerRequest || "Randevudan dönüştürüldü",
       },
     })
+    await recordFirstWorkOrderConversion(tx, workshopId)
+
 
     await tx.appointment.update({
       where: { id: appointmentId },

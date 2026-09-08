@@ -17,6 +17,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   PHOTO_UPLOAD_POLICY,
+  LITE_CAMPAIGN_DESCRIPTION,
   PLAN_COMPARISON,
   PLAN_PACKAGES,
   type PlanComparisonValue,
@@ -63,6 +64,7 @@ function PlanAction({
   hasPendingOrder,
   canPurchase,
   compact = false,
+  liteRegistrationOpen = true,
 }: {
   tier: SalePlanTier
   billing: BillingCycle
@@ -71,6 +73,7 @@ function PlanAction({
   hasPendingOrder: boolean
   canPurchase: boolean
   compact?: boolean
+  liteRegistrationOpen?: boolean
 }) {
   const isOwned = ownedTier === tier
   const pkg = PLAN_PACKAGES.find((plan) => plan.tier === tier)!
@@ -90,6 +93,10 @@ function PlanAction({
     )
   }
 
+  if (tier === "lite" && checkoutBasePath.startsWith("/register") && !liteRegistrationOpen) {
+    return <p role="status" className="text-sm text-muted-foreground">Yeni Lite kayıtları kapalı. Mevcut üyelerin ücretsiz kullanımı devam ediyor.</p>
+  }
+
   const href = `${checkoutBasePath}?tier=${tier}&cycle=${billing}`
   return (
     <Button
@@ -101,7 +108,7 @@ function PlanAction({
       <Link
         href={href}
         onClick={() =>
-          trackMarketingEvent("purchase_started", {
+          trackMarketingEvent(tier === "lite" && checkoutBasePath.startsWith("/register") ? "lite_cta_click" : "purchase_started", {
             plan_tier: tier,
             billing_cycle: billing,
             cta_location: "pricing_card",
@@ -109,7 +116,7 @@ function PlanAction({
         }
       >
         {isOwned && <Check className="size-4" aria-hidden="true" />}
-        {isOwned ? "Mevcut paket · Yenile" : checkoutBasePath.startsWith("/register") ? "Ücretsiz dene" : "Bu paketi seç"}
+        {isOwned ? "Mevcut paket · Yenile" : checkoutBasePath.startsWith("/register") ? tier === "lite" ? "Ücretsiz hesap oluştur" : "Ücretsiz dene" : "Bu paketi seç"}
       </Link>
     </Button>
   )
@@ -144,9 +151,10 @@ function PlanHeading({
         </span>
         <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">KDV dahil</span>
         {pkg.tier === "lite" && (
-          <span className="mt-1 block text-xs font-medium text-primary">Açılışa özel · sınırlı süre</span>
+          <span className="mt-1 block text-xs font-medium text-primary">Açılışa özel ücretsiz kayıt</span>
         )}
       </div>
+      {tier === "lite" && <p className="text-xs leading-5 text-muted-foreground">{LITE_CAMPAIGN_DESCRIPTION}</p>}
     </div>
   )
 }
@@ -157,6 +165,7 @@ export function PlanPackages({
   checkoutBasePath = "/checkout",
   hasPendingOrder = false,
   canPurchase = true,
+  liteRegistrationOpen = true,
 }: {
   ownedTier?: PlanTier | null
   workshopName?: string
@@ -165,11 +174,12 @@ export function PlanPackages({
   hasPendingOrder?: boolean
   /** Billing viewers without billing.manage can compare, but cannot start checkout. */
   canPurchase?: boolean
+  liteRegistrationOpen?: boolean
 }) {
   const [billing, setBilling] = useState<BillingCycle>("monthly")
 
   return (
-    <section aria-labelledby="plan-karsilastirma-baslik" className="space-y-5">
+    <section id="lite" aria-labelledby="plan-karsilastirma-baslik" className="scroll-mt-20 space-y-5">
       <div className="space-y-1 text-center">
         <h2 id="plan-karsilastirma-baslik" className="text-xl font-bold text-foreground sm:text-2xl">
           Paketleri karşılaştırın
@@ -180,7 +190,7 @@ export function PlanPackages({
       <div className="flex justify-center pt-2">
         <div className="relative">
           <Badge className="absolute -top-3 left-3/4 z-10 -translate-x-1/2 whitespace-nowrap px-2.5 py-0.5 text-[10px]">
-            <Sparkles className="size-3" aria-hidden="true" /> Yıllıkta 2 ay bedava
+            <Sparkles className="size-3" aria-hidden="true" /> Ücretli paketlerde 2 ay bedava
           </Badge>
           <ToggleGroup
             type="single"
@@ -230,6 +240,7 @@ export function PlanPackages({
                       ownedTier={ownedTier}
                       hasPendingOrder={hasPendingOrder}
                       canPurchase={canPurchase}
+                      liteRegistrationOpen={liteRegistrationOpen}
                       compact
                     />
                   </div>
@@ -265,7 +276,7 @@ export function PlanPackages({
         </Table>
       </div>
 
-      <Tabs defaultValue="pro" className="lg:hidden">
+      <Tabs defaultValue={checkoutBasePath.startsWith("/register") ? "lite" : "pro"} className="lg:hidden">
         <TabsList className="grid h-auto w-full grid-cols-3">
           {PLAN_PACKAGES.map((pkg) => (
             <TabsTrigger key={pkg.tier} value={pkg.tier} className="min-h-10 px-2">
@@ -283,6 +294,7 @@ export function PlanPackages({
               ownedTier={ownedTier}
               hasPendingOrder={hasPendingOrder}
               canPurchase={canPurchase}
+                      liteRegistrationOpen={liteRegistrationOpen}
             />
             {PLAN_COMPARISON.map((category) => (
               <section key={category.key} aria-labelledby={`mobil-${pkg.tier}-${category.key}`} className="space-y-2">
@@ -318,7 +330,7 @@ export function PlanPackages({
 
       <p className="text-center text-xs text-muted-foreground">
         {checkoutBasePath.startsWith("/register")
-          ? "Kart bilgisi istemiyoruz. Önce ücretsiz deneyin; deneme bitince uygulama içinden paketinizi etkinleştirirsiniz. "
+          ? "Lite süresiz ücretsizdir; kart gerekmez ve otomatik ücretliye dönüşmez. Profesyonel ve Premium kayıtlarında mevcut 7 iş günlük deneme geçerlidir. "
           : "Ücretli paketlerde Havale/EFT veya kart ile ödeyin; ödemeniz teyit edilince paketiniz aktifleşir. "}
         <a
           href={whatsappHref(`Merhaba, BakimX paket etkinleştirme hakkında bilgi almak istiyorum.${workshopName ? ` (${workshopName})` : ""}`)}

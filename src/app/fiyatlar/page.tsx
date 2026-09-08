@@ -1,4 +1,4 @@
-import Link from "next/link"
+import { isLiteRegistrationOpen } from "@/lib/lite-campaign"
 import { Header } from "@/components/sections/Header"
 import { Footer } from "@/components/sections/Footer"
 import { PlanPackages } from "@/components/billing/plan-packages"
@@ -7,7 +7,7 @@ import { PLAN_PACKAGES } from "@/lib/plans-catalog"
 import { publicPageMetadata, SITE_URL } from "@/lib/seo"
 
 const description =
-  "BakımX oto servis programı paketlerini ve KDV dahil fiyatlarını karşılaştırın. 7 iş günü ücretsiz deneyin; aylık veya yıllık planınızı seçin."
+  "BakımX oto servis programı paketlerini ve KDV dahil fiyatlarını karşılaştırın. Lite kampanyasında süresiz 0 TL kullanın; ücretli paketleri karşılaştırın."
 
 export const metadata = publicPageMetadata({
   path: "/fiyatlar",
@@ -32,6 +32,8 @@ const softwareApplicationStructuredData = {
   })),
 }
 
+export const dynamic = "force-dynamic"
+
 export default function FiyatlarPage() {
   return (
     <>
@@ -41,12 +43,10 @@ export default function FiyatlarPage() {
         <div className="text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Oto servis programı paketleri ve fiyatları</h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">
-            İş yerinize uygun paketi seçin. Kart bilgisi olmadan{" "}
-            <Link href="/register" className="text-primary underline underline-offset-2">ücretsiz deneyin</Link>
-            ; deneme bitince uygulama içinden paketinizi etkinleştirirsiniz.
+            Lite kampanyasında süresiz ücretsiz kullanım; otomatik ücretliye dönüşmez. Profesyonel ve Premium için kart bilgisi olmadan 7 iş günlük deneme sunulur. Ücretli paketi kendi onayınızla etkinleştirirsiniz.
           </p>
         </div>
-        <PlanPackages checkoutBasePath="/register" />
+        <PlanPackages checkoutBasePath="/register" liteRegistrationOpen={isLiteRegistrationOpen()} />
       </main>
       <Footer />
     </>

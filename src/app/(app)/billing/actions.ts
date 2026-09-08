@@ -1,5 +1,6 @@
 "use server"
 
+import { assertLiteRegistrationOpen, LiteRegistrationClosedError, isLiteRegistrationOpen, LITE_REGISTRATION_CLOSED } from "@/lib/lite-campaign"
 import { revalidatePath } from "next/cache"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { prisma } from "@/lib/db"
@@ -46,6 +47,9 @@ export async function createBillingOrder(input: {
   const data = parsed.data
   const tier = data.tier as PlanTier
   const cycle = data.cycle as BillingCycle
+  if (tier === "lite" && !workshop.liteFreeGrantedAt && !isLiteRegistrationOpen()) {
+    return { ok: false, error: LITE_REGISTRATION_CLOSED }
+  }
 
   // Tekrar mükerrer talebi engelle: aynı workshop'un zaten bekleyen bir siparişi
   // varsa (hesap üzerinden) VEYA aynı vergi/TC no ile başka bir workshop'un
@@ -81,6 +85,7 @@ export async function createBillingOrder(input: {
   // Paket değişimleri mevcut davranışı koruyarak kullanılmayan dönem kredisini
   // uygular; tip alanı hakediş için gerçek yükseltme/düşürmeyi ayrıca ayırır.
   const amountMinor =
+    tier === "lite" && workshop.liteFreeGrantedAt ? 0 :
     type === "upgrade" || type === "downgrade"
       ? computeUpgradeAmountMinor({
           currentTier: workshop.planTier as PlanTier,
@@ -110,6 +115,7 @@ export async function createBillingOrder(input: {
     const reference = generateOrderReference()
     try {
       const order = await prisma.$transaction(async (tx) => {
+        if (!workshop.liteFreeGrantedAt) assertLiteRegistrationOpen(tier)
         await tx.workshop.update({
           where: { id: workshop.id },
           data: {
@@ -145,7 +151,7 @@ export async function createBillingOrder(input: {
         "billing_order_created",
         JSON.stringify({ tier, cycle, amountMinor, netAmountMinor: taxSnapshot.netAmountMinor, type, method: data.method })
       )
-      const complimentary = isComplimentaryPlan(tier, cycle)
+      const complimentary = (tier === "lite" && !!workshop.liteFreeGrantedAt) || isComplimentaryPlan(tier, cycle)
       if (complimentary) {
         const activation = await activateBillingOrder(order.id, {
           actor: "payment",
@@ -157,6 +163,7 @@ export async function createBillingOrder(input: {
       revalidatePath("/admin")
       return { ok: true, reference, amountMinor, method: data.method, complimentary }
     } catch (err) {
+      if (err instanceof LiteRegistrationClosedError) return { ok: false, error: err.message }
       if ((err as { code?: string })?.code === "P2002") continue // reference collision → retry
       console.error("[createBillingOrder] failed:", err)
       return { ok: false, error: "Sipariş oluşturulamadı. Lütfen tekrar deneyin." }

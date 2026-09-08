@@ -1,5 +1,7 @@
 "use server"
 
+import { recordFirstWorkOrderConversion } from "@/lib/marketing-conversion-outbox"
+
 import { prisma } from "@/lib/db"
 import { requireFeatureWorkshop, requireWritableFeatureWorkshop } from "@/lib/auth"
 import type { Permission } from "@/lib/roles"
@@ -253,6 +255,8 @@ export async function convertQuoteToWorkOrderAction(formData: FormData) {
         notes: `${quote.customerRequest || ""}\n\nTeklif No: ${formatQuoteNo(quote)}`.trim(),
       },
     })
+    await recordFirstWorkOrderConversion(tx, workshopId)
+
 
     for (const item of quote.items) {
       const createdItem = await tx.serviceOrderItem.create({

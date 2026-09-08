@@ -1,4 +1,6 @@
+import { recordMarketingConversion } from "@/lib/marketing-conversion-outbox"
 import { NextResponse } from "next/server"
+import { assertLiteRegistrationOpen, LiteRegistrationClosedError } from "@/lib/lite-campaign"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/db"
 import { registerSchema } from "@/lib/validations/auth"
@@ -98,7 +100,7 @@ export async function POST(request: Request) {
     where: { email: data.email },
     select: {
       password: true,
-      workshop: { select: { id: true, approvalStatus: true, trialStartedAt: true } },
+      workshop: { select: { id: true, planTier: true, approvalStatus: true, trialStartedAt: true } },
     },
   })
   if (existing) {
@@ -116,6 +118,9 @@ export async function POST(request: Request) {
         trialStartedAt: existing.workshop.trialStartedAt,
       })
     ) {
+      if (data.planTier !== existing.workshop.planTier) {
+        return NextResponse.json({ code: "registration_plan_mismatch", error: "Bu e-posta ile farklı bir paket için başlatılmış kayıt var. Mevcut kayıt paketiniz değiştirilmedi. Mevcut hesabınıza giriş yaparak devam edin veya destek ile iletişime geçin." }, { status: 409 })
+      }
       const sent = await sendVerifyEmail(existing.workshop.id)
       if (!sent.ok) {
         return NextResponse.json({ error: EMAIL_SEND_ERROR }, { status: 500 })
@@ -155,6 +160,7 @@ export async function POST(request: Request) {
         const loginCode = workshopCodeCandidate(data.workshopName, attempt)
         try {
           return await prisma.$transaction(async (tx) => {
+            assertLiteRegistrationOpen(data.planTier)
             const conversionAt = new Date()
             const salesLink = salesRegistrationTokenHash
               ? await tx.salesRegistrationLink.findUnique({
@@ -237,10 +243,11 @@ export async function POST(request: Request) {
                 // Approval-gated trial: pending until the e-mail is verified. The trial
                 // (trialStartedAt/EndsAt) starts in activateVerifiedWorkshop, not here.
                 approvalStatus: "pending",
-                subscriptionStatus: "trialing",
+                subscriptionStatus: data.planTier === "lite" ? "active" : "trialing",
+                liteFreeGrantedAt: data.planTier === "lite" ? conversionAt : null,
                 trialStartedAt: null,
                 trialEndsAt: null,
-                planTier: "pro",
+                planTier: data.planTier,
                 acquisitionSource: salesLink ? "sales_advisor" : referrerWorkshop ? "referral" : data.acquisitionSource,
                 acquisitionAdvisorId: salesLink?.advisorId ?? null,
                 referredByWorkshopId: referrerWorkshop?.id ?? null,
@@ -325,6 +332,9 @@ export async function POST(request: Request) {
               })
             }
 
+            if (data.planTier === "lite") {
+              await recordMarketingConversion(tx, { name: "lite_registered", workshopId: ws.id, key: ws.id, payload: { plan_tier: "lite" }, attribution: raw.marketingAttribution })
+            }
             return ws
           })
         } catch (err) {
@@ -380,6 +390,9 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ ok: true })
   } catch (err) {
+    if (err instanceof LiteRegistrationClosedError) {
+      return NextResponse.json({ error: err.message, code: "lite_registration_closed" }, { status: 409 })
+    }
     if (err instanceof SalesRegistrationError) {
       return NextResponse.json({ error: err.message }, { status: 410 })
     }

@@ -18,6 +18,8 @@ import {
   TriangleAlert,
 } from "lucide-react"
 import type { UserRole } from "@prisma/client"
+import { PLAN_SEATS, type PlanTier } from "@/lib/plan"
+import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -123,6 +125,7 @@ export function TeamManagement({
   canManage,
   seatUsed,
   seatLimit,
+  accessTier,
   workshopName,
   loginCode,
   accountMissingPersonnel,
@@ -135,6 +138,7 @@ export function TeamManagement({
   canManage: boolean
   seatUsed: number
   seatLimit: number
+  accessTier: PlanTier
   workshopName: string
   /** `Workshop.loginCode` — kullanıcı adıyla girişte hangi tenant olduğunu çözer. */
   loginCode: string
@@ -265,8 +269,8 @@ export function TeamManagement({
           {seatLimit <= 1
             ? " Paketiniz tek kullanıcı içeriyor — ekibinize kullanıcı eklemek için "
             : " Yeni kullanıcı eklemek ya da davet etmek için "}
-          <Link href="/billing" className="font-semibold underline underline-offset-2">
-            paketinizi yükseltin
+          <Link href="/billing#paketler" onClick={() => (accessTier === "lite" || accessTier === "pro") && trackMarketingEvent("feature_upgrade_clicked", { feature_id: "team", current_tier: accessTier, target_tier: accessTier === "pro" ? "premium" : "pro", placement: "inline", destination: "plans" })} className="font-semibold underline underline-offset-2">
+            {accessTier === "pro" ? `${PLAN_SEATS.premium} kullanıcılı Premium paketini inceleyin` : accessTier === "lite" ? `${PLAN_SEATS.pro} kullanıcılı Profesyonel paketini inceleyin` : "paket seçeneklerini inceleyin"}
           </Link>{" "}
           ya da ek koltuk için bizimle iletişime geçin.
         </div>

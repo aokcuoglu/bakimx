@@ -52,12 +52,14 @@ function definePlanPackage(definition: PlanPackageDefinition): PlanPackage {
   const { listMonthlyPrice, listYearlyPrice, ...plan } = definition
   return {
     ...plan,
-    monthlyLabel: priceLabel(plan.monthlyPrice, "ay"),
-    yearlyLabel: priceLabel(plan.yearlyPrice, "yıl"),
+    monthlyLabel: plan.tier === "lite" ? "0 TL/ay" : priceLabel(plan.monthlyPrice, "ay"),
+    yearlyLabel: plan.tier === "lite" ? "0 TL/ay" : priceLabel(plan.yearlyPrice, "yıl"),
     ...(listMonthlyPrice == null ? {} : { listMonthlyLabel: priceLabel(listMonthlyPrice, "ay") }),
     ...(listYearlyPrice == null ? {} : { listYearlyLabel: priceLabel(listYearlyPrice, "yıl") }),
   }
 }
+
+export const LITE_CAMPAIGN_DESCRIPTION = "Kampanya döneminde Lite’a katılan işletmeler, Lite paket kapsamını süresiz ücretsiz kullanır. Yeni Lite kayıtları kapansa da mevcut üyelerin ücretsiz kullanımı devam eder."
 
 export const PLAN_PACKAGES: PlanPackage[] = [
   definePlanPackage({
@@ -65,8 +67,6 @@ export const PLAN_PACKAGES: PlanPackage[] = [
     name: "Lite",
     monthlyPrice: 0,
     yearlyPrice: 0,
-    listMonthlyPrice: 499,
-    listYearlyPrice: 4_990,
     tagline: "Temel kayıtlarını dijitale taşıyan servisler için",
     seats: PLAN_SEATS.lite,
     highlights: [

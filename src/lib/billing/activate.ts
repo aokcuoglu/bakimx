@@ -1,3 +1,4 @@
+import { recordMarketingConversion } from "@/lib/marketing-conversion-outbox"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { addPeriod, periodStartFrom } from "@/lib/billing/period"
@@ -41,14 +42,17 @@ export async function activateBillingOrder(
 
   const workshop = await prisma.workshop.findUnique({
     where: { id: order.workshopId },
-    select: { currentPeriodEnd: true, planTier: true, extraSeats: true },
+    select: { currentPeriodEnd: true, planTier: true, extraSeats: true, liteFreeGrantedAt: true },
   })
   const now = new Date()
   // Renewal extends from the current period end (no lost days); package changes
   // and new purchases start a fresh period now (changes were proration-credited).
   const periodStart =
     order.type === "renewal" ? periodStartFrom(workshop?.currentPeriodEnd ?? null, now) : now
-  const periodEnd = addPeriod(periodStart, order.billingCycle)
+  // The zero-price accepted order is the durable admission evidence, even if
+  // campaign admissions close before this activation retry.
+  const lifetimeLite = order.planTier === "lite" && order.amountMinor === 0
+  const periodEnd = lifetimeLite ? null : addPeriod(periodStart, order.billingCycle)
 
   let seatAdjustment: SeatAdjustmentResult = {
     limit: getSeatLimit(order.planTier, workshop?.extraSeats ?? 0),
@@ -127,10 +131,14 @@ export async function activateBillingOrder(
           subscriptionStatus: "active",
           approvalStatus: "approved",
           currentPeriodEnd: periodEnd,
+          ...(lifetimeLite ? { liteFreeGrantedAt: workshop?.liteFreeGrantedAt ?? now, trialStartedAt: null, trialEndsAt: null } : {}),
           requestedPlanTier: null,
           planRequestedAt: null,
         },
       })
+      if (order.amountMinor > 0 && ["new_purchase", "upgrade"].includes(order.type)) {
+        await recordMarketingConversion(tx, { name: "paid_subscription_confirmed", workshopId: order.workshopId, key: order.id, payload: { plan_tier: order.planTier, billing_cycle: order.billingCycle } })
+      }
       await createCommissionDraftForBillingOrderTx(
         tx,
         order,

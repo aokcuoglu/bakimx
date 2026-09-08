@@ -19,6 +19,7 @@ async function eligibleWorkshopIds(feature: GatedFeature, workshopId?: string): 
       subscriptionStatus: true,
       approvalStatus: true,
       trialEndsAt: true,
+      liteFreeGrantedAt: true,
       currentPeriodEnd: true,
     },
   })

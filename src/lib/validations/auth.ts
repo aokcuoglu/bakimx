@@ -33,6 +33,7 @@ export const loginSchema = z
 
 export const registerSchema = z
   .object({
+    planTier: z.enum(["lite", "pro", "premium"]).default("pro"),
     sector: z.enum(REGISTER_SECTOR_IDS).default("auto_service"),
     businessFeatures: z.array(z.enum(BUSINESS_FEATURE_IDS)).default([]),
     teamSize: z.enum(TEAM_SIZE_IDS).default("solo"),

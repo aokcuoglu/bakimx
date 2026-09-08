@@ -175,6 +175,7 @@ export async function inviteMemberAction(formData: FormData): Promise<Result> {
         subscriptionStatus: true,
         approvalStatus: true,
         trialEndsAt: true,
+      liteFreeGrantedAt: true,
         currentPeriodEnd: true,
       },
     })
