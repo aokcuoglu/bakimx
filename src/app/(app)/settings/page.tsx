@@ -4,7 +4,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { SettingsTabs } from "./settings-tabs"
 import { prisma } from "@/lib/db"
 import { getSeatUsage } from "@/lib/rbac"
-import { GATED_FEATURES, getEffectiveSeatLimit, hasWorkshopFeature } from "@/lib/plan"
+import { GATED_FEATURES, getPlanState, getEffectiveSeatLimit, hasWorkshopFeature } from "@/lib/plan"
 import { getFeaturePaywall } from "@/lib/feature-page-access"
 
 export const metadata = {
@@ -177,6 +177,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           accountMissingPersonnel={accountMissingPersonnel}
           seatUsed={seatUsage.used}
           seatLimit={seatLimit}
+          accessTier={getPlanState(workshop).accessTier}
           enabledFeatures={enabledFeatures}
         />
       </div>

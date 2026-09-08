@@ -1,9 +1,10 @@
 "use client"
 
+import { claimMarketingConversions } from "@/app/actions/marketing-conversions"
 import Script from "next/script"
 import { usePathname } from "next/navigation"
 import { useEffect, useRef } from "react"
-import { trackMarketingEvent, type MarketingEventDetail } from "@/lib/marketing-analytics"
+import { captureMarketingAttribution, trackMarketingEvent, type MarketingEventDetail } from "@/lib/marketing-analytics"
 
 declare global { interface Window { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void } }
 
@@ -30,6 +31,26 @@ export function MarketingAnalytics() {
     window.addEventListener("bakimx:analytics", forward)
     return () => window.removeEventListener("bakimx:analytics", forward)
   }, [enabled, measurementId])
+
+  useEffect(() => {
+    if (!enabled) return
+    // The analytics flag is the existing collection gate. No new provider or IDs.
+    if (["/", "/fiyatlar", "/register"].includes(pathname)) captureMarketingAttribution()
+    // Claim only on authenticated app routes, after the event listener is installed.
+    if (pathname === "/dashboard" || pathname.startsWith("/orders") || pathname.startsWith("/settings") || pathname.startsWith("/billing")) {
+      const deliver = () => {
+        void claimMarketingConversions().then((events) => {
+          for (const event of events) trackMarketingEvent(event.name, event.params)
+        }).catch(() => { /* Analytics must never block product use. */ })
+      }
+      deliver()
+      // Same-route mutations/refreshes do not change pathname. Also catch late
+      // provider confirmations while the owner remains on the billing screen.
+      const timer = window.setInterval(deliver, 30_000)
+      window.addEventListener("focus", deliver)
+      return () => { window.clearInterval(timer); window.removeEventListener("focus", deliver) }
+    }
+  }, [enabled, pathname])
 
   useEffect(() => {
     const landingType = LANDINGS[pathname]

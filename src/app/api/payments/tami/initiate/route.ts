@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
   // 3) Siparişi yükle — kart yöntemli ve ödeme bekleyen olmalı.
   const order = await prisma.billingOrder.findUnique({ where: { reference } })
-  if (!order || order.status !== "pending_payment" || order.method !== "card") {
+  if (!order || order.status !== "pending_payment" || order.method !== "card" || order.amountMinor <= 0) {
     return resultRedirect(request, reference)
   }
 

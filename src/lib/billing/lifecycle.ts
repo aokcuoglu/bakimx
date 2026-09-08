@@ -120,6 +120,7 @@ export async function sweepTrialWarnings(): Promise<LifecycleSweepResult> {
   const workshops = await prisma.workshop.findMany({
     where: {
       kind: "customer",
+      NOT: { planTier: "lite", liteFreeGrantedAt: { not: null } },
       subscriptionStatus: "trialing",
       approvalStatus: "approved",
       trialEndsAt: { not: null, gt: notTooOld },
@@ -132,6 +133,7 @@ export async function sweepTrialWarnings(): Promise<LifecycleSweepResult> {
       subscriptionStatus: true,
       approvalStatus: true,
       trialEndsAt: true,
+      liteFreeGrantedAt: true,
       currentPeriodEnd: true,
     },
   })
@@ -192,6 +194,7 @@ export async function sweepSubscriptionWarnings(): Promise<LifecycleSweepResult>
   const workshops = await prisma.workshop.findMany({
     where: {
       kind: "customer",
+      NOT: { planTier: "lite", liteFreeGrantedAt: { not: null } },
       subscriptionStatus: "active",
       currentPeriodEnd: { not: null, gt: notTooOld },
     },
@@ -203,6 +206,7 @@ export async function sweepSubscriptionWarnings(): Promise<LifecycleSweepResult>
       subscriptionStatus: true,
       approvalStatus: true,
       trialEndsAt: true,
+      liteFreeGrantedAt: true,
       currentPeriodEnd: true,
     },
   })
@@ -514,6 +518,7 @@ export async function sweepUnverifiedRegistrations(): Promise<LifecycleSweepResu
     candidates = await prisma.workshop.findMany({
       where: {
         kind: "customer",
+      NOT: { planTier: "lite", liteFreeGrantedAt: { not: null } },
         approvalStatus: "pending",
         trialStartedAt: null,
         createdAt: { gte: PURGE_LEGACY_CUTOFF, lt: staleCutoff },

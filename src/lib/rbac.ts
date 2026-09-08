@@ -160,6 +160,7 @@ export async function assertSeatAvailableTx(
       subscriptionStatus: true,
       approvalStatus: true,
       trialEndsAt: true,
+      liteFreeGrantedAt: true,
       currentPeriodEnd: true,
     },
   })

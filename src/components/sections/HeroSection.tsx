@@ -136,6 +136,8 @@ export function HeroSection() {
                         {slide.description}
                       </p>
 
+                      <p className="mt-4 text-sm font-semibold text-brand">Açılışa özel ücretsiz kayıt · Lite 0 TL/ay</p>
+
                       <ul className="mt-6 flex max-w-2xl flex-col gap-3 text-sm text-navy-foreground/90 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-3">
                         {slide.bullets.map((bullet) => (
                           <li
@@ -153,15 +155,16 @@ export function HeroSection() {
                       <div className="mt-8 flex flex-col gap-3 pr-16 sm:flex-row sm:flex-wrap sm:pr-0">
                         <Button asChild size="xl" className="h-12 px-5">
                           <Link
-                            href="/register"
+                            href="/fiyatlar#lite"
                             tabIndex={isActive ? 0 : -1}
                             onClick={() =>
-                              trackMarketingEvent("trial_cta_click", {
+                              trackMarketingEvent("lite_cta_click", {
                                 cta_location: "hero_primary",
+                                plan_tier: "lite",
                               })
                             }
                           >
-                            Ücretsiz denemeye başlayın <ArrowRight />
+                            Lite · 0 TL/ay ile başlayın <ArrowRight />
                           </Link>
                         </Button>
                         <Button
@@ -187,7 +190,7 @@ export function HeroSection() {
 
                       <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-navy-foreground/70">
                         <span className="flex items-center gap-1.5">
-                          <Check className="size-3.5" />7 iş günü ücretsiz
+                          <Check className="size-3.5" />Lite kapsamı süresiz ücretsiz
                         </span>
                         <span className="flex items-center gap-1.5">
                           <Check className="size-3.5" />

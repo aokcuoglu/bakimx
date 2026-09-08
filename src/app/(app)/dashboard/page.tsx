@@ -1,6 +1,8 @@
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import Link from "next/link"
+import { prisma } from "@/lib/db"
+import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { getPlanState, hasFeature } from "@/lib/plan"
 
@@ -94,6 +96,8 @@ export default async function DashboardPage() {
         getDashboardWidgetData(user.workshopId),
       ])
     : [null, null, null]
+  const needsFirstOrder = accessTier === "lite" && !(await prisma.serviceOrder.findFirst({ where: { workshopId: user.workshopId }, select: { id: true } }))
+
   const operationalAlerts = canAnalytics
     ? await getRecommendations(user.workshopId)
     : null
@@ -128,6 +132,17 @@ export default async function DashboardPage() {
             </Link>
           </div>
         </div>
+
+        {needsFirstOrder && (
+          <section aria-labelledby="first-order-heading" className="rounded-xl border bg-card p-4 space-y-3">
+            <h2 id="first-order-heading" className="text-lg font-semibold">Lite ile ilk işinize başlayın</h2>
+            <p className="text-sm text-muted-foreground">Kurulum tercihleriniz kaydedildi. İlk müşterinizi ve aracınızı kaydedin, ardından iş emrinizi açın. İş emri ekranında da müşteri ve araç ekleyebilirsiniz.</p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button asChild variant="outline"><Link href="/customers/new">İlk müşteriyi ekle</Link></Button>
+              <Button asChild><Link href="/orders/new">İlk iş emrini oluştur</Link></Button>
+            </div>
+          </section>
+        )}
 
         <KpiCards stats={stats} showQuotes={canQuotes} showPhotoChecklist={canPhotos} />
 

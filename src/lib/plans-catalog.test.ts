@@ -11,11 +11,13 @@ test("satış kataloğu üç güncel paketi doğru sırada sunar", () => {
   expect(PLAN_PACKAGES.map((plan) => plan.tier)).toEqual(["lite", "pro", "premium"])
 })
 
-test("Lite açılış kampanyası normal fiyatı koruyup ücretsiz satış fiyatı sunar", () => {
+test("Lite her dönemde 0 TL/ay gösterir, üzeri çizili fiyat içermez", () => {
   const lite = getPlanPackage("lite")
   expect(lite?.monthlyPrice).toBe(0)
   expect(lite?.yearlyPrice).toBe(0)
-  expect(lite && "listMonthlyLabel" in lite ? lite.listMonthlyLabel : undefined).toBe("₺499/ay")
+  expect(lite?.monthlyLabel).toBe("0 TL/ay")
+  expect(lite?.yearlyLabel).toBe("0 TL/ay")
+  expect(lite && "listMonthlyLabel" in lite ? lite.listMonthlyLabel : undefined).toBeUndefined()
 })
 
 test("birleşik Profesyonel ve Premium fiyatları yıllık iki ay bedava kuralına uyar", () => {

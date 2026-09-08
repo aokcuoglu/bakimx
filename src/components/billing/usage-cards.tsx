@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PHOTO_UPLOAD_POLICY } from "@/lib/plans-catalog"
-import type { PlanState } from "@/lib/plan"
+import { PLAN_SEATS, VIN_LOOKUP_QUOTA, type PlanState } from "@/lib/plan"
 import type { WorkshopQuotaUsage } from "@/lib/rapidapi-quota"
 import { USAGE_TONE_LABELS, summarizeSeatUsage, usagePercent, usageTone, type UsageTone } from "@/lib/billing/usage"
 import { cn } from "@/lib/utils"
@@ -122,7 +122,7 @@ export function BillingUsageCards({
             ) : (
               <>
                 <p className="font-semibold text-foreground">{planName}</p>
-                <p className="text-muted-foreground">{paidPeriodLabel}</p>
+                <p className="text-muted-foreground">{plan.tier === "lite" ? "0 TL/ay · Lite kapsamı süresiz ücretsiz. Otomatik ücretliye dönüşmez." : paidPeriodLabel}</p>
               </>
             )}
             {!plan.hasAccess && (
@@ -155,6 +155,11 @@ export function BillingUsageCards({
             <p className="text-xs text-muted-foreground">
               {seats.includedSeats} dahil koltuk{seats.extraSeats > 0 ? ` + ${seats.extraSeats} ek koltuk` : ""}
             </p>
+            {seats.used >= seats.limit && (plan.accessTier === "lite" || plan.accessTier === "pro") && (
+              <UpgradeAction canPurchase={canPurchase}>
+                {plan.accessTier === "lite" ? `Profesyonel: ${PLAN_SEATS.pro} kullanıcı` : `Premium: ${PLAN_SEATS.premium} kullanıcı`}
+              </UpgradeAction>
+            )}
           </CardContent>
         </Card>
 
@@ -169,7 +174,7 @@ export function BillingUsageCards({
               <>
                 <p className="font-semibold text-foreground">Paketinizde bulunmuyor</p>
                 <p className="text-muted-foreground">Şase ve canlı TecDoc katalog sorguları Profesyonel ve Premium paketlerde yer alır.</p>
-                <UpgradeAction canPurchase={canPurchase}>Paketi yükselt</UpgradeAction>
+                <UpgradeAction canPurchase={canPurchase}>Profesyonel paketini incele</UpgradeAction>
               </>
             ) : (
               <>
@@ -187,6 +192,7 @@ export function BillingUsageCards({
                   <dt className="text-muted-foreground">Ek kota</dt><dd className="text-right font-medium text-foreground">{quota.extraQuota.toLocaleString("tr-TR")}</dd>
                 </dl>
                 <p className="text-xs text-muted-foreground">{formatDate(quota.renewsAt)} tarihinde yenilenir.</p>
+                {quota.remaining <= 0 && plan.accessTier === "pro" && <UpgradeAction canPurchase={canPurchase}>Premium: {VIN_LOOKUP_QUOTA.premium.toLocaleString("tr-TR")} sorgu/ay</UpgradeAction>}
                 {canPurchase && (
                   <Button asChild size="sm" variant="outline">
                     <Link href="/billing/quota/purchase">Ek kota seçenekleri</Link>
@@ -217,7 +223,7 @@ export function BillingUsageCards({
             <>
               <p className="font-semibold text-foreground">Paketinizde bulunmuyor</p>
               <p className="text-muted-foreground">İş emri fotoğraf checklist’i Profesyonel ve Premium paketlerde yer alır.</p>
-              <UpgradeAction canPurchase={canPurchase}>Paketi yükselt</UpgradeAction>
+              <UpgradeAction canPurchase={canPurchase}>Profesyonel paketini incele</UpgradeAction>
             </>
           )}
         </CardContent>

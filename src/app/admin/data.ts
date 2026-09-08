@@ -49,6 +49,7 @@ export async function getWorkshopRows(query: WorkshopListQuery): Promise<Worksho
         planTier: true,
         requestedPlanTier: true,
         trialEndsAt: true,
+      liteFreeGrantedAt: true,
         currentPeriodEnd: true,
         extraSeats: true,
         acquisitionSource: true,

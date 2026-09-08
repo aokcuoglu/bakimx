@@ -32,6 +32,7 @@ model Workshop {
   // Defaults keep existing & admin-provisioned workshops fully active; only the
   // self-serve registration flow overrides these (pending approval + trialing).
   planTier           PlanTier               @default(pro)
+  liteFreeGrantedAt  DateTime? // Permanent Lite-only campaign entitlement; retained across upgrades.
   subscriptionStatus SubscriptionStatus     @default(active)
   approvalStatus     WorkshopApprovalStatus @default(approved)
   trialStartedAt     DateTime?

@@ -68,6 +68,7 @@ export async function runDeliveryReminderJob(workshopId: string): Promise<Schedu
       subscriptionStatus: true,
       approvalStatus: true,
       trialEndsAt: true,
+      liteFreeGrantedAt: true,
       currentPeriodEnd: true,
     },
   })

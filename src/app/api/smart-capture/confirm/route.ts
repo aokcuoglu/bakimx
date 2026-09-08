@@ -317,6 +317,7 @@ export async function POST(request: Request) {
             subscriptionStatus: true,
             approvalStatus: true,
             trialEndsAt: true,
+      liteFreeGrantedAt: true,
             currentPeriodEnd: true,
             extraVinQuota: true,
           },
