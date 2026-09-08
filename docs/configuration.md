@@ -200,6 +200,20 @@ sırasında gömülemez. İstemci onu `GET /api/technician/push` ucundan alır.
 
 ### İletişim Ortam Değişkenleri
 
+**Şirket WhatsApp satış/destek bağlantısı:** `NEXT_PUBLIC_SUPPORT_WHATSAPP=905423681438`.
+Numara ülke koduyla, yalnız rakam olarak yazılır. Boş/belirtilmemiş değer aynı
+şirket numarasına döner. Bu ayar mesaj göndermez ve WhatsApp API sağlayıcısını
+etkinleştirmez; yalnız mevcut şirket iletişim bağlantısının alıcısını belirler.
+Atölyelerin kendi müşteri paylaşım bağlantılarını etkilemez.
+
+Next.js değeri **derleme sırasında** tarayıcı paketine yazar. Docker build arg'ı
+`NEXT_PUBLIC_SUPPORT_WHATSAPP`; AWS workflow'larında isteğe bağlı repository
+variables `DEV_NEXT_PUBLIC_SUPPORT_WHATSAPP` ve `PROD_NEXT_PUBLIC_SUPPORT_WHATSAPP`
+ile değiştirilebilir. İkisi de belirtilmezse `905423681438` kullanılır.
+ECS runtime env değişikliği tek başına yeterli değildir; yeni image gerekir.
+Production ayarı/yayını insan onayına tabidir.
+Profil, ekip ve telefon kabul adımları: [WhatsApp Business kurulum rehberi](operations/whatsapp-business-setup.md).
+
 ```env
 # SMS Sağlayıcı — mock (varsayılan) veya netgsm
 SMS_PROVIDER=mock
