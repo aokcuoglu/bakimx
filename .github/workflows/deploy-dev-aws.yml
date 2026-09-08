@@ -168,6 +168,7 @@ jobs:
             SESSION_COOKIE_DOMAIN=app-dev.bakimx.com
             NEXT_PUBLIC_ANALYTICS_ENABLED=${{ vars.DEV_NEXT_PUBLIC_ANALYTICS_ENABLED }}
             NEXT_PUBLIC_GA_MEASUREMENT_ID=${{ vars.DEV_NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+            NEXT_PUBLIC_SUPPORT_WHATSAPP=${{ vars.DEV_NEXT_PUBLIC_SUPPORT_WHATSAPP || '905423681438' }}
 
       - name: Register new task definition (swap image)
         id: taskdef
