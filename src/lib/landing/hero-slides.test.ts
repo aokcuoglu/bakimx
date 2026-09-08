@@ -7,13 +7,26 @@ const publicFile = (path: string) =>
   new URL(`../../../public${path}`, import.meta.url);
 
 describe("landing hero carousel", () => {
-  test("leads with the ten-second work-order and part-finding promise", () => {
+  test("leads with the ten-second work-order and compatible-parts promise", () => {
     const firstSlide = HERO_SLIDES[0];
 
     expect(`${firstSlide.title} ${firstSlide.highlight}`).toBe(
       "Oto servisinizde iş emri açmak ve parça bulmak artık 10 saniye.",
     );
-    expect(firstSlide.description).toContain("şaseye uygun parçaları");
+    expect(firstSlide.eyebrow).toContain("Mobil Araç Kabul");
+    expect(firstSlide.description).toContain("%100 uyumlu yedek parçaları");
+    expect(firstSlide.description).toContain("tek tıkla iş emrine ekleyin");
+    expect(firstSlide.description).toContain("Yanlış parça siparişi");
+  });
+
+  test("puts chassis identification and workshop stock in the second story", () => {
+    const secondSlide = HERO_SLIDES[1];
+
+    expect(secondSlide.id).toBe("compatible-parts");
+    expect(secondSlide.eyebrow).toContain("Şaseden Araç Tanıma");
+    expect(secondSlide.eyebrow).toContain("Parça Stok");
+    expect(secondSlide.description).toContain("uyumlu parça sonuçlarını");
+    expect(secondSlide.description).toContain("servis stoğunuzdan");
   });
 
   test("uses three truthful, uniquely identified product stories", () => {
