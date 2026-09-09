@@ -666,7 +666,7 @@ export function WorkOrderDetail({
   }
 
   async function handleRequestDeliveryOtp() {
-    setLoading(true); setError(""); setDeliverySentCode(null)
+    setLoading(true); setError(""); setDeliverySentCode(null); setDeliveryOtpCode("")
     try {
       const res = await fetch(`/api/intakes/${intake.id}/delivery-otp`, { method: "POST" })
       const data = await res.json() as { success?: boolean; otpCode?: string; error?: string }
@@ -690,7 +690,12 @@ export function WorkOrderDetail({
         body: JSON.stringify({ code: deliveryOtpCode }),
       })
       const data = await res.json() as { success?: boolean; error?: string }
-      if (data.success) router.refresh()
+      if (data.success) {
+        setDeliveryOtpMode(false)
+        setDeliveryOtpCode("")
+        setDeliverySentCode(null)
+        router.refresh()
+      }
       else setError(data.error || "Doğrulama başarısız")
     } catch {
       setError("Bir hata oluştu")
@@ -876,8 +881,8 @@ export function WorkOrderDetail({
             inputMode="numeric"
             className="text-center text-xl tracking-widest"
           />
-          <div className="flex gap-2">
-            <Button onClick={handleVerifyDeliveryOtp} disabled={loading || deliveryOtpCode.length < 6} size="lg" className="flex-1">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button onClick={handleVerifyDeliveryOtp} disabled={loading || deliveryOtpCode.length < 6} size="lg" className="sm:flex-1">
               {loading ? <Loader2 className="size-4 animate-spin" /> : "Doğrula ve Teslim Et"}
             </Button>
             <Button variant="outline" onClick={handleRequestDeliveryOtp} disabled={loading} size="lg">Kodu Tekrar Gönder</Button>
