@@ -175,7 +175,7 @@ type IntakeDetailProps = {
   vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
   photos: VehiclePhoto[]
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
-  approvals: { id: string; status: string; otpCode: string; createdAt: Date }[]
+  approvals: { id: string; status: string; createdAt: Date }[]
   shareLinks: { id: string; token: string; isActive: boolean }[]
   order: { id: string; status: string; paymentStatus: string; items: { id: string; type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }[] } | null
 }
@@ -861,25 +861,13 @@ export function WorkOrderDetail({
 
       {deliveryOtpMode && order.status === "ready_for_delivery" && (
         <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-          <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> Teslim Onayı (OTP)</p>
+          <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> WhatsApp Teslim Onayı</p>
           {order.paymentStatus !== "paid" && (
             <p className="text-xs text-warning-strong">Uyarı: Bu iş emrinde ödeme tamamlanmadı ({order.paymentStatus}).</p>
           )}
+          <p className="text-xs text-muted-foreground">Müşterinin WhatsApp numarasına gönderilen kodu girin. Kod 10 dakika geçerlidir.</p>
           {deliverySentCode && (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Demo kodu (SMS kapalı): <span className="font-mono font-bold">{deliverySentCode}</span></p>
-              <Button
-                type="button"
-                size="lg"
-                className="w-full bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90"
-                onClick={() => {
-                  const text = `BakimX teslim onay kodunuz: ${deliverySentCode}. Aracınızın teslimini onaylamak için bu kodu servise iletin.`
-                  window.open(getWhatsAppSendUrl(order.customer.phone, text), "_blank")
-                }}
-              >
-                WhatsApp ile Gönder
-              </Button>
-            </div>
+            <p className="text-xs text-muted-foreground">Test modu — gerçek WhatsApp mesajı gönderilmedi. Demo kodu: <span className="font-mono font-bold">{deliverySentCode}</span></p>
           )}
           <Input
             value={deliveryOtpCode}
@@ -1245,7 +1233,7 @@ export function WorkOrderDetail({
               {order.status === "ready_for_delivery" && !deliveryOtpMode && (
                 <div className="pt-3 border-t">
                   <Button onClick={handleRequestDeliveryOtp} disabled={loading} variant="outline" className="w-full">
-                    <KeyRound className="size-4 mr-2" /> Teslim Onayı (OTP) Gönder
+                    <KeyRound className="size-4 mr-2" /> WhatsApp Teslim Kodu Gönder
                   </Button>
                 </div>
               )}
