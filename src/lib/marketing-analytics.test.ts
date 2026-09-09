@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { getMarketingContext, MARKETING_EVENT_NAMES, safePage, sanitizeMarketingPayload } from "./marketing-analytics"
+import { getMarketingContext, MARKETING_EVENT_NAMES, safePage, sanitizeMarketingPayload, sanitizeMarketingAttribution } from "./marketing-analytics"
 
 describe("marketing analytics contract", () => {
   test("keeps the BAK-171 event dictionary stable", () => {
@@ -7,6 +7,7 @@ describe("marketing analytics contract", () => {
       "seo_landing_view", "trial_cta_click", "demo_cta_click", "register_started",
       "register_submitted", "demo_submitted", "purchase_started", "purchase_submitted",
       "feature_paywall_viewed", "feature_upgrade_clicked",
+      "lite_cta_click", "lite_registered", "first_work_order_created", "paid_subscription_confirmed",
     ])
   })
 
@@ -63,4 +64,20 @@ describe("marketing analytics contract", () => {
       destination: "checkout",
     })
   })
+})
+
+
+describe("Lite attribution minimization", () => {
+  test("accepts campaign slugs and allowlisted landing paths only", () => {
+    expect(sanitizeMarketingAttribution({ campaignSource: "facebook", campaignMedium: "paid-social", campaignName: "lite_2026", landingPage: "/fiyatlar", email: "private@example.com", fbclid: "private-click-id" })).toEqual({ campaignSource: "facebook", campaignMedium: "paid-social", campaignName: "lite_2026", landingPage: "/fiyatlar" })
+  })
+  test("rejects malformed storage, free text, contact values and private URLs", () => {
+    for (const input of [null, [], "string", { campaignSource: "private@example.com", campaignMedium: "+905551234567", campaignName: "Customer name", landingPage: "/customers/private?email=secret" }]) expect(sanitizeMarketingAttribution(input)).toEqual({})
+  })
+})
+
+
+test("UTM context and caller payload both reject contact data", () => {
+  expect(getMarketingContext({ pathname: "/fiyatlar", search: "?utm_source=secret%40example.com&utm_medium=5551234567&utm_campaign=Customer%20Name" }, "")).toEqual({ source_page: "/fiyatlar" })
+  expect(sanitizeMarketingPayload("lite_cta_click", { cta_location: "pricing_card", plan_tier: "lite", campaign_source: "secret@example.com", campaign_medium: "5551234567" })).toEqual({ cta_location: "pricing_card", plan_tier: "lite" })
 })

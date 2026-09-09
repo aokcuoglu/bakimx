@@ -4,13 +4,16 @@
 
 Small and medium auto-service businesses: the owner or service advisor needs
 to see active jobs, customer approvals, parts and outstanding payments without
-learning software terminology first. The opening message is “Serviste işler
-yolunda. Kontrol sizde.”
+learning software terminology first. The opening now leads with BakımX's most
+distinctive working flows: mobile registration-document reading, chassis-based
+vehicle identification and compatible-parts/workshop-stock management.
 
-The page uses a stable product-led opening, a clearly labelled illustrative
-service board, and existing product screenshots. It avoids fabricated customer
-quotes, customer counts, performance statistics and stock-photo storytelling.
-The product tour offers work order, vehicle intake and customer tracking views.
+The page uses a three-story visual banner carousel backed by clearly
+representational workshop imagery. The first story always owns the page H1 and
+introduces registration reading; the second introduces chassis/parts/stock;
+the third covers photo-backed digital work orders. It avoids fabricated
+customer quotes, customer counts and performance statistics. The product tour
+continues to offer real work-order, vehicle-intake and customer-tracking views.
 
 ## Product claims checked against the application
 
@@ -39,18 +42,14 @@ successful submission, FAQ deep links and structured-answer consistency,
 WCAG A/AA checks, and a JavaScript-disabled first view. The demo request is
 intercepted so acceptance testing does not create real sales leads.
 
-The previous carousel-specific assertions are replaced with these behavioral
-checks. The server-paint and hero conversion-attribution regression guards
-remain in `src/app/page.test.ts`.
+`e2e/landing-hero-carousel.e2e.ts` separately covers the full-bleed banner,
+feature-story order, keyboard-operable controls, manual navigation and the
+reduced-motion autoplay default. Server-paint, image-loading and hero
+conversion-attribution guards remain in `src/app/page.test.ts` and the landing
+content tests.
 
-Verification result: lint, TypeScript, production build and all 13 public-page
-browser tests passed, including the five new landing tests. The narrowest
-checked viewport is 320 px; document width remains 320 px. Axe reports no
-WCAG A/AA violations in the tested landing state.
-
-Full unit suite: 2,099 passed, one existing failure in
-`src/lib/intake/photo-visibility.test.ts`. Its source scanner expects the shared
-`VISIBLE_PHOTO` constant; the pre-existing `src/lib/photos/quota.ts:13` query
-uses the equivalent inline `deletedAt: null` filter. Both files are unchanged
-from baseline commit `c7de83f7`; the quota implementation came from
-`d1fa9920`. This unrelated guard mismatch is not changed by the landing work.
+Verification result for #615: lint, TypeScript, production build and the seven
+focused landing browser tests pass. The narrowest checked viewport is 320 px;
+document width remains 320 px. Axe reports no WCAG A/AA violations in the
+tested landing state. The full unit suite passes with 2,153 tests and one
+explicitly skipped PostgreSQL integration test.

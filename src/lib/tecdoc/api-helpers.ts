@@ -2,10 +2,11 @@ import { NextResponse } from "next/server"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { hasWorkshopFeature } from "@/lib/plan"
 import { rateLimit } from "@/lib/rate-limit"
+import { getWorkshopQuotaContext, type WorkshopQuotaContext } from "@/lib/rapidapi-quota"
 import { TecdocError } from "./types"
 
 /** Shared auth + feature gate + rate limit for the /api/tecdoc/* routes. */
-export async function tecdocRouteGuard(): Promise<NextResponse | { workshopId: string }> {
+export async function tecdocRouteGuard(): Promise<NextResponse | WorkshopQuotaContext> {
   const { user, workshop } = await getCurrentUserWithWorkshop()
 
   if (!hasWorkshopFeature(workshop, "partsCatalog")) {
@@ -25,7 +26,7 @@ export async function tecdocRouteGuard(): Promise<NextResponse | { workshopId: s
     )
   }
 
-  return { workshopId: user.workshopId }
+  return getWorkshopQuotaContext(workshop)
 }
 
 export function tecdocErrorResponse(err: unknown): NextResponse {

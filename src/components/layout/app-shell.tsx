@@ -151,8 +151,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Abonelik",
     items: [
-      { href: "/billing", label: "Paket & Faturalandırma", icon: Receipt },
-      { href: "/billing/quota", label: "Kota Yönetimi", icon: BarChart3, feature: "partsCatalog" },
+      { href: "/billing", label: "Paketler & Kullanım", icon: Receipt },
     ],
   },
 ]

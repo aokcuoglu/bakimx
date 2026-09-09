@@ -175,7 +175,7 @@ type IntakeDetailProps = {
   vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
   photos: VehiclePhoto[]
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
-  approvals: { id: string; status: string; otpCode: string; createdAt: Date }[]
+  approvals: { id: string; status: string; createdAt: Date }[]
   shareLinks: { id: string; token: string; isActive: boolean }[]
   order: { id: string; status: string; paymentStatus: string; items: { id: string; type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }[] } | null
 }
@@ -666,7 +666,7 @@ export function WorkOrderDetail({
   }
 
   async function handleRequestDeliveryOtp() {
-    setLoading(true); setError(""); setDeliverySentCode(null)
+    setLoading(true); setError(""); setDeliverySentCode(null); setDeliveryOtpCode("")
     try {
       const res = await fetch(`/api/intakes/${intake.id}/delivery-otp`, { method: "POST" })
       const data = await res.json() as { success?: boolean; otpCode?: string; error?: string }
@@ -690,7 +690,12 @@ export function WorkOrderDetail({
         body: JSON.stringify({ code: deliveryOtpCode }),
       })
       const data = await res.json() as { success?: boolean; error?: string }
-      if (data.success) router.refresh()
+      if (data.success) {
+        setDeliveryOtpMode(false)
+        setDeliveryOtpCode("")
+        setDeliverySentCode(null)
+        router.refresh()
+      }
       else setError(data.error || "Doğrulama başarısız")
     } catch {
       setError("Bir hata oluştu")
@@ -861,25 +866,13 @@ export function WorkOrderDetail({
 
       {deliveryOtpMode && order.status === "ready_for_delivery" && (
         <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-          <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> Teslim Onayı (OTP)</p>
+          <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> WhatsApp Teslim Onayı</p>
           {order.paymentStatus !== "paid" && (
             <p className="text-xs text-warning-strong">Uyarı: Bu iş emrinde ödeme tamamlanmadı ({order.paymentStatus}).</p>
           )}
+          <p className="text-xs text-muted-foreground">Müşterinin WhatsApp numarasına gönderilen kodu girin. Kod 10 dakika geçerlidir.</p>
           {deliverySentCode && (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Demo kodu (SMS kapalı): <span className="font-mono font-bold">{deliverySentCode}</span></p>
-              <Button
-                type="button"
-                size="lg"
-                className="w-full bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90"
-                onClick={() => {
-                  const text = `BakimX teslim onay kodunuz: ${deliverySentCode}. Aracınızın teslimini onaylamak için bu kodu servise iletin.`
-                  window.open(getWhatsAppSendUrl(order.customer.phone, text), "_blank")
-                }}
-              >
-                WhatsApp ile Gönder
-              </Button>
-            </div>
+            <p className="text-xs text-muted-foreground">Test modu — gerçek WhatsApp mesajı gönderilmedi. Demo kodu: <span className="font-mono font-bold">{deliverySentCode}</span></p>
           )}
           <Input
             value={deliveryOtpCode}
@@ -888,8 +881,8 @@ export function WorkOrderDetail({
             inputMode="numeric"
             className="text-center text-xl tracking-widest"
           />
-          <div className="flex gap-2">
-            <Button onClick={handleVerifyDeliveryOtp} disabled={loading || deliveryOtpCode.length < 6} size="lg" className="flex-1">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button onClick={handleVerifyDeliveryOtp} disabled={loading || deliveryOtpCode.length < 6} size="lg" className="sm:flex-1">
               {loading ? <Loader2 className="size-4 animate-spin" /> : "Doğrula ve Teslim Et"}
             </Button>
             <Button variant="outline" onClick={handleRequestDeliveryOtp} disabled={loading} size="lg">Kodu Tekrar Gönder</Button>
@@ -1245,7 +1238,7 @@ export function WorkOrderDetail({
               {order.status === "ready_for_delivery" && !deliveryOtpMode && (
                 <div className="pt-3 border-t">
                   <Button onClick={handleRequestDeliveryOtp} disabled={loading} variant="outline" className="w-full">
-                    <KeyRound className="size-4 mr-2" /> Teslim Onayı (OTP) Gönder
+                    <KeyRound className="size-4 mr-2" /> WhatsApp Teslim Kodu Gönder
                   </Button>
                 </div>
               )}

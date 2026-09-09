@@ -195,6 +195,7 @@ export async function verifyCredentials({
       approvalStatus: true,
       // Plan alanları: giriş sonrası hedefi belirlemek için (paywall → /checkout).
       planTier: true,
+      liteFreeGrantedAt: true,
       subscriptionStatus: true,
       trialEndsAt: true,
       currentPeriodEnd: true,

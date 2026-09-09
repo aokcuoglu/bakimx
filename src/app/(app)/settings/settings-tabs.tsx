@@ -128,6 +128,7 @@ export function SettingsTabs({
   accountMissingPersonnel,
   seatUsed,
   seatLimit,
+  accessTier,
   enabledFeatures,
 }: {
   tab: string
@@ -139,6 +140,7 @@ export function SettingsTabs({
   accountMissingPersonnel: AccountMissingPersonnel[]
   seatUsed: number
   seatLimit: number
+  accessTier: import("@/lib/plan").PlanTier
   enabledFeatures: GatedFeature[]
 }) {
   const canManageTeam = user.role === "owner" || user.role === "manager"
@@ -231,6 +233,7 @@ export function SettingsTabs({
               canManage={canManageTeam}
               seatUsed={seatUsed}
               seatLimit={seatLimit}
+              accessTier={accessTier}
               workshopName={workshop.name}
               loginCode={workshop.loginCode}
               accountMissingPersonnel={accountMissingPersonnel}

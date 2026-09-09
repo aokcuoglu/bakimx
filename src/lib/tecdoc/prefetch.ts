@@ -3,6 +3,7 @@ import { getTecdocProvider } from "./provider"
 import { getVehicleCategories, getArticlesByCategory } from "./catalog"
 import { TecdocError } from "./types"
 import type { CategoryNode } from "./types"
+import type { WorkshopQuotaContext } from "@/lib/rapidapi-quota"
 
 /**
  * Teyit anında öncelikli indirilecek yaygın bakım kategorileri — küçük-harf isim
@@ -90,17 +91,20 @@ export function eagerPrefetchTarget(v: {
  * - getArticlesByCategory cache-first + idempotent (zaten cache'liyse API atlar).
  * - quota_exceeded'da döngü durur (kalan kotayı korur); diğer hatada kategori atlanır.
  */
-export async function prefetchCommonVehicleParts(vehicleTypeId: number): Promise<void> {
+export async function prefetchCommonVehicleParts(
+  vehicleTypeId: number,
+  quotaContext: WorkshopQuotaContext,
+): Promise<void> {
   try {
     if (!Number.isInteger(vehicleTypeId) || vehicleTypeId <= 0) return
     if (getTecdocProvider().name === "mock") return
 
-    const tree = await getVehicleCategories(vehicleTypeId)
+    const tree = await getVehicleCategories(vehicleTypeId, quotaContext)
     const targets = selectPrefetchTargets(tree)
 
     for (const categoryId of targets) {
       try {
-        await getArticlesByCategory(vehicleTypeId, categoryId)
+        await getArticlesByCategory(vehicleTypeId, categoryId, quotaContext)
       } catch (err) {
         if (err instanceof TecdocError && err.code === "quota_exceeded") {
           console.warn(`[tecdoc] prefetch durdu (kota): vehicleType=${vehicleTypeId}`)

@@ -1,5 +1,6 @@
 "use server"
 
+import { randomInt, createHash } from "node:crypto"
 import { prisma } from "@/lib/db"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { PlanWriteLockedError, getPlanState } from "@/lib/plan"
@@ -9,19 +10,15 @@ import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
 import { isOtpExpired } from "@/lib/intake/otp"
 import { checkRateLimit, recordAttempt } from "@/lib/communications/rate-limit"
-import { sendSMSDirect } from "@/lib/communications/sender"
+import { isMockWhatsAppOtp, sendWhatsAppOtp } from "@/lib/communications/whatsapp/otp"
 import { updateOrderStatusAction } from "@/app/(app)/orders/actions"
 import { assertCan } from "@/lib/rbac"
 
 const OTP_TTL_MS = 10 * 60 * 1000
 const DELIVERY_TYPE = "vehicle_delivery"
 
-function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
-}
-
-function isDemoSms(): boolean {
-  return process.env.NODE_ENV !== "production" || (process.env.SMS_PROVIDER ?? "mock") === "mock"
+function hashOtp(code: string): string {
+  return createHash("sha256").update(code).digest("hex")
 }
 
 /**
@@ -77,55 +74,64 @@ export async function requestDeliveryOtpAction(intakeFormId: string) {
   if (!intake) return { error: "Kabul formu bulunamadı" }
   if (intake.status !== "ready_for_delivery") return { error: "Araç teslimata hazır değil" }
 
-  // Fiyat ya da parça kararı eksikse SMS hiç gitmesin — müşteri boşuna kod beklemesin.
+  // Fiyat ya da parça kararı eksikse WhatsApp kodu hiç gitmesin — müşteri boşuna kod beklemesin.
   const blockerError = await checkDeliveryBlockers(user.workshopId, intakeFormId, workshop)
   if (blockerError) return { error: blockerError }
+
+  if (!isMockWhatsAppOtp() && !intake.customer.whatsappConsent) {
+    return { error: "Müşterinin WhatsApp iletişim izni bulunmuyor. Müşteri kaydından izni güncelleyin." }
+  }
 
   const sendKey = `delivery-otp-send:${intakeFormId}`
   if (!checkRateLimit(sendKey).allowed) return { error: "Çok sık kod istendi, lütfen biraz sonra tekrar deneyin" }
   recordAttempt(sendKey)
 
-  const otpCode = generateOtp()
+  const otpCode = randomInt(100000, 1000000).toString()
   const customerName =
     intake.customer.type === "corporate"
       ? intake.customer.companyName || "Kurumsal Müşteri"
       : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"
   const approvalTextVersion = `Araç Teslim Onayı\n\nMüşteri: ${customerName}\nPlaka: ${intake.vehicle.plate}\n\nAracımı teslim aldım.`
 
+  await prisma.approvalRequest.updateMany({
+    where: { intakeFormId, workshopId: user.workshopId, approvalType: DELIVERY_TYPE, status: "pending" },
+    data: { status: "expired" },
+  })
   const approval = await prisma.approvalRequest.create({
     data: {
       workshopId: user.workshopId,
       intakeFormId,
       phone: intake.customer.phone,
-      otpCode,
+      otpCode: hashOtp(otpCode),
       approvalTextVersion,
       approvalType: DELIVERY_TYPE,
-      status: "pending",
+      // Gönderim kabul edilene kadar doğrulanamaz.
+      status: "expired",
     },
   })
 
-  // sendSMSDirect kendi hatasını yakalayıp {success:false} döndürür (throw etmez);
-  // bu yüzden dönen .success'i kontrol et — sadece nadir throw için .catch.
-  const smsResult = await sendSMSDirect(
-    intake.customer.phone,
-    `BakimX teslim onay kodunuz: ${otpCode}. Aracınızın teslimini onaylamak için bu kodu servise iletin.`,
-  ).catch((e) => {
-    console.error("[requestDeliveryOtp] SMS gönderilemedi:", e)
-    return { success: false as const }
-  })
-  if (!smsResult.success && !isDemoSms()) {
-    return { error: "Onay SMS'i gönderilemedi, lütfen tekrar deneyin" }
+  const result = await sendWhatsAppOtp(intake.customer.phone, otpCode)
+  if (!result.success) {
+    await prisma.approvalRequest.updateMany({
+      where: { id: approval.id, workshopId: user.workshopId },
+      data: { status: "expired" },
+    })
+    return { error: "WhatsApp onay kodu gönderilemedi. Numara ve WhatsApp bağlantısını kontrol edip tekrar deneyin." }
   }
+  await prisma.approvalRequest.updateMany({
+    where: { id: approval.id, workshopId: user.workshopId },
+    data: { status: "pending" },
+  })
 
   await AuditLogAction(user.workshopId, user.id, "ApprovalRequest", approval.id, "delivery_otp_requested")
   await addTimelineEvent({
     workshopId: user.workshopId,
     intakeFormId,
     eventType: "delivery_otp_requested",
-    description: "Teslim onay kodu gönderildi",
+    description: isMockWhatsAppOtp() ? "Teslim onay kodu test modunda oluşturuldu" : "Teslim onay kodu WhatsApp API tarafından kabul edildi",
   })
 
-  return { success: true as const, otpCode: isDemoSms() ? otpCode : undefined }
+  return { success: true as const, otpCode: isMockWhatsAppOtp() ? otpCode : undefined }
 }
 
 export async function verifyDeliveryOtpAction(intakeFormId: string, code: string) {
@@ -150,10 +156,10 @@ export async function verifyDeliveryOtpAction(intakeFormId: string, code: string
   recordAttempt(verifyKey)
 
   const approval = await prisma.approvalRequest.findFirst({
-    where: { intakeFormId, workshopId: user.workshopId, approvalType: DELIVERY_TYPE, status: "pending" },
+    where: { intakeFormId, workshopId: user.workshopId, approvalType: DELIVERY_TYPE },
     orderBy: { createdAt: "desc" },
   })
-  if (!approval) return { error: "Bekleyen teslim onayı bulunamadı, yeni kod isteyin" }
+  if (!approval || approval.status !== "pending") return { error: "Bekleyen teslim onayı bulunamadı, yeni kod isteyin" }
 
   if (isOtpExpired(approval.createdAt, new Date(), OTP_TTL_MS)) {
     await prisma.approvalRequest.updateMany({
@@ -163,7 +169,7 @@ export async function verifyDeliveryOtpAction(intakeFormId: string, code: string
     return { error: "Kodun süresi doldu, lütfen yeni kod isteyin" }
   }
 
-  if (approval.otpCode !== code) return { error: "Geçersiz doğrulama kodu" }
+  if (!/^\d{6}$/.test(code) || approval.otpCode !== hashOtp(code)) return { error: "Geçersiz doğrulama kodu" }
 
   await prisma.$transaction(async (tx) => {
     await tx.approvalRequest.updateMany({

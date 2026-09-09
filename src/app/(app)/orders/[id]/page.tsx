@@ -332,7 +332,6 @@ export default async function OrderDetailPage({
     approvals: intakeForm.approvals.map((a) => ({
       id: a.id,
       status: a.status,
-      otpCode: a.otpCode,
       createdAt: a.createdAt,
     })),
     shareLinks: intakeForm.shareLinks.map((s) => ({ id: s.id, token: s.token, isActive: s.isActive })),

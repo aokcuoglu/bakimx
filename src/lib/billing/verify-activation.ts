@@ -1,8 +1,9 @@
+import { hasLifetimeLite } from "@/lib/lite-campaign"
 import { prisma } from "@/lib/db"
 import { computeTrialEnd } from "@/lib/plan"
 import { AuditLogAction } from "@/lib/audit"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
-import { welcomeTrialEmail } from "@/lib/emails/system-emails"
+import { welcomeTrialEmail, welcomeLiteEmail } from "@/lib/emails/system-emails"
 
 /**
  * E-posta doğrulaması tamamlandığında pending workshop'u active bir denemeye çevirir.
@@ -19,15 +20,20 @@ export async function activateVerifiedWorkshop(workshopId: string): Promise<{ ok
   const now = new Date()
   const trialEndsAt = computeTrialEnd(now)
 
+  let lifetimeLite = false
   let claimed = 0
   try {
+    const plan = await prisma.workshop.findUnique({ where: { id: workshopId }, select: { planTier: true, liteFreeGrantedAt: true } })
+    if (!plan) return { ok: false }
+    lifetimeLite = hasLifetimeLite(plan)
     const res = await prisma.workshop.updateMany({
       where: { id: workshopId, approvalStatus: "pending" },
       data: {
         approvalStatus: "approved",
-        subscriptionStatus: "trialing",
-        trialStartedAt: now,
-        trialEndsAt,
+        subscriptionStatus: lifetimeLite ? "active" : "trialing",
+        trialStartedAt: lifetimeLite ? null : now,
+        trialEndsAt: lifetimeLite ? null : trialEndsAt,
+        ...(lifetimeLite ? { currentPeriodEnd: null } : {}),
       },
     })
     claimed = res.count
@@ -51,7 +57,7 @@ export async function activateVerifiedWorkshop(workshopId: string): Promise<{ ok
     ])
     const to = owner?.email || workshop?.email
     if (workshop && to) {
-      const built = welcomeTrialEmail({
+      const built = lifetimeLite ? welcomeLiteEmail({ firstName: owner?.firstName || "", workshopName: workshop.name }) : welcomeTrialEmail({
         ownerName: owner?.firstName || "",
         workshopName: workshop.name,
         trialEndsAt,
@@ -65,7 +71,7 @@ export async function activateVerifiedWorkshop(workshopId: string): Promise<{ ok
         subject: built.subject,
         html: built.html,
         workshopId,
-        templateKey: "welcome_trial",
+        templateKey: lifetimeLite ? "welcome_lite" : "welcome_trial",
         audience: "workshop",
       })
     }
@@ -78,7 +84,7 @@ export async function activateVerifiedWorkshop(workshopId: string): Promise<{ ok
     undefined,
     "Workshop",
     workshopId,
-    "email_verified_trial_started"
+    lifetimeLite ? "email_verified_lite_activated" : "email_verified_trial_started"
   ).catch((err) => {
     console.error("[activateVerifiedWorkshop] audit failed:", err instanceof Error ? err.message : err)
   })

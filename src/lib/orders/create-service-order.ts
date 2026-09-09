@@ -1,3 +1,4 @@
+import { recordFirstWorkOrderConversion } from "@/lib/marketing-conversion-outbox"
 import type { Prisma, ArrivalReason } from "@prisma/client"
 import { generateUniqueWorkOrderNo } from "@/lib/work-order-number"
 
@@ -27,5 +28,6 @@ export async function createServiceOrderForIntake(
     data: { workshopId, intakeFormId, workOrderNo, status: "draft", arrivalReason: arrivalReason ?? null },
   })
 
+  await recordFirstWorkOrderConversion(tx, workshopId)
   return { id: order.id, workOrderNo }
 }

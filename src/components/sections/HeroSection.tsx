@@ -1,248 +1,276 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Check,
-  ClipboardList,
-  LayoutDashboard,
-  CalendarDays,
-  Users,
-  Package,
-  Wallet,
-  CarFront,
-  ChevronRight,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { trackMarketingEvent } from "@/lib/marketing-analytics";
+import { ArrowLeft, ArrowRight, Check, Pause, Play } from "lucide-react";
 
-const vehicles = [
-  {
-    plate: "34 ABC 123",
-    car: "Volkswagen Golf",
-    task: "Periyodik bakım",
-    status: "İşlemde",
-    color: "bg-primary/10 text-primary-strong",
-  },
-  {
-    plate: "06 DEF 456",
-    car: "Renault Clio",
-    task: "Fren kontrolü",
-    status: "Onay bekliyor",
-    color: "bg-warning/10 text-warning-strong",
-  },
-  {
-    plate: "35 GHK 789",
-    car: "Fiat Egea",
-    task: "Yağ ve filtre değişimi",
-    status: "Teslime hazır",
-    color: "bg-success/10 text-success-strong",
-  },
-];
+import { Button } from "@/components/ui/button";
+import {
+  Carousel,
+  type CarouselApi,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { HERO_SLIDES } from "@/lib/landing/hero-slides";
+import { trackMarketingEvent } from "@/lib/marketing-analytics";
+import { cn } from "@/lib/utils";
+
+const AUTOPLAY_DELAY_MS = 7_000;
 
 export function HeroSection() {
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const [api, setApi] = useState<CarouselApi>();
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [autoplayOverride, setAutoplayOverride] = useState<boolean | null>(
+    null,
+  );
+  const isPlaying = autoplayOverride ?? !prefersReducedMotion;
+
+  useEffect(() => {
+    if (!api) return;
+
+    const onSelect = () => setSelectedIndex(api.selectedScrollSnap());
+    api.on("select", onSelect);
+    api.on("reInit", onSelect);
+
+    return () => {
+      api.off("select", onSelect);
+      api.off("reInit", onSelect);
+    };
+  }, [api]);
+
+  useEffect(() => {
+    if (!api || !isPlaying) return;
+
+    const timeout = window.setTimeout(
+      () => api.scrollNext(),
+      AUTOPLAY_DELAY_MS,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [api, isPlaying, selectedIndex]);
+
+  const navigateManually = useCallback((navigate: () => void) => {
+    setAutoplayOverride(false);
+    navigate();
+  }, []);
+
   return (
     <section
       aria-labelledby="hero-title"
-      className="overflow-hidden border-b border-border bg-background"
+      className="relative overflow-hidden border-b border-border bg-navy text-navy-foreground"
     >
-      <div className="mx-auto max-w-7xl px-5 pb-12 pt-14 sm:px-8 sm:pb-16 sm:pt-20 lg:pt-24">
-        <div className="grid items-center gap-12 lg:grid-cols-[0.95fr_1.15fr] lg:gap-12">
-          <div>
-            <p className="mb-6 flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Oto
-              servisler için yönetim programı
-            </p>
-            <h1
-              id="hero-title"
-              className="max-w-xl text-[2.8rem] font-semibold leading-[1.08] tracking-[-0.055em] text-navy sm:text-6xl lg:text-[4rem]"
-            >
-              Serviste işler
-              <br />
-              yolunda.
-              <br />
-              <span className="text-primary">Kontrol sizde.</span>
-            </h1>
-            <p className="mt-7 max-w-md text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-              Hangi araç ne bekliyor, hangi iş tamamlandı, kim ne kadar
-              ödeyecek? İş emirlerini, müşterilerinizi ve kasanızı tek yerden
-              takip edin.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Button asChild size="xl" className="h-12 px-5">
-                <Link
-                  href="/register"
-                  onClick={() =>
-                    trackMarketingEvent("trial_cta_click", {
-                      cta_location: "hero_primary",
-                    })
-                  }
-                >
-                  Ücretsiz denemeye başlayın <ArrowRight />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="xl" className="h-12 px-5">
-                <a
-                  href="#demo-form"
-                  onClick={() =>
-                    trackMarketingEvent("demo_cta_click", {
-                      cta_location: "hero_secondary",
-                      destination: "form",
-                    })
-                  }
-                >
-                  Birlikte inceleyelim
-                </a>
-              </Button>
-            </div>
-            <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Check className="size-3.5" />7 iş günü ücretsiz
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Check className="size-3.5" />
-                Kredi kartı gerekmez
-              </span>
-            </p>
-          </div>
-          <div className="relative min-w-0 lg:-mr-24 xl:-mr-32">
-            <div className="rounded-2xl border border-border bg-muted p-2.5 shadow-xl shadow-navy/5 sm:p-3.5">
-              <div className="overflow-hidden rounded-lg border border-border bg-card">
-                <div className="flex items-center justify-between border-b px-4 py-3">
-                  <span className="flex items-center gap-2 text-xs font-semibold text-navy">
-                    <span className="size-2 rounded-full bg-primary" /> BakımX ·
-                    Servis paneli
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    Örnek servis verileri
-                  </span>
-                </div>
-                <div className="flex min-h-[390px] sm:min-h-[450px]">
-                  <aside
-                    aria-hidden="true"
-                    className="hidden w-36 shrink-0 border-r bg-navy px-3 py-5 text-navy-foreground sm:block"
-                  >
-                    <p className="mb-7 px-2 text-xs font-medium">
-                      Merkez Oto Servis
-                    </p>
-                    {[
-                      { icon: LayoutDashboard, label: "Genel bakış" },
-                      { icon: ClipboardList, label: "İş emirleri" },
-                      { icon: Users, label: "Müşteriler" },
-                      { icon: CalendarDays, label: "Randevular" },
-                      { icon: Package, label: "Stok / Parçalar" },
-                      { icon: Wallet, label: "Kasa" },
-                    ].map(({ icon: Icon, label }, i) => (
-                      <div
-                        key={label}
-                        className={`mb-2 flex items-center gap-2 rounded-md px-2 py-2.5 text-[11px] ${i === 1 ? "bg-navy-foreground/15" : ""}`}
-                      >
-                        <Icon className="size-3.5" />
-                        {label}
-                      </div>
-                    ))}
-                  </aside>
-                  <div className="min-w-0 flex-1 bg-background p-4 sm:p-5">
-                    <div className="mb-5 flex items-center justify-between">
-                      <div>
-                        <p className="text-[10px] text-muted-foreground">
-                          SERVİSİNİZDE BUGÜN
-                        </p>
-                        <p className="mt-1 text-lg font-semibold tracking-tight text-navy">
-                          Her iş gözünüzün önünde.
-                        </p>
-                      </div>
-                      <CalendarDays className="size-5 text-muted-foreground" />
-                    </div>
-                    <div className="mb-5 grid grid-cols-3 gap-2">
-                      {[
-                        { label: "Aktif iş emri", value: "12" },
-                        { label: "Onay bekleyen", value: "3" },
-                        { label: "Teslime hazır", value: "4" },
-                      ].map((item) => (
-                        <div
-                          key={item.label}
-                          className="rounded-lg border bg-card p-3"
+      <Carousel
+        aria-label="BakımX öne çıkan servis özellikleri"
+        opts={{
+          align: "start",
+          duration: prefersReducedMotion ? 0 : 24,
+          loop: true,
+        }}
+        setApi={setApi}
+        className="relative"
+      >
+        <CarouselContent className="-ml-0">
+          {HERO_SLIDES.map((slide, index) => {
+            const isActive = selectedIndex === index;
+            const headingClassName =
+              "max-w-3xl text-balance text-[2.55rem] font-semibold leading-[1.05] tracking-[-0.05em] text-navy-foreground sm:text-6xl lg:text-[4.35rem]";
+
+            return (
+              <CarouselItem
+                key={slide.id}
+                aria-label={`${index + 1} / ${HERO_SLIDES.length}`}
+                aria-hidden={!isActive}
+                data-hero-slide={slide.id}
+                className="pl-0"
+              >
+                <div className="relative min-h-[46rem] w-full sm:min-h-[48rem] lg:min-h-[43rem]">
+                  <Image
+                    src={slide.image}
+                    alt=""
+                    fill
+                    loading={index === 0 ? "eager" : "lazy"}
+                    sizes="100vw"
+                    style={{ objectPosition: slide.imagePosition }}
+                    className="object-cover"
+                  />
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 bg-gradient-to-r from-navy via-navy/90 to-navy/20"
+                  />
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-navy/30"
+                  />
+
+                  <div className="relative z-10 mx-auto flex min-h-[46rem] w-full max-w-7xl items-center px-5 pb-36 pt-14 sm:min-h-[48rem] sm:px-8 sm:pb-32 sm:pt-16 lg:min-h-[43rem] lg:py-24">
+                    <div className="max-w-3xl">
+                      <p className="flex w-fit items-center gap-2.5 rounded-full border border-navy-foreground/20 bg-navy/60 px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-navy-foreground backdrop-blur-sm">
+                        <span className="size-1.5 rounded-full bg-primary" />
+                        {slide.eyebrow}
+                      </p>
+
+                      {index === 0 ? (
+                        <h1
+                          id="hero-title"
+                          className={cn(headingClassName, "mt-6")}
                         >
-                          <p className="text-[10px] text-muted-foreground">
-                            {item.label}
-                          </p>
-                          <p className="mt-2 text-2xl font-semibold tracking-tight text-navy">
-                            {item.value}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="overflow-hidden rounded-lg border bg-card">
-                      <div className="flex justify-between border-b px-3 py-3 text-xs">
-                        <span className="font-semibold">Günün iş emirleri</span>
-                        <span className="text-muted-foreground">3 araç</span>
-                      </div>
-                      {vehicles.map((vehicle) => (
-                        <div
-                          key={vehicle.plate}
-                          className="flex items-center justify-between gap-2 border-b px-3 py-4 last:border-0"
-                        >
-                          <div className="flex min-w-0 items-center gap-2.5">
-                            <div className="hidden rounded-md bg-muted p-2 sm:block">
-                              <CarFront className="size-4 text-navy" />
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold text-navy">
-                                {vehicle.plate}
-                                <span className="ml-2 hidden text-[10px] font-normal text-muted-foreground xl:inline">
-                                  {vehicle.car}
-                                </span>
-                              </p>
-                              <p className="mt-1 text-[10px] text-muted-foreground">
-                                {vehicle.task}
-                              </p>
-                            </div>
-                          </div>
-                          <span
-                            className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-medium ${vehicle.color}`}
-                          >
-                            {vehicle.status}
+                          {slide.title}
+                          <br />
+                          <span className="text-primary">
+                            {slide.highlight}
                           </span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 flex items-center gap-2 text-[10px] text-muted-foreground">
-                      <Check className="size-3.5 text-success-strong" /> Araç
-                      kabulünden teslimata, aynı kayıt üzerinden.
+                        </h1>
+                      ) : (
+                        <h2 className={cn(headingClassName, "mt-6")}>
+                          {slide.title}
+                          <br />
+                          <span className="text-primary">
+                            {slide.highlight}
+                          </span>
+                        </h2>
+                      )}
+
+                      <p className="mt-6 max-w-2xl text-base leading-7 text-navy-foreground/80 sm:text-lg sm:leading-8">
+                        {slide.description}
+                      </p>
+
+                      <p className="mt-4 text-sm font-semibold text-brand">Açılışa özel ücretsiz kayıt · Lite 0 TL/ay</p>
+
+                      <ul className="mt-6 flex max-w-2xl flex-col gap-3 text-sm text-navy-foreground/90 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-3">
+                        {slide.bullets.map((bullet) => (
+                          <li
+                            key={bullet}
+                            className="inline-flex items-center gap-2"
+                          >
+                            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
+                              <Check className="size-3.5" />
+                            </span>
+                            {bullet}
+                          </li>
+                        ))}
+                      </ul>
+
+                      <div className="mt-8 flex flex-col gap-3 pr-16 sm:flex-row sm:flex-wrap sm:pr-0">
+                        <Button asChild size="xl" className="h-12 px-5">
+                          <Link
+                            href="/fiyatlar#lite"
+                            tabIndex={isActive ? 0 : -1}
+                            onClick={() =>
+                              trackMarketingEvent("lite_cta_click", {
+                                cta_location: "hero_primary",
+                                plan_tier: "lite",
+                              })
+                            }
+                          >
+                            Lite · 0 TL/ay ile başlayın <ArrowRight />
+                          </Link>
+                        </Button>
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="xl"
+                          className="h-12 border-navy-foreground/30 bg-navy/55 px-5 text-navy-foreground hover:bg-navy hover:text-navy-foreground"
+                        >
+                          <a
+                            href="#demo-form"
+                            tabIndex={isActive ? 0 : -1}
+                            onClick={() =>
+                              trackMarketingEvent("demo_cta_click", {
+                                cta_location: "hero_secondary",
+                                destination: "form",
+                              })
+                            }
+                          >
+                            Birlikte inceleyelim
+                          </a>
+                        </Button>
+                      </div>
+
+                      <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-navy-foreground/70">
+                        <span className="flex items-center gap-1.5">
+                          <Check className="size-3.5" />Lite kapsamı süresiz ücretsiz
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Check className="size-3.5" />
+                          Kredi kartı gerekmez
+                        </span>
+                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
+              </CarouselItem>
+            );
+          })}
+        </CarouselContent>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-7 z-20 sm:bottom-8">
+          <div className="mx-auto flex max-w-7xl items-end justify-between gap-4 px-5 sm:items-center sm:px-8">
+            <div className="pointer-events-auto flex min-w-0 items-center gap-1 rounded-full border border-navy-foreground/15 bg-navy/55 p-1 backdrop-blur-sm">
+              {HERO_SLIDES.map((slide, index) => (
+                <Button
+                  key={slide.id}
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={`${index + 1}. slayta git: ${slide.eyebrow}`}
+                  aria-current={selectedIndex === index ? "true" : undefined}
+                  disabled={!api}
+                  onClick={() => navigateManually(() => api?.scrollTo(index))}
+                  className="size-8 rounded-full text-navy-foreground hover:bg-navy-foreground/10 hover:text-navy-foreground"
+                >
+                  <span
+                    className={cn(
+                      "h-1.5 rounded-full bg-navy-foreground/35 transition-[width,background-color] motion-reduce:transition-none",
+                      selectedIndex === index ? "w-7 bg-primary" : "w-2.5",
+                    )}
+                  />
+                </Button>
+              ))}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => setAutoplayOverride(!isPlaying)}
+                aria-label={
+                  isPlaying
+                    ? "Carousel otomatik geçişini duraklat"
+                    : "Carousel otomatik geçişini başlat"
+                }
+                className="ml-1 size-8 rounded-full text-navy-foreground hover:bg-navy-foreground/10 hover:text-navy-foreground"
+              >
+                {isPlaying ? <Pause /> : <Play />}
+              </Button>
             </div>
-            <div className="relative ml-8 -mt-5 flex max-w-xs items-center gap-3 rounded-xl border bg-card p-4 shadow-lg shadow-navy/5 sm:ml-20">
-              <div className="rounded-full bg-success/10 p-2 text-success-strong">
-                <Check className="size-4" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-navy">
-                  Müşteri onayı alındı
-                </p>
-                <p className="mt-1 text-[10px] text-muted-foreground">
-                  06 DEF 456 · Fren kontrolü · Örnek
-                </p>
-              </div>
-              <ChevronRight className="ml-auto size-4 text-muted-foreground" />
+
+            <div className="pointer-events-auto mr-14 flex items-center gap-2 sm:mr-16">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => navigateManually(() => api?.scrollPrev())}
+                aria-label="Önceki slayt"
+                disabled={!api}
+                className="size-10 rounded-full border border-navy-foreground/25 bg-navy/55 text-navy-foreground backdrop-blur-sm hover:bg-navy hover:text-navy-foreground"
+              >
+                <ArrowLeft />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => navigateManually(() => api?.scrollNext())}
+                aria-label="Sonraki slayt"
+                disabled={!api}
+                className="size-10 rounded-full border border-navy-foreground/25 bg-navy/55 text-navy-foreground backdrop-blur-sm hover:bg-navy hover:text-navy-foreground"
+              >
+                <ArrowRight />
+              </Button>
             </div>
           </div>
         </div>
-        <div className="mt-14 flex flex-col gap-4 border-t pt-7 sm:flex-row sm:items-center sm:justify-between lg:mt-20">
-          <p className="text-xs text-muted-foreground">
-            Küçük bir atölyeden büyüyen servis ekiplerine.
-          </p>
-          <div className="flex flex-wrap gap-x-6 gap-y-3 text-xs font-medium text-navy">
-            <span>Özel servisler</span>
-            <span>Bakım & onarım</span>
-            <span>Lastik & hızlı servis</span>
-            <span>Kaporta & boya</span>
-          </div>
-        </div>
-      </div>
+      </Carousel>
     </section>
   );
 }

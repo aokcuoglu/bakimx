@@ -16,26 +16,41 @@ export type HeroSlide = {
 export const HERO_SLIDES = [
   {
     id: "digital-intake",
-    eyebrow: "İş Emri + Parça Bulma",
+    eyebrow: "Mobil Araç Kabul + Ruhsat Okuma",
     title: "Oto servisinizde iş emri açmak ve parça bulmak",
     highlight: "artık 10 saniye.",
     description:
-      "Ruhsatı taratarak aracı saniyeler içinde tanıyın; dijital iş emrini başlatın ve şaseye uygun parçaları aynı akışta bulun.",
+      "Ruhsat okutarak araca %100 uyumlu yedek parçaları anında bulun, tek tıkla iş emrine ekleyin. Yanlış parça siparişi ve zaman kaybına son verin.",
     bullets: [
-      "Ruhsattan otomatik araç tanıma",
-      "10 saniyede dijital iş emri",
-      "Şaseye uygun parça bulma",
+      "Ruhsattan şase ve araç tanıma",
+      "%100 uyumlu yedek parça sonuçları",
+      "Tek tıkla iş emrine ekleme",
     ],
     image: "/landing/hero/digital-intake.webp",
     imagePosition: "72% center",
   },
   {
-    id: "photo-evidence",
-    eyebrow: "Dijital İş Emri",
-    title: "Yapılan her işi",
-    highlight: "kanıtıyla belgeleyin.",
+    id: "compatible-parts",
+    eyebrow: "Şaseden Araç Tanıma + Parça Stok",
+    title: "Şaseyi girin.",
+    highlight: "Doğru aracı, doğru parçayla eşleştirin.",
     description:
-      "Fotoğrafı, hasar kaydını, parça ve işçiliği aynı iş emrinde tutun; kabulden teslimata hiçbir ayrıntı kaybolmasın.",
+      "Şase numarasıyla araç bilgilerini getirin ve uyumlu parça sonuçlarını görün; iş emrine eklenen stoklu parçaları servis stoğunuzdan otomatik düşün.",
+    bullets: [
+      "Şaseden marka-model eşleştirme",
+      "Araca uygun parça sonuçları",
+      "İş emriyle bağlı stok takibi",
+    ],
+    image: "/landing/hero/compatible-parts.webp",
+    imagePosition: "72% center",
+  },
+  {
+    id: "photo-evidence",
+    eyebrow: "Fotoğraflı Dijital İş Emri",
+    title: "Yapılan her işi",
+    highlight: "kanıtıyla aynı kayıtta tutun.",
+    description:
+      "Fotoğrafı, hasar kaydını, parça ve işçiliği aynı iş emrinde tutun; kabulden teslimata servis ekibiniz güncel kaydı birlikte takip etsin.",
     bullets: [
       "Değiştirilemez fotoğraf kanıtı",
       "Hasar haritası ve kontrol listesi",
@@ -43,20 +58,5 @@ export const HERO_SLIDES = [
     ],
     image: "/landing/hero/photo-evidence.webp",
     imagePosition: "73% center",
-  },
-  {
-    id: "compatible-parts",
-    eyebrow: "Araca Uygun Parçalar",
-    title: "Araca uyan parçayı bulun,",
-    highlight: "iş emrine tek tıkla ekleyin.",
-    description:
-      "Şase numarasına göre yalnızca o araca uyan parçaları görün; elle arama ve yanlış parça riskini azaltın.",
-    bullets: [
-      "Şaseye göre araç tanıma",
-      "Araca uygun parça listesi",
-      "Tek tıkla iş emrine ekleme",
-    ],
-    image: "/landing/hero/compatible-parts.webp",
-    imagePosition: "72% center",
   },
 ] as const satisfies readonly HeroSlide[];

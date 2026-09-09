@@ -1,3 +1,4 @@
+import { hasLifetimeLite } from "@/lib/lite-campaign"
 import type { Workshop } from "@prisma/client"
 
 /**
@@ -232,7 +233,7 @@ const PREMIUM_ONLY_FEATURES = new Set<GatedFeature>(["eInvoice", "multiBranch", 
 type WorkshopPlanFields = Pick<
   Workshop,
   "planTier" | "subscriptionStatus" | "approvalStatus" | "trialEndsAt" | "currentPeriodEnd"
->
+> & { liteFreeGrantedAt?: Date | null }
 
 export interface PlanState {
   /** Persisted billing tier. */
@@ -267,10 +268,11 @@ export interface PlanState {
 
 export function getPlanState(workshop: WorkshopPlanFields): PlanState {
   const tier = workshop.planTier as PlanTier
-  const status = workshop.subscriptionStatus
+  const lifetimeLite = hasLifetimeLite(workshop)
+  const status = lifetimeLite ? "active" : workshop.subscriptionStatus
   const approval = workshop.approvalStatus
-  const trialEndsAt = workshop.trialEndsAt ?? null
-  const currentPeriodEnd = workshop.currentPeriodEnd ?? null
+  const trialEndsAt = lifetimeLite ? null : workshop.trialEndsAt ?? null
+  const currentPeriodEnd = lifetimeLite ? null : workshop.currentPeriodEnd ?? null
 
   const isApproved = approval === "approved"
   const isTrialing = status === "trialing"

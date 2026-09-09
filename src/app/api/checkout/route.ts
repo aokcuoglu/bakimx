@@ -1,4 +1,6 @@
+import { recordMarketingConversion } from "@/lib/marketing-conversion-outbox"
 import { NextResponse } from "next/server"
+import { assertLiteRegistrationOpen, LiteRegistrationClosedError } from "@/lib/lite-campaign"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/db"
 import { checkoutPublicSchema } from "@/lib/validations/billing"
@@ -99,6 +101,7 @@ export async function POST(request: Request) {
       const loginCode = workshopCodeCandidate(data.workshopName, attempt)
       try {
         const order = await prisma.$transaction(async (tx) => {
+          assertLiteRegistrationOpen(tier)
           const workshop = await tx.workshop.create({
             data: {
               loginCode,
@@ -114,10 +117,11 @@ export async function POST(request: Request) {
               // Instant activation: the owner can sign in right away on the
               // trial. The pending havale only gates the paid plan upgrade.
               approvalStatus: "approved",
-              subscriptionStatus: "trialing",
-              trialStartedAt: now,
-              trialEndsAt: computeTrialEnd(now),
-              planTier: "pro",
+              subscriptionStatus: tier === "lite" ? "active" : "trialing",
+              liteFreeGrantedAt: tier === "lite" ? now : null,
+              trialStartedAt: tier === "lite" ? null : now,
+              trialEndsAt: tier === "lite" ? null : computeTrialEnd(now),
+              planTier: tier === "lite" ? "lite" : "pro",
               acquisitionSource: data.acquisitionSource,
               acquisitionAdvisorId,
               requestedPlanTier: tier,
@@ -153,6 +157,9 @@ export async function POST(request: Request) {
               technicianId: ownerTechnician.id,
             },
           })
+          if (tier === "lite") {
+            await recordMarketingConversion(tx, { name: "lite_registered", workshopId: workshop.id, key: workshop.id, payload: { plan_tier: "lite" }, attribution: raw.marketingAttribution })
+          }
           return tx.billingOrder.create({
             data: {
               workshopId: workshop.id,
@@ -191,6 +198,9 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 })
   } catch (err) {
+    if (err instanceof LiteRegistrationClosedError) {
+      return NextResponse.json({ error: err.message, code: "lite_registration_closed" }, { status: 409 })
+    }
     const code = (err as { code?: string })?.code
     if (code === "P2002") {
       return NextResponse.json({ error: "Bu e-posta adresi ile zaten bir hesap mevcut. Giriş yapmayı deneyin." }, { status: 409 })

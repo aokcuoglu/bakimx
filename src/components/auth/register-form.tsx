@@ -92,7 +92,7 @@ import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { CitySelect, DistrictSelect } from "@/components/shared/location-select"
 import { ACQUISITION_SOURCES, ACQUISITION_SOURCE_OPTIONS } from "@/lib/acquisition-sources"
 import { formatPhoneTR } from "@/lib/format"
-import { trackMarketingEvent } from "@/lib/marketing-analytics"
+import { trackMarketingEvent, getStoredMarketingAttribution } from "@/lib/marketing-analytics"
 import {
   BUSINESS_FEATURE_IDS,
   REGISTER_MODULE_IDS,
@@ -109,6 +109,7 @@ import {
   type TeamSizeId,
 } from "@/lib/register-onboarding"
 import { cn } from "@/lib/utils"
+import type { SalePlanTier } from "@/lib/plan"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { optionalReferralCodeSchema } from "@/lib/validations/referral-code"
 import { typedResolver } from "@/lib/validations/resolver"
@@ -285,7 +286,7 @@ export function RegisterForm({
   onSnapshotChange,
 }: {
   salesRegistration?: SalesRegistrationPrefill
-  preferredPlan?: { tier: string; cycle: "monthly" | "yearly" }
+  preferredPlan?: { tier: SalePlanTier; cycle: "monthly" | "yearly" }
   onSnapshotChange?: (snapshot: RegisterWizardSnapshot) => void
 }) {
   const [currentStep, setCurrentStep] = useState(0)
@@ -381,6 +382,8 @@ export function RegisterForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          planTier: preferredPlan?.tier ?? "pro",
+          marketingAttribution: getStoredMarketingAttribution(),
           sector: values.sector || "auto_service",
           businessFeatures: values.businessFeatures,
           teamSize: values.teamSize || "solo",
@@ -410,11 +413,13 @@ export function RegisterForm({
         return
       }
 
-      trackMarketingEvent("register_submitted", {
-        sector: values.sector || "auto_service",
-        team_size: values.teamSize || "solo",
-        module_count: String(values.selectedModules.length),
-      })
+      if (!data.resumed) {
+        trackMarketingEvent("register_submitted", {
+          sector: values.sector || "auto_service",
+          team_size: values.teamSize || "solo",
+          module_count: String(values.selectedModules.length),
+        })
+      }
       setSubmitted(values.email.trim())
     } catch {
       setError("Bir hata oluştu. Lütfen tekrar deneyin.")
@@ -432,10 +437,10 @@ export function RegisterForm({
         </div>
         <h1 className="mt-5 text-2xl font-bold tracking-tight text-foreground">E-postanızı kontrol edin</h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-          <span className="font-medium text-foreground">{submitted}</span> adresine doğrulama bağlantısı gönderdik. Bağlantıya tıkladığınızda ücretsiz 7 iş günlük kullanımınız başlar.
+          <span className="font-medium text-foreground">{submitted}</span> adresine doğrulama bağlantısı gönderdik. {preferredPlan?.tier === "lite" ? "Bağlantıya tıkladığınızda süresiz ücretsiz Lite kullanımınız başlar." : "Bağlantıya tıkladığınızda ücretsiz 7 iş günlük kullanımınız başlar."}
         </p>
         <p className="mt-3 text-xs text-muted-foreground">
-          Kart bilgisi gerekmez. Süre sonunda paket satın alınmazsa hesabınız ve verileriniz korunarak erişim dondurulur.
+          {preferredPlan?.tier === "lite" ? "Kart bilgisi gerekmez. Lite süreli deneme değildir ve otomatik ücretliye dönüşmez." : "Kart bilgisi gerekmez. Süre sonunda paket satın alınmazsa hesabınız ve verileriniz korunarak erişim dondurulur."}
         </p>
         <Button asChild className="mt-7">
           <Link href="/login">Giriş sayfasına dön</Link>
@@ -455,7 +460,7 @@ export function RegisterForm({
           onChange={() => {
             if (startedRef.current) return
             startedRef.current = true
-            trackMarketingEvent("register_started", { entry_step: "sector" })
+            trackMarketingEvent("register_started", { entry_step: "sector", plan_tier: preferredPlan?.tier ?? "pro" })
           }}
           method="post"
         >
@@ -483,6 +488,7 @@ export function RegisterForm({
                 {currentStep === 4 && (
                   <AccountStep
                     form={form}
+                    isLite={preferredPlan?.tier === "lite"}
                     city={city}
                     acquisitionSource={acquisitionSource}
                     salesAdvisorName={salesRegistration?.advisorName}
@@ -567,7 +573,7 @@ function PreferredPlanBanner({
         </span>
       </p>
       <p className="mt-0.5 text-xs text-muted-foreground-strong">
-        Önce ücretsiz deneyin; deneme bitince bu paketi etkinleştirebilirsiniz.
+        {tier === "lite" ? "Lite kapsamı süresiz ücretsizdir. Kart gerekmez; otomatik ücretliye dönüşmez." : "Önce 7 iş günü ücretsiz deneyin; deneme bitince bu paketi kendi onayınızla etkinleştirebilirsiniz."}
       </p>
     </div>
   )
@@ -1019,6 +1025,7 @@ function ModulesStep({ form }: { form: WizardForm }) {
 
 function AccountStep({
   form,
+  isLite,
   city,
   acquisitionSource,
   salesAdvisorName,
@@ -1026,6 +1033,7 @@ function AccountStep({
   onShowPasswordChange,
 }: {
   form: WizardForm
+  isLite?: boolean
   city: string
   acquisitionSource: WizardFormValues["acquisitionSource"]
   salesAdvisorName?: string
@@ -1147,7 +1155,7 @@ function AccountStep({
             <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
               <FormControl><Checkbox checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} aria-label="Aydınlatma metni onayı" /></FormControl>
               <div className="text-xs leading-5 text-muted-foreground">
-                <Link href="/kvkk" target="_blank" className="font-medium text-primary hover:underline">KVKK Aydınlatma Metni</Link>&apos;ni okudum. Hesabımın ücretsiz 7 iş günü kullanılacağını, satın alma yapılmazsa verilerim korunarak erişimin dondurulacağını biliyorum.
+                <Link href="/kvkk" target="_blank" className="font-medium text-primary hover:underline">KVKK Aydınlatma Metni</Link>&apos;ni okudum. {isLite ? "Lite paket kapsamını süresiz ücretsiz kullanacağımı ve hesabımın otomatik ücretliye dönüşmeyeceğini biliyorum." : "Hesabımın ücretsiz 7 iş günü kullanılacağını, satın alma yapılmazsa verilerim korunarak erişimin dondurulacağını biliyorum."}
                 <FormMessage />
               </div>
             </div>

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
+import { hasLifetimeLite } from "@/lib/lite-campaign"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
 import { activateBillingOrder } from "@/lib/billing/activate"
 import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
@@ -97,17 +98,19 @@ export async function approveWorkshop(workshopId: string): Promise<Result> {
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
 
   const now = new Date()
+  const currentPlan = await prisma.workshop.findUnique({ where: { id: workshopId } })
+  const lifetimeLite = currentPlan ? hasLifetimeLite(currentPlan) : false
   const ws = await prisma.workshop.update({
     where: { id: workshopId },
     data: {
       approvalStatus: "approved",
-      subscriptionStatus: "trialing",
-      trialStartedAt: now,
-      trialEndsAt: computeTrialEnd(now),
+      subscriptionStatus: lifetimeLite ? "active" : "trialing",
+      trialStartedAt: lifetimeLite ? null : now,
+      trialEndsAt: lifetimeLite ? null : computeTrialEnd(now),
     },
   })
   await AuditLogAction(workshopId, ctx.user.id, "Workshop", workshopId, "admin_workshop_approved")
-  await sendOwnerDecisionEmail(workshopId, ws.name, ws.email, "approved")
+  if (!lifetimeLite) await sendOwnerDecisionEmail(workshopId, ws.name, ws.email, "approved")
   revalidatePath("/admin", "layout")
   return { ok: true }
 }
