@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test"
 import { resetLandingAssistantProvider } from "@/lib/landing/assistant-provider"
-import { askWithTimeout, POST } from "./route"
+import { POST } from "./route"
+import { askWithTimeout } from "@/lib/landing/assistant-timeout"
 
 const request = (body: unknown, ip = "198.51.100.10") => new Request("http://localhost/api/assistant/ask", {
   method: "POST",
