@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Check, CircleCheck, MessageCircle, Minus, Sparkles } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -154,6 +155,7 @@ function PlanHeading({
 }
 
 export function PlanPackages({
+  presentation = "comparison",
   ownedTier = null,
   workshopName,
   checkoutBasePath = "/checkout",
@@ -161,6 +163,7 @@ export function PlanPackages({
   canPurchase = true,
   liteRegistrationOpen = true,
 }: {
+  presentation?: "comparison" | "public"
   ownedTier?: PlanTier | null
   workshopName?: string
   checkoutBasePath?: string
@@ -170,11 +173,12 @@ export function PlanPackages({
   canPurchase?: boolean
   liteRegistrationOpen?: boolean
 }) {
+  const isPublic = presentation === "public"
   const [billing, setBilling] = useState<BillingCycle>("monthly")
 
   return (
     <section id="lite" aria-labelledby="plan-karsilastirma-baslik" className="scroll-mt-20 space-y-5">
-      <div className="space-y-1 text-center">
+      <div className={cn("space-y-1 text-center", isPublic && "sr-only")}>
         <h2 id="plan-karsilastirma-baslik" className="text-xl font-bold text-foreground sm:text-2xl">
           Paketleri karşılaştırın
         </h2>
@@ -183,14 +187,14 @@ export function PlanPackages({
 
       <div className="flex justify-center pt-2">
         <div className="relative">
-          <Badge className="absolute -top-3 left-3/4 z-10 -translate-x-1/2 whitespace-nowrap px-2.5 py-0.5 text-[10px]">
+          {!isPublic && <Badge className="absolute -top-3 left-3/4 z-10 -translate-x-1/2 whitespace-nowrap px-2.5 py-0.5 text-[10px]">
             <Sparkles className="size-3" aria-hidden="true" /> Ücretli paketlerde 2 ay bedava
-          </Badge>
+          </Badge>}
           <ToggleGroup
             type="single"
             spacing={1}
             aria-label="Faturalama dönemi"
-            className="grid w-64 grid-cols-2 rounded-lg border bg-card p-1"
+            className={cn("grid w-64 grid-cols-2 rounded-lg border bg-card p-1", isPublic && "rounded-xl border-0 bg-muted")}
             value={billing}
             onValueChange={(value) => {
               if (value) setBilling(value as BillingCycle)
@@ -200,7 +204,7 @@ export function PlanPackages({
               <ToggleGroupItem
                 key={cycle}
                 value={cycle}
-                className="w-full rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm hover:text-foreground"
+                className={cn("w-full rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:shadow-sm hover:text-foreground", isPublic ? "rounded-lg data-[state=on]:bg-card data-[state=on]:text-foreground" : "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground")}
               >
                 {cycle === "monthly" ? "Aylık" : "Yıllık"}
               </ToggleGroupItem>
@@ -208,6 +212,52 @@ export function PlanPackages({
           </ToggleGroup>
         </div>
       </div>
+
+      {isPublic && (
+        <>
+          <p className="text-center text-xs text-muted-foreground">Yıllık ücretli paketlerde 2 ay bedava · Tüm fiyatlara KDV dahil</p>
+          <div className="relative !mt-14 grid gap-5 border-y border-border/60 py-4 md:grid-cols-3 lg:!mt-20 lg:gap-7" aria-label="Paketler">
+            {PLAN_PACKAGES.map((pkg) => (
+              <Card
+                key={pkg.tier}
+                role="article"
+                aria-labelledby={`paket-${pkg.tier}`}
+                className={cn("relative gap-0 overflow-visible rounded-3xl border border-border/70 p-6 shadow-sm ring-0 lg:p-8", pkg.popular && "border-primary/40 ring-4 ring-primary/10")}
+              >
+                <div className="flex min-h-8 flex-wrap items-center justify-between gap-2">
+                  <h3 id={`paket-${pkg.tier}`} className="text-2xl font-medium tracking-tight">{pkg.name}</h3>
+                  {pkg.popular && <Badge variant="secondary" className="bg-primary/10 text-primary-strong">En popüler</Badge>}
+                </div>
+                <div className="mt-8 min-h-24" aria-live="polite" aria-atomic="true">
+                  <p className="flex flex-wrap items-baseline gap-x-1.5">
+                    <span className="text-4xl font-semibold tracking-tight lg:text-5xl">{pkg.tier === "lite" ? "0 TL" : `₺${(billing === "monthly" ? pkg.monthlyPrice : pkg.yearlyPrice).toLocaleString("tr-TR")}`}</span>
+                    <span className="text-sm text-muted-foreground">/{pkg.tier === "lite" || billing === "monthly" ? "ay" : "yıl"}</span>
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">{pkg.tier === "lite" ? "Lite kampanyasında süresiz ücretsiz" : billing === "monthly" ? "Aylık faturalandırılır · KDV dahil" : "Yıllık faturalandırılır · KDV dahil"}</p>
+                </div>
+                <p className="mt-5 min-h-12 text-sm font-medium leading-6">{pkg.tagline}</p>
+                <ul className="mb-8 mt-4 space-y-3">
+                  {pkg.highlights.map((highlight) => (
+                    <li key={highlight} className="flex items-start gap-2.5 text-sm leading-5 text-muted-foreground">
+                      <Check className="mt-0.5 size-4 shrink-0 rounded-md bg-muted text-muted-foreground" aria-hidden="true" />
+                      {highlight}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-auto space-y-4">
+                  <p className="text-xs leading-5 text-muted-foreground">{pkg.tier === "lite" ? "Kart gerekmez. Otomatik ücretliye dönüşmez." : "Kart bilgisi olmadan 7 iş günü ücretsiz deneyin."}</p>
+                  <PlanAction tier={pkg.tier} billing={billing} checkoutBasePath={checkoutBasePath} ownedTier={ownedTier} hasPendingOrder={hasPendingOrder} canPurchase={canPurchase} liteRegistrationOpen={liteRegistrationOpen} />
+                </div>
+              </Card>
+            ))}
+          </div>
+          <p className="mx-auto max-w-3xl pt-5 text-center text-xs leading-6 text-muted-foreground">{LITE_CAMPAIGN_DESCRIPTION} Ücretli paketi kendi onayınızla etkinleştirirsiniz.</p>
+          <div className="pb-6 pt-16 text-center sm:pt-24">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Her paketin detayını karşılaştırın.</h2>
+            <p className="mt-3 text-sm text-muted-foreground">Servisinizin ihtiyaçlarına göre özellikleri ve kullanım limitlerini inceleyin.</p>
+          </div>
+        </>
+      )}
 
       <div className="hidden overflow-hidden rounded-xl border bg-card lg:block">
         <Table className="table-fixed">
