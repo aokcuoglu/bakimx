@@ -1,0 +1,33 @@
+.window {
+  display: inline-grid;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+.amount {
+  grid-area: 1 / 1;
+  display: block;
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.monthly {
+  transform: translateY(0);
+}
+
+.yearly {
+  transform: translateY(100%);
+}
+
+.window[data-cycle="yearly"] .monthly {
+  transform: translateY(-100%);
+}
+
+.window[data-cycle="yearly"] .yearly {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amount {
+    transition: none;
+  }
+}
