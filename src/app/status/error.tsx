@@ -12,6 +12,7 @@ export default function Error({ reset }: { reset: () => void }) {
     <PublicSite>
       <Header />
       <main className="mx-auto min-h-[60vh] max-w-2xl space-y-4 px-4 py-12 sm:px-6">
+        <h1 className="text-3xl font-semibold tracking-tight">Sistem durumu</h1>
         <Alert variant="destructive">
           <AlertCircle aria-hidden="true" />
           <AlertTitle>Sistem durumu yüklenemedi</AlertTitle>

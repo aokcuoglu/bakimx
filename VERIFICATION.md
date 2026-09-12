@@ -34,3 +34,11 @@ Tekrar üretim: `node scripts/issue-635-public-qa.mjs`. Capture script'i yalnız
 ## Sonraki sahip
 
 Ürün sahibi: localhost:3100 üzerinde görsel değerlendirme. Bu yerel deneme yayın veya production onayı anlamına gelmez. Yayın aşamasına geçilecekse mevcut route export build engeli ve seri E2E kararlılığı önce ele alınmalıdır.
+
+## PR #638 — güncel dev ile entegrasyon doğrulaması
+
+PR #637 (`943347f9`) branch'e birleştirildi. Fiyatlar sayfasının yeni başlığı, public paket kartları, dönem animasyonu ve sabit karşılaştırma tablosu korunur; `PublicSite customLayout` sayfanın özel tipografisini değiştirmeden ortak yaşam döngüsünü sağlar. Header CTA'sının nötr tonu da korunur.
+
+`askWithTimeout` export düzeltmesi #637 ile geldi. Worktree artık paylaşılan node_modules symlink'i yerine frozen lockfile'dan kurulmuş kendi bağımlılıklarını kullanıyor. Normal `bun run build` (Turbopack) ve typecheck geçti; yukarıdaki ilk denemenin build engeli artık açık değildir.
+
+Entegrasyon QA: ürün sahnesi testi ve #637'nin üç fiyatlandırma testi geçti. Modal / 13 alt sayfa responsive ve axe testi son koşuda geçti (7.2s). Yerel DB kapalı olduğundan `/status` hata görünümü doğrulandı; bu görünümün eksik H1'i tamamlandı. Normal durum verilerinin yüklenmesi bu son yerel koşuda doğrulanmadı. Önceki toplu Webpack hidrasyon sorunları tarihsel not olarak korunmuştur.

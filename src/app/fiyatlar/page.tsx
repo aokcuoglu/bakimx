@@ -1,4 +1,5 @@
-import { PublicSite } from "@/components/public/PublicSite";
+import { PublicSite } from "@/components/public/PublicSite"
+import styles from "./pricing.module.css"
 import { isLiteRegistrationOpen } from "@/lib/lite-campaign"
 import { Header } from "@/components/sections/Header"
 import { Footer } from "@/components/sections/Footer"
@@ -37,19 +38,26 @@ export const dynamic = "force-dynamic"
 
 export default function FiyatlarPage() {
   return (
-    <PublicSite>
-      <JsonLd data={softwareApplicationStructuredData} />
-      <Header />
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 space-y-8">
-        <div className="text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Oto servis programı paketleri ve fiyatları</h1>
-          <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">
-            Lite kampanyasında süresiz ücretsiz kullanım; otomatik ücretliye dönüşmez. Profesyonel ve Premium için kart bilgisi olmadan 7 iş günlük deneme sunulur. Ücretli paketi kendi onayınızla etkinleştirirsiniz.
-          </p>
-        </div>
-        <PlanPackages checkoutBasePath="/register" liteRegistrationOpen={isLiteRegistrationOpen()} />
-      </main>
-      <Footer />
+    <PublicSite customLayout>
+      <div className={styles.page}>
+        <JsonLd data={softwareApplicationStructuredData} />
+        <Header />
+        <main className="bg-card pb-20">
+          <div className="mx-auto max-w-5xl px-5 pb-8 pt-16 text-center sm:pt-24 lg:pt-28">
+            <h1 className="text-4xl font-semibold tracking-[-0.015em] text-foreground sm:text-5xl lg:text-[56px] lg:leading-[60px] text-balance">
+              Servisinizle büyür.
+            </h1>
+            <p className="mx-auto mt-5 max-w-2xl text-lg leading-[26px] text-foreground sm:text-xl text-balance">
+              Servisinizin her aşaması için tasarlandı.<br />
+              Bugün başlayın, kart bilgisi gerekmez.
+            </p>
+          </div>
+          <div className="mx-auto max-w-[1204px] px-5 sm:px-8">
+            <PlanPackages presentation="public" checkoutBasePath="/register" liteRegistrationOpen={isLiteRegistrationOpen()} />
+          </div>
+        </main>
+        <Footer />
+      </div>
     </PublicSite>
   )
 }

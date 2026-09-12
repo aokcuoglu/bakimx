@@ -9,9 +9,12 @@ import styles from "./public-site.module.css";
 export function PublicSite({
   children,
   editorial = false,
+  customLayout = false,
 }: {
   children: ReactNode;
   editorial?: boolean;
+  /** Specialized public pages keep their own typography and sticky layout. */
+  customLayout?: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const reduced = usePrefersReducedMotion();
@@ -48,7 +51,7 @@ export function PublicSite({
   return (
     <div
       ref={root}
-      className={styles.site}
+      className={customLayout ? styles.customSite : styles.site}
       data-public-site
       data-editorial={editorial || undefined}
     >

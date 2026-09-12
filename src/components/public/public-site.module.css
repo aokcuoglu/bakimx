@@ -1,4 +1,5 @@
-.site {
+.site,
+.customSite {
   background: var(--card);
   color: var(--foreground);
   min-height: 100vh;
