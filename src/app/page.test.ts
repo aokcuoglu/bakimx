@@ -9,13 +9,13 @@ describe("landing performance and conversion contracts", () => {
   // Browser tests exercise the rendered page, keyboard navigation, mobile
   // overflow, FAQ data and demo submission. These guards retain regressions
   // that cannot be detected after hydration alone.
-  test("hero heading is server-visible and the carousel avoids LCP regressions", () => {
+  test("hero heading is server-visible and the product stage avoids LCP regressions", () => {
     const heading = heroSource.match(/<h1([\s\S]*?)<\/h1>/)?.[0];
     expect(heading).toBeDefined();
     expect(heading).not.toMatch(/initial=|animate=|enter-up|opacity-0/);
     expect(heroSource).not.toContain("framer-motion");
-    expect(heroSource).toContain("<Carousel");
-    expect(heroSource).toContain('index === 0 ? "eager" : "lazy"');
+    expect(heroSource).not.toContain("<Carousel");
+    expect(heroSource).toContain("Servisiniz büyüsün.");
     expect(heroSource).not.toMatch(/^\s*(priority|preload)(\s*=|\s*$)/m);
     expect(heroSource).not.toContain("setInterval");
   });

@@ -1,3 +1,5 @@
+import { DemoRequestButton } from "@/components/public/DemoRequestButton";
+import { PublicSite } from "@/components/public/PublicSite";
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
@@ -65,7 +67,7 @@ const faqStructuredData = {
 
 export default function AracKabulFormuPage() {
   return (
-    <>
+    <PublicSite editorial>
       <JsonLd data={[articleStructuredData, howToStructuredData, faqStructuredData]} />
       <div className="print:hidden">
         <Header />
@@ -118,7 +120,7 @@ export default function AracKabulFormuPage() {
           </div>
         </section>
 
-        <section className="bg-navy py-16 text-navy-foreground sm:py-20 print:bg-white print:py-0 print:text-foreground" aria-labelledby="liste-baslik">
+        <section className="bg-background py-16 text-foreground sm:py-20 print:bg-white print:py-0 print:text-foreground" aria-labelledby="liste-baslik">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 print:max-w-none print:px-0">
             <div className="hidden print:block">
               <p className="text-lg font-semibold text-foreground">BakımX — Araç Kabul Kontrol Listesi</p>
@@ -126,34 +128,34 @@ export default function AracKabulFormuPage() {
             </div>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between print:hidden">
               <div className="max-w-3xl">
-                <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">
+                <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Sahada uygulayın
                 </p>
                 <h2 id="liste-baslik" className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
                   Eksiksiz bir araç kabulünde 8 adım
                 </h2>
-                <p className="mt-4 text-base leading-7 text-navy-foreground/70">
+                <p className="mt-4 text-base leading-7 text-muted-foreground">
                   Yazdırıp elle işaretleyebilir ya da her adımı dijital araç kabul akışında tamamlayabilirsiniz.
                 </p>
               </div>
-              <PrintButton label="Listeyi yazdır" className="shrink-0 border-navy-foreground/30 bg-transparent text-navy-foreground hover:bg-navy-foreground/10 print:hidden" />
+              <PrintButton label="Listeyi yazdır" className="shrink-0 border-border bg-transparent text-foreground hover:bg-muted print:hidden" />
             </div>
-            <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-navy-foreground/15 bg-navy-foreground/15 sm:grid-cols-2 print:mt-4 print:grid-cols-1 print:gap-2 print:rounded-none print:border-0 print:bg-transparent">
+            <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 print:mt-4 print:grid-cols-1 print:gap-2 print:rounded-none print:border-0 print:bg-transparent">
               {ARAC_KABUL_FORMU_CHECKLIST.map((step, index) => (
                 <li
                   key={step.title}
-                  className="relative bg-navy p-5 sm:p-6 print:break-inside-avoid print:border print:border-border print:bg-white print:p-3"
+                  className="relative bg-background p-5 sm:p-6 print:break-inside-avoid print:border print:border-border print:bg-white print:p-3"
                 >
                   <div className="flex items-start gap-3">
                     <span
                       aria-hidden="true"
-                      className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded border-2 border-navy-foreground/40 font-mono text-xs text-navy-foreground/70 print:border-foreground/50 print:text-foreground"
+                      className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded border-2 border-border font-mono text-xs text-muted-foreground print:border-foreground/50 print:text-foreground"
                     >
                       {index + 1}
                     </span>
                     <div>
                       <h3 className="text-base font-semibold print:text-sm">{step.title}</h3>
-                      <p className="mt-1.5 text-sm leading-6 text-navy-foreground/65 print:text-xs print:leading-5 print:text-muted-foreground">
+                      <p className="mt-1.5 text-sm leading-6 text-muted-foreground print:text-xs print:leading-5 print:text-muted-foreground">
                         {step.description}
                       </p>
                     </div>
@@ -238,26 +240,26 @@ export default function AracKabulFormuPage() {
           </div>
         </section>
 
-        <section className="bg-primary py-14 text-primary-foreground sm:py-16 print:hidden">
+        <section className="border-t bg-background py-14 text-foreground sm:py-16 print:hidden">
           <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-7 px-4 sm:px-6 md:flex-row md:items-center lg:px-8">
             <div>
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Bu listeyi kendi kabul kayıtlarınızda görün</h2>
-              <p className="mt-2 text-sm leading-6 text-primary-foreground sm:text-base">
+              <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">
                 Adımların BakımX&apos;te nasıl bir araya geldiğini ürün sayfasında inceleyin.
               </p>
             </div>
-            <Button asChild size="lg" variant="secondary">
+            <div className="flex shrink-0 flex-col gap-3"><Button asChild size="lg" variant="navy">
               <Link href="/dijital-arac-kabul">
                 Dijital araç kabul akışını gör
                 <ArrowRight aria-hidden="true" />
               </Link>
-            </Button>
+            </Button><DemoRequestButton location="public_closing" /></div>
           </div>
         </section>
       </main>
       <div className="print:hidden">
         <Footer />
       </div>
-    </>
+    </PublicSite>
   )
 }

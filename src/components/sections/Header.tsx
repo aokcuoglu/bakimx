@@ -31,7 +31,7 @@ export function Header() {
   }, [mobileOpen]);
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-lg">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
+      <div className="mx-auto flex h-18 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
         <Link
           href="/"
           aria-label="BakımX ana sayfa"
@@ -70,7 +70,7 @@ export function Header() {
           <Link href="/login" className="text-sm font-medium text-navy">
             Giriş yap
           </Link>
-          <Button asChild size="xl" className="h-10">
+          <Button asChild variant="navy" size="xl" className="h-10">
             <Link
               href="/register"
               onClick={() =>
@@ -120,7 +120,7 @@ export function Header() {
             >
               Giriş yap
             </Link>
-            <Button asChild size="xl" className="mt-2 h-12">
+            <Button asChild variant="navy" size="xl" className="mt-2 h-12">
               <Link
                 href="/register"
                 onClick={() => {

@@ -1,7 +1,8 @@
+import { DemoRequestButton } from "@/components/public/DemoRequestButton";
+import { PublicSite } from "@/components/public/PublicSite";
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight, BookOpen, FileSpreadsheet, MonitorSmartphone } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/sections/Footer"
 import { Header } from "@/components/sections/Header"
 import {
@@ -34,10 +35,10 @@ const relatedPages = [
 
 export default function ComparisonPage() {
   return (
-    <>
+    <PublicSite editorial>
       <Header />
       <main>
-        <section className="border-b bg-gradient-to-b from-primary/10 to-background py-16 sm:py-24">
+        <section className="border-b bg-card py-16 sm:py-24">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
             <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-primary-strong">Dengeli seçim rehberi</p>
             <h1 className="mt-4 max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl">Defter, Excel veya oto servis programı: hangisi ne zaman uygun?</h1>
@@ -105,14 +106,14 @@ export default function ComparisonPage() {
           </div>
         </section>
 
-        <section className="bg-primary py-14 text-primary-foreground sm:py-16">
+        <section className="border-t bg-background py-14 text-foreground sm:py-16">
           <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-7 px-4 sm:px-6 md:flex-row md:items-center lg:px-8">
             <div><h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Kendi servis akışınızla karşılaştırın</h2><p className="mt-2 text-sm leading-6 sm:text-base">BakımX&apos;in çalışma biçimini canlı demoda görün ve sorularınızı ekibimize iletin.</p></div>
-            <Button asChild size="lg" variant="secondary"><Link href="/demo">Demo isteyin<ArrowRight aria-hidden="true" /></Link></Button>
+            <DemoRequestButton location="public_closing" />
           </div>
         </section>
       </main>
       <Footer />
-    </>
+    </PublicSite>
   )
 }

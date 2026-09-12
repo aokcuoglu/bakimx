@@ -20,7 +20,8 @@
   display: none;
 }
 
-.page header [data-variant="default"] {
+.page header [data-variant="default"],
+.page header [data-variant="navy"] {
   background: var(--foreground);
   color: var(--card);
 }

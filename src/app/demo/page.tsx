@@ -1,3 +1,4 @@
+import { PublicSite } from "@/components/public/PublicSite";
 import type { Metadata } from "next";
 import { Header } from "@/components/sections/Header";
 import { Footer } from "@/components/sections/Footer";
@@ -12,12 +13,12 @@ export const metadata: Metadata = publicPageMetadata({
 
 export default function DemoPage() {
   return (
-    <>
+    <PublicSite>
       <Header />
       <main>
         <DemoRequestSection />
       </main>
       <Footer />
-    </>
+    </PublicSite>
   );
 }

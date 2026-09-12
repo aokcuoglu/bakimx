@@ -1,5 +1,6 @@
+import { PublicSite } from "@/components/public/PublicSite";
+import { Header } from "@/components/sections/Header";
 import Link from "next/link";
-import { BrandLogo } from "@/components/shared/brand-logo";
 import { Footer } from "@/components/sections/Footer";
 
 /**
@@ -65,24 +66,8 @@ export function LegalPage({
   const related = LEGAL_DOCS.filter((doc) => doc.slug !== slug);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            aria-label="BakımX ana sayfa"
-            className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            <BrandLogo variant="primary-light" size="lg" alt="BakımX" />
-          </Link>
-          <Link
-            href="/"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Ana sayfaya dön
-          </Link>
-        </div>
-      </header>
+    <PublicSite>
+      <Header />
 
       <main className="flex-1">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
@@ -139,7 +124,7 @@ export function LegalPage({
       </main>
 
       <Footer />
-    </div>
+    </PublicSite>
   );
 }
 
