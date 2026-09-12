@@ -59,6 +59,7 @@ function PlanAction({
   hasPendingOrder,
   canPurchase,
   compact = false,
+  publicCard = false,
   liteRegistrationOpen = true,
 }: {
   tier: SalePlanTier
@@ -68,6 +69,7 @@ function PlanAction({
   hasPendingOrder: boolean
   canPurchase: boolean
   compact?: boolean
+  publicCard?: boolean
   liteRegistrationOpen?: boolean
 }) {
   const isOwned = ownedTier === tier
@@ -96,9 +98,9 @@ function PlanAction({
   return (
     <Button
       asChild
-      variant={isOwned ? "secondary" : pkg.popular ? "default" : "outline"}
+      variant={isOwned ? "secondary" : pkg.popular ? publicCard ? "navy" : "default" : "outline"}
       size={compact ? "sm" : "default"}
-      className="w-full"
+      className={cn("w-full", publicCard && "h-9 rounded-lg text-sm font-normal", publicCard && pkg.popular && "bg-foreground text-card hover:bg-foreground/90", publicCard && !pkg.popular && "bg-card")}
     >
       <Link
         href={href}
@@ -194,7 +196,7 @@ export function PlanPackages({
             type="single"
             spacing={1}
             aria-label="Faturalama dönemi"
-            className={cn("grid w-64 grid-cols-2 rounded-lg border bg-card p-1", isPublic && "rounded-xl border-0 bg-muted")}
+            className={cn("grid w-64 grid-cols-2 rounded-lg border bg-card p-1", isPublic && "w-48 rounded-xl border-0 bg-muted p-0.5")}
             value={billing}
             onValueChange={(value) => {
               if (value) setBilling(value as BillingCycle)
@@ -204,7 +206,7 @@ export function PlanPackages({
               <ToggleGroupItem
                 key={cycle}
                 value={cycle}
-                className={cn("w-full rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:shadow-sm hover:text-foreground", isPublic ? "rounded-lg data-[state=on]:bg-card data-[state=on]:text-foreground" : "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground")}
+                className={cn("w-full rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:shadow-sm hover:text-foreground", isPublic ? "h-9 rounded-[10px] data-[state=on]:bg-card data-[state=on]:text-foreground" : "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground")}
               >
                 {cycle === "monthly" ? "Aylık" : "Yıllık"}
               </ToggleGroupItem>
@@ -215,43 +217,46 @@ export function PlanPackages({
 
       {isPublic && (
         <>
-          <p className="text-center text-xs text-muted-foreground">Yıllık ücretli paketlerde 2 ay bedava · Tüm fiyatlara KDV dahil</p>
-          <div className="relative !mt-14 grid gap-5 border-y border-border/60 py-4 md:grid-cols-3 lg:!mt-20 lg:gap-7" aria-label="Paketler">
+          <div className="relative !mt-16 grid gap-6 border-y border-border/50 px-3 py-3 md:grid-cols-3 before:pointer-events-none before:absolute before:-inset-y-10 before:inset-x-0 before:border-x before:border-border/40" aria-label="Paketler">
+            <span aria-hidden="true" className="pointer-events-none absolute -left-1 -top-2 text-xs text-border">+</span>
+            <span aria-hidden="true" className="pointer-events-none absolute -right-1 -top-2 text-xs text-border">+</span>
+            <span aria-hidden="true" className="pointer-events-none absolute -bottom-2 -left-1 text-xs text-border">+</span>
+            <span aria-hidden="true" className="pointer-events-none absolute -bottom-2 -right-1 text-xs text-border">+</span>
             {PLAN_PACKAGES.map((pkg) => (
-              <Card
-                key={pkg.tier}
-                role="article"
-                aria-labelledby={`paket-${pkg.tier}`}
-                className={cn("relative gap-0 overflow-visible rounded-3xl border border-border/70 p-6 shadow-sm ring-0 lg:p-8", pkg.popular && "border-primary/40 ring-4 ring-primary/10")}
-              >
-                <div className="flex min-h-8 flex-wrap items-center justify-between gap-2">
-                  <h3 id={`paket-${pkg.tier}`} className="text-2xl font-medium tracking-tight">{pkg.name}</h3>
-                  {pkg.popular && <Badge variant="secondary" className="bg-primary/10 text-primary-strong">En popüler</Badge>}
-                </div>
-                <div className="mt-8 min-h-24" aria-live="polite" aria-atomic="true">
-                  <p className="flex flex-wrap items-baseline gap-x-1.5">
-                    <span className="text-4xl font-semibold tracking-tight lg:text-5xl">{pkg.tier === "lite" ? "0 TL" : `₺${(billing === "monthly" ? pkg.monthlyPrice : pkg.yearlyPrice).toLocaleString("tr-TR")}`}</span>
-                    <span className="text-sm text-muted-foreground">/{pkg.tier === "lite" || billing === "monthly" ? "ay" : "yıl"}</span>
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">{pkg.tier === "lite" ? "Lite kampanyasında süresiz ücretsiz" : billing === "monthly" ? "Aylık faturalandırılır · KDV dahil" : "Yıllık faturalandırılır · KDV dahil"}</p>
-                </div>
-                <p className="mt-5 min-h-12 text-sm font-medium leading-6">{pkg.tagline}</p>
-                <ul className="mb-8 mt-4 space-y-3">
-                  {pkg.highlights.map((highlight) => (
-                    <li key={highlight} className="flex items-start gap-2.5 text-sm leading-5 text-muted-foreground">
-                      <Check className="mt-0.5 size-4 shrink-0 rounded-md bg-muted text-muted-foreground" aria-hidden="true" />
-                      {highlight}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-auto space-y-4">
-                  <p className="text-xs leading-5 text-muted-foreground">{pkg.tier === "lite" ? "Kart gerekmez. Otomatik ücretliye dönüşmez." : "Kart bilgisi olmadan 7 iş günü ücretsiz deneyin."}</p>
-                  <PlanAction tier={pkg.tier} billing={billing} checkoutBasePath={checkoutBasePath} ownedTier={ownedTier} hasPendingOrder={hasPendingOrder} canPurchase={canPurchase} liteRegistrationOpen={liteRegistrationOpen} />
-                </div>
-              </Card>
+              <div key={pkg.tier} className="relative before:pointer-events-none before:absolute before:-inset-y-14 before:-left-3 before:hidden before:border-l before:border-border/40 md:before:block first:before:border-0">
+                <Card
+                  role="article"
+                  aria-labelledby={`paket-${pkg.tier}`}
+                  className={cn("relative h-full min-h-[400px] gap-0 overflow-visible rounded-[20px] border border-border/70 p-6 shadow-sm ring-0", pkg.popular && "border-primary/40 ring-4 ring-primary/10")}
+                >
+                  <h3 id={`paket-${pkg.tier}`} className="text-xl font-medium tracking-tight">{pkg.name}</h3>
+                  <div className="mt-7" aria-live="polite" aria-atomic="true">
+                    <div className="flex min-h-12 flex-wrap items-center gap-3">
+                      <p className="text-[40px] font-semibold leading-[48px] tracking-[-0.025em]">{pkg.tier === "lite" ? "0 TL" : `₺${(billing === "monthly" ? pkg.monthlyPrice : pkg.yearlyPrice).toLocaleString("tr-TR")}`}</p>
+                      {pkg.tier !== "lite" && billing === "yearly" && <Badge variant="outline" className="rounded-lg border-primary/20 bg-primary/10 text-primary-strong font-normal">2 ay bedava</Badge>}
+                    </div>
+                    <p className="text-xs leading-5 text-muted-foreground">{pkg.tier === "lite" ? "Lite kampanyasında süresiz ücretsiz" : billing === "monthly" ? "Aylık faturalandırılır · KDV dahil" : "Yıllık faturalandırılır · KDV dahil"}</p>
+                  </div>
+                  <p className="mt-8 min-h-10 text-sm font-medium leading-5">{pkg.tagline}</p>
+                  <ul className="mb-8 mt-2.5 space-y-2.5">
+                    {pkg.highlights.slice(0, 3).map((highlight) => (
+                      <li key={highlight} className="flex items-start gap-2 text-sm leading-5 text-muted-foreground">
+                        <Check className="mt-0.5 size-4 shrink-0 rounded-[5px] bg-muted text-muted-foreground" aria-hidden="true" />
+                        {highlight}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-auto">
+                    <PlanAction publicCard tier={pkg.tier} billing={billing} checkoutBasePath={checkoutBasePath} ownedTier={ownedTier} hasPendingOrder={hasPendingOrder} canPurchase={canPurchase} liteRegistrationOpen={liteRegistrationOpen} />
+                  </div>
+                </Card>
+              </div>
             ))}
           </div>
-          <p className="mx-auto max-w-3xl pt-5 text-center text-xs leading-6 text-muted-foreground">{LITE_CAMPAIGN_DESCRIPTION} Ücretli paketi kendi onayınızla etkinleştirirsiniz.</p>
+          <div className="mx-auto max-w-3xl !mt-16 space-y-3 text-center text-xs leading-5 text-muted-foreground">
+            <p>Ücretli paketlerde kart bilgisi olmadan 7 iş günü deneme. Yıllık ödemede 2 ay bedava. Tüm fiyatlara KDV dahildir.</p>
+            <p>{LITE_CAMPAIGN_DESCRIPTION} Otomatik ücretliye dönüşmez. Ücretli paketi kendi onayınızla etkinleştirirsiniz.</p>
+          </div>
           <div className="pb-6 pt-16 text-center sm:pt-24">
             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Her paketin detayını karşılaştırın.</h2>
             <p className="mt-3 text-sm text-muted-foreground">Servisinizin ihtiyaçlarına göre özellikleri ve kullanım limitlerini inceleyin.</p>
