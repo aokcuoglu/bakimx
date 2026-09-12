@@ -1,27 +1,43 @@
-# BakımX — Attio referanslı yerel deneme (#635)
+# BakımX — Attio referanslı public site (#635)
 
-12 Eylül 2026 kullanıcı geri bildirimi önceki iki sütunlu tasarımı değiştirir. Kaynak: kullanıcının paylaştığı üç ekran görüntüsü ve https://attio.com/. Kapsam giriş ve hemen altındaki ürün anlatımıdır; PR, merge ve yayın yoktur.
+## Kapsam
 
-## Ana mesaj
-
-“Servisiniz büyüsün. Kontrol sizde kalsın.” Merkezde tek H1, iki satır. Altında araç kabul, parça, iş emri ve tahsilatı bağlayan kısa açıklama. İki mevcut hedef korunur: `/fiyatlar#lite` ve `#demo-form`; analitik event adları ve konum parametreleri değişmez. Yeni bir fiyat politikası yoktur: Lite 0 TL/ay mevcut teklifidir.
+12 Eylül 2026 tarihli kullanıcı geri bildirimleri önceki iki bölümlük denemenin yerini alır. Referans kullanıcının Attio ekran görüntüleri ve https://attio.com/. Ana sayfanın tamamı, üç ürün tanıtım sayfası, karşılaştırma, iki rehber, fiyatlar, demo, sistem durumu ve dört hukuki belge ortak `PublicSite` görünümünü kullanır. Uygulama, yönetim, kimlik doğrulama ve müşteriye özel işlem ekranları bu pazarlama tasarımının dışında kalır. PR, merge veya yayın yoktur.
 
 ## Görsel dil
 
-Beyaz `card` zemini, ince `border` dikey çizgileri, koyu `foreground` başlık, ikincil `muted-foreground` metin. Geist kullanılır. H1 masaüstünde 84px'e kadar, mobilde 36–56px; sıkı harf aralığı, 1.03 satır yüksekliği. Girişte 100px üst boşluk, içerikte 1280px sınır. İki CTA 48px yüksekliğinde; mobilde tam genişlikte ve ana CTA önce görünür. Stiller CSS Module ile yalnız bu iki bölüme bağlıdır.
+Geist; beyaz `card` zemin; ince `border` ayraçlar; koyu `foreground` başlıklar; `muted-foreground` açıklamalar. Mavi, ürün verilerinde ve bağlantılarda vurgu olarak kalır. Büyük renk blokları açık yüzeylere dönüştürülür. Ortak içerik sınırı 1200px, ürün sahnesi 1440px. Bölüm boşlukları masaüstünde 64–120px, mobilde 64px. Ana H1 84px'e, tanıtım sayfaları 76px'e kadar ölçeklenir. Başlıklarda sıkı harf aralığı ve dengeli satır kırılması kullanılır. Rehber ve hukuki metinlerin içerikleri korunur.
 
-## Katmanlı ürün alanı
+`PublicSite` ve CSS Module yalnız açıkça sarılmış site sayfalarına uygulanır. Uygulamanın global tokenları veya paylaşılan UI bileşenlerinin varsayılanları değiştirilmez. Header/Footer ortak açık görünüm kullanır. Mobil ürün görselleri dikey sıralanır; CTA'lar dar alanda alt alta gelir.
 
-Ortada 1000px civarında bir servis özeti penceresi; ön solda iş emri, ön sağda şaseyle ilişkili katalog sonuçları. Yumuşak mavi zemin, ince pencere başlıkları, hafif gölgeler ve derinlik. Dashboard ve iş emri, ürünün işlevlerini anlatan HTML/CSS demo kompozisyonlarıdır; birebir ekran görüntüsü değildir. Sabit servis, müşteri, plaka ve tutarlar örnektir. Parça alanı mevcut `parts-catalog.png` görselinin listeye odaklanan kırpımıdır. Sayfada örnek veri açıklaması bulunur.
+## Ana mesaj ve ürün sahnesi
 
-Mobilde pencereler sıralı yerleşir; dashboard'ın dekoratif menüsü ve ikincil grafik kartları kaldırılır. Görsel katmanlar mobilde üst üste binmez. Sunulan veriler gerçek servis performansı ya da dönüşüm kanıtı değildir.
+“Servisiniz büyüsün. Kontrol sizde kalsın.” Tek, sunucuda görünür H1. Altında araç kabulü, parçalar, iş emirleri ve tahsilatı bağlayan kısa açıklama. Ana CTA `/fiyatlar#lite`, mevcut Lite teklifi ve analitik adları korunur.
 
-## Motion
+Ortada dashboard, solda iş emri, sağda şase bazlı parça listesi. Dashboard ve iş emri açıklayıcı HTML/CSS örnekleridir; canlı ürün ekranının birebir kopyası değildir. Parça listesi mevcut `parts-catalog.png` kırpımıdır. Örnek veriler sayfada açıkça belirtilir.
 
-Kullanıcı bu revizyonda Motion kullanımına açıkça izin verdi. Mevcut `framer-motion` paketi kullanılır; yeni bağımlılık yoktur. Resmî kaynaklar: https://github.com/motiondivision/motion ve https://motion.dev/docs/react-use-scroll.
+## Demo modalı
 
-Yalnız ürün pencereleri `useScroll` + `useTransform` ile hareket eder. Merkez pencere küçük bir ölçek ve dikey hareket alır; iki yan pencere farklı mesafelerle yerleşir. `initial={false}` kullanılır, opacity ile gizleme yoktur. H1 normal HTML'dir ve Motion import etmez. Projede bulunan ve sunucu hidrasyonunu koruyan `usePrefersReducedMotion` ile hareket azaltma desteklenir; CSS media query mobilde ve reduced-motion durumunda transform'u kaldırır. Görsel boyutları baştan ayrılır.
+“Birlikte inceleyelim” Radix Dialog açar; sayfayı aşağı kaydırmaz. Eski uzun demo bölümü kısa kapanış mesajıyla değiştirilmiştir. Modal: 640px'e kadar genişlik, 24/40px iç boşluk, açık zemin, gri arka perde, ekran yüksekliğini aşınca içeride kaydırma. Kapat düğmesi başlangıç odağıdır; Escape kapatır, odak tetikleyiciye döner.
 
-## Teslim
+Aynı react-hook-form + zod + shadcn Form bileşeni `/demo` üzerinde de kullanılır. Ad, telefon, servis adı, şehir, aylık araç adedi ve isteğe bağlı not; mevcut `/api/demo-request` sözleşmesine gönderilir. Sunucu hatasında girilen bilgiler korunur, başarıda teyit odağa alınır. Analitik başarı olayı yalnız başarılı API yanıtında çalışır. KVKK bağlantısı korunur. Yeni ticari koşul, API, DB veya bağımlılık yoktur.
 
-Önizleme: http://localhost:3100. Görseller: `artifacts/issue-635/attio/`. İlk denemenin görselleri üst klasörde karşılaştırma için saklıdır. Kayıt dönüşümü ölçülmez. Sonraki adım ürün sahibinin yerel tasarımı değerlendirmesidir.
+## Motion test değerleri
+
+Mevcut `framer-motion` paketi kullanılır. Kullanıcının açık Motion talebi önceki landing kısıtının bu yerel deneme için istisnasıdır. Kaynaklar: https://github.com/motiondivision/motion ve https://motion.dev/docs/react-use-scroll.
+
+| Alan | Başlangıç → bitiş | Tetikleyici |
+| --- | --- | --- |
+| Dashboard | y: 140 → 0px, scale: 0.92 → 1 | Ürün sahnesinin üstü viewport altına değdiğinde başlar; merkezler hizalandığında biter |
+| İş emri | y: 240 → −12px | Aynı kaydırma aralığı |
+| Parça penceresi | y: 280 → 12px | Aynı kaydırma aralığı |
+| Diğer doğrudan main bölümleri | y: 36 → 0px, 750ms | Viewport altından 60px içeride ilk görünüş; bir kez; easing [0.22, 1, 0.36, 1] |
+| Üst çizgi | scaleX: 0 → 1 | Sayfanın başından sonuna toplam kaydırma |
+
+Ürün pencereleri `initial={false}` kullanır. H1 ve metinler opacity ile gizlenmez; JavaScript kapalıyken ilk içerik görünürdür. 640px ve altında katman hareketi kapanır. `prefers-reduced-motion: reduce` bütün bu Motion efektlerini kapatır. Modalın 100ms açılış/kapanışı mevcut Radix/CSS geçişidir, Motion olarak sunulmaz.
+
+Test: masaüstünde hareket azaltma kapalıyken ana sayfayı en üste alın, ilk 700–1000px'i yavaş kaydırın. Yan pencereler dashboard'dan daha uzun yol alır. Sonraki bölümlere ilk inişte yukarı hareketi izleyin; tekrar görmek için sayfayı yenileyin. Üstteki 2px çizgi kaydırma ilerlemesini gösterir.
+
+## Yerel teslim
+
+Önizleme http://localhost:3100. Karşılaştırmalar `artifacts/issue-635/public-site/` altında. Önceki denemeler korunur. Bu çalışma kayıt dönüşümüne ilişkin ölçüm veya iddia içermez.

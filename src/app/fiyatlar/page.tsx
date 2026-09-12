@@ -1,3 +1,4 @@
+import { PublicSite } from "@/components/public/PublicSite";
 import { isLiteRegistrationOpen } from "@/lib/lite-campaign"
 import { Header } from "@/components/sections/Header"
 import { Footer } from "@/components/sections/Footer"
@@ -36,7 +37,7 @@ export const dynamic = "force-dynamic"
 
 export default function FiyatlarPage() {
   return (
-    <>
+    <PublicSite>
       <JsonLd data={softwareApplicationStructuredData} />
       <Header />
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 space-y-8">
@@ -49,6 +50,6 @@ export default function FiyatlarPage() {
         <PlanPackages checkoutBasePath="/register" liteRegistrationOpen={isLiteRegistrationOpen()} />
       </main>
       <Footer />
-    </>
+    </PublicSite>
   )
 }

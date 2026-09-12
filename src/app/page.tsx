@@ -1,3 +1,4 @@
+import { PublicSite } from "@/components/public/PublicSite";
 import type { Metadata } from "next";
 import { Header } from "@/components/sections/Header";
 import { HeroSection } from "@/components/sections/HeroSection";
@@ -42,7 +43,7 @@ const homeStructuredData = [
 
 export default function Home() {
   return (
-    <>
+    <PublicSite>
       <JsonLd data={homeStructuredData} />
       <Header />
       <main>
@@ -56,6 +57,6 @@ export default function Home() {
         <DemoFormSection />
       </main>
       <Footer />
-    </>
+    </PublicSite>
   );
 }

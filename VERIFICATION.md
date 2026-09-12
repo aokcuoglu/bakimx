@@ -1,30 +1,36 @@
-# Attio referanslı yerel deneme — #635
+# Yerel doğrulama — issue #635
 
-12 Eylül 2026 revizyonu. Issue: https://github.com/aokcuoglu/bakimx/issues/635. Branch: `issue/635-light-landing`. Worktree: `/private/tmp/bakimx-issue-635`. Önizleme: http://localhost:3100. İlk deneme `bf397705` commit'inde saklıdır.
+## Kapsam ve teslim
 
-## Değişiklik
+- Worktree: `/private/tmp/bakimx-issue-635`; branch: `issue/635-light-landing`.
+- Ana sayfanın tamamı, üç ürün sayfası, karşılaştırma, iki rehber, fiyatlar, demo, durum ve dört hukuki sayfa.
+- Modal mevcut `/api/demo-request` sözleşmesini kullanır. Browser testlerinde istekler mock edildi; gerçek lead oluşturulmadı.
+- Uygulama/admin/auth ekranları, API, DB, bağımlılıklar ve fiyat politikası değişmedi.
+- Önizleme: http://localhost:3100 (Webpack dev). PR/push/merge/deploy yapılmadı.
 
-- `HeroSection.tsx`: merkezde yeni mesaj, kısa açıklama, iki CTA. Hedef ve analitik konum/event sözleşmeleri korunur.
-- `ProductStage.tsx`: demo servis özeti ve iş emri kompozisyonu, mevcut parça kataloğu görseli. Motion ile üç pencereye kaydırma hareketi.
-- `landing-editorial.module.css`: beyaz zemin, büyük tipografi, katmanlar, tema tokenları, mobil ve reduced-motion kuralları; yalnız bu iki bölüme uygulanır.
-- `LandingContent.tsx`: önceki sekmeli ürün turu yerine ProductStage export eder; diğer bölümler değiştirilmez.
-- Landing/page testleri yeni mesaj ve kompozisyona uyarlanmıştır. `DESIGN.md` yeni tasarım kararlarını kaydeder.
+## Geçen kontroller
 
-Dashboard ve iş emri görünümleri HTML/CSS ile hazırlanmış örnek kompozisyonlardır; gerçek servis verisi ya da birebir uygulama ekran görüntüsü değildir. Katalog görseli mevcut ürün ekranıdır. Bu ayrım sayfada demo verisi notuyla belirtilir. Yeni bağımlılık, API, DB, fiyat politikası veya global tema değişikliği yoktur.
+- `bun test`: **2207 passed, 2 skipped, 0 failed**; 311 dosya. Skip'ler mevcut PostgreSQL entegrasyon fixture'larıdır.
+- `bun run lint`: geçti; uyarı yok.
+- `e2e/public-site.e2e.ts`: son bağımsız koşu **1 passed (14.7s)**. Modal Enter ile açılış, başlangıç odağı, focus trap, Escape/odağın dönüşü, hata sonrası değerlerin korunması ve yeniden gönderim; 320/390/768/1440 genişliklerinde modal ve 13 alt sayfa taşma kontrolü; tek H1; modal ve 13 alt sayfanın WCAG A/AA axe kontrolü geçti.
+- `e2e/landing-product-stage.e2e.ts`: normal kaydırmada transform değişimi, reduced-motion'da hareketsiz yerleşim, dört genişlik, hero/product axe ve JS kapalı ilk içerik geçti.
+- `e2e/landing-redesign.e2e.ts`: modal CTA, mobil menü, başa dönme, mock form gönderimi, FAQ deep link/JSON-LD uyumu ve ana sayfa axe/no-JS kontrolleri başarılı koşuda geçti.
+- `git diff --check`: geçti.
 
-## Kontroller
+## Açık doğrulama kısıtları
 
-- `bun test`: **2207 başarılı, 2 isteğe bağlı PostgreSQL testi atlandı, 0 hata**.
-- `bun run lint`: **başarılı**.
-- `PLAYWRIGHT_PORT=3100 bun run test:e2e e2e/landing-product-stage.e2e.ts --trace off`: **başarılı**. Tek senaryoda 320/390/768/1440px taşma, üç pencere, CTA hedefleri, tek H1, axe WCAG A/AA, reduced-motion, gerçek kaydırma transform değişimi ve JavaScript kapalı H1/CTA/dashboard kontrol edilir. Tüm uygulamanın E2E paketi yeşil olarak iddia edilmez.
-- Typecheck build öncesinde başarılıydı. Build'in ürettiği route tipleri sonrasında mevcut `askWithTimeout` export hatasını bildirir.
-- `bun run build --webpack`: derleme aşaması geçer; Next route doğrulaması `src/app/api/assistant/ask/route.ts:18` içindeki geçersiz `askWithTimeout` export'unda durur. Aynı export başlangıç `origin/dev` commit'inde vardır ve değiştirilmemiştir. Bu sebeple tam üretim gate'i yeşil değildir.
-- Masaüstü ve mobil görüntüler görsel olarak incelendi. Hareket azaltmada CSS transform'u kaldırır; paylaşılan `usePrefersReducedMotion` hook'u SSR/hidrasyon uyumunu korur. Ana mesaj Motion kullanmaz.
+- `bun run build --webpack`: uygulama derlemesi başarılı (**19.2s**); Next'in production route tip kontrolünde mevcut `src/app/api/assistant/ask/route.ts` içindeki `askWithTimeout` export'u yüzünden başarısız. Bu dosya branch'in `origin/dev` tabanından değişmemiştir. Son `bun run typecheck` de `.next/types` üzerinden aynı mevcut export hatasıyla başarısızdır. Typecheck ve production build başarılı sayılmıyor.
+- Seri Playwright koşuları dev ortamında aralıklı hidrasyon beklemeleri / `ERR_ABORTED` gösterdi. Örneğin bir koşu 7/8, başka bir koşu 5/8 geçti. İlgili testlerin bağımsız başarılı koşuları var; toplu E2E'nin kararlı yeşil olduğu iddia edilmiyor.
+- Daha sonra eklenen tüm-alt-sayfa axe kontrolü bağımsız koşuda 13 route üzerinde geçti; sonuç ayrıntıları hata durumunda kısa bir hedef/özet listesi olarak raporlanır.
+- Ürün dashboard ve iş emri kompozisyonları açıklayıcı örneklerdir; canlı uygulama screenshot'u değildir.
+- LCP ve kayıt dönüşümü için production ölçümü yapılmadı.
 
-## Yerel kullanım ve teslim
+## Görseller
 
-Başlatma: `bun run dev --webpack -p 3100`. node_modules ana checkout'a bağlı olduğu için bu worktree'de Webpack kullanılır. `.env.local` içeriği değiştirilmedi. Analitik test sunucusu `NEXT_PUBLIC_ANALYTICS_ENABLED=true`, `NEXT_PUBLIC_GA_MEASUREMENT_ID=''` ile harici GA teslimatı olmadan açıldı.
+`artifacts/issue-635/public-site/index.html` galerisi: 11 sayfanın 1440×900 ve 390×900 viewport ile tam sayfa görüntüleri, ayrıca iki modal görüntüsü. Ana sayfa/modal JS açık; alt sayfalar server-rendered/no-JS; reduced-motion açık. Lazy görseller capture için yükletildi. No-JS sayfalarda JS-tabanlı stil enjeksiyonu kullanılmadı. Önceki iki denemenin galerilerine bağlantılar vardır.
 
-[Güncel galeri](artifacts/issue-635/attio/index.html). Yenileme: `node scripts/issue-635-attio-qa.mjs`. Görüntülerde yalnız Next geliştirme rozeti gizlenir. [İlk deneme](artifacts/issue-635/index.html) karşılaştırma için korunur.
+Tekrar üretim: `node scripts/issue-635-public-qa.mjs`. Capture script'i yalnız ana sayfanın hidrasyonu için en fazla iki yeniden yükleme yapabilir; testlerde bu retry uygulanmaz. Animasyonlar galeride değil canlı önizlemede değerlendirilir; kesin değerler ve tetikleyiciler `DESIGN.md` içinde.
 
-Ana checkout değişiklikleri korunmuştur. PR, push, merge ve yayın yapılmamıştır. Issue tasarım değerlendirmesi için açıktır. Sonraki sorumlu ürün/tasarım sahibidir. Üretime hazırlık için mevcut route export hatası ayrıca çözülmelidir. Kayıt dönüşümü ölçülmemiştir.
+## Sonraki sahip
+
+Ürün sahibi: localhost:3100 üzerinde görsel değerlendirme. Bu yerel deneme yayın veya production onayı anlamına gelmez. Yayın aşamasına geçilecekse mevcut route export build engeli ve seri E2E kararlılığı önce ele alınmalıdır.

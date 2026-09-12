@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackMarketingEvent } from "@/lib/marketing-analytics";
+import { DemoRequestButton } from "@/components/public/DemoRequestButton";
 import styles from "./landing-editorial.module.css";
 
 export function HeroSection() {
@@ -25,19 +26,14 @@ export function HeroSection() {
           yerde.
         </p>
         <div className={styles.actions}>
-          <Button asChild variant="outline" size="xl" className="h-12 px-6">
-            <a
-              href="#demo-form"
-              onClick={() =>
-                trackMarketingEvent("demo_cta_click", {
-                  cta_location: "hero_secondary",
-                  destination: "form",
-                })
-              }
-            >
-              Birlikte inceleyelim
-            </a>
-          </Button>
+          <DemoRequestButton
+            onClick={() =>
+              trackMarketingEvent("demo_cta_click", {
+                cta_location: "hero_secondary",
+                destination: "form",
+              })
+            }
+          />
           <Button asChild variant="navy" size="xl" className="h-12 px-6">
             <Link
               href="/fiyatlar#lite"

@@ -95,7 +95,7 @@ export function OperationsSection() {
 
 export function GettingStartedSection() {
   return (
-    <section className="bg-navy py-20 text-navy-foreground sm:py-24">
+    <section className="bg-background py-20 text-foreground sm:py-24">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="mb-12 grid gap-6 lg:grid-cols-2">
           <h2 className="max-w-xl text-3xl font-semibold leading-tight tracking-[-0.04em] sm:text-4xl">
@@ -129,7 +129,7 @@ export function GettingStartedSection() {
               text: "Servisinizin ihtiyaçlarını konuşalım; ekibiniz ve mevcut kayıtlarınız için geçişi planlayalım.",
             },
           ].map(({ icon: Icon, n, title, text }) => (
-            <div key={n} className="border-t border-navy-foreground/25 pt-6">
+            <div key={n} className="border-t border-border pt-6">
               <div className="mb-6 flex items-center justify-between">
                 <span className="text-xs">{n}</span>
                 <Icon className="size-5" />

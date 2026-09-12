@@ -62,7 +62,7 @@ const footerLinks = {
   ],
   company: [
     { label: "Demo Talep Et", href: "/demo" },
-    { label: "İletişim", href: "/#demo-form" },
+    { label: "İletişim", href: "/demo" },
     { label: "Sistem Durumu", href: "/status" },
   ],
   legal: [
@@ -77,21 +77,21 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t bg-navy text-navy-foreground">
+    <footer className="border-t bg-background text-foreground">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-9 lg:py-10">
         <div className="grid gap-8 sm:gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <Reveal amount={0.15} className="sm:col-span-2 lg:col-span-1">
             <Link
               href="/"
               aria-label="BakimX ana sayfa"
-              className="inline-flex items-center mb-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-navy"
+              className="inline-flex items-center mb-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
             >
-              <BrandLogo variant="primary-dark" size="lg" alt="BakimX" />
+              <BrandLogo variant="primary-light" size="lg" alt="BakimX" />
             </Link>
-            <p className="text-sm text-navy-foreground/70 leading-relaxed max-w-xs">
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               Serviste işler yolunda. Kontrol sizde.
             </p>
-            <p className="mt-3 text-xs text-navy-foreground/50">
+            <p className="mt-3 text-xs text-muted-foreground">
               Türkiye&apos;deki oto servisler için geliştiriliyor.
             </p>
             <div className="mt-5 flex items-center gap-3">
@@ -102,7 +102,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-navy-foreground/70 transition-colors hover:bg-white/20 hover:text-navy-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-navy"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-card text-muted-foreground transition-colors hover:bg-card hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                 >
                   <Icon className="h-[18px] w-[18px]" />
                 </a>
@@ -116,7 +116,7 @@ export function Footer() {
             { title: "Yasal", links: footerLinks.legal },
           ].map((group, i) => (
             <Reveal key={group.title} amount={0.15} delay={(i + 1) * 80}>
-              <h3 className="font-semibold mb-2.5 text-xs sm:text-sm uppercase tracking-wider text-navy-foreground/90">
+              <h3 className="font-semibold mb-2.5 text-xs sm:text-sm uppercase tracking-wider text-muted-foreground">
                 {group.title}
               </h3>
               <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:block sm:space-y-2">
@@ -124,7 +124,7 @@ export function Footer() {
                   <li key={link.label}>
                     <a
                       href={link.href}
-                      className="text-sm text-navy-foreground/60 hover:text-navy-foreground transition-colors"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {link.label}
                     </a>
@@ -135,12 +135,12 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-6 pt-4 sm:mt-8 sm:pt-5 border-t border-white/10">
+        <div className="mt-6 pt-4 sm:mt-8 sm:pt-5 border-t border-border">
           <div className="flex flex-row flex-wrap justify-between items-center gap-x-4 gap-y-1">
-            <p className="text-xs sm:text-sm text-navy-foreground/50">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               &copy; {currentYear} BakimX. Tüm hakları saklıdır.
             </p>
-            <span className="text-xs text-navy-foreground/60">
+            <span className="text-xs text-muted-foreground">
               v{process.env.NEXT_PUBLIC_APP_VERSION}
             </span>
           </div>

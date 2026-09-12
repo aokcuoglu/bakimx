@@ -29,7 +29,7 @@ test("editorial hero: responsive composition, accessibility, scroll motion and s
     );
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
     await expect(page.locator('#hero a[href="/fiyatlar#lite"]')).toBeVisible();
-    await expect(page.locator('#hero a[href="#demo-form"]')).toBeVisible();
+    await expect(page.locator("#hero").getByRole("button", { name: "Birlikte inceleyelim" })).toBeVisible();
     await expect(page.locator("[data-product-window]")).toHaveCount(3);
     expect(
       await page.evaluate(

@@ -171,7 +171,7 @@ export function RuhsatDemoSection() {
                   <Button
                     type="button"
                     onClick={start}
-                    variant="gradient"
+                    variant="navy"
                     className="h-11 w-full gap-2 text-sm font-semibold"
                   >
                     <ScanLine className="h-4 w-4" />

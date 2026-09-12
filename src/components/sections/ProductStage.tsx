@@ -197,10 +197,10 @@ export function ProductStage() {
     target: ref,
     offset: ["start end", "center center"],
   });
-  const mainY = useTransform(scrollYProgress, [0, 1], [65, 0]);
-  const mainScale = useTransform(scrollYProgress, [0, 1], [0.96, 1]);
-  const leftY = useTransform(scrollYProgress, [0, 1], [125, -12]);
-  const rightY = useTransform(scrollYProgress, [0, 1], [160, 12]);
+  const mainY = useTransform(scrollYProgress, [0, 1], [140, 0]);
+  const mainScale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
+  const leftY = useTransform(scrollYProgress, [0, 1], [240, -12]);
+  const rightY = useTransform(scrollYProgress, [0, 1], [280, 12]);
   return (
     <section
       id="ozellikler"
