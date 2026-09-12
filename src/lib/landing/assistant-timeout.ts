@@ -13,4 +13,3 @@ export async function askWithTimeout(
     clearTimeout(timeout)
   }
 }
-
