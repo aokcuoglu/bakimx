@@ -2,7 +2,7 @@
 
 ## Kapsam
 
-12 Eylül 2026 tarihli kullanıcı geri bildirimleri önceki iki bölümlük denemenin yerini alır. Referans kullanıcının Attio ekran görüntüleri ve https://attio.com/. Ana sayfanın tamamı, üç ürün tanıtım sayfası, karşılaştırma, iki rehber, fiyatlar, demo, sistem durumu ve dört hukuki belge ortak `PublicSite` görünümünü kullanır. Uygulama, yönetim, kimlik doğrulama ve müşteriye özel işlem ekranları bu pazarlama tasarımının dışında kalır. PR, merge veya yayın yoktur.
+12 Eylül 2026 tarihli kullanıcı geri bildirimleri önceki iki bölümlük denemenin yerini alır. Referans kullanıcının Attio ekran görüntüleri ve https://attio.com/. Ana sayfanın tamamı, üç ürün tanıtım sayfası, karşılaştırma, iki rehber, fiyatlar, demo, sistem durumu ve dört hukuki belge ortak `PublicSite` görünümünü kullanır. Uygulama, yönetim, kimlik doğrulama ve müşteriye özel işlem ekranları bu pazarlama tasarımının dışında kalır. Yerel tasarım kullanıcı tarafından onaylandı; sonraki adım `dev` hedefli PR’dır. Production yayını kapsam dışıdır.
 
 ## Görsel dil
 

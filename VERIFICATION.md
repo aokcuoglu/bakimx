@@ -6,7 +6,7 @@
 - Ana sayfanın tamamı, üç ürün sayfası, karşılaştırma, iki rehber, fiyatlar, demo, durum ve dört hukuki sayfa.
 - Modal mevcut `/api/demo-request` sözleşmesini kullanır. Browser testlerinde istekler mock edildi; gerçek lead oluşturulmadı.
 - Uygulama/admin/auth ekranları, API, DB, bağımlılıklar ve fiyat politikası değişmedi.
-- Önizleme: http://localhost:3100 (Webpack dev). PR/push/merge/deploy yapılmadı.
+- Önizleme: http://localhost:3100 (Webpack dev). Yerel tasarım onaylandı; `dev` hedefli PR hazırlığına geçildi. Production deploy kapsam dışıdır.
 
 ## Geçen kontroller
 
