@@ -254,11 +254,18 @@ export function PlanPackages({
                   <h3 id={`paket-${pkg.tier}`} className="text-xl font-medium tracking-tight">{pkg.name}</h3>
                   <div className="mt-7" aria-live="polite" aria-atomic="true">
                     <div className="flex min-h-12 flex-wrap items-center gap-3">
-                      <p className="text-[40px] font-semibold leading-[48px] tracking-[-0.025em]"><PriceRoll
-                        monthly={pkg.tier === "lite" ? "0 TL" : `₺${pkg.monthlyPrice.toLocaleString("tr-TR")}`}
-                        yearly={pkg.tier === "lite" ? "0 TL" : `₺${pkg.yearlyPrice.toLocaleString("tr-TR")}`}
-                        cycle={billing}
-                      /></p>
+                      <p className="flex items-baseline text-[40px] font-semibold leading-[48px] tracking-[-0.025em]">
+                        {pkg.tier === "lite" ? "0 TL" : (
+                          <>
+                            <span>₺</span>
+                            <PriceRoll
+                              monthly={pkg.monthlyPrice.toLocaleString("tr-TR")}
+                              yearly={pkg.yearlyPrice.toLocaleString("tr-TR")}
+                              cycle={billing}
+                            />
+                          </>
+                        )}
+                      </p>
                       {pkg.tier !== "lite" && billing === "yearly" && <Badge variant="outline" className="rounded-lg border-primary/20 bg-primary/10 text-primary-strong font-normal">2 ay bedava</Badge>}
                     </div>
                     <p className="text-xs leading-5 text-muted-foreground">{pkg.tier === "lite" ? "Lite kampanyasında süresiz ücretsiz" : billing === "monthly" ? "Aylık faturalandırılır · KDV dahil" : "Yıllık faturalandırılır · KDV dahil"}</p>
