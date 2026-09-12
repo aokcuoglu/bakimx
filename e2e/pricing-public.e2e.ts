@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test"
 
-test("public pricing keeps prices and registration links in sync on desktop and mobile", async ({ page }) => {
+test("public pricing keeps prices and registration links in sync on desktop and mobile", async ({ page }, testInfo) => {
   await page.goto("/fiyatlar")
+  // Radix makes the group tabbable once its client controls have mounted.
+  await expect(page.getByRole("radiogroup", { name: "Faturalama dönemi" })).toHaveAttribute("tabindex", "0")
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
   const cards = page.getByRole("article")
   await expect(cards).toHaveCount(3)
@@ -9,10 +11,8 @@ test("public pricing keeps prices and registration links in sync on desktop and 
   await expect(pro).toContainText("₺1.799")
   await expect(pro.getByRole("link", { name: "Ücretsiz dene" })).toHaveAttribute("href", "/register?tier=pro&cycle=monthly")
   const yearly = page.getByRole("radio", { name: "Yıllık", exact: true })
-  await expect(async () => {
-    await yearly.click()
-    await expect(yearly).toHaveAttribute("aria-checked", "true")
-  }).toPass()
+  await yearly.click()
+  await expect(yearly).toHaveAttribute("aria-checked", "true")
   await expect(pro).toContainText("₺17.990")
   await expect(pro).toContainText("Yıllık faturalandırılır")
   await expect(pro.getByRole("link", { name: "Ücretsiz dene" })).toHaveAttribute("href", "/register?tier=pro&cycle=yearly")
@@ -34,8 +34,8 @@ test("public pricing keeps prices and registration links in sync on desktop and 
   await page.setViewportSize({ width: 1440, height: 1100 })
   await expect(page.getByRole("table")).toBeVisible()
   await page.evaluate(() => window.scrollTo(0, 0))
-  await page.screenshot({ path: "/private/tmp/bakimx-636-desktop.png" })
+  await page.screenshot({ path: testInfo.outputPath("desktop.png") })
   await page.setViewportSize({ width: 390, height: 844 })
   await page.evaluate(() => window.scrollTo(0, 0))
-  await page.screenshot({ path: "/private/tmp/bakimx-636-mobile.png" })
+  await page.screenshot({ path: testInfo.outputPath("mobile.png") })
 })
