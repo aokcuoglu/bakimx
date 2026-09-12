@@ -11,40 +11,17 @@ test("product tour works with the keyboard and core destinations remain availabl
   await page.evaluate(() => document.fonts.ready);
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    /Oto servisinizde iş emri açmak ve parça bulmak\s*artık 10 saniye\./,
+    /Servisiniz büyüsün.\s*Kontrol sizde kalsın./,
   );
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   await expect(
     page
-      .getByRole("link", { name: "Lite · 0 TL/ay ile başlayın", exact: true })
+      .getByRole("link", { name: "Ücretsiz başlayın", exact: true })
       .first(),
   ).toHaveAttribute("href", "/fiyatlar#lite");
 
-  const workOrder = page
-    .locator("#ozellikler")
-    .getByRole("tab", { name: "İş emri", exact: true });
-  await workOrder.focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(
-    page.getByRole("tab", { name: "Araç kabul", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
-  await expect(
-    page.getByRole("tabpanel", { name: "Araç kabul", exact: true }),
-  ).toBeVisible();
-  await page.keyboard.press("ArrowRight");
-  await expect(
-    page.getByRole("tab", { name: "Müşteri takibi", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
-  const productImage = page
-    .getByRole("tabpanel", { name: "Müşteri takibi", exact: true })
-    .locator("img")
-    .first();
-  await expect(productImage).toBeVisible();
-  await expect
-    .poll(() =>
-      productImage.evaluate((img: HTMLImageElement) => img.naturalWidth),
-    )
-    .toBeGreaterThan(0);
+  await expect(page.locator("[data-product-window]")).toHaveCount(3);
+  await expect(page.locator('[data-product-window="dashboard"]')).toBeVisible();
 
   for (const id of ["ozellikler", "neden", "sss", "ruhsat-demo", "demo-form"]) {
     await expect(page.locator(`[id="${id}"]`)).toHaveCount(1);
@@ -244,7 +221,7 @@ test("landing is accessible and its primary content is available without JavaScr
   await expect(noJsPage.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(
     noJsPage
-      .getByRole("link", { name: "Lite · 0 TL/ay ile başlayın", exact: true })
+      .getByRole("link", { name: "Ücretsiz başlayın", exact: true })
       .first(),
   ).toBeVisible();
   await context.close();

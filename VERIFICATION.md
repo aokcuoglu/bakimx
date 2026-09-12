@@ -1,30 +1,30 @@
-# Yerel tasarım denemesi — #635
+# Attio referanslı yerel deneme — #635
 
-- Issue: https://github.com/aokcuoglu/bakimx/issues/635
-- Branch: `issue/635-light-landing`
-- Başlangıç commit'i: `8e8ee8f0` (`origin/dev`).
-- Worktree: `/private/tmp/bakimx-issue-635`
-- Önizleme: http://localhost:3100
-- Başlatma: `bun run dev --webpack -p 3100`. Bağımlılıklar ana checkout'a symlink olduğu için Turbopack kök sınırı yerine Webpack kullanılır. `.env.local` mevcut worktree kurulum script'iyle bağlandı; içerik değiştirilmedi.
+12 Eylül 2026 revizyonu. Issue: https://github.com/aokcuoglu/bakimx/issues/635. Branch: `issue/635-light-landing`. Worktree: `/private/tmp/bakimx-issue-635`. Önizleme: http://localhost:3100. İlk deneme `bf397705` commit'inde saklıdır.
 
-## Kapsam ve dosyalar
+## Değişiklik
 
-`HeroSection.tsx`: sabit mesaj ve CTA'lar, üç ürün sekmesi, mevcut ruhsat ve ekran görüntüleri, örnek bilgi kartı. `LandingContent.tsx`: yalnız ProductTourSection boşlukları ve mobil görsel sırası. `DESIGN.md`: tipografi, renk, yerleşim ve erişilebilirlik kuralları. Landing E2E ve page unit sözleşmeleri yeni davranışa uyarlandı; Lite edinim testinin hero seçicisi güncellendi. `scripts/issue-635-capture.mjs` görüntüleri yeniden üretir.
+- `HeroSection.tsx`: merkezde yeni mesaj, kısa açıklama, iki CTA. Hedef ve analitik konum/event sözleşmeleri korunur.
+- `ProductStage.tsx`: demo servis özeti ve iş emri kompozisyonu, mevcut parça kataloğu görseli. Motion ile üç pencereye kaydırma hareketi.
+- `landing-editorial.module.css`: beyaz zemin, büyük tipografi, katmanlar, tema tokenları, mobil ve reduced-motion kuralları; yalnız bu iki bölüme uygulanır.
+- `LandingContent.tsx`: önceki sekmeli ürün turu yerine ProductStage export eder; diğer bölümler değiştirilmez.
+- Landing/page testleri yeni mesaj ve kompozisyona uyarlanmıştır. `DESIGN.md` yeni tasarım kararlarını kaydeder.
 
-Yeni bağımlılık, API, DB veya global tema değişikliği yok. Ana checkout'taki kaydedilmemiş değişikliklere dokunulmadı. PR, push, merge ve yayın yapılmadı. Issue yerel tasarım değerlendirmesi için açık tutuldu.
+Dashboard ve iş emri görünümleri HTML/CSS ile hazırlanmış örnek kompozisyonlardır; gerçek servis verisi ya da birebir uygulama ekran görüntüsü değildir. Katalog görseli mevcut ürün ekranıdır. Bu ayrım sayfada demo verisi notuyla belirtilir. Yeni bağımlılık, API, DB, fiyat politikası veya global tema değişikliği yoktur.
 
-## Doğrulama
+## Kontroller
 
-- `bun test`: 2207 başarılı, 2 isteğe bağlı PostgreSQL entegrasyon testi atlandı, 0 hata.
-- `bun run lint`: başarılı.
-- Typecheck ilk çalıştırmada başarılıydı. Build'in ürettiği `.next/types` sonrasında mevcut route export hatasını bildiriyor.
-- `bun run build --webpack`: derleme tamamlandı, Next route tip doğrulaması `src/app/api/assistant/ask/route.ts:18` içindeki `askWithTimeout` export'unda durdu. Aynı export başlangıç `origin/dev` commit'inde de var; bu dosya değiştirilmedi. Standart Turbopack build ayrıca dışarı işaret eden node_modules symlink'ini kabul etmiyor. Font indirme adımı ağ izniyle geçti.
-- Tarayıcı kontrolleri: dört genişlikte tüm sekmeler, taşma, görsel yükleme, mobil görsel/madde sırası, axe WCAG A/AA, ok tuşları ve Home, otomatik geçiş olmaması, tek H1, JavaScript kapalı içerik, CTA hedefleri ve mevcut analitik payload'lar. Analitik testi `NEXT_PUBLIC_ANALYTICS_ENABLED=true` ile çalıştırılır; yerel sunucuda `NEXT_PUBLIC_GA_MEASUREMENT_ID` boş bırakılarak üçüncü taraf teslimatı devre dışı tutulur.
+- `bun test`: **2207 başarılı, 2 isteğe bağlı PostgreSQL testi atlandı, 0 hata**.
+- `bun run lint`: **başarılı**.
+- `PLAYWRIGHT_PORT=3100 bun run test:e2e e2e/landing-product-stage.e2e.ts --trace off`: **başarılı**. Tek senaryoda 320/390/768/1440px taşma, üç pencere, CTA hedefleri, tek H1, axe WCAG A/AA, reduced-motion, gerçek kaydırma transform değişimi ve JavaScript kapalı H1/CTA/dashboard kontrol edilir. Tüm uygulamanın E2E paketi yeşil olarak iddia edilmez.
+- Typecheck build öncesinde başarılıydı. Build'in ürettiği route tipleri sonrasında mevcut `askWithTimeout` export hatasını bildirir.
+- `bun run build --webpack`: derleme aşaması geçer; Next route doğrulaması `src/app/api/assistant/ask/route.ts:18` içindeki geçersiz `askWithTimeout` export'unda durur. Aynı export başlangıç `origin/dev` commit'inde vardır ve değiştirilmemiştir. Bu sebeple tam üretim gate'i yeşil değildir.
+- Masaüstü ve mobil görüntüler görsel olarak incelendi. Hareket azaltmada CSS transform'u kaldırır; paylaşılan `usePrefersReducedMotion` hook'u SSR/hidrasyon uyumunu korur. Ana mesaj Motion kullanmaz.
 
-Toplu E2E koşusu tamamen yeşil değildir: aynı sekme ve CTA kontrolleri bazı koşularda geçerken bazılarında seçim değişmemesi, olayın yakalanmaması veya gezinme zaman aşımı görülmüştür. Dört genişlikte axe/taşma, klavye, CTA/analitik ve JS kapalı içerik kontrollerinin ayrı koşularda başarılı sonuçları vardır; bu, kararlı bir toplu geçiş yerine sayılmaz. Hidrasyon/gezinme kaynaklı olabileceği düşünülüyor; kök neden kesinleştirilmedi. Tam doğrulama tamamlanmış olarak değerlendirilmemelidir.
+## Yerel kullanım ve teslim
 
-## Karşılaştırma ve sonrki adım
+Başlatma: `bun run dev --webpack -p 3100`. node_modules ana checkout'a bağlı olduğu için bu worktree'de Webpack kullanılır. `.env.local` içeriği değiştirilmedi. Analitik test sunucusu `NEXT_PUBLIC_ANALYTICS_ENABLED=true`, `NEXT_PUBLIC_GA_MEASUREMENT_ID=''` ile harici GA teslimatı olmadan açıldı.
 
-[Önce/sonra galerisi](artifacts/issue-635/index.html) 1440×900 ve 390×900 pencerelerinde alınan tam sayfa görüntülerini içerir. Aynı klasörde iki bölümün tüm sekmeleri ayrı PNG olarak bulunur. Sabit başlık/CTA ve ruhsat kartı görsel olarak incelendi; parça ekranı mobilde katalog listesini yakın gösterir.
+[Güncel galeri](artifacts/issue-635/attio/index.html). Yenileme: `node scripts/issue-635-attio-qa.mjs`. Görüntülerde yalnız Next geliştirme rozeti gizlenir. [İlk deneme](artifacts/issue-635/index.html) karşılaştırma için korunur.
 
-Kayıt dönüşümü ölçülmedi. Üretim tamamlanması iddiası yok. Sonraki sorumlu: ürün/tasarım sahibi; yerel denemeyi değerlendirdikten sonra kalıcılaştırma kapsamını belirler. Yayın öncesi bağımsız route export hatası çözülmeli ve build/typecheck yeniden yeşil olmalıdır.
+Ana checkout değişiklikleri korunmuştur. PR, push, merge ve yayın yapılmamıştır. Issue tasarım değerlendirmesi için açıktır. Sonraki sorumlu ürün/tasarım sahibidir. Üretime hazırlık için mevcut route export hatası ayrıca çözülmelidir. Kayıt dönüşümü ölçülmemiştir.

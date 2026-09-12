@@ -1,23 +1,27 @@
-# BakımX açık zemin denemesi — #635
+# BakımX — Attio referanslı yerel deneme (#635)
 
-Kapsam: yalnız ana sayfa giriş ve ürün turu. Yerel karşılaştırma; PR, merge ve yayın yok. Başlangıç: origin/dev, 8e8ee8f0. Cal.com planın düzen referansıdır; tasarım BakımX bileşenleri ve mevcut varlıklarıyla uygulanır.
+12 Eylül 2026 kullanıcı geri bildirimi önceki iki sütunlu tasarımı değiştirir. Kaynak: kullanıcının paylaştığı üç ekran görüntüsü ve https://attio.com/. Kapsam giriş ve hemen altındaki ürün anlatımıdır; PR, merge ve yayın yoktur.
 
-## Tipografi ve ritim
+## Ana mesaj
 
-Mevcut Geist korunur. Tek H1: mobil 36px, tablet 48px, masaüstü 56px; satır yüksekliği 1.08, harf aralığı -0.045em. Ürün turu H2: 30/36/44px. Gövde 16px/28px, panel metni 14px/24px. Etiketler 12px. İçerik en fazla 1280px; kenar boşluğu 20/32px. Bölümler 48/64/80px dikey boşluk kullanır.
+“Servisiniz büyüsün. Kontrol sizde kalsın.” Merkezde tek H1, iki satır. Altında araç kabul, parça, iş emri ve tahsilatı bağlayan kısa açıklama. İki mevcut hedef korunur: `/fiyatlar#lite` ve `#demo-form`; analitik event adları ve konum parametreleri değişmez. Yeni bir fiyat politikası yoktur: Lite 0 TL/ay mevcut teklifidir.
 
-## Renk ve yüzey
+## Görsel dil
 
-Açık ana zemin `background`, paneller `card`, görsel alanı `muted`. Başlık `navy`, vurgu ve onay ikonları `primary`, açıklamalar `muted-foreground`. İnce `border` çizgileri ve 16px panel köşeleri kullanılır. Seçili sekme `navy` / `navy-foreground`. Renkler yalnız tema tokenlarıdır; global tema değişmez.
+Beyaz `card` zemini, ince `border` dikey çizgileri, koyu `foreground` başlık, ikincil `muted-foreground` metin. Geist kullanılır. H1 masaüstünde 84px'e kadar, mobilde 36–56px; sıkı harf aralığı, 1.03 satır yüksekliği. Girişte 100px üst boşluk, içerikte 1280px sınır. İki CTA 48px yüksekliğinde; mobilde tam genişlikte ve ana CTA önce görünür. Stiller CSS Module ile yalnız bu iki bölüme bağlıdır.
 
-## Giriş ve görseller
+## Katmanlı ürün alanı
 
-1024px üzerinde metin solda, ürün paneli sağda; altında doğal belge sırası metin, CTA, sekmeler, görseldir. İlk mesaj, fiyat metni, CTA hedefleri ve analitik olayları korunur. Üç Radix sekmesi otomatik geçiş yapmaz. İlk panel ruhsatın tamamını sabit demo bilgileriyle eşleştirir; diğerleri mevcut katalog ve iş emri ekranlarının yakın görünümüdür. Her panel örnek gösterim olarak işaretlidir. Ruhsat bilgileri canlı OCR çıktısı gibi sunulmaz. Sabit görsel yüksekliği yüklenme sıçramasını engeller.
+Ortada 1000px civarında bir servis özeti penceresi; ön solda iş emri, ön sağda şaseyle ilişkili katalog sonuçları. Yumuşak mavi zemin, ince pencere başlıkları, hafif gölgeler ve derinlik. Dashboard ve iş emri, ürünün işlevlerini anlatan HTML/CSS demo kompozisyonlarıdır; birebir ekran görüntüsü değildir. Sabit servis, müşteri, plaka ve tutarlar örnektir. Parça alanı mevcut `parts-catalog.png` görselinin listeye odaklanan kırpımıdır. Sayfada örnek veri açıklaması bulunur.
 
-## Ürün turu ve mobil
+Mobilde pencereler sıralı yerleşir; dashboard'ın dekoratif menüsü ve ikincil grafik kartları kaldırılır. Görsel katmanlar mobilde üst üste binmez. Sunulan veriler gerçek servis performansı ya da dönüşüm kanıtı değildir.
 
-İş emri / Araç kabul / Müşteri takibi korunur. Mobil sıra: başlık ve açıklama, görsel, maddeler, örnek kayıt açıklaması. 320px üzerinde üç sekme tek satıra sığar; CTA'lar küçük ekranlarda tam genişliktedir. Ekran görüntüleri seçili ilgili alanı gösterir, uzun ekranların tamamını küçültmeye çalışmaz.
+## Motion
 
-## Etkileşim ve erişilebilirlik
+Kullanıcı bu revizyonda Motion kullanımına açıkça izin verdi. Mevcut `framer-motion` paketi kullanılır; yeni bağımlılık yoktur. Resmî kaynaklar: https://github.com/motiondivision/motion ve https://motion.dev/docs/react-use-scroll.
 
-Radix Tabs ok tuşları, Home/End ve Tab ile çalışır; seçili durum ile klavye odağı görünürdür. Button kompozisyonu asChild kullanır. İlk içerik sunucu HTML'inde görünür; animasyon ve framer-motion yok. Görsel alanlarının ölçüsü önceden ayrılır. Kontrast ve taşma 320, 390, 768, 1440px genişliklerde doğrulanır. Kayıt dönüşümüne etki bu deneyde ölçülmez.
+Yalnız ürün pencereleri `useScroll` + `useTransform` ile hareket eder. Merkez pencere küçük bir ölçek ve dikey hareket alır; iki yan pencere farklı mesafelerle yerleşir. `initial={false}` kullanılır, opacity ile gizleme yoktur. H1 normal HTML'dir ve Motion import etmez. Projede bulunan ve sunucu hidrasyonunu koruyan `usePrefersReducedMotion` ile hareket azaltma desteklenir; CSS media query mobilde ve reduced-motion durumunda transform'u kaldırır. Görsel boyutları baştan ayrılır.
+
+## Teslim
+
+Önizleme: http://localhost:3100. Görseller: `artifacts/issue-635/attio/`. İlk denemenin görselleri üst klasörde karşılaştırma için saklıdır. Kayıt dönüşümü ölçülmez. Sonraki adım ürün sahibinin yerel tasarımı değerlendirmesidir.

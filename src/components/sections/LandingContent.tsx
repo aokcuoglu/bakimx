@@ -1,10 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  Check,
   CalendarDays,
   Package,
   Wallet,
@@ -13,163 +11,9 @@ import {
   ClipboardCheck,
   MessageSquareText,
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 
-const tour = [
-  {
-    id: "order",
-    label: "İş emri",
-    number: "01",
-    title: "Bir araç. Tek kayıt. Baştan sona.",
-    description:
-      "Müşterinin şikâyeti, yapılacak işler, kullanılan parçalar ve tahsilat aynı iş emrinde. Ustanız da siz de işin hangi aşamada olduğunu görün.",
-    points: [
-      "Parça ve işçilik kalemlerini birlikte hazırlayın",
-      "İşi teknisyene atayın, durumunu takip edin",
-      "Ödenen tutarı ve kalan bakiyeyi görün",
-    ],
-    image: "/landing/screens/order-detail.png",
-    width: 1440,
-    height: 900,
-    alt: "BakımX iş emri ekranında müşteri, araç, iş durumu ve tahsilat bilgileri",
-  },
-  {
-    id: "intake",
-    label: "Araç kabul",
-    number: "02",
-    title: "Araç gelirken her şey kayıt altında.",
-    description:
-      "Kilometreyi, yakıt seviyesini, mevcut hasarları ve müşteri talebini kaydedin. Kabul fotoğraflarıyla aracın teslim alındığı durumu belgeleyin.",
-    points: [
-      "Hasarı araç şeması üzerinde işaretleyin",
-      "Kabul fotoğraflarını iş emrine ekleyin",
-      "Ruhsattan okunan bilgileri kontrol ederek onaylayın",
-    ],
-    image: "/landing/screens/digital-intake-damage-map.png",
-    width: 1000,
-    height: 1400,
-    alt: "Dijital araç kabul ekranında araç şeması üzerinde kaydedilmiş hasar",
-  },
-  {
-    id: "tracking",
-    label: "Müşteri takibi",
-    number: "03",
-    title: "Müşteriniz de ne yapıldığını bilsin.",
-    description:
-      "Araç kabul ve işlem özetini bir bağlantıyla paylaşın. Müşteriniz telefonundan yapılan işlemleri görsün; siz servisinizdeki işe odaklanın.",
-    points: [
-      "Araç kabul ve işlem özetini paylaşın",
-      "Teklif ve müşteri onaylarını takip edin",
-      "Müşteriniz linki telefonundan açsın",
-    ],
-    image: "/landing/screens/public-tracking.png",
-    width: 390,
-    height: 844,
-    alt: "Müşterinin telefonunda açılan BakımX araç kabul ve işlem özeti",
-  },
-];
-
-export function ProductTourSection() {
-  return (
-    <section id="ozellikler" className="scroll-mt-24 bg-card py-12 sm:py-16 lg:py-20">
-      <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="mb-10 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-          <div>
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-              Servisinizin günlük akışı
-            </p>
-            <h2 className="max-w-2xl text-3xl font-semibold leading-tight tracking-[-0.04em] text-navy sm:text-4xl lg:text-[2.75rem]">
-              Araç kabulünden anahtar teslimine.
-            </h2>
-          </div>
-          <p className="max-w-xs text-sm leading-6 text-muted-foreground">
-            BakımX&apos;in gerçek ekranlarına göz atın. Her adım, servisteki bir
-            işi kolaylaştırmak için.
-          </p>
-        </div>
-        <Tabs defaultValue="order" className="gap-7">
-          <TabsList
-            aria-label="Ürün özellikleri"
-            className="h-auto! grid w-full grid-cols-3 gap-1 rounded-none border-b bg-transparent p-0 pb-3 sm:flex sm:w-fit sm:gap-2"
-          >
-            <>
-              {tour.map((item) => (
-                <TabsTrigger
-                  key={item.id}
-                  value={item.id}
-                  className="h-11 min-w-0 gap-1 rounded-lg px-1 text-xs text-muted-foreground transition-none data-[state=active]:bg-navy data-[state=active]:text-navy-foreground sm:flex-none sm:gap-2 sm:px-4 sm:text-sm"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="hidden text-[10px] sm:inline"
-                  >
-                    {item.number}
-                  </span>
-                  {item.label}
-                </TabsTrigger>
-              ))}
-            </>
-          </TabsList>
-          {tour.map((item) => (
-            <TabsContent key={item.id} value={item.id}>
-              <div className="grid overflow-hidden rounded-2xl border bg-background lg:min-h-[490px] lg:grid-cols-[0.85fr_1.15fr]">
-                <div className="contents lg:flex lg:flex-col lg:justify-center lg:p-10">
-                  <div className="order-1 p-5 pb-0 sm:p-8 sm:pb-0 lg:p-0">
-                  <span className="mb-7 text-sm font-medium text-muted-foreground">
-                    /{item.number}
-                  </span>
-                  <h3 className="text-2xl font-semibold leading-tight tracking-tight text-navy sm:text-3xl">
-                    {item.title}
-                  </h3>
-                  <p className="mt-5 text-sm leading-7 text-muted-foreground">
-                    {item.description}
-                  </p>
-                  </div>
-                  <ul className="order-3 space-y-3 px-5 pt-5 sm:px-8 lg:mt-7 lg:p-0">
-                    {item.points.map((point) => (
-                      <li
-                        key={point}
-                        className="flex items-start gap-2.5 text-sm leading-6 text-navy"
-                      >
-                        <Check className="mt-1 size-4 shrink-0 text-primary" />
-                        {point}
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="order-4 px-5 py-5 text-xs text-muted-foreground sm:px-8 lg:mt-8 lg:p-0">
-                    Gerçek ürün ekranı · Örnek kayıtlar
-                  </p>
-                </div>
-                <div className="relative order-2 mt-5 flex h-[380px] sm:h-[480px] lg:mt-0 lg:h-auto min-h-[330px] items-start justify-center overflow-hidden border-t bg-muted p-5 pb-0 lg:border-l lg:border-t lg:pt-10">
-                  {item.id === "tracking" ? (
-                    <Image
-                      src={item.image}
-                      alt={item.alt}
-                      width={item.width}
-                      height={item.height}
-                      sizes="300px"
-                      className="max-h-[470px] w-[260px] rounded-t-2xl border border-border object-cover object-top shadow-xl"
-                    />
-                  ) : (
-                    <Image
-                      src={item.image}
-                      alt={item.alt}
-                      width={item.width}
-                      height={item.height}
-                      sizes="(max-width: 1024px) 90vw, 720px"
-                      className={`rounded-t-lg border border-border shadow-xl ${item.id === "order" ? "h-[350px] w-full object-cover object-left-top sm:h-[440px]" : "h-[440px] w-full object-cover object-[50%_35%]"}`}
-                    />
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
-      </div>
-    </section>
-  );
-}
+export { ProductStage as ProductTourSection } from "./ProductStage";
 
 export function OperationsSection() {
   return (
