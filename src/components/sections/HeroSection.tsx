@@ -1,276 +1,190 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Check, Pause, Play } from "lucide-react";
-
+import { ArrowRight, Check, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Carousel,
-  type CarouselApi,
-  CarouselContent,
-  CarouselItem,
-} from "@/components/ui/carousel";
-import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HERO_SLIDES } from "@/lib/landing/hero-slides";
 import { trackMarketingEvent } from "@/lib/marketing-analytics";
-import { cn } from "@/lib/utils";
 
-const AUTOPLAY_DELAY_MS = 7_000;
+const labels = ["Ruhsat okuma", "Parça bulma", "İş emri"];
 
 export function HeroSection() {
-  const prefersReducedMotion = usePrefersReducedMotion();
-  const [api, setApi] = useState<CarouselApi>();
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [autoplayOverride, setAutoplayOverride] = useState<boolean | null>(
-    null,
-  );
-  const isPlaying = autoplayOverride ?? !prefersReducedMotion;
-
-  useEffect(() => {
-    if (!api) return;
-
-    const onSelect = () => setSelectedIndex(api.selectedScrollSnap());
-    api.on("select", onSelect);
-    api.on("reInit", onSelect);
-
-    return () => {
-      api.off("select", onSelect);
-      api.off("reInit", onSelect);
-    };
-  }, [api]);
-
-  useEffect(() => {
-    if (!api || !isPlaying) return;
-
-    const timeout = window.setTimeout(
-      () => api.scrollNext(),
-      AUTOPLAY_DELAY_MS,
-    );
-    return () => window.clearTimeout(timeout);
-  }, [api, isPlaying, selectedIndex]);
-
-  const navigateManually = useCallback((navigate: () => void) => {
-    setAutoplayOverride(false);
-    navigate();
-  }, []);
-
+  const lead = HERO_SLIDES[0];
   return (
     <section
       aria-labelledby="hero-title"
-      className="relative overflow-hidden border-b border-border bg-navy text-navy-foreground"
+      className="border-b bg-background"
+      id="hero"
     >
-      <Carousel
-        aria-label="BakımX öne çıkan servis özellikleri"
-        opts={{
-          align: "start",
-          duration: prefersReducedMotion ? 0 : 24,
-          loop: true,
-        }}
-        setApi={setApi}
-        className="relative"
-      >
-        <CarouselContent className="-ml-0">
-          {HERO_SLIDES.map((slide, index) => {
-            const isActive = selectedIndex === index;
-            const headingClassName =
-              "max-w-3xl text-balance text-[2.55rem] font-semibold leading-[1.05] tracking-[-0.05em] text-navy-foreground sm:text-6xl lg:text-[4.35rem]";
-
-            return (
-              <CarouselItem
-                key={slide.id}
-                aria-label={`${index + 1} / ${HERO_SLIDES.length}`}
-                aria-hidden={!isActive}
-                data-hero-slide={slide.id}
-                className="pl-0"
+      <div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[1fr_1.1fr] lg:gap-14 lg:py-20">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+            {lead.eyebrow}
+          </p>
+          <h1
+            id="hero-title"
+            className="mt-5 text-balance text-4xl font-semibold leading-[1.08] tracking-[-0.045em] text-navy sm:text-5xl lg:text-[3.5rem]"
+          >
+            {lead.title} <span className="text-primary">{lead.highlight}</span>
+          </h1>
+          <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground">
+            {lead.description}
+          </p>
+          <p className="mt-6 text-sm font-semibold text-navy">
+            Açılışa özel ücretsiz kayıt · Lite 0 TL/ay
+          </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <Button asChild size="xl" className="h-12">
+              <Link
+                href="/fiyatlar#lite"
+                onClick={() =>
+                  trackMarketingEvent("lite_cta_click", {
+                    cta_location: "hero_primary",
+                    plan_tier: "lite",
+                  })
+                }
               >
-                <div className="relative min-h-[46rem] w-full sm:min-h-[48rem] lg:min-h-[43rem]">
-                  <Image
-                    src={slide.image}
-                    alt=""
-                    fill
-                    loading={index === 0 ? "eager" : "lazy"}
-                    sizes="100vw"
-                    style={{ objectPosition: slide.imagePosition }}
-                    className="object-cover"
-                  />
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 bg-gradient-to-r from-navy via-navy/90 to-navy/20"
-                  />
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-navy/30"
-                  />
-
-                  <div className="relative z-10 mx-auto flex min-h-[46rem] w-full max-w-7xl items-center px-5 pb-36 pt-14 sm:min-h-[48rem] sm:px-8 sm:pb-32 sm:pt-16 lg:min-h-[43rem] lg:py-24">
-                    <div className="max-w-3xl">
-                      <p className="flex w-fit items-center gap-2.5 rounded-full border border-navy-foreground/20 bg-navy/60 px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-navy-foreground backdrop-blur-sm">
-                        <span className="size-1.5 rounded-full bg-primary" />
-                        {slide.eyebrow}
+                Lite · 0 TL/ay ile başlayın <ArrowRight />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="xl" className="h-12">
+              <a
+                href="#demo-form"
+                onClick={() =>
+                  trackMarketingEvent("demo_cta_click", {
+                    cta_location: "hero_secondary",
+                    destination: "form",
+                  })
+                }
+              >
+                Birlikte inceleyelim
+              </a>
+            </Button>
+          </div>
+          <p className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <Check className="size-3.5" />
+              Lite kapsamı süresiz ücretsiz
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Check className="size-3.5" />
+              Kredi kartı gerekmez
+            </span>
+          </p>
+        </div>
+        <Tabs defaultValue={lead.id} className="min-w-0 gap-4">
+          <TabsList
+            aria-label="BakımX öne çıkan servis özellikleri"
+            className="grid h-11! w-full grid-cols-3 border bg-card"
+          >
+            {HERO_SLIDES.map((slide, index) => (
+              <TabsTrigger
+                key={slide.id}
+                value={slide.id}
+                className="h-full text-xs text-muted-foreground transition-none data-[state=active]:bg-navy data-[state=active]:text-navy-foreground sm:text-sm"
+              >
+                {labels[index]}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {HERO_SLIDES.map((slide, index) => (
+            <TabsContent
+              key={slide.id}
+              value={slide.id}
+              className="rounded-2xl border bg-card focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <div className="flex items-center justify-between gap-2 border-b px-4 py-3 text-xs text-muted-foreground">
+                <span className="font-semibold text-navy">
+                  BakımX / {labels[index]}
+                </span>
+                <span>Örnek gösterim</span>
+              </div>
+              <div className="relative h-[330px] overflow-hidden bg-muted sm:h-[360px]">
+                {index === 0 ? (
+                  <div className="grid h-full grid-cols-[0.85fr_1fr] items-center gap-3 p-3 sm:gap-5 sm:p-5">
+                    <div className="relative h-full">
+                      <Image
+                        src="/landing/ruhsat-demo.png"
+                        alt="34 LKN 123 plakalı Honda PCX 125 örnek ruhsatı"
+                        fill
+                        loading="eager"
+                        sizes="(max-width: 640px) 40vw, 250px"
+                        className="object-contain"
+                      />
+                    </div>
+                    <div className="rounded-xl border bg-card p-3 sm:p-4">
+                      <ScanLine className="mb-3 size-5 text-primary" />
+                      <p className="text-sm font-semibold text-navy">
+                        Okunan bilgiler
                       </p>
-
-                      {index === 0 ? (
-                        <h1
-                          id="hero-title"
-                          className={cn(headingClassName, "mt-6")}
-                        >
-                          {slide.title}
-                          <br />
-                          <span className="text-primary">
-                            {slide.highlight}
-                          </span>
-                        </h1>
-                      ) : (
-                        <h2 className={cn(headingClassName, "mt-6")}>
-                          {slide.title}
-                          <br />
-                          <span className="text-primary">
-                            {slide.highlight}
-                          </span>
-                        </h2>
-                      )}
-
-                      <p className="mt-6 max-w-2xl text-base leading-7 text-navy-foreground/80 sm:text-lg sm:leading-8">
-                        {slide.description}
-                      </p>
-
-                      <p className="mt-4 text-sm font-semibold text-brand">Açılışa özel ücretsiz kayıt · Lite 0 TL/ay</p>
-
-                      <ul className="mt-6 flex max-w-2xl flex-col gap-3 text-sm text-navy-foreground/90 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-3">
-                        {slide.bullets.map((bullet) => (
-                          <li
-                            key={bullet}
-                            className="inline-flex items-center gap-2"
-                          >
-                            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
-                              <Check className="size-3.5" />
-                            </span>
-                            {bullet}
-                          </li>
+                      <dl className="mt-3 space-y-3">
+                        {[
+                          ["Plaka", "34 LKN 123"],
+                          ["Marka / Model", "HONDA PCX 125"],
+                          ["Model yılı", "2024"],
+                        ].map(([label, value]) => (
+                          <div key={label}>
+                            <dt className="text-xs text-muted-foreground">
+                              {label}
+                            </dt>
+                            <dd className="mt-1 text-sm font-medium text-navy">
+                              {value}
+                            </dd>
+                          </div>
                         ))}
-                      </ul>
-
-                      <div className="mt-8 flex flex-col gap-3 pr-16 sm:flex-row sm:flex-wrap sm:pr-0">
-                        <Button asChild size="xl" className="h-12 px-5">
-                          <Link
-                            href="/fiyatlar#lite"
-                            tabIndex={isActive ? 0 : -1}
-                            onClick={() =>
-                              trackMarketingEvent("lite_cta_click", {
-                                cta_location: "hero_primary",
-                                plan_tier: "lite",
-                              })
-                            }
-                          >
-                            Lite · 0 TL/ay ile başlayın <ArrowRight />
-                          </Link>
-                        </Button>
-                        <Button
-                          asChild
-                          variant="outline"
-                          size="xl"
-                          className="h-12 border-navy-foreground/30 bg-navy/55 px-5 text-navy-foreground hover:bg-navy hover:text-navy-foreground"
-                        >
-                          <a
-                            href="#demo-form"
-                            tabIndex={isActive ? 0 : -1}
-                            onClick={() =>
-                              trackMarketingEvent("demo_cta_click", {
-                                cta_location: "hero_secondary",
-                                destination: "form",
-                              })
-                            }
-                          >
-                            Birlikte inceleyelim
-                          </a>
-                        </Button>
-                      </div>
-
-                      <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-navy-foreground/70">
-                        <span className="flex items-center gap-1.5">
-                          <Check className="size-3.5" />Lite kapsamı süresiz ücretsiz
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <Check className="size-3.5" />
-                          Kredi kartı gerekmez
-                        </span>
+                      </dl>
+                      <p className="mt-4 text-xs leading-5 text-muted-foreground">
+                        Sabit demo verisi · Canlı OCR sonucu değildir.
                       </p>
                     </div>
                   </div>
-                </div>
-              </CarouselItem>
-            );
-          })}
-        </CarouselContent>
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-7 z-20 sm:bottom-8">
-          <div className="mx-auto flex max-w-7xl items-end justify-between gap-4 px-5 sm:items-center sm:px-8">
-            <div className="pointer-events-auto flex min-w-0 items-center gap-1 rounded-full border border-navy-foreground/15 bg-navy/55 p-1 backdrop-blur-sm">
-              {HERO_SLIDES.map((slide, index) => (
-                <Button
-                  key={slide.id}
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  aria-label={`${index + 1}. slayta git: ${slide.eyebrow}`}
-                  aria-current={selectedIndex === index ? "true" : undefined}
-                  disabled={!api}
-                  onClick={() => navigateManually(() => api?.scrollTo(index))}
-                  className="size-8 rounded-full text-navy-foreground hover:bg-navy-foreground/10 hover:text-navy-foreground"
-                >
-                  <span
-                    className={cn(
-                      "h-1.5 rounded-full bg-navy-foreground/35 transition-[width,background-color] motion-reduce:transition-none",
-                      selectedIndex === index ? "w-7 bg-primary" : "w-2.5",
-                    )}
+                ) : (
+                  <Image
+                    src={
+                      index === 1
+                        ? "/landing/screens/parts-catalog.png"
+                        : "/landing/screens/order-detail.png"
+                    }
+                    alt={
+                      index === 1
+                        ? "BakımX parça kataloğunda örnek parça sonuçları"
+                        : "BakımX iş emrinde örnek işlem ve tahsilat bilgileri"
+                    }
+                    width={1440}
+                    height={900}
+                    sizes="1000px"
+                    className={
+                      index === 1
+                        ? "absolute left-1/2 -top-10 w-[1000px] max-w-none -translate-x-1/2"
+                        : "absolute -left-36 top-0 w-[900px] max-w-none"
+                    }
                   />
-                </Button>
-              ))}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => setAutoplayOverride(!isPlaying)}
-                aria-label={
-                  isPlaying
-                    ? "Carousel otomatik geçişini duraklat"
-                    : "Carousel otomatik geçişini başlat"
-                }
-                className="ml-1 size-8 rounded-full text-navy-foreground hover:bg-navy-foreground/10 hover:text-navy-foreground"
-              >
-                {isPlaying ? <Pause /> : <Play />}
-              </Button>
-            </div>
-
-            <div className="pointer-events-auto mr-14 flex items-center gap-2 sm:mr-16">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => navigateManually(() => api?.scrollPrev())}
-                aria-label="Önceki slayt"
-                disabled={!api}
-                className="size-10 rounded-full border border-navy-foreground/25 bg-navy/55 text-navy-foreground backdrop-blur-sm hover:bg-navy hover:text-navy-foreground"
-              >
-                <ArrowLeft />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => navigateManually(() => api?.scrollNext())}
-                aria-label="Sonraki slayt"
-                disabled={!api}
-                className="size-10 rounded-full border border-navy-foreground/25 bg-navy/55 text-navy-foreground backdrop-blur-sm hover:bg-navy hover:text-navy-foreground"
-              >
-                <ArrowRight />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </Carousel>
+                )}
+              </div>
+              <div className="min-h-[190px] border-t p-4 sm:p-5">
+                {index !== 0 && (
+                  <p className="mb-3 text-sm leading-6 text-muted-foreground">
+                    {slide.description}
+                  </p>
+                )}
+                <ul className="space-y-2">
+                  {slide.bullets.map((bullet) => (
+                    <li
+                      key={bullet}
+                      className="flex items-start gap-2 text-sm leading-6 text-navy"
+                    >
+                      <Check className="mt-1 size-4 shrink-0 text-primary" />
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
     </section>
   );
 }

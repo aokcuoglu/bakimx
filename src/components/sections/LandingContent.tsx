@@ -72,14 +72,14 @@ const tour = [
 
 export function ProductTourSection() {
   return (
-    <section id="ozellikler" className="scroll-mt-24 bg-card py-20 sm:py-28">
+    <section id="ozellikler" className="scroll-mt-24 bg-card py-12 sm:py-16 lg:py-20">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="mb-10 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div>
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
               Servisinizin günlük akışı
             </p>
-            <h2 className="max-w-2xl text-3xl font-semibold leading-tight tracking-[-0.04em] text-navy sm:text-4xl lg:text-5xl">
+            <h2 className="max-w-2xl text-3xl font-semibold leading-tight tracking-[-0.04em] text-navy sm:text-4xl lg:text-[2.75rem]">
               Araç kabulünden anahtar teslimine.
             </h2>
           </div>
@@ -98,7 +98,7 @@ export function ProductTourSection() {
                 <TabsTrigger
                   key={item.id}
                   value={item.id}
-                  className="h-11 min-w-0 gap-1 rounded-lg px-1 text-xs text-muted-foreground data-[state=active]:bg-navy data-[state=active]:text-navy-foreground sm:flex-none sm:gap-2 sm:px-4 sm:text-sm"
+                  className="h-11 min-w-0 gap-1 rounded-lg px-1 text-xs text-muted-foreground transition-none data-[state=active]:bg-navy data-[state=active]:text-navy-foreground sm:flex-none sm:gap-2 sm:px-4 sm:text-sm"
                 >
                   <span
                     aria-hidden="true"
@@ -113,8 +113,9 @@ export function ProductTourSection() {
           </TabsList>
           {tour.map((item) => (
             <TabsContent key={item.id} value={item.id}>
-              <div className="grid overflow-hidden rounded-2xl border bg-background lg:min-h-[490px] lg:grid-cols-[0.75fr_1.25fr]">
-                <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-12">
+              <div className="grid overflow-hidden rounded-2xl border bg-background lg:min-h-[490px] lg:grid-cols-[0.85fr_1.15fr]">
+                <div className="contents lg:flex lg:flex-col lg:justify-center lg:p-10">
+                  <div className="order-1 p-5 pb-0 sm:p-8 sm:pb-0 lg:p-0">
                   <span className="mb-7 text-sm font-medium text-muted-foreground">
                     /{item.number}
                   </span>
@@ -124,7 +125,8 @@ export function ProductTourSection() {
                   <p className="mt-5 text-sm leading-7 text-muted-foreground">
                     {item.description}
                   </p>
-                  <ul className="mt-7 space-y-3">
+                  </div>
+                  <ul className="order-3 space-y-3 px-5 pt-5 sm:px-8 lg:mt-7 lg:p-0">
                     {item.points.map((point) => (
                       <li
                         key={point}
@@ -135,11 +137,11 @@ export function ProductTourSection() {
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-8 text-xs text-muted-foreground">
+                  <p className="order-4 px-5 py-5 text-xs text-muted-foreground sm:px-8 lg:mt-8 lg:p-0">
                     Gerçek ürün ekranı · Örnek kayıtlar
                   </p>
                 </div>
-                <div className="relative flex min-h-[330px] items-start justify-center overflow-hidden border-t bg-muted p-5 pb-0 lg:border-l lg:border-t lg:pt-10">
+                <div className="relative order-2 mt-5 flex h-[380px] sm:h-[480px] lg:mt-0 lg:h-auto min-h-[330px] items-start justify-center overflow-hidden border-t bg-muted p-5 pb-0 lg:border-l lg:border-t lg:pt-10">
                   {item.id === "tracking" ? (
                     <Image
                       src={item.image}

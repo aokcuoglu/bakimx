@@ -8,17 +8,21 @@ test("product tour works with the keyboard and core destinations remain availabl
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     /Oto servisinizde iş emri açmak ve parça bulmak\s*artık 10 saniye\./,
   );
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   await expect(
     page
-      .getByRole("link", { name: "Ücretsiz denemeye başlayın", exact: true })
+      .getByRole("link", { name: "Lite · 0 TL/ay ile başlayın", exact: true })
       .first(),
-  ).toHaveAttribute("href", "/register");
+  ).toHaveAttribute("href", "/fiyatlar#lite");
 
-  const workOrder = page.getByRole("tab", { name: "İş emri", exact: true });
+  const workOrder = page
+    .locator("#ozellikler")
+    .getByRole("tab", { name: "İş emri", exact: true });
   await workOrder.focus();
   await page.keyboard.press("ArrowRight");
   await expect(
@@ -60,6 +64,8 @@ test("mobile navigation closes after choosing a section and page fits narrow scr
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+
   await page.getByRole("button", { name: "Menüyü aç" }).click();
   await page
     .locator("#mobile-menu")
@@ -84,6 +90,7 @@ test("landing controls return a scrolled page to the top", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
 
   const scrollToTop = page.getByRole("button", {
     name: "Sayfanın başına dön",
@@ -91,7 +98,9 @@ test("landing controls return a scrolled page to the top", async ({ page }) => {
   await expect(scrollToTop).toHaveCount(0);
 
   await page.locator("footer").scrollIntoViewIfNeeded();
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(80);
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(80);
   await expect(scrollToTop).toBeVisible();
   const assistantLauncher = page.getByRole("button", {
     name: "BakımX Asistanı'nı aç",
@@ -111,7 +120,9 @@ test("landing controls return a scrolled page to the top", async ({ page }) => {
   await expect(scrollToTop).toHaveCount(0);
 
   await page.locator("footer").scrollIntoViewIfNeeded();
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(80);
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(80);
   await page
     .getByRole("link", { name: "BakımX ana sayfa", exact: true })
     .first()
@@ -127,9 +138,9 @@ test("landing controls return a scrolled page to the top", async ({ page }) => {
   ]);
   expect(mobileScrollButtonBox).not.toBeNull();
   expect(mobileAssistantButtonBox).not.toBeNull();
-  expect(
-    mobileScrollButtonBox!.x + mobileScrollButtonBox!.width,
-  ).toBeLessThan(mobileAssistantButtonBox!.x);
+  expect(mobileScrollButtonBox!.x + mobileScrollButtonBox!.width).toBeLessThan(
+    mobileAssistantButtonBox!.x,
+  );
   await scrollToTop.click();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 });
@@ -219,6 +230,8 @@ test("landing is accessible and its primary content is available without JavaScr
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze();
@@ -231,7 +244,7 @@ test("landing is accessible and its primary content is available without JavaScr
   await expect(noJsPage.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(
     noJsPage
-      .getByRole("link", { name: "Ücretsiz denemeye başlayın", exact: true })
+      .getByRole("link", { name: "Lite · 0 TL/ay ile başlayın", exact: true })
       .first(),
   ).toBeVisible();
   await context.close();
