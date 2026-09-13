@@ -144,7 +144,7 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
   transition: color 150ms ease;
 }
