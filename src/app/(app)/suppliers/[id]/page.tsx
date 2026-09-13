@@ -6,6 +6,8 @@ import { getSupplierById, getSupplierCriticalParts } from "@/lib/suppliers/queri
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 
+export const metadata = { title: "Tedarikçi Detayı" }
+
 export default async function SupplierDetailPage(props: { params: Promise<{ id: string }> }) {
   const paywall = await getFeaturePaywall("procurement")
   if (paywall) return paywall

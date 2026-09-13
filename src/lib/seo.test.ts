@@ -28,7 +28,7 @@ describe("SEO route policy", () => {
   test("public page metadata is self-canonical with matching social copy", () => {
     const result = publicPageMetadata({ path: "/demo", title: "Demo", description: "Açıklama" })
     expect(result.alternates?.canonical).toBe("/demo")
-    expect(result.openGraph).toEqual(expect.objectContaining({ title: "Demo", description: "Açıklama", url: "/demo" }))
-    expect(result.twitter).toEqual(expect.objectContaining({ title: "Demo", description: "Açıklama" }))
+    expect(result.openGraph).toEqual(expect.objectContaining({ title: "Demo | BakımX", description: "Açıklama", url: "/demo" }))
+    expect(result.twitter).toEqual(expect.objectContaining({ title: "Demo | BakımX", description: "Açıklama" }))
   })
 })

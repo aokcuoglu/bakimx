@@ -1,6 +1,6 @@
 export const IS_EMRI_REHBER_PATH = "/rehber/oto-servis-is-emri-nasil-hazirlanir" as const
 
-export const IS_EMRI_REHBER_TITLE = "Oto Servis İş Emri Nasıl Hazırlanır? Uygulanabilir Standart"
+export const IS_EMRI_REHBER_TITLE = "Oto Servis İş Emri Nasıl Hazırlanır?"
 
 export const IS_EMRI_REHBER_H1 = "Oto servis iş emri nasıl hazırlanır: eksiksiz bir kayıtta olması gereken 6 unsur"
 

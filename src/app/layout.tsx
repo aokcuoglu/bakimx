@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SiteAssistant } from "@/components/site-assistant/site-assistant"
 import { announcementDismissScript } from "@/lib/landing/announcement"
-import { SITE_URL } from "@/lib/seo"
+import { SITE_URL, BRAND_NAME, HOME_TITLE, TITLE_TEMPLATE } from "@/lib/seo"
 import { MarketingAnalytics } from "@/components/analytics/marketing-analytics"
 import { CookieConsent } from "@/components/cookie-consent/cookie-consent"
 
@@ -22,10 +22,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  applicationName: "BakimX",
+  applicationName: BRAND_NAME,
   title: {
-    default: "BakimX | Oto Servis Yönetim Platformu",
-    template: "%s | BakimX",
+    default: HOME_TITLE,
+    template: TITLE_TEMPLATE,
   },
   description:
     "Oto tamirciler için mobil araç kabul, hasar kaydı, müşteri onayı ve WhatsApp işlem çıktısı platformu.",
@@ -49,23 +49,23 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   openGraph: {
-    title: "BakimX | Oto Servis Yönetim Platformu",
+    title: HOME_TITLE,
     description:
       "Oto tamirciler için mobil araç kabul, hasar kaydı, müşteri onayı ve WhatsApp işlem çıktısı platformu.",
     type: "website",
     locale: "tr_TR",
-    siteName: "BakimX",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "BakimX — Oto Servis Yönetim Platformu" }],
+    siteName: BRAND_NAME,
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "BakımX — Oto Servis Yönetim Platformu" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "BakimX | Oto Servis Yönetim Platformu",
+    title: HOME_TITLE,
     description:
       "Oto tamirciler için mobil araç kabul, hasar kaydı, müşteri onayı ve WhatsApp işlem çıktısı platformu.",
     images: ["/twitter-image"],
   },
   appleWebApp: {
-    title: "BakimX",
+    title: BRAND_NAME,
     statusBarStyle: "default",
     capable: true,
   },

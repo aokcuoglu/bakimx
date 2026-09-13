@@ -8,6 +8,8 @@ import { getWorkshopBrands, getWorkshopCategories } from "@/lib/parts/queries"
 import { kurusToLira } from "@/lib/money"
 import { notFound } from "next/navigation"
 
+export const metadata = { title: "Stok ve Hizmet Düzenle" }
+
 export default async function EditPartPage(props: { params: Promise<{ id: string }> }) {
   const paywall = await getFeaturePaywall("partsInventory")
   if (paywall) return paywall

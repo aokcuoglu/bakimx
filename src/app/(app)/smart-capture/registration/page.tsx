@@ -5,6 +5,8 @@ import { SmartCaptureRegistration } from "@/components/intake/smart-capture-regi
 import Link from "next/link"
 import { ArrowLeft, ScanLine } from "lucide-react"
 
+export const metadata = { title: "Ruhsat Okuma" }
+
 export default async function SmartCaptureRegistrationPage() {
   const paywall = await getFeaturePaywall("ocrIntake")
   if (paywall) return paywall

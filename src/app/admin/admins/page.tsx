@@ -5,6 +5,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AddPlatformAdminForm } from "@/app/admin/admins/add-admin-form"
 import { PlatformAdminRow } from "@/app/admin/admins/admin-row-actions"
 
+export const metadata = { title: "Yöneticiler · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 function displayName(u: { firstName: string | null; lastName: string | null }): string {

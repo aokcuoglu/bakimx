@@ -25,6 +25,8 @@ import {
   BarChart3,
 } from "lucide-react"
 
+export const metadata = { title: "Kasa" }
+
 export default async function CashboxPage() {
   const paywall = await getFeaturePaywall("cashbox")
   if (paywall) return paywall

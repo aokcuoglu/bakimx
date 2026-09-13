@@ -5,6 +5,8 @@ import { ReportsLayout } from "@/components/reports/reports-layout"
 import { CollectionsReport } from "@/components/reports/collections-report"
 import { getCollectionReportStats, getDailyCollectionAmounts, getMonthlyCollectionAmounts } from "@/lib/reports/queries"
 
+export const metadata = { title: "Tahsilat Raporu" }
+
 export default async function CollectionsReportPage({
   searchParams,
 }: {

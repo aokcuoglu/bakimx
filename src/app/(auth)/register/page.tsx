@@ -7,7 +7,7 @@ import { isAuthenticated } from "@/lib/auth"
 import { isSalePlanTier, type SalePlanTier } from "@/lib/plan"
 
 export const metadata: Metadata = {
-  title: "Ücretsiz hesap oluştur",
+  title: "Ücretsiz Hesap Oluştur",
   description: "BakimX hesabınızı oluşturun. Lite kampanyasında süresiz ücretsiz kullanım; ücretli paketlerde 7 iş günlük deneme.",
 }
 

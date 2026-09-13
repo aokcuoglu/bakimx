@@ -5,7 +5,7 @@ import { publicPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = publicPageMetadata({
   path: "/terms",
-  title: "Kullanım Koşulları ve Hizmet Sözleşmesi",
+  title: "Kullanım Koşulları",
   description: "BakımX oto servis yönetim platformunun kullanım koşulları ve hizmet sözleşmesi.",
 });
 

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { getSalesAccess } from "@/lib/sales/access"
 import { loadSalesPerformance } from "@/lib/sales/performance-query"
 
+export const metadata = { title: "Satış Performansı · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 export default async function SalesPerformancePage({

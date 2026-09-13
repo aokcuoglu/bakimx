@@ -10,6 +10,8 @@ import { SalesLeadFilters, type SalesLeadFilterValues } from "@/components/sales
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
+export const metadata = { title: "Satış Adayları · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 const STATUS_LABELS: Record<SalesLeadStatus, string> = {

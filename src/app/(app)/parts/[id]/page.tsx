@@ -5,6 +5,8 @@ import { PartDetail } from "@/components/parts/part-detail"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 
+export const metadata = { title: "Stok ve Hizmet Detayı" }
+
 export default async function PartDetailPage(props: { params: Promise<{ id: string }> }) {
   const paywall = await getFeaturePaywall("partsInventory")
   if (paywall) return paywall

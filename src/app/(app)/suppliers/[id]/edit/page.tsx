@@ -5,6 +5,8 @@ import { SupplierForm } from "@/components/suppliers/supplier-form"
 import { getSupplierById } from "@/lib/suppliers/queries"
 import { notFound } from "next/navigation"
 
+export const metadata = { title: "Tedarikçi Düzenle" }
+
 export default async function EditSupplierPage(props: { params: Promise<{ id: string }> }) {
   const paywall = await getFeaturePaywall("procurement")
   if (paywall) return paywall

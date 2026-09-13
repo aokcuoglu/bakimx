@@ -6,6 +6,8 @@ import { notFound } from "next/navigation"
 import { AppointmentDetail } from "@/components/appointments/appointment-detail"
 import { formatAppointmentNo } from "@/lib/work-order-number"
 
+export const metadata = { title: "Randevu Detayı" }
+
 export default async function AppointmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const paywall = await getFeaturePaywall("appointments")
   if (paywall) return paywall

@@ -5,6 +5,8 @@ import { CommunicationLogList } from "@/components/communications/communication-
 import { getCommunicationLogs, getCommunicationStats } from "./actions"
 import Link from "next/link"
 
+export const metadata = { title: "İletişim Merkezi" }
+
 export default async function CommunicationsPage() {
   const paywall = await getFeaturePaywall("communications")
   if (paywall) return paywall

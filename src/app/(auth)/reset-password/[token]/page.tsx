@@ -6,7 +6,7 @@ import { ResetPasswordForm } from "@/components/auth/reset-password-form"
 import { hashResetToken, isResetExpired } from "@/lib/password-reset"
 
 export const metadata: Metadata = {
-  title: "Şifre Sıfırla",
+  title: "Yeni Şifre Belirle",
   description: "BakimX hesabınız için yeni şifre belirleyin.",
 }
 

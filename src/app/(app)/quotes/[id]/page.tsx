@@ -6,6 +6,8 @@ import { notFound } from "next/navigation"
 import { QuoteDetail } from "@/components/quotes/quote-detail"
 import { formatQuoteNo } from "@/lib/work-order-number"
 
+export const metadata = { title: "Teklif Detayı" }
+
 export default async function QuoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const paywall = await getFeaturePaywall("quotes")
   if (paywall) return paywall

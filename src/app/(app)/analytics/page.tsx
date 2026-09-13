@@ -20,6 +20,8 @@ import {
   getRecommendations,
 } from "@/lib/analytics/queries"
 
+export const metadata = { title: "Servis Analizi" }
+
 export default async function AnalyticsPage() {
   const paywall = await getFeaturePaywall("analytics")
   if (paywall) return paywall

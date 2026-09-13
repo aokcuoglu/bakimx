@@ -5,6 +5,8 @@ import { getRapidApiUsage } from "@/lib/rapidapi-quota"
 import { getGoogleMapsUsageSnapshot } from "@/lib/sales/google-maps-usage.server"
 import { cn } from "@/lib/utils"
 
+export const metadata = { title: "Sistem Sağlığı · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

@@ -3,6 +3,8 @@ import { AppShell } from "@/components/layout/app-shell"
 import { CustomerCreateForm } from "@/components/customers/customer-create-form"
 import Link from "next/link"
 
+export const metadata = { title: "Yeni Müşteri" }
+
 export default async function NewCustomerPage({
   searchParams,
 }: {

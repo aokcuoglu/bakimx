@@ -18,7 +18,7 @@ import { ResumeChatOpener } from "./resume-chat"
 export const dynamic = "force-dynamic"
 
 export const metadata = {
-  title: "Destek görüşmeniz",
+  title: "Destek Görüşmesi",
   // Arama motorlarına açılacak bir yüzey değil; token'lı URL'ler indekslenmemeli.
   robots: { index: false, follow: false },
 }

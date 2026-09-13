@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db"
 import { VehicleCreateForm } from "@/components/vehicles/vehicle-create-form"
 import Link from "next/link"
 
+export const metadata = { title: "Yeni Araç" }
+
 export default async function NewVehiclePage({
   searchParams,
 }: {

@@ -4,6 +4,8 @@ import { getCatalogBrandOptions } from "@/app/admin/catalog/data"
 import { CatalogProductForm } from "@/app/admin/catalog/product-form"
 import { Button } from "@/components/ui/button"
 
+export const metadata = { title: "Yeni Ürün · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 export default async function NewCatalogProductPage() {

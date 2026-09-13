@@ -7,7 +7,7 @@ import { BrandLogo } from "@/components/shared/brand-logo"
 import { getAdminSsoConfig, logAdminSsoDisabled, type AdminSsoRejection } from "@/lib/admin-sso"
 
 export const metadata: Metadata = {
-  title: "BakımX personel girişi",
+  title: "Personel Girişi",
   robots: { index: false, follow: false },
 }
 

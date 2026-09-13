@@ -15,7 +15,7 @@ import { salesAdvisorDisplayName } from "@/lib/sales/links"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
 
 export const metadata: Metadata = {
-  title: "BakımX Hesabınızı Oluşturun",
+  title: "Hesap Oluştur",
   description: "Satış danışmanınızın sizin için hazırladığı BakımX hesabını tamamlayın.",
   robots: PRIVATE_ROBOTS,
 }

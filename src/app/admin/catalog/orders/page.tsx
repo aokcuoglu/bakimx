@@ -6,6 +6,8 @@ import {
   parseOrderStatus,
 } from "@/app/admin/catalog/orders/data"
 
+export const metadata = { title: "Parça Siparişleri · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 /**

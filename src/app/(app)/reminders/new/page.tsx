@@ -6,6 +6,8 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { ReminderCreateForm } from "@/components/reminders/reminder-create-form"
 
+export const metadata = { title: "Yeni Bakım Hatırlatması" }
+
 export default async function NewReminderPage({
   searchParams,
 }: {

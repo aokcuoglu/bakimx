@@ -1,5 +1,14 @@
 import type { Metadata } from "next"
 
+export const BRAND_NAME = "BakımX"
+export const TITLE_TEMPLATE = `%s | ${BRAND_NAME}`
+export const HOME_TITLE = `${BRAND_NAME}: Oto Servis Yönetim Platformu`
+
+/** Page names omit the brand; the root template adds it to browser titles. */
+export function brandedTitle(title: string): string {
+  return `${title} | ${BRAND_NAME}`
+}
+
 export const SITE_URL = "https://bakimx.com"
 
 export const INDEXABLE_ROUTES = [
@@ -19,30 +28,39 @@ export const INDEXABLE_ROUTES = [
   "/acik-riza",
 ] as const
 
+export type PublicIndexablePath =
+  | (typeof INDEXABLE_ROUTES)[number]
+  | "/blog"
+  | "/contact-us"
+  | `/blog/${string}`
+
 export function publicPageMetadata({
   path,
   title,
   description,
+  brandFirst = false,
 }: {
-  path: (typeof INDEXABLE_ROUTES)[number]
+  path: PublicIndexablePath
   title: string
   description: string
+  brandFirst?: boolean
 }): Metadata {
+  const fullTitle = brandFirst ? `${BRAND_NAME} ${title}` : brandedTitle(title)
   return {
-    title,
+    title: brandFirst ? { absolute: fullTitle } : title,
     description,
     alternates: { canonical: path },
     openGraph: {
-      title,
+      title: fullTitle,
       description,
       url: path,
       type: "website",
       locale: "tr_TR",
-      siteName: "BakimX",
+      siteName: BRAND_NAME,
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: fullTitle,
       description,
     },
   }

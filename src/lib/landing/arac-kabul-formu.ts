@@ -1,6 +1,6 @@
 export const ARAC_KABUL_FORMU_PATH = "/rehber/arac-kabul-formu" as const
 
-export const ARAC_KABUL_FORMU_TITLE = "Araç Kabul Formu: Sahada Uygulanabilir 8 Adımlık Kontrol Listesi"
+export const ARAC_KABUL_FORMU_TITLE = "Araç Kabul Formu: 8 Adımlık Kontrol Listesi"
 
 export const ARAC_KABUL_FORMU_H1 = "Araç kabul formu: eksiksiz kabul için 8 adımlık kontrol listesi"
 

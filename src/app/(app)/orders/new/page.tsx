@@ -5,6 +5,8 @@ import { IntakeWizard } from "@/components/intake/intake-wizard"
 import Link from "next/link"
 import { getPlanState } from "@/lib/plan"
 
+export const metadata = { title: "Yeni İş Emri" }
+
 export default async function NewOrderPage({
   searchParams,
 }: {

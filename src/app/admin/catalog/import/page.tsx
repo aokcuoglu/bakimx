@@ -5,6 +5,8 @@ import { getCatalogImportHistory } from "@/app/admin/catalog/import/data"
 import { CatalogImportWizard } from "@/app/admin/catalog/import/import-wizard"
 import { Button } from "@/components/ui/button"
 
+export const metadata = { title: "Katalog İçe Aktar · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 export default async function CatalogImportPage() {

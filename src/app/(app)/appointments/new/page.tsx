@@ -5,6 +5,8 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { AppointmentCreateForm } from "@/components/appointments/appointment-create-form"
 
+export const metadata = { title: "Yeni Randevu" }
+
 export default async function NewAppointmentPage() {
   const paywall = await getFeaturePaywall("appointments")
   if (paywall) return paywall

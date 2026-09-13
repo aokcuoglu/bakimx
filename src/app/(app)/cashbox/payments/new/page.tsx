@@ -5,6 +5,8 @@ import { AppShell } from "@/components/layout/app-shell"
 import { CollectionCreateForm } from "@/components/cashbox/collection-create-form"
 import { prisma } from "@/lib/db"
 
+export const metadata = { title: "Yeni Ödeme" }
+
 export default async function NewPaymentPage({ searchParams }: { searchParams: Promise<{ customerId?: string; orderId?: string }> }) {
   const paywall = await getFeaturePaywall("cashbox")
   if (paywall) return paywall

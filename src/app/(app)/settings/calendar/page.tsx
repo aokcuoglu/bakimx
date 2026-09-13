@@ -5,6 +5,8 @@ import { CalendarSettings } from "@/components/settings/calendar-settings"
 import { getCalendarSettings } from "./actions"
 import Link from "next/link"
 
+export const metadata = { title: "Takvim Ayarları" }
+
 export default async function CalendarSettingsPage() {
   const paywall = await getFeaturePaywall("appointments")
   if (paywall) return paywall

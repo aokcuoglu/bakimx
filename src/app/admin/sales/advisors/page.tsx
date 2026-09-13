@@ -2,6 +2,8 @@ import { SalesAdvisorManagement } from "@/components/sales/sales-advisor-managem
 import { prisma } from "@/lib/db"
 import { getSalesAccess } from "@/lib/sales/access"
 
+export const metadata = { title: "Satış Danışmanları · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 export default async function SalesAdvisorsPage() {

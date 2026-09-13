@@ -7,6 +7,8 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { ReminderCreateForm } from "@/components/reminders/reminder-create-form"
 
+export const metadata = { title: "Bakım Hatırlatmasını Düzenle" }
+
 export default async function EditReminderPage({ params }: { params: Promise<{ id: string }> }) {
   const paywall = await getFeaturePaywall("automatedReminders")
   if (paywall) return paywall
