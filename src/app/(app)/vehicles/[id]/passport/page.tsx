@@ -9,6 +9,8 @@ import { getVehicleReminders } from "@/lib/reminders/queries"
 import { VehiclePassport } from "@/components/vehicles/vehicle-passport"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
+export const metadata = { title: "Araç Pasaportu" }
+
 export const dynamic = "force-dynamic"
 
 export default async function VehiclePassportPage({ params }: { params: Promise<{ id: string }> }) {

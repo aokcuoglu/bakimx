@@ -5,6 +5,8 @@ import type { LiveChatSettingsValues } from "@/lib/validations/live-chat"
 import { LiveChatTabs } from "../live-chat-tabs"
 import { LiveChatSettingsForm } from "./live-chat-settings-form"
 
+export const metadata = { title: "Canlı Destek Ayarları · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 export default async function AdminLiveChatSettingsPage() {

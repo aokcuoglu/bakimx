@@ -4,6 +4,7 @@ export const LLMS_PUBLIC_PATHS = [
   ["Oto servis programı", "/oto-servis-programi"],
   ["Dijital araç kabul", "/dijital-arac-kabul"],
   ["İş emri programı", "/is-emri-programi"],
+  ["Blog", "/blog"],
   ["Araç kabul formu rehberi", "/rehber/arac-kabul-formu"],
   ["Oto servis iş emri rehberi", "/rehber/oto-servis-is-emri-nasil-hazirlanir"],
   ["Defter, Excel ve oto servis programı karşılaştırması", "/karsilastir/defter-excel-oto-servis-programi"],

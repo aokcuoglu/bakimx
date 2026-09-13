@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
 import { getSeatUsage } from "@/lib/rbac"
 
-export const metadata = { title: "Satın Al", robots: PRIVATE_ROBOTS }
+export const metadata = { title: "Siparişi Tamamla", robots: PRIVATE_ROBOTS }
 
 const HAVALE = getHavaleInstructions()
 

@@ -22,11 +22,19 @@ const OCR_TRACE = [
 ]
 
 const nextConfig: NextConfig = {
+  // Keep localhost controls reachable: the dev badge overlaps the mobile menu/FABs.
+  devIndicators: false,
   output: "standalone",
+  // next-mdx-remote + Turbopack: https://github.com/vercel/next.js/issues/64525
+  transpilePackages: ["next-mdx-remote"],
   outputFileTracingIncludes: {
     "/api/plate/scan": OCR_TRACE,
     "/api/smart-capture/ocr": OCR_TRACE,
     "/api/smart-capture/confirm": OCR_TRACE,
+    // Blog MDX files are read via fs at runtime (not statically imported).
+    "/blog": ["./content/blog/**/*"],
+    "/blog/[slug]": ["./content/blog/**/*"],
+    "/sitemap.xml": ["./content/blog/**/*"],
   },
   // Bu repo birden fazla git worktree ile kullanılıyor; her worktree'nin kendi
   // bun.lock'ı olduğu için Next yanlış kök dizini tahmin edip uyarı veriyordu.

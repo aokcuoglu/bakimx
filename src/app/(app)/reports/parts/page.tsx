@@ -5,6 +5,8 @@ import { ReportsLayout } from "@/components/reports/reports-layout"
 import { PartsReport } from "@/components/reports/parts-report"
 import { getPartsReportStats, getMostUsedParts, getLowestStockParts } from "@/lib/reports/queries"
 
+export const metadata = { title: "Parça Raporu" }
+
 export default async function PartsReportPage() {
   const paywall = await getFeaturePaywall("reports")
   if (paywall) return paywall

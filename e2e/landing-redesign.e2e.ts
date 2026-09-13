@@ -1,55 +1,39 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-test("product tour works with the keyboard and core destinations remain available", async ({
+test("hero opens the demo modal and core destinations remain available", async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
+  await expect(page.locator("[data-public-ready=true]")).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    /Oto servisinizde iş emri açmak ve parça bulmak\s*artık 10 saniye\./,
+    /İş emri 10 saniyede\s*Şaseden parça listesi\s*Her kayıt yerinde/,
   );
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   await expect(
     page
-      .getByRole("link", { name: "Ücretsiz denemeye başlayın", exact: true })
+      .getByRole("link", { name: "Ücretsiz başlayın", exact: true })
       .first(),
   ).toHaveAttribute("href", "/register");
 
-  const workOrder = page.getByRole("tab", { name: "İş emri", exact: true });
-  await workOrder.focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(
-    page.getByRole("tab", { name: "Araç kabul", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
-  await expect(
-    page.getByRole("tabpanel", { name: "Araç kabul", exact: true }),
-  ).toBeVisible();
-  await page.keyboard.press("ArrowRight");
-  await expect(
-    page.getByRole("tab", { name: "Müşteri takibi", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
-  const productImage = page
-    .getByRole("tabpanel", { name: "Müşteri takibi", exact: true })
-    .locator("img")
-    .first();
-  await expect(productImage).toBeVisible();
-  await expect
-    .poll(() =>
-      productImage.evaluate((img: HTMLImageElement) => img.naturalWidth),
-    )
-    .toBeGreaterThan(0);
+  await expect(page.locator("[data-product-window]")).toHaveCount(4);
+  await expect(page.locator('[data-product-window="dashboard"]')).toBeVisible();
 
-  for (const id of ["ozellikler", "neden", "sss", "ruhsat-demo", "demo-form"]) {
+  for (const id of ["ozellikler", "neden", "sss"]) {
     await expect(page.locator(`[id="${id}"]`)).toHaveCount(1);
   }
+  await expect(page.locator("#ruhsat-demo")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Örnek ruhsatı okut", exact: true })).toHaveCount(0);
   await page
-    .getByRole("link", { name: "Birlikte inceleyelim", exact: true })
+    .getByRole("button", { name: "Birlikte inceleyelim", exact: true })
     .first()
     .click();
-  await expect(page).toHaveURL(/#demo-form$/);
+  await expect(page.getByRole("dialog", { name: "Servisinizi tanıyalım." })).toBeVisible();
   await expect(page.getByLabel("Ad Soyad", { exact: true })).toBeInViewport();
   expect(errors).toEqual([]);
 });
@@ -60,6 +44,9 @@ test("mobile navigation closes after choosing a section and page fits narrow scr
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/");
+  await expect(page.locator("[data-public-ready=true]")).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+
   await page.getByRole("button", { name: "Menüyü aç" }).click();
   await page
     .locator("#mobile-menu")
@@ -84,6 +71,8 @@ test("landing controls return a scrolled page to the top", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
+  await expect(page.locator("[data-public-ready=true]")).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
 
   const scrollToTop = page.getByRole("button", {
     name: "Sayfanın başına dön",
@@ -91,7 +80,9 @@ test("landing controls return a scrolled page to the top", async ({ page }) => {
   await expect(scrollToTop).toHaveCount(0);
 
   await page.locator("footer").scrollIntoViewIfNeeded();
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(80);
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(80);
   await expect(scrollToTop).toBeVisible();
   const assistantLauncher = page.getByRole("button", {
     name: "BakımX Asistanı'nı aç",
@@ -111,7 +102,9 @@ test("landing controls return a scrolled page to the top", async ({ page }) => {
   await expect(scrollToTop).toHaveCount(0);
 
   await page.locator("footer").scrollIntoViewIfNeeded();
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(80);
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(80);
   await page
     .getByRole("link", { name: "BakımX ana sayfa", exact: true })
     .first()
@@ -127,9 +120,9 @@ test("landing controls return a scrolled page to the top", async ({ page }) => {
   ]);
   expect(mobileScrollButtonBox).not.toBeNull();
   expect(mobileAssistantButtonBox).not.toBeNull();
-  expect(
-    mobileScrollButtonBox!.x + mobileScrollButtonBox!.width,
-  ).toBeLessThan(mobileAssistantButtonBox!.x);
+  expect(mobileScrollButtonBox!.x + mobileScrollButtonBox!.width).toBeLessThan(
+    mobileAssistantButtonBox!.x,
+  );
   await scrollToTop.click();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 });
@@ -151,7 +144,9 @@ test("demo request validation and confirmation work without sending a real lead"
       body: JSON.stringify({ success: true }),
     });
   });
-  await page.goto("/#demo-form");
+  await page.goto("/");
+  await expect(page.locator("[data-public-ready=true]")).toBeVisible();
+  await page.getByRole("button", { name: "Birlikte inceleyelim", exact: true }).first().click();
   const form = page.locator("#demo-form");
   await form.getByRole("button", { name: "Demo İste", exact: true }).click();
   await expect(page.getByLabel("Ad Soyad", { exact: true })).toHaveAttribute(
@@ -180,6 +175,7 @@ test("FAQ deep links and structured answers agree with the visible page", async 
   page,
 }) => {
   await page.goto("/#sss-stok-dusumu");
+  await expect(page.locator("[data-public-ready=true]")).toBeVisible();
   await expect(
     page.locator("#sss-stok-dusumu").getByRole("button"),
   ).toHaveAttribute("aria-expanded", "true");
@@ -219,6 +215,9 @@ test("landing is accessible and its primary content is available without JavaScr
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
+  await expect(page.locator("[data-public-ready=true]")).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze();
@@ -231,7 +230,7 @@ test("landing is accessible and its primary content is available without JavaScr
   await expect(noJsPage.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(
     noJsPage
-      .getByRole("link", { name: "Ücretsiz denemeye başlayın", exact: true })
+      .getByRole("link", { name: "Ücretsiz başlayın", exact: true })
       .first(),
   ).toBeVisible();
   await context.close();

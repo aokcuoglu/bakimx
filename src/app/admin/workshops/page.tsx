@@ -22,6 +22,8 @@ import { EmptyState } from "@/components/shared/empty-state"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { prisma } from "@/lib/db"
 
+export const metadata = { title: "İş Yerleri · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 /** Liste gövdesi — sorgu burada çalışır, böylece filtre değiştiğinde form

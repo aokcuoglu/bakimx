@@ -8,6 +8,8 @@ import { getPartKPIs } from "@/lib/parts/queries"
 import { getLaborCatalog, getLaborCategories, getLaborKPIs } from "@/lib/labor/queries"
 import { getUniqueBrandsAction, getUniqueCategoriesAction } from "./actions"
 
+export const metadata = { title: "Stok ve Hizmetler" }
+
 export default async function PartsPage(props: {
   searchParams?: Promise<{ tab?: string; q?: string; status?: string; category?: string; brand?: string }>
 }) {

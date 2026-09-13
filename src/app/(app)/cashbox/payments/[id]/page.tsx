@@ -18,6 +18,8 @@ const methodIcons: Record<string, React.ComponentType<{ className?: string }>> =
   other: Receipt,
 }
 
+export const metadata = { title: "Ödeme Detayı" }
+
 export default async function PaymentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const paywall = await getFeaturePaywall("cashbox")
   if (paywall) return paywall

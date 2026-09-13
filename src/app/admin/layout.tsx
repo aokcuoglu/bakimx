@@ -8,9 +8,9 @@ import { AdminShell } from "@/components/layout/admin-shell"
 import { AdminPageTransition } from "@/app/admin/admin-page-transition"
 import { getUnansweredCount } from "@/app/admin/live-chat/data"
 import { Button } from "@/components/ui/button"
-import { PRIVATE_ROBOTS } from "@/lib/seo"
+import { PRIVATE_ROBOTS, TITLE_TEMPLATE } from "@/lib/seo"
 
-export const metadata = { title: "BakimX Yönetim", robots: PRIVATE_ROBOTS }
+export const metadata = { title: { default: "Yönetim", template: TITLE_TEMPLATE }, robots: PRIVATE_ROBOTS }
 
 // Always render fresh — this is an operational console.
 export const dynamic = "force-dynamic"

@@ -103,6 +103,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Storage: mock (default) / S3-compatible (MinIO local / Cloudflare R2 production)
 
 ## UI Component Rules
+- **Tasarım kaynağı:** Yeni veya revize edilen tüm UI çalışmalarından önce [DESIGN.md](./DESIGN.md) okunur — özellikle **Eylemler ve butonlar** bölümü. Attio ana referans; Vercel açık yüzey + Linear tipografi/boşluk destekleyicidir (13–14 Eylül 2026). Kayıt, kurulum, uygulama, yönetim ve site asistanını kapsar. Birincil CTA parlak `primary` mavi olmaz: public/asistan → `variant="navy"`, kayıt/kurulum → koyu `foreground` dolgu; ikincil `outline`, geri/kapat `ghost`. Shared `Button` default’u global değiştirilmez.
 - **NO raw HTML interactive elements** — always use shadcn/ui components:
   - `<button>` → `<Button>`
   - `<input>` → `<Input>`

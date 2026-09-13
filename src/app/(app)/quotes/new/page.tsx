@@ -5,6 +5,8 @@ import Link from "next/link"
 import { QuoteCreateForm } from "@/components/quotes/quote-create-form"
 import { getLaborCatalog } from "@/lib/labor/queries"
 
+export const metadata = { title: "Yeni Teklif" }
+
 export default async function NewQuotePage() {
   const paywall = await getFeaturePaywall("quotes")
   if (paywall) return paywall

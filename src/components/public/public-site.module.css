@@ -1,0 +1,236 @@
+.site,
+.customSite,
+.landingSite {
+  background: var(--card);
+  color: var(--foreground);
+  min-height: 100vh;
+  --public-width: 1200px;
+}
+.landingSite {
+  position: relative;
+}
+.landingFrame {
+  position: absolute;
+  z-index: 2;
+  top: 72px;
+  bottom: 0;
+  left: 50%;
+  width: min(1280px, 100%);
+  pointer-events: none;
+  transform: translateX(-50%);
+  border-inline: 1px solid var(--border);
+  opacity: 0.72;
+}
+.landingSite > :not(.landingFrame):not(header) {
+  position: relative;
+  z-index: 1;
+}
+.landingSite > header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+.landingSite > .progress {
+  z-index: 60;
+}
+.progress {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--primary);
+  transform-origin: left;
+  z-index: 60;
+  pointer-events: none;
+}
+.site :global(main) {
+  overflow: clip;
+}
+.site :global(main > section:not(#hero):not(#ozellikler)) {
+  border-color: var(--border);
+  padding-block: clamp(64px, 8vw, 120px);
+}
+.site
+  :global(
+    main > section:not(#hero):not(#ozellikler):not([data-public-compact]) > div
+  ) {
+  max-width: var(--public-width);
+}
+.site :global(main > section h2) {
+  font-weight: 550;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.site :global(main > section > div > h2),
+.site :global(main > section > div > div > h2) {
+  font-size: clamp(30px, 3.4vw, 48px);
+  line-height: 1.13;
+}
+.site :global(main > section figure) {
+  box-shadow: 0 20px 60px color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+.site :global([data-reveal]) {
+  opacity: 1 !important;
+  transform: none !important;
+}
+.site[data-editorial] :global(main > section:first-of-type) {
+  padding-top: clamp(72px, 9vw, 132px);
+}
+.site[data-editorial] :global(main > section:first-of-type > div) {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+.site[data-editorial]
+  :global(main > section:first-of-type > div > div:first-child) {
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
+  text-align: center;
+}
+.site[data-editorial] :global(main > section:first-of-type h1) {
+  font-size: clamp(38px, 5.6vw, 76px);
+  font-weight: 550;
+  line-height: 1.04;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+.site[data-editorial] :global(main > section:first-of-type p) {
+  max-width: 720px;
+  margin-inline: auto;
+}
+.site[data-editorial] :global(main > section:first-of-type figure) {
+  width: min(100%, 1040px);
+  margin-inline: auto;
+  border-radius: 18px;
+}
+.site :global(footer) {
+  background: var(--card);
+}
+@media (max-width: 640px) {
+  .site :global(main > section:not(#hero):not(#ozellikler)) {
+    padding-block: 64px;
+  }
+  .site[data-editorial] :global(main > section:first-of-type > div) {
+    gap: 32px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site :global(main > section) {
+    transform: none !important;
+  }
+  .progress {
+    display: none;
+  }
+}
+.site[data-editorial] :global(main > section:first-of-type) {
+  background: var(--card);
+}
+.site[data-editorial] :global(main > section:first-of-type .absolute) {
+  display: none;
+}
+.site[data-editorial] :global(main > section:first-of-type h1) {
+  margin-inline: auto;
+}
+.site[data-editorial] :global(main > section:first-of-type .items-start) {
+  align-items: center;
+  justify-content: center;
+}
+.site :global(main > section + section) {
+  border-top: 1px solid var(--border);
+}
+.site :global(main > section:not(#ozellikler) .text-navy) {
+  color: var(--foreground);
+}
+.site :global(main > section:not(#ozellikler) .text-primary:not(a)) {
+  color: var(--foreground);
+}
+.site :global(main > section .font-mono) {
+  font-family: inherit;
+}
+.site :global(main > div:first-child > h1) {
+  max-width: 960px;
+  margin-inline: auto;
+  font-size: clamp(36px, 5vw, 68px);
+  letter-spacing: -0.05em;
+  line-height: 1.08;
+  font-weight: 550;
+  text-wrap: balance;
+}
+.site :global(main > div:first-child:has(> h1)) {
+  padding-block: 64px;
+  text-align: center;
+}
+.site :global(main > div:first-child:has(> h1) > p) {
+  max-width: 720px;
+  margin-inline: auto;
+}
+.site :global(main > section:not(#hero):not(#ozellikler)) {
+  background-color: var(--card);
+}
+.site :global(main > section:nth-of-type(4)) {
+  background-color: var(--background);
+}
+.site :global(footer > div) {
+  padding-block: 64px 32px;
+}
+.site :global(main > section figure + figure) {
+  align-self: start;
+}
+@media print {
+  .progress {
+    display: none;
+  }
+}
+@media print {
+  .site > header,
+  .site > footer {
+    display: none;
+  }
+  .site :global(main > section) {
+    transform: none !important;
+    padding-block: 16px !important;
+  }
+}
+
+/* Landing uses a separate root so the open public palette also applies to it.
+   Without this bridge the older `text-navy` call-site classes win. */
+.landingSite :global(main) {
+  overflow: clip;
+}
+.landingSite :global(main > section:not(#hero):not(#ozellikler)) {
+  border-color: var(--border);
+  padding-block: clamp(64px, 8vw, 120px);
+  background-color: var(--card);
+}
+.landingSite :global(main > section:not(#hero):not(#ozellikler) > div) {
+  max-width: var(--public-width);
+}
+.landingSite :global(main > section + section) {
+  border-top: 1px solid var(--border);
+}
+.landingSite :global(main > section:not(#ozellikler) .text-navy) {
+  color: var(--foreground);
+}
+.landingSite :global(main > section:not(#ozellikler) .text-primary:not(a)) {
+  color: var(--foreground);
+}
+.landingSite :global(main > section .font-mono) {
+  font-family: inherit;
+}
+.landingSite :global(footer) {
+  background: var(--card);
+}
+.landingSite :global(footer > div) {
+  padding-block: 64px 32px;
+}
+@media (max-width: 640px) {
+  .landingSite :global(main > section:not(#hero):not(#ozellikler)) {
+    padding-block: 64px;
+  }
+}
+@media print {
+  .landingSite :global(main > section) {
+    transform: none !important;
+    padding-block: 16px !important;
+  }
+}

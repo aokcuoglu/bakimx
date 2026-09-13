@@ -1,3 +1,4 @@
+import { PublicSite } from "@/components/public/PublicSite";
 import { AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Header } from "@/components/sections/Header"
 import { Footer } from "@/components/sections/Footer"
@@ -31,7 +32,7 @@ export default async function StatusPage() {
   const overallStatus = deriveOverallStatus(activeIncidents.map((incident) => incident.severity))
 
   return (
-    <>
+    <PublicSite>
       <Header />
       <main className="mx-auto max-w-2xl px-4 sm:px-6 py-12 space-y-8">
         <div>
@@ -113,6 +114,6 @@ export default async function StatusPage() {
         </div>
       </main>
       <Footer />
-    </>
+    </PublicSite>
   )
 }

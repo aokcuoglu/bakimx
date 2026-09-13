@@ -15,6 +15,8 @@ import { formatDiscountLabel } from "@/lib/parts/bakimx-price"
 import { FeaturePaywall } from "@/components/billing/feature-paywall"
 import { InlineFeatureUpsell } from "@/components/billing/inline-feature-upsell"
 
+export const metadata = { title: "Parça Siparişlerim" }
+
 export const dynamic = "force-dynamic"
 
 /**

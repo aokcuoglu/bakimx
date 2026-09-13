@@ -16,6 +16,8 @@ export type LandingObjection = {
   id: string;
   /** Müşterinin kendi cümlesi — kartta tırnak içinde gösterilir. */
   question: string;
+  /** SSS ve soru çiplerinde kullanılan kısa etiket. */
+  landingQuestion?: string;
   /** Tek cümlelik cevap. */
   answer: string;
   /** Gerçek ürün ekranından alınmış kanıt görseli. */
@@ -48,11 +50,13 @@ function objection(
   question: string,
   answer: string,
   screenshotAlt: string,
-  keywords: string[]
+  keywords: string[],
+  landingQuestion?: string,
 ): LandingObjection {
   return {
     id,
     question,
+    landingQuestion,
     answer,
     screenshot: `/landing/objections/${id}.png`,
     screenshotAlt,
@@ -67,55 +71,63 @@ export const LANDING_OBJECTIONS: LandingObjection[] = [
     "Dışarıdan alınan parçayı takip edemiyorum",
     'Teknisyen "Parça Aldım" der, kutunun fotoğrafını çeker; okunan bilgiler öneri olarak gelir ve parça iş emri kalemine düşer.',
     "Teknisyen ekranında dış alım parçasının fotoğrafla kaydedildiği pencere",
-    ["dışarıdan", "dış alım", "harici", "müşteri getirdi", "yedek parça", "fiş", "kutu"]
+    ["dışarıdan", "dış alım", "harici", "müşteri getirdi", "yedek parça", "fiş", "kutu"],
+    "Dışarıdan parça takibi",
   ),
   objection(
     "uyumlu-parca",
     "Araca hangi parça uyuyor bilmiyorum",
     "Ruhsattaki şasi numarası araç modeline eşlenir; katalogda yalnız o araca uyan parçalar listelenir.",
     "Araca uygun parçaların listelendiği parça kataloğu ekranı",
-    ["uygun parça", "uyumlu", "katalog", "vin", "şasi", "marka model", "orijinal", "muadil"]
+    ["uygun parça", "uyumlu", "katalog", "vin", "şasi", "marka model", "orijinal", "muadil"],
+    "Parça uyumu",
   ),
   objection(
     "hizli-kabul",
     "Araç kabulü yarım saat sürüyor",
     "Ruhsatı okutun; plaka, marka, model, şasi ve model yılı otomatik dolar, siz yalnızca kontrol edip onaylarsınız.",
     "Ruhsat okutma adımında araç bilgilerinin otomatik dolduğu form",
-    ["kabul", "ruhsat", "okutma", "tarama", "hızlı", "süre", "dakika", "veri girişi", "araba"]
+    ["kabul", "ruhsat", "okutma", "tarama", "hızlı", "süre", "dakika", "veri girişi", "araba"],
+    "Araç kabulü",
   ),
   objection(
     "musteri-arayisi",
     "Müşteri her gün arayıp aracını soruyor",
     "Her iş emrinin kişiye özel canlı takip linki vardır; WhatsApp'tan tek dokunuşla gönderirsiniz.",
     "Müşterinin telefonundan gördüğü canlı iş emri takip sayfası",
-    ["telefon", "arama", "bilgilendirme", "wp", "sms", "haber verme", "durum", "paylaşma"]
+    ["telefon", "arama", "bilgilendirme", "wp", "sms", "haber verme", "durum", "paylaşma"],
+    "Müşteri takibi",
   ),
   objection(
     "hasar-kanit",
     "Hasar bizden mi değil mi tartışması çıkıyor",
     "Kabulde fotoğraf kontrol listesi ve hasar haritası doldurulur; kaydedilen kanıt sonradan silinmez.",
     "Araç kabulünde hasar haritası ve fotoğraf kontrol listesi ekranı",
-    ["çizik", "göçük", "hasar", "anlaşmazlık", "suçlama", "fotoğraf", "kanıt", "sigorta"]
+    ["çizik", "göçük", "hasar", "anlaşmazlık", "suçlama", "fotoğraf", "kanıt", "sigorta"],
+    "Hasar kanıtı",
   ),
   objection(
     "is-takibi",
     "Hangi işi kim, ne zaman yaptı bilmiyorum",
     "Her iş emrinde teknisyen ataması, zorunlu kontrol listesi ve zaman damgalı işlem geçmişi tutulur.",
     "İş emrindeki teknisyen ataması ve zaman damgalı işlem geçmişi",
-    ["usta", "personel", "çalışan", "atama", "sorumlu", "işlem geçmişi", "kayıt", "denetim"]
+    ["usta", "personel", "çalışan", "atama", "sorumlu", "işlem geçmişi", "kayıt", "denetim"],
+    "İş takibi",
   ),
   objection(
     "stok-dusumu",
     "Stok elimde tutmuyor",
     "İş emrine parça eklendiğinde stok otomatik düşer; stok yetmiyorsa kalem hiç eklenmez.",
     "Parça stok listesi ve kritik stok uyarıları",
-    ["stok", "takip", "depo", "envanter", "sayım", "kritik", "eksilme", "adet", "raf"]
+    ["stok", "takip", "depo", "envanter", "sayım", "kritik", "eksilme", "adet", "raf"],
+    "Stok takibi",
   ),
   objection(
     "tedarikci-fiyat",
     "Fiyat verirken tedarikçileri karşılaştıramıyorum",
     "Parça başına kendi tedarikçi alış fiyatlarınız tek ekranda yan yana görünür.",
     "Bir parçanın tedarikçi bazlı alış fiyatlarının karşılaştırıldığı ekran",
-    ["fiyat", "tedarikçi", "alış", "maliyet", "karşılaştırma", "teklif", "bayi", "iskonto"]
+    ["fiyat", "tedarikçi", "alış", "maliyet", "karşılaştırma", "teklif", "bayi", "iskonto"],
+    "Tedarikçi fiyatları",
   ),
 ];

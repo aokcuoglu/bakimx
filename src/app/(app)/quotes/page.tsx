@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button"
 
 type SP = { q?: string; status?: string }
 
+export const metadata = { title: "Teklifler" }
+
 export default async function QuotesPage({ searchParams }: { searchParams: Promise<SP> }) {
   const paywall = await getFeaturePaywall("quotes")
   if (paywall) return paywall

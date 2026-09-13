@@ -1,0 +1,15 @@
+.dialog {
+  box-shadow: 0 24px 100px
+    color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+:global(body):has(.dialog) :global([data-slot="dialog-overlay"]) {
+  background: color-mix(in srgb, var(--foreground) 45%, transparent);
+  backdrop-filter: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialog,
+  :global(body):has(.dialog) :global([data-slot="dialog-overlay"]) {
+    animation: none !important;
+    transition: none !important;
+  }
+}

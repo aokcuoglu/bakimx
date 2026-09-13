@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { FilterSelect } from "@/components/shared/filter-select"
 
+export const metadata = { title: "Demo ve Destek Talepleri · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 interface LeadsSearchParams {

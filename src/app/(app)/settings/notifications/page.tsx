@@ -5,6 +5,8 @@ import { NotificationSettings } from "@/components/settings/notification-setting
 import { getNotificationTemplates, getCommunicationProviders } from "./actions"
 import Link from "next/link"
 
+export const metadata = { title: "Bildirim Ayarları" }
+
 export default async function NotificationsPage() {
   const paywall = await getFeaturePaywall("automatedReminders")
   if (paywall) return paywall

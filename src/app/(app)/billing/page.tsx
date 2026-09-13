@@ -12,7 +12,7 @@ import { prisma } from "@/lib/db"
 import { formatMinor } from "@/lib/billing/pricing"
 import { getWorkshopQuotaContext, getWorkshopQuotaUsage } from "@/lib/rapidapi-quota"
 
-export const metadata = { title: "Paketler & Kullanım" }
+export const metadata = { title: "Paketler ve Kullanım" }
 
 export default async function BillingPage({
   searchParams,

@@ -17,6 +17,8 @@ import {
   TECHNICIAN_PARAM,
 } from "@/lib/technician/selected-technician"
 
+export const metadata = { title: "Teknisyen Paneli" }
+
 export const dynamic = "force-dynamic"
 
 export default async function TechnicianPage({

@@ -2,6 +2,8 @@ import { requireAdminCapability } from "@/lib/admin"
 import { CatalogList } from "@/app/admin/catalog/catalog-list"
 import { getCatalogBrandOptions, getCatalogProducts, parseCatalogStatus } from "@/app/admin/catalog/data"
 
+export const metadata = { title: "Ürün Kataloğu · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 export default async function AdminCatalogPage(props: {

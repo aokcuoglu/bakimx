@@ -1,6 +1,6 @@
 export const IS_EMRI_PROGRAMI_PATH = "/is-emri-programi" as const
 
-export const IS_EMRI_PROGRAMI_TITLE = "İş Emri Programı: İş, Parça, İşçilik ve Onay Tek Ekranda"
+export const IS_EMRI_PROGRAMI_TITLE = "İş Emri Programı: İş ve Onay Takibi"
 
 export const IS_EMRI_PROGRAMI_H1 = "İş emri programı ile her aracın işi tek kayıtta ilerlesin"
 

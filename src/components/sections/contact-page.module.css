@@ -1,0 +1,23 @@
+.page { background: var(--card); }
+.content { width: min(100% - 2.5rem, 1200px); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); min-height: 760px; border-inline: 1px solid var(--border); }
+.intro { padding: clamp(3rem, 8vw, 7rem) clamp(1.5rem, 6vw, 6rem); border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; }
+.intro h1 { max-width: 540px; margin: 2.5rem 0 0; font-size: clamp(3rem, 5vw, 5rem); line-height: .98; letter-spacing: -.065em; font-weight: 600; }
+.lead { max-width: 440px; margin: 1.75rem 0 0; color: var(--muted-foreground); font-size: 1.05rem; line-height: 1.65; }
+.contactDetails { display: grid; gap: .4rem; margin-top: 3.5rem; color: var(--muted-foreground); font-size: .95rem; }
+.contactDetails a { color: var(--foreground); font-size: 1.25rem; font-weight: 600; text-decoration: none; }
+.contactDetails a:hover, .consent a:hover { text-decoration: underline; }
+.socialHint { margin-top: 2rem; }
+.socials { display: flex; gap: .6rem; }
+.socials a { display: grid; place-items: center; width: 2rem; height: 2rem; border: 1px solid var(--border); border-radius: 999px; color: var(--foreground); font-size: .75rem; font-weight: 700; text-decoration: none; }
+.formPanel { padding: clamp(2rem, 6vw, 5rem) clamp(1.25rem, 5vw, 5rem); }
+.formHeader { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
+.eyebrow { margin: 0 0 .65rem; color: var(--muted-foreground); font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.formHeader h2 { margin: 0; font-size: clamp(1.7rem, 3vw, 2.5rem); line-height: 1.08; letter-spacing: -.045em; }
+.form { display: grid; gap: 1.1rem; padding-top: 2rem; }
+.form :global([data-slot="input"]), .form :global([data-slot="textarea"]) { min-height: 2.75rem; background: var(--background); }
+.form :global([data-slot="textarea"]) { min-height: 6rem; }
+.consent { margin: .1rem 0 .25rem; color: var(--muted-foreground); font-size: .75rem; line-height: 1.5; }
+.consent a { color: var(--foreground); text-decoration: underline; text-underline-offset: 2px; }
+.illustration { display: block; width: min(100%, 520px); height: auto; object-fit: contain; }
+@media (max-width: 800px) { .content { grid-template-columns: 1fr; border-inline: 0; } .intro { border-right: 0; border-bottom: 1px solid var(--border); padding-block: 4rem; } .formPanel { padding-block: 3rem 5rem; } }
+@media (max-width: 480px) { .content { width: 100%; } .intro { padding-inline: 1.25rem; } .formPanel { padding-inline: 1.25rem; } .illustration { width: 100%; } }

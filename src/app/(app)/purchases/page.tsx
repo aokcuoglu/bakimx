@@ -16,6 +16,8 @@ import type { OrderStatus, Prisma } from "@prisma/client"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
 
+export const metadata = { title: "Dış Alımlar" }
+
 export const dynamic = "force-dynamic"
 
 export default async function PurchasesPage({

@@ -6,6 +6,8 @@ import { LiveChatTabs } from "./live-chat-tabs"
 import { LiveChatInbox } from "./live-chat-inbox"
 import { getInbox, getThread, type InboxFilter } from "./data"
 
+export const metadata = { title: "Canlı Destek · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 const FILTERS: InboxFilter[] = ["open", "closed", "all"]

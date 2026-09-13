@@ -8,6 +8,8 @@ import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib
 import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { quantityToNumber } from "@/lib/orders/quantity"
 
+export const metadata = { title: "Servis Özeti ve Onay" }
+
 export const dynamic = "force-dynamic"
 
 export default async function SharePage({ params }: { params: Promise<{ token: string }> }) {

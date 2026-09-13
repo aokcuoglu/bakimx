@@ -39,8 +39,8 @@ function ActionInner({ action, trailing }: { action: MenuAction; trailing?: Reac
   const Icon = action.icon;
   return (
     <>
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary-strong transition-colors group-hover/button:bg-primary/15">
-        <Icon className="size-5" />
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted text-foreground">
+        <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1 space-y-0.5">
         <span className="block text-sm font-medium leading-tight text-foreground">{action.label}</span>
@@ -53,17 +53,17 @@ function ActionInner({ action, trailing }: { action: MenuAction; trailing?: Reac
 }
 
 const ROW_CLASS =
-  "h-auto w-full justify-start gap-3 whitespace-normal rounded-xl p-3 text-left " +
-  "hover:border-primary/40 hover:bg-primary/5";
+  "h-auto w-full justify-start gap-3 whitespace-normal rounded-lg border-border p-3 text-left " +
+  "hover:bg-muted/60";
 
 export function MenuView({ onNavigate }: MenuViewProps) {
   const badge = useLiveChatBadge();
 
   return (
     <div className="space-y-4 p-4">
-      <div className="rounded-2xl bg-muted/60 px-4 py-3.5">
+      <div className="rounded-lg bg-muted px-3.5 py-3">
         <p className="text-sm leading-relaxed text-foreground">
-          Merhaba! 👋 BakımX ile ilgilendiğiniz için teşekkürler. Size nasıl yardımcı olabiliriz?
+          Merhaba! BakımX ile ilgilendiğiniz için teşekkürler. Size nasıl yardımcı olabiliriz?
         </p>
       </div>
       <div className="space-y-2">

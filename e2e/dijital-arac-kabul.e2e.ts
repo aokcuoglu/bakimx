@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test"
 test("dijital araç kabul sayfası mobilde taşmadan ve erişilebilir açılır", async ({ page }) => {
   await page.goto("/dijital-arac-kabul")
 
-  await expect(page).toHaveTitle(/Dijital Araç Kabul: Ruhsat, Fotoğraf ve Hasar Kaydı Tek Ekranda/)
+  await expect(page).toHaveTitle(/Dijital Araç Kabul: Ruhsat, Fotoğraf ve Hasar Kaydı/)
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://bakimx.com/dijital-arac-kabul")
   await expect(page.getByRole("heading", { level: 1, name: /Dijital araç kabul/ })).toBeVisible()
   await expect(page.getByRole("link", { name: "Ücretsiz deneyin" })).toHaveCount(2)

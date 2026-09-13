@@ -1,3 +1,4 @@
+import { PublicSite } from "@/components/public/PublicSite";
 import type { Metadata } from "next";
 import { Header } from "@/components/sections/Header";
 import { Footer } from "@/components/sections/Footer";
@@ -6,18 +7,18 @@ import { publicPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = publicPageMetadata({
   path: "/demo",
-  title: "BakımX Oto Servis Programı Demo Talebi",
+  title: "Canlı Demo Talebi",
   description: "BakımX oto servis programını iş yerinize göre görün. Demo talebinizi bırakın; araç kabulü, iş emri ve müşteri takibini birlikte inceleyelim.",
 });
 
 export default function DemoPage() {
   return (
-    <>
+    <PublicSite>
       <Header />
       <main>
         <DemoRequestSection />
       </main>
       <Footer />
-    </>
+    </PublicSite>
   );
 }

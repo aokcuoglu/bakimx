@@ -1,0 +1,28 @@
+.badge {
+  --category-accent: var(--primary);
+  height: auto;
+  min-height: 1.875rem;
+  max-width: 100%;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--category-accent) 24%, var(--card));
+  border-radius: 0.25rem;
+  background: color-mix(in oklab, var(--category-accent) 5%, var(--card));
+  color: var(--foreground);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.12em;
+  white-space: normal;
+}
+
+.badge[data-category="rehber"] {
+  --category-accent: var(--chart-2);
+}
+
+.badge[data-category="urun"] {
+  --category-accent: var(--chart-3);
+}
+
+.badge[data-category="sektor"] {
+  --category-accent: var(--chart-4);
+}

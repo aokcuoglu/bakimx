@@ -233,7 +233,7 @@ export async function POST(request: Request) {
                 taxOffice: data.taxOffice || null,
                 taxNumber: data.taxNumber || null,
                 invoiceTitle: data.invoiceTitle || data.workshopName,
-                onboardingProfile: {
+                onboardingProfile: raw.sector === undefined ? { status: "pending" } : {
                   sector: data.sector,
                   businessFeatures: data.businessFeatures,
                   teamSize: data.teamSize,

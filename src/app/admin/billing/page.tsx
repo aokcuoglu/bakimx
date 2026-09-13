@@ -2,6 +2,8 @@ import { can, getAdminContext } from "@/lib/admin"
 import { getBillingData } from "@/app/admin/data"
 import { AdminBilling } from "@/app/admin/admin-billing"
 
+export const metadata = { title: "Abonelikler · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 export default async function AdminBillingPage() {

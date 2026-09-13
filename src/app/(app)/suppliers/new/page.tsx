@@ -3,6 +3,8 @@ import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { SupplierForm } from "@/components/suppliers/supplier-form"
 
+export const metadata = { title: "Yeni Tedarikçi" }
+
 export default async function NewSupplierPage() {
   const paywall = await getFeaturePaywall("procurement")
   if (paywall) return paywall

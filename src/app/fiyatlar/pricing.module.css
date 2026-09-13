@@ -1,0 +1,4 @@
+.page {
+  /* Keep the pricing surface neutral; text inherits the shared palette. */
+  --muted: oklch(from var(--secondary) l 0 h);
+}

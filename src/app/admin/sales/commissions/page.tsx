@@ -7,6 +7,8 @@ import { formatMinor } from "@/lib/billing/pricing"
 import { Button } from "@/components/ui/button"
 import { CommissionLedger } from "@/components/sales/commission-ledger"
 
+export const metadata = { title: "Komisyonlar · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 const STATUSES = ["draft", "approved", "paid", "void"] as const satisfies readonly SalesCommissionStatus[]

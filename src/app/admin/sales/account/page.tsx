@@ -3,6 +3,8 @@ import { AccountProfileForm } from "@/components/account/account-profile-form"
 import { getCurrentUser } from "@/lib/auth"
 import { getSalesAccess } from "@/lib/sales/access"
 
+export const metadata = { title: "Danışman Hesabım · Yönetim" }
+
 export default async function SalesAccountPage() {
   await getSalesAccess("viewSales")
   const user = await getCurrentUser()

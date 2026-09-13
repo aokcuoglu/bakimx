@@ -1,11 +1,11 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { RegisterFooter } from "./register-footer"
+import { Header } from "@/components/sections/Header"
 import { RegisterForm } from "@/components/auth/register-form"
 import type { SalesRegistrationPrefill } from "@/components/auth/register-form"
+import styles from "./register-design.module.css"
 import { RegisterSidebar } from "@/components/auth/register-sidebar"
 import type { RegisterWizardSnapshot } from "@/lib/register-onboarding"
 import type { SalePlanTier } from "@/lib/plan"
@@ -26,7 +26,9 @@ const INITIAL_SNAPSHOT: RegisterWizardSnapshot = {
 export function RegisterClient({
   salesRegistration,
   preferredPlan,
+  mode = "register",
 }: {
+  mode?: "register" | "onboarding"
   salesRegistration?: SalesRegistrationPrefill
   preferredPlan?: PreferredPlan
 }) {
@@ -45,28 +47,24 @@ export function RegisterClient({
     })
   }, [])
 
-  return (
-    <div className="flex min-h-screen flex-col bg-muted">
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-3 sm:px-5">
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/">
-            <ArrowLeft data-icon="inline-start" />
-            Ana Sayfa
-          </Link>
-        </Button>
-        <p className="text-xs text-muted-foreground sm:text-sm">
-          Zaten üye misiniz?{" "}
-          <Link href="/login" className="font-semibold text-primary hover:underline">
-            Giriş Yap
-          </Link>
-        </p>
-      </header>
+  if (mode === "onboarding") {
+    return (
+      <main className="mx-auto w-full max-w-5xl rounded-lg border border-border bg-card p-5 sm:p-10">
+        <RegisterForm mode="onboarding" />
+      </main>
+    )
+  }
 
-      <div className="flex flex-1 lg:min-h-[calc(100vh-3.5rem)]">
-        <RegisterSidebar snapshot={snapshot} preferredPlan={preferredPlan} />
-        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8 xl:px-12">
-          <div className="mx-auto w-full max-w-4xl">
+  return (
+    <div className={styles.viewport}>
+      <Header />
+
+      <div className={styles.layout}>
+        <RegisterSidebar snapshot={snapshot} preferredPlan={preferredPlan} mode={mode} />
+        <main aria-label="Hesap kayıt formu" className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-5 py-8 sm:px-10 sm:py-12 lg:px-14 xl:px-20">
+          <div className="mx-auto w-full max-w-2xl">
             <RegisterForm
+              mode={mode}
               salesRegistration={salesRegistration}
               preferredPlan={preferredPlan}
               onSnapshotChange={handleSnapshotChange}
@@ -74,6 +72,7 @@ export function RegisterClient({
           </div>
         </main>
       </div>
+      <RegisterFooter className="px-5 py-4 sm:px-8" />
     </div>
   )
 }

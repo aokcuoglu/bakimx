@@ -17,6 +17,8 @@ import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 import { quantityToNumber } from "@/lib/orders/quantity"
 import { GATED_FEATURES, getPlanState, hasFeature } from "@/lib/plan"
 
+export const metadata = { title: "İş Emri Detayı" }
+
 export default async function OrderDetailPage({
   params,
   searchParams,

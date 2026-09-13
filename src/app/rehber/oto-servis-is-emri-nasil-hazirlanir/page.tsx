@@ -1,3 +1,5 @@
+import { DemoRequestButton } from "@/components/public/DemoRequestButton";
+import { PublicSite } from "@/components/public/PublicSite";
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
@@ -61,7 +63,7 @@ const faqStructuredData = {
 
 export default function IsEmriRehberPage() {
   return (
-    <>
+    <PublicSite editorial>
       <JsonLd data={[articleStructuredData, faqStructuredData]} />
       <Header />
       <main className="overflow-hidden">
@@ -112,32 +114,32 @@ export default function IsEmriRehberPage() {
           </div>
         </section>
 
-        <section className="bg-navy py-16 text-navy-foreground sm:py-20" aria-labelledby="unsurlar-baslik">
+        <section className="bg-background py-16 text-foreground sm:py-20" aria-labelledby="unsurlar-baslik">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
-              <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">
+              <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Uygulanabilir standart
               </p>
               <h2 id="unsurlar-baslik" className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
                 Eksiksiz bir iş emrinde altı unsur bulunur
               </h2>
-              <p className="mt-4 text-base leading-7 text-navy-foreground/70">
+              <p className="mt-4 text-base leading-7 text-muted-foreground">
                 Her unsurun ne işe yaradığı ve BakımX&apos;te nasıl uygulandığı aşağıda ayrı ayrı gösteriliyor.
               </p>
             </div>
-            <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-navy-foreground/15 bg-navy-foreground/15 sm:grid-cols-2 lg:grid-cols-3">
+            <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
               {IS_EMRI_REHBER_UNSURLAR.map((unsur, index) => {
                 const Icon = unsurIcons[index]
                 return (
-                  <li key={unsur.title} className="relative bg-navy p-5 sm:p-6">
+                  <li key={unsur.title} className="relative bg-background p-5 sm:p-6">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-sm text-navy-foreground/60">0{index + 1}</span>
-                      <Icon className="size-5 text-navy-foreground/80" aria-hidden="true" />
+                      <span className="font-mono text-sm text-muted-foreground">0{index + 1}</span>
+                      <Icon className="size-5 text-muted-foreground" aria-hidden="true" />
                     </div>
                     <h3 className="mt-6 text-base font-semibold">{unsur.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-navy-foreground/65">{unsur.what}</p>
-                    <p className="mt-3 text-sm font-medium leading-6 text-navy-foreground/85">Neden: {unsur.why}</p>
-                    <p className="mt-3 text-xs leading-5 text-navy-foreground/55">BakımX&apos;te: {unsur.proof}</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{unsur.what}</p>
+                    <p className="mt-3 text-sm font-medium leading-6 text-muted-foreground">Neden: {unsur.why}</p>
+                    <p className="mt-3 text-xs leading-5 text-muted-foreground">BakımX&apos;te: {unsur.proof}</p>
                   </li>
                 )
               })}
@@ -210,24 +212,24 @@ export default function IsEmriRehberPage() {
           </div>
         </section>
 
-        <section className="bg-primary py-14 text-primary-foreground sm:py-16">
+        <section className="border-t bg-background py-14 text-foreground sm:py-16">
           <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-7 px-4 sm:px-6 md:flex-row md:items-center lg:px-8">
             <div>
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Bu standardı kendi iş emirlerinizde görün</h2>
-              <p className="mt-2 text-sm leading-6 text-primary-foreground sm:text-base">
+              <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">
                 Altı unsurun BakımX&apos;te nasıl bir araya geldiğini ürün sayfasında inceleyin.
               </p>
             </div>
-            <Button asChild size="lg" variant="secondary">
+            <div className="flex shrink-0 flex-col gap-3"><Button asChild size="lg" variant="navy">
               <Link href="/is-emri-programi">
                 Dijital iş emrini gör
                 <ArrowRight aria-hidden="true" />
               </Link>
-            </Button>
+            </Button><DemoRequestButton location="public_closing" /></div>
           </div>
         </section>
       </main>
       <Footer />
-    </>
+    </PublicSite>
   )
 }

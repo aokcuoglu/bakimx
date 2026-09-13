@@ -2,6 +2,8 @@ import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { StatusIncidentConsole } from "@/app/admin/status/status-incident-console"
 
+export const metadata = { title: "Durum Yönetimi · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 export default async function AdminStatusPage() {

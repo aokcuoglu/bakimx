@@ -30,8 +30,8 @@ export function Header() {
     return () => document.removeEventListener("keydown", close);
   }, [mobileOpen]);
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-lg">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
+    <header className="sticky top-0 z-50 border-b border-border bg-card/95 text-foreground backdrop-blur-lg">
+      <div className="mx-auto flex h-18 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
         <Link
           href="/"
           aria-label="BakımX ana sayfa"
@@ -45,11 +45,9 @@ export function Header() {
             scrollToPageTop();
           }}
         >
-          <BrandLogo variant="primary-light" size="lg" priority alt="BakımX" />
-          <span className="border-l pl-3 text-xs font-medium leading-4 text-muted-foreground">
-            Servisinizin
-            <br />
-            yeni düzeni.
+          <BrandLogo variant="primary-light" size="lg" priority alt="" />
+          <span className="text-lg font-bold tracking-tight text-foreground">
+            Bakım<span className="text-primary">X</span>
           </span>
         </Link>
         <nav
@@ -60,17 +58,20 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-navy"
+              className="text-sm font-medium text-foreground transition-colors hover:text-primary"
             >
               {item.label}
             </Link>
           ))}
         </nav>
         <div className="hidden items-center gap-5 lg:flex">
-          <Link href="/login" className="text-sm font-medium text-navy">
+          <Link
+            href="/login"
+            className="rounded-md px-1 py-1 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+          >
             Giriş yap
           </Link>
-          <Button asChild size="xl" className="h-10">
+          <Button asChild variant="navy" size="xl" className="h-10">
             <Link
               href="/register"
               onClick={() =>
@@ -107,7 +108,7 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-md px-2 py-3 text-sm font-medium"
+                className="rounded-md px-2 py-3 text-sm font-medium text-foreground"
                 onClick={() => setMobileOpen(false)}
               >
                 {item.label}
@@ -115,12 +116,12 @@ export function Header() {
             ))}
             <Link
               href="/login"
-              className="px-2 py-3 text-sm font-medium"
+              className="rounded-md px-2 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
               onClick={() => setMobileOpen(false)}
             >
               Giriş yap
             </Link>
-            <Button asChild size="xl" className="mt-2 h-12">
+            <Button asChild variant="navy" size="xl" className="mt-2 h-12">
               <Link
                 href="/register"
                 onClick={() => {

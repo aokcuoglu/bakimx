@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { askLandingAssistant, LANDING_ASSISTANT_TIMEOUT_MS } from "@/lib/landing/assistant-ai"
+import { askWithTimeout } from "@/lib/landing/assistant-timeout"
 import { rateLimit } from "@/lib/rate-limit"
 
 const requestSchema = z.object({
@@ -14,20 +14,6 @@ function clientIp(request: Request): string {
 }
 
 const fallback = () => NextResponse.json({ success: true, mode: "fallback" as const })
-
-export async function askWithTimeout(
-  question: string,
-  timeoutMs: number = LANDING_ASSISTANT_TIMEOUT_MS,
-  ask: typeof askLandingAssistant = askLandingAssistant,
-) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    return await ask(question, controller.signal)
-  } finally {
-    clearTimeout(timeout)
-  }
-}
 
 export async function POST(request: Request) {
   if (process.env.LANDING_ASSISTANT_AI !== "on") return fallback()

@@ -244,6 +244,13 @@ afterAll(() => {
 })
 
 describe("POST /api/auth/register onboarding and attribution", () => {
+  test("defers onboarding without inventing answers when registration only includes account details", async () => {
+    const response = await POST(request(validBody, "198.51.100.76"))
+    expect(response.status).toBe(200)
+    expect(createdWorkshopData).toMatchObject({ onboardingProfile: { status: "pending" } })
+    expect((createdWorkshopData as Record<string, unknown> | null)?.onboardingProfile).toEqual({ status: "pending" })
+  })
+
   test("rejects sectors that are still marked as coming soon", async () => {
     const response = await POST(
       request({ ...validBody, sector: "upholstery" }, "198.51.100.70"),

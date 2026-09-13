@@ -6,6 +6,8 @@ import { TechniciansReport } from "@/components/reports/technicians-report"
 import { getTechnicianReportStats, getTechnicianPerformance } from "@/lib/reports/queries"
 import { TECHNICIAN_ROLES } from "@/lib/constants"
 
+export const metadata = { title: "Teknisyen Raporu" }
+
 export default async function TechniciansReportPage() {
   const paywall = await getFeaturePaywall("reports")
   if (paywall) return paywall

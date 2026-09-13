@@ -1,3 +1,5 @@
+import { DemoRequestButton } from "@/components/public/DemoRequestButton";
+import { PublicSite } from "@/components/public/PublicSite";
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
@@ -61,7 +63,7 @@ const faqStructuredData = {
 
 export default function OtoServisProgramiPage() {
   return (
-    <>
+    <PublicSite editorial>
       <JsonLd data={[applicationStructuredData, faqStructuredData]} />
       <Header />
       <main className="overflow-hidden">
@@ -115,24 +117,24 @@ export default function OtoServisProgramiPage() {
           </div>
         </section>
 
-        <section className="bg-navy py-16 text-navy-foreground sm:py-20" aria-labelledby="akis-baslik">
+        <section className="bg-background py-16 text-foreground sm:py-20" aria-labelledby="akis-baslik">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
-              <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">Servis akışı</p>
+              <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Servis akışı</p>
               <h2 id="akis-baslik" className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Bir araç geldiğinde beş adım</h2>
-              <p className="mt-4 text-base leading-7 text-navy-foreground/70">Ekran ekran dolaşmak yerine aracın kaydını ilerletin. Ekip, sıradaki işi aynı akıştan görsün.</p>
+              <p className="mt-4 text-base leading-7 text-muted-foreground">Ekran ekran dolaşmak yerine aracın kaydını ilerletin. Ekip, sıradaki işi aynı akıştan görsün.</p>
             </div>
-            <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-navy-foreground/15 bg-navy-foreground/15 md:grid-cols-5">
+            <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-5">
               {workflow.map((step, index) => {
                 const Icon = step.icon
                 return (
-                  <li key={step.title} className="relative bg-navy p-5 sm:p-6">
+                  <li key={step.title} className="relative bg-background p-5 sm:p-6">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-sm text-navy-foreground/60">0{index + 1}</span>
-                      <Icon className="size-5 text-navy-foreground/80" aria-hidden="true" />
+                      <span className="font-mono text-sm text-muted-foreground">0{index + 1}</span>
+                      <Icon className="size-5 text-muted-foreground" aria-hidden="true" />
                     </div>
                     <h3 className="mt-8 text-base font-semibold">{step.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-navy-foreground/65">{step.description}</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{step.description}</p>
                   </li>
                 )
               })}
@@ -241,22 +243,22 @@ export default function OtoServisProgramiPage() {
           </div>
         </section>
 
-        <section className="bg-primary py-14 text-primary-foreground sm:py-16">
+        <section className="border-t bg-background py-14 text-foreground sm:py-16">
           <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-7 px-4 sm:px-6 md:flex-row md:items-center lg:px-8">
             <div>
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Servis akışınızı tek kayıtta toplamaya başlayın</h2>
-              <p className="mt-2 text-sm leading-6 text-primary-foreground sm:text-base">E-posta doğrulamasından sonra 7 iş günlük ücretsiz kullanımınız başlar.</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">E-posta doğrulamasından sonra 7 iş günlük ücretsiz kullanımınız başlar.</p>
             </div>
-            <Button asChild size="lg" variant="secondary">
+            <div className="flex shrink-0 flex-col gap-3"><Button asChild size="lg" variant="navy">
               <Link href="/register">
                 Ücretsiz deneyin
                 <ArrowRight aria-hidden="true" />
               </Link>
-            </Button>
+            </Button><DemoRequestButton location="public_closing" /></div>
           </div>
         </section>
       </main>
       <Footer />
-    </>
+    </PublicSite>
   )
 }

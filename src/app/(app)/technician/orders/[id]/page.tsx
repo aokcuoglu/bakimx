@@ -17,6 +17,8 @@ import { ORDER_ITEM_PERMISSION } from "@/lib/technician/item-editing"
 import { technicianOrderDetailWhere } from "@/lib/technician/order-visibility"
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 
+export const metadata = { title: "Teknisyen İş Emri" }
+
 export const dynamic = "force-dynamic"
 
 export default async function TechnicianOrderPage({ params }: { params: Promise<{ id: string }> }) {

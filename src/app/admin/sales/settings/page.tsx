@@ -5,6 +5,8 @@ import { getSalesAccess } from "@/lib/sales/access"
 import { Button } from "@/components/ui/button"
 import { CommissionRuleSettings } from "@/components/sales/commission-rule-settings"
 
+export const metadata = { title: "Satış Ayarları · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 export default async function SalesCommissionSettingsPage() {

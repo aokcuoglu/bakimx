@@ -14,6 +14,8 @@ import { FilterSelect } from "@/components/shared/filter-select"
 
 type SP = { q?: string; type?: string }
 
+export const metadata = { title: "Müşteri Bakiyeleri" }
+
 export default async function CustomerBalancesPage({ searchParams }: { searchParams: Promise<SP> }) {
   const paywall = await getFeaturePaywall("cashbox")
   if (paywall) return paywall
