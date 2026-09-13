@@ -3,7 +3,12 @@
 import { claimMarketingConversions } from "@/app/actions/marketing-conversions"
 import Script from "next/script"
 import { usePathname } from "next/navigation"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
+import {
+  COOKIE_CONSENT_CHANGED_EVENT,
+  hasPerformanceConsent,
+  type CookieConsentRecord,
+} from "@/lib/cookie-consent"
 import { captureMarketingAttribution, trackMarketingEvent, type MarketingEventDetail } from "@/lib/marketing-analytics"
 
 declare global { interface Window { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void } }
@@ -17,9 +22,21 @@ export function MarketingAnalytics() {
   const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
   const enabled = process.env.NEXT_PUBLIC_ANALYTICS_ENABLED === "true"
   const previousPath = useRef<string | null>(null)
+  const [performanceAllowed, setPerformanceAllowed] = useState(false)
 
   useEffect(() => {
-    if (!enabled) return
+    const sync = () => setPerformanceAllowed(hasPerformanceConsent())
+    sync()
+    const onChange = (event: Event) => {
+      const detail = (event as CustomEvent<CookieConsentRecord>).detail
+      setPerformanceAllowed(detail?.preferences.performance === true)
+    }
+    window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, onChange)
+    return () => window.removeEventListener(COOKIE_CONSENT_CHANGED_EVENT, onChange)
+  }, [])
+
+  useEffect(() => {
+    if (!enabled || !performanceAllowed) return
     if (measurementId) {
       window.dataLayer = window.dataLayer || []
       window.gtag = window.gtag || function (...args: unknown[]) { window.dataLayer?.push(args) }
@@ -30,10 +47,10 @@ export function MarketingAnalytics() {
     }
     window.addEventListener("bakimx:analytics", forward)
     return () => window.removeEventListener("bakimx:analytics", forward)
-  }, [enabled, measurementId])
+  }, [enabled, measurementId, performanceAllowed])
 
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled || !performanceAllowed) return
     // The analytics flag is the existing collection gate. No new provider or IDs.
     if (["/", "/fiyatlar", "/register"].includes(pathname)) captureMarketingAttribution()
     // Claim only on authenticated app routes, after the event listener is installed.
@@ -50,15 +67,16 @@ export function MarketingAnalytics() {
       window.addEventListener("focus", deliver)
       return () => { window.clearInterval(timer); window.removeEventListener("focus", deliver) }
     }
-  }, [enabled, pathname])
+  }, [enabled, pathname, performanceAllowed])
 
   useEffect(() => {
+    if (!performanceAllowed) return
     const landingType = LANDINGS[pathname]
     if (!landingType || previousPath.current === pathname) return
     if (trackMarketingEvent("seo_landing_view", { landing_type: landingType })) previousPath.current = pathname
-  }, [pathname])
+  }, [pathname, performanceAllowed])
 
-  if (!enabled || !measurementId) return null
+  if (!enabled || !measurementId || !performanceAllowed) return null
   return <>
     <Script src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`} strategy="afterInteractive" />
     <Script id="bakimx-ga4" strategy="afterInteractive">{`

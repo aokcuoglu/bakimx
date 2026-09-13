@@ -533,7 +533,7 @@ export function MockAppDemo() {
 
 function OrdersTable() {
   return (
-    <div className="max-h-48 overflow-auto rounded-lg border border-border bg-card">
+    <div tabIndex={0} role="region" aria-label="Örnek aktif iş emirleri" className="max-h-48 overflow-auto rounded-lg border border-border bg-card">
       <table className="w-full text-left text-[11px]">
         <caption className="sr-only">Aktif iş emirleri</caption>
         <thead>

@@ -168,7 +168,7 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
         <Textarea id="da-notes" rows={2} placeholder="İhtiyacınızı kısaca yazın" value={data.notes} onChange={(e) => setData({ ...data, notes: e.target.value })} />
       </div>
 
-      <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+      <Button type="submit" size="lg" variant="navy" className="w-full rounded-lg" disabled={submitting}>
         {submitting ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Gönderiliyor...

@@ -24,14 +24,16 @@ test("hero opens the demo modal and core destinations remain available", async (
   await expect(page.locator("[data-product-window]")).toHaveCount(4);
   await expect(page.locator('[data-product-window="dashboard"]')).toBeVisible();
 
-  for (const id of ["ozellikler", "neden", "sss", "ruhsat-demo"]) {
+  for (const id of ["ozellikler", "neden", "sss"]) {
     await expect(page.locator(`[id="${id}"]`)).toHaveCount(1);
   }
+  await expect(page.locator("#ruhsat-demo")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Örnek ruhsatı okut", exact: true })).toHaveCount(0);
   await page
     .getByRole("button", { name: "Birlikte inceleyelim", exact: true })
     .first()
     .click();
-  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Servisinizi tanıyalım." })).toBeVisible();
   await expect(page.getByLabel("Ad Soyad", { exact: true })).toBeInViewport();
   expect(errors).toEqual([]);
 });

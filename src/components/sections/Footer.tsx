@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { Reveal } from "@/components/shared/reveal";
+import { CookiePreferencesButton } from "@/components/cookie-consent/cookie-preferences-button";
+import styles from "./footer.module.css";
 
-// lucide-react no longer ships brand/social glyphs, so we inline the official marks.
 function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
@@ -29,71 +32,124 @@ function XIcon(props: React.SVGProps<SVGSVGElement>) {
 
 const socialLinks = [
   {
-    label: "BakimX LinkedIn sayfası",
+    label: "BakımX LinkedIn sayfası",
     href: "https://www.linkedin.com/company/bakimx/",
     icon: LinkedinIcon,
   },
   {
-    label: "BakimX Instagram sayfası",
+    label: "BakımX Instagram sayfası",
     href: "https://www.instagram.com/bakimxcom",
     icon: InstagramIcon,
   },
   {
-    label: "BakimX X (Twitter) hesabı",
+    label: "BakımX X (Twitter) hesabı",
     href: "https://x.com/bakimxcom",
     icon: XIcon,
   },
-];
+] as const;
 
-const footerLinks = {
-  product: [
-    { label: "Oto Servis Programı", href: "/oto-servis-programi" },
-    { label: "Dijital Araç Kabul", href: "/dijital-arac-kabul" },
-    { label: "İş Emri Programı", href: "/is-emri-programi" },
-    {
-      label: "Defter, Excel ve Program",
-      href: "/karsilastir/defter-excel-oto-servis-programi",
-    },
-    { label: "Özellikler", href: "/#ozellikler" },
-    { label: "Neden BakimX", href: "/#neden" },
-    { label: "SSS", href: "/#sss" },
-    { label: "Fiyatlar", href: "/fiyatlar" },
-  ],
-  company: [
-    { label: "Demo Talep Et", href: "/demo" },
-    { label: "İletişim", href: "/demo" },
-    { label: "Sistem Durumu", href: "/status" },
-  ],
-  legal: [
-    { label: "Kullanım Koşulları", href: "/terms" },
-    { label: "KVKK Aydınlatma Metni", href: "/kvkk" },
-    { label: "Açık Rıza Metni", href: "/acik-riza" },
-    { label: "Gizlilik ve Çerez Politikası", href: "/privacy" },
-  ],
-} as const;
+type FooterLink = { label: string; href: string };
+
+type SolutionGroup = {
+  title: string;
+  links: readonly FooterLink[];
+};
+
+const solutionGroups: readonly SolutionGroup[] = [
+  {
+    title: "Oto servis programı",
+    links: [
+      { label: "Oto Servis Programı", href: "/oto-servis-programi" },
+      { label: "Fiyatlar", href: "/fiyatlar" },
+      { label: "Özellikler", href: "/#ozellikler" },
+    ],
+  },
+  {
+    title: "Dijital araç kabul",
+    links: [{ label: "Dijital Araç Kabul", href: "/dijital-arac-kabul" }],
+  },
+  {
+    title: "İş emri yönetimi",
+    links: [
+      { label: "İş Emri Programı", href: "/is-emri-programi" },
+      {
+        label: "Defter, Excel ve Program",
+        href: "/karsilastir/defter-excel-oto-servis-programi",
+      },
+    ],
+  },
+] as const;
+
+const companyLinks: readonly FooterLink[] = [
+  { label: "Demo Talep Et", href: "/demo" },
+  { label: "Ücretsiz Dene", href: "/register" },
+  { label: "İletişim", href: "/demo" },
+  { label: "Sistem Durumu", href: "/status" },
+] as const;
+
+/** Blog eklendiğinde buraya `{ label: "Blog", href: "/blog" }` konur. */
+const resourceLinks: readonly FooterLink[] = [
+  { label: "Neden BakımX", href: "/#neden" },
+  { label: "SSS", href: "/#sss" },
+  { label: "Araç Kabul Formu Rehberi", href: "/rehber/arac-kabul-formu" },
+  {
+    label: "İş Emri Rehberi",
+    href: "/rehber/oto-servis-is-emri-nasil-hazirlanir",
+  },
+] as const;
+
+const legalLinks: readonly FooterLink[] = [
+  { label: "Kullanım Koşulları", href: "/terms" },
+  { label: "KVKK Aydınlatma Metni", href: "/kvkk" },
+  { label: "Açık Rıza Metni", href: "/acik-riza" },
+  { label: "Gizlilik ve Çerez Politikası", href: "/privacy" },
+] as const;
+
+function FooterNavLink({ href, label }: FooterLink) {
+  if (href.startsWith("http")) {
+    return (
+      <a
+        href={href}
+        className={styles.link}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {label}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={styles.link}>
+      {label}
+    </Link>
+  );
+}
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t bg-background text-foreground">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-9 lg:py-10">
-        <div className="grid gap-8 sm:gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          <Reveal amount={0.15} className="sm:col-span-2 lg:col-span-1">
+    <footer className={styles.footer}>
+      <div className={styles.inner}>
+        <div className={styles.grid}>
+          <Reveal amount={0.15} className={styles.brandBlock}>
             <Link
               href="/"
-              aria-label="BakimX ana sayfa"
-              className="inline-flex items-center mb-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+              aria-label="BakımX ana sayfa"
+              className={styles.brandLink}
             >
-              <BrandLogo variant="primary-light" size="lg" alt="BakimX" />
+              <BrandLogo variant="primary-light" size="lg" alt="" />
+              <span className={styles.brandName}>
+                Bakım<span className={styles.brandAccent}>X</span>
+              </span>
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+            <p className={styles.tagline}>
               Serviste işler yolunda. Kontrol sizde.
             </p>
-            <p className="mt-3 text-xs text-muted-foreground">
+            <p className={styles.taglineMeta}>
               Türkiye&apos;deki oto servisler için geliştiriliyor.
             </p>
-            <div className="mt-5 flex items-center gap-3">
+            <div className={styles.socialRow}>
               {socialLinks.map(({ label, href, icon: Icon }) => (
                 <a
                   key={href}
@@ -101,7 +157,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-card text-muted-foreground transition-colors hover:bg-card hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                  className={styles.socialLink}
                 >
                   <Icon className="h-[18px] w-[18px]" />
                 </a>
@@ -109,41 +165,72 @@ export function Footer() {
             </div>
           </Reveal>
 
-          {[
-            { title: "Ürün", links: footerLinks.product },
-            { title: "Şirket", links: footerLinks.company },
-            { title: "Yasal", links: footerLinks.legal },
-          ].map((group, i) => (
-            <Reveal key={group.title} amount={0.15} delay={(i + 1) * 80}>
-              <h3 className="font-semibold mb-2.5 text-xs sm:text-sm uppercase tracking-wider text-muted-foreground">
-                {group.title}
-              </h3>
-              <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:block sm:space-y-2">
-                {group.links.map((link) => (
-                  <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </Reveal>
-          ))}
+          <Reveal amount={0.15} delay={80}>
+            <h3 className={styles.columnTitle}>Çözümler</h3>
+            {solutionGroups.map((group) => (
+              <div key={group.title} className={styles.solutionGroup}>
+                <h4 className={styles.solutionHeading}>{group.title}</h4>
+                <ul className={styles.linkList}>
+                  {group.links.map((link) => (
+                    <li key={`${group.title}-${link.href}-${link.label}`}>
+                      <FooterNavLink {...link} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </Reveal>
+
+          <Reveal amount={0.15} delay={120}>
+            <h3 className={styles.columnTitle}>Şirket</h3>
+            <ul className={styles.linkList}>
+              {companyLinks.map((link) => (
+                <li key={`${link.href}-${link.label}`}>
+                  <FooterNavLink {...link} />
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+
+          <Reveal amount={0.15} delay={160}>
+            <h3 className={styles.columnTitle}>Kaynaklar</h3>
+            <ul className={styles.linkList}>
+              {resourceLinks.map((link) => (
+                <li key={`${link.href}-${link.label}`}>
+                  <FooterNavLink {...link} />
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+
+          <Reveal amount={0.15} delay={200}>
+            <h3 className={styles.columnTitle}>Yasal</h3>
+            <ul className={styles.linkList}>
+              {legalLinks.map((link) => (
+                <li key={link.href}>
+                  <FooterNavLink {...link} />
+                </li>
+              ))}
+              <li>
+                <CookiePreferencesButton className={`${styles.link} ${styles.cookieButton} h-auto rounded-none`} />
+              </li>
+            </ul>
+          </Reveal>
         </div>
 
-        <div className="mt-6 pt-4 sm:mt-8 sm:pt-5 border-t border-border">
-          <div className="flex flex-row flex-wrap justify-between items-center gap-x-4 gap-y-1">
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              &copy; {currentYear} BakimX. Tüm hakları saklıdır.
-            </p>
-            <span className="text-xs text-muted-foreground">
-              v{process.env.NEXT_PUBLIC_APP_VERSION}
-            </span>
+        <div className={styles.bottomBar}>
+          <p>&copy; {currentYear} BakımX. Tüm hakları saklıdır.</p>
+          <div className={styles.bottomMeta}>
+            <Link href="/status" className={styles.link}>
+              Sistem durumu
+            </Link>
+            <span>v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
           </div>
         </div>
+      </div>
+
+      <div className={styles.watermark} aria-hidden="true">
+        <span className={styles.watermarkText}>BakımX</span>
       </div>
     </footer>
   );

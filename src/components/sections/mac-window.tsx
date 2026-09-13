@@ -10,6 +10,12 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import styles from "./mac-window.module.css";
 
@@ -169,48 +175,83 @@ export function MacWindow({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
-        <div className={styles.traffic} role="group" aria-label="Pencere kontrolleri">
-          <button
-            type="button"
-            className={`${styles.light} ${styles.close}`}
-            aria-label="Kapat"
-            title="Kapat"
-            onClick={(e) => {
-              e.stopPropagation();
-              setClosed(true);
-            }}
-          />
-          <button
-            type="button"
-            className={`${styles.light} ${styles.minimize}`}
-            aria-label={minimized ? "Genişlet" : "Simge durumuna küçült"}
-            title={minimized ? "Genişlet" : "Simge durumuna küçült"}
-            onClick={(e) => {
-              e.stopPropagation();
-              setMinimized((v) => !v);
-              if (maximized) setMaximized(false);
-              onFocus(id);
-            }}
-          />
-          <button
-            type="button"
-            className={`${styles.light} ${styles.maximize}`}
-            aria-label={maximized ? "Önceki boyuta dön" : "Büyüt"}
-            title={maximized ? "Önceki boyuta dön" : "Büyüt"}
-            onClick={(e) => {
-              e.stopPropagation();
-              setMaximized((v) => !v);
-              setMinimized(false);
-              onFocus(id);
-            }}
-          />
+        <div
+          className={styles.traffic}
+          role="group"
+          aria-label="Pencere kontrolleri"
+        >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                className={`${styles.light} ${styles.close}`}
+                aria-label="Kapat"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setClosed(true);
+                }}
+              />
+            </TooltipTrigger>
+            <TooltipContent>Kapat</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                className={`${styles.light} ${styles.minimize}`}
+                aria-label={minimized ? "Genişlet" : "Simge durumuna küçült"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMinimized((v) => !v);
+                  if (maximized) setMaximized(false);
+                  onFocus(id);
+                }}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              {minimized ? "Genişlet" : "Simge durumuna küçült"}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                className={`${styles.light} ${styles.maximize}`}
+                aria-label={maximized ? "Önceki boyuta dön" : "Büyüt"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMaximized((v) => !v);
+                  setMinimized(false);
+                  onFocus(id);
+                }}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              {maximized ? "Önceki boyuta dön" : "Büyüt"}
+            </TooltipContent>
+          </Tooltip>
         </div>
         <span id={titleId} className={styles.title}>
           {title}
         </span>
         <span className={styles.barSpacer} aria-hidden />
       </div>
-      {!minimized && <div className={styles.body}>{children}</div>}
+      {!minimized && (
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label={`${title} içeriği`}
+          className={styles.body}
+        >
+          {children}
+        </div>
+      )}
     </div>
   );
 }

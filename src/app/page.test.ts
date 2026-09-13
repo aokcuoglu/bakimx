@@ -6,6 +6,10 @@ const sectionsDir = join(import.meta.dir, "..", "components", "sections");
 const heroSource = readFileSync(join(sectionsDir, "HeroSection.tsx"), "utf8");
 
 describe("landing performance and conversion contracts", () => {
+  test("the retired standalone registration demo stays off the home page", () => {
+    const homeSource = readFileSync(join(import.meta.dir, "page.tsx"), "utf8");
+    expect(homeSource).not.toContain("RuhsatDemoSection");
+  });
   // Browser tests exercise the rendered page, keyboard navigation, mobile
   // overflow, FAQ data and demo submission. These guards retain regressions
   // that cannot be detected after hydration alone.

@@ -22,6 +22,8 @@ const OCR_TRACE = [
 ]
 
 const nextConfig: NextConfig = {
+  // Keep localhost controls reachable: the dev badge overlaps the mobile menu/FABs.
+  devIndicators: false,
   output: "standalone",
   outputFileTracingIncludes: {
     "/api/plate/scan": OCR_TRACE,

@@ -72,7 +72,7 @@ export function AnswersView({ query, aiEnabled, onBack, onNavigate }: AnswersVie
     <div className="space-y-4 p-4">
       <ViewHeader title="Sorunuzun yanıtı" onBack={onBack} />
 
-      <div className="rounded-2xl bg-muted/60 px-4 py-3">
+      <div className="rounded-lg bg-muted px-3.5 py-3">
         <p className="text-xs font-medium text-muted-foreground">Sorunuz</p>
         <p className="mt-0.5 text-sm leading-relaxed text-foreground">{query}</p>
       </div>
@@ -175,8 +175,8 @@ export function AnswersView({ query, aiEnabled, onBack, onNavigate }: AnswersVie
 }
 
 const ROW_CLASS =
-  "h-auto w-full justify-start gap-3 whitespace-normal rounded-xl p-3 text-left " +
-  "hover:border-primary/40 hover:bg-primary/5";
+  "h-auto w-full justify-start gap-3 whitespace-normal rounded-lg border-border p-3 text-left " +
+  "hover:bg-muted/60";
 
 function FallbackAction({
   icon: Icon,
@@ -198,11 +198,11 @@ function FallbackAction({
     <Button
       type="button"
       variant="outline"
-      className={cn(ROW_CLASS, emphasis && "border-primary/40 bg-primary/5")}
+      className={cn(ROW_CLASS, emphasis && "border-foreground/15 bg-muted")}
       onClick={onClick}
     >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary-strong transition-colors group-hover/button:bg-primary/15">
-        <Icon className="size-5" />
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted text-foreground">
+        <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1 space-y-0.5">
         <span className="block text-sm font-medium leading-tight text-foreground">{label}</span>

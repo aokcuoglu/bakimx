@@ -43,7 +43,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
   { slug: "terms", href: "/terms", title: "Kullanım Koşulları ve Hizmet Sözleşmesi" },
   { slug: "kvkk", href: "/kvkk", title: "KVKK Aydınlatma Metni" },
   { slug: "acik-riza", href: "/acik-riza", title: "Açık Rıza Metni" },
-  { slug: "privacy", href: "/privacy", title: "Gizlilik ve Çerez Politikası" },
+  { slug: "privacy", href: "/privacy", title: "Gizlilik Politikası" },
 ];
 
 type LegalPageProps = {
@@ -56,6 +56,10 @@ type LegalPageProps = {
   children: React.ReactNode;
 };
 
+/**
+ * Hukuki belge düzeni — Vercel/Linear açık yüzey + okuma odaklı tipografi.
+ * Referans: sade başlık, hemen altında güncelleme tarihi, geniş satır aralığı.
+ */
 export function LegalPage({
   slug,
   title,
@@ -69,50 +73,50 @@ export function LegalPage({
     <PublicSite>
       <Header />
 
-      <main className="flex-1">
-        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            {title}
-          </h1>
+      <main className="flex-1 bg-background">
+        <article className="mx-auto max-w-2xl px-5 pb-20 pt-14 sm:px-6 sm:pb-24 sm:pt-20 lg:px-8">
+          <header className="space-y-3">
+            <h1 className="text-[2rem] font-semibold leading-[1.15] tracking-tight text-foreground sm:text-4xl sm:leading-[1.1]">
+              {title}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Son güncelleme: {lastUpdated}
+            </p>
+          </header>
+
           {intro ? (
-            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+            <p className="mt-8 text-[15px] leading-7 text-muted-foreground sm:text-base sm:leading-7">
               {intro}
             </p>
           ) : null}
-          <p className="mt-3 text-sm text-muted-foreground">
-            Son güncelleme: {lastUpdated}
-          </p>
 
-          {/*
-            Bölümler düz <p>, <ul>/<li>, <strong>, <h3> ile yazılabilsin diye
-            tipografi tek yerden (arbitrary variant'larla) veriliyor.
-          */}
           <div
             className={[
-              "mt-10 space-y-10",
-              "[&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-foreground",
-              "[&_h3]:pt-1 [&_h3]:font-medium [&_h3]:text-foreground",
-              "[&_p]:text-[15px] [&_p]:leading-relaxed [&_p]:text-muted-foreground",
-              "[&_li]:text-[15px] [&_li]:leading-relaxed [&_li]:text-muted-foreground",
-              "[&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-5",
-              "[&_ol]:list-decimal [&_ol]:space-y-1.5 [&_ol]:pl-5",
+              "mt-12 space-y-12",
+              "[&_h2]:text-lg [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-foreground",
+              "[&_h3]:pt-1 [&_h3]:text-[15px] [&_h3]:font-medium [&_h3]:text-foreground",
+              "[&_p]:text-[15px] [&_p]:leading-7 [&_p]:text-muted-foreground",
+              "[&_li]:text-[15px] [&_li]:leading-7 [&_li]:text-muted-foreground",
+              "[&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5",
+              "[&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-5",
               "[&_strong]:font-medium [&_strong]:text-foreground",
-              "[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:no-underline",
+              "[&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-primary",
             ].join(" ")}
           >
             {children}
           </div>
 
-          <nav className="mt-14 border-t pt-8">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              İlgili belgeler
-            </h2>
-            <ul className="mt-3 space-y-2">
+          <nav
+            aria-label="İlgili belgeler"
+            className="mt-16 border-t border-border pt-8"
+          >
+            <p className="text-sm text-muted-foreground">İlgili belgeler</p>
+            <ul className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-2">
               {related.map((doc) => (
                 <li key={doc.slug}>
                   <Link
                     href={doc.href}
-                    className="text-sm text-primary underline underline-offset-2 hover:no-underline"
+                    className="text-sm text-foreground underline underline-offset-2 hover:text-primary"
                   >
                     {doc.title}
                   </Link>
@@ -120,7 +124,7 @@ export function LegalPage({
               ))}
             </ul>
           </nav>
-        </div>
+        </article>
       </main>
 
       <Footer />
@@ -128,18 +132,21 @@ export function LegalPage({
   );
 }
 
-/** Numaralı hukuki bölüm — başlık + içerik. */
+/** Hukuki bölüm — başlık + içerik. `n` verilirse numaralı başlık üretir. */
 export function LegalSection({
   n,
   title,
   children,
+  id,
 }: {
   n?: number;
   title: string;
   children: React.ReactNode;
+  /** Sayfa içi çapa (ör. çerez politikası bağlantısı). */
+  id?: string;
 }) {
   return (
-    <section className="space-y-4">
+    <section id={id} className="space-y-3 scroll-mt-24">
       <h2>{n != null ? `${n}. ${title}` : title}</h2>
       {children}
     </section>

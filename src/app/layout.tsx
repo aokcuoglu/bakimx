@@ -8,6 +8,7 @@ import { SiteAssistant } from "@/components/site-assistant/site-assistant"
 import { announcementDismissScript } from "@/lib/landing/announcement"
 import { SITE_URL } from "@/lib/seo"
 import { MarketingAnalytics } from "@/components/analytics/marketing-analytics"
+import { CookieConsent } from "@/components/cookie-consent/cookie-consent"
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -107,6 +108,7 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col bg-background text-foreground">
         <TooltipProvider>
           {children}
+          <CookieConsent />
           <MarketingAnalytics />
           <Toaster />
           <SiteAssistant aiEnabled={process.env.LANDING_ASSISTANT_AI === "on"} />

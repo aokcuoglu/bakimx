@@ -31,11 +31,11 @@ export function SuccessView({ context, onReset, onClose }: SuccessViewProps) {
       <p className="text-base font-semibold text-foreground">{m.title}</p>
       <p className="text-sm text-muted-foreground">{m.body}</p>
       <div className="mt-2 flex w-full flex-col gap-2">
-        <Button type="button" variant="outline" onClick={onReset}>
-          Başka bir şey sor
-        </Button>
-        <Button type="button" onClick={onClose}>
+        <Button type="button" variant="navy" className="w-full rounded-lg" onClick={onClose}>
           Kapat
+        </Button>
+        <Button type="button" variant="outline" className="w-full rounded-lg" onClick={onReset}>
+          Başka bir şey sor
         </Button>
       </div>
     </div>

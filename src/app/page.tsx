@@ -2,7 +2,6 @@ import { PublicSite } from "@/components/public/PublicSite";
 import type { Metadata } from "next";
 import { Header } from "@/components/sections/Header";
 import { HeroSection } from "@/components/sections/HeroSection";
-import { RuhsatDemoSection } from "@/components/sections/RuhsatDemoSection";
 import {
   ProductTourSection,
   OperationsSection,
@@ -49,7 +48,6 @@ export default function Home() {
         <ProductTourSection />
         <OperationsSection />
         <GettingStartedSection />
-        <RuhsatDemoSection />
         <FAQSection />
       </main>
       <Footer />
