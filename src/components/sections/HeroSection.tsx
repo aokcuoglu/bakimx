@@ -30,8 +30,8 @@ export function HeroSection() {
             width={1280}
             height={720}
             decoding="async"
-            // Decorative; keep out of LCP contention with the H1.
-            loading="lazy"
+            // Decorative, but above the fold: load it with the first viewport.
+            loading="eager"
           />
         </picture>
       </div>
