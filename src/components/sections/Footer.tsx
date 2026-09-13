@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { Reveal } from "@/components/shared/reveal";
-import { CookiePreferencesButton } from "@/components/cookie-consent/cookie-preferences-button";
 
 // lucide-react no longer ships brand/social glyphs, so we inline the official marks.
 function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -130,11 +129,6 @@ export function Footer() {
                     </a>
                   </li>
                 ))}
-                {group.title === "Yasal" ? (
-                  <li>
-                    <CookiePreferencesButton className="text-sm text-muted-foreground hover:text-foreground transition-colors" />
-                  </li>
-                ) : null}
               </ul>
             </Reveal>
           ))}
