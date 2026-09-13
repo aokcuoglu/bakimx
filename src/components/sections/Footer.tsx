@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { Reveal } from "@/components/shared/reveal";
+import { CookiePreferencesButton } from "@/components/cookie-consent/cookie-preferences-button";
 
 // lucide-react no longer ships brand/social glyphs, so we inline the official marks.
 function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -54,7 +55,6 @@ const footerLinks = {
       label: "Defter, Excel ve Program",
       href: "/karsilastir/defter-excel-oto-servis-programi",
     },
-    { label: "Canlı Demo", href: "/#ruhsat-demo" },
     { label: "Özellikler", href: "/#ozellikler" },
     { label: "Neden BakimX", href: "/#neden" },
     { label: "SSS", href: "/#sss" },
@@ -71,7 +71,7 @@ const footerLinks = {
     { label: "Açık Rıza Metni", href: "/acik-riza" },
     { label: "Gizlilik ve Çerez Politikası", href: "/privacy" },
   ],
-};
+} as const;
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -130,6 +130,11 @@ export function Footer() {
                     </a>
                   </li>
                 ))}
+                {group.title === "Yasal" ? (
+                  <li>
+                    <CookiePreferencesButton className="text-sm text-muted-foreground hover:text-foreground transition-colors" />
+                  </li>
+                ) : null}
               </ul>
             </Reveal>
           ))}

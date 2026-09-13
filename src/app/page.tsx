@@ -7,10 +7,8 @@ import {
   ProductTourSection,
   OperationsSection,
   GettingStartedSection,
-  RoadmapSection,
 } from "@/components/sections/LandingContent";
 import { FAQSection } from "@/components/sections/FAQSection";
-import { DemoFormSection } from "@/components/sections/DemoFormSection";
 import { Footer } from "@/components/sections/Footer";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LANDING_FAQ_ITEMS } from "@/lib/faq-data";
@@ -52,9 +50,7 @@ export default function Home() {
         <OperationsSection />
         <GettingStartedSection />
         <RuhsatDemoSection />
-        <RoadmapSection />
         <FAQSection />
-        <DemoFormSection />
       </main>
       <Footer />
     </PublicSite>

@@ -15,7 +15,9 @@ describe("landing performance and conversion contracts", () => {
     expect(heading).not.toMatch(/initial=|animate=|enter-up|opacity-0/);
     expect(heroSource).not.toContain("framer-motion");
     expect(heroSource).not.toContain("<Carousel");
-    expect(heroSource).toContain("Servisiniz büyüsün.");
+    expect(heroSource).toContain("İş emri 10 saniyede");
+    expect(heroSource).toContain("Şaseden parça listesi");
+    expect(heroSource).toContain("Her kayıt yerinde");
     expect(heroSource).not.toMatch(/^\s*(priority|preload)(\s*=|\s*$)/m);
     expect(heroSource).not.toContain("setInterval");
   });
@@ -25,7 +27,9 @@ describe("landing performance and conversion contracts", () => {
     expect(heroSource).toContain('cta_location: "hero_secondary"');
     expect(heroSource).toContain('"lite_cta_click"');
     expect(heroSource).toContain('plan_tier: "lite"');
-    expect(heroSource).toContain('href="/fiyatlar#lite"');
+    expect(heroSource).toContain('href="/register"');
+    expect(heroSource).not.toContain("Lite 0 TL/ay");
+    expect(heroSource).not.toContain("Kredi kartı gerekmez");
     expect(heroSource).toContain('"demo_cta_click"');
   });
 });

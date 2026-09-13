@@ -7,6 +7,13 @@ import { trackMarketingEvent } from "@/lib/marketing-analytics";
 import { DemoRequestButton } from "@/components/public/DemoRequestButton";
 import styles from "./landing-editorial.module.css";
 
+/** Servis sahiplerinin en sık yaşadığı 3 ağrı — hero kolajı. */
+const HERO_COLLAGE = [
+  "İş emri 10 saniyede",
+  "Şaseden parça listesi",
+  "Her kayıt yerinde",
+] as const;
+
 export function HeroSection() {
   return (
     <section id="hero" aria-labelledby="hero-title" className={styles.hero}>
@@ -16,12 +23,20 @@ export function HeroSection() {
           <ChevronRight size={14} aria-hidden />
         </p>
         <h1 id="hero-title" className={styles.headline}>
-          Servisiniz büyüsün.
-          <br />
-          Kontrol sizde kalsın.
+          <span className={styles.collage}>
+            {HERO_COLLAGE.map((line, index) => (
+              <span
+                key={line}
+                className={styles.collageLine}
+                data-i={index}
+              >
+                {line}
+              </span>
+            ))}
+          </span>
         </h1>
         <p className={styles.intro}>
-          Araç kabulünden doğru parçaya, iş emrinden tahsilata.
+          Hızlı iş emri, araca özel parça, kaybolmayan geçmiş.
           <br className={styles.desktopBreak} /> Servisinizin bütün işi, tek bir
           yerde.
         </p>
@@ -36,7 +51,7 @@ export function HeroSection() {
           />
           <Button asChild variant="navy" size="xl" className="h-12 px-6">
             <Link
-              href="/fiyatlar#lite"
+              href="/register"
               onClick={() =>
                 trackMarketingEvent("lite_cta_click", {
                   cta_location: "hero_primary",
@@ -48,9 +63,6 @@ export function HeroSection() {
             </Link>
           </Button>
         </div>
-        <p className={styles.offer}>
-          Lite 0 TL/ay <span aria-hidden>·</span> Kredi kartı gerekmez
-        </p>
       </div>
     </section>
   );

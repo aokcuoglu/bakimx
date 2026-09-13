@@ -10,8 +10,11 @@ import {
   MonitorSmartphone,
   ClipboardCheck,
   MessageSquareText,
+  FileText,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export { ProductStage as ProductTourSection } from "./ProductStage";
 
@@ -68,9 +71,26 @@ export function OperationsSection() {
                 text: "Yönetici, servis danışmanı ve teknisyen kendi yetkileriyle çalışsın. Görevler ve araç geçmişi aynı yerde bulunsun.",
                 tag: "Ekip & müşteri geçmişi",
               },
-            ].map(({ icon: Icon, title, text, tag }) => (
+              {
+                icon: FileText,
+                title: "e-Fatura & e-Arşiv",
+                text: "Servis işlemleri ile elektronik belge süreçlerini birbirine bağlamak için planlanıyor.",
+                tag: "Elektronik belgeler",
+                upcoming: true,
+              },
+              {
+                icon: Building2,
+                title: "Çoklu şube yönetimi",
+                text: "Birden fazla şubenin işleyişini ortak bir görünümden takip etmek için planlanıyor.",
+                tag: "Şube yönetimi",
+                upcoming: true,
+              },
+            ].map(({ icon: Icon, title, text, tag, upcoming }) => (
               <div key={tag} className="border-t border-border py-7">
-                <Icon className="mb-5 size-6 text-primary" />
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <Icon className="size-6 text-primary" />
+                  {upcoming && <Badge variant="secondary">Yakında</Badge>}
+                </div>
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {tag}
                 </p>
@@ -139,51 +159,6 @@ export function GettingStartedSection() {
             </div>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
-
-export function RoadmapSection() {
-  return (
-    <section className="border-y bg-background py-16">
-      <div className="mx-auto grid max-w-7xl gap-8 px-5 sm:px-8 lg:grid-cols-[1.1fr_1fr_1fr]">
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Bir sonraki adımlar
-          </p>
-          <h2 className="text-2xl font-semibold tracking-tight text-navy">
-            Servisinizle birlikte gelişir.
-          </h2>
-          <p className="mt-4 text-xs leading-6 text-muted-foreground">
-            Planlanan geliştirmeler henüz kullanıma açık değildir. Kapsam ve
-            sıra, servislerden gelen geri bildirimlerle netleşir.
-          </p>
-        </div>
-        {[
-          {
-            phase: "Faz 1",
-            name: "e-Fatura & e-Arşiv",
-            text: "Servis işlemleri ile elektronik belge süreçlerini birbirine bağlamak.",
-          },
-          {
-            phase: "Faz 2",
-            name: "Çoklu şube yönetimi",
-            text: "Birden fazla şubenin işleyişini ortak bir görünümden takip etmek.",
-          },
-        ].map((item) => (
-          <div key={item.phase} className="rounded-xl border bg-card p-6">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {item.phase} <span className="mx-2">/</span> Yakında · Planlanan
-            </p>
-            <h3 className="mt-5 text-lg font-semibold text-navy">
-              {item.name}
-            </h3>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              {item.text}
-            </p>
-          </div>
-        ))}
       </div>
     </section>
   );

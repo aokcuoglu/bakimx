@@ -12,16 +12,16 @@ test("hero opens the demo modal and core destinations remain available", async (
   await page.evaluate(() => document.fonts.ready);
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    /Servisiniz büyüsün.\s*Kontrol sizde kalsın./,
+    /İş emri 10 saniyede\s*Şaseden parça listesi\s*Her kayıt yerinde/,
   );
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   await expect(
     page
       .getByRole("link", { name: "Ücretsiz başlayın", exact: true })
       .first(),
-  ).toHaveAttribute("href", "/fiyatlar#lite");
+  ).toHaveAttribute("href", "/register");
 
-  await expect(page.locator("[data-product-window]")).toHaveCount(3);
+  await expect(page.locator("[data-product-window]")).toHaveCount(4);
   await expect(page.locator('[data-product-window="dashboard"]')).toBeVisible();
 
   for (const id of ["ozellikler", "neden", "sss", "ruhsat-demo"]) {
