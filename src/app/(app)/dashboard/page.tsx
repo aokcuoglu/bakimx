@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { getPlanState, hasFeature } from "@/lib/plan"
+import { redirect } from "next/navigation"
+import { isOnboardingPending } from "@/lib/validations/onboarding"
 
 import {
   getDashboardStats,
@@ -43,6 +45,9 @@ import { OperationalAlertsWidget } from "@/components/analytics/operational-aler
 
 export default async function DashboardPage() {
   const { user, workshop } = await getAppData()
+  if (user.role === "owner" && !user.impersonatorAdminId && isOnboardingPending(workshop?.onboardingProfile)) {
+    redirect("/onboarding")
+  }
   const accessTier = getPlanState(workshop!).accessTier
   const canQuotes = hasFeature(accessTier, "quotes")
   const canPhotos = hasFeature(accessTier, "photoChecklist")

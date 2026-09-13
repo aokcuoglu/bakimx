@@ -24,7 +24,7 @@ function formatTime(iso: string): string {
 /** Çevrimdışıyken gösterilen "ne zaman açığız" kartı. */
 function HoursCard({ status }: { status: LiveChatStatusWire }) {
   return (
-    <div className="rounded-xl border bg-muted/40 p-3">
+    <div className="rounded-lg border bg-muted/40 p-3">
       <p className="flex items-center gap-1.5 text-xs font-medium text-foreground">
         <Clock className="size-3.5 shrink-0" />
         Destek saatlerimiz
@@ -49,7 +49,7 @@ function MessageBubble({ message }: { message: LiveChatMessageWire }) {
 
   if (isSystem) {
     return (
-      <div className="rounded-xl bg-muted/60 px-3 py-2">
+      <div className="rounded-lg bg-muted/60 px-3 py-2">
         <p className="text-xs text-muted-foreground">{message.body}</p>
       </div>
     );
@@ -59,12 +59,12 @@ function MessageBubble({ message }: { message: LiveChatMessageWire }) {
     <div className={cn("flex", isVisitor ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[85%] rounded-2xl px-3 py-2",
-          isVisitor ? "bg-primary text-primary-foreground" : "border bg-card text-foreground",
+          "max-w-[85%] rounded-lg px-3 py-2",
+          isVisitor ? "bg-navy text-navy-foreground" : "bg-muted text-foreground",
         )}
       >
-        <p className="whitespace-pre-wrap break-words text-sm">{message.body}</p>
-        <p className={cn("mt-1 text-[10px]", isVisitor ? "text-primary-foreground" : "text-muted-foreground")}>
+        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.body}</p>
+        <p className={cn("mt-1 text-[10px]", isVisitor ? "text-navy-foreground" : "text-muted-foreground")}>
           {isVisitor ? "Siz" : "Destek"} · {formatTime(message.createdAt)}
         </p>
       </div>
@@ -112,8 +112,10 @@ function PreChatForm({
 
   return (
     <form onSubmit={submit} className="space-y-3 p-4">
-      <div className={cn("rounded-xl px-3 py-2.5", status.online ? "bg-success/10" : "bg-muted/60")}>
-        <p className="text-sm text-foreground">{status.online ? status.greeting : status.offlineMessage}</p>
+      <div className={cn("rounded-lg px-3.5 py-3", status.online ? "bg-muted" : "bg-muted/60")}>
+        <p className="text-sm leading-relaxed text-foreground">
+          {status.online ? status.greeting : status.offlineMessage}
+        </p>
         {!status.online && status.nextOpeningText && (
           <p className="mt-1 text-xs text-muted-foreground">{status.nextOpeningText}</p>
         )}
@@ -171,7 +173,7 @@ function PreChatForm({
         {errors.message && <p className="text-xs text-destructive-strong">{errors.message}</p>}
       </div>
 
-      <Button type="submit" size="lg" className="w-full" disabled={sending}>
+      <Button type="submit" size="lg" variant="navy" className="w-full rounded-lg" disabled={sending}>
         {sending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Bağlanıyor...
@@ -282,9 +284,16 @@ export function LiveChatView({ onBack }: LiveChatViewProps) {
           }}
           placeholder="Mesajınızı yazın..."
           aria-label="Mesajınız"
-          className="max-h-28 min-h-9 resize-none"
+          className="max-h-28 min-h-9 resize-none rounded-lg shadow-none"
         />
-        <Button type="submit" size="icon" aria-label="Gönder" disabled={sending || draft.trim().length === 0}>
+        <Button
+          type="submit"
+          size="icon"
+          variant="navy"
+          aria-label="Gönder"
+          disabled={sending || draft.trim().length === 0}
+          className="size-9 shrink-0 rounded-lg"
+        >
           {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
         </Button>
       </form>

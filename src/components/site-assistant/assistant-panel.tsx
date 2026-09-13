@@ -113,7 +113,7 @@ export function AssistantPanel({
         aria-modal={modal}
         tabIndex={-1}
         className={cn(
-          "fixed z-40 flex flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl outline-none",
+          "fixed z-40 flex flex-col overflow-hidden rounded-xl border bg-card shadow-lg outline-none",
           "bottom-20 left-4 right-4 max-h-[70vh]",
           "sm:bottom-24 sm:left-auto sm:right-6 sm:w-[380px] sm:max-h-[560px]",
           // Sohbette yükseklik sabitlenir: mesaj listesi kendi içinde kayar,
@@ -124,13 +124,13 @@ export function AssistantPanel({
           modal && "bottom-4 sm:bottom-6",
         )}
       >
-        <div className="flex items-center gap-3 bg-primary px-4 py-3.5 text-primary-foreground">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/15">
-            <Wrench className="size-5" />
+        <div className="flex items-center gap-3 border-b bg-card px-4 py-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full border bg-muted text-foreground">
+            <Wrench className="size-4" />
           </div>
           <div className="min-w-0 flex-1 space-y-0.5">
-            <p className="text-sm font-semibold leading-tight">BakımX Asistanı</p>
-            <p className="text-xs leading-tight text-primary-foreground">
+            <p className="text-sm font-semibold leading-tight text-foreground">BakımX Asistanı</p>
+            <p className="text-xs leading-tight text-muted-foreground">
               Sorularınız için buradayız
             </p>
           </div>
@@ -139,9 +139,9 @@ export function AssistantPanel({
             size="icon"
             onClick={onClose}
             aria-label="Kapat"
-            className="-mr-1 shrink-0 rounded-full text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+            className="-mr-1 size-8 shrink-0 text-muted-foreground hover:text-foreground"
           >
-            <X className="h-5 w-5" />
+            <X className="size-4" />
           </Button>
         </div>
 

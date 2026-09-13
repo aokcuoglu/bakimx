@@ -1,0 +1,71 @@
+.viewport {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.viewport > header {
+  flex-shrink: 0;
+}
+
+.layout {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  flex: 1;
+  border-inline: 1px solid var(--border);
+}
+
+.form {
+  width: 100%;
+  color: var(--foreground);
+}
+
+.form :global(input[data-slot="form-control"]),
+.form :global(button[data-slot="form-control"][role="combobox"]),
+.form :global([data-slot="input"]),
+.form :global([data-slot="select-trigger"]),
+.form :global([data-slot="input-group"]),
+.form :global([data-slot="combobox-input"]),
+.form :global([data-slot="combobox-trigger"]) {
+  min-height: 40px;
+  border-radius: 6px;
+  background: var(--card);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 3%, transparent);
+}
+
+.form :global([data-slot="form-label"]) {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.form :global([data-slot="button"][data-variant="default"]) {
+  min-height: 38px;
+  border-radius: 6px;
+  background: var(--foreground);
+  color: var(--card);
+}
+
+.form :global([data-slot="button"][data-variant="default"]:hover) {
+  background: color-mix(in srgb, var(--foreground) 88%, var(--card));
+}
+
+.form :global([data-slot="toggle-group-item"]) {
+  box-shadow: none;
+}
+
+@media (max-width: 639px) {
+  .layout {
+    border: 0;
+  }
+
+  .submit {
+    width: 100%;
+  }
+}

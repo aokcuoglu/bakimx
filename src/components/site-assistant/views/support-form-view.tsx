@@ -121,7 +121,7 @@ export function SupportFormView({ onBack, onSuccess }: SupportFormViewProps) {
         {errors.message && <p className="text-xs text-destructive-strong">{errors.message}</p>}
       </div>
 
-      <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+      <Button type="submit" size="lg" variant="navy" className="w-full rounded-lg" disabled={submitting}>
         {submitting ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Gönderiliyor...

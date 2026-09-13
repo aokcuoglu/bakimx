@@ -2,15 +2,12 @@ import { PublicSite } from "@/components/public/PublicSite";
 import type { Metadata } from "next";
 import { Header } from "@/components/sections/Header";
 import { HeroSection } from "@/components/sections/HeroSection";
-import { RuhsatDemoSection } from "@/components/sections/RuhsatDemoSection";
 import {
   ProductTourSection,
   OperationsSection,
   GettingStartedSection,
-  RoadmapSection,
 } from "@/components/sections/LandingContent";
 import { FAQSection } from "@/components/sections/FAQSection";
-import { DemoFormSection } from "@/components/sections/DemoFormSection";
 import { Footer } from "@/components/sections/Footer";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LANDING_FAQ_ITEMS } from "@/lib/faq-data";
@@ -51,10 +48,7 @@ export default function Home() {
         <ProductTourSection />
         <OperationsSection />
         <GettingStartedSection />
-        <RuhsatDemoSection />
-        <RoadmapSection />
         <FAQSection />
-        <DemoFormSection />
       </main>
       <Footer />
     </PublicSite>

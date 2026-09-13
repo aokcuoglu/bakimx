@@ -45,11 +45,9 @@ export function Header() {
             scrollToPageTop();
           }}
         >
-          <BrandLogo variant="primary-light" size="lg" priority alt="BakımX" />
-          <span className="border-l pl-3 text-xs font-medium leading-4 text-muted-foreground">
-            Servisinizin
-            <br />
-            yeni düzeni.
+          <BrandLogo variant="primary-light" size="lg" priority alt="" />
+          <span className="text-lg font-bold tracking-tight text-foreground">
+            Bakım<span className="text-primary">X</span>
           </span>
         </Link>
         <nav

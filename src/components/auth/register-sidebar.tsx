@@ -1,7 +1,4 @@
-import Image from "next/image"
-import Link from "next/link"
 import { Check, CircleCheck, Sparkles } from "lucide-react"
-import { BrandLogo } from "@/components/shared/brand-logo"
 import {
   REGISTER_STEPS,
   type RegisterWizardSnapshot,
@@ -28,63 +25,68 @@ const TEAM_SIZE_LABELS: Record<TeamSizeId, string> = {
 export function RegisterSidebar({
   snapshot,
   preferredPlan,
+  mode = "register",
 }: {
+  mode?: "register" | "onboarding"
   snapshot: RegisterWizardSnapshot
   preferredPlan?: PreferredPlan
 }) {
   const preferredPkg = preferredPlan ? getPlanPackage(preferredPlan.tier) : undefined
 
   return (
-    <aside className="relative isolate hidden min-h-full overflow-hidden bg-navy text-navy-foreground lg:flex lg:w-80 lg:shrink-0 lg:flex-col xl:w-[360px]">
-      <Image
-        src="/landing/hero-video-poster.jpg"
-        alt=""
-        fill
-        priority
-        sizes="360px"
-        className="object-cover object-[38%_center]"
-        aria-hidden
-      />
-      <div aria-hidden className="absolute inset-0 bg-navy/90" />
-      <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-navy/30 via-navy/75 to-navy" />
+    <aside className="hidden min-h-full border-r border-border bg-card text-foreground lg:flex lg:w-[340px] lg:shrink-0 lg:flex-col xl:w-[400px]">
+      <div className="relative flex min-h-full flex-1 flex-col px-9 py-12 xl:px-12">
 
-      <div className="relative flex min-h-full flex-1 flex-col px-7 py-8">
-        <Link
-          href="/"
-          aria-label="BakimX ana sayfa"
-          className="inline-flex w-fit rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-foreground/50"
-        >
-          <BrandLogo variant="primary-dark" size="lg" priority />
-        </Link>
 
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold tracking-tight">
-            Sisteminizi <span className="text-brand">oluşturun</span>
+        <div>
+          <h2 className="text-4xl font-medium leading-[1.15] tracking-[-0.045em]">
+            {mode === "onboarding" ? "Servisinizi hazırlayın" : "Servisiniz için yeni bir başlangıç."}
           </h2>
-          <p className="mt-2 max-w-xs text-sm leading-5 text-navy-foreground/70">
-            5 adımda oto servisinize göre hazırlanmış ücretsiz hesabınızı kurun.
+          <p className="mt-5 max-w-xs text-sm leading-6 text-muted-foreground">
+            {mode === "onboarding" ? "4 adımda servisinize uygun çalışma düzenini belirleyin." : "Firma, iletişim ve giriş bilgilerinizi girin. Servisinizin kurulumunu üyelikten sonra tamamlayın."}
           </p>
           {preferredPkg && preferredPlan && (
-            <div className="mt-4 rounded-xl border border-brand/30 bg-brand/10 px-3 py-2.5">
-              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-brand">
+            <div className="mt-4 rounded-lg border border-border bg-card px-3 py-2.5">
+              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 <Sparkles className="size-3" />
                 İlgilendiğiniz paket
               </p>
-              <p className="mt-1 text-sm font-semibold text-navy-foreground">
+              <p className="mt-1 text-sm font-semibold text-foreground">
                 {preferredPkg.name}
-                <span className="ml-1.5 font-normal text-navy-foreground/70">
+                <span className="ml-1.5 font-normal text-muted-foreground">
                   · {preferredPlan.cycle === "yearly" ? preferredPkg.yearlyLabel : preferredPkg.monthlyLabel}
                 </span>
               </p>
-              <p className="mt-0.5 text-xs text-navy-foreground/60">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 {preferredPlan.tier === "lite" ? "Lite kapsamı süresiz ücretsizdir. Kart gerekmez; otomatik ücretliye dönüşmez." : "Önce 7 iş günü ücretsiz deneyin; deneme bitince bu paketi kendi onayınızla etkinleştirebilirsiniz."}
               </p>
             </div>
           )}
         </div>
 
-        <ol className="mt-7 space-y-4" aria-label="Kayıt adımları">
-          {REGISTER_STEPS.map((step, index) => {
+        {mode === "register" && (
+          <div className="mt-12 border-t border-border pt-7">
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Başlamak çok kolay</p>
+            <ol className="mt-5 space-y-6">
+              {[
+                ["Hesabınızı oluşturun", "Firma ve iletişim bilgilerinizi ekleyin."],
+                ["E-postanızı doğrulayın", "Size gönderdiğimiz bağlantıyla devam edin."],
+                ["Servisinizi hazırlayın", "Ekibinizi ve çalışma tercihlerinizi belirleyin."],
+              ].map(([title, description], index) => (
+                <li key={title} className="flex gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-border text-[11px] text-muted-foreground">{index + 1}</span>
+                  <div>
+                    <p className="text-sm font-medium">{title}</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+
+        {mode === "onboarding" && <ol className="mt-7 space-y-4" aria-label="Kayıt adımları">
+          {REGISTER_STEPS.slice(0, 4).map((step, index) => {
             const complete = index < snapshot.currentStep
             const active = index === snapshot.currentStep
             return (
@@ -92,28 +94,28 @@ export function RegisterSidebar({
                 <span
                   className={cn(
                     "flex size-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
-                    complete && "border-primary bg-primary text-primary-foreground",
-                    active && "border-brand bg-navy-light/70 text-navy-foreground ring-2 ring-brand/20",
-                    !complete && !active && "border-navy-foreground/15 bg-navy-foreground/5 text-navy-foreground/60",
+                    complete && "border-foreground bg-foreground text-card",
+                    active && "border-foreground bg-muted text-foreground",
+                    !complete && !active && "border-border bg-card text-muted-foreground",
                   )}
                   aria-current={active ? "step" : undefined}
                 >
                   {complete ? <Check className="size-4" /> : index + 1}
                 </span>
-                <span className={cn(!complete && !active && "text-navy-foreground/60")}>
+                <span className={cn(!complete && !active && "text-muted-foreground")}>
                   <span className="block text-sm font-semibold">{step.label}</span>
-                  <span className="block text-xs text-navy-foreground/55">{step.description}</span>
+                  <span className="block text-xs text-muted-foreground">{step.description}</span>
                 </span>
               </li>
             )
           })}
-        </ol>
+        </ol>}
 
-        <div className="mt-auto rounded-xl border border-navy-foreground/15 bg-navy-foreground/5 p-4 backdrop-blur-sm">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-navy-foreground/60">
+        {mode === "onboarding" && <div className="mt-auto rounded-lg border border-border bg-card p-4 backdrop-blur-sm">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Seçimleriniz
           </p>
-          <div className="mt-3 space-y-2 text-xs text-navy-foreground/85">
+          <div className="mt-3 space-y-2 text-xs text-foreground">
             {snapshot.sector && <SummaryRow label="Oto Servis" />}
             {snapshot.businessFeatureCount > 0 && (
               <SummaryRow label={`${snapshot.businessFeatureCount} iş detayı`} />
@@ -123,10 +125,10 @@ export function RegisterSidebar({
               <SummaryRow label={`${snapshot.moduleCount} modül`} />
             )}
             {!snapshot.sector && (
-              <p className="text-navy-foreground/50">Seçimleriniz burada özetlenecek.</p>
+              <p className="text-muted-foreground">Seçimleriniz burada özetlenecek.</p>
             )}
           </div>
-        </div>
+        </div>}
       </div>
     </aside>
   )
@@ -135,7 +137,7 @@ export function RegisterSidebar({
 function SummaryRow({ label }: { label: string }) {
   return (
     <p className="flex items-center gap-2">
-      <CircleCheck className="size-3.5 text-brand" />
+      <CircleCheck className="size-3.5 text-muted-foreground" />
       <span>{label}</span>
     </p>
   )

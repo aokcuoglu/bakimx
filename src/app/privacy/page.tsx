@@ -5,42 +5,48 @@ import { publicPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = publicPageMetadata({
   path: "/privacy",
-  title: "Gizlilik ve Çerez Politikası",
-  description: "BakımX gizlilik ve çerez (cookie) politikası; hangi verilerin nasıl toplandığı ve kullanıldığı.",
+  title: "Gizlilik Politikası",
+  description:
+    "BakımX gizlilik ve çerez politikası; hangi verilerin nasıl toplandığı ve kullanıldığı.",
 });
 
 export default function PrivacyPage() {
   return (
     <LegalPage
       slug="privacy"
-      title="Gizlilik ve Çerez Politikası"
+      title="Gizlilik Politikası"
       intro={
         <>
           Bu politika, {COMPANY.brand} web sitesi ve uygulamasını kullanırken
           verilerinizin nasıl toplandığını, kullanıldığını ve çerezlerle nasıl
-          işlem yapıldığını açıklar. Kişisel verilerin işlenmesine ilişkin detaylar{" "}
-          <Link href="/kvkk">KVKK Aydınlatma Metni</Link>&apos;nde yer alır.
+          işlem yapıldığını açıklar. Kişisel verilerin işlenmesine ilişkin
+          detaylar <Link href="/kvkk">KVKK Aydınlatma Metni</Link>&apos;nde yer
+          alır.
         </>
       }
     >
-      <LegalSection n={1} title="Genel">
+      <LegalSection title="Genel">
         <p>
-          {COMPANY.legalName} olarak gizliliğinize önem veriyoruz. Yalnızca hizmeti
-          sunmak, güvenliği sağlamak ve deneyimi iyileştirmek için gerekli olan
-          verileri işleriz.
+          {COMPANY.legalName} olarak gizliliğinize önem veriyoruz. Yalnızca
+          hizmeti sunmak, güvenliği sağlamak ve deneyimi iyileştirmek için
+          gerekli olan verileri işleriz.
         </p>
       </LegalSection>
 
-      <LegalSection n={2} title="Topladığımız Veriler">
+      <LegalSection title="Topladığımız veriler">
+        <p>
+          Hizmeti sunarken ve siteyi ziyaret ettiğinizde şu tür bilgiler
+          toplanabilir:
+        </p>
         <ul>
           <li>
-            <strong>Site ziyaretçisi:</strong> demo/iletişim formu aracılığıyla
-            paylaştığınız ad, telefon, işletme adı, şehir gibi bilgiler yalnızca
-            size ulaşmak amacıyla kullanılır.
+            <strong>Site ziyaretçisi:</strong> demo veya iletişim formu
+            aracılığıyla paylaştığınız ad, telefon, işletme adı, şehir gibi
+            bilgiler yalnızca size ulaşmak amacıyla kullanılır.
           </li>
           <li>
-            <strong>Hesap sahibi:</strong> kayıt sırasında verilen ad, e-posta ve
-            işletme bilgileri ile hizmeti kullanırken oluşan işlem kayıtları.
+            <strong>Hesap sahibi:</strong> kayıt sırasında verilen ad, e-posta
+            ve işletme bilgileri ile hizmeti kullanırken oluşan işlem kayıtları.
           </li>
           <li>
             <strong>Teknik:</strong> güvenlik ve hata giderme için IP adresi,
@@ -49,19 +55,32 @@ export default function PrivacyPage() {
         </ul>
       </LegalSection>
 
-      <LegalSection n={3} title="Çerezler (Cookies)">
+      <LegalSection title="Çerezler" id="cerezler">
         <p>
-          {COMPANY.brand}, çalışması için gerekli olan sınırlı sayıda çerez
-          kullanır:
+          {COMPANY.brand} web sitesinde çerez ve benzeri teknolojiler kullanır.
+          Tercihlerinizi sayfadaki çerez bildirimi veya footer&apos;daki{" "}
+          <strong>Çerez tercihleri</strong> bağlantısından yönetebilirsiniz.
         </p>
         <ul>
           <li>
-            <strong>Zorunlu çerezler:</strong> oturum açma ve güvenlik (kimlik
-            doğrulama) için gereklidir; bunlar olmadan platforma giriş yapılamaz.
+            <strong>Zorunlu çerezler:</strong> oturum, güvenlik ve temel site
+            işlevleri için gereklidir; bunlar olmadan platform çalışmaz. Rıza
+            gerektirmez.
           </li>
           <li>
-            <strong>İşlevsel çerezler:</strong> arayüz tercihlerinizi (örneğin
-            kenar çubuğu durumu) hatırlamak için kullanılır.
+            <strong>Performans çerezleri:</strong> site kullanımını ölçmek ve
+            deneyimi iyileştirmek için kullanılır (örneğin Google Analytics).
+            Yalnızca açık rızanızla yüklenir.
+          </li>
+          <li>
+            <strong>İşlevsel çerezler:</strong> arayüz tercihlerinizi ve yardımcı
+            özelliklerin durumunu hatırlamak için kullanılır. Açık rızanızla
+            etkinleşir.
+          </li>
+          <li>
+            <strong>Hedefleme çerezleri:</strong> ilgi alanlarınıza göre içerik
+            veya reklam göstermek için kullanılabilir. Şu an aktif bir hedefleme
+            aracı yoktur; ileride eklenirse yine açık rızanıza bağlı olacaktır.
           </li>
         </ul>
         <p>
@@ -70,26 +89,26 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={4} title="Verilerin Paylaşımı">
+      <LegalSection title="Verilerin paylaşımı">
         <p>
-          Kişisel verileriniz pazarlama amacıyla üçüncü taraflara satılmaz. Veriler
-          yalnızca hizmetin sunulması için gerekli sağlayıcılarla (barındırma,
-          ödeme, mesajlaşma, OCR/yapay zeka vb.) ve yasal yükümlülükler
-          çerçevesinde yetkili kurumlarla paylaşılır. Ayrıntılar{" "}
+          Kişisel verileriniz pazarlama amacıyla üçüncü taraflara satılmaz.
+          Veriler yalnızca hizmetin sunulması için gerekli sağlayıcılarla
+          (barındırma, ödeme, mesajlaşma, OCR/yapay zeka vb.) ve yasal
+          yükümlülükler çerçevesinde yetkili kurumlarla paylaşılır. Ayrıntılar{" "}
           <Link href="/kvkk">KVKK Aydınlatma Metni</Link>&apos;nde açıklanmıştır.
         </p>
       </LegalSection>
 
-      <LegalSection n={5} title="Haklarınız">
+      <LegalSection title="Haklarınız">
         <p>
           KVKK m.11 kapsamındaki haklarınızı ve bunları nasıl kullanacağınızı{" "}
-          <Link href="/kvkk">KVKK Aydınlatma Metni</Link>&apos;nde bulabilirsiniz.
-          Açık rıza gerektiren işlemler için{" "}
+          <Link href="/kvkk">KVKK Aydınlatma Metni</Link>&apos;nde
+          bulabilirsiniz. Açık rıza gerektiren işlemler için{" "}
           <Link href="/acik-riza">Açık Rıza Metni</Link>&apos;ne bakabilirsiniz.
         </p>
       </LegalSection>
 
-      <LegalSection n={6} title="İletişim">
+      <LegalSection title="İletişim">
         <p>
           Gizlilik ve çerez uygulamalarımıza ilişkin sorularınız için{" "}
           <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> adresine

@@ -1,3 +1,5 @@
+import { hasPerformanceConsent } from "./cookie-consent"
+
 export const MARKETING_EVENT_NAMES = [
   "seo_landing_view", "trial_cta_click", "demo_cta_click", "register_started",
   "register_submitted", "demo_submitted", "purchase_started", "purchase_submitted",
@@ -28,17 +30,18 @@ export type MarketingEventPayloads = {
   seo_landing_view: Common & { landing_type: "home" | "product" | "pricing" | "demo" }
   trial_cta_click: Common & { cta_location: string; plan_tier?: PlanTier }
   demo_cta_click: Common & { cta_location: string; destination: "form" | "assistant" }
-  register_started: Common & { entry_step: "sector"; plan_tier?: PlanTier }
+  register_started: Common & { entry_step: "sector" | "account"; plan_tier?: PlanTier }
   register_submitted: Common & {
-    sector:
+    entry_step?: "account"
+    sector?:
       | "auto_service"
       | "mechanical_service"
       | "body_paint"
       | "spare_parts"
       | "tire_service"
       | "auto_electric"
-    team_size: "solo" | "2_5" | "6_10" | "11_25" | "26_50" | "50_plus"
-    module_count: string
+    team_size?: "solo" | "2_5" | "6_10" | "11_25" | "26_50" | "50_plus"
+    module_count?: string
   }
   demo_submitted: Common & {
     form_location: "home" | "demo_page" | "assistant" | "register_coming_soon_sector"
@@ -79,7 +82,7 @@ const EVENT_FIELDS: Record<MarketingEventName, readonly string[]> = {
   trial_cta_click: ["plan_tier"],
   demo_cta_click: ["destination"],
   register_started: ["entry_step", "plan_tier"],
-  register_submitted: ["sector", "team_size", "module_count"],
+  register_submitted: ["entry_step", "sector", "team_size", "module_count"],
   demo_submitted: ["form_location"],
   purchase_started: ["plan_tier", "billing_cycle"],
   purchase_submitted: ["plan_tier", "billing_cycle", "payment_method"],
@@ -120,6 +123,8 @@ export function getMarketingContext(location: Pick<Location, "pathname" | "searc
 
 export function trackMarketingEvent<N extends MarketingEventName>(name: N, payload: MarketingEventPayloads[N]) {
   if (typeof window === "undefined" || process.env.NEXT_PUBLIC_ANALYTICS_ENABLED !== "true") return false
+  // Performance cookies require an explicit public-site consent choice.
+  if (!hasPerformanceConsent()) return false
   const detail: MarketingEventDetail<N> = {
     name,
     params: {
@@ -152,11 +157,13 @@ export function sanitizeMarketingAttribution(input: unknown): MarketingAttributi
 
 export function getStoredMarketingAttribution(): MarketingAttribution {
   if (typeof window === "undefined" || process.env.NEXT_PUBLIC_ANALYTICS_ENABLED !== "true") return {}
+  if (!hasPerformanceConsent()) return {}
   try { return sanitizeMarketingAttribution(JSON.parse(window.localStorage.getItem(ATTRIBUTION_STORAGE_KEY) || "{}")) } catch { return {} }
 }
 
 export function captureMarketingAttribution() {
   if (typeof window === "undefined" || process.env.NEXT_PUBLIC_ANALYTICS_ENABLED !== "true") return
+  if (!hasPerformanceConsent()) return
   const existing = getStoredMarketingAttribution()
   if (existing.campaignSource || existing.campaignMedium || existing.campaignName) return
   const query = new URLSearchParams(window.location.search)

@@ -12,7 +12,9 @@ import {
   useSyncExternalStore,
 } from "react"
 import Link from "next/link"
-import { AnimatePresence, motion } from "framer-motion"
+import styles from "./register-design.module.css"
+import { RegisterFooter } from "./register-footer"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useForm, type UseFormReturn } from "react-hook-form"
 import { z } from "zod/v4"
 import {
@@ -58,6 +60,7 @@ import {
   Zap,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -90,16 +93,11 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { toast } from "sonner"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { CitySelect, DistrictSelect } from "@/components/shared/location-select"
-import { ACQUISITION_SOURCES, ACQUISITION_SOURCE_OPTIONS } from "@/lib/acquisition-sources"
+import { ACQUISITION_SOURCE_OPTIONS } from "@/lib/acquisition-sources"
 import { formatPhoneTR } from "@/lib/format"
 import { trackMarketingEvent, getStoredMarketingAttribution } from "@/lib/marketing-analytics"
 import {
-  BUSINESS_FEATURE_IDS,
-  REGISTER_MODULE_IDS,
-  REGISTER_SECTOR_IDS,
   REGISTER_STEPS,
-  SETUP_PREFERENCE_IDS,
-  TEAM_SIZE_IDS,
   isRegisterSectorEnabled,
   recommendedRegisterModules,
   type BusinessFeatureId,
@@ -111,7 +109,7 @@ import {
 import { cn } from "@/lib/utils"
 import type { SalePlanTier } from "@/lib/plan"
 import { getPlanPackage } from "@/lib/plans-catalog"
-import { optionalReferralCodeSchema } from "@/lib/validations/referral-code"
+import { createRegisterFormSchema } from "@/lib/validations/register-form"
 import { typedResolver } from "@/lib/validations/resolver"
 
 type IconType = ComponentType<{ className?: string }>
@@ -198,43 +196,8 @@ const SETUP_OPTIONS: { id: SetupPreferenceId; label: string; description: string
   { id: "call_me", label: "Beni arayın", description: "Kurulum için ücretsiz destek isteyin.", icon: Headphones },
 ]
 
-const registerWizardSchema = z
-  .object({
-    sector: z.union([z.literal(""), z.enum(REGISTER_SECTOR_IDS)]).refine(Boolean, "Sektör seçimi zorunludur"),
-    businessFeatures: z.array(z.enum(BUSINESS_FEATURE_IDS)).default([]),
-    teamSize: z.union([z.literal(""), z.enum(TEAM_SIZE_IDS)]).refine(Boolean, "Ekip büyüklüğü seçimi zorunludur"),
-    selectedModules: z.array(z.enum(REGISTER_MODULE_IDS)).min(1, "En az bir modül seçin"),
-    setupPreference: z.enum(SETUP_PREFERENCE_IDS),
-    acquisitionSource: z.enum(ACQUISITION_SOURCES).default("unknown"),
-    referralCode: optionalReferralCodeSchema,
-    workshopName: z.string().min(2, "Firma / servis adı zorunludur"),
-    phone: z.string().min(10, "Geçerli bir telefon numarası girin"),
-    city: z.string().min(1, "İl seçimi zorunludur"),
-    district: z.string().optional().default(""),
-    address: z.string().min(3, "Açık adres zorunludur"),
-    taxOffice: z.string().optional().default(""),
-    taxNumber: z
-      .string()
-      .optional()
-      .default("")
-      .refine((value) => !value || /^\d{10,11}$/.test(value), "Vergi / TC kimlik no 10 veya 11 haneli olmalıdır"),
-    firstName: z.string().min(1, "Ad zorunludur"),
-    lastName: z.string().min(1, "Soyad zorunludur"),
-    email: z.email("Geçerli bir e-posta adresi girin"),
-    password: z.string().min(8, "Şifre en az 8 karakter olmalıdır"),
-    confirmPassword: z.string().min(8, "Şifrenizi tekrar girin"),
-    kvkkConsent: z.boolean().refine(Boolean, "Devam etmek için aydınlatma metnini onaylayın"),
-  })
-  .superRefine((data, ctx) => {
-    if (data.password !== data.confirmPassword) {
-      ctx.addIssue({ code: "custom", path: ["confirmPassword"], message: "Şifreler eşleşmiyor" })
-    }
-    if (data.acquisitionSource === "referral" && !data.referralCode) {
-      ctx.addIssue({ code: "custom", path: ["referralCode"], message: "Referans kodu zorunludur" })
-    }
-  })
 
-type WizardFormValues = z.infer<typeof registerWizardSchema>
+type WizardFormValues = z.infer<ReturnType<typeof createRegisterFormSchema>>
 type WizardForm = UseFormReturn<WizardFormValues, unknown, WizardFormValues>
 
 const STEP_FIELDS: Record<number, (keyof WizardFormValues)[]> = {
@@ -284,12 +247,16 @@ export function RegisterForm({
   salesRegistration,
   preferredPlan,
   onSnapshotChange,
+  mode = "register",
 }: {
+  mode?: "register" | "onboarding"
   salesRegistration?: SalesRegistrationPrefill
   preferredPlan?: { tier: SalePlanTier; cycle: "monthly" | "yearly" }
   onSnapshotChange?: (snapshot: RegisterWizardSnapshot) => void
 }) {
-  const [currentStep, setCurrentStep] = useState(0)
+  const onboarding = mode === "onboarding"
+  const reduceMotion = useReducedMotion()
+  const [currentStep, setCurrentStep] = useState(onboarding ? 0 : 4)
   const [direction, setDirection] = useState(1)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -300,7 +267,7 @@ export function RegisterForm({
   const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false)
 
   const form = useForm<WizardFormValues, unknown, WizardFormValues>({
-    resolver: typedResolver(registerWizardSchema),
+    resolver: typedResolver(createRegisterFormSchema(onboarding)),
     defaultValues: {
       sector: "",
       businessFeatures: [],
@@ -361,34 +328,43 @@ export function RegisterForm({
     }
     if (currentStep === 3) form.clearErrors(STEP_FIELDS[4])
     setDirection(1)
-    setCurrentStep((step) => Math.min(step + 1, REGISTER_STEPS.length - 1))
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    setCurrentStep((step) => Math.min(step + 1, REGISTER_STEPS.length - 2))
+    window.scrollTo({ top: 0, behavior: reduceMotion ? "instant" : "smooth" })
   }
 
   function goPrevious() {
     setDirection(-1)
     setCurrentStep((step) => Math.max(step - 1, 0))
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    window.scrollTo({ top: 0, behavior: reduceMotion ? "instant" : "smooth" })
   }
 
   async function handleSubmit(values: WizardFormValues) {
-    if (submitRef.current) return
+    if (submitRef.current || (onboarding && currentStep !== 3)) return
     submitRef.current = true
     setError("")
     setLoading(true)
 
     try {
+      if (onboarding) {
+        const response = await fetch("/api/onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sector: values.sector, businessFeatures: values.businessFeatures, teamSize: values.teamSize, selectedModules: values.selectedModules, setupPreference: values.setupPreference }),
+        })
+        const result = await response.json()
+        if (!response.ok || !result.ok) {
+          setError(result.error || "Kurulum kaydedilemedi")
+          return
+        }
+        window.location.assign("/dashboard")
+        return
+      }
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planTier: preferredPlan?.tier ?? "pro",
           marketingAttribution: getStoredMarketingAttribution(),
-          sector: values.sector || "auto_service",
-          businessFeatures: values.businessFeatures,
-          teamSize: values.teamSize || "solo",
-          selectedModules: values.selectedModules,
-          setupPreference: values.setupPreference,
           acquisitionSource: values.acquisitionSource,
           salesRegistrationToken: salesRegistration?.token,
           referralCode: values.referralCode || undefined,
@@ -415,9 +391,7 @@ export function RegisterForm({
 
       if (!data.resumed) {
         trackMarketingEvent("register_submitted", {
-          sector: values.sector || "auto_service",
-          team_size: values.teamSize || "solo",
-          module_count: String(values.selectedModules.length),
+          entry_step: "account",
         })
       }
       setSubmitted(values.email.trim())
@@ -431,7 +405,7 @@ export function RegisterForm({
 
   if (submitted) {
     return (
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-xl py-12 text-center">
+      <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-xl py-12 text-center">
         <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10">
           <Mail className="size-7 text-primary" />
         </div>
@@ -450,41 +424,41 @@ export function RegisterForm({
   }
 
   return (
-    <div className="w-full">
-      <MobileStepIndicator currentStep={currentStep} />
+    <div className={styles.form}>
+      {onboarding && <MobileStepIndicator currentStep={currentStep} />}
       {preferredPlan && <PreferredPlanBanner tier={preferredPlan.tier} cycle={preferredPlan.cycle} />}
 
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleSubmit)}
           onChange={() => {
-            if (startedRef.current) return
+            if (onboarding || startedRef.current) return
             startedRef.current = true
-            trackMarketingEvent("register_started", { entry_step: "sector", plan_tier: preferredPlan?.tier ?? "pro" })
+            trackMarketingEvent("register_started", { entry_step: "account", plan_tier: preferredPlan?.tier ?? "pro" })
           }}
           method="post"
         >
           {error && (
-            <div role="alert" aria-live="polite" className="mb-5 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive-strong">
-              {error}
-            </div>
+            <Alert variant="destructive" aria-live="polite" className="mb-5">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           <div className="relative min-h-[440px]">
-            <AnimatePresence mode="wait" custom={direction}>
+            <AnimatePresence initial={false} mode="wait" custom={direction}>
               <motion.div
                 key={currentStep}
                 custom={direction}
-                variants={stepVariants}
-                initial="enter"
+                variants={reduceMotion || !onboarding ? { enter: { x: 0, opacity: 1 }, center: { x: 0, opacity: 1 }, exit: { x: 0, opacity: 1 } } : stepVariants}
+                initial={false}
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.2, ease: "easeInOut" }}
+                transition={{ duration: reduceMotion || !onboarding ? 0 : 0.2, ease: "easeInOut" }}
               >
                 {currentStep === 0 && <SectorStep form={form} />}
                 {currentStep === 1 && <BusinessDetailsStep form={form} />}
                 {currentStep === 2 && <TeamSizeStep form={form} />}
-                {currentStep === 3 && <ModulesStep form={form} />}
+                {currentStep === 3 && <><ModulesStep form={form} /><SetupStep form={form} /></>}
                 {currentStep === 4 && (
                   <AccountStep
                     form={form}
@@ -500,8 +474,8 @@ export function RegisterForm({
             </AnimatePresence>
           </div>
 
-          <div className="mt-7 flex items-center gap-3 border-t border-border pt-5">
-            {currentStep === 0 ? (
+          <div className="mt-7 flex flex-wrap items-center gap-3 border-t border-border pt-5">
+            {!onboarding || currentStep === 0 ? (
               <Button asChild type="button" variant="outline">
                 <Link href="/">
                   <ArrowLeft data-icon="inline-start" />
@@ -515,36 +489,29 @@ export function RegisterForm({
               </Button>
             )}
             <div className="flex-1" />
-            {currentStep < REGISTER_STEPS.length - 1 ? (
-              <Button type="button" onClick={goNext} disabled={currentStep === 0 && !sector}>
+            {onboarding && currentStep < REGISTER_STEPS.length - 2 ? (
+              <Button key="next-step" type="button" onClick={goNext} disabled={currentStep === 0 && !sector}>
                 Devam Et
                 <ArrowRight data-icon="inline-end" />
               </Button>
             ) : (
-              <Button type="submit" disabled={loading || !hydrated} size="xl">
+              <Button key="submit-form" type="submit" disabled={loading || !hydrated} size="xl" className={styles.submit}>
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <BrandSpinner size={18} />
-                    Hesap oluşturuluyor...
+                    {onboarding ? "Kurulum kaydediliyor..." : "Hesap oluşturuluyor..."}
                   </span>
                 ) : (
                   <>
                     <User data-icon="inline-start" />
-                    Ücretsiz Hesabımı Oluştur
+                    {onboarding ? "Kurulumu Tamamla" : "Ücretsiz Hesabımı Oluştur"}
                   </>
                 )}
               </Button>
             )}
           </div>
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5 text-xs text-muted-foreground">
-            <span>© 2026 BakimX · Servisiniz kontrol altında</span>
-            <span className="flex gap-4">
-              <Link href="/kvkk" target="_blank" className="hover:text-foreground hover:underline">KVKK</Link>
-              <Link href="/privacy" target="_blank" className="hover:text-foreground hover:underline">Gizlilik</Link>
-              <Link href="/terms" target="_blank" className="hover:text-foreground hover:underline">Kullanım Koşulları</Link>
-            </span>
-          </div>
+          {onboarding && <RegisterFooter className="mt-5 pt-5" />}
         </form>
       </Form>
     </div>
@@ -561,8 +528,8 @@ function PreferredPlanBanner({
   const pkg = getPlanPackage(tier as "lite" | "pro" | "premium" | "starter")
   if (!pkg) return null
   return (
-    <div className="mb-5 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 lg:hidden">
-      <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary-strong">
+    <div className="mb-5 rounded-lg border border-border bg-card px-4 py-3 lg:hidden">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
         <Sparkles className="size-3.5" />
         İlgilendiğiniz paket
       </p>
@@ -581,15 +548,15 @@ function PreferredPlanBanner({
 
 function MobileStepIndicator({ currentStep }: { currentStep: number }) {
   return (
-    <nav aria-label="Kayıt adımları" className="mb-7 lg:hidden">
+    <nav aria-label="Kurulum adımları" className="mb-7">
       <div className="flex items-center gap-2">
-        {REGISTER_STEPS.map((step, index) => (
+        {REGISTER_STEPS.slice(0, 4).map((step, index) => (
           <Fragment key={step.label}>
             <span
               className={cn(
                 "flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
-                index < currentStep && "border-primary bg-primary text-primary-foreground",
-                index === currentStep && "border-primary bg-primary/10 text-primary-strong",
+                index < currentStep && "border-foreground bg-foreground text-card",
+                index === currentStep && "border-foreground bg-card text-foreground",
                 index > currentStep && "border-border text-muted-foreground",
               )}
               aria-current={index === currentStep ? "step" : undefined}
@@ -597,8 +564,8 @@ function MobileStepIndicator({ currentStep }: { currentStep: number }) {
             >
               {index < currentStep ? <Check className="size-3.5" /> : index + 1}
             </span>
-            {index < REGISTER_STEPS.length - 1 && (
-              <span className={cn("h-px flex-1 bg-border", index < currentStep && "bg-primary")} />
+            {index < 3 && (
+              <span className={cn("h-px flex-1 bg-border", index < currentStep && "bg-foreground")} />
             )}
           </Fragment>
         ))}
@@ -612,9 +579,9 @@ function MobileStepIndicator({ currentStep }: { currentStep: number }) {
 
 function StepHeading({ title, description }: { title: string; description: React.ReactNode }) {
   return (
-    <div className="mb-6 text-center">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{title}</h1>
-      <p className="mx-auto mt-2 max-w-2xl text-sm leading-5 text-muted-foreground">{description}</p>
+    <div className="mb-9 border-b border-border pb-7">
+      <h1 className="text-2xl font-medium tracking-[-0.035em] text-foreground sm:text-[32px]">{title}</h1>
+      <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">{description}</p>
     </div>
   )
 }
@@ -645,10 +612,10 @@ function SectorStep({ form }: { form: WizardForm }) {
                       key={sector.id}
                       value={sector.id}
                       variant="outline"
-                      className="relative h-auto min-h-28 w-full items-start justify-start rounded-xl p-3 text-left whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-foreground"
+                      className="relative h-auto min-h-28 w-full items-start justify-start rounded-lg p-3 text-left whitespace-normal data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground"
                     >
                       <span className="flex w-full flex-col items-start">
-                        <span className="mb-3 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
+                        <span className="mb-3 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-foreground group-data-[state=on]/toggle:text-card">
                           <Icon className="size-4.5" />
                         </span>
                         <span className="text-sm font-semibold text-foreground">{sector.label}</span>
@@ -667,7 +634,7 @@ function SectorStep({ form }: { form: WizardForm }) {
                     type="button"
                     variant="outline"
                     onClick={() => setInterestSector(sector)}
-                    className="relative h-auto min-h-28 w-full items-start justify-start rounded-xl border-dashed bg-muted/40 p-3 text-left whitespace-normal hover:bg-muted/60"
+                    className="relative h-auto min-h-28 w-full items-start justify-start rounded-lg border-dashed bg-muted/40 p-3 text-left whitespace-normal hover:bg-muted/60"
                   >
                     <span className="flex w-full flex-col items-start">
                       <span className="mb-3 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
@@ -802,7 +769,7 @@ function ComingSoonSectorInterestForm({
 
       {isSuccess ? (
         <div className="space-y-4 py-2">
-          <div className="rounded-xl border border-success/20 bg-success/10 p-4 text-sm text-success-strong">
+          <div className="rounded-lg border border-success/20 bg-success/10 p-4 text-sm text-success-strong">
             Talebiniz kaydedildi. Ekibimiz sizinle iletişime geçecek.
           </div>
           <DialogFooter>
@@ -892,7 +859,7 @@ function BusinessDetailsStep({ form }: { form: WizardForm }) {
     <div>
       <StepHeading
         title="İş detayları"
-        description={<><span className="font-semibold text-primary">{sectorLabel}</span> için birkaç soru — yanıtlarınıza göre başlangıç modüllerini önerelim.</>}
+        description={<><span className="font-medium text-foreground">{sectorLabel}</span> için birkaç soru — yanıtlarınıza göre başlangıç modüllerini önerelim.</>}
       />
       <FormField
         control={form.control}
@@ -904,7 +871,7 @@ function BusinessDetailsStep({ form }: { form: WizardForm }) {
                 const Icon = question.icon
                 const checked = field.value.includes(question.id)
                 return (
-                  <div key={question.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-xs">
+                  <div key={question.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-xs">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                       <Icon className="size-4.5" />
                     </span>
@@ -952,9 +919,9 @@ function TeamSizeStep({ form }: { form: WizardForm }) {
                   key={option.id}
                   value={option.id}
                   variant="outline"
-                  className="h-auto min-h-32 w-full flex-col rounded-xl p-4 text-center data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-foreground"
+                  className="h-auto min-h-32 w-full flex-col rounded-lg p-4 text-center data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground"
                 >
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
+                  <span className="flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-foreground group-data-[state=on]/toggle:text-card">
                     <Users className="size-5" />
                   </span>
                   <span className="mt-3 text-sm font-semibold">{option.label}</span>
@@ -971,11 +938,13 @@ function TeamSizeStep({ form }: { form: WizardForm }) {
 }
 
 function ModulesStep({ form }: { form: WizardForm }) {
+  const sectorLabel = SECTOR_LABEL_BY_ID[form.watch("sector")] ?? "Seçtiğiniz sektör"
+
   return (
     <div>
       <StepHeading
         title="Modüllerinizi seçin"
-        description={<><span className="font-semibold text-primary">Oto Servis</span> için önerilenleri işaretledik — istediğinizi ekleyip çıkarabilirsiniz.</>}
+        description={<><span className="font-medium text-foreground">{sectorLabel}</span> için önerilenleri işaretledik — istediğinizi ekleyip çıkarabilirsiniz.</>}
       />
       <FormField
         control={form.control}
@@ -997,22 +966,22 @@ function ModulesStep({ form }: { form: WizardForm }) {
                     key={module.id}
                     value={module.id}
                     variant="outline"
-                    className="h-auto min-h-18 w-full justify-start rounded-xl p-2.5 text-left whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-foreground"
+                    className="h-auto min-h-18 w-full justify-start rounded-lg p-2.5 text-left whitespace-normal data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground"
                   >
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-foreground group-data-[state=on]/toggle:text-card">
                       <Icon className="size-4" />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-xs font-semibold">{module.label}</span>
                       <span className="mt-0.5 block text-[10px] font-normal leading-3 text-muted-foreground">{module.description}</span>
                     </span>
-                    {selected ? <CircleCheck className="size-4 shrink-0 text-primary" /> : <span className="size-4 shrink-0 rounded-full border border-border" />}
+                    {selected ? <CircleCheck className="size-4 shrink-0 text-foreground" /> : <span className="size-4 shrink-0 rounded-full border border-border" />}
                   </ToggleGroupItem>
                 )
               })}
             </ToggleGroup>
             <FormMessage />
-            <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-xs font-semibold text-primary-strong">
+            <div className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-xs font-medium text-foreground">
               <Sparkles className="size-4" />
               {field.value.length} modül seçildi
             </div>
@@ -1048,11 +1017,11 @@ function AccountStep({
 
   return (
     <div>
-      <StepHeading title="Hesap bilgileriniz" description="Son adım — firma ve giriş bilgilerinizi tamamlayın. Kart bilgisi istemiyoruz." />
+      <StepHeading title="Hesap bilgileriniz" description="Firma, iletişim ve giriş bilgilerinizi tamamlayın. Servis tercihlerinizi üyelikten sonra belirleyebilirsiniz." />
 
-      <div className="space-y-4">
-        <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
-          <h2 className="mb-4 text-xs font-bold uppercase tracking-wide text-primary">Firma bilgileri</h2>
+      <div className="space-y-7">
+        <section className="border-b border-border pb-7">
+          <h2 className="mb-5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Firma bilgileri</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField control={form.control} name="workshopName" render={({ field }) => (
               <FormItem className="sm:col-span-2"><FormLabel>Firma / servis adı *</FormLabel><div className="relative"><Building2 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><FormControl><Input {...field} placeholder="Örn: Kaya Oto Servis" className="pl-9" /></FormControl></div><FormMessage /></FormItem>
@@ -1066,8 +1035,8 @@ function AccountStep({
           </div>
         </section>
 
-        <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
-          <h2 className="mb-4 text-xs font-bold uppercase tracking-wide text-primary">İletişim bilgileri</h2>
+        <section className="border-b border-border pb-7">
+          <h2 className="mb-5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">İletişim bilgileri</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField control={form.control} name="phone" render={({ field }) => (
               <FormItem><FormLabel>Cep telefonu *</FormLabel><div className="relative"><Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><FormControl><Input {...field} type="tel" inputMode="tel" autoComplete="tel" placeholder="05XX XXX XX XX" className="pl-9" onChange={(event) => field.onChange(formatPhoneTR(event.target.value))} /></FormControl></div><FormMessage /></FormItem>
@@ -1087,8 +1056,8 @@ function AccountStep({
           </div>
         </section>
 
-        <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
-          <h2 className="mb-4 text-xs font-bold uppercase tracking-wide text-primary">Giriş bilgileri</h2>
+        <section className="border-b border-border pb-7">
+          <h2 className="mb-5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Giriş bilgileri</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField control={form.control} name="firstName" render={({ field }) => (
               <FormItem><FormLabel>Ad *</FormLabel><FormControl><Input {...field} autoComplete="given-name" placeholder="Adınız" /></FormControl><FormMessage /></FormItem>
@@ -1101,32 +1070,10 @@ function AccountStep({
           </div>
         </section>
 
-        <section className="rounded-xl border border-success/30 bg-success/10 p-4 sm:p-5">
-          <div className="mb-3 flex items-center gap-2">
-            <Sparkles className="size-4 text-success-strong" />
-            <h2 className="text-xs font-bold uppercase tracking-wide text-success-strong">Kurulum & veri taşıma yardımı</h2>
-            <Badge variant="outline" className="border-success/30 text-success-strong">Ücretsiz</Badge>
-          </div>
-          <p className="mb-3 text-xs leading-5 text-muted-foreground-strong">Hesabı kendiniz kurabilir veya ekibimizden ücretsiz destek isteyebilirsiniz.</p>
-          <FormField control={form.control} name="setupPreference" render={({ field }) => (
-            <FormItem>
-              <ToggleGroup type="single" value={field.value} onValueChange={(value) => value && field.onChange(value)} className="grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-3" aria-label="Kurulum desteği tercihi">
-                {SETUP_OPTIONS.map((option) => {
-                  const Icon = option.icon
-                  return (
-                    <ToggleGroupItem key={option.id} value={option.id} variant="outline" className="h-auto min-h-20 w-full justify-start rounded-lg bg-background p-3 text-left whitespace-normal data-[state=on]:border-success data-[state=on]:bg-success/10 data-[state=on]:text-foreground">
-                      <Icon className="size-4 shrink-0 text-success-strong" />
-                      <span><span className="block text-xs font-semibold">{option.label}</span><span className="mt-0.5 block text-[10px] font-normal leading-3 text-muted-foreground-strong">{option.description}</span></span>
-                    </ToggleGroupItem>
-                  )
-                })}
-              </ToggleGroup>
-            </FormItem>
-          )} />
-        </section>
+
 
         {salesAdvisorName ? (
-          <section className="rounded-xl border border-primary/20 bg-primary/10 p-4 text-primary-strong sm:p-5">
+          <section className="rounded-lg border border-border bg-card p-4 text-foreground sm:p-5">
             <div className="flex items-start gap-3">
               <Shield className="mt-0.5 size-5 shrink-0" />
               <div>
@@ -1136,7 +1083,7 @@ function AccountStep({
             </div>
           </section>
         ) : (
-          <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+          <section className="border-b border-border pb-7">
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField control={form.control} name="acquisitionSource" render={({ field }) => (
                 <FormItem><FormLabel>Bizi nereden duydunuz?</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger className="w-full"><SelectValue /></SelectTrigger></FormControl><SelectContent>{ACQUISITION_SOURCE_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
@@ -1152,7 +1099,7 @@ function AccountStep({
 
         <FormField control={form.control} name="kvkkConsent" render={({ field }) => (
           <FormItem>
-            <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
+            <div className="flex items-start gap-3 py-1">
               <FormControl><Checkbox checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} aria-label="Aydınlatma metni onayı" /></FormControl>
               <div className="text-xs leading-5 text-muted-foreground">
                 <Link href="/kvkk" target="_blank" className="font-medium text-primary hover:underline">KVKK Aydınlatma Metni</Link>&apos;ni okudum. {isLite ? "Lite paket kapsamını süresiz ücretsiz kullanacağımı ve hesabımın otomatik ücretliye dönüşmeyeceğini biliyorum." : "Hesabımın ücretsiz 7 iş günü kullanılacağını, satın alma yapılmazsa verilerim korunarak erişimin dondurulacağını biliyorum."}
@@ -1193,5 +1140,33 @@ function PasswordField({
         <FormMessage />
       </FormItem>
     )} />
+  )
+}
+
+function SetupStep({ form }: { form: WizardForm }) {
+  return (
+        <section className="rounded-lg border border-border bg-card p-4 sm:p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Sparkles className="size-4 text-muted-foreground" />
+            <h2 className="text-xs font-medium uppercase tracking-wide text-foreground">Kurulum & veri taşıma yardımı</h2>
+            <Badge variant="outline" className="border-border text-muted-foreground">Ücretsiz</Badge>
+          </div>
+          <p className="mb-3 text-xs leading-5 text-muted-foreground-strong">Hesabı kendiniz kurabilir veya ekibimizden ücretsiz destek isteyebilirsiniz.</p>
+          <FormField control={form.control} name="setupPreference" render={({ field }) => (
+            <FormItem>
+              <ToggleGroup type="single" value={field.value} onValueChange={(value) => value && field.onChange(value)} className="grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-3" aria-label="Kurulum desteği tercihi">
+                {SETUP_OPTIONS.map((option) => {
+                  const Icon = option.icon
+                  return (
+                    <ToggleGroupItem key={option.id} value={option.id} variant="outline" className="h-auto min-h-20 w-full justify-start rounded-lg bg-background p-3 text-left whitespace-normal data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground">
+                      <Icon className="size-4 shrink-0 text-muted-foreground" />
+                      <span><span className="block text-xs font-semibold">{option.label}</span><span className="mt-0.5 block text-[10px] font-normal leading-3 text-muted-foreground-strong">{option.description}</span></span>
+                    </ToggleGroupItem>
+                  )
+                })}
+              </ToggleGroup>
+            </FormItem>
+          )} />
+        </section>
   )
 }
