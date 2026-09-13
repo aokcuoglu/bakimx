@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { animate, inView, motion, useScroll } from "framer-motion";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { ScrollToTopButton } from "@/components/site-assistant/scroll-to-top-button";
 import styles from "./public-site.module.css";
 
 /** Public website only. Server-rendered children are always visible. */
@@ -62,6 +63,7 @@ export function PublicSite({
           style={{ scaleX: scrollYProgress }}
         />
       )}
+      <ScrollToTopButton />
       {children}
     </div>
   );

@@ -1,5 +1,7 @@
 export interface FaqItem {
   question: string;
+  /** Landing'deki yoğun düzen için kısa soru etiketi. */
+  landingQuestion?: string;
   answer: string;
   /** Landing'de öne çıkarılacak temel sorular; tüm maddeler Asistan'da kalır. */
   showOnLanding?: boolean;
@@ -12,20 +14,53 @@ export interface FaqItem {
  */
 export const FAQ_ITEMS: FaqItem[] = [
   {
-    question: "BakimX mobilde çalışır mı? Kurulum gerekiyor mu?",
+    question: "Araç kabulünü hızlandırabilir miyim?",
     showOnLanding: true,
+    answer:
+      "Evet. Ruhsatı fotoğrafladığınızda plaka, marka, model, şasi ve model yılı otomatik dolar. Siz yalnızca bilgileri kontrol edip onaylarsınız.",
+  },
+  {
+    question: "Araca uygun parçayı nasıl bulurum?",
+    showOnLanding: true,
+    answer:
+      "Ruhsattaki şasi numarası araç modeline eşlenir. Katalogda yalnızca o araca uyan parçaları görür, kendi tedarikçi alış fiyatlarınızı karşılaştırabilirsiniz.",
+  },
+  {
+    question: "İş emrini ve müşteri iletişimini nasıl takip ederim?",
+    showOnLanding: true,
+    answer:
+      "Her iş emrinde teknisyen ataması, kontrol listesi ve işlem geçmişi tutulur. Müşterinize canlı takip linkini WhatsApp üzerinden tek dokunuşla gönderebilirsiniz.",
+  },
+  {
+    question: "Stok ve tedarikçi takibi var mı?",
+    showOnLanding: true,
+    answer:
+      "Evet. İş emrine parça eklendiğinde stok otomatik düşer; tedarikçilerinizi yönetir, kritik stokları ve kendi alış fiyatlarınızı tek ekrandan izlersiniz.",
+  },
+  {
+    question: "Ekibimi ve yetkileri yönetebilir miyim?",
+    showOnLanding: true,
+    answer:
+      "Evet. Teknisyen, servis danışmanı ve yönetici rolleri farklı yetkilerle çalışır. Böylece herkes yalnızca ihtiyacı olan bilgilere erişir.",
+  },
+  {
+    question: "Müşteriye WhatsApp'tan çıktı gönderebilir miyim?",
+    showOnLanding: true,
+    answer:
+      "Evet. Takip linkini veya iş emri özetini WhatsApp üzerinden paylaşabilirsiniz. Müşteriniz linki tarayıcıda açar; uygulama indirmesi gerekmez.",
+  },
+  {
+    question: "BakimX mobilde çalışır mı? Kurulum gerekiyor mu?",
     answer:
       "Evet. Telefon, tablet veya bilgisayarınızın tarayıcısından kullanabilirsiniz. Program indirmeniz gerekmez; aynı hesabınızla servisinizdeki kayıtlara erişirsiniz.",
   },
   {
     question: "Ruhsat okuma nasıl çalışır?",
-    showOnLanding: true,
     answer:
       "Ruhsat fotoğrafından plaka, marka/model, şasi numarası ve model yılı okunur. Bilgileri kontrol edip onaylarsınız. Araç eşleştirmesi yapıldığında ilgili katalog parçalarını inceleyebilirsiniz; fiyatlar kendi kataloğunuzdan gelir.",
   },
   {
     question: "Hangi modüller bugün hazır?",
-    showOnLanding: true,
     answer:
       "İş emri, teklif, randevu, stok/parça, tedarikçi, kasa, müşteri ve araç yönetimi, bakım hatırlatmaları ve raporlar kullanıma hazır. Modül ve kullanım hakları pakete göre değişir. e-Fatura/e-Arşiv ve çoklu şube yönetimi planlanan geliştirmelerdir; henüz kullanıma açık değildir.",
   },
@@ -36,7 +71,6 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     question: "Müşteriye WhatsApp ile çıktı gönderilebilir mi?",
-    showOnLanding: true,
     answer:
       "Evet. Müşterinize takip linkini veya iş emri özetini WhatsApp üzerinden paylaşabilirsiniz. Müşteriniz linki tarayıcıda açar; uygulama indirmesi gerekmez. Yazdırılabilir çıktıları tarayıcınızdan PDF olarak da kaydedebilirsiniz.",
   },
@@ -62,7 +96,6 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     question: "Fiyatlandırma nasıl çalışıyor?",
-    showOnLanding: true,
     answer:
       "Lite, Profesyonel ve Premium paketlerini Fiyatlar sayfasında karşılaştırabilirsiniz. Özellikler, dahil kullanıcı sayısı ve kullanım kotaları pakete göre değişir. Güncel aylık ve yıllık tutarlar aynı sayfada yer alır.",
   },

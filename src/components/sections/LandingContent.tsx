@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DemoRequestButton } from "@/components/public/DemoRequestButton";
 
 export { ProductStage as ProductTourSection } from "./ProductStage";
 
@@ -156,6 +157,11 @@ export function GettingStartedSection() {
               </div>
               <h3 className="text-xl font-semibold">{title}</h3>
               <p className="mt-3 text-sm leading-7">{text}</p>
+              {n === "03" && (
+                <div className="mt-6">
+                  <DemoRequestButton location="getting_started" />
+                </div>
+              )}
             </div>
           ))}
         </div>
