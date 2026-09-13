@@ -17,6 +17,25 @@ const HERO_COLLAGE = [
 export function HeroSection() {
   return (
     <section id="hero" aria-labelledby="hero-title" className={styles.hero}>
+      <div className={styles.heroBgArt} aria-hidden="true">
+        <picture>
+          <source
+            srcSet="/illustrations/hero-workshop-bg.webp"
+            type="image/webp"
+          />
+          <img
+            src="/illustrations/hero-workshop-bg.jpg"
+            alt=""
+            className={styles.heroBgArtImage}
+            width={1280}
+            height={720}
+            decoding="async"
+            // Decorative, but above the fold: load it with the first viewport.
+            loading="eager"
+          />
+        </picture>
+      </div>
+
       <div className={styles.heroInner}>
         <p className={styles.eyebrow}>
           Servisinizin yeni çalışma düzeni{" "}

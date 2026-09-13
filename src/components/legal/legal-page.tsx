@@ -100,7 +100,7 @@ export function LegalPage({
               "[&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5",
               "[&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-5",
               "[&_strong]:font-medium [&_strong]:text-foreground",
-              "[&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-primary",
+              "[&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-2 [&_a:hover]:text-primary",
             ].join(" ")}
           >
             {children}

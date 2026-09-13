@@ -167,18 +167,15 @@ export function Footer() {
 
           <Reveal amount={0.15} delay={80}>
             <h3 className={styles.columnTitle}>Çözümler</h3>
-            {solutionGroups.map((group) => (
-              <div key={group.title} className={styles.solutionGroup}>
-                <h4 className={styles.solutionHeading}>{group.title}</h4>
-                <ul className={styles.linkList}>
-                  {group.links.map((link) => (
-                    <li key={`${group.title}-${link.href}-${link.label}`}>
-                      <FooterNavLink {...link} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <ul className={styles.linkList}>
+              {solutionGroups.flatMap((group) =>
+                group.links.map((link) => (
+                  <li key={`${group.title}-${link.href}-${link.label}`}>
+                    <FooterNavLink {...link} />
+                  </li>
+                )),
+              )}
+            </ul>
           </Reveal>
 
           <Reveal amount={0.15} delay={120}>

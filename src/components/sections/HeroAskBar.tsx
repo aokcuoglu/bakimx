@@ -16,10 +16,10 @@ import {
 } from "@/components/site-assistant/assistant-bridge";
 
 /**
- * Çipler Faz 2'deki kartların ilk dört sorusudur; metin `objections.ts`ten
+ * Çipler Faz 2'deki kartların ilk üç sorusudur; metin `objections.ts`ten
  * gelir, burada kopyası tutulmaz.
  */
-const CHIP_COUNT = 4;
+const CHIP_COUNT = 3;
 const CHIPS = LANDING_OBJECTIONS.slice(0, CHIP_COUNT);
 
 const INPUT_ID = "hero-ask-bar";
