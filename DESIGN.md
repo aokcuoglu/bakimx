@@ -12,9 +12,9 @@ Geist; beyaz `card` zemin; ince `border` ayraçlar; koyu `foreground` başlıkla
 
 ## Ana mesaj ve ürün sahnesi
 
-“Servisiniz büyüsün. Kontrol sizde kalsın.” Tek, sunucuda görünür H1. Altında araç kabulü, parçalar, iş emirleri ve tahsilatı bağlayan kısa açıklama. Ana CTA `/fiyatlar#lite`, mevcut Lite teklifi ve analitik adları korunur.
+Hero H1, servis sahiplerinin üç ana ağrısının kısa kolajıdır (İş emri 10 saniyede · Şaseden parça listesi · Her kayıt yerinde) — tek, sunucuda görünür. Altında bu üç vaadi bağlayan kısa açıklama. Ana CTA `/register`; Lite teklif satırı hero’dan kaldırılmıştır, analitik olay adları korunur.
 
-Ortada dashboard, solda iş emri, sağda şase bazlı parça listesi. Dashboard ve iş emri açıklayıcı HTML/CSS örnekleridir; canlı ürün ekranının birebir kopyası değildir. Parça listesi mevcut `parts-catalog.png` kırpımıdır. Örnek veriler sayfada açıkça belirtilir.
+Masaüstünde ortada etkileşimli dashboard, yanında iş emri / şase parça / canlı akış pencereleri. 640px ve altında Attio mobil desenine uyulur: yalnız etkileşimli dashboard çerçevesi kalır; uydu pencereler render edilmez (CSS de SSR/no-JS için gizler). Dashboard mock’u tıklanabilir tur içerir. Örnek veriler sayfada açıkça belirtilir.
 
 ## Demo modalı
 

@@ -45,7 +45,11 @@ test("editorial hero: responsive composition, accessibility, interactive product
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
     await expect(page.locator('#hero a[href="/register"]')).toBeVisible();
     await expect(page.locator("#hero").getByRole("button", { name: "Birlikte inceleyelim" })).toBeVisible();
-    await expect(page.locator("[data-product-window]")).toHaveCount(4);
+    const isMobileStage = width <= 640;
+    await expect(page.locator("[data-product-window]")).toHaveCount(
+      isMobileStage ? 1 : 4,
+    );
+    await expect(page.locator('[data-product-window="dashboard"]')).toBeVisible();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth - innerWidth,
