@@ -5,6 +5,8 @@ import { PartForm } from "@/components/parts/part-form"
 import { getActiveSuppliersForSelect } from "@/lib/suppliers/queries"
 import { getWorkshopBrands, getWorkshopCategories } from "@/lib/parts/queries"
 
+export const metadata = { title: "Yeni Stok veya Hizmet" }
+
 export default async function NewPartPage() {
   const paywall = await getFeaturePaywall("partsInventory")
   if (paywall) return paywall

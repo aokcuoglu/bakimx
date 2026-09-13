@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Footer } from "@/components/sections/Footer"
 import { Header } from "@/components/sections/Header"
+import { PublicSite } from "@/components/public/PublicSite"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { resolveResumeToken } from "@/lib/live-chat/server"
@@ -18,7 +19,7 @@ import { ResumeChatOpener } from "./resume-chat"
 export const dynamic = "force-dynamic"
 
 export const metadata = {
-  title: "Destek görüşmeniz",
+  title: "Destek Görüşmesi",
   // Arama motorlarına açılacak bir yüzey değil; token'lı URL'ler indekslenmemeli.
   robots: { index: false, follow: false },
 }
@@ -33,7 +34,7 @@ export default async function LiveChatResumePage({
   const result = await resolveResumeToken(token)
 
   return (
-    <>
+    <PublicSite>
       <Header />
       <main className="mx-auto flex w-full max-w-xl flex-col px-4 py-12 sm:px-6">
         <Card>
@@ -80,6 +81,6 @@ export default async function LiveChatResumePage({
         </Card>
       </main>
       <Footer />
-    </>
+    </PublicSite>
   )
 }

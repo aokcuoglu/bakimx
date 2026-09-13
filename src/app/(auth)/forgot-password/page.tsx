@@ -3,7 +3,7 @@ import { AuthVisualPanel } from "@/components/auth/auth-visual-panel"
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form"
 
 export const metadata: Metadata = {
-  title: "Şifremi Sıfırla",
+  title: "Şifremi Unuttum",
   description: "BakimX hesabınızın şifresini e-posta ile sıfırlayın.",
 }
 

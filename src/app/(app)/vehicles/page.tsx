@@ -10,6 +10,8 @@ import { deleteVehicleAction } from "./actions"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
+export const metadata = { title: "Araçlar" }
+
 export default async function VehiclesPage({
   searchParams,
 }: {

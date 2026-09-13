@@ -5,6 +5,8 @@ import { salesAdvisorDisplayName } from "@/lib/sales/links"
 import { salesRegistrationLinkState } from "@/lib/sales/registration-link"
 import { SalesLeadDetail } from "@/components/sales/sales-lead-detail"
 
+export const metadata = { title: "Satış Adayı Detayı · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 const ACTIVITY_PAGE_SIZE = 10

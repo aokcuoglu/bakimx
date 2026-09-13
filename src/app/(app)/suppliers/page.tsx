@@ -6,6 +6,8 @@ import { prisma } from "@/lib/db"
 import { getSupplierKPIs } from "@/lib/suppliers/queries"
 import { matchingSupplierCategories } from "@/lib/supplier-categories"
 
+export const metadata = { title: "Tedarikçiler" }
+
 export default async function SuppliersPage(props: {
   searchParams?: Promise<{ q?: string; status?: string }>
 }) {

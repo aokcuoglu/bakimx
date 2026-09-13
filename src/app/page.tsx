@@ -11,11 +11,15 @@ import { FAQSection } from "@/components/sections/FAQSection";
 import { Footer } from "@/components/sections/Footer";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LANDING_FAQ_ITEMS } from "@/lib/faq-data";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, HOME_TITLE, publicPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  alternates: { canonical: "/" },
-  openGraph: { url: "/" },
+  ...publicPageMetadata({
+    path: "/",
+    title: "Oto Servis Yönetim Platformu",
+    description: "Araç kabul, iş emri, stok, müşteri ve tahsilat takibini BakımX ile tek yerde yönetin.",
+  }),
+  title: { absolute: HOME_TITLE },
 };
 
 const homeStructuredData = [
@@ -40,7 +44,7 @@ const homeStructuredData = [
 
 export default function Home() {
   return (
-    <PublicSite>
+    <PublicSite landing>
       <JsonLd data={homeStructuredData} />
       <Header />
       <main>

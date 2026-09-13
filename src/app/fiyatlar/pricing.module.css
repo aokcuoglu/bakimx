@@ -1,34 +1,4 @@
 .page {
-  /* Neutralize the existing theme tones for this public pricing surface. */
-  --foreground: oklch(from var(--color-navy) l 0 h);
-  --card-foreground: var(--foreground);
+  /* Keep the pricing surface neutral; text inherits the shared palette. */
   --muted: oklch(from var(--secondary) l 0 h);
-}
-
-.page header > div {
-  max-width: none;
-  height: 68px;
-  padding-inline: 24px;
-  gap: 40px;
-}
-
-.page header nav {
-  margin-right: auto;
-}
-
-.page header a[aria-label="BakımX ana sayfa"] > span:last-child {
-  display: none;
-}
-
-.page header [data-variant="default"],
-.page header [data-variant="navy"] {
-  background: var(--foreground);
-  color: var(--card);
-}
-
-@media (max-width: 640px) {
-  .page header > div {
-    padding-inline: 20px;
-    gap: 16px;
-  }
 }

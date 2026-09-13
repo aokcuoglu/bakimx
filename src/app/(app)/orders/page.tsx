@@ -15,6 +15,8 @@ import { resolveTechnicianFilter, UNASSIGNED_TECHNICIAN } from "@/lib/orders/tec
 import { INVOICE_WITH, INVOICE_WITHOUT, isInvoiceMissing, resolveInvoiceFilter } from "@/lib/orders/invoice-filter"
 import { ACTIVE_ORDER_FILTER, ACTIVE_ORDER_STATUSES, resolveOrderStatusFilter } from "@/lib/orders/status-filter"
 
+export const metadata = { title: "İş Emirleri" }
+
 export default async function OrdersPage({
   searchParams,
 }: {

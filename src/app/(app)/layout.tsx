@@ -12,10 +12,10 @@ import { AppShellChrome } from "@/components/layout/app-shell"
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner"
 import { VersionUpdateNotice } from "@/components/layout/version-update-notice"
 import { getBuildSignature } from "@/lib/build-signature"
-import { PRIVATE_ROBOTS } from "@/lib/seo"
+import { PRIVATE_ROBOTS, TITLE_TEMPLATE } from "@/lib/seo"
 
 export const metadata: Metadata = {
-  title: "İş Yeri Paneli",
+  title: { default: "İş Yeri Paneli", template: TITLE_TEMPLATE },
   description: "Araç kabul, hasar kaydı ve müşteri onayı yönetimi",
   robots: PRIVATE_ROBOTS,
 }

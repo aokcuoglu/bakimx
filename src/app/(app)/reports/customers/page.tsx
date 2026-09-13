@@ -5,6 +5,8 @@ import { ReportsLayout } from "@/components/reports/reports-layout"
 import { CustomersReport } from "@/components/reports/customers-report"
 import { getCustomerReportStats, getTopCustomersBySpend, getMostVisitedCustomers } from "@/lib/reports/queries"
 
+export const metadata = { title: "Müşteri Raporu" }
+
 export default async function CustomersReportPage({
   searchParams,
 }: {

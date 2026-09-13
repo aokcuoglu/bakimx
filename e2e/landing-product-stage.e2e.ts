@@ -20,9 +20,10 @@ test("editorial hero: responsive composition, accessibility, interactive product
 
   // Mac trafik ışıkları + sürükleme: workflow penceresini taşı
   const workflow = page.locator('[data-product-window="workflow"]');
+  const bar = workflow.locator('[class*="bar"]').first();
+  await bar.click({ trial: true });
   const before = await workflow.boundingBox();
   expect(before).toBeTruthy();
-  const bar = workflow.locator('[class*="bar"]').first();
   const barBox = await bar.boundingBox();
   expect(barBox).toBeTruthy();
   await page.mouse.move(barBox!.x + barBox!.width / 2, barBox!.y + barBox!.height / 2);

@@ -1,6 +1,6 @@
 export const DIJITAL_ARAC_KABUL_PATH = "/dijital-arac-kabul" as const
 
-export const DIJITAL_ARAC_KABUL_TITLE = "Dijital Araç Kabul: Ruhsat, Fotoğraf ve Hasar Kaydı Tek Ekranda"
+export const DIJITAL_ARAC_KABUL_TITLE = "Dijital Araç Kabul: Ruhsat, Fotoğraf ve Hasar Kaydı"
 
 export const DIJITAL_ARAC_KABUL_H1 = "Dijital araç kabulle ruhsatı okutun, kabul kaydını telefondan tamamlayın"
 

@@ -6,6 +6,8 @@ import { VehicleCreateForm } from "@/components/vehicles/vehicle-create-form"
 import { VehicleIdentity } from "@/components/vehicles/vehicle-identity"
 import Link from "next/link"
 
+export const metadata = { title: "Araç Düzenle" }
+
 export default async function EditVehiclePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { user, workshop } = await getAppData()

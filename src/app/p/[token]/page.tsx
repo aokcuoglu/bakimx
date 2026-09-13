@@ -7,6 +7,8 @@ import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
 import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
 
+export const metadata = { title: "Araç Pasaportu" }
+
 export const dynamic = "force-dynamic"
 
 export default async function PublicPassportPage({ params }: { params: Promise<{ token: string }> }) {

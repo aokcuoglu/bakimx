@@ -31,6 +31,25 @@ describe("public landing routes", () => {
     expect(response.headers.get("location")).toBeNull()
   })
 
+  test("allows anonymous local requests to /contact-us", async () => {
+    const response = await middleware(new NextRequest("http://localhost/contact-us"))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get("location")).toBeNull()
+  })
+
+  test("allows anonymous local requests to /blog and blog posts", async () => {
+    const index = await middleware(new NextRequest("http://localhost/blog"))
+    expect(index.status).toBe(200)
+    expect(index.headers.get("location")).toBeNull()
+
+    const post = await middleware(
+      new NextRequest("http://localhost/blog/oto-serviste-dijital-donusum"),
+    )
+    expect(post.status).toBe(200)
+    expect(post.headers.get("location")).toBeNull()
+  })
+
   test("allows anonymous local requests to /llms.txt", async () => {
     const response = await middleware(new NextRequest("http://localhost/llms.txt"))
 

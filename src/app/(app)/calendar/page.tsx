@@ -5,6 +5,8 @@ import { CalendarView } from "@/components/appointments/calendar-view"
 import { getCalendarEvents } from "@/lib/calendar/queries"
 import Link from "next/link"
 
+export const metadata = { title: "Takvim" }
+
 export default async function CalendarPage({
   searchParams,
 }: {

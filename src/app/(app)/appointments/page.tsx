@@ -10,6 +10,8 @@ import { AppointmentList } from "@/components/appointments/appointment-list"
 import { formatAppointmentNo } from "@/lib/work-order-number"
 import { cn } from "@/lib/utils"
 
+export const metadata = { title: "Randevular" }
+
 export default async function AppointmentsPage({
   searchParams,
 }: {

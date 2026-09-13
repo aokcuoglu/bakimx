@@ -7,6 +7,8 @@ import { formatMinor } from "@/lib/billing/pricing"
 import { HealthBand } from "@/app/admin/health/health-band"
 import { ActiveImpersonations } from "@/app/admin/active-impersonations"
 
+export const metadata = { title: "Genel Bakış · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 export default async function AdminHomePage() {

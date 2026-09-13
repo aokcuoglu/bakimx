@@ -4,6 +4,8 @@ import { istanbulDayBounds } from "@/lib/sales/time"
 import { loadSalesPerformance } from "@/lib/sales/performance-query"
 import { SalesConsole } from "./sales-console"
 
+export const metadata = { title: "Satış Paneli · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 export default async function SalesPage({

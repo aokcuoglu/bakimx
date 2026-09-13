@@ -7,6 +7,8 @@ import { formatCatalogAuditChanges } from "@/lib/catalog/bakimx-catalog"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
+export const metadata = { title: "Ürün Detayı · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 const AUDIT_ACTION_LABELS: Record<string, string> = {

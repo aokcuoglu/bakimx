@@ -18,6 +18,8 @@ const bucketColors = [
   { bg: "bg-destructive/10", border: "border-destructive/20", label: "text-muted-foreground-strong", text: "text-destructive-strong", accentBg: "bg-destructive/20", icon: AlertTriangle },
 ]
 
+export const metadata = { title: "Alacak Yaşlandırma" }
+
 export default async function AgingReportPage() {
   const paywall = await getFeaturePaywall("cashbox")
   if (paywall) return paywall

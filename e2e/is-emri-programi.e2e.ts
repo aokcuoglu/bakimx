@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test"
 test("iş emri programı sayfası mobilde taşmadan ve erişilebilir açılır", async ({ page }) => {
   await page.goto("/is-emri-programi")
 
-  await expect(page).toHaveTitle(/İş Emri Programı: İş, Parça, İşçilik ve Onay Tek Ekranda/)
+  await expect(page).toHaveTitle(/İş Emri Programı: İş ve Onay Takibi/)
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://bakimx.com/is-emri-programi")
   await expect(page.getByRole("heading", { level: 1, name: /İş emri programı/ })).toBeVisible()
   await expect(page.getByRole("link", { name: "Ücretsiz deneyin" })).toHaveCount(2)

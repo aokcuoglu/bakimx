@@ -69,6 +69,8 @@ function getDateRange(period: string, dateFromStr?: string, dateToStr?: string):
   }
 }
 
+export const metadata = { title: "Ödemeler" }
+
 export default async function PaymentsListPage({ searchParams }: { searchParams: Promise<SP> }) {
   const paywall = await getFeaturePaywall("cashbox")
   if (paywall) return paywall

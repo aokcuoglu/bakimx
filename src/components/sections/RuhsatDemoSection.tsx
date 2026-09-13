@@ -146,7 +146,7 @@ export function RuhsatDemoSection() {
         <Tabs defaultValue="sample" onValueChange={reset} className="mt-10">
           <TabsList className="mx-auto mb-5 h-auto">
             <TabsTrigger value="sample">Örnek ruhsat</TabsTrigger>
-            <TabsTrigger value="upload">Kendi ruhsatını dene</TabsTrigger>
+            <TabsTrigger value="upload" className="text-muted-foreground">Kendi ruhsatını dene</TabsTrigger>
           </TabsList>
           <TabsContent value="sample">
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12 items-start">

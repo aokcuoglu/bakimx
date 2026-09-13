@@ -9,6 +9,8 @@ import { getVehicleReminders } from "@/lib/reminders/queries"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { getCrossWorkshopVehicleHistory } from "@/lib/vehicle-history/queries"
 
+export const metadata = { title: "Araç Detayı" }
+
 export default async function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { user, workshop } = await getAppData()

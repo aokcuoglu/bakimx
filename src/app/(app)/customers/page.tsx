@@ -12,6 +12,8 @@ import type { Prisma } from "@prisma/client"
 
 type SP = { q?: string; type?: string; tag?: string; source?: string }
 
+export const metadata = { title: "Müşteriler" }
+
 export default async function CustomersPage({ searchParams }: { searchParams: Promise<SP> }) {
   const { user, workshop } = await getAppData()
   const params = await searchParams

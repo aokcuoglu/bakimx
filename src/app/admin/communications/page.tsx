@@ -11,6 +11,8 @@ import { CommunicationLogTable } from "./communication-log-table"
 const PAGE_SIZE = 10
 type Search = { workshopId?: string; type?: string; status?: string; page?: string }
 
+export const metadata = { title: "İletişim Merkezi · Yönetim" }
+
 export default async function AdminCommunicationsPage({ searchParams }: { searchParams: Promise<Search> }) {
   await requireAdminCapability("viewAudit")
   const sp = await searchParams

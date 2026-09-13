@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { auditActionLabel } from "@/lib/admin/activity-labels"
 import { AuditLogDetailDialog } from "./audit-log-detail-dialog"
 
+export const metadata = { title: "Denetim Kayıtları · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 const PAGE_SIZE = 10

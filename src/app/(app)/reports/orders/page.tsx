@@ -13,6 +13,8 @@ import {
 } from "@/lib/reports/queries"
 import { prisma } from "@/lib/db"
 
+export const metadata = { title: "İş Emri Raporu" }
+
 export default async function OrdersReportPage({
   searchParams,
 }: {

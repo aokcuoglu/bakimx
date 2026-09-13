@@ -609,11 +609,11 @@
 
 :root {
   --background: oklch(0.98 0.002 250);
-  --foreground: oklch(0.20 0.04 260);
+  --foreground: #171717;
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.20 0.04 260);
+  --card-foreground: #171717;
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0.04 260);
+  --popover-foreground: #171717;
   --primary: oklch(0.543 0.213 260);
   --primary-foreground: oklch(0.98 0.002 250);
   /* AÇIK YÜZEY ÜZERİNDEKİ METİN/İKON tonu — success/warning/destructive ile
@@ -624,20 +624,15 @@
      göre kalıyordu (BAK-160). -strong bu dört yüzeyin dördünde de ≥5.5:1. */
   --primary-strong: oklch(0.47 0.213 260);
   --secondary: oklch(0.96 0.01 250);
-  --secondary-foreground: oklch(0.20 0.04 260);
+  --secondary-foreground: #171717;
   --muted: oklch(0.96 0.01 250);
-  --muted-foreground: oklch(0.50 0.02 260);
-  /* İKİNCİL METİN, TONLU ZEMİNDE. Diğer -strong tonlarıyla aynı desen ama
-     sebebi farklı: --muted-foreground düz yüzeylerde AA'yı rahat geçiyor
-     (kart 6.00:1, sayfa 5.66:1) — düştüğü yer uygulamanın içerik alanı, çünkü
-     orası `bg-background` değil `bg-muted`. `bg-destructive/10` bir de onun
-     üstüne binince efektif zemin yeterince koyulaşıyor ve 11px KPI etiketi
-     4.43:1'e iniyor (BAK-189, /cashbox/aging'de canlı ölçüm; statik model
-     4.49:1 veriyor). -strong tonu üç düz yüzeyin ve onların dört `/10` tonlu
-     hâlinin hepsinde >=5.8:1. */
-  --muted-foreground-strong: oklch(0.44 0.02 260);
+  /* Vercel + Linear uyarlaması: nötr, siyaha yakın metinler.
+     Hiyerarşi soluk renkten çok boyut, ağırlık ve boşlukla kurulur.
+     Tonlu yüzeylerde -strong sözleşmesi korunur (BAK-189). */
+  --muted-foreground: #262626;
+  --muted-foreground-strong: #171717;
   --accent: oklch(0.96 0.02 250);
-  --accent-foreground: oklch(0.20 0.04 260);
+  --accent-foreground: #171717;
   --destructive: oklch(0.577 0.245 27.325);
   /* Dolu destructive zemin üzerindeki metin/ikon. Koyu temadaki karşılığı .dark
      bloğunda lacivert-siyaha döner (kırmızı orada açıldığı için) — success ve

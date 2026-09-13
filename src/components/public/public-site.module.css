@@ -1,14 +1,42 @@
 .site,
-.customSite {
+.customSite,
+.landingSite {
   background: var(--card);
   color: var(--foreground);
   min-height: 100vh;
   --public-width: 1200px;
 }
+.landingSite {
+  position: relative;
+}
+.landingFrame {
+  position: absolute;
+  z-index: 2;
+  top: 72px;
+  bottom: 0;
+  left: 50%;
+  width: min(1280px, 100%);
+  pointer-events: none;
+  transform: translateX(-50%);
+  border-inline: 1px solid var(--border);
+  opacity: 0.72;
+}
+.landingSite > :not(.landingFrame):not(header) {
+  position: relative;
+  z-index: 1;
+}
+.landingSite > header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+.landingSite > .progress {
+  z-index: 60;
+}
 .progress {
   position: fixed;
   inset: 0 0 auto;
-  height: 2px;
+  height: 3px;
   background: var(--primary);
   transform-origin: left;
   z-index: 60;
@@ -76,7 +104,7 @@
   border-radius: 18px;
 }
 .site :global(footer) {
-  background: var(--background);
+  background: var(--card);
 }
 @media (max-width: 640px) {
   .site :global(main > section:not(#hero):not(#ozellikler)) {
@@ -159,6 +187,49 @@
     display: none;
   }
   .site :global(main > section) {
+    transform: none !important;
+    padding-block: 16px !important;
+  }
+}
+
+/* Landing uses a separate root so the open public palette also applies to it.
+   Without this bridge the older `text-navy` call-site classes win. */
+.landingSite :global(main) {
+  overflow: clip;
+}
+.landingSite :global(main > section:not(#hero):not(#ozellikler)) {
+  border-color: var(--border);
+  padding-block: clamp(64px, 8vw, 120px);
+  background-color: var(--card);
+}
+.landingSite :global(main > section:not(#hero):not(#ozellikler) > div) {
+  max-width: var(--public-width);
+}
+.landingSite :global(main > section + section) {
+  border-top: 1px solid var(--border);
+}
+.landingSite :global(main > section:not(#ozellikler) .text-navy) {
+  color: var(--foreground);
+}
+.landingSite :global(main > section:not(#ozellikler) .text-primary:not(a)) {
+  color: var(--foreground);
+}
+.landingSite :global(main > section .font-mono) {
+  font-family: inherit;
+}
+.landingSite :global(footer) {
+  background: var(--card);
+}
+.landingSite :global(footer > div) {
+  padding-block: 64px 32px;
+}
+@media (max-width: 640px) {
+  .landingSite :global(main > section:not(#hero):not(#ozellikler)) {
+    padding-block: 64px;
+  }
+}
+@media print {
+  .landingSite :global(main > section) {
     transform: none !important;
     padding-block: 16px !important;
   }

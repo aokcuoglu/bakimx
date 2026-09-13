@@ -30,6 +30,8 @@ import {
   WORKSHOP_ORDER_PAGE_SIZE,
 } from "@/lib/admin/workshop-detail-query"
 
+export const metadata = { title: "İş Yeri Detayı · Yönetim" }
+
 export const dynamic = "force-dynamic"
 
 const TIER_LABELS: Record<string, string> = { lite: "Lite", starter: "Başlangıç", pro: "Profesyonel", premium: "Premium" }

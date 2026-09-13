@@ -4,6 +4,8 @@ import { AppShell } from "@/components/layout/app-shell"
 import { ReportsLayout } from "@/components/reports/reports-layout"
 import { BarChart3 } from "lucide-react"
 
+export const metadata = { title: "Raporlar" }
+
 export default async function ReportsPage() {
   const paywall = await getFeaturePaywall("reports")
   if (paywall) return paywall

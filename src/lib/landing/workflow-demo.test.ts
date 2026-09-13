@@ -26,16 +26,29 @@ describe("landing ürün akışı demosu", () => {
     expect(existsSync(publicFile("/landing/screens/mock-app-tour.gif"))).toBe(true);
   });
 
-  test("Mac pencereleri ve framer-motion yok", () => {
+  test("Mac pencereleri ve staggered LandingMotion (DESIGN.md)", () => {
     const stage = read("../../components/sections/ProductStage.tsx");
     const panel = read("../../components/sections/WorkflowDemoSection.tsx");
     const mac = read("../../components/sections/mac-window.tsx");
-    expect(stage).not.toContain("framer-motion");
+    const site = read("../../components/public/PublicSite.tsx");
+    const motion = read("../../components/shared/landing-motion.tsx");
+    const ops = read("../../components/sections/LandingContent.tsx");
+    expect(stage).toContain("LandingStagger");
+    expect(stage).toContain("LandingItem");
+    expect(stage).toContain('variant="window"');
+    expect(stage).not.toContain("useScroll");
+    expect(motion).toContain("staggerChildren");
+    expect(motion).toContain("opacity: 0");
+    expect(motion).toContain("y: 40");
+    expect(motion).toContain("y: 56");
+    expect(ops).toContain("LandingStagger");
     expect(panel).not.toContain("framer-motion");
     expect(stage).toContain("MacWindow");
     expect(mac).toContain("Kapat");
     expect(mac).toContain("Simge durumuna küçült");
     expect(mac).toContain("Büyüt");
+    expect(site).toContain("scaleX: scrollYProgress");
+    expect(site).not.toContain("y: [64, 0]");
   });
 
   test("akış ruhsat → iş emri → parça → hava filtresi", () => {

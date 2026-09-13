@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { ReminderDetail } from "@/components/reminders/reminder-detail"
 
+export const metadata = { title: "Bakım Hatırlatması Detayı" }
+
 export default async function ReminderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const paywall = await getFeaturePaywall("automatedReminders")
   if (paywall) return paywall

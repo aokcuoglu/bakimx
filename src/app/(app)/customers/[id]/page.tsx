@@ -7,6 +7,8 @@ import { notFound } from "next/navigation"
 import { CustomerDetail } from "@/components/customers/customer-detail"
 import { getCustomerReminders } from "@/lib/reminders/queries"
 
+export const metadata = { title: "Müşteri Detayı" }
+
 export default async function CustomerDetailPage({
   params,
   searchParams,
