@@ -4,6 +4,10 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { Reveal } from "@/components/shared/reveal";
 import { CookiePreferencesButton } from "@/components/cookie-consent/cookie-preferences-button";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { ArrowRight } from "lucide-react";
 import styles from "./footer.module.css";
 
 function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -83,12 +87,12 @@ const solutionGroups: readonly SolutionGroup[] = [
 const companyLinks: readonly FooterLink[] = [
   { label: "Demo Talep Et", href: "/demo" },
   { label: "Ücretsiz Dene", href: "/register" },
-  { label: "İletişim", href: "/demo" },
+  { label: "İletişim", href: "/contact-us" },
   { label: "Sistem Durumu", href: "/status" },
 ] as const;
 
-/** Blog eklendiğinde buraya `{ label: "Blog", href: "/blog" }` konur. */
 const resourceLinks: readonly FooterLink[] = [
+  { label: "Blog", href: "/blog" },
   { label: "Neden BakımX", href: "/#neden" },
   { label: "SSS", href: "/#sss" },
   { label: "Araç Kabul Formu Rehberi", href: "/rehber/arac-kabul-formu" },
@@ -131,24 +135,29 @@ export function Footer() {
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
-        <div className={styles.grid}>
-          <Reveal amount={0.15} className={styles.brandBlock}>
+        <div className={styles.contactBand}>
+          <Reveal amount={0.15} className={styles.contactBrand}>
             <Link
               href="/"
               aria-label="BakımX ana sayfa"
               className={styles.brandLink}
             >
-              <BrandLogo variant="primary-light" size="lg" alt="" />
+              <BrandLogo variant="primary-light" height={40} alt="" />
               <span className={styles.brandName}>
                 Bakım<span className={styles.brandAccent}>X</span>
               </span>
             </Link>
-            <p className={styles.tagline}>
-              Serviste işler yolunda. Kontrol sizde.
-            </p>
-            <p className={styles.taglineMeta}>
-              Türkiye&apos;deki oto servisler için geliştiriliyor.
-            </p>
+            <div className={styles.contactPitch}>
+              <p className={styles.tagline}>
+                Serviste işler yolunda.<br />
+                Kontrol sizde.
+              </p>
+              <Button asChild variant="outline" size="xl" className={styles.demoButton}>
+                <Link href="/demo">
+                  Demo talep et <ArrowRight aria-hidden="true" />
+                </Link>
+              </Button>
+            </div>
             <div className={styles.socialRow}>
               {socialLinks.map(({ label, href, icon: Icon }) => (
                 <a
@@ -165,6 +174,36 @@ export function Footer() {
             </div>
           </Reveal>
 
+          <Reveal amount={0.15} delay={80} className={styles.updatesBlock}>
+            <h2 className={styles.updatesTitle}>Yeniliklerden haberdar olun</h2>
+            <form className={styles.signupForm} action="/contact-us" method="get">
+              <label className="sr-only" htmlFor="footer-email">E-posta adresiniz</label>
+              <Input
+                id="footer-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="E-posta adresiniz"
+                required
+                className={styles.emailInput}
+              />
+              <Button type="submit" variant="ghost" size="xl" className={styles.signupButton}>
+                Abone ol <ArrowRight aria-hidden="true" />
+              </Button>
+            </form>
+            <div className={styles.consentRow}>
+              <Checkbox id="footer-consent" name="consent" required aria-label="Güncelleme e-postaları için onay" />
+              <p className={styles.consentText}>
+                <Link href="/privacy">Gizlilik Politikası</Link>’nı okuduğumu ve adım ile e-posta adresimin
+                pazarlama iletişimi, promosyon ve güncellemeler göndermek amacıyla toplanıp kullanılacağını
+                onaylıyorum. İznimi dilediğim zaman abonelikten çıkarak veya hey@bakimx.com üzerinden
+                iletişime geçerek geri çekebilirim.
+              </p>
+            </div>
+          </Reveal>
+        </div>
+
+        <div className={styles.menuGrid}>
           <Reveal amount={0.15} delay={80}>
             <h3 className={styles.columnTitle}>Çözümler</h3>
             <ul className={styles.linkList}>

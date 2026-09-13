@@ -10,6 +10,12 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -37,12 +43,14 @@ type MacWindowProps = {
   onApi?: (api: MacWindowApi) => void;
   /** Mobilde sürükleme kapalı — parent stacked layout kullanır. */
   draggable?: boolean;
+  /**
+   * Ürün sahnesi scroll-linked ofseti (DESIGN.md Motion denemesi).
+   * Sürükleme ofsetiyle toplanır; `initial={false}` — SSR’da opacity gizlemez.
+   */
+  scrollY?: MotionValue<number>;
+  scrollScale?: MotionValue<number>;
 };
 
-/**
- * macOS tarzı trafik ışığı + sürükleme. Landing ürün sahnesi pencereleri için.
- * framer-motion kullanmaz (BAK-165).
- */
 function clamp(value: number, min: number, max: number) {
   if (min > max) return (min + max) / 2;
   return Math.min(max, Math.max(min, value));
@@ -58,10 +66,14 @@ export function MacWindow({
   onFocus,
   onApi,
   draggable = true,
+  scrollY,
+  scrollScale,
 }: MacWindowProps) {
   const titleId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragX = useMotionValue(0);
+  const dragY = useMotionValue(0);
+  const zeroScrollY = useMotionValue(0);
   const [minimized, setMinimized] = useState(false);
   const [maximized, setMaximized] = useState(false);
   const [closed, setClosed] = useState(false);
@@ -77,12 +89,20 @@ export function MacWindow({
     maxY: number;
   } | null>(null);
 
+  const resolvedScrollY = scrollY ?? zeroScrollY;
+  const composedY = useTransform(
+    [dragY, resolvedScrollY],
+    ([dragOffset, scrollOffset]: number[]) => dragOffset + scrollOffset,
+  );
+
   const restore = useCallback(() => {
     setClosed(false);
     setMinimized(false);
     setMaximized(false);
+    dragX.set(0);
+    dragY.set(0);
     onFocus(id);
-  }, [id, onFocus]);
+  }, [dragX, dragY, id, onFocus]);
 
   useEffect(() => {
     onApi?.({ id, closed, restore });
@@ -96,22 +116,24 @@ export function MacWindow({
     if (event.button !== 0) return;
     onFocus(id);
     const el = rootRef.current;
-    const parent = el?.offsetParent as HTMLElement | null;
+    const parent = el?.closest<HTMLElement>("[data-product-stage-bounds]");
     if (!el || !parent) return;
     // Capture başlıkta olmalı: kökte capture edilirse move/up bar handler'larına
     // gelmez ve imleç çubuğu terk edince sürükleme kopar.
     event.currentTarget.setPointerCapture(event.pointerId);
-    // CSS left/top (offset*) + translate ofseti sahne içinde kalsın.
-    const minX = -el.offsetLeft;
-    const maxX = parent.clientWidth - el.offsetWidth - el.offsetLeft;
-    const minY = -el.offsetTop;
-    const maxY = parent.clientHeight - el.offsetHeight - el.offsetTop;
+    // Reveal wrappers are window-sized; clamp against the whole product stage.
+    const bounds = parent.getBoundingClientRect();
+    const windowBounds = el.getBoundingClientRect();
+    const minX = dragX.get() + bounds.left - windowBounds.left;
+    const maxX = dragX.get() + bounds.right - windowBounds.right;
+    const minY = dragY.get() + bounds.top - windowBounds.top;
+    const maxY = dragY.get() + bounds.bottom - windowBounds.bottom;
     drag.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
-      originX: offset.x,
-      originY: offset.y,
+      originX: dragX.get(),
+      originY: dragY.get(),
       minX,
       maxX,
       minY,
@@ -122,18 +144,20 @@ export function MacWindow({
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const state = drag.current;
     if (!state || state.pointerId !== event.pointerId) return;
-    setOffset({
-      x: clamp(
+    dragX.set(
+      clamp(
         state.originX + (event.clientX - state.startX),
         state.minX,
         state.maxX,
       ),
-      y: clamp(
+    );
+    dragY.set(
+      clamp(
         state.originY + (event.clientY - state.startY),
         state.minY,
         state.maxY,
       ),
-    });
+    );
   };
 
   const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -147,13 +171,10 @@ export function MacWindow({
 
   if (closed) return null;
 
-  const transform =
-    draggable && !maximized
-      ? `translate3d(${offset.x}px, ${offset.y}px, 0)`
-      : undefined;
+  const canDrag = draggable && !maximized;
 
   return (
-    <div
+    <motion.div
       ref={rootRef}
       role="dialog"
       aria-labelledby={titleId}
@@ -161,10 +182,13 @@ export function MacWindow({
       data-minimized={minimized ? "true" : "false"}
       data-maximized={maximized ? "true" : "false"}
       className={cn(styles.window, maximized && styles.maximized, className)}
+      initial={false}
       style={{
         ...style,
         zIndex,
-        transform,
+        x: canDrag ? dragX : 0,
+        y: maximized ? 0 : composedY,
+        scale: !maximized && scrollScale ? scrollScale : 1,
       }}
       onPointerDown={() => onFocus(id)}
     >
@@ -252,6 +276,6 @@ export function MacWindow({
           {children}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

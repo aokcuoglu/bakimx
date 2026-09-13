@@ -14,7 +14,7 @@ test("public website shell, modal keyboard lifecycle and responsive routes", asy
     .getByRole("button", { name: "Birlikte inceleyelim" });
   await trigger.focus();
   await page.keyboard.press("Enter");
-  const dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog", { name: "Servisinizi tanıyalım." });
   await expect(dialog).toBeVisible();
   await expect(page).not.toHaveURL(/#demo-form/);
   await expect(
@@ -23,7 +23,7 @@ test("public website shell, modal keyboard lifecycle and responsive routes", asy
   expect(
     (
       await new AxeBuilder({ page })
-        .include('[role="dialog"]')
+        .include('[data-public-demo]')
         .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
         .analyze()
     ).violations,
@@ -91,6 +91,9 @@ test("public website shell, modal keyboard lifecycle and responsive routes", asy
     "/karsilastir/defter-excel-oto-servis-programi",
     "/rehber/arac-kabul-formu",
     "/rehber/oto-servis-is-emri-nasil-hazirlanir",
+    "/contact-us",
+    "/blog",
+    "/blog/oto-serviste-dijital-donusum",
     "/fiyatlar",
     "/demo",
     "/privacy",

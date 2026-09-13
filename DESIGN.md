@@ -2,7 +2,7 @@
 
 ## Kapsam
 
-12 Eylül 2026 tarihli kullanıcı geri bildirimleri önceki iki bölümlük denemenin yerini alır. Referans kullanıcının Attio ekran görüntüleri ve https://attio.com/. Ana sayfanın tamamı, üç ürün tanıtım sayfası, karşılaştırma, iki rehber, fiyatlar, demo, sistem durumu ve dört hukuki belge ortak `PublicSite` görünümünü kullanır. 13 Eylül 2026 tarihli kullanıcı kararıyla bu görsel dil yeni ve revize edilen bütün ekranlar için esastır: public site, kimlik doğrulama, kurulum, uygulama ve yönetim. Ekranın işlevi içerik yoğunluğunu belirler; pazarlama sayfasının büyük başlıkları ve geniş boşlukları veri ekranlarına taşınmaz. Public tasarımın yerel yönü kullanıcı tarafından onaylandı. Güncel revizyon kayıt ve üyelik sonrası kurulum ekranlarını kapsar. Production yayını kapsam dışıdır.
+12 Eylül 2026 tarihli kullanıcı geri bildirimleri önceki iki bölümlük denemenin yerini alır. Referans kullanıcının Attio ekran görüntüleri ve https://attio.com/. Ana sayfanın tamamı, üç ürün tanıtım sayfası, karşılaştırma, iki rehber, blog (liste + yazı), fiyatlar, demo, sistem durumu ve dört hukuki belge ortak `PublicSite` görünümünü kullanır. 13 Eylül 2026 tarihli kullanıcı kararıyla bu görsel dil yeni ve revize edilen bütün ekranlar için esastır: public site, kimlik doğrulama, kurulum, uygulama ve yönetim. Ekranın işlevi içerik yoğunluğunu belirler; pazarlama sayfasının büyük başlıkları ve geniş boşlukları veri ekranlarına taşınmaz. Public tasarımın yerel yönü kullanıcı tarafından onaylandı. Güncel revizyon kayıt ve üyelik sonrası kurulum ekranlarını kapsar. Production yayını kapsam dışıdır.
 
 ## Referanslar ve karar geçmişi
 
@@ -16,9 +16,20 @@ Koleksiyondaki dosyalar üçüncü taraf tasarım analizleridir. BakımX'e uyarl
 
 ## Görsel dil
 
-Geist; beyaz `card` zemin; ince `border` ayraçlar; koyu `foreground` başlıklar; `muted-foreground` açıklamalar. Mavi, ürün verilerinde ve bağlantılarda vurgu olarak kalır. Büyük renk blokları açık yüzeylere dönüştürülür. Ortak içerik sınırı 1200px, ürün sahnesi 1440px. Bölüm boşlukları masaüstünde 64–120px, mobilde 64px. Ana H1 84px'e, tanıtım sayfaları 76px'e kadar ölçeklenir. Başlıklarda sıkı harf aralığı ve dengeli satır kırılması kullanılır. Rehber ve hukuki metinlerin içerikleri korunur.
+Inter uygulama ve genel public yüzeylerde kullanılır. Kod ve sabit genişlikli alanlarda Geist Mono korunur. Blog (`/blog`) Clutch’a yakın display tipografi için **Schibsted Grotesk** kullanır (PP Radio Grotesk ticari; OFL/Google Fonts alternatifi). Beyaz `card` zemin; ince `border` ayraçlar; koyu `foreground` başlıklar; `muted-foreground` açıklamalar. Mavi, ürün verilerinde ve bağlantılarda vurgu olarak kalır. Büyük renk blokları açık yüzeylere dönüştürülür. Ortak içerik sınırı 1200px, ürün sahnesi 1440px. Bölüm boşlukları masaüstünde 64–120px, mobilde 64px. Ana H1 84px'e, tanıtım sayfaları 76px'e kadar ölçeklenir. Başlıklarda sıkı harf aralığı ve dengeli satır kırılması kullanılır. Rehber ve hukuki metinlerin içerikleri korunur.
 
 `PublicSite` ve CSS Module yalnız açıkça sarılmış site sayfalarına uygulanır. Uygulamanın global tokenları veya paylaşılan UI bileşenlerinin varsayılanları değiştirilmez. Header/Footer ortak açık görünüm kullanır. Mobil ürün görselleri dikey sıralanır; CTA'lar dar alanda alt alta gelir.
+
+## Site genelinde metin rengi — 13 Eylül 2026
+
+Kullanıcının Header için onayladığı koyu metin kararı tüm siteye genişletildi: public, blog, kayıt, kurulum, uygulama ve yönetim. Yukarıdaki Vercel ve Linear analizleri yeniden incelendi. Vercel'in nötr `#171717` ana metni ve açık yüzeyleri; Linear'ın kontrollü vurgu, sıkı başlık aralığı ve boyut/ağırlık/boşluk hiyerarşisi esas alınır. Linear'ın koyu pazarlama paleti taşınmaz.
+
+- Açık temada ana metin, başlık, navigasyon ve alan etiketleri `text-foreground` kullanır: `#171717`. Kart, popover, secondary ve accent metinleri aynı nötr siyah tonundadır.
+- Yardımcı metinler `text-muted-foreground` kullanır: `#262626`; soluk gri görünüm yerine siyaha yakın okunaklı ton. Tonlu yüzeylerde `text-muted-foreground-strong` (`#171717`) kullanılır.
+- Hiyerarşi öncelikle font boyutu, ağırlık, satır yüksekliği ve boşlukla kurulur; metne opacity verilmez. Menü etiketleri yardımcı metin sayılmaz.
+- Bu açık kullanıcı talebi, global tokenları değiştirmeme kuralının **nötr metin paleti için istisnasıdır**; renkler `globals.css` üzerinden uygulanır. Call-site'larda sabit hex renk kullanılmaz.
+- Koyu tema açık metinlerini, koyu dolgu üzerindeki açık yazılar kendi foreground eşlerini korur. Marka, bağlantı, odak, başarı/uyarı/hata renklerinin anlamı korunur.
+- Inter genel fonttur; `/blog` ve yazı sayfalarında Schibsted Grotesk, sabit genişlikli alanlarda Geist Mono korunur.
 
 ## Eylemler ve butonlar (zorunlu)
 
@@ -43,7 +54,7 @@ Ek kurallar:
 ## Uygulama, kayıt ve kurulum
 
 - Açık `card` yüzey, `border` ile 1px ayraçlar ve `foreground` başlıklar temel düzeni oluşturur. Yardımcı metin `muted-foreground` kullanır. Dekoratif renkli kart yığınları ve büyük koyu arka plan panelleri yerine hizalama ve boşlukla hiyerarşi kurulur.
-- Geist korunur. Form ve uygulama başlıkları yaklaşık 28–36px, alan etiketleri ve gövde 14–16px, yardımcı metin en az 12px olur. Pazarlama başlık ölçeği bu ekranlara uygulanmaz.
+- Inter kullanılır. Form ve uygulama başlıkları yaklaşık 28–36px, alan etiketleri ve gövde 14–16px, yardımcı metin en az 12px olur. Pazarlama başlık ölçeği bu ekranlara uygulanmaz.
 - Boşluklar 4/8px ritminde; alan araları 16–24px, mantıksal bölüm araları 24–40px. Form kontrolleri 40–44px yüksekliğinde, köşeler ölçülü (6–10px) olur. Tablo yoğunluğu göreve göre daha kompakt kalabilir.
 - Birincil / ikincil / üçüncül eylem ayrımı yukarıdaki **Eylemler ve butonlar** tablosuna uyar. Hata, başarı ve uyarı renkleri yalnız gerçek durumu anlatır; kontrast kuralları korunur.
 - Kayıtta yalnız sağdaki form alanı kayar; Header, sol açıklama sütunu ve alt footer görünüm alanında sabit kalır. Kayıt mevcut public `Header` bileşenini kullanır; açıklama sütununda logo tekrar edilmez. Kayıt masaüstünde sakin bir açıklama sütunu ve hesap formundan oluşur; mobilde form önceliklidir. Firma, iletişim ve giriş bilgileri ince ayraçlarla gruplanır. E-posta doğrulaması, KVKK, danışman/referans ve paket sözleşmeleri korunur.
@@ -65,19 +76,18 @@ Aynı react-hook-form + zod + shadcn Form bileşeni `/demo` üzerinde de kullan�
 
 ## Motion test değerleri
 
-Mevcut `framer-motion` paketi kullanılır. Kullanıcının açık Motion talebi önceki landing kısıtının bu yerel deneme için istisnasıdır. Kaynaklar: https://github.com/motiondivision/motion ve https://motion.dev/docs/react-use-scroll.
+Mevcut `framer-motion` paketi kullanılır. Kullanıcının açık Motion talebi önceki landing kısıtının bu yerel deneme için istisnasıdır. Kaynak: https://github.com/motiondivision/motion. Desen Qatchup tarzı **staggered fade+rise** (scroll-linked parallax değil).
 
 | Alan | Başlangıç → bitiş | Tetikleyici |
 | --- | --- | --- |
-| Dashboard | y: 140 → 0px, scale: 0.92 → 1 | Ürün sahnesinin üstü viewport altına değdiğinde başlar; merkezler hizalandığında biter |
-| İş emri | y: 240 → −12px | Aynı kaydırma aralığı |
-| Parça penceresi | y: 280 → 12px | Aynı kaydırma aralığı |
-| Diğer doğrudan main bölümleri | y: 36 → 0px, 750ms | Viewport altından 60px içeride ilk görünüş; bir kez; easing [0.22, 1, 0.36, 1] |
-| Üst çizgi | scaleX: 0 → 1 | Sayfanın başından sonuna toplam kaydırma |
+| Ürün pencereleri | opacity 0→1, y: 56→0, scale: 0.94→1, 1.15s | Sahne viewport’a girince bir kez; çocuklar 110ms stagger |
+| Section öğeleri (kart, başlık, FAQ) | opacity 0→1, y: 40→0, 1s | Viewport altından ~12% içeride; bir kez; stagger 80–110ms |
+| Üst çizgi | scaleX: 0 → 1, 3px | Sayfanın başından sonuna toplam kaydırma |
+| Easing | [0.22, 1, 0.36, 1] | Tüm reveal’lar |
 
-Ürün pencereleri `initial={false}` kullanır. H1 ve metinler opacity ile gizlenmez; JavaScript kapalıyken ilk içerik görünürdür. 640px ve altında katman hareketi kapanır. `prefers-reduced-motion: reduce` bütün bu Motion efektlerini kapatır. Modalın 100ms açılış/kapanışı mevcut Radix/CSS geçişidir, Motion olarak sunulmaz.
+Hero H1 opacity ile gizlenmez (BAK-165 LCP). `prefers-reduced-motion: reduce` stagger’ı kapatır; JS kapalıyken `layout.tsx` noscript kuralı `[data-landing-motion]` öğelerini gösterir. Modalın 100ms açılış/kapanışı mevcut Radix/CSS geçişidir.
 
-Test: masaüstünde hareket azaltma kapalıyken ana sayfayı en üste alın, ilk 700–1000px'i yavaş kaydırın. Yan pencereler dashboard'dan daha uzun yol alır. Sonraki bölümlere ilk inişte yukarı hareketi izleyin; tekrar görmek için sayfayı yenileyin. Üstteki 2px çizgi kaydırma ilerlemesini gösterir.
+Test: masaüstünde hareket azaltma kapalıyken ana sayfayı yenileyip yavaş kaydırın. Ürün pencereleri sırayla belirmeli; `#neden` kartları kademeli fade+rise göstermeli. Üstteki 3px çizgi kaydırma ilerlemesini gösterir.
 
 ## Yerel teslim
 

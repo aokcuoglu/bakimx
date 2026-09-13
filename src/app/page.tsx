@@ -44,7 +44,7 @@ const homeStructuredData = [
 
 export default function Home() {
   return (
-    <PublicSite>
+    <PublicSite landing>
       <JsonLd data={homeStructuredData} />
       <Header />
       <main>

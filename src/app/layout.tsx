@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner"
@@ -10,7 +10,7 @@ import { SITE_URL, BRAND_NAME, HOME_TITLE, TITLE_TEMPLATE } from "@/lib/seo"
 import { MarketingAnalytics } from "@/components/analytics/marketing-analytics"
 import { CookieConsent } from "@/components/cookie-consent/cookie-consent"
 
-const geistSans = Geist({
+const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin", "latin-ext"],
 });
@@ -86,7 +86,7 @@ export default function RootLayout({
     <html
       lang="tr"
       data-scroll-behavior="smooth"
-      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      className={`${inter.variable} ${geistMono.variable} antialiased`}
     >
       <head>
         <Script
@@ -102,7 +102,12 @@ export default function RootLayout({
           kuralı yalnız JS devre dışıyken uygular.
         */}
         <noscript>
-          <style dangerouslySetInnerHTML={{ __html: '[data-reveal="pending"]{opacity:1}' }} />
+          <style
+            dangerouslySetInnerHTML={{
+              __html:
+                '[data-reveal="pending"]{opacity:1}[data-landing-motion]{opacity:1!important;transform:none!important}',
+            }}
+          />
         </noscript>
       </head>
       <body className="min-h-screen flex flex-col bg-background text-foreground">

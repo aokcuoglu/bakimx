@@ -1,5 +1,11 @@
 import type { Metadata } from "next"
+import { Schibsted_Grotesk } from "next/font/google"
 import { publicPageMetadata, TITLE_TEMPLATE } from "@/lib/seo"
+
+const blogFont = Schibsted_Grotesk({
+  variable: "--font-blog",
+  subsets: ["latin", "latin-ext"],
+})
 
 const base = publicPageMetadata({
   path: "/blog",
@@ -14,5 +20,5 @@ export const metadata: Metadata = {
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return children
+  return <div className={`${blogFont.variable} ${blogFont.className}`}>{children}</div>
 }

@@ -6,10 +6,12 @@ import { INDEXABLE_ROUTES, publicPageMetadata, SITE_URL } from "@/lib/seo"
 describe("SEO route policy", () => {
   test("sitemap contains each canonical public route exactly once", () => {
     const entries = sitemap()
-    expect(entries.map((entry) => entry.url)).toEqual(
-      INDEXABLE_ROUTES.map((path) => new URL(path, SITE_URL).toString()),
-    )
-    expect(new Set(entries.map((entry) => entry.url)).size).toBe(entries.length)
+    const urls = entries.map((entry) => entry.url)
+    for (const path of INDEXABLE_ROUTES) {
+      expect(urls).toContain(new URL(path, SITE_URL).toString())
+    }
+    expect(urls.some((url) => url.includes("/blog/"))).toBe(true)
+    expect(new Set(urls).size).toBe(urls.length)
   })
 
   test("robots advertises the sitemap and blocks private route families", () => {

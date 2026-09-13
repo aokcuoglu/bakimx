@@ -30,7 +30,7 @@ export function Header() {
     return () => document.removeEventListener("keydown", close);
   }, [mobileOpen]);
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 border-b border-border bg-card/95 text-foreground backdrop-blur-lg">
       <div className="mx-auto flex h-18 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
         <Link
           href="/"
@@ -58,14 +58,17 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-navy"
+              className="text-sm font-medium text-foreground transition-colors hover:text-primary"
             >
               {item.label}
             </Link>
           ))}
         </nav>
         <div className="hidden items-center gap-5 lg:flex">
-          <Link href="/login" className="text-sm font-medium text-navy">
+          <Link
+            href="/login"
+            className="rounded-md px-1 py-1 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+          >
             Giriş yap
           </Link>
           <Button asChild variant="navy" size="xl" className="h-10">
@@ -105,7 +108,7 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-md px-2 py-3 text-sm font-medium"
+                className="rounded-md px-2 py-3 text-sm font-medium text-foreground"
                 onClick={() => setMobileOpen(false)}
               >
                 {item.label}
@@ -113,7 +116,7 @@ export function Header() {
             ))}
             <Link
               href="/login"
-              className="px-2 py-3 text-sm font-medium"
+              className="rounded-md px-2 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
               onClick={() => setMobileOpen(false)}
             >
               Giriş yap
