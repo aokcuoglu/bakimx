@@ -405,21 +405,26 @@ export function RegisterForm({
 
   if (submitted) {
     return (
-      <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-xl py-12 text-center">
-        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10">
-          <Mail className="size-7 text-primary" />
+      <section aria-labelledby="verification-heading" className="mx-auto w-full max-w-md py-4 text-foreground sm:py-8">
+        <div className="flex size-12 items-center justify-center rounded-lg border border-border bg-muted">
+          <Mail aria-hidden="true" className="size-5" />
         </div>
-        <h1 className="mt-5 text-2xl font-bold tracking-tight text-foreground">E-postanızı kontrol edin</h1>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-          <span className="font-medium text-foreground">{submitted}</span> adresine doğrulama bağlantısı gönderdik. {preferredPlan?.tier === "lite" ? "Bağlantıya tıkladığınızda süresiz ücretsiz Lite kullanımınız başlar." : "Bağlantıya tıkladığınızda ücretsiz 7 iş günlük kullanımınız başlar."}
+        <h1 id="verification-heading" className="mt-6 text-[28px] font-semibold leading-tight tracking-tight sm:text-[32px]">E-postanızı kontrol edin</h1>
+        <p className="mt-4 text-sm leading-6 text-muted-foreground">
+          <span className="break-words font-medium text-foreground">{submitted}</span> adresine doğrulama bağlantısı gönderdik.
         </p>
-        <p className="mt-3 text-xs text-muted-foreground">
-          {preferredPlan?.tier === "lite" ? "Kart bilgisi gerekmez. Lite süreli deneme değildir ve otomatik ücretliye dönüşmez." : "Kart bilgisi gerekmez. Süre sonunda paket satın alınmazsa hesabınız ve verileriniz korunarak erişim dondurulur."}
-        </p>
-        <Button asChild className="mt-7">
-          <Link href="/login">Giriş sayfasına dön</Link>
+        <div className="mt-6 border-y border-border py-6">
+          <p className="text-sm leading-6 text-foreground">
+            {preferredPlan?.tier === "lite" ? "Bağlantıya tıkladığınızda süresiz ücretsiz Lite kullanımınız başlar." : "Bağlantıya tıkladığınızda ücretsiz 7 iş günlük kullanımınız başlar."}
+          </p>
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">
+            {preferredPlan?.tier === "lite" ? "Kart bilgisi gerekmez. Lite süreli deneme değildir ve otomatik ücretliye dönüşmez." : "Kart bilgisi gerekmez. Süre sonunda paket satın alınmazsa hesabınız ve verileriniz korunarak erişim dondurulur."}
+          </p>
+        </div>
+        <Button asChild variant="ghost" className="mt-6 min-h-10 text-muted-foreground">
+          <Link href="/login"><ArrowLeft aria-hidden="true" className="size-4" />Giriş sayfasına dön</Link>
         </Button>
-      </motion.div>
+      </section>
     )
   }
 

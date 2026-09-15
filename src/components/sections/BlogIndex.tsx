@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { ChevronRight } from "lucide-react"
 import { getAllPosts, getFeaturedPost } from "@/lib/blog/posts"
 import { BlogCategoryFilters } from "./BlogCategoryFilters"
 import styles from "./blog-page.module.css"
@@ -14,14 +15,14 @@ export function BlogIndex() {
       <div className={styles.shell}>
         <nav className={styles.breadcrumb} aria-label="Sayfa konumu">
           <Link href="/">Ana sayfa</Link>
-          <span aria-hidden="true">/</span>
+          <ChevronRight size={16} aria-hidden="true" />
           <span className={styles.breadcrumbCurrent}>Blog</span>
         </nav>
       </div>
 
       <section className={`${styles.shell} ${styles.hero}`}>
         <div className={styles.heroInner}>
-          <h1>Oto servis operasyonu ve dijital dönüşüm üzerine yazılar</h1>
+          <h1>Oto servisler için dijital dönüşüm rehberleri</h1>
           <p className={styles.lead}>
             Araç kabul, iş emri, müşteri iletişimi ve atölye yazılımı hakkında pratik
             rehberler. Servisinizi büyütürken süreci sade tutmanıza yardımcı olacak
