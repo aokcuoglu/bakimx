@@ -4,7 +4,7 @@ The master flag `NEXT_PUBLIC_ANALYTICS_ENABLED=true` and explicit targeting-cook
 
 Only `/`, `/demo`, and `/demo/ozet` can bootstrap advertising. An optional separate browser key `bakimx:demo-attribution` retains the first accepted campaign/click-ID attribution; consent withdrawal or master-off clears it. The API independently checks the master flag and submitted targeting choice before accepting whitelisted attribution into nullable SalesLead columns. `attributionRecordedAt` is server receipt time, not a fabricated first-click time. Existing leads stay null. The existing authorized CRM list displays campaign labels, never click IDs.
 
-The demo API returns an unrelated UUID only after successful persistence. The browser sends one explicit Google Ads conversion per UUID, using `transaction_id` for provider deduplication. Generic GA events have explicit `send_to` routing to prevent the added Ads destination receiving unrelated funnel events. Form phone/name/business/notes, hashed contact data, and CRM IDs/stages are never passed to advertising. Configuration and events explicitly set query-free `page_location`, empty `page_referrer`, and disable enhanced conversions. Script HTTP referrer is suppressed. PageView is disabled. Revocation denies ad storage and removes the local event listener; private routes deny ad storage too.
+The demo API returns an unrelated UUID only after successful persistence. The browser sends one explicit Google Ads conversion per UUID, using `transaction_id` for provider deduplication. Generic GA events have explicit `send_to` routing to prevent the added Ads destination receiving unrelated funnel events. Form phone/name/business/notes, hashed contact data, and CRM IDs/stages are never passed to advertising. Configuration and events explicitly set query-free `page_location`, empty `page_referrer`, and disable enhanced conversions. Script HTTP referrer is suppressed. PageView is disabled. Both `ad_storage` and `ad_user_data` are granted only with explicit targeting consent on allowed demo routes: Google requires these flags for pseudonymous click-ID conversion measurement. This does not enable phone/email collection: enhanced conversions stay off, explicit event `user_data` stays null, and no form contacts enter the tag. `ad_personalization` remains denied. Revocation denies both measurement flags and removes the local event listener; private routes deny both flags too.
 
 This is pseudonymous click attribution, not a promise of anonymous transport: an enabled third-party SDK still makes browser network requests (including the browser's IP). Previously accepted provider events cannot be recalled by withdrawing browser consent. No actual advertising configuration or production changes are part of this PR.
 
@@ -12,6 +12,7 @@ This is pseudonymous click attribution, not a promise of anonymous transport: an
 
 - [Google conversion measurement](https://developers.google.com/tag-platform/devguides/conversions)
 - [Google event routing](https://developers.google.com/tag-platform/gtagjs/routing)
+- [Google Consent Mode parameter semantics](https://support.google.com/tagmanager/answer/13802165?hl=en)
 - [Google tag consent API](https://developers.google.com/tag-platform/gtagjs/reference#consent)
 
 ## Verification

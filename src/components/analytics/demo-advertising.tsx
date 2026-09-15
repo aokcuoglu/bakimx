@@ -18,7 +18,7 @@ export function DemoAdvertising() {
       const consent = hasDemoAdvertisingConsent() && ["/", "/demo", "/demo/ozet"].includes(pathname)
       setAllowed(consent)
       captureDemoAttribution()
-      window.gtag?.("consent", "update", { ad_storage: consent ? "granted" : "denied", ad_user_data: "denied", ad_personalization: "denied" })
+      window.gtag?.("consent", "update", { ad_storage: consent ? "granted" : "denied", ad_user_data: consent ? "granted" : "denied", ad_personalization: "denied" })
     }
     sync()
     window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, sync)
@@ -44,7 +44,7 @@ export function DemoAdvertising() {
       <Script id="bakimx-demo-ads-config" strategy="afterInteractive">{`
         window.dataLayer = window.dataLayer || [];
         window.gtag = window.gtag || function(){window.dataLayer.push(arguments);};
-        window.gtag('consent', 'default', { ad_storage: 'granted', ad_user_data: 'denied', ad_personalization: 'denied' });
+        window.gtag('consent', 'default', { ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'denied' });
         window.gtag('js', new Date());
         window.gtag('config', '${adsId}', { send_page_view: false, allow_enhanced_conversions: false, page_location: window.location.origin + window.location.pathname, page_referrer: '' });
       `}</Script>

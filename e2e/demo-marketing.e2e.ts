@@ -85,6 +85,10 @@ test("advertising pauses on revocation and resumes only on allowed routes", asyn
   await expect(page.locator("#bakimx-demo-ads-config")).toHaveCount(0)
   await page.goto("/demo?gclid=test-click")
   await expect(page.locator("#bakimx-demo-ads-config")).toHaveCount(1)
+  const expectAdvertisingConsent = async (state: "granted" | "denied") => {
+    await expect.poll(() => page.evaluate(() => (window.dataLayer ?? []).map(value => Array.from(value as ArrayLike<unknown>)).filter(value => value[0] === "consent").at(-1)?.[2])).toMatchObject({ ad_storage: state, ad_user_data: state, ad_personalization: "denied" })
+  }
+  await expectAdvertisingConsent("granted")
   const changeConsent = async (targeting: boolean) => page.evaluate(value => {
     const record = JSON.parse(localStorage.getItem("bakimx.cookie-consent")!)
     record.preferences.targeting = value
@@ -92,10 +96,12 @@ test("advertising pauses on revocation and resumes only on allowed routes", asyn
     window.dispatchEvent(new CustomEvent("bakimx:cookie-consent-changed", { detail: record }))
   }, targeting)
   await changeConsent(false)
+  await expectAdvertisingConsent("denied")
   await expect.poll(() => page.evaluate(() => localStorage.getItem("bakimx:demo-attribution"))).toBeNull()
   await page.evaluate(() => window.dispatchEvent(new CustomEvent("bakimx:demo-conversion", { detail: { eventId: "11111111-1111-1111-1111-111111111111" } })))
   expect(await page.evaluate(() => (window.dataLayer ?? []).map(value => Array.from(value as ArrayLike<unknown>)).filter(value => value[1] === "conversion").length)).toBe(0)
   await changeConsent(true)
+  await expectAdvertisingConsent("granted")
   await expect.poll(() => page.evaluate(() => localStorage.getItem("bakimx:demo-attribution"))).not.toBeNull()
   await page.evaluate(() => window.dispatchEvent(new CustomEvent("bakimx:demo-conversion", { detail: { eventId: "22222222-2222-2222-2222-222222222222" } })))
   await expect.poll(() => page.evaluate(() => (window.dataLayer ?? []).map(value => Array.from(value as ArrayLike<unknown>)).filter(value => value[1] === "conversion").length)).toBe(1)
@@ -103,7 +109,7 @@ test("advertising pauses on revocation and resumes only on allowed routes", asyn
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.getByRole("link", { name: "Giriş yap", exact: true }).first().click()
   await expect(page).toHaveURL(/\/login/)
-  await expect.poll(() => page.evaluate(() => (window.dataLayer ?? []).map(value => Array.from(value as ArrayLike<unknown>)).filter(value => value[0] === "consent").at(-1)?.[2])).toMatchObject({ ad_storage: "denied" })
+  await expectAdvertisingConsent("denied")
   await page.evaluate(() => window.dispatchEvent(new CustomEvent("bakimx:demo-conversion", { detail: { eventId: "33333333-3333-3333-3333-333333333333" } })))
   expect(await page.evaluate(() => (window.dataLayer ?? []).map(value => Array.from(value as ArrayLike<unknown>)).filter(value => value[1] === "conversion").length)).toBe(1)
 })
