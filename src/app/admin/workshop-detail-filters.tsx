@@ -105,7 +105,7 @@ export function UsageDateFilter({ from, to }: { from: string; to: string }) {
               <FormControl>
                 <DateRangePicker
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(range) => field.onChange(range ?? {})}
                   placeholder="Tüm zamanlar"
                 />
               </FormControl>
@@ -183,7 +183,7 @@ export function WorkshopOrderFilters({
                 <FormControl>
                   <DateRangePicker
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(range) => field.onChange(range ?? {})}
                     placeholder="Tüm zamanlar"
                   />
                 </FormControl>
