@@ -26,6 +26,9 @@ describe("demo advertising attribution", () => {
   test("rejects contact fields, unsafe click IDs, arbitrary URL and campaign PII", () => {
     expect(sanitizeDemoAttribution({ phone: "5551234567", email: "secret@example.com", campaignSource: "secret@example.com", gclid: "test@example.com", fbclid: "valid_click", landingPage: "/demo?email=secret" })).toEqual({ fbclid: "valid_click" })
   })
+  test("demo landing allowlist rejects Lite, private and token-bearing paths", () => {
+    for (const landingPage of ["/register", "/fiyatlar", "/dashboard", "/w/secret", "//external.example", "/demo?token=secret"]) expect(sanitizeDemoAttribution({ landingPage })).toEqual({})
+  })
   test("performance consent alone cannot collect or emit advertising", () => {
     const { storage, events } = browser(false)
     captureDemoAttribution()

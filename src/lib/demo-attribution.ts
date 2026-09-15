@@ -11,6 +11,7 @@ export function hasDemoAdvertisingConsent() {
 /** Separate from Lite attribution: click IDs never enter registration analytics. */
 export function sanitizeDemoAttribution(input: unknown): DemoAttribution {
   const result: DemoAttribution = sanitizeMarketingAttribution(input)
+  delete result.landingPage
   if (!input || typeof input !== "object" || Array.isArray(input)) return result
   const raw = input as Record<string, unknown>
   for (const key of ["gclid", "fbclid"] as const) {

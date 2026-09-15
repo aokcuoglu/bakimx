@@ -1,13 +1,14 @@
 import { expect, test } from "@playwright/test"
 
 for (const width of [320, 390, 768, 1440]) {
-  test(`demo and summary fit ${width}px with one visible heading`, async ({ page }) => {
+  test(`demo and summary fit ${width}px with one visible heading`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 })
     for (const path of ["/demo", "/demo/ozet"]) {
       await page.goto(path)
       await expect(page.locator("h1")).toHaveCount(1)
       await expect(page.locator("h1")).toBeVisible()
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+      await page.screenshot({ path: testInfo.outputPath(path === "/demo" ? "demo.png" : "summary.png"), fullPage: true })
     }
   })
 }
@@ -64,4 +65,29 @@ test("performance-only consent never loads advertising SDK or stores click IDs",
   await expect(page.locator("h1")).toBeVisible()
   expect(await page.evaluate(() => localStorage.getItem("bakimx:demo-attribution"))).toBeNull()
   expect(requests.filter(url => url.includes("AW-") || url.includes("facebook"))).toEqual([])
+})
+
+
+test("advertising pauses on revocation and resumes only on allowed routes", async ({ page }) => {
+  test.skip(process.env.NEXT_PUBLIC_ANALYTICS_ENABLED !== "true" || process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID !== "AW-123456789", "Requires blocked-provider test configuration")
+  await page.route(/googletagmanager|google-analytics|facebook/, route => route.fulfill({ body: "", contentType: "application/javascript" }))
+  await page.addInitScript(() => localStorage.setItem("bakimx.cookie-consent", JSON.stringify({ version: 1, updatedAt: new Date().toISOString(), preferences: { necessary: true, performance: false, targeting: true, functional: false } })))
+  await page.goto("/login?token=private")
+  await expect(page.locator("#bakimx-demo-ads-config")).toHaveCount(0)
+  await page.goto("/demo?gclid=test-click")
+  await expect(page.locator("#bakimx-demo-ads-config")).toHaveCount(1)
+  const changeConsent = async (targeting: boolean) => page.evaluate(value => {
+    const record = JSON.parse(localStorage.getItem("bakimx.cookie-consent")!)
+    record.preferences.targeting = value
+    localStorage.setItem("bakimx.cookie-consent", JSON.stringify(record))
+    window.dispatchEvent(new CustomEvent("bakimx:cookie-consent-changed", { detail: record }))
+  }, targeting)
+  await changeConsent(false)
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("bakimx:demo-attribution"))).toBeNull()
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent("bakimx:demo-conversion", { detail: { eventId: "11111111-1111-1111-1111-111111111111" } })))
+  expect(await page.evaluate(() => (window.dataLayer ?? []).map(value => Array.from(value as ArrayLike<unknown>)).filter(value => value[1] === "conversion").length)).toBe(0)
+  await changeConsent(true)
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("bakimx:demo-attribution"))).not.toBeNull()
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent("bakimx:demo-conversion", { detail: { eventId: "22222222-2222-2222-2222-222222222222" } })))
+  await expect.poll(() => page.evaluate(() => (window.dataLayer ?? []).map(value => Array.from(value as ArrayLike<unknown>)).filter(value => value[1] === "conversion").length)).toBe(1)
 })
