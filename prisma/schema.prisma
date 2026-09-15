@@ -2061,6 +2061,13 @@ model SalesLead {
   locationConfirmedAt DateTime?
   monthlyVehicles     String?
   notes               String?
+  campaignSource      String?
+  campaignMedium      String?
+  campaignName        String?
+  gclid               String?
+  fbclid              String?
+  landingPage         String?
+  attributionRecordedAt DateTime?
   nextActionAt        DateTime?
   lostReason          String?
   /// Doluysa lead'in danışman atfı artık değiştirilemez. İlk kazanımda dolar.

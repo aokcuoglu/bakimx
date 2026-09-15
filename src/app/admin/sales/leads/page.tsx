@@ -100,6 +100,9 @@ export default async function SalesLeadsPage({
         district: true,
         status: true,
         source: true,
+        campaignSource: true,
+        campaignMedium: true,
+        campaignName: true,
         nextActionAt: true,
         createdAt: true,
         advisor: { select: { user: { select: { firstName: true, lastName: true, email: true } } } },
@@ -160,6 +163,7 @@ export default async function SalesLeadsPage({
                 <span className="flex items-center gap-1"><Phone className="size-3.5" />{lead.phone}</span>
                 {lead.email && <span className="flex items-center gap-1"><Mail className="size-3.5" />{lead.email}</span>}
                 {(lead.city || lead.district) && <span className="flex items-center gap-1"><MapPin className="size-3.5" />{[lead.district, lead.city].filter(Boolean).join(", ")}</span>}
+                {lead.campaignSource && <span>{[lead.campaignSource, lead.campaignMedium, lead.campaignName].filter(Boolean).join(" / ")}</span>}
                 {lead.nextActionAt && <span className="flex items-center gap-1"><CalendarClock className="size-3.5" />{displayDate(lead.nextActionAt)}</span>}
               </div>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-xs text-muted-foreground">

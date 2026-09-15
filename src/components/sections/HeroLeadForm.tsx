@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { demoRequestSchema } from "@/lib/validations/demo-request";
 import { TR_CITIES } from "@/lib/tr-cities";
+import { captureDemoAttribution, getDemoAttribution, hasDemoAdvertisingConsent, trackDemoAdvertisingConversion } from "@/lib/demo-attribution";
 import { trackMarketingEvent } from "@/lib/marketing-analytics";
 
 type Values = z.infer<typeof demoRequestSchema>;
@@ -52,6 +53,7 @@ export function HeroLeadForm({
   const [success, setSuccess] = useState(false);
   const successRef = useRef<HTMLDivElement>(null);
   const submitRef = useRef(false);
+  const formStartedRef = useRef(false);
   useEffect(() => {
     if (success) successRef.current?.focus();
   }, [success]);
@@ -60,10 +62,11 @@ export function HeroLeadForm({
     submitRef.current = true;
     form.clearErrors("root");
     try {
+      captureDemoAttribution();
       const response = await fetch("/api/demo-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ ...values, attribution: getDemoAttribution(), targetingConsent: hasDemoAdvertisingConsent() }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -81,7 +84,9 @@ export function HeroLeadForm({
           });
         return;
       }
-      trackMarketingEvent("demo_submitted", { form_location: formLocation });
+      const result = await response.json().catch(() => ({})) as { eventId?: string };
+      trackMarketingEvent("demo_submitted", { form_location: formLocation, event_id: result.eventId });
+      if (result.eventId) trackDemoAdvertisingConversion(result.eventId);
       setSuccess(true);
     } catch {
       form.setError("root", {
@@ -116,6 +121,9 @@ export function HeroLeadForm({
     <Form {...form}>
       <form
         id="demo-form"
+        onFocus={() => {
+          if (!formStartedRef.current) formStartedRef.current = trackMarketingEvent("demo_form_started", { form_location: formLocation });
+        }}
         onSubmit={(event) => {
           void form.handleSubmit(onSubmit)(event);
         }}

@@ -89,7 +89,7 @@ export const COOKIE_CATEGORIES: ReadonlyArray<{
     id: "targeting",
     title: "Hedefleme Çerezleri",
     description:
-      "İlgi alanlarınıza göre içerik veya reklam göstermek için kullanılır. Şu an aktif bir hedefleme aracı yoktur.",
+      "Etkinleştirildiğinde reklam tıklamalarını ve demo talebi dönüşümlerini ölçmek için kullanılır. Demo formundaki iletişim bilgileriniz reklam sağlayıcılarına gönderilmez.",
   },
 ]
 
