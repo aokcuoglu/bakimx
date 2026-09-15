@@ -2,7 +2,7 @@ import { hasPerformanceConsent } from "./cookie-consent"
 
 export const MARKETING_EVENT_NAMES = [
   "seo_landing_view", "trial_cta_click", "demo_cta_click", "register_started",
-  "register_submitted", "demo_submitted", "purchase_started", "purchase_submitted",
+  "register_submitted", "demo_form_started", "demo_submitted", "purchase_started", "purchase_submitted",
   "feature_paywall_viewed", "feature_upgrade_clicked",
   "lite_cta_click", "lite_registered", "first_work_order_created", "paid_subscription_confirmed",
 ] as const
@@ -43,6 +43,7 @@ export type MarketingEventPayloads = {
     team_size?: "solo" | "2_5" | "6_10" | "11_25" | "26_50" | "50_plus"
     module_count?: string
   }
+  demo_form_started: Common & { form_location: "home" | "demo_page" }
   demo_submitted: Common & {
     form_location: "home" | "demo_page" | "assistant" | "register_coming_soon_sector"
   }
@@ -83,6 +84,7 @@ const EVENT_FIELDS: Record<MarketingEventName, readonly string[]> = {
   demo_cta_click: ["destination"],
   register_started: ["entry_step", "plan_tier"],
   register_submitted: ["entry_step", "sector", "team_size", "module_count"],
+  demo_form_started: ["form_location"],
   demo_submitted: ["form_location"],
   purchase_started: ["plan_tier", "billing_cycle"],
   purchase_submitted: ["plan_tier", "billing_cycle", "payment_method"],

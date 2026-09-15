@@ -1,6 +1,7 @@
 "use client"
 
 import { claimMarketingConversions } from "@/app/actions/marketing-conversions"
+import { DemoAdvertising } from "./demo-advertising"
 import Script from "next/script"
 import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
@@ -43,7 +44,7 @@ export function MarketingAnalytics() {
     }
     const forward = (event: Event) => {
       const { name, params } = (event as CustomEvent<MarketingEventDetail>).detail
-      window.gtag?.("event", name, params)
+      if (measurementId) window.gtag?.("event", name, { ...params, send_to: measurementId })
     }
     window.addEventListener("bakimx:analytics", forward)
     return () => window.removeEventListener("bakimx:analytics", forward)
@@ -76,8 +77,9 @@ export function MarketingAnalytics() {
     if (trackMarketingEvent("seo_landing_view", { landing_type: landingType })) previousPath.current = pathname
   }, [pathname, performanceAllowed])
 
-  if (!enabled || !measurementId || !performanceAllowed) return null
   return <>
+    <DemoAdvertising />
+    {enabled && measurementId && performanceAllowed && <>
     <Script src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`} strategy="afterInteractive" />
     <Script id="bakimx-ga4" strategy="afterInteractive">{`
       window.dataLayer = window.dataLayer || [];
@@ -85,5 +87,6 @@ export function MarketingAnalytics() {
       window.gtag('js', new Date());
       window.gtag('config', '${measurementId}', { send_page_view: false });
     `}</Script>
+    </>}
   </>
 }

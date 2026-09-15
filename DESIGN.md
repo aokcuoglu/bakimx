@@ -110,3 +110,7 @@ Test: masaüstünde hareket azaltma kapalıyken ana sayfayı yenileyip yavaş ka
 Ana sayfadaki bağımsız “Canlı Demo / Ruhsat Okuma” bölümü kaldırılmıştır; tekrar eklenmez. Hero altındaki etkileşimli ProductStage ve “Birlikte inceleyelim” modalı korunur. Güncel yerel önizleme http://localhost:3000 adresindedir.
 
 Footer sırası kolonlar → copyright → dekoratif BakımX watermark’tır; çözüm kolonlarında kategori başlıkları ve sayfa bağlantıları bulunur. Çerez tercihleri mobilde sağ alttaki asistan ve yukarı çık düğmelerinin üstünde yer alır. Eski reklam/click-ID entegrasyonu taslağı bu teslimata dahil değildir.
+
+## Demo reklam taslağı uzlaştırması — 15 Eylül 2026 (#649)
+
+Kullanıcı eski reklam/click-ID taslağını ayrı dev PR kapsamında yeniden değerlendirmeyi onayladı. `/demo` ve yazdırılabilir `/demo/ozet` açık PublicSite yüzeylerini, mevcut demo formunu ve onaylı ürün mesajlarını kullanır. Eski koyu bloklar ve doğrulanmamış “maksimum 10 saniyede parça bulma” garantisi taşınmaz. Reklam atfı ve demo dönüşümü yalnız analitik ana anahtarı açıkken ve hedefleme çerezlerine açık rıza varken çalışır. İletişim bilgileri, hash’leri veya CRM kimlik/aşama bilgileri reklam sağlayıcılarına gönderilmez. Lite kampanya atfı ayrı kalır. Dış sağlayıcı aktarımı yalnız Google Ads demo dönüşümüdür; Meta Pixel/CAPI yüklenmez, rızalı fbclid yalnız dahili atıfta saklanır.
