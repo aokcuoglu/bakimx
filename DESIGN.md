@@ -16,7 +16,7 @@ Koleksiyondaki dosyalar üçüncü taraf tasarım analizleridir. BakımX'e uyarl
 
 ## Görsel dil
 
-Inter uygulama ve genel public yüzeylerde kullanılır. Kod ve sabit genişlikli alanlarda Geist Mono korunur. Blog (`/blog`) Clutch’a yakın display tipografi için **Schibsted Grotesk** kullanır (PP Radio Grotesk ticari; OFL/Google Fonts alternatifi). Beyaz `card` zemin; ince `border` ayraçlar; koyu `foreground` başlıklar; `muted-foreground` açıklamalar. Mavi, ürün verilerinde ve bağlantılarda vurgu olarak kalır. Büyük renk blokları açık yüzeylere dönüştürülür. Ortak içerik sınırı 1200px, ürün sahnesi 1440px. Bölüm boşlukları masaüstünde 64–120px, mobilde 64px. Ana H1 84px'e, tanıtım sayfaları 76px'e kadar ölçeklenir. Başlıklarda sıkı harf aralığı ve dengeli satır kırılması kullanılır. Rehber ve hukuki metinlerin içerikleri korunur.
+Inter uygulama ve genel public yüzeylerde kullanılır. Kod ve sabit genişlikli alanlarda Geist Mono korunur. Blog (`/blog`) Clutch’a yakın display tipografi için **Switzer** kullanır (PP Radio Grotesk referansına yakın Fontshare alternatifi; ITF FFL, yerel WOFF2 dosyaları). Beyaz `card` zemin; ince `border` ayraçlar; koyu `foreground` başlıklar; `muted-foreground` açıklamalar. Mavi, ürün verilerinde ve bağlantılarda vurgu olarak kalır. Büyük renk blokları açık yüzeylere dönüştürülür. Ortak içerik sınırı 1200px, ürün sahnesi 1440px. Bölüm boşlukları masaüstünde 64–120px, mobilde 64px. Ana H1 84px'e, tanıtım sayfaları 76px'e kadar ölçeklenir. Başlıklarda sıkı harf aralığı ve dengeli satır kırılması kullanılır. Rehber ve hukuki metinlerin içerikleri korunur.
 
 `PublicSite` ve CSS Module yalnız açıkça sarılmış site sayfalarına uygulanır. Uygulamanın global tokenları veya paylaşılan UI bileşenlerinin varsayılanları değiştirilmez. Header/Footer ortak açık görünüm kullanır. Mobil ürün görselleri dikey sıralanır; CTA'lar dar alanda alt alta gelir.
 
@@ -29,7 +29,7 @@ Kullanıcının Header için onayladığı koyu metin kararı tüm siteye geniş
 - Hiyerarşi öncelikle font boyutu, ağırlık, satır yüksekliği ve boşlukla kurulur; metne opacity verilmez. Menü etiketleri yardımcı metin sayılmaz.
 - Bu açık kullanıcı talebi, global tokenları değiştirmeme kuralının **nötr metin paleti için istisnasıdır**; renkler `globals.css` üzerinden uygulanır. Call-site'larda sabit hex renk kullanılmaz.
 - Koyu tema açık metinlerini, koyu dolgu üzerindeki açık yazılar kendi foreground eşlerini korur. Marka, bağlantı, odak, başarı/uyarı/hata renklerinin anlamı korunur.
-- Inter genel fonttur; `/blog` ve yazı sayfalarında Schibsted Grotesk, sabit genişlikli alanlarda Geist Mono korunur.
+- Inter genel fonttur; `/blog` ve yazı sayfalarında Switzer, sabit genişlikli alanlarda Geist Mono korunur.
 
 ## Eylemler ve butonlar (zorunlu)
 
@@ -50,6 +50,18 @@ Ek kurallar:
 - Sohbet balonları: ziyaretçi koyu (`navy` veya `foreground`), ajan / sistem `muted`; ziyaretçi balonunda parlak `primary` yok.
 - Köşeler ölçülü (`rounded-lg` / `rounded-xl`, ~6–12px). Ağır `shadow-2xl` yerine sınırlı `shadow-md` / `shadow-lg`.
 - Shared `Button` bileşeninin global `default` variant’ı bu belgeden dolayı değiştirilmez; call-site’ta `navy` / `outline` / `ghost` seçilir. `className` ile `bg-foreground` vermek `button.tsx` birleştirmesinde `bg-primary`’ı her zaman ezmez — public yüzeylerde `variant="navy"` kullan.
+
+### Clutch buton ölçüleri — 13 Eylül 2026 (#647)
+
+Kullanıcının Clutch ekran görüntüsü ve [Clutch](https://www.clutch.security/) canlı CSS'i buton geometrisinin referansıdır. Vercel'in sade yüzeyleri ve Linear'ın yoğunluk disiplini korunur. Bu açık talep, shared UI varsayılanlarını değiştirmeme kuralının **Button tipografisi ve ölçüleri için istisnasıdır**; `default` renk variant'ı değişmez.
+
+- Metinli buton: Inter (`font-sans`), 14px, ağırlık 500, satır yüksekliği %140 (19.6px), harf aralığı −0.02em, köşe 6px. Metin ortalanır (`text-center`); koyu `navy` dolguda yazı tam beyazdır (`text-navy-foreground`), metne ek opacity verilmez. Outline/ghost kendi kontrastlı metin tokenlarını korur.
+- `default` / `sm`: Clutch small — 38px yükseklik, iki yanda 14px padding, 6px ikon aralığı. İkon eklenince yatay padding daralmaz.
+- `lg`: Clutch medium — 44px yükseklik, iki yanda 16px padding, aynı tipografi.
+- `xl`: BakımX büyük CTA — 48px yükseklik, iki yanda 24px padding, aynı tipografi. Mobil ana CTA ve hero için kullanılır.
+- `xs` / `compact`: yoğun tablo ve araç çubukları için 32px / 12px metin / 8px yatay padding. İkon boyutlarının mevcut 32px hit alanları korunur; ortak köşe 6px olur. FAB gibi özel şekiller kendi açık boyut ve radius tercihini korur.
+- Header masaüstü CTA'sı `sm`, mobil CTA'sı `xl` kullanır. Boyut için `h-*` / `px-*` kopyalamak yerine `size` seçilir.
+- Renk rolleri yukarıdaki tabloya uyar. Clutch'ın siyah gradient'i ve gölgesi aktarılmaz. Radix `asChild`, disabled, odak halkası ve hata durumları korunur.
 
 ## Uygulama, kayıt ve kurulum
 

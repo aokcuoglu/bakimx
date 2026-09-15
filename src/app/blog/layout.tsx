@@ -1,10 +1,14 @@
 import type { Metadata } from "next"
-import { Schibsted_Grotesk } from "next/font/google"
+import localFont from "next/font/local"
 import { publicPageMetadata, TITLE_TEMPLATE } from "@/lib/seo"
 
-const blogFont = Schibsted_Grotesk({
+const blogFont = localFont({
+  src: [
+    { path: "./fonts/Switzer-Variable.woff2", weight: "100 900", style: "normal" },
+    { path: "./fonts/Switzer-VariableItalic.woff2", weight: "100 900", style: "italic" },
+  ],
   variable: "--font-blog",
-  subsets: ["latin", "latin-ext"],
+  display: "swap",
 })
 
 const base = publicPageMetadata({

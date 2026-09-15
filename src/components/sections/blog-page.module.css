@@ -36,14 +36,18 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  padding: 1.5rem 1.25rem 1rem;
-  font-size: 0.8125rem;
+  /* Header + progress rail: 65px mobile / 81px desktop.
+     Keep the breadcrumb at 120px and the hero at 184px. */
+  padding: 55px 1.25rem 40px;
+  font-size: 1rem;
+  line-height: 24px;
   color: var(--muted-foreground);
 }
 
 @media (min-width: 1024px) {
   .breadcrumb {
-    padding: 2rem 0 1.25rem;
+    padding-top: 39px;
+    padding-inline: 0;
   }
 }
 
@@ -89,14 +93,20 @@
 }
 
 .hero h1 {
-  max-width: min(50rem, 100%);
-  margin: 0 0 0.85rem;
-  font-size: clamp(2.25rem, 4.8vw, 3.875rem); /* ~62px desktop */
-  font-weight: 400;
+  max-width: 796px;
+  margin: 0 0 24px;
+  font-size: clamp(40px, calc(40px + 22 * ((100vw - 320px) / 1140)), 62px);
+  font-weight: 600;
   font-variation-settings: "wght" 600;
   letter-spacing: -0.01em;
   line-height: 1.1;
-  text-wrap: balance;
+  text-wrap: wrap;
+}
+
+@media (min-width: 1000px) {
+  .hero h1 {
+    font-size: 62px;
+  }
 }
 
 .lead {

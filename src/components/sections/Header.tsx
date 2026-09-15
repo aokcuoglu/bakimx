@@ -30,8 +30,8 @@ export function Header() {
     return () => document.removeEventListener("keydown", close);
   }, [mobileOpen]);
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card/95 text-foreground backdrop-blur-lg">
-      <div className="mx-auto flex h-18 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
+    <header className="sticky top-0 z-50 bg-card/95 font-sans text-foreground backdrop-blur-lg">
+      <div className="relative mx-auto flex h-[62px] max-w-[1204px] items-center justify-between gap-6 px-5 lg:h-[78px] lg:px-6">
         <Link
           href="/"
           aria-label="BakımX ana sayfa"
@@ -52,13 +52,13 @@ export function Header() {
         </Link>
         <nav
           aria-label="Ana menü"
-          className="hidden items-center gap-7 lg:flex"
+          className="hidden items-center gap-6 lg:flex xl:absolute xl:left-1/2 xl:-translate-x-1/2"
         >
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-foreground transition-colors hover:text-primary"
+              className="text-[15px] leading-[1.5] font-normal text-foreground transition-colors hover:text-primary"
             >
               {item.label}
             </Link>
@@ -67,11 +67,11 @@ export function Header() {
         <div className="hidden items-center gap-5 lg:flex">
           <Link
             href="/login"
-            className="rounded-md px-1 py-1 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+            className="rounded-md px-1 py-1 text-[15px] leading-[1.5] font-normal text-foreground transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
           >
             Giriş yap
           </Link>
-          <Button asChild variant="navy" size="xl" className="h-10">
+          <Button asChild variant="navy" size="sm">
             <Link
               href="/register"
               onClick={() =>
@@ -121,7 +121,7 @@ export function Header() {
             >
               Giriş yap
             </Link>
-            <Button asChild variant="navy" size="xl" className="mt-2 h-12">
+            <Button asChild variant="navy" size="xl" className="mt-2">
               <Link
                 href="/register"
                 onClick={() => {

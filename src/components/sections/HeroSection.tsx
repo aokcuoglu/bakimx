@@ -68,7 +68,7 @@ export function HeroSection() {
               })
             }
           />
-          <Button asChild variant="navy" size="xl" className="h-12 px-6">
+          <Button asChild variant="navy" size="xl">
             <Link
               href="/register"
               onClick={() =>
