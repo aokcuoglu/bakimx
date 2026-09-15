@@ -257,7 +257,7 @@ export function CatalogList({
         </div>
       )}
 
-      <div className="rounded-lg border bg-card">
+      <div role="region" aria-label="Ürün listesi" tabIndex={0} className="max-h-[calc(100dvh-16rem)] overflow-auto rounded-lg border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         {rows.length === 0 ? (
           <p className="p-6 text-sm text-muted-foreground">
             {hasFilters ? "Filtrelere uyan ürün yok." : "Katalogda henüz ürün yok. “Yeni Ürün” ile başlayın."}
