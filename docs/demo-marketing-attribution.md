@@ -21,7 +21,7 @@ This is pseudonymous click attribution, not a promise of anonymous transport: an
 Provider-isolated browser acceptance:
 
 ```sh
-NEXT_PUBLIC_ANALYTICS_ENABLED=true NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID=AW-123456789 NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL=test_demo PLAYWRIGHT_PORT=3219 bunx playwright test e2e/demo-marketing.e2e.ts
+NEXT_PUBLIC_ANALYTICS_ENABLED=true NEXT_PUBLIC_GA_MEASUREMENT_ID=G-TEST123 NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID=AW-123456789 NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL=test_demo PLAYWRIGHT_PORT=3219 bunx playwright test e2e/demo-marketing.e2e.ts
 ```
 
 Tests fulfill all advertising requests locally; never use real configured provider IDs for QA. The extra advertising test is skipped without this explicit fixture configuration. Migration is additive; deploying a previous application version tolerates these nullable columns. Merge to dev requires `[deploy-dev]` so migration deploy precedes the new app. Production execution remains a separate human gate.

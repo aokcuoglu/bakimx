@@ -49,6 +49,15 @@ test("demo error preserves input; success emits only an opaque advertising ID", 
   expect(await page.evaluate(() => (window as unknown as { demoEvents: unknown[] }).demoEvents)).toEqual([{ eventId: "00000000-0000-0000-0000-000000000000" }])
   await page.evaluate(() => window.dispatchEvent(new CustomEvent("bakimx:demo-conversion", { detail: { eventId: "00000000-0000-0000-0000-000000000000" } })))
   expect(await page.evaluate(() => (window.dataLayer ?? []).map(value => Array.from(value as ArrayLike<unknown>)).filter(value => value[1] === "conversion").length)).toBe(1)
+  // Switching performance consent must not remount advertising or reset dedup.
+  await page.evaluate(() => {
+    const record = JSON.parse(localStorage.getItem("bakimx.cookie-consent")!)
+    record.preferences.performance = true
+    localStorage.setItem("bakimx.cookie-consent", JSON.stringify(record))
+    window.dispatchEvent(new CustomEvent("bakimx:cookie-consent-changed", { detail: record }))
+  })
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent("bakimx:demo-conversion", { detail: { eventId: "00000000-0000-0000-0000-000000000000" } })))
+  expect(await page.evaluate(() => (window.dataLayer ?? []).map(value => Array.from(value as ArrayLike<unknown>)).filter(value => value[1] === "conversion").length)).toBe(1)
   expect(requests.at(-1)?.targetingConsent).toBe(true)
   expect(requests.at(-1)?.attribution).toEqual({ campaignSource: "google", gclid: "test-click", landingPage: "/demo" })
 })
@@ -90,4 +99,11 @@ test("advertising pauses on revocation and resumes only on allowed routes", asyn
   await expect.poll(() => page.evaluate(() => localStorage.getItem("bakimx:demo-attribution"))).not.toBeNull()
   await page.evaluate(() => window.dispatchEvent(new CustomEvent("bakimx:demo-conversion", { detail: { eventId: "22222222-2222-2222-2222-222222222222" } })))
   await expect.poll(() => page.evaluate(() => (window.dataLayer ?? []).map(value => Array.from(value as ArrayLike<unknown>)).filter(value => value[1] === "conversion").length)).toBe(1)
+  // Public Header's account link uses Next Link (client-side navigation).
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.getByRole("link", { name: "Giriş yap", exact: true }).first().click()
+  await expect(page).toHaveURL(/\/login/)
+  await expect.poll(() => page.evaluate(() => (window.dataLayer ?? []).map(value => Array.from(value as ArrayLike<unknown>)).filter(value => value[0] === "consent").at(-1)?.[2])).toMatchObject({ ad_storage: "denied" })
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent("bakimx:demo-conversion", { detail: { eventId: "33333333-3333-3333-3333-333333333333" } })))
+  expect(await page.evaluate(() => (window.dataLayer ?? []).map(value => Array.from(value as ArrayLike<unknown>)).filter(value => value[1] === "conversion").length)).toBe(1)
 })

@@ -77,9 +77,9 @@ export function MarketingAnalytics() {
     if (trackMarketingEvent("seo_landing_view", { landing_type: landingType })) previousPath.current = pathname
   }, [pathname, performanceAllowed])
 
-  if (!enabled || !measurementId || !performanceAllowed) return <DemoAdvertising />
   return <>
     <DemoAdvertising />
+    {enabled && measurementId && performanceAllowed && <>
     <Script src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`} strategy="afterInteractive" />
     <Script id="bakimx-ga4" strategy="afterInteractive">{`
       window.dataLayer = window.dataLayer || [];
@@ -87,5 +87,6 @@ export function MarketingAnalytics() {
       window.gtag('js', new Date());
       window.gtag('config', '${measurementId}', { send_page_view: false });
     `}</Script>
+    </>}
   </>
 }
