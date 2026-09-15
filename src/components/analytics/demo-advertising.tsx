@@ -28,7 +28,7 @@ export function DemoAdvertising() {
   useEffect(() => {
     if (!allowed) return
     const forward = (event: Event) => {
-      if (!hasDemoAdvertisingConsent()) return
+      if (!hasDemoAdvertisingConsent() || !["/", "/demo", "/demo/ozet"].includes(window.location.pathname)) return
       const eventId = (event as CustomEvent<{ eventId: string }>).detail?.eventId
       if (!eventId || !/^[a-f0-9-]{36}$/.test(eventId) || sent.current.has(eventId)) return
       sent.current.add(eventId)
