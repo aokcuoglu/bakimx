@@ -247,6 +247,7 @@ export function LoginForm({
 
         <Button
           type="submit"
+          variant="foreground"
           size="xl"
           disabled={loading}
           className="w-full"
