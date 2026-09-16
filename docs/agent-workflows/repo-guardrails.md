@@ -9,7 +9,7 @@ kural buraya yazılmaz. Teslimat akışının tamamı için
 ## 1. Kalite kapısı: dört komut, tek sıra
 
 CI (`quality` işi) tam olarak şunları koşar — lokalde de aynısını koş
-([`.github/workflows/quality.yml`](../../.github/workflows/quality.yml):48-58):
+([`.github/workflows/quality.yml`](../../.github/workflows/quality.yml)):
 
 ```sh
 bun test
@@ -17,6 +17,11 @@ bun run lint
 bun run typecheck
 bun run build      # SESSION_SECRET gerektirir
 ```
+
+**`dev` PR'larında Actions varsayılan kapalıdır.** `quality` job'u `dev`'e
+giden PR'da yalnız `ci` label'ı varken koşar; `main` PR'larında her zaman
+koşar. Gündüz draft PR + labelsız; akşam `gh pr edit <n> --add-label ci`.
+Ayrıntı: [local-dev-batch-ci.md](./local-dev-batch-ci.md).
 
 `bun run lint` **uyarıyla değil, hatayla** düşer; mevcut uyarı sayısını
 artırmamak yeterli değil, sıfır hata gerekir. Lint hatası yüzünden bloke olmuş
