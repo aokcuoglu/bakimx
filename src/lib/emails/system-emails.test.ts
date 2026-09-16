@@ -49,7 +49,7 @@ test("welcomeTrialEmail: hoş geldin + deneme bitiş tarihi + giriş CTA'sı", (
   expect(e.html).toContain("/login")
   expect(e.html).toContain("7 iş gün")
   expect(e.html).toContain("12.07.2026")
-  expect(e.html).toContain("/billing")
+  expect(e.html).toContain("/account/plans")
 })
 
 test("welcomeTrialEmail: kullanıcı değerlerini HTML-escape eder", () => {

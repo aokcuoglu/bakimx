@@ -603,7 +603,7 @@ function ComplimentaryDonePanel({ mode }: { mode: Mode }) {
           Açılışa özel kampanya uygulandı; ödeme yapmanız gerekmiyor.
         </p>
       </div>
-      <Link href={mode === "public" ? "/login" : "/billing"} className="inline-block text-sm text-primary hover:underline">
+      <Link href={mode === "public" ? "/login" : "/account/plans"} className="inline-block text-sm text-primary hover:underline">
         {mode === "public" ? "Giriş sayfasına git" : "Paket sayfasına dön"}
       </Link>
     </div>
@@ -663,7 +663,7 @@ function DonePanel({
           Giriş sayfasına git
         </Link>
       ) : (
-        <Link href="/billing" className="inline-block text-sm text-primary hover:underline">
+        <Link href="/account/billing" className="inline-block text-sm text-primary hover:underline">
           Paket sayfasına dön
         </Link>
       )}

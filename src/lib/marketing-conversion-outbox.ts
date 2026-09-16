@@ -17,7 +17,7 @@ export async function recordMarketingConversion<N extends ConversionName>(
   const attribution = sanitizeMarketingAttribution(input.attribution)
   const id = conversionId(input.name, input.key)
   const params = sanitizeMarketingPayload(input.name, {
-    source_page: input.name === "lite_registered" ? "/register" : input.name === "first_work_order_created" ? "/orders" : "/billing",
+    source_page: input.name === "lite_registered" ? "/register" : input.name === "first_work_order_created" ? "/orders" : "/account/plans",
     ...input.payload,
     event_id: id,
     ...(attribution.campaignSource ? { campaign_source: attribution.campaignSource } : {}),

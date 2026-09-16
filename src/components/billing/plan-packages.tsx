@@ -52,7 +52,7 @@ function BillingPeriod({ billing, onChange, subdued = false, label = "Faturalama
               <ToggleGroupItem
                 key={cycle}
                 value={cycle}
-                className={cn("w-full rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:shadow-sm hover:text-foreground", subdued ? "h-9 rounded-[10px] data-[state=on]:bg-card data-[state=on]:text-foreground" : "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground")}
+                className={cn("w-full rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm hover:text-foreground", subdued && "h-9 rounded-[10px]")}
               >
                 {cycle === "monthly" ? "Aylık" : "Yıllık"}
               </ToggleGroupItem>
@@ -102,6 +102,7 @@ function PlanAction({
   compact = false,
   publicCard = false,
   liteRegistrationOpen = true,
+  onSelectPlan,
 }: {
   tier: SalePlanTier
   billing: BillingCycle
@@ -112,6 +113,7 @@ function PlanAction({
   compact?: boolean
   publicCard?: boolean
   liteRegistrationOpen?: boolean
+  onSelectPlan?: (tier: SalePlanTier, cycle: BillingCycle) => void
 }) {
   const isOwned = ownedTier === tier
   const pkg = PLAN_PACKAGES.find((plan) => plan.tier === tier)!
@@ -136,6 +138,19 @@ function PlanAction({
   }
 
   const href = `${checkoutBasePath}?tier=${tier}&cycle=${billing}`
+  const label = isOwned ? "Mevcut paket · Yenile" : checkoutBasePath.startsWith("/register") ? tier === "lite" ? "Ücretsiz hesap oluştur" : "Ücretsiz dene" : "Bu paketi seç"
+  const trackSelection = () => trackMarketingEvent(tier === "lite" && checkoutBasePath.startsWith("/register") ? "lite_cta_click" : "purchase_started", {
+    plan_tier: tier,
+    billing_cycle: billing,
+    cta_location: "pricing_card",
+  })
+  if (onSelectPlan) {
+    return (
+      <Button type="button" variant={isOwned ? "secondary" : pkg.popular ? "foreground" : "outline"} size={compact ? "sm" : "default"} className="w-full" onClick={() => { trackSelection(); onSelectPlan(tier, billing) }}>
+        {isOwned && <Check className="size-4" aria-hidden="true" />}{label}
+      </Button>
+    )
+  }
   return (
     <Button
       asChild
@@ -145,16 +160,10 @@ function PlanAction({
     >
       <Link
         href={href}
-        onClick={() =>
-          trackMarketingEvent(tier === "lite" && checkoutBasePath.startsWith("/register") ? "lite_cta_click" : "purchase_started", {
-            plan_tier: tier,
-            billing_cycle: billing,
-            cta_location: "pricing_card",
-          })
-        }
+        onClick={trackSelection}
       >
         {isOwned && <Check className="size-4" aria-hidden="true" />}
-        {isOwned ? "Mevcut paket · Yenile" : checkoutBasePath.startsWith("/register") ? tier === "lite" ? "Ücretsiz hesap oluştur" : "Ücretsiz dene" : "Bu paketi seç"}
+        {label}
       </Link>
     </Button>
   )
@@ -164,18 +173,23 @@ function PlanHeading({
   tier,
   billing,
   ownedTier,
+  centered = true,
+  trialTier = null,
 }: {
   tier: SalePlanTier
   billing: BillingCycle
   ownedTier: PlanTier | null
+  centered?: boolean
+  trialTier?: SalePlanTier | null
 }) {
   const pkg = PLAN_PACKAGES.find((plan) => plan.tier === tier)!
   return (
     <div className="space-y-2">
-      <div className="flex min-h-6 flex-wrap items-center justify-center gap-1.5">
+      <div className={cn("flex min-h-6 flex-wrap items-center gap-1.5", centered && "justify-center")}>
         <span className="font-semibold text-foreground">{pkg.name}</span>
         {pkg.popular && <Badge>En popüler</Badge>}
         {ownedTier === tier && <Badge variant="outline">Mevcut paket</Badge>}
+        {trialTier === tier && <Badge variant="outline">Deneme hakları</Badge>}
       </div>
       <p className="min-h-10 text-xs leading-5 text-muted-foreground">{pkg.tagline}</p>
       <div>
@@ -192,7 +206,7 @@ function PlanHeading({
           <span className="mt-1 block text-xs font-medium text-primary">Açılışa özel ücretsiz kayıt</span>
         )}
       </div>
-      {tier === "lite" && <p className="text-xs leading-5 text-muted-foreground">{LITE_CAMPAIGN_DESCRIPTION}</p>}
+      {tier === "lite" && centered && <p className="text-xs leading-5 text-muted-foreground">{LITE_CAMPAIGN_DESCRIPTION}</p>}
     </div>
   )
 }
@@ -205,6 +219,8 @@ export function PlanPackages({
   hasPendingOrder = false,
   canPurchase = true,
   liteRegistrationOpen = true,
+  onSelectPlan,
+  trialTier = null,
 }: {
   presentation?: "comparison" | "public"
   ownedTier?: PlanTier | null
@@ -215,20 +231,22 @@ export function PlanPackages({
   /** Billing viewers without billing.manage can compare, but cannot start checkout. */
   canPurchase?: boolean
   liteRegistrationOpen?: boolean
+  onSelectPlan?: (tier: SalePlanTier, cycle: BillingCycle) => void
+  trialTier?: SalePlanTier | null
 }) {
   const isPublic = presentation === "public"
   const [billing, setBilling] = useState<BillingCycle>("monthly")
 
   return (
-    <section id="lite" aria-labelledby="plan-karsilastirma-baslik" className="scroll-mt-20 space-y-5">
-      <div className={cn("space-y-1 text-center", isPublic && "sr-only")}>
-        <h2 id="plan-karsilastirma-baslik" className="text-xl font-bold text-foreground sm:text-2xl">
+    <section id="lite" aria-label="Paketleri karşılaştırın" className="scroll-mt-20 space-y-5">
+      <div className={cn("space-y-1 text-center", isPublic ? "sr-only" : "lg:hidden")}>
+        <h2 className="text-xl font-bold text-foreground sm:text-2xl">
           Paketleri karşılaştırın
         </h2>
         <p className="text-sm text-muted-foreground">Fiyatı, kullanım limitlerini ve özellikleri yan yana inceleyin.</p>
       </div>
 
-      <div className="flex justify-center pt-2">
+      <div className={cn("flex justify-center pt-2", !isPublic && "lg:hidden")}>
         <div className="relative">
           {!isPublic && <Badge className="absolute -top-3 left-3/4 z-10 -translate-x-1/2 whitespace-nowrap px-2.5 py-0.5 text-[10px]">
             <Sparkles className="size-3" aria-hidden="true" /> Ücretli paketlerde 2 ay bedava
@@ -280,7 +298,7 @@ export function PlanPackages({
                     ))}
                   </ul>
                   <div className="mt-auto">
-                    <PlanAction publicCard tier={pkg.tier} billing={billing} checkoutBasePath={checkoutBasePath} ownedTier={ownedTier} hasPendingOrder={hasPendingOrder} canPurchase={canPurchase} liteRegistrationOpen={liteRegistrationOpen} />
+                    <PlanAction publicCard tier={pkg.tier} billing={billing} checkoutBasePath={checkoutBasePath} ownedTier={ownedTier} hasPendingOrder={hasPendingOrder} canPurchase={canPurchase} liteRegistrationOpen={liteRegistrationOpen} onSelectPlan={onSelectPlan} />
                   </div>
                 </Card>
               </div>
@@ -305,17 +323,28 @@ export function PlanPackages({
                 {isPublic ? (
                   <div className="flex min-h-32 flex-col justify-end gap-4 pb-1">
                     <span className="text-xs leading-5 text-muted-foreground">Tercih ettiğiniz<br />ödeme dönemini seçin</span>
+                    <div className="space-y-1">
+                      <BillingPeriod billing={billing} onChange={setBilling} subdued label="Karşılaştırma faturalama dönemi" />
+                      <p className="text-[11px] font-normal text-muted-foreground">Yıllık ödemede 2 ay bedava</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex min-h-48 flex-col justify-between gap-5">
+                    <div>
+                      <h2 className="text-base font-semibold">Paketleri karşılaştırın</h2>
+                      <p className="mt-1 text-xs font-normal text-muted-foreground">İhtiyacınıza uygun paketi bulun.</p>
+                    </div>
                     <BillingPeriod billing={billing} onChange={setBilling} subdued label="Karşılaştırma faturalama dönemi" />
                   </div>
-                ) : "Özellik ve limit"}
+                )}
               </TableHead>
               {PLAN_PACKAGES.map((pkg) => (
                 <TableHead
                   key={pkg.tier}
                   scope="col"
                   className={cn(
-                    "w-[24%] px-4 py-5 text-center align-top whitespace-normal",
-                    isPublic ? "text-left" : pkg.popular && "bg-primary/5",
+                    "w-[24%] px-4 py-5 text-left align-top whitespace-normal",
+                    !isPublic && (pkg.tier === trialTier || (!trialTier && pkg.popular)) && "bg-primary/5",
                   )}
                 >
                   {isPublic ? (
@@ -329,7 +358,7 @@ export function PlanPackages({
                         {pkg.tier === "lite" ? "Lite kampanyasında ücretsiz" : billing === "monthly" ? "Aylık faturalandırılır" : "Yıllık faturalandırılır"}
                       </p>
                     </div>
-                  ) : <PlanHeading tier={pkg.tier} billing={billing} ownedTier={ownedTier} />}
+                  ) : <PlanHeading tier={pkg.tier} billing={billing} ownedTier={ownedTier} centered={false} trialTier={trialTier} />}
                   <div className="mt-4">
                     <PlanAction
                       tier={pkg.tier}
@@ -341,6 +370,7 @@ export function PlanPackages({
                       liteRegistrationOpen={liteRegistrationOpen}
                       compact={!isPublic}
                       publicCard={isPublic}
+                      onSelectPlan={onSelectPlan}
                     />
                   </div>
                 </TableHead>
@@ -363,7 +393,7 @@ export function PlanPackages({
                   {PLAN_PACKAGES.map((pkg) => (
                     <TableCell
                       key={pkg.tier}
-                      className={cn("px-4 py-3 text-center whitespace-normal", isPublic ? "py-3.5 text-xs text-muted-foreground" : "", pkg.popular && (isPublic ? "bg-muted/40" : "bg-primary/5"))}
+                      className={cn("px-4 py-3 text-center whitespace-normal", isPublic ? "py-3.5 text-xs text-muted-foreground" : "", (pkg.tier === trialTier || (!trialTier && pkg.popular)) && (isPublic ? "bg-muted/40" : "bg-primary/5"))}
                     >
                       <ComparisonValue value={row.values[pkg.tier]} minimal={isPublic} />
                     </TableCell>
@@ -375,7 +405,7 @@ export function PlanPackages({
         </Table>
       </div>
 
-      <Tabs defaultValue={checkoutBasePath.startsWith("/register") ? "lite" : "pro"} className="lg:hidden">
+      <Tabs defaultValue={trialTier ?? ownedTier ?? (checkoutBasePath.startsWith("/register") ? "lite" : "pro")} className="lg:hidden">
         <TabsList className={cn("grid h-auto w-full grid-cols-3", isPublic && "sticky top-[68px] z-30 border-b bg-card")}>
           {PLAN_PACKAGES.map((pkg) => (
             <TabsTrigger key={pkg.tier} value={pkg.tier} className="min-h-10 px-2">
@@ -385,7 +415,7 @@ export function PlanPackages({
         </TabsList>
         {PLAN_PACKAGES.map((pkg) => (
           <TabsContent key={pkg.tier} value={pkg.tier} className="space-y-4 rounded-xl border bg-card p-4">
-            <PlanHeading tier={pkg.tier} billing={billing} ownedTier={ownedTier} />
+            <PlanHeading tier={pkg.tier} billing={billing} ownedTier={ownedTier} trialTier={trialTier} />
             <PlanAction
               tier={pkg.tier}
               billing={billing}
@@ -393,7 +423,8 @@ export function PlanPackages({
               ownedTier={ownedTier}
               hasPendingOrder={hasPendingOrder}
               canPurchase={canPurchase}
-                      liteRegistrationOpen={liteRegistrationOpen}
+              liteRegistrationOpen={liteRegistrationOpen}
+              onSelectPlan={onSelectPlan}
             />
             {PLAN_COMPARISON.map((category) => (
               <section key={category.key} aria-labelledby={`mobil-${pkg.tier}-${category.key}`} className="space-y-2">
@@ -426,6 +457,8 @@ export function PlanPackages({
           {PHOTO_UPLOAD_POLICY.serverLimitMb} MB’dir.
         </p>
       </div>
+
+      {!isPublic && <p className="text-xs leading-5 text-muted-foreground">{LITE_CAMPAIGN_DESCRIPTION}</p>}
 
       <p className="text-center text-xs text-muted-foreground">
         {checkoutBasePath.startsWith("/register")

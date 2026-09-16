@@ -55,7 +55,7 @@ export function MarketingAnalytics() {
     // The analytics flag is the existing collection gate. No new provider or IDs.
     if (["/", "/fiyatlar", "/register"].includes(pathname)) captureMarketingAttribution()
     // Claim only on authenticated app routes, after the event listener is installed.
-    if (pathname === "/dashboard" || pathname.startsWith("/orders") || pathname.startsWith("/settings") || pathname.startsWith("/billing")) {
+    if (pathname === "/dashboard" || pathname.startsWith("/orders") || pathname.startsWith("/settings") || pathname.startsWith("/account") || pathname.startsWith("/billing")) {
       const deliver = () => {
         void claimMarketingConversions().then((events) => {
           for (const event of events) trackMarketingEvent(event.name, event.params)
