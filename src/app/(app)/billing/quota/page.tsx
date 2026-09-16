@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 
-export const metadata = { title: "Paketler & Kullanım" }
+export const metadata = { title: "Faturalandırma" }
 
 export default function QuotaPage() {
-  redirect("/account#kullanim")
+  redirect("/account/billing#kullanim")
 }

@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation"
 
-export const metadata = { title: "Paket ve kullanım" }
+export const metadata = { title: "Faturalandırma" }
 
-/** Preserve existing billing links while Account owns the visible surface. */
+/** Preserve existing billing links while the Account billing page owns the surface. */
 export default async function BillingPage({ searchParams }: {
   searchParams: Promise<{ pendingBlocked?: string }>
 }) {
   const sp = await searchParams
-  redirect(sp.pendingBlocked === "1" ? "/account?pendingBlocked=1#paket" : "/account#paket")
+  redirect(sp.pendingBlocked === "1" ? "/account/billing?pendingBlocked=1" : "/account/billing")
 }

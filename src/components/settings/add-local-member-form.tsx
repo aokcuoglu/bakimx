@@ -157,7 +157,7 @@ export function AddLocalMemberForm({
           {seatLimited && (
             <>
               {" "}
-              <Link href="/account#paket" className="font-semibold underline underline-offset-2">
+              <Link href="/account/plans" className="font-semibold underline underline-offset-2">
                 Paketleri görüntüleyin
               </Link>
             </>

@@ -22,6 +22,7 @@ import {
   Bell,
   FileText,
   CalendarClock,
+  CreditCard,
   BellRing,
   Boxes,
   Truck,
@@ -394,12 +395,26 @@ function AppSidebar({
         )}
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Hesabım">
+            <SidebarMenuButton asChild tooltip="Hesabım" isActive={pathname === "/account"}>
               <Link href="/account">
                 <UserCircle className="size-4" />
                 <span>Hesabım</span>
               </Link>
             </SidebarMenuButton>
+            {!isTechRole && (
+              <SidebarMenuSub className="group-data-[collapsible=icon]:hidden">
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton asChild isActive={pathname === "/account/plans"}>
+                    <Link href="/account/plans"><span>Paketler</span></Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton asChild isActive={pathname === "/account/billing"}>
+                    <Link href="/account/billing"><CreditCard className="size-3.5" aria-hidden="true" /><span>Faturalandırma</span></Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
           </SidebarMenuItem>
           <SidebarMenuItem>
             <form action="/api/auth/logout" method="POST" className="w-full">
@@ -414,7 +429,7 @@ function AppSidebar({
           <SidebarMenu className="border-t border-sidebar-border pt-2">
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={`${planStatus.title} · ${planStatus.detail}`} className="h-auto min-h-12 group-data-[collapsible=icon]:size-8!">
-                <Link href="/account#paket">
+                <Link href="/account/plans">
                   <CalendarClock className="size-4" aria-hidden="true" />
                   <span className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
                     <span className="block truncate text-xs font-medium">{planStatus.title}</span>

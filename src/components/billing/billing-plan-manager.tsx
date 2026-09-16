@@ -49,6 +49,8 @@ export function BillingPlanManager({
   seatUsage,
   extraSeats,
   havale,
+  showComparison = true,
+  explorePlansHref,
 }: {
   ownedTier: PlanTier | null
   currentPlanName: string
@@ -68,6 +70,8 @@ export function BillingPlanManager({
   seatUsage: { activeUsers: number; pendingInvites: number; used: number }
   extraSeats: number
   havale: HavaleInfo
+  showComparison?: boolean
+  explorePlansHref?: string
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -144,27 +148,36 @@ export function BillingPlanManager({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-semibold text-foreground">{isTrialing ? "Ücretsiz deneme" : currentPlanName}</p>
-              {isTrialing && trialDaysLeft != null && <Badge variant="secondary">{trialDaysLeft} iş günü kaldı</Badge>}
+              <Badge variant="outline">Mevcut paket</Badge>
+              {isTrialing && <Badge variant="secondary">Deneme</Badge>}
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">Paketleri karşılaştırın, ödeme dönemini seçin ve satın alma işlemini tamamlayın.</p>
+            <h2 className="mt-3 text-lg font-semibold text-foreground">{isTrialing ? "Premium denemesi" : currentPlanName}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {isTrialing
+                ? `Lite hesabınız Premium haklarını kullanıyor${trialDaysLeft == null ? "." : ` · ${trialDaysLeft} iş günü kaldı.`}`
+                : `${currentCycle === "yearly" ? "Yıllık" : currentCycle === "monthly" ? "Aylık" : ""} abonelik dönemi`}
+            </p>
           </div>
-          <Button type="button" variant="foreground" onClick={() => { returnFocusRef.current = document.activeElement as HTMLElement | null; closeDialog(true) }}>
-            <Receipt className="size-4" aria-hidden="true" /> Paketi yönet
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {explorePlansHref && <Button asChild variant="outline"><Link href={explorePlansHref}>Paketleri incele</Link></Button>}
+            <Button type="button" variant="foreground" onClick={() => { returnFocusRef.current = document.activeElement as HTMLElement | null; closeDialog(true) }}>
+              <Receipt className="size-4" aria-hidden="true" /> Paketi yönet
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div id="paketler" className="scroll-mt-24 pt-2">
+      {showComparison && <div id="paketler" className="scroll-mt-24 pt-2">
         <PlanPackages
           ownedTier={ownedTier}
           workshopName={workshopName}
           hasPendingOrder={hasPendingOrder}
           canPurchase={canPurchase}
           liteRegistrationOpen={liteRegistrationOpen}
+          trialTier={isTrialing ? "premium" : null}
           onSelectPlan={choosePlan}
         />
-      </div>
+      </div>}
 
       <Dialog open={open} onOpenChange={closeDialog}>
         <DialogContent className="flex max-h-[min(92dvh,900px)] w-[calc(100%-1rem)] max-w-5xl flex-col gap-0 overflow-hidden rounded-xl bg-card p-0 sm:max-w-5xl" showCloseButton={false} onOpenAutoFocus={(event) => { event.preventDefault(); closeButtonRef.current?.focus() }} onCloseAutoFocus={(event) => { event.preventDefault(); returnFocusRef.current?.focus() }}>
@@ -183,7 +196,7 @@ export function BillingPlanManager({
                   <CheckCircle2 className="mx-auto size-10 text-success-strong" aria-hidden="true" />
                   <h3 className="text-lg font-semibold">{pkg?.name} paketiniz etkin</h3>
                   <p className="text-sm text-muted-foreground">Ücretsiz paket etkinleştirildi. Ödeme yapmanız gerekmiyor.</p>
-                  <Button type="button" variant="outline" onClick={() => closeDialog(false)}>Hesaba dön</Button>
+                  <Button type="button" variant="outline" onClick={() => closeDialog(false)}>Sayfaya dön</Button>
                 </div>
               ) : done.method === "card" ? (
                 <div className="mx-auto max-w-lg py-3">
@@ -203,7 +216,7 @@ export function BillingPlanManager({
                     <dt className="text-muted-foreground">Açıklama</dt><dd className="font-mono font-semibold">{done.reference}</dd>
                   </dl>
                   <p className="text-sm text-muted-foreground">Havale açıklamasına referans kodunu yazın.</p>
-                  <Button type="button" variant="outline" onClick={() => closeDialog(false)}>Hesaba dön</Button>
+                  <Button type="button" variant="outline" onClick={() => closeDialog(false)}>Sayfaya dön</Button>
                 </div>
               )
             ) : view === "compare" ? (

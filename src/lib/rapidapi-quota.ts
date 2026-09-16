@@ -40,7 +40,7 @@ export class WorkshopQuotaExceededError extends Error {
     super(
       cap <= 0
         ? "Bu pakette şase/parça sorgusu bulunmuyor. Paketinizi yükseltin."
-        : "Aylık katalog sorgu limitiniz doldu. Ek kota satın almak için Paketler & Kullanım sayfasını kullanın.",
+        : "Aylık katalog sorgu limitiniz doldu. Ek kota satın almak için Faturalandırma sayfasını kullanın.",
     )
     this.name = "WorkshopQuotaExceededError"
     this.cap = cap

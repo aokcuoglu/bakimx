@@ -16,10 +16,12 @@ test("paket karşılaştırması masaüstü semantik tablo ve mobil shadcn Tabs 
 })
 
 test("uygulama içi paket CTA yetkisi billing.manage rolünden gelir", () => {
-  const page = read("src/app/(app)/account/page.tsx")
+  const page = read("src/app/(app)/account/plans/page.tsx")
+  const context = read("src/lib/billing/account-context.ts")
   const purchasePage = read("src/app/(app)/billing/quota/purchase/page.tsx")
   const comparison = read("src/components/billing/plan-packages.tsx")
-  expect(page).toContain("canManageBilling(user.role)")
+  expect(context).toContain("canManageBilling(user.role)")
+  expect(context).toContain('isTechnicianRestrictedRole(user.role)')
   expect(page).toContain("canPurchase={canPurchase}")
   expect(purchasePage).toContain("canManageBilling(user.role)")
   expect(comparison).toContain("Paket değişikliği için yöneticinizle görüşün.")
@@ -28,15 +30,16 @@ test("uygulama içi paket CTA yetkisi billing.manage rolünden gelir", () => {
 
 test("eski kota sayfası kullanıma yönlenir ve ek kota rotası korunur", () => {
   const redirectPage = read("src/app/(app)/billing/quota/page.tsx")
-  expect(redirectPage).toContain('redirect("/account#kullanim")')
+  expect(redirectPage).toContain('redirect("/account/billing#kullanim")')
   expect(existsSync(join(root, "src/app/(app)/billing/quota/purchase/page.tsx"))).toBe(true)
 })
 
-test("kullanım görünümü Lite boş durumunu gösterir ve sahte depolama yüzdesi üretmez", () => {
-  const source = read("src/components/billing/usage-cards.tsx")
-  expect(source.match(/Paketinizde bulunmuyor/g)?.length).toBe(2)
+test("faturalandırma kullanımı gerçek hakları ve Lite boş durumunu gösterir", () => {
+  const source = read("src/components/billing/billing-usage-panel.tsx")
+  expect(source).toContain("Paketinizde bulunmuyor")
   expect(source.toLocaleLowerCase("tr-TR")).not.toContain("depolama yüzdesi")
-  expect(source).toContain("Premium deneme hakları")
+  expect(source).toContain("PLAN_SEATS[plan.accessTier]")
+  expect(source).toContain("quota.used")
 })
 
 test("koltuk sorgusu yalnız süresi geçmemiş davetleri sayar", () => {

@@ -14,7 +14,7 @@ import {
 /**
  * /checkout, zaten bekleyen bir siparişi olan bir workshop'a düşünce buraya
  * yönlendirir — kullanıcıyı ayrı, bağlamsız bir sayfada bırakmak yerine
- * /account üzerinde bu diyalogla bilgilendirir. Kart siparişlerinde havale
+ * /account/billing üzerinde bu diyalogla bilgilendirir. Kart siparişlerinde havale
  * talimatı yerine "Ödemeye devam et" ile kart kurtarma sayfasına yönlendirir.
  */
 export function PendingOrderAlert({ reference, method }: { reference: string; method?: string | null }) {
@@ -22,7 +22,7 @@ export function PendingOrderAlert({ reference, method }: { reference: string; me
   const isCard = method === "card"
 
   function dismiss() {
-    router.replace("/account#paket")
+    router.replace("/account/billing")
   }
 
   function continuePayment() {
