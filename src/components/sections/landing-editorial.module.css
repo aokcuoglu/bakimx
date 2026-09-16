@@ -63,7 +63,7 @@
 .heroInner {
   position: relative;
   z-index: 1;
-  max-width: 1280px;
+  max-width: var(--public-width, 1124px);
   margin: auto;
   padding: 100px 24px 80px;
   border-inline: 1px solid var(--border);
@@ -148,13 +148,14 @@
 .stage {
   position: relative;
   margin: 0 auto;
-  max-width: 1440px;
+  max-width: var(--public-width, 1124px);
   height: 820px;
   padding-top: 50px;
   overflow: hidden;
 }
 .stageGlow {
   position: absolute;
+  /* Mavi zemin, sahnenin değil ortak içerik grid'inin parçası. */
   inset: 15% 0 0;
   background: linear-gradient(
     to bottom,
@@ -164,7 +165,7 @@
 }
 .stageGrid {
   position: absolute;
-  inset: 0 max(0px, calc((100% - 1280px) / 2));
+  inset: 0;
   border-inline: 1px solid var(--border);
   background: linear-gradient(
     90deg,
@@ -453,19 +454,19 @@
 .orderWindow {
   z-index: 3;
   width: 295px;
-  left: 3%;
+  left: 16px;
   top: 380px;
 }
 .partsWindow {
   z-index: 2;
   width: 305px;
-  right: 2%;
+  right: 16px;
   top: 90px;
 }
 .workflowWindow {
   z-index: 4;
   width: 480px;
-  right: 3%;
+  right: 16px;
   top: 240px;
   max-height: 560px;
 }
@@ -576,7 +577,7 @@
   transform: translateX(-50%);
 }
 .productSummary {
-  max-width: 1280px;
+  max-width: var(--public-width, 1124px);
   margin: auto;
   padding: 92px 64px 88px;
   border-inline: 1px solid var(--border);

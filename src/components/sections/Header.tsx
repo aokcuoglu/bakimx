@@ -31,7 +31,7 @@ export function Header() {
   }, [mobileOpen]);
   return (
     <header className="sticky top-0 z-50 bg-card/95 font-sans text-foreground backdrop-blur-lg">
-      <div className="relative mx-auto flex h-[62px] max-w-[1204px] items-center justify-between gap-6 px-5 lg:h-[78px] lg:px-6">
+      <div className="relative mx-auto flex h-[62px] max-w-[1124px] items-center justify-between gap-6 px-5 lg:h-[78px] lg:px-6">
         <Link
           href="/"
           aria-label="BakımX ana sayfa"
@@ -103,7 +103,7 @@ export function Header() {
           aria-label="Mobil menü"
           className="border-t bg-card px-5 py-5 lg:hidden"
         >
-          <div className="mx-auto flex max-w-7xl flex-col gap-1">
+          <div className="mx-auto flex max-w-[1124px] flex-col gap-1">
             {navItems.map((item) => (
               <Link
                 key={item.href}

@@ -11,7 +11,7 @@ export function BlogIndex() {
 
   return (
     <div className={styles.page}>
-      {/* Breadcrumb stays outside the bordered 1124 frame (Clutch pattern) */}
+      {/* Breadcrumb stays outside the bordered 1124px frame (Clutch pattern) */}
       <div className={styles.shell}>
         <nav className={styles.breadcrumb} aria-label="Sayfa konumu">
           <Link href="/">Ana sayfa</Link>

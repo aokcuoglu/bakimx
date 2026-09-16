@@ -1,6 +1,6 @@
 .page {
-  /* Clutch blog frame tokens (measured @ 1440) */
-  --blog-frame: 1124px;
+  /* Align the blog card grid with the shared public content frame. */
+  --blog-frame: var(--public-width, 1124px);
   --blog-rail: #dfdfdf;
   --blog-hero-pad-x: 1.25rem;
   --blog-hero-pad-x-lg: 80px;
@@ -24,7 +24,7 @@
   }
 }
 
-/* Shared 1124 content column — breadcrumb uses shell WITHOUT rails */
+/* Shared 1124px content column — breadcrumb uses shell WITHOUT rails */
 .shell {
   width: min(100%, var(--blog-frame));
   margin-inline: auto;
