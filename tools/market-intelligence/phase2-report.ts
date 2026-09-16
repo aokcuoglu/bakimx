@@ -51,9 +51,11 @@ export async function buildPhase2Report(root: string): Promise<{ queries: number
       return `| ${md(page.query)} | ${ranks.map((rank) => rank ?? "Doğrulanamadı").join(" | ")} | [Google](${page.searchUrl}) |`
     }),
     "",
-    "## Collected organic results",
+    "## Evidence samples",
     "",
-    ...pages.flatMap((page) => [`### ${md(page.query)}`, "", ...page.organicResults.map((result) => `${result.position}. [${md(result.title)}](${result.url}) — ${md(result.description) || "Snippet yok"}`), ""]),
+    "Complete normalized SERP rows and spreadsheet CSV stay in the ignored local data directory. These links show the first three organic results per query.",
+    "",
+    ...pages.flatMap((page) => [`### ${md(page.query)}`, "", ...page.organicResults.slice(0, 3).map((result) => `${result.position}. [${md(result.title)}](${result.url})`), ""]),
     "## Marketing observations",
     "",
     ...(curation.findings.length ? curation.findings.flatMap((finding, index) => [`${index + 1}. **Gözlem:** ${finding.observation} **BakımX testi:** ${finding.implication} **Confidence:** ${finding.confidence}. Kanıt: ${finding.sourceUrls.map((url) => `[kaynak](${url})`).join(", ")}.`, ""]) : ["Henüz insan değerlendirmesi eklenmedi.", ""]),
