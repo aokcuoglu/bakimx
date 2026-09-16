@@ -66,13 +66,16 @@ export function DetailHeader({
 
   return (
     <div className="flex items-start gap-3 sm:items-center">
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={onBack}
-          className="p-2.5 hover:bg-muted rounded-lg touch-manipulation shrink-0"
+          className="shrink-0"
           aria-label="Geri"
         >
           <ArrowLeft className="size-5" />
-        </button>
+        </Button>
         <div className="flex-1 min-w-0 flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
           {/* `items-start` sütun modunda çocukları içeriğe göre büyüttüğü için
               `truncate` tek başına devreye girmiyordu: uzun kurumsal müşteri adı
@@ -105,7 +108,7 @@ export function DetailHeader({
                 {primary && (
                   <Button
                     size="default"
-                    variant="default"
+                    variant="foreground"
                     onClick={primary.onClick}
                     disabled={loading || primary.disabled}
                   >

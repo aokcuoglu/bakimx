@@ -125,13 +125,12 @@ export default async function DashboardPage() {
                 })}
               </p>
             </div>
-            <Link
-              href="/orders/new"
-              className="inline-flex items-center justify-center gap-2 h-8 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors touch-manipulation shadow-sm"
-            >
-              <Plus className="size-4" />
-              Yeni İş Emri
-            </Link>
+            <Button variant="inverse" size="compact" asChild>
+              <Link href="/orders/new">
+                <Plus className="size-4" />
+                Yeni İş Emri
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -141,7 +140,7 @@ export default async function DashboardPage() {
             <p className="text-sm text-muted-foreground">Kurulum tercihleriniz kaydedildi. İlk müşterinizi ve aracınızı kaydedin, ardından iş emrinizi açın. İş emri ekranında da müşteri ve araç ekleyebilirsiniz.</p>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button asChild variant="outline"><Link href="/customers/new">İlk müşteriyi ekle</Link></Button>
-              <Button asChild><Link href="/orders/new">İlk iş emrini oluştur</Link></Button>
+              <Button variant="foreground" asChild><Link href="/orders/new">İlk iş emrini oluştur</Link></Button>
             </div>
           </section>
         )}

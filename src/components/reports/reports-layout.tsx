@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import {
   Wrench,
   Users,
@@ -37,19 +38,21 @@ export function ReportsLayout({ children }: { children: React.ReactNode }) {
           const Icon = item.icon
           const isActive = pathname === item.href
           return (
-            <Link
+            <Button
               key={item.href}
-              href={item.href}
+              variant={isActive ? "foreground" : "secondary"}
+              size="sm"
               className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted text-muted-foreground hover:bg-border hover:text-foreground"
+                "whitespace-nowrap",
+                !isActive && "text-muted-foreground hover:text-foreground"
               )}
+              asChild
             >
-              <Icon className="size-4" />
-              {item.label}
-            </Link>
+              <Link href={item.href} aria-current={isActive ? "page" : undefined}>
+                <Icon className="size-4" />
+                {item.label}
+              </Link>
+            </Button>
           )
         })}
       </nav>

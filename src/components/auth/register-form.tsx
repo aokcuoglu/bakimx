@@ -498,12 +498,12 @@ export function RegisterForm({
             ) : null}
             <div className="flex-1" />
             {onboarding && currentStep < REGISTER_STEPS.length - 2 ? (
-              <Button key="next-step" type="button" onClick={goNext} disabled={currentStep === 0 && !sector}>
+              <Button key="next-step" type="button" variant="foreground" onClick={goNext} disabled={currentStep === 0 && !sector}>
                 Devam Et
                 <ArrowRight data-icon="inline-end" />
               </Button>
             ) : (
-              <Button key="submit-form" type="submit" disabled={loading || !hydrated} size="xl" className={styles.submit}>
+              <Button key="submit-form" type="submit" variant="foreground" disabled={loading || !hydrated} className={styles.submit}>
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <BrandSpinner size={18} />
@@ -780,7 +780,7 @@ function ComingSoonSectorInterestForm({
             Talebiniz kaydedildi. Ekibimiz sizinle iletişime geçecek.
           </div>
           <DialogFooter>
-            <Button type="button" onClick={onClose}>
+            <Button type="button" variant="foreground" onClick={onClose}>
               Tamam
             </Button>
           </DialogFooter>
@@ -841,7 +841,7 @@ function ComingSoonSectorInterestForm({
             <Button type="button" variant="outline" onClick={onClose}>
               Vazgeç
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" variant="foreground" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />

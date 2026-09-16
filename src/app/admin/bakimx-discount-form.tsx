@@ -83,7 +83,7 @@ export function BakimxDiscountForm({ workshopId, currentDiscountBps }: BakimxDis
             )}
           />
 
-          <Button type="submit" disabled={isPending}>
+          <Button variant="foreground" type="submit" disabled={isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
             Güncelle
           </Button>

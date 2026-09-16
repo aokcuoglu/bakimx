@@ -79,7 +79,7 @@ function DateFilters({
 function QueryPrompt({ colSpan, pending, onRun }: { colSpan: number; pending: boolean; onRun: () => void }) {
   return <TableRow>
     <TableCell colSpan={colSpan} className="h-36 text-center">
-      <Button type="button" disabled={pending} onClick={onRun}>
+      <Button variant="foreground" type="button" disabled={pending} onClick={onRun}>
         {pending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Play aria-hidden="true" />}
         {pending ? "Running…" : "Run Query"}
       </Button>

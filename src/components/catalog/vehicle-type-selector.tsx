@@ -184,13 +184,16 @@ export function VehicleTypeSelector({ selectedIds, onChange }: VehicleTypeSelect
             {selectedIds.map((typeId) => (
               <Badge key={typeId} variant="secondary" className="gap-1">
                 {typeNames[typeId] || `Type ${typeId}`}
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={() => removeType(typeId)}
-                  className="ml-1 inline-flex items-center rounded hover:bg-destructive/20"
+                  className="ml-1 text-destructive-strong hover:bg-destructive/20"
                   aria-label="Kaldır"
                 >
                   <X className="size-3" />
-                </button>
+                </Button>
               </Badge>
             ))}
           </div>

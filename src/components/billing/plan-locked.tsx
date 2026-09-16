@@ -2,6 +2,7 @@ import { Clock, Lock, Mail } from "lucide-react"
 import { logoutAction } from "@/app/(auth)/login/actions"
 import { PlanPackages } from "@/components/billing/plan-packages"
 import { ResendVerifyButton } from "@/components/billing/resend-verify-button"
+import { Button } from "@/components/ui/button"
 import type { LockReason } from "@/lib/plan"
 
 const COPY: Record<
@@ -80,12 +81,14 @@ export function PlanLocked({
         )}
 
         <form action={logoutAction} className="mt-8 text-center">
-          <button
+          <Button
             type="submit"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
           >
             Çıkış yap
-          </button>
+          </Button>
         </form>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { BlogCategoryBadge } from "@/components/blog/category-badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   BLOG_CATEGORIES,
   BLOG_CATEGORY_LABELS,
@@ -127,61 +128,71 @@ export function BlogCategoryFilters({
         </article>
       ) : null}
 
-      <div className={styles.filters} role="tablist" aria-label="Yazı kategorileri">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={filter === "all"}
-          data-active={filter === "all"}
-          className={styles.filterChip}
-          onClick={() => setFilter("all")}
+      <Tabs
+        value={filter}
+        onValueChange={(value) => setFilter(value as FilterValue)}
+        className="gap-0"
+      >
+        <TabsList
+          variant="line"
+          className={styles.filters}
+          aria-label="Yazı kategorileri"
         >
-          #Tümü
-        </button>
-        {BLOG_CATEGORIES.map((category) => (
-          <button
-            key={category}
-            type="button"
-            role="tab"
-            aria-selected={filter === category}
-            data-active={filter === category}
+          <TabsTrigger
+            value="all"
+            data-active={filter === "all"}
             className={styles.filterChip}
-            onClick={() => setFilter(category)}
           >
-            #{BLOG_CATEGORY_LABELS[category]}
-          </button>
-        ))}
-      </div>
-
-      {visible.length === 0 ? (
-        <p className={styles.empty}>Bu kategoride henüz yazı yok.</p>
-      ) : (
-        <div className={styles.grid}>
-          {visible.map((post) => (
-            <article key={post.slug} className={styles.card}>
-              <Link
-                href={`/blog/${post.slug}`}
-                className={styles.cardMediaLink}
-                tabIndex={-1}
-                aria-hidden="true"
-              >
-                <Cover
-                  post={post}
-                  className={styles.cardMedia}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-              </Link>
-              <div className={styles.cardBody}>
-                <BlogCategoryBadge category={post.category} />
-                <h2 className={styles.cardTitle}>
-                  <Link href={`/blog/${post.slug}`}>{post.title}</Link>
-                </h2>
-                <AuthorRow post={post} />
-              </div>
-            </article>
+            #Tümü
+          </TabsTrigger>
+          {BLOG_CATEGORIES.map((category) => (
+            <TabsTrigger
+              key={category}
+              value={category}
+              data-active={filter === category}
+              className={styles.filterChip}
+            >
+              #{BLOG_CATEGORY_LABELS[category]}
+            </TabsTrigger>
           ))}
-        </div>
-      )}
+        </TabsList>
+
+        {(["all", ...BLOG_CATEGORIES] as const).map((value) => (
+          <TabsContent key={value} value={value} className="m-0">
+            {filter === value ? (
+              visible.length === 0 ? (
+                <p className={styles.empty}>Bu kategoride henüz yazı yok.</p>
+              ) : (
+                <div className={styles.grid}>
+                  {visible.map((post) => (
+                    <article key={post.slug} className={styles.card}>
+                      <Link
+                        href={`/blog/${post.slug}`}
+                        className={styles.cardMediaLink}
+                        tabIndex={-1}
+                        aria-hidden="true"
+                      >
+                        <Cover
+                          post={post}
+                          className={styles.cardMedia}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
+                      </Link>
+                      <div className={styles.cardBody}>
+                        <BlogCategoryBadge category={post.category} />
+                        <h2 className={styles.cardTitle}>
+                          <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+                        </h2>
+                        <AuthorRow post={post} />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )
+            ) : null}
+          </TabsContent>
+        ))}
+      </Tabs>
     </>
   )
 }

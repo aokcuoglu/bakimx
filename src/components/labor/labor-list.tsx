@@ -96,7 +96,7 @@ export function LaborList({
           <Wrench className="size-5 text-primary" />
           Stok / Parçalar
         </h2>
-        <Button size="sm" className="w-full sm:w-auto" onClick={openCreate}>
+        <Button variant="foreground" size="sm" className="w-full sm:w-auto" onClick={openCreate}>
           <Plus className="size-3.5 mr-1" /> Yeni İşçilik
         </Button>
       </div>
@@ -117,7 +117,7 @@ export function LaborList({
             Tanımladığınız işçilikler iş emri ve teklif ekranlarında öneri olarak çıkar.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 px-4">
-            <Button size="sm" onClick={openCreate}>
+            <Button variant="foreground" size="sm" onClick={openCreate}>
               <Plus className="size-3.5 mr-1" /> Yeni İşçilik
             </Button>
             <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>

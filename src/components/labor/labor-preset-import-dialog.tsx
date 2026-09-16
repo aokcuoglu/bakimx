@@ -127,7 +127,7 @@ export function LaborPresetImportDialog({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
             Vazgeç
           </Button>
-          <Button type="button" onClick={submit} disabled={submitting || selected.size === 0}>
+          <Button variant="foreground" type="button" onClick={submit} disabled={submitting || selected.size === 0}>
             {submitting && <Loader2 className="size-4 animate-spin" />}
             {selected.size} kalemi ekle
           </Button>

@@ -170,7 +170,7 @@ export function MemberCredentialsDialog({
         </div>
 
         <DialogFooter>
-          <Button type="button" size="lg" onClick={onClose} className="w-full touch-manipulation">
+          <Button variant="foreground" type="button" size="lg" onClick={onClose} className="w-full touch-manipulation">
             Bilgileri ilettim, kapat
           </Button>
         </DialogFooter>

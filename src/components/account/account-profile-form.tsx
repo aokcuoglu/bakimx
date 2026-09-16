@@ -78,7 +78,7 @@ export function AccountProfileForm({
             )}
           />
         </div>
-        <Button
+        <Button variant="foreground"
           type="submit"
           disabled={form.formState.isSubmitting || !form.formState.isDirty}
         >

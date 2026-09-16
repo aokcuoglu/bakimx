@@ -172,7 +172,7 @@ function CommissionCard({ commission, canManage }: { commission: Commission; can
         )}
         {canManage && commission.status === "approved" && (
           <div className="flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-end">
-            <Button type="button" disabled={pending} onClick={markPaid}>
+            <Button variant="foreground" type="button" disabled={pending} onClick={markPaid}>
               <CheckCircle2 className="size-4" /> Ödendi işaretle
             </Button>
             <div className="flex-1"><VoidForm commissionId={commission.id} pending={pending} startTransition={startTransition} /></div>
@@ -254,7 +254,7 @@ function ApprovalForm({
           </FormItem>
         )} />
         <div className="sm:col-span-2">
-          <Button type="submit" disabled={pending}>Hakedişi onayla</Button>
+          <Button variant="foreground" type="submit" disabled={pending}>Hakedişi onayla</Button>
         </div>
       </form>
     </Form>

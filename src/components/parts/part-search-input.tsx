@@ -578,10 +578,11 @@ export function PartSearchInput({
                   )}
                 </span>
                 {onShowDetail && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     aria-label="Parça detayı"
-                    title="Özellikler, görsel ve uygunluk"
                     // Satır seçimini TETİKLEMEMELİ: mouseDown input'u blur edip
                     // popup'ı kapatırdı, click ise Autocomplete'in kendi seçim
                     // handler'ına baloncuklanırdı.
@@ -593,10 +594,10 @@ export function PartSearchInput({
                       e.stopPropagation()
                       onShowDetail(a)
                     }}
-                    className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className="shrink-0 text-muted-foreground"
                   >
                     <Info className="size-4" />
-                  </button>
+                  </Button>
                 )}
               </AutocompleteItem>
             ) })())}

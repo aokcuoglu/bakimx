@@ -473,7 +473,7 @@ export function BusinessProfileForm({
               </div>
             </div>
 
-            <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
+            <Button variant="foreground" type="submit" className="w-full sm:w-auto" disabled={loading}>
               {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
               Güncelle
             </Button>

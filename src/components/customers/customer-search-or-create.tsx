@@ -192,8 +192,8 @@ export function CustomerSearchOrCreate({
     return (
       <div className="space-y-3 rounded-lg border border-border p-3">
         <div className="flex gap-2">
-          <Button type="button" size="sm" variant={type === "individual" ? "default" : "outline"} className="flex-1" onClick={() => setType("individual")}>Bireysel</Button>
-          <Button type="button" size="sm" variant={type === "corporate" ? "default" : "outline"} className="flex-1" onClick={() => setType("corporate")}>Kurumsal</Button>
+          <Button type="button" size="sm" variant={type === "individual" ? "secondary" : "outline"} className="flex-1" onClick={() => setType("individual")}>Bireysel</Button>
+          <Button type="button" size="sm" variant={type === "corporate" ? "secondary" : "outline"} className="flex-1" onClick={() => setType("corporate")}>Kurumsal</Button>
         </div>
         {type === "individual" ? (
           <div className="grid grid-cols-2 gap-2">
@@ -204,14 +204,15 @@ export function CustomerSearchOrCreate({
           <div className="space-y-1"><Label>Şirket adı *</Label><Input autoFocus value={companyName} onChange={(e) => setCompanyName(e.target.value)} /></div>
         )}
         <div className="space-y-1"><Label>Telefon *</Label><Input value={phone} onChange={(e) => { setPhone(formatPhoneTR(e.target.value)); setDuplicates([]); setError("") }} inputMode="tel" placeholder="0544 515 74 08" /></div>
-        <button
+        <Button
           type="button"
+          variant="outline"
           onClick={() => setShowExtra((s) => !s)}
-          className="flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted/50"
+          className="h-auto w-full justify-between px-3 py-2 text-foreground"
         >
           <span>Ek bilgiler (opsiyonel)</span>
           <ChevronDown className={`size-4 transition-transform ${showExtra ? "rotate-180" : ""}`} />
-        </button>
+        </Button>
 
         {showExtra && (
           <div className="space-y-3 rounded-lg border border-border p-3">
@@ -262,7 +263,7 @@ export function CustomerSearchOrCreate({
         ) : null}
         <div className="flex justify-end gap-2">
           <Button type="button" size="sm" variant="ghost" onClick={() => { setCreating(false); setError(""); setDuplicates([]) }}>Vazgeç</Button>
-          <Button type="button" size="sm" onClick={() => handleCreate(duplicates.length > 0)} disabled={busy}>
+          <Button variant="foreground" type="button" size="sm" onClick={() => handleCreate(duplicates.length > 0)} disabled={busy}>
             {busy ? <Loader2 className="size-4 animate-spin" /> : duplicates.length > 0 ? "Yine de yeni müşteri oluştur" : "Müşteriyi oluştur"}
           </Button>
         </div>
@@ -306,7 +307,7 @@ export function CustomerSearchOrCreate({
           ) : query.trim().length >= 1 ? (
             <div className="flex w-full items-center gap-2 p-2">
               <span className="text-xs text-muted-foreground">«{query.trim()}» yok —</span>
-              <Button type="button" size="sm" onClick={openCreate}><Plus className="size-4 mr-1" /> Yeni müşteri</Button>
+              <Button variant="foreground" type="button" size="sm" onClick={openCreate}><Plus className="size-4 mr-1" /> Yeni müşteri</Button>
             </div>
           ) : (
             <span className="py-2 text-sm text-muted-foreground">Aramak için yazın</span>

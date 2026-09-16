@@ -126,7 +126,7 @@ export function CatalogList({
               <Upload className="size-3.5 mr-1" /> İçe Aktar
             </Link>
           </Button>
-          <Button size="sm" asChild>
+          <Button variant="foreground" size="sm" asChild>
             <Link href="/admin/catalog/new">
               <Plus className="size-3.5 mr-1" /> Yeni Ürün
             </Link>
@@ -415,7 +415,7 @@ function BulkPriceDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
             Vazgeç
           </Button>
-          <Button onClick={() => onSubmit(percent)} disabled={!valid || pending}>
+          <Button variant="foreground" onClick={() => onSubmit(percent)} disabled={!valid || pending}>
             {pending && <Loader2 className="size-4 animate-spin" />}
             Uygula
           </Button>
@@ -473,7 +473,7 @@ function BulkStockDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
             Vazgeç
           </Button>
-          <Button onClick={() => onSubmit(mode, quantity)} disabled={!valid || pending}>
+          <Button variant="foreground" onClick={() => onSubmit(mode, quantity)} disabled={!valid || pending}>
             {pending && <Loader2 className="size-4 animate-spin" />}
             Uygula
           </Button>

@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
+import ts from "typescript"
 
 const SRC = join(import.meta.dir, "..")
 const SCOPES = [
@@ -26,6 +27,46 @@ function tsxFiles(dir: string, files: string[] = []): string[] {
   }
   return files
 }
+
+test("görünür etkileşimli kontroller ortak UI primitive'lerini kullanıyor", () => {
+  const offenders: string[] = []
+  for (const file of tsxFiles(SRC)) {
+    const path = relative(SRC, file)
+    if (path === "components/ui/input.tsx" || path === "components/ui/textarea.tsx") continue
+
+    const source = readFileSync(file, "utf8")
+    if (/<(?:button|select|textarea)\b/.test(source)) offenders.push(path)
+    for (const input of source.matchAll(/<input\b[^>]*>/gs)) {
+      if (!/\btype=["'](?:hidden|file)["']/.test(input[0])) offenders.push(path)
+    }
+  }
+  expect(offenders).toEqual([])
+})
+
+test("Button çağrıları eylem rengini açıkça seçiyor ve parlak default'u kullanmıyor", () => {
+  const offenders: string[] = []
+  for (const file of tsxFiles(SRC)) {
+    const source = readFileSync(file, "utf8")
+    const parsed = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
+    const visit = (node: ts.Node) => {
+      if (
+        (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
+        node.tagName.getText(parsed) === "Button"
+      ) {
+        const variant = node.attributes.properties.find(
+          (attribute) => ts.isJsxAttribute(attribute) && attribute.name.getText(parsed) === "variant"
+        ) as ts.JsxAttribute | undefined
+        if (!variant || /["']default["']/.test(variant.initializer?.getText(parsed) ?? "")) {
+          const line = parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1
+          offenders.push(`${relative(SRC, file)}:${line}`)
+        }
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(parsed)
+  }
+  expect(offenders).toEqual([])
+})
 
 test("yönetim yüzeylerinde görünür ham interaktif kontrol yok", () => {
   const offenders: string[] = []

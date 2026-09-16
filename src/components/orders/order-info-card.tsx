@@ -236,7 +236,7 @@ export function OrderInfoCard({
                   />
                 </div>
                 <div className="flex gap-2 pt-1">
-                  <Button onClick={saveInvoice} disabled={savingInvoice} size="sm" className="flex-1">
+                  <Button variant="foreground" onClick={saveInvoice} disabled={savingInvoice} size="sm" className="flex-1">
                     {savingInvoice ? <Loader2 className="size-3.5 animate-spin" /> : "Kaydet"}
                   </Button>
                   <Button variant="outline" onClick={() => setEditingInvoice(false)} disabled={savingInvoice} size="sm">
@@ -254,12 +254,15 @@ export function OrderInfoCard({
                   <span className="flex items-center gap-2">
                     <span className="font-mono text-xs text-foreground">{order.invoiceNo || "—"}</span>
                     {invoiceEditable && (
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="xs"
                         onClick={startEditInvoice}
-                        className="flex items-center gap-1 text-xs font-medium text-primary hover:bg-primary/5 px-1.5 py-0.5 rounded-lg touch-manipulation"
+                        className="gap-1 px-1.5 text-primary"
                       >
                         <Pencil className="size-3" /> Düzenle
-                      </button>
+                      </Button>
                     )}
                   </span>
                 </div>

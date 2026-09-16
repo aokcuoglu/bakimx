@@ -21,7 +21,7 @@ export default async function NewCatalogProductPage() {
         <p className="text-sm text-muted-foreground">
           Ürün eklemeden önce en az bir marka tanımlamalısınız.
         </p>
-        <Button asChild>
+        <Button variant="foreground" asChild>
           <Link href="/admin/catalog/brands">
             Marka ekle
           </Link>

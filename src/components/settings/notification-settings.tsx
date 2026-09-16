@@ -273,7 +273,7 @@ export function NotificationSettings({
                             className="bg-muted font-mono border-border focus-visible:border-primary focus-visible:ring-primary/30"
                           />
                           <div className="flex gap-2">
-                            <Button
+                            <Button variant="foreground"
                               type="button"
                               onClick={() => handleSave(template.key, ch)}
                               disabled={saving || !editContent.trim()}

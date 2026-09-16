@@ -62,7 +62,7 @@ export default async function TechnicianPage({
               <CardDescription>Ayarlar &gt; Ekip sayfasından bir teknisyen ekleyin</CardDescription>
             </CardHeader>
             <CardFooter className="justify-center border-t-0 bg-transparent">
-              <Button asChild>
+              <Button variant="foreground" asChild>
                 <Link href="/settings?tab=team">
                   Ekip Sayfasına Git
                 </Link>

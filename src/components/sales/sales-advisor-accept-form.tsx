@@ -86,7 +86,7 @@ export function SalesAdvisorAcceptForm({
               </FormItem>
             )}
           />
-          <Button type="submit" size="xl" className="w-full" disabled={pending}>
+          <Button variant="foreground" type="submit" size="xl" className="w-full" disabled={pending}>
             {pending ? "Hesap oluşturuluyor…" : "Hesabımı oluştur"}
           </Button>
         </form>

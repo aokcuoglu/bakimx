@@ -269,7 +269,7 @@ export function AddLocalMemberForm({
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
-        <Button type="submit" size="lg" disabled={!canSubmit} className="touch-manipulation">
+        <Button variant="foreground" type="submit" size="lg" disabled={!canSubmit} className="touch-manipulation">
           {isPending ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
           Kullanıcıyı Oluştur
         </Button>

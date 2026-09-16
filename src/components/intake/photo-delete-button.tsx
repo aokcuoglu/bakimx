@@ -59,8 +59,10 @@ export function PhotoDeleteButton({
   return (
     <>
       {variant === "overlay" ? (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           aria-label={photoLabel ? `${photoLabel} fotoğrafını sil` : "Fotoğrafı sil"}
           // Kart tıklaması lightbox açıyor; sil butonu onu tetiklememeli.
           onClick={(e) => { e.stopPropagation(); setOpen(true) }}
@@ -78,7 +80,7 @@ export function PhotoDeleteButton({
           )}
         >
           <Trash2 className="size-4" />
-        </button>
+        </Button>
       ) : (
         <Button
           type="button"

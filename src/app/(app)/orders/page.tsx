@@ -134,7 +134,7 @@ export default async function OrdersPage({
       workshopName={workshop?.name}
       pageTitle="İş Emirleri"
       pageActions={
-        <Button size="icon" asChild aria-label="Yeni iş emri">
+        <Button variant="foreground" size="icon" asChild aria-label="Yeni iş emri">
           <Link href="/orders/new">
             <Plus className="size-5" />
           </Link>
@@ -153,7 +153,7 @@ export default async function OrdersPage({
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">İş Emirleri</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Servis operasyonlarını yönetin</p>
           </div>
-          <Button size="default" className="hidden sm:inline-flex" asChild>
+          <Button variant="foreground" size="default" className="hidden sm:inline-flex" asChild>
             <Link href="/orders/new">
               <Plus className="size-4" />
               Yeni İş Emri

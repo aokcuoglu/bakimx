@@ -122,11 +122,11 @@ export default async function SalesCommissionsPage({
       </section>
 
       <div className="flex flex-wrap gap-2" aria-label="Hakediş durum filtresi">
-        <Button asChild size="sm" variant={status === null ? "default" : "outline"}>
+        <Button asChild size="sm" variant={status === null ? "secondary" : "outline"}>
           <Link href="/admin/sales/commissions">Tümü</Link>
         </Button>
         {STATUSES.map((item) => (
-          <Button key={item} asChild size="sm" variant={status === item ? "default" : "outline"}>
+          <Button key={item} asChild size="sm" variant={status === item ? "secondary" : "outline"}>
             <Link href={`/admin/sales/commissions?status=${item}`}>{STATUS_LABELS[item]}</Link>
           </Button>
         ))}

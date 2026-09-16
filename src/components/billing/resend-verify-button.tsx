@@ -28,7 +28,7 @@ export function ResendVerifyButton() {
 
   return (
     <div className="space-y-2 text-center">
-      <Button onClick={resend} disabled={state === "loading"} className="w-full">
+      <Button variant="foreground" onClick={resend} disabled={state === "loading"} className="w-full">
         {state === "loading" ? (
           <span className="flex items-center justify-center gap-2">
             <Loader2 className="size-4 animate-spin" /> Gönderiliyor…

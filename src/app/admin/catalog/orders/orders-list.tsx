@@ -239,7 +239,7 @@ export function OrdersList({
                           key={next}
                           type="button"
                           size="sm"
-                          variant={next === "cancelled" ? "outline" : "default"}
+                          variant={next === "cancelled" ? "outline" : "foreground"}
                           disabled={pending}
                           onClick={() => transition(order, next)}
                         >

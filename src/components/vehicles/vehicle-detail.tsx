@@ -189,7 +189,7 @@ export function VehicleDetail({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <VehicleIdentity plate={v.plate} brand={v.brand} model={v.model} />
           <div className="flex flex-wrap items-center gap-2">
-            <Button asChild>
+            <Button variant="foreground" asChild>
               <Link href={`/orders/new?vehicleId=${v.id}`} aria-label="Yeni iş emri oluştur">
                 <Wrench className="size-4" />
                 <span className="hidden sm:inline">Yeni İş Emri</span>

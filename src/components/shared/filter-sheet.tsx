@@ -140,7 +140,7 @@ export function FilterSheet({
           >
             Temizle
           </Button>
-          <Button type="button" size="xl" className="flex-1" onClick={apply}>
+          <Button variant="foreground" type="button" size="xl" className="flex-1" onClick={apply}>
             Uygula
           </Button>
         </div>

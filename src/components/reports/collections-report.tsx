@@ -126,7 +126,7 @@ export function CollectionsReport({ stats, dailyCollections, monthlyCollections,
               onChange={(e) => setDateTo(e.target.value)}
             />
           </div>
-          <Button onClick={applyFilters} size="sm">
+          <Button variant="foreground" onClick={applyFilters} size="sm">
             Uygula
           </Button>
           <Button variant="outline" size="sm" onClick={clearFilters}>

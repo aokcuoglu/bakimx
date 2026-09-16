@@ -160,7 +160,7 @@ export function TechnicianPhotoUpload({
         description="Çektiğiniz fotoğrafı bu iş emrinin kanıtlarına ekleyin."
         footer={
           <div className="flex gap-2">
-            <Button
+            <Button variant="foreground"
               type="button"
               size="lg"
               className="flex-1 touch-manipulation"

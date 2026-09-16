@@ -254,11 +254,11 @@ export function PurchaseWizard({
                             key={c}
                             type="button"
                             onClick={() => setCycle(c)}
-                            variant={cycle === c ? "default" : "ghost"}
+                            variant={cycle === c ? "secondary" : "ghost"}
                             className={cn(
                               "flex-1",
                               cycle === c
-                                ? "bg-primary text-primary-foreground shadow-sm"
+                                ? "bg-card text-foreground shadow-sm"
                                 : "text-muted-foreground hover:text-foreground",
                             )}
                           >
@@ -328,7 +328,7 @@ export function PurchaseWizard({
                         </Alert>
                       )}
                       <div className="flex justify-end pt-2">
-                        <Button
+                        <Button variant="foreground"
                           type="button"
                           size="lg"
                           onClick={() => next([])}
@@ -474,7 +474,7 @@ export function PurchaseWizard({
                         <Button type="button" variant="outline" size="lg" onClick={() => setStep(0)}>
                           <ChevronLeft className="size-4" /> Geri
                         </Button>
-                        <Button
+                        <Button variant="foreground"
                           type="button"
                           size="lg"                          onClick={() =>
                             next(
@@ -559,7 +559,7 @@ export function PurchaseWizard({
                         <Button type="button" variant="outline" size="lg" onClick={() => setStep(1)}>
                           <ChevronLeft className="size-4" /> Geri
                         </Button>
-                        <Button
+                        <Button variant="foreground"
                           type="button"
                           size="lg"
                           disabled={loading}

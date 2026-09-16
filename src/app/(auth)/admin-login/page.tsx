@@ -69,7 +69,7 @@ export default async function AdminLoginPage({
               <p className="text-sm text-muted-foreground">
                 Yönetim konsoluna {config.allowedDomain} Google Workspace hesabınızla girin.
               </p>
-              <Button size="lg" className="w-full" asChild>
+              <Button variant="foreground" size="lg" className="w-full" asChild>
                 <a href="/api/auth/admin/google/start">
                   <GoogleMark />
                   Google ile devam et

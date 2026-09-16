@@ -1,6 +1,7 @@
 "use client"
 
 import { Camera, CheckCircle2, AlertTriangle, XCircle, BarChart3 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 type PhotoCompletionBarProps = {
   percentage: number
@@ -60,15 +61,17 @@ export function PhotoCompletionBar({
           </p>
           <div className="flex flex-wrap gap-1">
             {missingLabels.map((label, i) => (
-              <button
+              <Button
                 key={label}
                 type="button"
+                variant="outline"
+                size="xs"
                 onClick={() => onMissingClick?.(missing[i])}
-                className="inline-flex items-center gap-1 text-xs bg-destructive/10 text-foreground px-2 py-0.5 rounded-full border border-destructive/20 hover:bg-destructive/20 transition-colors"
+                className="h-auto gap-1 rounded-full border-destructive/20 bg-destructive/10 px-2 py-0.5 text-foreground hover:bg-destructive/20"
               >
                 <XCircle className="size-3" />
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

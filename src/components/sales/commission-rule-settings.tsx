@@ -116,7 +116,7 @@ export function CommissionRuleSettings({ rules, now }: { rules: Rule[]; now: num
                   <FormMessage />
                 </FormItem>
               )} />
-              <Button type="submit" disabled={pending}>Kuralı ekle</Button>
+              <Button variant="foreground" type="submit" disabled={pending}>Kuralı ekle</Button>
             </form>
           </Form>
         </CardContent>

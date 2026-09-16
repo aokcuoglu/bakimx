@@ -118,7 +118,7 @@ export function HeroAskBar({ value, onValueChange, focusSignal }: HeroAskBarProp
             className="rounded-full border-white/20 bg-white pl-9 pr-4 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:border-white/40 focus-visible:ring-white/20"
           />
         </div>
-        <Button type="submit" size="lg" disabled={value.trim().length === 0} className="gap-2 rounded-full px-4 sm:px-6">
+        <Button type="submit" variant="inverse" size="lg" disabled={value.trim().length === 0} className="gap-2 rounded-full px-4 sm:px-6">
           Sor
           <ArrowRight aria-hidden className="size-4" />
         </Button>

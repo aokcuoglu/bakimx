@@ -479,7 +479,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
               İptal
             </Link>
           </Button>
-          <Button type="submit" disabled={loading} className="gap-1.5">
+          <Button variant="foreground" type="submit" disabled={loading} className="gap-1.5">
             {loading ? <Loader2 className="size-4 animate-spin" /> : null}
             {mode === "edit" ? "Güncelle" : "Hatırlatma Kaydet"}
           </Button>

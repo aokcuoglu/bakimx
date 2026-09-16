@@ -81,7 +81,7 @@ export default function DijitalAracKabulPage() {
                 {DIJITAL_ARAC_KABUL_INTRO}
               </p>
               <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-                <Button asChild size="lg">
+                <Button asChild variant="navy" size="lg">
                   <Link href="/register">
                     Ücretsiz deneyin
                     <ArrowRight aria-hidden="true" />

@@ -428,7 +428,7 @@ export function IntakeWizard({
                   <Button type="button" variant="outline" onClick={() => setStep(1)} size="lg">
                     Geri
                   </Button>
-                  <Button
+                  <Button variant="foreground"
                     type="button"
                     onClick={handleCreateIntake}
                     disabled={loading || !customerComplaint.trim() || kmTooLow}
@@ -520,7 +520,7 @@ export function IntakeWizard({
                   <Button type="button" variant="outline" size="lg" className="gap-2" onClick={handleSaveAndNew}>
                     <Plus className="size-4" /> Kaydet & Yeni
                   </Button>
-                  <Button size="lg" className="gap-2" asChild>
+                  <Button variant="foreground" size="lg" className="gap-2" asChild>
                     <Link href={orderId ? `/orders/${orderId}` : "/orders"}>
                       İş Emrine Git
                     </Link>

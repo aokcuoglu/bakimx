@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Clock } from "lucide-react"
 import { AppShell } from "@/components/layout/app-shell"
+import { Button } from "@/components/ui/button"
 import { getAppData } from "@/app/(app)/data"
 import { PLAN_SEATS, getPlanState, hasFeature, type PlanTier } from "@/lib/plan"
 import { canManageBilling, getSeatUsage } from "@/lib/rbac"
@@ -81,12 +82,11 @@ export default async function BillingPage({
                   <p className="text-muted-foreground mt-0.5">
                     Başlattığınız kart ödemesi henüz tamamlanmadı. Ödemenizi tamamlamak için devam edin.
                   </p>
-                  <Link
-                    href={`/payment/result?ref=${encodeURIComponent(pendingOrder.reference)}`}
-                    className="mt-2 inline-flex h-8 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-                  >
-                    Ödemeye devam et
-                  </Link>
+                  <Button variant="foreground" size="compact" className="mt-2" asChild>
+                    <Link href={`/payment/result?ref=${encodeURIComponent(pendingOrder.reference)}`}>
+                      Ödemeye devam et
+                    </Link>
+                  </Button>
                 </>
               ) : (
                 <p className="text-muted-foreground mt-0.5">

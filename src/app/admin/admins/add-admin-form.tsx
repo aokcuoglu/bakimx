@@ -128,7 +128,7 @@ export function AddPlatformAdminForm() {
             )}
           />
 
-          <Button type="submit" disabled={isPending} className="sm:mt-6">
+          <Button variant="foreground" type="submit" disabled={isPending} className="sm:mt-6">
             {isPending ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
             Ekle
           </Button>

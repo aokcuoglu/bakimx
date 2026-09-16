@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { BlueprintGrid, BrandEyebrow } from "@/components/shared/brand-decor";
 import { Reveal } from "@/components/shared/reveal";
@@ -43,33 +43,19 @@ export function FinalCTASection() {
           delay={200}
           className="mt-8 flex flex-col justify-center gap-3 sm:flex-row sm:gap-4"
         >
-          <Link
-            href="/register"
-            onClick={() => trackMarketingEvent("trial_cta_click", { cta_location: "final_primary" })}
-            className={buttonVariants({
-              variant: "gradient",
-              size: "lg",
-              className: "h-12 gap-2 px-8 text-base",
-            })}
-          >
-            Ücretsiz Dene
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          <Button asChild variant="inverse" size="xl">
+            <Link href="/register" onClick={() => trackMarketingEvent("trial_cta_click", { cta_location: "final_primary" })}>
+              Ücretsiz Dene <ArrowRight className="size-4" />
+            </Link>
+          </Button>
           {/* Form hemen alt bölümde: çapa aşağı gider, yukarı değil.
               Outline varyantı koyu zemine göre ez: şeffaf zemin + beyaz metin
               (marka rehberi §7 "koyu zeminde border-white/25 şeffaf"). */}
-          <Link
-            href="/#demo-form"
-            onClick={() => trackMarketingEvent("demo_cta_click", { cta_location: "final_secondary", destination: "form" })}
-            className={buttonVariants({
-              variant: "outline",
-              size: "lg",
-              className:
-                "border-white/30 bg-transparent px-8 text-base text-navy-foreground hover:border-white/50 hover:bg-white/10 hover:text-navy-foreground dark:border-white/30 dark:bg-transparent dark:text-navy-foreground dark:hover:bg-white/10 dark:hover:text-navy-foreground",
-            })}
-          >
-            Demo İste
-          </Link>
+          <Button asChild variant="outline" size="xl" className="border-white/30 bg-transparent text-navy-foreground hover:bg-white/10 hover:text-navy-foreground">
+            <Link href="/#demo-form" onClick={() => trackMarketingEvent("demo_cta_click", { cta_location: "final_secondary", destination: "form" })}>
+              Demo İste
+            </Link>
+          </Button>
         </Reveal>
       </div>
     </section>

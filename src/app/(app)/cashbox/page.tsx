@@ -61,7 +61,7 @@ export default async function CashboxPage() {
                 Yaşlandırma
               </Link>
             </Button>
-            <Button size="lg" className="touch-manipulation" asChild>
+            <Button variant="foreground" size="lg" className="touch-manipulation" asChild>
               <Link href="/cashbox/payments/new">
                 <Plus className="size-4" />
                 Yeni Tahsilat

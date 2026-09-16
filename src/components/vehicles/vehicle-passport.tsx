@@ -537,13 +537,16 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                       {t.isActive && (!t.expiresAt || new Date(t.expiresAt) > new Date()) && (
                         <>
                           <div className="flex gap-2">
-                            <button
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="compact"
                               onClick={() => handleCopy(t.token)}
-                              className="flex-1 inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg border border-border bg-card text-foreground hover:bg-muted text-xs font-medium transition-colors"
+                              className="flex-1"
                             >
                               {copied === t.token ? <CheckCircle2 className="size-3.5 text-success-strong" /> : <Copy className="size-3.5" />}
                               {copied === t.token ? "Kopyalandı!" : "Linki Kopyala"}
-                            </button>
+                            </Button>
                             <Button variant="outline" asChild>
                               <Link href={`/p/${t.token}`} target="_blank">
                                 <ExternalLink className="size-3.5" />

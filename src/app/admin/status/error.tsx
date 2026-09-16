@@ -14,7 +14,7 @@ export default function Error({ reset }: { reset: () => void }) {
           Olay kayıtları alınırken bir sorun oluştu. İnternet bağlantınızı kontrol edip yeniden deneyin.
         </AlertDescription>
       </Alert>
-      <Button size="lg" onClick={reset}>Yeniden Dene</Button>
+      <Button variant="foreground" size="lg" onClick={reset}>Yeniden Dene</Button>
     </div>
   )
 }

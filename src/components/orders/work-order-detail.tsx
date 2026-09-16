@@ -882,7 +882,7 @@ export function WorkOrderDetail({
             className="text-center text-xl tracking-widest"
           />
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button onClick={handleVerifyDeliveryOtp} disabled={loading || deliveryOtpCode.length < 6} size="lg" className="sm:flex-1">
+            <Button variant="foreground" onClick={handleVerifyDeliveryOtp} disabled={loading || deliveryOtpCode.length < 6} size="lg" className="sm:flex-1">
               {loading ? <Loader2 className="size-4 animate-spin" /> : "Doğrula ve Teslim Et"}
             </Button>
             <Button variant="outline" onClick={handleRequestDeliveryOtp} disabled={loading} size="lg">Kodu Tekrar Gönder</Button>
@@ -1029,12 +1029,15 @@ export function WorkOrderDetail({
               <CardTitle className="text-base flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Şikayet & Notlar</span>
                 {!editingInfo && canOpenInfoEditor && (
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
                     onClick={startEditInfo}
-                    className="flex items-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 px-2 py-1 rounded-lg touch-manipulation"
+                    className="gap-1.5 px-2 text-primary"
                   >
                     <Pencil className="size-3.5" /> Düzenle
-                  </button>
+                  </Button>
                 )}
               </CardTitle>
             </CardHeader>
@@ -1089,7 +1092,7 @@ export function WorkOrderDetail({
                   </div>
                   <p className="text-xs text-muted-foreground">Yapılan değişiklik zaman çizelgesine ve denetim kaydına işlenir.</p>
                   <div className="flex gap-2 pt-1">
-                    <Button onClick={handleSaveInfo} disabled={savingInfo || !editComplaint.trim()} size="sm" className="flex-1">
+                    <Button variant="foreground" onClick={handleSaveInfo} disabled={savingInfo || !editComplaint.trim()} size="sm" className="flex-1">
                       {savingInfo ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}
                     </Button>
                     <Button variant="outline" onClick={() => setEditingInfo(false)} disabled={savingInfo} size="sm">İptal</Button>
@@ -1175,7 +1178,7 @@ export function WorkOrderDetail({
               {!shareToken ? (
                 <>
                   <p className="text-xs text-muted-foreground">Müşteriyle paylaşabileceğiniz salt-görüntü bir özet linki oluşturun.</p>
-                  <Button onClick={handleGenerateShareLink} disabled={loading} className="w-full">
+                  <Button variant="foreground" onClick={handleGenerateShareLink} disabled={loading} className="w-full">
                     <Share2 className="size-4 mr-2" /> Müşteri Çıktı Linki Oluştur
                   </Button>
                 </>
@@ -1187,16 +1190,21 @@ export function WorkOrderDetail({
                       {intake.shareLinks[0]?.isActive ? "Link aktif" : "Link devre dışı"}
                     </span>
                   </div>
-                  <Link href={`/s/${shareToken}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border hover:bg-muted text-sm text-foreground touch-manipulation">
-                    <FileText className="size-4 text-muted-foreground" /> Müşteri Çıktısını Aç
-                  </Link>
-                  <Link href={`/s/${shareToken}/pdf`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border hover:bg-muted text-sm text-foreground touch-manipulation">
-                    <Printer className="size-4 text-muted-foreground" /> Yazdır / PDF
-                  </Link>
+                  <Button variant="outline" className="w-full justify-start" asChild>
+                    <Link href={`/s/${shareToken}`} target="_blank" rel="noopener noreferrer">
+                      <FileText className="size-4 text-muted-foreground" /> Müşteri Çıktısını Aç
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start" asChild>
+                    <Link href={`/s/${shareToken}/pdf`} target="_blank" rel="noopener noreferrer">
+                      <Printer className="size-4 text-muted-foreground" /> Yazdır / PDF
+                    </Link>
+                  </Button>
                   <Button
+                    variant="whatsapp"
                     type="button"
                     size="lg"
-                    className="w-full justify-start bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90 touch-manipulation"
+                    className="w-full justify-start"
                     onClick={() => {
                       if (!shareLinkFull) return
                       const text = generateWhatsAppShareText({ publicLink: shareLinkFull, totalAmount: order.totals.hasAnyPrice ? order.totals.grandTotal : null })
@@ -1206,8 +1214,10 @@ export function WorkOrderDetail({
                     <Share2 className="size-4" /> WhatsApp ile Paylaş
                   </Button>
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="compact"
                       onClick={async () => {
                         const linkId = intake.shareLinks[0]?.id
                         if (!linkId) return
@@ -1220,17 +1230,19 @@ export function WorkOrderDetail({
                           router.refresh()
                         } catch {}
                       }}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-border bg-background text-foreground rounded-lg text-xs font-medium hover:bg-muted transition-colors"
+                      className="flex-1"
                     >
                       {intake.shareLinks[0]?.isActive ? <><EyeOff className="size-3.5" /> Devre Dışı</> : <><Eye className="size-3.5" /> Etkinleştir</>}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="compact"
                       onClick={async () => { if (shareLinkFull) { try { await navigator.clipboard.writeText(shareLinkFull) } catch {} } }}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-border bg-background text-foreground rounded-lg text-xs font-medium hover:bg-muted transition-colors"
+                      className="flex-1"
                     >
                       <LinkIcon className="size-3.5" /> Kopyala
-                    </button>
+                    </Button>
                   </div>
                 </>
               )}
@@ -1359,14 +1371,16 @@ export function WorkOrderDetail({
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-xs text-muted-foreground">Eksik:</span>
                   {missingRequired.map(([key, val]) => (
-                    <button
+                    <Button
                       key={key}
                       type="button"
+                      variant="outline"
+                      size="xs"
                       onClick={() => focusPhoto(key)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium bg-destructive/10 text-destructive-strong border border-destructive/20 hover:bg-destructive/15 transition-colors touch-manipulation"
+                      className="h-auto gap-1 rounded-full border-destructive/20 bg-destructive/10 px-2 py-1 text-[11px] text-destructive-strong hover:bg-destructive/15"
                     >
                       <Camera className="size-3" /> {val.label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               ) : (
@@ -1502,7 +1516,7 @@ export function WorkOrderDetail({
                     <p className="text-xs text-muted-foreground">Tür, aşama ve not seçilen tüm fotoğraflara uygulanır.</p>
                   )}
                 </div>
-                <Button onClick={handleAddPhoto} disabled={loading || !photoType} size="lg" className="w-full">
+                <Button variant="foreground" onClick={handleAddPhoto} disabled={loading || !photoType} size="lg" className="w-full">
                   {loading ? <Loader2 className="size-4 mr-1 animate-spin" /> : <Upload className="size-4 mr-1" />}
                   {loading && pendingPhotos.length > 0
                     ? `Yükleniyor ${Math.min(uploadedCount + 1, pendingPhotos.length)}/${pendingPhotos.length}`
@@ -1595,7 +1609,7 @@ export function WorkOrderDetail({
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={reopening}>Vazgeç</AlertDialogCancel>
-            <Button onClick={handleReopen} disabled={reopening || reopenReason.trim().length < 5}>
+            <Button variant="foreground" onClick={handleReopen} disabled={reopening || reopenReason.trim().length < 5}>
               {reopening ? <Loader2 className="size-4 animate-spin" /> : "Yeniden Aç"}
             </Button>
           </AlertDialogFooter>
@@ -1619,11 +1633,12 @@ function MobileTotalsBar({
 }) {
   if (!totals.hasAnyPrice) return null
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       onClick={onJump}
       aria-label="Fiyatlandırma özetine git"
-      className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 flex w-full items-center justify-between rounded-xl border border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur touch-manipulation md:hidden"
+      className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 h-auto w-full justify-between rounded-xl bg-background/95 px-4 py-3 text-left whitespace-normal shadow-lg backdrop-blur md:hidden"
     >
       <span className="flex min-w-0 flex-col items-start gap-0.5">
         <span className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -1644,6 +1659,6 @@ function MobileTotalsBar({
         )}
       </span>
       <span className="text-base font-bold tabular-nums text-foreground">{formatTRY(totals.grandTotal)}</span>
-    </button>
+    </Button>
   )
 }
