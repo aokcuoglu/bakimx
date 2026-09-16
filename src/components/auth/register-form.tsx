@@ -13,7 +13,6 @@ import {
 } from "react"
 import Link from "next/link"
 import styles from "./register-design.module.css"
-import { RegisterFooter } from "./register-footer"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useForm, type UseFormReturn } from "react-hook-form"
 import { z } from "zod/v4"
@@ -247,12 +246,14 @@ export function RegisterForm({
   salesRegistration,
   preferredPlan,
   onSnapshotChange,
+  onStepChange,
   mode = "register",
 }: {
   mode?: "register" | "onboarding"
   salesRegistration?: SalesRegistrationPrefill
   preferredPlan?: { tier: SalePlanTier; cycle: "monthly" | "yearly" }
   onSnapshotChange?: (snapshot: RegisterWizardSnapshot) => void
+  onStepChange?: () => void
 }) {
   const onboarding = mode === "onboarding"
   const reduceMotion = useReducedMotion()
@@ -329,13 +330,15 @@ export function RegisterForm({
     if (currentStep === 3) form.clearErrors(STEP_FIELDS[4])
     setDirection(1)
     setCurrentStep((step) => Math.min(step + 1, REGISTER_STEPS.length - 2))
-    window.scrollTo({ top: 0, behavior: reduceMotion ? "instant" : "smooth" })
+    if (onboarding) onStepChange?.()
+    else window.scrollTo({ top: 0, behavior: reduceMotion ? "instant" : "smooth" })
   }
 
   function goPrevious() {
     setDirection(-1)
     setCurrentStep((step) => Math.max(step - 1, 0))
-    window.scrollTo({ top: 0, behavior: reduceMotion ? "instant" : "smooth" })
+    if (onboarding) onStepChange?.()
+    else window.scrollTo({ top: 0, behavior: reduceMotion ? "instant" : "smooth" })
   }
 
   async function handleSubmit(values: WizardFormValues) {
@@ -480,19 +483,19 @@ export function RegisterForm({
           </div>
 
           <div className="mt-7 flex flex-wrap items-center gap-3 border-t border-border pt-5">
-            {!onboarding || currentStep === 0 ? (
+            {!onboarding ? (
               <Button asChild type="button" variant="outline">
                 <Link href="/">
                   <ArrowLeft data-icon="inline-start" />
                   Ana Sayfa
                 </Link>
               </Button>
-            ) : (
+            ) : currentStep > 0 ? (
               <Button type="button" variant="outline" onClick={goPrevious}>
                 <ArrowLeft data-icon="inline-start" />
                 Geri
               </Button>
-            )}
+            ) : null}
             <div className="flex-1" />
             {onboarding && currentStep < REGISTER_STEPS.length - 2 ? (
               <Button key="next-step" type="button" onClick={goNext} disabled={currentStep === 0 && !sector}>
@@ -516,7 +519,6 @@ export function RegisterForm({
             )}
           </div>
 
-          {onboarding && <RegisterFooter className="mt-5 pt-5" />}
         </form>
       </Form>
     </div>

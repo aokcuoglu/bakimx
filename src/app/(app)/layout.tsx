@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
@@ -12,6 +12,9 @@ import { AppShellChrome } from "@/components/layout/app-shell"
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner"
 import { VersionUpdateNotice } from "@/components/layout/version-update-notice"
 import { getBuildSignature } from "@/lib/build-signature"
+import { OnboardingDialog, OnboardingRouteContent } from "@/components/auth/onboarding-dialog"
+import { ONBOARDING_PATH_HEADER } from "@/lib/onboarding-route"
+import { isOnboardingPending } from "@/lib/validations/onboarding"
 import { PRIVATE_ROBOTS, TITLE_TEMPLATE } from "@/lib/seo"
 
 export const metadata: Metadata = {
@@ -47,6 +50,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       currentPeriodEnd: true,
       requestedPlanTier: true,
       kind: true,
+      onboardingProfile: true,
     },
   })
   if (!workshop) {
@@ -110,6 +114,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     )
   }
 
+  const requiresOnboarding = user.role === "owner" && !impersonation &&
+    isOnboardingPending(workshop.onboardingProfile)
+  if (requiresOnboarding) {
+    const pathname = (await headers()).get(ONBOARDING_PATH_HEADER)
+    if (pathname !== "/dashboard") redirect("/dashboard")
+  }
+
   // Salt-okunur bant: buraya artık yalnızca kurucu impersonation'ı düşebilir —
   // gerçek kullanıcı yukarıda çıkışa yönlendirildi. Kurucu kilitli tenant'ı
   // inceleyebilsin diye veri görünür kalır; yazma işlemleri sunucu tarafında
@@ -121,7 +132,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       : "Bu iş yerinin aboneliği sona erdi — plan kilidi nedeniyle salt-okunur."
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col" inert={requiresOnboarding}>
       {/* Bu belgeyi render eden build'in imzası — açık sekme eskidiğinde
           engellemeyen "yenile" bildirimi için (bkz. version-update-notice.tsx). */}
       <VersionUpdateNotice loadedSignature={getBuildSignature()} />
@@ -159,12 +170,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             role: user.role,
           }}
         >
-          {children}
+          {requiresOnboarding ? <OnboardingRouteContent>{children}</OnboardingRouteContent> : children}
         </AppShellChrome>
       </div>
       <div className="border-t py-3 px-4 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} BakimX · Tüm hakları saklıdır · v{process.env.NEXT_PUBLIC_APP_VERSION}
       </div>
+      {requiresOnboarding && <OnboardingDialog />}
     </div>
   )
 }
