@@ -112,6 +112,10 @@ function clearBounceIfPresent(request: NextRequest, response: NextResponse): Nex
   return response
 }
 
+function continueToApp(request: NextRequest): NextResponse {
+  return clearBounceIfPresent(request, NextResponse.next())
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   const host = (request.headers.get("host") || "").split(":")[0].toLowerCase()
@@ -166,7 +170,7 @@ export async function middleware(request: NextRequest) {
     if (session.surface !== "sales" && isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
       return NextResponse.redirect(new URL("/technician", request.url))
     }
-    return clearBounceIfPresent(request, NextResponse.next())
+    return continueToApp(request)
   }
 
   // ---- PROD: host-aware ----
@@ -207,7 +211,7 @@ export async function middleware(request: NextRequest) {
     if (session.surface !== "sales" && isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
       return NextResponse.redirect(`${APP_ORIGIN}/technician`)
     }
-    return clearBounceIfPresent(request, NextResponse.next())
+    return continueToApp(request)
   }
 
   // ---- LANDING HOST (bakimx.com) + unknown hosts ----

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 import { expect, test } from "@playwright/test"
 import { salesE2EPrisma as prisma } from "./helpers/sales-e2e-fixture"
 
-test("team step opens module selection without submitting onboarding", async ({ page }) => {
+test("onboarding uses URL steps and gates the app until completion", async ({ page }) => {
   const key = `qa-onboarding-${randomUUID()}`
   const email = `${key}@example.test`
   const workshop = await prisma.workshop.create({
@@ -35,19 +35,59 @@ test("team step opens module selection without submitting onboarding", async ({ 
     })
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto(`/api/auth/dev-login?email=${encodeURIComponent(email)}&redirect=/dashboard`)
-    await expect(page).toHaveURL(/\/onboarding$/)
+    await expect(page).toHaveURL(/\/onboarding\/sektor$/)
+    await expect(page.getByRole("heading", { name: "Sektörünüzü seçin" })).toBeVisible()
+    await expect(page.getByRole("dialog")).toHaveCount(0)
+
+    for (const width of [320, 390, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 })
+      await expect(page.getByRole("heading", { name: "Sektörünüzü seçin" })).toBeVisible()
+      const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
+      expect(hasHorizontalOverflow, `${width}px yatay taşma`).toBe(false)
+      const preview = page.getByRole("complementary", { name: "BakımX önizlemesi" })
+      if (width >= 1024) {
+        await expect(preview).toBeVisible()
+        await expect(page.getByRole("button", { name: /Diğer sektörler/ })).toBeInViewport()
+      }
+      else await expect(preview).toBeHidden()
+    }
+    await page.setViewportSize({ width: 360, height: 800 })
+
+    const otherSectors = page.getByRole("button", { name: /Diğer sektörler/ })
+    await expect(page.getByRole("button", { name: /Oto Döşeme/ })).toBeHidden()
+    await otherSectors.click()
+    await expect(page.getByRole("button", { name: /Oto Döşeme/ })).toBeVisible()
+    await otherSectors.click()
+
+    await page.goto("/customers")
+    await expect(page).toHaveURL(/\/onboarding\/sektor$/)
+    await page.goto("/onboarding")
+    await expect(page).toHaveURL(/\/onboarding\/sektor$/)
+    await page.goto("/onboarding/moduller")
+    await expect(page).toHaveURL(/\/onboarding\/sektor$/)
+
     await page.getByRole("radio", { name: /Mekanik Servis/ }).click()
     await page.getByRole("button", { name: "Devam Et", exact: true }).click()
+    await expect(page).toHaveURL(/\/onboarding\/is-detaylari$/)
     await expect(page.getByRole("heading", { name: "İş detayları", exact: true })).toBeVisible()
+
+    await page.goBack()
+    await expect(page).toHaveURL(/\/onboarding\/sektor$/)
+    await expect(page.getByRole("radio", { name: /Mekanik Servis/ })).toHaveAttribute("data-state", "on")
+    await page.reload()
+    await expect(page.getByRole("radio", { name: /Mekanik Servis/ })).toHaveAttribute("data-state", "on")
     await page.getByRole("button", { name: "Devam Et", exact: true }).click()
+    await expect(page).toHaveURL(/\/onboarding\/is-detaylari$/)
+    await page.getByRole("button", { name: "Devam Et", exact: true }).click()
+    await expect(page).toHaveURL(/\/onboarding\/ekip$/)
     await page.getByRole("radio", { name: /Sadece Ben/i }).click()
 
     // The same native click must not turn into a submit when React renders
     // the final-step button in the position previously occupied by Next.
     await page.getByRole("button", { name: "Devam Et", exact: true }).click()
+    await expect(page).toHaveURL(/\/onboarding\/moduller$/)
     await expect(page.getByRole("heading", { name: "Modüllerinizi seçin", exact: true })).toBeVisible()
     await expect(page.getByRole("button", { name: "Kurulumu Tamamla", exact: true })).toBeEnabled()
-    await expect(page).toHaveURL(/\/onboarding$/)
     expect(submissions).toHaveLength(0)
     const pending = await prisma.workshop.findUniqueOrThrow({
       where: { id: workshop.id }, select: { onboardingProfile: true },
@@ -60,6 +100,10 @@ test("team step opens module selection without submitting onboarding", async ({ 
     await page.getByRole("button", { name: "Kurulumu Tamamla", exact: true }).click()
     expect((await savedResponse).status()).toBe(200)
     await expect(page).toHaveURL(/\/dashboard$/)
+    await page.goto("/onboarding/sektor")
+    await expect(page).toHaveURL(/\/dashboard$/)
+    await page.goto("/customers")
+    await expect(page.getByRole("heading", { level: 2, name: "Müşteriler", exact: true })).toBeVisible()
     expect(submissions).toHaveLength(1)
     const completed = await prisma.workshop.findUniqueOrThrow({
       where: { id: workshop.id }, select: { onboardingProfile: true },
