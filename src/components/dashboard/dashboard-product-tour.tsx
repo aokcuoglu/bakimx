@@ -166,12 +166,16 @@ export function DashboardProductTour({ enabled }: { enabled: boolean }) {
         await rAF()
       }
       if (cancelled) return
-      if (stepIndex >= steps.length - 1) {
-        void dismiss()
+      // Missing DOM target: advance when possible. Never auto-complete — that
+      // silently wrote dashboardTourCompletedAt while the user saw no tour.
+      if (stepIndex < steps.length - 1) {
+        setMeasuredStepId(null)
+        setStepIndex((i) => i + 1)
         return
       }
-      setMeasuredStepId(null)
-      setStepIndex((i) => i + 1)
+      setTargetRect(null)
+      setCardPos(centerCard(window.innerWidth, window.innerHeight))
+      setMeasuredStepId(stepId)
     })()
 
     function onViewportChange() {
@@ -189,7 +193,9 @@ export function DashboardProductTour({ enabled }: { enabled: boolean }) {
   }, [active, step, stepIndex, steps.length, dismiss])
 
   if (!active || !step || !cardPos || measuredStepId !== step.id) return null
-  if (!intro && !targetRect) return null
+  // Intro and last-step fallback are centered (no spotlight); other steps need a target.
+  const showSpotlight = Boolean(targetRect)
+  if (!intro && !showSpotlight && stepIndex < steps.length - 1) return null
 
   const isLast = stepIndex >= steps.length - 1
   const canGoBack = stepIndex > 0
@@ -211,12 +217,12 @@ export function DashboardProductTour({ enabled }: { enabled: boolean }) {
   return (
     <div className="contents" aria-live="polite">
       <div
-        className={cn("fixed inset-0 z-[45]", intro ? "bg-foreground/50" : undefined)}
+        className={cn("fixed inset-0 z-[45]", !showSpotlight ? "bg-foreground/50" : undefined)}
         aria-hidden
         onClick={(e) => e.stopPropagation()}
       />
 
-      {!intro && targetRect ? (
+      {showSpotlight && targetRect ? (
         <div
           className={cn(
             "pointer-events-none fixed z-[46] rounded-lg ring-2 ring-background",
