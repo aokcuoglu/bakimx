@@ -59,16 +59,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
   if (success) {
     return (
       <div className={styles.form}>
-        <div className="mb-9 border-b border-border pb-7">
-          <h1 className="text-2xl font-medium tracking-[-0.035em] text-foreground sm:text-[32px]">
-            Yeni şifre belirleyin
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            Şifre güncelleme işlemi tamamlandı.
-          </p>
-        </div>
-
-        <Alert variant="success" className="mb-6">
+        <Alert variant="success">
           <CheckCircle2 />
           <AlertTitle>Şifreniz güncellendi</AlertTitle>
           <AlertDescription>
@@ -76,7 +67,12 @@ export function ResetPasswordForm({ token }: { token: string }) {
           </AlertDescription>
         </Alert>
 
-        <Button asChild variant="outline" size="xl" className={cn("w-full", styles.submit)}>
+        <Button
+          asChild
+          variant="outline"
+          size="xl"
+          className={cn("mt-6 w-full", styles.submit)}
+        >
           <Link href="/login">Giriş sayfasına git</Link>
         </Button>
       </div>

@@ -49,16 +49,7 @@ export function ForgotPasswordForm() {
   if (success) {
     return (
       <div className={styles.form}>
-        <div className="mb-9 border-b border-border pb-7">
-          <h1 className="text-2xl font-medium tracking-[-0.035em] text-foreground sm:text-[32px]">
-            Şifrenizi sıfırlayın
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            Sıfırlama bağlantısı talebiniz alındı.
-          </p>
-        </div>
-
-        <Alert variant="success" className="mb-6">
+        <Alert variant="success">
           <CheckCircle2 />
           <AlertTitle>E-postanızı kontrol edin</AlertTitle>
           <AlertDescription>
@@ -67,7 +58,12 @@ export function ForgotPasswordForm() {
           </AlertDescription>
         </Alert>
 
-        <Button asChild variant="outline" size="xl" className={cn("w-full", styles.submit)}>
+        <Button
+          asChild
+          variant="outline"
+          size="xl"
+          className={cn("mt-6 w-full", styles.submit)}
+        >
           <Link href="/login">
             <ArrowLeft className="size-4" />
             Giriş sayfasına dön
