@@ -157,37 +157,41 @@ export function BlogCategoryFilters({
           ))}
         </TabsList>
 
-        <TabsContent value={filter} className="m-0">
-          {visible.length === 0 ? (
-            <p className={styles.empty}>Bu kategoride henüz yazı yok.</p>
-          ) : (
-            <div className={styles.grid}>
-              {visible.map((post) => (
-                <article key={post.slug} className={styles.card}>
-                  <Link
-                    href={`/blog/${post.slug}`}
-                    className={styles.cardMediaLink}
-                    tabIndex={-1}
-                    aria-hidden="true"
-                  >
-                    <Cover
-                      post={post}
-                      className={styles.cardMedia}
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    />
-                  </Link>
-                  <div className={styles.cardBody}>
-                    <BlogCategoryBadge category={post.category} />
-                    <h2 className={styles.cardTitle}>
-                      <Link href={`/blog/${post.slug}`}>{post.title}</Link>
-                    </h2>
-                    <AuthorRow post={post} />
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </TabsContent>
+        {(["all", ...BLOG_CATEGORIES] as const).map((value) => (
+          <TabsContent key={value} value={value} className="m-0">
+            {filter === value ? (
+              visible.length === 0 ? (
+                <p className={styles.empty}>Bu kategoride henüz yazı yok.</p>
+              ) : (
+                <div className={styles.grid}>
+                  {visible.map((post) => (
+                    <article key={post.slug} className={styles.card}>
+                      <Link
+                        href={`/blog/${post.slug}`}
+                        className={styles.cardMediaLink}
+                        tabIndex={-1}
+                        aria-hidden="true"
+                      >
+                        <Cover
+                          post={post}
+                          className={styles.cardMedia}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
+                      </Link>
+                      <div className={styles.cardBody}>
+                        <BlogCategoryBadge category={post.category} />
+                        <h2 className={styles.cardTitle}>
+                          <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+                        </h2>
+                        <AuthorRow post={post} />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )
+            ) : null}
+          </TabsContent>
+        ))}
       </Tabs>
     </>
   )
