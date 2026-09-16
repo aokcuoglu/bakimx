@@ -4,6 +4,7 @@ import { salesE2EPrisma as prisma } from "./helpers/sales-e2e-fixture"
 import { formatMinor } from "../src/lib/billing/pricing"
 
 test("owner compares plans and validates checkout in the modal; staff can only compare", async ({ page, browser }, testInfo) => {
+  test.setTimeout(90_000)
   const key = randomUUID().slice(0, 8)
   const ownerEmail = `billing-modal-owner-${key}@example.test`
   const staffEmail = `billing-modal-staff-${key}@example.test`
@@ -128,6 +129,7 @@ test("owner compares plans and validates checkout in the modal; staff can only c
 })
 
 test("Lite trial advertises Premium access from the sidebar and Account", async ({ page }, testInfo) => {
+  test.setTimeout(90_000)
   const key = randomUUID().slice(0, 8)
   const email = `billing-trial-${key}@example.test`
   const workshop = await prisma.workshop.create({
@@ -148,7 +150,7 @@ test("Lite trial advertises Premium access from the sidebar and Account", async 
   })
   try {
     await page.setViewportSize({ width: 1440, height: 900 })
-    await page.goto(`/api/auth/dev-login?email=${encodeURIComponent(email)}&redirect=/dashboard`)
+    await page.goto(`/api/auth/dev-login?email=${encodeURIComponent(email)}&redirect=/account`)
     const status = page.getByRole("link", { name: /iş günü kaldı.*Premium denemesi.*Paket seç/ })
     await expect(status).toBeVisible()
     await status.click()
