@@ -3,8 +3,11 @@ import {
   Car,
   Check,
   ClipboardList,
+  KeyRound,
+  Lock,
   Mail,
   Settings2,
+  ShieldCheck,
   Wrench,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -190,6 +193,88 @@ export function RegisterSidebarVisual() {
                 <p className="mt-1 text-[9px] font-medium text-muted-foreground">{label}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </MiniAppFrame>
+    </div>
+  )
+}
+
+/** Şifre sıfırlama: e-posta doğrulama / güvenli erişim önizlemesi */
+export function ForgotPasswordSidebarVisual() {
+  const steps = [
+    { label: "E-posta", icon: Mail, done: true },
+    { label: "Bağlantı", icon: KeyRound, done: false, active: true },
+    { label: "Yeni şifre", icon: Lock, done: false },
+  ] as const
+
+  return (
+    <div className="relative">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-2 -z-10 rounded-2xl bg-muted/35"
+      />
+      <MiniAppFrame title="app.bakimx.com/reset">
+        <div className="space-y-2.5 p-2.5">
+          <div className="flex items-center gap-1.5">
+            {steps.map((step, index) => {
+              const Icon = step.icon
+              const active = "active" in step && step.active
+              return (
+                <div key={step.label} className="flex min-w-0 flex-1 items-center gap-1.5">
+                  <div
+                    className={cn(
+                      "flex size-6 shrink-0 items-center justify-center rounded-md border text-muted-foreground",
+                      step.done && "border-foreground bg-foreground text-card",
+                      active && "border-foreground bg-muted text-foreground",
+                      !step.done && !active && "border-border bg-card",
+                    )}
+                  >
+                    <Icon className="size-3" />
+                  </div>
+                  {index < steps.length - 1 && (
+                    <span
+                      className={cn(
+                        "h-px min-w-0 flex-1",
+                        step.done ? "bg-foreground/40" : "bg-border",
+                      )}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted/50 p-2.5">
+            <div className="flex items-start gap-2">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground">
+                <ShieldCheck className="size-3.5" />
+              </span>
+              <div className="min-w-0 flex-1 space-y-1.5 pt-0.5">
+                <p className="text-[11px] font-medium text-foreground">Güvenli sıfırlama</p>
+                <SkeletonLine className="w-28" />
+                <SkeletonLine className="w-20" />
+                <div className="flex gap-1 pt-0.5">
+                  <StatusPill label="1 saat geçerli" active />
+                  <StatusPill label="Tek kullanım" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border bg-card px-2.5 py-2">
+            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              Gelen kutusu
+            </p>
+            <div className="mt-1.5 flex items-center gap-2">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground">
+                <Mail className="size-3" />
+              </span>
+              <div className="min-w-0 flex-1 space-y-1">
+                <SkeletonLine className="w-32" />
+                <SkeletonLine className="w-24" />
+              </div>
+            </div>
           </div>
         </div>
       </MiniAppFrame>
