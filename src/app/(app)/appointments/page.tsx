@@ -111,7 +111,7 @@ export default async function AppointmentsPage({
       workshopName={workshop?.name}
       pageTitle="Randevular"
       pageActions={
-        <Button size="icon" asChild aria-label="Yeni randevu">
+        <Button variant="foreground" size="icon" asChild aria-label="Yeni randevu">
           <Link href="/appointments/new">
             <Plus className="size-5" />
           </Link>
@@ -130,7 +130,7 @@ export default async function AppointmentsPage({
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">Randevular</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Servis randevularını planlayın ve yönetin</p>
           </div>
-          <Button size="default" className="hidden sm:inline-flex" asChild>
+          <Button variant="foreground" size="default" className="hidden sm:inline-flex" asChild>
             <Link href="/appointments/new">
               <Plus className="size-4" />
               Yeni Randevu
@@ -168,18 +168,20 @@ export default async function AppointmentsPage({
               ? `/appointments${q ? `?q=${q}` : ""}${activeStatus ? `${q ? "&" : "?"}status=${activeStatus}` : ""}`
               : `/appointments?date=${tab.key}${q ? `&q=${q}` : ""}${activeStatus ? `&status=${activeStatus}` : ""}`
             return (
-              <Link
+              <Button
                 key={tab.key}
-                href={href}
+                variant={isActive ? "secondary" : "ghost"}
+                size="compact"
                 className={cn(
-                  "h-8 px-3 inline-flex items-center rounded-lg text-sm font-medium whitespace-nowrap transition-colors touch-manipulation",
-                  isActive
-                    ? "bg-primary/10 text-primary-strong"
-                    : "text-muted-foreground hover:bg-muted"
+                  "whitespace-nowrap",
+                  isActive ? "bg-primary/10 text-primary-strong" : "text-muted-foreground"
                 )}
+                asChild
               >
-                {tab.label}
-              </Link>
+                <Link href={href} aria-current={isActive ? "page" : undefined}>
+                  {tab.label}
+                </Link>
+              </Button>
             )
           })}
         </div>
@@ -225,4 +227,3 @@ export default async function AppointmentsPage({
     </AppShell>
   )
 }
-

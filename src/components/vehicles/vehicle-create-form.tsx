@@ -654,7 +654,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
             </Card>
 
             <div className="flex gap-3 pt-2">
-              <Button type="submit" form="vehicle-form" disabled={loading} className="gap-2">
+              <Button variant="foreground" type="submit" form="vehicle-form" disabled={loading} className="gap-2">
                 {loading && <Loader2 className="size-4 animate-spin" />}
                 {isEdit ? "Aracı Güncelle" : "Araç Kaydet"}
               </Button>

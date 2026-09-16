@@ -152,7 +152,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
             Hatırlatmalar
             <span className="text-xs text-muted-foreground font-normal">({filtered.length})</span>
           </CardTitle>
-          <Button size="sm" className="gap-1.5" asChild>
+          <Button variant="foreground" size="sm" className="gap-1.5" asChild>
             <Link href="/reminders/new">
               <Plus className="size-4" />
               Yeni Hatırlatma
@@ -289,12 +289,11 @@ export function ReminderList({ initialReminders, stats }: Props) {
                         </td>
                         <td className="py-3 px-3 text-right">
                           <div className="inline-flex items-center gap-1">
-                            <Link
-                              href={`/reminders/${r.id}`}
-                              className="inline-flex items-center h-8 px-2 rounded-md text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-                            >
-                              Görüntüle
-                            </Link>
+                            <Button variant="ghost" size="compact" className="text-muted-foreground" asChild>
+                              <Link href={`/reminders/${r.id}`}>
+                                Görüntüle
+                              </Link>
+                            </Button>
                             {r.status === "upcoming" || r.status === "due_soon" || r.status === "overdue" ? (
                               <>
                                 <Button

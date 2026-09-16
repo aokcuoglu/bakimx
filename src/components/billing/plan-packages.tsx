@@ -139,9 +139,9 @@ function PlanAction({
   return (
     <Button
       asChild
-      variant={isOwned ? "secondary" : pkg.popular ? publicCard ? "navy" : "default" : "outline"}
+      variant={isOwned ? "secondary" : pkg.popular ? publicCard ? "navy" : "foreground" : "outline"}
       size={compact ? "sm" : "default"}
-      className={cn("w-full", publicCard && "h-9 rounded-lg text-sm font-normal", publicCard && pkg.popular && "bg-foreground text-card hover:bg-foreground/90", publicCard && !pkg.popular && "bg-card")}
+      className={cn("w-full", publicCard && "h-9 rounded-lg text-sm font-normal", publicCard && !pkg.popular && "bg-card")}
     >
       <Link
         href={href}

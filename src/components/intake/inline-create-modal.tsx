@@ -373,21 +373,22 @@ export function InlineCreateModal({
                   <p className="text-xs text-muted-foreground">{existingMatch.sublabel}</p>
                 </div>
               </div>
-              <Button type="button" size="sm" className="w-full" onClick={selectExisting}>
+              <Button variant="foreground" type="button" size="sm" className="w-full" onClick={selectExisting}>
                 <Car className="size-4 mr-1" /> Bu aracı seç
               </Button>
             </div>
           )}
 
           {/* Detailed ruhsat fields */}
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={() => setShowDetails((s) => !s)}
-            className="flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted/50"
+            className="h-auto w-full justify-between px-3 py-2 text-foreground"
           >
             <span>Ruhsat / teknik bilgiler (opsiyonel)</span>
             <ChevronDown className={`size-4 transition-transform ${showDetails ? "rotate-180" : ""}`} />
-          </button>
+          </Button>
 
           {showDetails && (
             <div className="grid grid-cols-2 gap-2 rounded-lg border border-border p-3">
@@ -483,7 +484,7 @@ export function InlineCreateModal({
 
           <div className="flex items-center justify-end gap-2 pt-1">
             <Button type="button" variant="outline" onClick={() => handleCreate(true)} disabled={loading}>{loading ? <Loader2 className="size-4 animate-spin" /> : "Oluştur ve Düzenle"}</Button>
-            <Button type="button" onClick={() => handleCreate(false)} disabled={loading}>{loading ? <Loader2 className="size-4 animate-spin" /> : "Oluştur"}</Button>
+            <Button variant="foreground" type="button" onClick={() => handleCreate(false)} disabled={loading}>{loading ? <Loader2 className="size-4 animate-spin" /> : "Oluştur"}</Button>
           </div>
         </div>
       </DialogContent>

@@ -109,7 +109,7 @@ export function VersionUpdateNotice({ loadedSignature }: { loadedSignature: stri
               kaydedin.
             </AlertDescription>
             <AlertAction className="flex items-start gap-1">
-              <Button size="sm" onClick={reloadWithOverlay}>
+              <Button variant="foreground" size="sm" onClick={reloadWithOverlay}>
                 Şimdi Yenile
               </Button>
               <Button

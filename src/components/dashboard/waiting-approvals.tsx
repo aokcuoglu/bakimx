@@ -4,6 +4,7 @@ import Link from "next/link"
 import type { WaitingApprovalItem } from "@/lib/dashboard/queries"
 import { ExternalLink } from "lucide-react"
 import { PlateBadge } from "@/components/shared/status-badge"
+import { Button } from "@/components/ui/button"
 import { useDashboardPage, DashboardPagination } from "@/components/dashboard/dashboard-pagination"
 
 function formatDate(iso: string): string {
@@ -37,13 +38,17 @@ export function WaitingApprovals({ approvals }: { approvals: WaitingApprovalItem
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-2">
-                <Link
-                  href={`/orders/${a.id}`}
-                  className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md bg-warning/10 hover:bg-warning/20 text-xs font-medium text-warning-foreground transition-colors touch-manipulation"
+                <Button
+                  variant="outline"
+                  size="compact"
+                  className="border-warning/20 bg-warning/10 text-warning-strong hover:bg-warning/20"
+                  asChild
                 >
-                  <ExternalLink className="size-3" />
-                  İş Emri Detayı
-                </Link>
+                  <Link href={`/orders/${a.id}`}>
+                    <ExternalLink className="size-3" />
+                    İş Emri Detayı
+                  </Link>
+                </Button>
               </div>
             </div>
           ))

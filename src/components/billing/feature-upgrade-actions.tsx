@@ -37,7 +37,7 @@ export function FeatureUpgradeActions({ feature, currentTier, targetTier, placem
 
   return (
     <div className={compact ? "flex flex-col gap-2 sm:flex-row" : "flex flex-col gap-3 sm:flex-row sm:justify-center"}>
-      <Button asChild size={compact ? "sm" : "lg"}>
+      <Button variant="foreground" asChild size={compact ? "sm" : "lg"}>
         <Link
           href={`/checkout?tier=${targetTier}&cycle=monthly`}
           onClick={() => trackClick("checkout")}

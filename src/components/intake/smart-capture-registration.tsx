@@ -298,7 +298,7 @@ export function SmartCaptureRegistration() {
                   </p>
                 </div>
               </div>
-              <Button size="lg" asChild className="shrink-0 gap-2">
+              <Button variant="foreground" size="lg" asChild className="shrink-0 gap-2">
                 <Link href={saveResult.intakeUrl}>
                   İş Emrine Devam Et
                   <ArrowRight className="size-4" />
@@ -442,7 +442,7 @@ export function SmartCaptureRegistration() {
         )}
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button
+          <Button variant="foreground"
             onClick={handleConfirm}
             disabled={LOADING_STEPS.includes(step) || (confirmedFields.phone || "").replace(/\D/g, "").length < 10}
             className="gap-2"
@@ -497,7 +497,7 @@ export function SmartCaptureRegistration() {
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
           >
-            <Button
+            <Button variant="foreground"
               type="button"
               size="lg"
               className="w-full max-w-md gap-2 text-base"

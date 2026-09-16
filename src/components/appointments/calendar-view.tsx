@@ -171,7 +171,7 @@ export function CalendarView({
                   key={v}
                   type="button"
                   size="sm"
-                  variant={view === v ? "default" : "ghost"}
+                  variant={view === v ? "secondary" : "ghost"}
                   onClick={() => setView(v)}
                 >
                   {labels[v]}

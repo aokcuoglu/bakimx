@@ -110,19 +110,20 @@ export function WorkshopLoginForm({ workshopCode, redirect }: Props) {
             required
             className="pl-9 pr-9"
           />
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            tabIndex={-1}
+            className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground"
             aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-          </button>
+          </Button>
         </div>
       </div>
 
-      <Button type="submit" size="lg" disabled={loading} className="w-full">
+      <Button type="submit" variant="foreground" size="lg" disabled={loading} className="w-full">
         {loading ? (
           <span className="flex items-center justify-center gap-2">
             <Loader2 className="size-4 animate-spin" />

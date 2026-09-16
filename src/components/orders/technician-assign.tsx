@@ -138,9 +138,10 @@ export function TechnicianAssign({
       title="Usta Ata"
       description="İş emrini üstlenecek ustayı seçin"
       trigger={
-        <button
+        <Button
           type="button"
-          className={trigger}
+          variant="ghost"
+          className={cn("h-auto min-h-8 justify-start whitespace-normal", trigger)}
           aria-label={
             assignedTechnicianName
               ? `Atanan usta: ${assignedTechnicianName} — değiştir`
@@ -149,7 +150,7 @@ export function TechnicianAssign({
         >
           <Icon className={cn("shrink-0", iconSize)} />
           <span className="truncate">{label}</span>
-        </button>
+        </Button>
       }
       footer={
         assignedTechnicianId ? (
@@ -173,7 +174,7 @@ export function TechnicianAssign({
           <p className="mt-1 text-xs text-muted-foreground">
             Atama yapabilmek için önce Ayarlar → Ekip sayfasından usta ekleyin.
           </p>
-          <Button size="lg" className="mt-4" asChild>
+          <Button variant="foreground" size="lg" className="mt-4" asChild>
             <Link href="/settings?tab=team">
               <UserPlus className="size-4" />
               Usta Ekle
@@ -204,16 +205,17 @@ export function TechnicianAssign({
               const info = roleInfo(t.role)
               const isAssigned = t.id === assignedTechnicianId
               return (
-                <button
+                <Button
                   key={t.id}
                   type="button"
+                  variant="outline"
                   onClick={() => handleAssign(t)}
                   disabled={isPending}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors touch-manipulation disabled:opacity-60",
+                    "h-auto w-full justify-start gap-3 p-3 text-left whitespace-normal",
                     isAssigned
                       ? "border-primary/30 bg-primary/10"
-                      : "border-border bg-card hover:border-primary/30 hover:bg-primary/5"
+                      : "border-border bg-card hover:bg-muted"
                   )}
                 >
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -236,7 +238,7 @@ export function TechnicianAssign({
                     </span>
                   </span>
                   {isAssigned && <Check className="size-4 shrink-0 text-primary" />}
-                </button>
+                </Button>
               )
             })
           )}

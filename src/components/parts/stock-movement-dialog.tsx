@@ -113,7 +113,7 @@ export function StockMovementDialog({
           </div>
 
           <div className="flex gap-2 pt-2">
-            <Button type="submit" disabled={loading} className="flex-1">
+            <Button variant="foreground" type="submit" disabled={loading} className="flex-1">
               {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : null}
               {type === "in" ? "Giriş Yap" : type === "out" ? "Çıkış Yap" : "Düzelt"}
             </Button>

@@ -103,7 +103,7 @@ export default async function PurchaseQuotaPage() {
                 <div className="flex items-center gap-3">
                   <span className="text-lg font-bold text-foreground">{option.priceLabel}</span>
                   {canPurchase ? (
-                    <Button size="sm">Satın Al</Button>
+                    <Button variant="foreground" size="sm">Satın Al</Button>
                   ) : (
                     <p className="max-w-40 text-right text-xs text-muted-foreground">
                       Paket değişikliği için yöneticinizle görüşün.

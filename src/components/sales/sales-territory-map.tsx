@@ -331,7 +331,7 @@ export function SalesTerritoryMap({
                 <p className="font-semibold text-foreground">{selectedDiscovery.businessName}</p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">{selectedDiscovery.formattedAddress || "Adres bilgisi bulunamadı"}</p>
                 {onCreateLeadFromPlace && (
-                  <Button type="button" size="sm" className="mt-3" onClick={() => onCreateLeadFromPlace(selectedDiscovery)}>
+                  <Button variant="foreground" type="button" size="sm" className="mt-3" onClick={() => onCreateLeadFromPlace(selectedDiscovery)}>
                     Satış fırsatı oluştur
                   </Button>
                 )}

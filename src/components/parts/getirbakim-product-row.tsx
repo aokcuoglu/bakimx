@@ -1,6 +1,7 @@
 "use client"
 
 import { Truck } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { formatTRY } from "@/lib/format"
 import {
   GETIRBAKIM_SOURCE_LABEL,
@@ -103,9 +104,9 @@ export function GetirbakimProductRow({
 
   if (selectable) {
     return (
-      <button type="button" onClick={onSelect} className={cn(rowClass, "w-full")}>
+      <Button type="button" variant="ghost" onClick={onSelect} className={cn(rowClass, "h-auto w-full justify-start whitespace-normal")}>
         {body}
-      </button>
+      </Button>
     )
   }
 

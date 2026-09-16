@@ -206,7 +206,7 @@ export function RuhsattanOku({
               <p className="text-sm text-muted-foreground">{description}</p>
             </div>
             <div className="flex w-full max-w-sm flex-col gap-2 sm:flex-row">
-              <Button type="button" className="flex-1 gap-2" onClick={() => openScanner(true)}>
+              <Button variant="foreground" type="button" className="flex-1 gap-2" onClick={() => openScanner(true)}>
                 <Camera className="size-4" /> Kamera ile çek
               </Button>
               <Button type="button" variant="outline" className="flex-1 gap-2" onClick={() => fileInputRef.current?.click()}>

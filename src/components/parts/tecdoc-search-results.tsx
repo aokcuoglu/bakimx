@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronRight, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { Button } from "@/components/ui/button"
 import { TecdocArticleRow, TECDOC_SOURCE_LABEL } from "./tecdoc-article-row"
 import { BakimxProductRow } from "./bakimx-product-row"
 import { GetirbakimProductRow } from "./getirbakim-product-row"
@@ -126,11 +127,12 @@ export function TecdocSearchResults({
         <section>
           <SectionHeading>Kategoriler ({categories.length + categoryOverflow})</SectionHeading>
           {categories.map((c) => (
-            <button
+            <Button
               key={`${c.node.id}-${c.path}`}
               type="button"
+              variant="ghost"
               onClick={() => onCategorySelect(c)}
-              className="w-full min-h-8 flex items-center justify-between gap-2 px-4 py-2 text-left border-b border-border/60 hover:bg-muted"
+              className="h-auto min-h-8 w-full justify-between gap-2 rounded-none border-b border-border/60 px-4 py-2 text-left whitespace-normal"
             >
               <span className="min-w-0 flex-1">
                 <span className="block text-sm truncate">{c.node.name}</span>
@@ -139,7 +141,7 @@ export function TecdocSearchResults({
                 )}
               </span>
               <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-            </button>
+            </Button>
           ))}
           {categoryOverflow > 0 && (
             <p className="px-4 py-2 text-xs text-muted-foreground">
@@ -269,18 +271,19 @@ function BrandChip({
   children: React.ReactNode
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex min-h-8 max-w-[12rem] items-center gap-1 truncate rounded-full border px-2.5 text-xs font-medium transition-colors touch-manipulation",
+        "h-auto min-h-8 max-w-[12rem] gap-1 truncate rounded-full px-2.5 text-xs",
         active
           ? "border-primary bg-primary text-primary-foreground [&_span]:text-primary-foreground"
           : "border-border bg-background text-foreground hover:bg-muted",
       )}
     >
       {children}
-    </button>
+    </Button>
   )
 }

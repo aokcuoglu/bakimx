@@ -154,7 +154,7 @@ export default async function AdminWorkshopsPage({
           />
         </label>
         <div className="flex gap-2">
-          <Button type="submit">Filtrele</Button>
+          <Button variant="foreground" type="submit">Filtrele</Button>
           {filtered && (
             <Button variant="ghost" asChild>
               <Link href="/admin/workshops">

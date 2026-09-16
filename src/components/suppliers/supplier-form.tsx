@@ -396,7 +396,7 @@ export function SupplierForm({ supplier }: { supplier?: SupplierData }) {
           </Card>
 
           <div className="flex gap-3">
-            <Button type="submit" disabled={pending} className="flex-1 sm:flex-none">
+            <Button variant="foreground" type="submit" disabled={pending} className="flex-1 sm:flex-none">
               {pending ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
               {isEdit ? "Güncelle" : "Tedarikçi Oluştur"}
             </Button>

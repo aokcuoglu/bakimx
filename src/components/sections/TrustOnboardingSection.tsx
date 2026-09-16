@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Zap, MessageCircle, LifeBuoy, ArrowRight } from "lucide-react";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/reveal";
@@ -62,17 +62,9 @@ export function TrustOnboardingSection() {
         </div>
 
         <div className="mt-10 text-center">
-          <Link
-            href="/register"
-            className={buttonVariants({
-              variant: "gradient",
-              size: "lg",
-              className: "h-12 gap-2 px-8 text-base",
-            })}
-          >
-            Ücretsiz Dene
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          <Button asChild variant="navy" size="xl">
+            <Link href="/register">Ücretsiz Dene <ArrowRight className="size-4" /></Link>
+          </Button>
         </div>
       </div>
     </section>

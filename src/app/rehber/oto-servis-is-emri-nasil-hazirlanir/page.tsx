@@ -78,7 +78,7 @@ export default function IsEmriRehberPage() {
               {IS_EMRI_REHBER_INTRO}
             </p>
             <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <Button asChild size="lg">
+              <Button asChild variant="navy" size="lg">
                 <Link href="/is-emri-programi">
                   Dijital iş emrini gör
                   <ArrowRight aria-hidden="true" />

@@ -543,7 +543,7 @@ function MobileBottomNav({
               active={pathname === "/technician" || pathname.startsWith("/technician/")}
             />
             <div className="flex justify-center">
-              <Button
+              <Button variant="foreground"
                 type="button"
                 size="icon"
                 className="-mt-7 size-14 rounded-full shadow-md ring-4 ring-background"

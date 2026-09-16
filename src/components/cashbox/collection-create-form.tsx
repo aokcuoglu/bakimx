@@ -345,7 +345,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                               <Button
                                 key={m.key}
                                 type="button"
-                                variant={field.value === m.key ? "default" : "outline"}
+                                variant={field.value === m.key ? "secondary" : "outline"}
                                 className="justify-start flex-1"
                                 onClick={() => field.onChange(m.key)}
                               >
@@ -460,7 +460,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
             </Card>
 
             <div>
-              <Button type="submit" disabled={loading} size="lg" className="w-full">
+              <Button variant="foreground" type="submit" disabled={loading} size="lg" className="w-full">
                 {loading ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Check className="size-4 mr-2" />}
                 Tahsilatı Kaydet
               </Button>

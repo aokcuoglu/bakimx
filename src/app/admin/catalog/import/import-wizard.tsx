@@ -329,7 +329,7 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={runPreview} disabled={!file || !brandId || pending}>
+            <Button variant="foreground" onClick={runPreview} disabled={!file || !brandId || pending}>
               {pending && !preview ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-3.5 mr-1" />}
               Ön izle
             </Button>
@@ -467,7 +467,7 @@ function PreviewPanel({
         </Alert>
 
         <div className="flex flex-wrap gap-2">
-          <Button onClick={onApply} disabled={pending || nothingToDo}>
+          <Button variant="foreground" onClick={onApply} disabled={pending || nothingToDo}>
             {pending && <Loader2 className="size-4 animate-spin" />}
             {counts.created} yeni + {counts.updated} güncellemeyi uygula
           </Button>

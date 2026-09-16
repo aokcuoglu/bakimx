@@ -165,7 +165,7 @@ export function CardFormFields({
         <p className="text-xs leading-4 text-destructive-strong">{errors.expiry || errors.cvv}</p>
       )}
 
-      <Button type="submit" size="lg" disabled={submitting} className="mt-1 w-full">
+      <Button variant="foreground" type="submit" size="lg" disabled={submitting} className="mt-1 w-full">
         {submitting ? (
           <>
             <BrandSpinner size={18} /> {submittingLabel}

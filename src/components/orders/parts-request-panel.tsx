@@ -446,7 +446,7 @@ function EditPartsRequestDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
                 Vazgeç
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button variant="foreground" type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="size-4 animate-spin" />}
                 Kaydet
               </Button>

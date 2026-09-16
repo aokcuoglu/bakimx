@@ -34,7 +34,7 @@ export function ResumeChatOpener({ conversationToken }: { conversationToken: str
           ? "Görüşmeniz destek panelinde açıldı. Panel kapandıysa aşağıdaki düğmeyle yeniden açabilirsiniz."
           : "Görüşmeniz açılıyor…"}
       </p>
-      <Button
+      <Button variant="navy"
         onClick={() => {
           adoptLiveChatToken(conversationToken);
           requestLiveChatResume();

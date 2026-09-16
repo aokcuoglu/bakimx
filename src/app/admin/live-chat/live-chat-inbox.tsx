@@ -78,7 +78,7 @@ function ConversationList({
           <Button
             key={f.value}
             size="sm"
-            variant={filter === f.value ? "default" : "outline"}
+            variant={filter === f.value ? "secondary" : "outline"}
             asChild
           >
             <Link href={`/admin/live-chat?filter=${f.value}`}>
@@ -292,7 +292,7 @@ function ThreadPanel({ thread, filter }: { thread: ThreadDetail; filter: InboxFi
           aria-label="Yanıtınız"
           className="max-h-32 resize-none"
         />
-        <Button onClick={submit} disabled={pending || draft.trim().length === 0} aria-label="Yanıtı gönder">
+        <Button variant="foreground" onClick={submit} disabled={pending || draft.trim().length === 0} aria-label="Yanıtı gönder">
           {pending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
         </Button>
       </div>

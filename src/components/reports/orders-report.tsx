@@ -162,7 +162,7 @@ export function OrdersReport({
             </Select>
           </div>
           <div className="flex items-end gap-2">
-            <Button onClick={applyFilters} size="sm">
+            <Button variant="foreground" onClick={applyFilters} size="sm">
               Uygula
             </Button>
             <Button variant="outline" size="sm" onClick={clearFilters}>

@@ -554,15 +554,16 @@ export function TecdocPartPicker({
               {scopeName && (
                 <span className="inline-flex min-h-7 max-w-full items-center gap-1 rounded-full border border-border bg-muted/60 pl-2.5 pr-1 text-xs text-muted-foreground">
                   <span className="truncate">{scopeName} içinde</span>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-xs"
                     onClick={clearScope}
                     aria-label="Kategori kapsamını kaldır, tüm araçta ara"
-                    title="Tüm araçta ara"
-                    className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-muted-foreground/20 hover:text-foreground"
+                    className="size-6 shrink-0 rounded-full"
                   >
                     <X className="size-3" />
-                  </button>
+                  </Button>
                 </span>
               )}
             </div>
@@ -633,11 +634,12 @@ export function TecdocPartPicker({
                   </div>
                 )}
                 {currentNodes.map((node) => (
-                  <button
+                  <Button
                     key={node.id}
                     type="button"
+                    variant="ghost"
                     onClick={() => (node.children.length > 0 ? setStack((s) => [...s, node]) : void openLeaf(node))}
-                    className="w-full min-h-8 flex items-center justify-between gap-2 px-4 py-2 text-left text-sm border-b border-border/60 hover:bg-muted"
+                    className="h-auto min-h-8 w-full justify-between gap-2 rounded-none border-b border-border/60 px-4 py-2 text-left whitespace-normal"
                   >
                     <span className="flex min-w-0 flex-1 items-center gap-2">
                       {isBakimxNode(node) && <Store className="size-3.5 shrink-0 text-primary" />}
@@ -647,7 +649,7 @@ export function TecdocPartPicker({
                       )}
                     </span>
                     <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-                  </button>
+                  </Button>
                 ))}
                 {currentNodes.length === 0 && (
                   <p className="px-4 py-6 text-center text-sm text-muted-foreground">
