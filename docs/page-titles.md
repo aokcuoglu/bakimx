@@ -129,6 +129,7 @@ Yönlendirme sayfaları hedefin başlığını alır. Filtre, sıralama, modal v
 | `/` | BakımX: Oto Servis Yönetim Platformu |
 | `/payment/result` | Ödeme Sonucu \| BakımX |
 | `/privacy` | Gizlilik Politikası \| BakımX |
+| `/kilavuz` | Kullanım Kılavuzu \| BakımX |
 | `/rehber/arac-kabul-formu` | Araç Kabul Formu: 8 Adımlık Kontrol Listesi \| BakımX |
 | `/rehber/oto-servis-is-emri-nasil-hazirlanir` | Oto Servis İş Emri Nasıl Hazırlanır? \| BakımX |
 | `/s/[token]` | Servis Özeti ve Onay \| BakımX |
