@@ -336,6 +336,8 @@ model User {
   password           String
   // Sahibin ürettiği geçici şifreyle ilk girişte şifre değiştirmeye zorlar (P1).
   mustChangePassword Boolean     @default(false)
+  /// Dashboard ürün turu tamamlandığında (veya atlandığında) set edilir; null = henüz gösterilmedi.
+  dashboardTourCompletedAt DateTime?
   firstName          String?
   lastName           String?
   workshopId         String

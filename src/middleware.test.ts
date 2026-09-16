@@ -64,6 +64,13 @@ describe("public landing routes", () => {
     expect(response.headers.get("location")).toBeNull()
   })
 
+  test("allows anonymous local requests to /kilavuz", async () => {
+    const response = await middleware(new NextRequest("http://localhost/kilavuz"))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get("location")).toBeNull()
+  })
+
   test("allows anonymous local requests to the comparison page", async () => {
     const response = await middleware(new NextRequest("http://localhost/karsilastir/defter-excel-oto-servis-programi"))
     expect(response.status).toBe(200)
