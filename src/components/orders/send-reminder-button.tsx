@@ -56,7 +56,7 @@ export function SendReminderButton({
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setShowConfirm(true)} className="text-primary border-primary/20 hover:bg-primary/5">
+      <Button variant="outline" size="sm" onClick={() => setShowConfirm(true)}>
         <Send className="size-3.5 mr-1" />
         Hatırlatma Gönder
       </Button>

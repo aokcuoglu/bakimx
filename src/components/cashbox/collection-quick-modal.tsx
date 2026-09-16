@@ -226,7 +226,7 @@ export function CollectionQuickModal({
                           <Button
                             key={m.key}
                             type="button"
-                            variant={field.value === m.key ? "default" : "outline"}
+                            variant={field.value === m.key ? "secondary" : "outline"}
                             className="justify-start"
                             onClick={() => field.onChange(m.key)}
                           >

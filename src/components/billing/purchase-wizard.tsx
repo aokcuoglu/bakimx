@@ -254,11 +254,11 @@ export function PurchaseWizard({
                             key={c}
                             type="button"
                             onClick={() => setCycle(c)}
-                            variant={cycle === c ? "default" : "ghost"}
+                            variant={cycle === c ? "secondary" : "ghost"}
                             className={cn(
                               "flex-1",
                               cycle === c
-                                ? "bg-primary text-primary-foreground shadow-sm"
+                                ? "bg-card text-foreground shadow-sm"
                                 : "text-muted-foreground hover:text-foreground",
                             )}
                           >

@@ -833,7 +833,7 @@ export function SalesLocationPicker({
           <Button
             type="button"
             size="sm"
-            variant={confirmed ? "outline" : "default"}
+            variant={confirmed ? "outline" : "foreground"}
             onClick={() => {
               form.setValue("locationConfirmed", true, { shouldDirty: true, shouldValidate: true })
               void form.trigger(["latitude", "longitude", "locationSource", "locationConfirmed"])

@@ -189,7 +189,7 @@ function AddTechnicianForm({
             key={key}
             type="button"
             onClick={() => setRole(key)}
-            variant={role === key ? "default" : "outline"}
+            variant={role === key ? "secondary" : "outline"}
             size="sm"
           >
             {info.label}

@@ -192,8 +192,8 @@ export function CustomerSearchOrCreate({
     return (
       <div className="space-y-3 rounded-lg border border-border p-3">
         <div className="flex gap-2">
-          <Button type="button" size="sm" variant={type === "individual" ? "default" : "outline"} className="flex-1" onClick={() => setType("individual")}>Bireysel</Button>
-          <Button type="button" size="sm" variant={type === "corporate" ? "default" : "outline"} className="flex-1" onClick={() => setType("corporate")}>Kurumsal</Button>
+          <Button type="button" size="sm" variant={type === "individual" ? "secondary" : "outline"} className="flex-1" onClick={() => setType("individual")}>Bireysel</Button>
+          <Button type="button" size="sm" variant={type === "corporate" ? "secondary" : "outline"} className="flex-1" onClick={() => setType("corporate")}>Kurumsal</Button>
         </div>
         {type === "individual" ? (
           <div className="grid grid-cols-2 gap-2">

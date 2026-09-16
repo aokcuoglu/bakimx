@@ -669,7 +669,7 @@ function LaborModeToggle({ mode, onChange, disabled }: {
           key={value}
           type="button"
           size="sm"
-          variant={mode === value ? "default" : "ghost"}
+          variant={mode === value ? "secondary" : "ghost"}
           disabled={disabled}
           onClick={() => onChange(value)}
           className={cn("gap-1.5", mode !== value && "text-muted-foreground")}

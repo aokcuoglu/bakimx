@@ -78,7 +78,7 @@ function ConversationList({
           <Button
             key={f.value}
             size="sm"
-            variant={filter === f.value ? "default" : "outline"}
+            variant={filter === f.value ? "secondary" : "outline"}
             asChild
           >
             <Link href={`/admin/live-chat?filter=${f.value}`}>

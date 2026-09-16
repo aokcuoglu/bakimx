@@ -609,7 +609,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
         type="button"
         variant="outline"
         onClick={() => setShow(true)}
-        className="mt-3 w-full justify-center gap-1.5 border-dashed bg-primary/[0.04] text-primary hover:bg-primary/[0.08] hover:text-primary"
+        className="mt-3 w-full justify-center gap-1.5 border-dashed text-muted-foreground hover:text-foreground"
       >
         <Plus className="size-4" />
         Kontrol maddesi ekle

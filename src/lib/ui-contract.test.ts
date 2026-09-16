@@ -43,7 +43,7 @@ test("görünür etkileşimli kontroller ortak UI primitive'lerini kullanıyor",
   expect(offenders).toEqual([])
 })
 
-test("Button çağrıları eylem rengini açık bir variant ile seçiyor", () => {
+test("Button çağrıları eylem rengini açıkça seçiyor ve parlak default'u kullanmıyor", () => {
   const offenders: string[] = []
   for (const file of tsxFiles(SRC)) {
     const source = readFileSync(file, "utf8")
@@ -51,11 +51,15 @@ test("Button çağrıları eylem rengini açık bir variant ile seçiyor", () =>
     const visit = (node: ts.Node) => {
       if (
         (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
-        node.tagName.getText(parsed) === "Button" &&
-        !node.attributes.properties.some((attribute) => ts.isJsxAttribute(attribute) && attribute.name.getText(parsed) === "variant")
+        node.tagName.getText(parsed) === "Button"
       ) {
-        const line = parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1
-        offenders.push(`${relative(SRC, file)}:${line}`)
+        const variant = node.attributes.properties.find(
+          (attribute) => ts.isJsxAttribute(attribute) && attribute.name.getText(parsed) === "variant"
+        ) as ts.JsxAttribute | undefined
+        if (!variant || /["']default["']/.test(variant.initializer?.getText(parsed) ?? "")) {
+          const line = parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1
+          offenders.push(`${relative(SRC, file)}:${line}`)
+        }
       }
       ts.forEachChild(node, visit)
     }

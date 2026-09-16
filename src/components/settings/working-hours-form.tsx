@@ -143,7 +143,7 @@ export function WorkingHoursForm({ settings }: { settings: SettingsData }) {
                         <Button
                           key={day.value}
                           type="button"
-                          variant={active ? "default" : "outline"}
+                          variant={active ? "secondary" : "outline"}
                           size="sm"
                           onClick={() => toggleDay("weekdayWorkingDays", day.value)}
                         >
@@ -211,7 +211,7 @@ export function WorkingHoursForm({ settings }: { settings: SettingsData }) {
                         <Button
                           key={day.value}
                           type="button"
-                          variant={active ? "default" : "outline"}
+                          variant={active ? "secondary" : "outline"}
                           size="sm"
                           onClick={() => toggleDay("weekendWorkingDays", day.value)}
                         >
