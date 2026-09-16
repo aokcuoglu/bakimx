@@ -4,7 +4,7 @@
   background: var(--card);
   color: var(--foreground);
   min-height: 100vh;
-  --public-width: 1200px;
+  --public-width: 1124px;
 }
 .landingSite {
   position: relative;
@@ -15,7 +15,7 @@
   top: 72px;
   bottom: 0;
   left: 50%;
-  width: min(1280px, 100%);
+  width: min(var(--public-width), 100%);
   pointer-events: none;
   transform: translateX(-50%);
   border-inline: 1px solid var(--border);

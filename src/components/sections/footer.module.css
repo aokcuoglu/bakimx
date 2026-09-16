@@ -10,7 +10,7 @@
   position: relative;
   z-index: 1;
   margin-inline: auto;
-  max-width: var(--public-width, 1200px);
+  max-width: var(--public-width, 1124px);
   width: calc(100% - 2rem);
   padding: 0 1rem 1.25rem;
 }
@@ -23,8 +23,8 @@
 
 @media (min-width: 1024px) {
   .footer.footer .inner {
-    width: min(100% - 2rem, var(--public-width, 1200px));
-    padding: 0 0 1.5rem;
+    width: min(100% - 2rem, var(--public-width, 1124px));
+    padding: 0 2rem 1.5rem;
   }
 }
 
@@ -48,7 +48,6 @@
     /* Reference proportions: brand 40%, gutter 8%, updates 52%. */
     grid-template-columns: minmax(0, 10fr) minmax(0, 13fr);
     column-gap: 8%;
-    margin-inline: 5rem;
     padding: 4rem 0;
   }
 }
