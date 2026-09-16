@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, Lock, Store, UserRound } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -144,19 +145,19 @@ export function LoginForm({
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {successNotice && !error && (
-          <div className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success-strong">
-            {successNotice}
-          </div>
+          <Alert variant="success">
+            <AlertDescription>{successNotice}</AlertDescription>
+          </Alert>
         )}
         {expiredNotice && !error && (
-          <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning-strong">
-            {expiredNotice}
-          </div>
+          <Alert variant="warning">
+            <AlertDescription>{expiredNotice}</AlertDescription>
+          </Alert>
         )}
         {error && (
-          <div role="alert" aria-live="polite" className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
-            {error}
-          </div>
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         <div className="space-y-2">

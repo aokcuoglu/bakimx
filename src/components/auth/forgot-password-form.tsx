@@ -2,16 +2,14 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { motion } from "framer-motion"
-import { Loader2, Mail, CheckCircle2, ArrowLeft } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Mail } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-
-const formVariants = {
-  hidden: { opacity: 0, y: 12 },
-  visible: { opacity: 1, y: 0 },
-}
+import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { cn } from "@/lib/utils"
+import styles from "@/components/auth/register-design.module.css"
 
 export function ForgotPasswordForm() {
   const [loading, setLoading] = useState(false)
@@ -50,88 +48,98 @@ export function ForgotPasswordForm() {
 
   if (success) {
     return (
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={formVariants}
-        className="text-center space-y-4"
-      >
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-          <CheckCircle2 className="h-7 w-7 text-primary" />
+      <div className={styles.form}>
+        <div className="mb-9 border-b border-border pb-7">
+          <h1 className="text-2xl font-medium tracking-[-0.035em] text-foreground sm:text-[32px]">
+            Şifrenizi sıfırlayın
+          </h1>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+            Sıfırlama bağlantısı talebiniz alındı.
+          </p>
         </div>
-        <h1 className="text-2xl font-semibold">E-postanızı kontrol edin</h1>
-        <p className="text-sm text-muted-foreground">
-          Eğer bu e-posta bir hesaba bağlıysa, şifre sıfırlama bağlantısı gönderildi.
-          Bağlantı 1 saat boyunca geçerlidir.
-        </p>
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Giriş sayfasına dön
-        </Link>
-      </motion.div>
+
+        <Alert variant="success" className="mb-6">
+          <CheckCircle2 />
+          <AlertTitle>E-postanızı kontrol edin</AlertTitle>
+          <AlertDescription>
+            Eğer bu e-posta bir hesaba bağlıysa, şifre sıfırlama bağlantısı gönderildi.
+            Bağlantı 1 saat boyunca geçerlidir.
+          </AlertDescription>
+        </Alert>
+
+        <Button asChild variant="outline" size="xl" className={cn("w-full", styles.submit)}>
+          <Link href="/login">
+            <ArrowLeft className="size-4" />
+            Giriş sayfasına dön
+          </Link>
+        </Button>
+      </div>
     )
   }
 
   return (
-    <motion.form
-      initial="hidden"
-      animate="visible"
-      variants={formVariants}
-      onSubmit={handleSubmit}
-      className="space-y-5"
-    >
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold">Şifremi Sıfırla</h1>
-        <p className="text-sm text-muted-foreground">
-          Hesabınızın e-posta adresini girin, size bir sıfırlama bağlantısı gönderelim.
+    <div className={styles.form}>
+      <div className="mb-9 border-b border-border pb-7">
+        <h1 className="text-2xl font-medium tracking-[-0.035em] text-foreground sm:text-[32px]">
+          Şifrenizi sıfırlayın
+        </h1>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+          Hesabınızın e-posta adresini girin; size bir sıfırlama bağlantısı gönderelim.
         </p>
       </div>
 
-      {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive-strong">
-          {error}
-        </div>
-      )}
-
-      <div className="space-y-2">
-        <Label htmlFor="email">E-posta</Label>
-        <div className="relative">
-          <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="ornek@isyeri.com"
-            className="pl-9"
-            required
-          />
-        </div>
-      </div>
-
-      <Button type="submit" variant="foreground" size="xl" className="w-full" disabled={loading}>
-        {loading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Gönderiliyor…
-          </>
-        ) : (
-          "Sıfırlama bağlantısı gönder"
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
-      </Button>
 
-      <div className="text-center">
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium text-foreground">
+            E-posta
+          </Label>
+          <div className="relative">
+            <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="ornek@isyeri.com"
+              className="h-10 rounded-md bg-card pl-9 shadow-xs"
+              required
+            />
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          variant="foreground"
+          size="xl"
+          disabled={loading}
+          className={cn("w-full", styles.submit)}
         >
-          <ArrowLeft className="h-4 w-4" />
-          Giriş sayfasına dön
-        </Link>
-      </div>
-    </motion.form>
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <BrandSpinner size={18} />
+              Gönderiliyor...
+            </span>
+          ) : (
+            "Sıfırlama bağlantısı gönder"
+          )}
+        </Button>
+
+        <div className="border-t pt-4 text-center text-sm text-muted-foreground">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1 font-medium text-primary transition-colors hover:underline"
+          >
+            <ArrowLeft className="size-4" />
+            Giriş sayfasına dön
+          </Link>
+        </div>
+      </form>
+    </div>
   )
 }
