@@ -1,0 +1,618 @@
+{
+  "generatedAt": "2026-09-16T19:52:42.605Z",
+  "methodology": "Official Apify Website Content Crawler; Cheerio; 8 pages and depth 2 per site. Claims are manually curated against collected URLs.",
+  "coverage": [
+    {
+      "competitor": "bakimx",
+      "site": "https://bakimx.com",
+      "pages": 8,
+      "run": {
+        "id": "ARDAwijFQmXV8xaoT",
+        "status": "SUCCEEDED",
+        "usageTotalUsd": 0.016077316508705416,
+        "datasetId": "PBteOcdiY6LfqFcjW",
+        "malformedItems": 0,
+        "chargeCapUsd": 0.12
+      }
+    },
+    {
+      "competitor": "padok",
+      "site": "https://hayatyazilim.com",
+      "pages": 8,
+      "run": {
+        "id": "m9QYv3g7IbMToPYr7",
+        "status": "SUCCEEDED",
+        "usageTotalUsd": 0.025491803686992994,
+        "datasetId": "TSqFVLIidixeK7iv1",
+        "malformedItems": 0,
+        "chargeCapUsd": 0.12
+      }
+    },
+    {
+      "competitor": "servisdata",
+      "site": "https://www.servisdata.com",
+      "pages": 0,
+      "run": {
+        "id": "rX3T1nZpa7lXfXiHS",
+        "status": "SUCCEEDED",
+        "usageTotalUsd": 0.004586112495435609,
+        "datasetId": "ykFSPKr1WocbwgJc1",
+        "malformedItems": 0,
+        "chargeCapUsd": 0.12,
+        "diagnostic": "Cheerio bağlantı hatası (peer misbehaved); dynamic rendering may be required, ancak bu run bunu doğrulamaz."
+      }
+    },
+    {
+      "competitor": "kursoft",
+      "site": "https://www.kursoft.com.tr",
+      "pages": 8,
+      "run": {
+        "id": "0SFwsv4kLS7dXf3gM",
+        "status": "SUCCEEDED",
+        "usageTotalUsd": 0.037555857705000376,
+        "datasetId": "GW29Y6rHXShyLWJMl",
+        "malformedItems": 0,
+        "chargeCapUsd": 0.12
+      }
+    }
+  ],
+  "profiles": {
+    "bakimx": {
+      "positioning": {
+        "text": "Araç kabulden teslimata oto servis işlerini aynı kayıtta yöneten platform.",
+        "sources": [
+          "https://bakimx.com/",
+          "https://bakimx.com/oto-servis-programi"
+        ]
+      },
+      "segment": {
+        "text": "Kağıt, mesaj ve ayrı dosyalar yerine ortak kayıt isteyen oto servisler; internetsiz masaüstü veya yalnız ön muhasebe arayanlar hedef dışı olarak anlatılıyor.",
+        "sources": [
+          "https://bakimx.com/oto-servis-programi"
+        ]
+      },
+      "valueProposition": {
+        "text": "Hızlı iş emri, şaseye göre parça listesi ve kaybolmayan araç geçmişi.",
+        "sources": [
+          "https://bakimx.com/"
+        ]
+      },
+      "features": {
+        "freeStart": {
+          "text": "Lite 0 TL/ay; açılışa özel süresiz ücretsiz kapsam.",
+          "sources": [
+            "https://bakimx.com/fiyatlar"
+          ]
+        },
+        "registrationReading": {
+          "text": "Ruhsat OCR ile araç bilgisi doldurma; Lite paketine dahil değil.",
+          "sources": [
+            "https://bakimx.com/dijital-arac-kabul",
+            "https://bakimx.com/fiyatlar"
+          ]
+        },
+        "workOrders": {
+          "text": "İş emri var; Lite paketine dahil.",
+          "sources": [
+            "https://bakimx.com/oto-servis-programi",
+            "https://bakimx.com/fiyatlar"
+          ]
+        },
+        "inventory": {
+          "text": "Stok ve tedarikçi takibi anlatılıyor; Lite paketine dahil değil.",
+          "sources": [
+            "https://bakimx.com/",
+            "https://bakimx.com/fiyatlar"
+          ]
+        },
+        "costAnalysis": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "partsVin": {
+          "text": "Şaseyle araca özel katalog sonucu ve iş emrine parça ekleme anlatılıyor; Lite paketinde yok.",
+          "sources": [
+            "https://bakimx.com/",
+            "https://bakimx.com/fiyatlar"
+          ]
+        },
+        "einvoicing": {
+          "text": "e-Fatura/e-Arşiv yol haritasında, şu anda aktif değil.",
+          "sources": [
+            "https://bakimx.com/",
+            "https://bakimx.com/oto-servis-programi"
+          ]
+        },
+        "vehicleHistory": {
+          "text": "Araç geçmişi aynı servis kaydında tutuluyor.",
+          "sources": [
+            "https://bakimx.com/",
+            "https://bakimx.com/oto-servis-programi"
+          ]
+        },
+        "accounts": {
+          "text": "Profesyonel pakette müşteri alacak yaşlandırma ve tahsilat takibi anlatılıyor.",
+          "sources": [
+            "https://bakimx.com/oto-servis-programi"
+          ]
+        },
+        "invoicing": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "mobile": {
+          "text": "Araç kabul ve iş emri telefon/tablet tarayıcısında kullanılabiliyor.",
+          "sources": [
+            "https://bakimx.com/oto-servis-programi",
+            "https://bakimx.com/dijital-arac-kabul"
+          ]
+        },
+        "whatsapp": {
+          "text": "Lite paketinde WhatsApp paylaşımı var.",
+          "sources": [
+            "https://bakimx.com/fiyatlar"
+          ]
+        },
+        "usersBranches": {
+          "text": "Rol bazlı ekip kullanımı anlatılıyor; çoklu şube yönetimi yakında olarak işaretlenmiş.",
+          "sources": [
+            "https://bakimx.com/"
+          ]
+        },
+        "demoCta": {
+          "text": "Canlı Demo talep formu var.",
+          "sources": [
+            "https://bakimx.com/demo"
+          ]
+        }
+      },
+      "offer": {
+        "text": "Lite açılışa özel 0 TL/ay (KDV dahil), Lite kapsamı süresiz ücretsiz; e-posta doğrulamasından sonra 7 iş günlük deneme.",
+        "sources": [
+          "https://bakimx.com/fiyatlar",
+          "https://bakimx.com/"
+        ]
+      },
+      "cta": {
+        "text": "Ücretsiz hesap oluştur ve canlı demo talebi.",
+        "sources": [
+          "https://bakimx.com/fiyatlar",
+          "https://bakimx.com/demo"
+        ]
+      },
+      "trust": {
+        "text": "Temsili veriyle gerçek ürün ekranları ve etkileşimli ruhsat demo örneği gösteriliyor; taranan sayfalarda müşteri sayısı doğrulanamadı.",
+        "sources": [
+          "https://bakimx.com/oto-servis-programi",
+          "https://bakimx.com/dijital-arac-kabul"
+        ]
+      },
+      "extraFeatures": {
+        "text": "Kabul fotoğraf kontrol listesi, hasar haritası, müşteri paylaşım ekranı, randevu ve tahsilat akışı anlatılıyor.",
+        "sources": [
+          "https://bakimx.com/dijital-arac-kabul",
+          "https://bakimx.com/oto-servis-programi",
+          "https://bakimx.com/"
+        ]
+      }
+    },
+    "padok": {
+      "positioning": {
+        "text": "Hayat Yazılımın oto servis ürün ailesi: PADOK Bulut abonelik ve PadokPlus masaüstü kalıcı lisans.",
+        "sources": [
+          "https://hayatyazilim.com/",
+          "https://hayatyazilim.com/oto-servis-programi/"
+        ]
+      },
+      "segment": {
+        "text": "Tek lokasyonlu ve çok şubeli oto servisler, mobil ekipler ve hasar ağırlıklı servisler hedefleniyor.",
+        "sources": [
+          "https://hayatyazilim.com/padok-bulut/"
+        ]
+      },
+      "valueProposition": {
+        "text": "İş emri, stok, fatura, cari ve tahsilatı tek veri omurgasında bağlayıp tekrar girişi azaltma.",
+        "sources": [
+          "https://hayatyazilim.com/padok-bulut/"
+        ]
+      },
+      "features": {
+        "freeStart": {
+          "text": "14 gün ücretsiz deneme; kalıcı ücretsiz paket taranan sayfalarda doğrulanamadı.",
+          "sources": [
+            "https://hayatyazilim.com/padok-bulut/"
+          ]
+        },
+        "registrationReading": {
+          "text": "Ruhsat ve mobil plaka okuma ana pakete dahil olarak sunuluyor.",
+          "sources": [
+            "https://hayatyazilim.com/padok-bulut/"
+          ]
+        },
+        "workOrders": {
+          "text": "Servis/iş emri ana programda.",
+          "sources": [
+            "https://hayatyazilim.com/padok-bulut/"
+          ]
+        },
+        "inventory": {
+          "text": "Yedek parça stok modülü var; ürün karşılaştırmasında PADOK Bulut için opsiyonel +400 TL/ay yazıyor.",
+          "sources": [
+            "https://hayatyazilim.com/padok-bulut/",
+            "https://hayatyazilim.com/urun-karsilastirma/"
+          ]
+        },
+        "costAnalysis": {
+          "text": "Ciro, maliyet ve kâr raporlaması anlatılıyor.",
+          "sources": [
+            "https://hayatyazilim.com/padok-bulut/"
+          ]
+        },
+        "partsVin": {
+          "text": "Parça stoğu ve ruhsattan şasi çıkarma anlatılıyor; VIN ile parça uyumu taranan sayfalarda doğrulanamadı.",
+          "sources": [
+            "https://hayatyazilim.com/padok-bulut/"
+          ]
+        },
+        "einvoicing": {
+          "text": "e-Fatura/e-Arşiv var; karşılaştırma sayfası +200 TL opsiyonel derken SSS fiyata dahil diyor. Paket kapsamı çelişkili.",
+          "sources": [
+            "https://hayatyazilim.com/urun-karsilastirma/",
+            "https://hayatyazilim.com/sikca-sorulan-sorular/"
+          ]
+        },
+        "vehicleHistory": {
+          "text": "Araç bazlı servis geçmişi ve müşteri takip portalı anlatılıyor.",
+          "sources": [
+            "https://hayatyazilim.com/oto-servis-programi/",
+            "https://hayatyazilim.com/padok-bulut/"
+          ]
+        },
+        "accounts": {
+          "text": "Müşteri/tedarikçi cari hesabı ve tahsilat takibi anlatılıyor.",
+          "sources": [
+            "https://hayatyazilim.com/padok-bulut/"
+          ]
+        },
+        "invoicing": {
+          "text": "İş emrinden fatura oluşturma anlatılıyor.",
+          "sources": [
+            "https://hayatyazilim.com/padok-bulut/"
+          ]
+        },
+        "mobile": {
+          "text": "PADOK Bulut bilgisayar, tablet ve telefondan tarayıcıyla kullanılıyor.",
+          "sources": [
+            "https://hayatyazilim.com/padok-bulut/"
+          ]
+        },
+        "whatsapp": {
+          "text": "Müşteri takip bağlantısı ve süreç mesajları için WhatsApp kullanımı anlatılıyor.",
+          "sources": [
+            "https://hayatyazilim.com/padok-bulut/"
+          ]
+        },
+        "usersBranches": {
+          "text": "2 kullanıcı dahil, ek kullanıcı +390 TL/ay; çok şubeli servisler hedefleniyor.",
+          "sources": [
+            "https://hayatyazilim.com/padok-bulut/"
+          ]
+        },
+        "demoCta": {
+          "text": "14 Gün Ücretsiz Dene ve demo/teklif iletişim çağrısı.",
+          "sources": [
+            "https://hayatyazilim.com/padok-bulut/",
+            "https://hayatyazilim.com/oto-servis-programi/"
+          ]
+        }
+      },
+      "offer": {
+        "text": "PADOK Bulut 1.150 TL/ay + KDV başlangıç, 14 gün ücretsiz deneme, yıllık peşinde 2 ay hediye; PadokPlus 24.000 TL + KDV başlangıçlı kalıcı lisans.",
+        "sources": [
+          "https://hayatyazilim.com/padok-bulut/",
+          "https://hayatyazilim.com/urun-karsilastirma/"
+        ]
+      },
+      "cta": {
+        "text": "14 Gün Ücretsiz Dene; canlı demo/teklif için iletişime geç.",
+        "sources": [
+          "https://hayatyazilim.com/padok-bulut/",
+          "https://hayatyazilim.com/oto-servis-programi/"
+        ]
+      },
+      "trust": {
+        "text": "Sitede 15+ yıl deneyim ve 300+ aktif işletme beyanı; MySoft entegratör bağlantısı ve kurulum/eğitim desteği anlatılıyor.",
+        "sources": [
+          "https://hayatyazilim.com/",
+          "https://hayatyazilim.com/sikca-sorulan-sorular/"
+        ]
+      },
+      "extraFeatures": {
+        "text": "Müşteri servis takip portalı, bakım paketleri, hasar yönetimi, SMS doğrulamalı paylaşım ve personel yönetimi anlatılıyor.",
+        "sources": [
+          "https://hayatyazilim.com/padok-bulut/"
+        ]
+      }
+    },
+    "servisdata": {
+      "positioning": {
+        "text": "Doğrulanamadı",
+        "sources": []
+      },
+      "segment": {
+        "text": "Doğrulanamadı",
+        "sources": []
+      },
+      "valueProposition": {
+        "text": "Doğrulanamadı",
+        "sources": []
+      },
+      "features": {
+        "freeStart": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "registrationReading": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "workOrders": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "inventory": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "costAnalysis": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "partsVin": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "einvoicing": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "vehicleHistory": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "accounts": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "invoicing": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "mobile": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "whatsapp": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "usersBranches": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "demoCta": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        }
+      },
+      "offer": {
+        "text": "Doğrulanamadı",
+        "sources": []
+      },
+      "cta": {
+        "text": "Doğrulanamadı",
+        "sources": []
+      },
+      "trust": {
+        "text": "Doğrulanamadı",
+        "sources": []
+      },
+      "extraFeatures": {
+        "text": "Doğrulanamadı",
+        "sources": []
+      }
+    },
+    "kursoft": {
+      "positioning": {
+        "text": "Oto serviste kabulden teslimata, stok ve ön muhasebe ile entegre KRS çözümü; şirket genelinde ticari yazılım ailesi.",
+        "sources": [
+          "https://kursoft.com.tr/oto-servis-programi/",
+          "https://www.kursoft.com.tr/"
+        ]
+      },
+      "segment": {
+        "text": "Binek, ağır vasıta, motosiklet, iş makinesi, kaporta ve benzeri servis tipleri hedefleniyor.",
+        "sources": [
+          "https://kursoft.com.tr/oto-servis-programi/"
+        ]
+      },
+      "valueProposition": {
+        "text": "Servis işlemlerinin stok, cari ve faturaya otomatik yansıması; özelleştirilebilir modül ve raporlar.",
+        "sources": [
+          "https://kursoft.com.tr/oto-servis-programi/"
+        ]
+      },
+      "features": {
+        "freeStart": {
+          "text": "14 gün ücretsiz deneme; kalıcı ücretsiz paket taranan sayfalarda doğrulanamadı.",
+          "sources": [
+            "https://kursoft.com.tr/oto-servis-programi/"
+          ]
+        },
+        "registrationReading": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "workOrders": {
+          "text": "İş emri ve servis yönetimi anlatılıyor.",
+          "sources": [
+            "https://kursoft.com.tr/oto-servis-programi/"
+          ]
+        },
+        "inventory": {
+          "text": "Barkodlu/barkodsuz parça stoğu ve kritik seviye uyarıları anlatılıyor.",
+          "sources": [
+            "https://kursoft.com.tr/oto-servis-programi/"
+          ]
+        },
+        "costAnalysis": {
+          "text": "Maliyet, kâr/zarar ve servis kârlılık raporları anlatılıyor.",
+          "sources": [
+            "https://kursoft.com.tr/oto-servis-programi/"
+          ]
+        },
+        "partsVin": {
+          "text": "OEM/muadil kodlu parça stoğu ve şasi veri alanı anlatılıyor; VIN uyumlu parça eşleştirme doğrulanamadı.",
+          "sources": [
+            "https://kursoft.com.tr/oto-servis-programi/"
+          ]
+        },
+        "einvoicing": {
+          "text": "Oto servis formundan e-Fatura/e-Arşiv ve ayrı e-fatura çözümü anlatılıyor.",
+          "sources": [
+            "https://kursoft.com.tr/oto-servis-programi/",
+            "https://kursoft.com.tr/e-fatura/"
+          ]
+        },
+        "vehicleHistory": {
+          "text": "Plaka ve kilometre bazlı araç servis geçmişi anlatılıyor.",
+          "sources": [
+            "https://kursoft.com.tr/oto-servis-programi/"
+          ]
+        },
+        "accounts": {
+          "text": "Cari borçlandırma ve açık hesap takibi anlatılıyor.",
+          "sources": [
+            "https://kursoft.com.tr/oto-servis-programi/"
+          ]
+        },
+        "invoicing": {
+          "text": "İş emrini faturaya dönüştürme anlatılıyor.",
+          "sources": [
+            "https://kursoft.com.tr/oto-servis-programi/"
+          ]
+        },
+        "mobile": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "whatsapp": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "usersBranches": {
+          "text": "Doğrulanamadı",
+          "sources": []
+        },
+        "demoCta": {
+          "text": "Online demo talebi ve ücretsiz deneme çağrısı.",
+          "sources": [
+            "https://kursoft.com.tr/oto-servis-programi/"
+          ]
+        }
+      },
+      "offer": {
+        "text": "Oto servis için 14 gün ücretsiz deneme; tek seferlik ömür boyu lisans veya yıllık bulut kiralama belirtiliyor. Taranan sayfalarda net oto servis fiyatı doğrulanamadı.",
+        "sources": [
+          "https://kursoft.com.tr/oto-servis-programi/"
+        ]
+      },
+      "cta": {
+        "text": "Online demo talebi, ücretsiz dene ve bize ulaşın çağrıları.",
+        "sources": [
+          "https://kursoft.com.tr/oto-servis-programi/"
+        ]
+      },
+      "trust": {
+        "text": "Referans/testimonial bölümleri ve e-fatura sayfasında Sovos iş ortaklığı beyanı var.",
+        "sources": [
+          "https://kursoft.com.tr/oto-servis-programi/",
+          "https://kursoft.com.tr/e-fatura/"
+        ]
+      },
+      "extraFeatures": {
+        "text": "SMS/e-posta bildirimleri, bakım hatırlatmaları, özelleştirilebilir rapor ve form tasarımı anlatılıyor.",
+        "sources": [
+          "https://kursoft.com.tr/oto-servis-programi/"
+        ]
+      }
+    }
+  },
+  "opportunities": [
+    {
+      "observation": "PADOK Bulut ve Kursoft oto servis sayfaları 14 günlük ücretsiz deneme sunuyor; BakımX fiyat sayfasında açılışa özel 0 TL/ay Lite kapsamı süresiz ücretsiz olarak belirtiliyor.",
+      "differentiation": "BakımX'in kalıcı ücretsiz başlangıcını ve Lite sınırlarını aynı mesajda açık anlatmak.",
+      "testMessage": "İlk iş emrinizi 0 TL Lite ile açın; ihtiyaç büyüdükçe paketinizi seçin.",
+      "sources": [
+        "https://bakimx.com/fiyatlar",
+        "https://hayatyazilim.com/padok-bulut/",
+        "https://kursoft.com.tr/oto-servis-programi/"
+      ],
+      "confidence": "HIGH"
+    },
+    {
+      "observation": "PADOK Bulut ruhsat okumayı ana pakete dahil gösteriyor; BakımX ruhsat okuma ile fotoğraf ve hasar kaydını aynı kabul akışına bağlıyor.",
+      "differentiation": "Ruhsat okumayı tek başına benzersiz özellik gibi sunmadan, kanıtlı kabulden iş emrine geçen akışı göstermek.",
+      "testMessage": "Ruhsatı okutun, kabul fotoğraflarını tamamlayın, iş emrine tek kayıttan geçin.",
+      "sources": [
+        "https://hayatyazilim.com/padok-bulut/",
+        "https://bakimx.com/dijital-arac-kabul"
+      ],
+      "confidence": "HIGH"
+    },
+    {
+      "observation": "PADOK ve Kursoft e-fatura işlevini pazarlıyor; BakımX bu özelliği yol haritasında ve aktif değil olarak belirtiyor. PADOK paket fiyatı sayfalarında kapsam çelişkisi var.",
+      "differentiation": "BakımX paket sayfasında bugün çalışan özellikler ile planlananları net ayırmak; e-fatura vaadini aktifmiş gibi sunmamak.",
+      "testMessage": "Servis operasyonunu bugün tek akışa taşıyın; elektronik belge yol haritasını şeffafça görün.",
+      "sources": [
+        "https://bakimx.com/",
+        "https://bakimx.com/oto-servis-programi",
+        "https://hayatyazilim.com/urun-karsilastirma/",
+        "https://hayatyazilim.com/sikca-sorulan-sorular/",
+        "https://kursoft.com.tr/oto-servis-programi/"
+      ],
+      "confidence": "HIGH"
+    },
+    {
+      "observation": "Kursoft OEM/muadil kodlu parça stoklarını, PADOK stok/ruhsat akışını anlatıyor; taranan sayfalarda VIN ile araca uygun parça eşleştirmesi doğrulanmadı. BakımX şaseyle katalog sonucu anlatıyor.",
+      "differentiation": "Şaseden araca özel parça listesine ve iş emrine geçişi gerçek ürün ekranlarıyla ölçülebilir bir mesaj olarak sınamak.",
+      "testMessage": "Şaseyi girin; araca uygun parçayı iş emrine aynı akışta ekleyin.",
+      "sources": [
+        "https://kursoft.com.tr/oto-servis-programi/",
+        "https://hayatyazilim.com/padok-bulut/",
+        "https://bakimx.com/"
+      ],
+      "confidence": "MEDIUM"
+    },
+    {
+      "observation": "Hayat Yazılım 15+ yıl ve 300+ aktif işletme beyanı, Kursoft referans/testimonial sayfaları kullanıyor. BakımX taranan sayfalarda temsili verili gerçek ürün ekranları gösteriyor.",
+      "differentiation": "BakımX için doğrulanabilir ürün akışı demosunu öne çıkarmak; müşteri sayısı veya başarı oranı uydurmadan izinli müşteri kanıtı toplamak.",
+      "testMessage": "Servisinizdeki kabulden teslimata akışı canlı demoda görün.",
+      "sources": [
+        "https://hayatyazilim.com/",
+        "https://kursoft.com.tr/oto-servis-programi/",
+        "https://bakimx.com/oto-servis-programi",
+        "https://bakimx.com/demo"
+      ],
+      "confidence": "HIGH"
+    }
+  ],
+  "cost": {
+    "usageAtStartUsd": 0,
+    "actorRuns": 4,
+    "totalPages": 24,
+    "pilotActorCostUsd": 0.08371109039613439,
+    "usageAfterUsd": 0.08374981415689423,
+    "estimatedRemainingFreeCreditUsd": 4.916250185843106
+  }
+}

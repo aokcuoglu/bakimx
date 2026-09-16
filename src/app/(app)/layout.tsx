@@ -15,6 +15,8 @@ import { AppShellChrome } from "@/components/layout/app-shell"
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner"
 import { VersionUpdateNotice } from "@/components/layout/version-update-notice"
 import { getBuildSignature } from "@/lib/build-signature"
+import { FIRST_ONBOARDING_PATH } from "@/lib/onboarding-steps"
+import { isOnboardingPending } from "@/lib/validations/onboarding"
 import { PRIVATE_ROBOTS, TITLE_TEMPLATE } from "@/lib/seo"
 
 export const metadata: Metadata = {
@@ -50,6 +52,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       currentPeriodEnd: true,
       requestedPlanTier: true,
       kind: true,
+      onboardingProfile: true,
     },
   })
   if (!workshop) {
@@ -116,6 +119,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       />
     )
   }
+
+  const requiresOnboarding = user.role === "owner" && !impersonation &&
+    isOnboardingPending(workshop.onboardingProfile)
+  if (requiresOnboarding) redirect(FIRST_ONBOARDING_PATH)
 
   // Salt-okunur bant: buraya artık yalnızca kurucu impersonation'ı düşebilir —
   // gerçek kullanıcı yukarıda çıkışa yönlendirildi. Kurucu kilitli tenant'ı
