@@ -102,6 +102,7 @@ function PlanAction({
   compact = false,
   publicCard = false,
   liteRegistrationOpen = true,
+  onSelectPlan,
 }: {
   tier: SalePlanTier
   billing: BillingCycle
@@ -112,6 +113,7 @@ function PlanAction({
   compact?: boolean
   publicCard?: boolean
   liteRegistrationOpen?: boolean
+  onSelectPlan?: (tier: SalePlanTier, cycle: BillingCycle) => void
 }) {
   const isOwned = ownedTier === tier
   const pkg = PLAN_PACKAGES.find((plan) => plan.tier === tier)!
@@ -136,6 +138,19 @@ function PlanAction({
   }
 
   const href = `${checkoutBasePath}?tier=${tier}&cycle=${billing}`
+  const label = isOwned ? "Mevcut paket · Yenile" : checkoutBasePath.startsWith("/register") ? tier === "lite" ? "Ücretsiz hesap oluştur" : "Ücretsiz dene" : "Bu paketi seç"
+  const trackSelection = () => trackMarketingEvent(tier === "lite" && checkoutBasePath.startsWith("/register") ? "lite_cta_click" : "purchase_started", {
+    plan_tier: tier,
+    billing_cycle: billing,
+    cta_location: "pricing_card",
+  })
+  if (onSelectPlan) {
+    return (
+      <Button type="button" variant={isOwned ? "secondary" : pkg.popular ? "foreground" : "outline"} size={compact ? "sm" : "default"} className="w-full" onClick={() => { trackSelection(); onSelectPlan(tier, billing) }}>
+        {isOwned && <Check className="size-4" aria-hidden="true" />}{label}
+      </Button>
+    )
+  }
   return (
     <Button
       asChild
@@ -145,16 +160,10 @@ function PlanAction({
     >
       <Link
         href={href}
-        onClick={() =>
-          trackMarketingEvent(tier === "lite" && checkoutBasePath.startsWith("/register") ? "lite_cta_click" : "purchase_started", {
-            plan_tier: tier,
-            billing_cycle: billing,
-            cta_location: "pricing_card",
-          })
-        }
+        onClick={trackSelection}
       >
         {isOwned && <Check className="size-4" aria-hidden="true" />}
-        {isOwned ? "Mevcut paket · Yenile" : checkoutBasePath.startsWith("/register") ? tier === "lite" ? "Ücretsiz hesap oluştur" : "Ücretsiz dene" : "Bu paketi seç"}
+        {label}
       </Link>
     </Button>
   )
@@ -205,6 +214,7 @@ export function PlanPackages({
   hasPendingOrder = false,
   canPurchase = true,
   liteRegistrationOpen = true,
+  onSelectPlan,
 }: {
   presentation?: "comparison" | "public"
   ownedTier?: PlanTier | null
@@ -215,6 +225,7 @@ export function PlanPackages({
   /** Billing viewers without billing.manage can compare, but cannot start checkout. */
   canPurchase?: boolean
   liteRegistrationOpen?: boolean
+  onSelectPlan?: (tier: SalePlanTier, cycle: BillingCycle) => void
 }) {
   const isPublic = presentation === "public"
   const [billing, setBilling] = useState<BillingCycle>("monthly")
@@ -280,7 +291,7 @@ export function PlanPackages({
                     ))}
                   </ul>
                   <div className="mt-auto">
-                    <PlanAction publicCard tier={pkg.tier} billing={billing} checkoutBasePath={checkoutBasePath} ownedTier={ownedTier} hasPendingOrder={hasPendingOrder} canPurchase={canPurchase} liteRegistrationOpen={liteRegistrationOpen} />
+                    <PlanAction publicCard tier={pkg.tier} billing={billing} checkoutBasePath={checkoutBasePath} ownedTier={ownedTier} hasPendingOrder={hasPendingOrder} canPurchase={canPurchase} liteRegistrationOpen={liteRegistrationOpen} onSelectPlan={onSelectPlan} />
                   </div>
                 </Card>
               </div>
@@ -341,6 +352,7 @@ export function PlanPackages({
                       liteRegistrationOpen={liteRegistrationOpen}
                       compact={!isPublic}
                       publicCard={isPublic}
+                      onSelectPlan={onSelectPlan}
                     />
                   </div>
                 </TableHead>
@@ -393,7 +405,8 @@ export function PlanPackages({
               ownedTier={ownedTier}
               hasPendingOrder={hasPendingOrder}
               canPurchase={canPurchase}
-                      liteRegistrationOpen={liteRegistrationOpen}
+              liteRegistrationOpen={liteRegistrationOpen}
+              onSelectPlan={onSelectPlan}
             />
             {PLAN_COMPARISON.map((category) => (
               <section key={category.key} aria-labelledby={`mobil-${pkg.tier}-${category.key}`} className="space-y-2">

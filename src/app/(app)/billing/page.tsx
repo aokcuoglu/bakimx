@@ -6,12 +6,14 @@ import { getAppData } from "@/app/(app)/data"
 import { PLAN_SEATS, getPlanState, hasFeature, type PlanTier } from "@/lib/plan"
 import { canManageBilling, getSeatUsage } from "@/lib/rbac"
 import { getPlanPackage } from "@/lib/plans-catalog"
-import { PlanPackages } from "@/components/billing/plan-packages"
+import { BillingPlanManager } from "@/components/billing/billing-plan-manager"
 import { BillingUsageCards } from "@/components/billing/usage-cards"
 import { PendingOrderAlert } from "@/components/billing/pending-order-alert"
 import { prisma } from "@/lib/db"
 import { formatMinor } from "@/lib/billing/pricing"
 import { getWorkshopQuotaContext, getWorkshopQuotaUsage } from "@/lib/rapidapi-quota"
+import { isLiteRegistrationOpen } from "@/lib/lite-campaign"
+import { getHavaleInstructions } from "@/lib/billing/provider"
 
 export const metadata = { title: "Paketler ve Kullanım" }
 
@@ -110,14 +112,26 @@ export default async function BillingPage({
           receiptHref={lastConfirmedOrder ? `/api/billing/orders/${lastConfirmedOrder.id}/receipt` : undefined}
         />
 
-        <div id="paketler" className="scroll-mt-24 pt-2">
-          <PlanPackages
-            ownedTier={ownedTier}
-            workshopName={workshop.name}
-            hasPendingOrder={!!pendingOrder}
-            canPurchase={canPurchase}
-          />
-        </div>
+        <BillingPlanManager
+          ownedTier={ownedTier}
+          currentPlanName={ownedPkg?.name ?? getPlanPackage(plan.tier)?.name ?? plan.tier}
+          currentCycle={workshop.billingCycle}
+          isTrialing={plan.isTrialing}
+          trialDaysLeft={plan.trialDaysLeft}
+          workshopName={workshop.name}
+          hasPendingOrder={!!pendingOrder}
+          pendingReference={pendingOrder?.reference}
+          pendingMethod={pendingOrder?.method}
+          canPurchase={canPurchase}
+          liteRegistrationOpen={isLiteRegistrationOpen()}
+          liteFreeGranted={!!workshop.liteFreeGrantedAt}
+          defaultInvoiceTitle={workshop.invoiceTitle || workshop.name}
+          defaultTaxNumber={workshop.taxNumber || ""}
+          defaultTaxOffice={workshop.taxOffice || ""}
+          seatUsage={seatUsage}
+          extraSeats={Math.max(0, workshop.extraSeats)}
+          havale={getHavaleInstructions()}
+        />
       </div>
     </AppShell>
   )
