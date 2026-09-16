@@ -3,18 +3,12 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { motion } from "framer-motion"
 import { Eye, EyeOff, Lock, Store, UserRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { isEmailIdentifier } from "@/lib/user-identity"
-
-const formVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.15, ease: "easeOut" as const } },
-}
 
 // On success, send the user to the app (app.bakimx.com in prod). The app origin is
 // derived from the current host (no build-time env needed); a validated ?redirect
@@ -136,17 +130,12 @@ export function LoginForm({
   }
 
   return (
-    <motion.div
-      variants={formVariants}
-      initial="hidden"
-      animate="visible"
-      className="w-full"
-    >
-      <div className="mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
+    <div className="w-full">
+      <div className="mb-8 border-b border-border pb-7">
+        <h1 className="text-2xl font-medium tracking-[-0.035em] text-foreground sm:text-[32px]">
           BakimX hesabınıza giriş yapın
         </h1>
-        <p className="mt-2 text-muted-foreground text-sm lg:text-base">
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
           Servis süreçlerinizi yönetmek için giriş yapın.
         </p>
       </div>
@@ -169,7 +158,7 @@ export function LoginForm({
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="identifier" className="text-sm font-medium text-muted-foreground">
+          <Label htmlFor="identifier" className="text-sm font-medium text-foreground">
             E-posta veya kullanıcı adı
           </Label>
           <div className="relative">
@@ -184,7 +173,7 @@ export function LoginForm({
               spellCheck={false}
               placeholder="ornek@email.com veya kullanıcı adınız"
               required
-              className="pl-9"
+              className="h-10 rounded-md bg-card pl-9 shadow-xs"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
             />
@@ -195,7 +184,7 @@ export function LoginForm({
             hesap olduğu çözülemez. E-posta girenlere hiç gösterilmez. */}
         {usesUsername && (
           <div className="space-y-2">
-            <Label htmlFor="workshopCode" className="text-sm font-medium text-muted-foreground">
+            <Label htmlFor="workshopCode" className="text-sm font-medium text-foreground">
               İş yeri kodu
             </Label>
             <div className="relative">
@@ -208,7 +197,7 @@ export function LoginForm({
                 autoCapitalize="none"
                 spellCheck={false}
                 placeholder="ornek-oto-servis"
-                className="pl-9"
+                className="h-10 rounded-md bg-card pl-9 shadow-xs"
               />
             </div>
             <p className="text-xs text-muted-foreground">
@@ -218,7 +207,7 @@ export function LoginForm({
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium text-muted-foreground">
+          <Label htmlFor="password" className="text-sm font-medium text-foreground">
             Şifre
           </Label>
           <div className="relative">
@@ -230,7 +219,7 @@ export function LoginForm({
               autoComplete="current-password"
               placeholder="••••••"
               required
-              className="pl-9 pr-9"
+              className="h-10 rounded-md bg-card pl-9 pr-9 shadow-xs"
             />
             <Button
               type="button"
@@ -278,6 +267,6 @@ export function LoginForm({
           </Link>
         </div>
       </form>
-    </motion.div>
+    </div>
   )
 }

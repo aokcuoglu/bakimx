@@ -1,6 +1,9 @@
 import type { Metadata } from "next"
-import { AuthVisualPanel } from "@/components/auth/auth-visual-panel"
 import { LoginForm } from "@/components/auth/login-form"
+import { LoginSidebar } from "@/components/auth/login-sidebar"
+import { RegisterFooter } from "@/components/auth/register-footer"
+import styles from "@/components/auth/register-design.module.css"
+import { Header } from "@/components/sections/Header"
 
 export const metadata: Metadata = {
   title: "Giriş Yap",
@@ -17,18 +20,23 @@ export default async function LoginPage({
 }) {
   const { expired, reason, advisorInvited } = await searchParams
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-muted">
-      <div className="lg:w-[45%] lg:min-h-screen">
-        <AuthVisualPanel />
-      </div>
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-10">
-        <div className="w-full max-w-[440px]">
+    <div className={styles.viewport}>
+      <Header />
+      <div className={styles.layout}>
+        <LoginSidebar />
+        <main
+          aria-label="Hesaba giriş formu"
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-5 py-8 sm:px-10 sm:py-12 lg:px-14 xl:px-20"
+        >
+          <div className="mx-auto w-full max-w-md">
           <LoginForm
             expiredReason={expired ?? reason}
             successNotice={advisorInvited === "1" ? "Satış hesabınız oluşturuldu. E-posta adresiniz ve şifrenizle giriş yapabilirsiniz." : undefined}
           />
-        </div>
+          </div>
+        </main>
       </div>
+      <RegisterFooter className="px-5 py-4 sm:px-8" />
     </div>
   )
 }
