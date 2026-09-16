@@ -421,19 +421,21 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
 
           <div className="space-y-2">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Paylaş</span>
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="lg"
               disabled
-              className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border bg-card text-muted-foreground text-sm cursor-not-allowed touch-manipulation"
-              title="PDF çıktısı yakında"
+              className="w-full justify-start text-muted-foreground"
             >
               <Printer className="size-4" />
               Yazdır / PDF
-            </button>
+            </Button>
             <Button
+              variant="whatsapp"
               type="button"
               size="lg"
-              className="w-full justify-start bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90 touch-manipulation"
+              className="w-full justify-start"
               onClick={handleWhatsApp}
             >
               <Share2 className="size-4" />

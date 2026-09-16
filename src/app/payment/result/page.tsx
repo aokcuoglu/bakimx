@@ -173,7 +173,7 @@ export default async function PaymentResultPage({
               </span>
             </p>
           )}
-          <Button asChild size="lg" className="mt-6 w-full">
+          <Button variant="foreground" asChild size="lg" className="mt-6 w-full">
             <Link href="/login">
               Uygulamaya Git
             </Link>

@@ -214,12 +214,13 @@ function FilledPhaseCell({
   onOpen: () => void
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       onClick={onOpen}
       className={cn(
         CELL,
-        "relative shrink-0 overflow-hidden rounded-md border bg-muted text-left touch-manipulation hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        "relative h-auto shrink-0 overflow-hidden rounded-md border bg-muted p-0 text-left hover:border-primary/50"
       )}
       aria-label={`${typeLabel} · ${PHOTO_PHASE_SHORT_LABELS[phase]} — üçlü karşılaştır`}
     >
@@ -235,7 +236,7 @@ function FilledPhaseCell({
           {count}
         </span>
       ) : null}
-    </button>
+    </Button>
   )
 }
 
@@ -312,14 +313,15 @@ function PhaseCompareDialog({
                         }}
                       />
                     ) : null}
-                    <button
+                    <Button
                       type="button"
-                      className="relative block w-full overflow-hidden rounded-md aspect-square bg-muted touch-manipulation ring-offset-background hover:ring-2 hover:ring-ring"
+                      variant="ghost"
+                      className="relative block h-auto w-full overflow-hidden rounded-md bg-muted p-0 aspect-square hover:ring-2 hover:ring-ring"
                       onClick={() => onZoom(phase)}
                       aria-label={`${row.label} · ${PHOTO_PHASE_SHORT_LABELS[phase]} — büyüt`}
                     >
                       <MatrixThumb photoId={cover.id} fileUrl={cover.fileUrl} />
-                    </button>
+                    </Button>
                   </div>
                 ) : cover ? (
                   <div className="flex aspect-square items-center justify-center rounded-md border border-dashed bg-muted/40">

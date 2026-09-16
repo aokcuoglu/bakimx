@@ -38,7 +38,7 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
             </p>
           </div>
         </div>
-        <Button
+        <Button variant="foreground"
           size="lg"
           onClick={() => setShowForm(!showForm)}
           className="touch-manipulation"
@@ -197,7 +197,7 @@ function AddTechnicianForm({
         ))}
       </div>
       <div className="flex gap-2">
-        <Button
+        <Button variant="foreground"
           type="submit"
           size="lg"
           disabled={isPending || !fullName.trim() || !phone.trim()}

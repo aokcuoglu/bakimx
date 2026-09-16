@@ -341,7 +341,7 @@ export function CameraScanner({
               <div className="flex w-full max-w-sm flex-col items-center gap-4 text-center">
                 {renderConfirm?.(scannedValue)}
                 <div className="flex w-full flex-col gap-2">
-                  <Button size="lg" onClick={accept} className="gap-2">
+                  <Button variant="foreground" size="lg" onClick={accept} className="gap-2">
                     <Check className="size-4" /> Kullan
                   </Button>
                   <Button variant="outline" onClick={retake} className="gap-2 border-white/30 bg-white/10 text-white hover:bg-white/20">
@@ -371,7 +371,7 @@ export function CameraScanner({
                 ? "Kamera izni verilmedi. Tarayıcı ayarlarından izin verin veya dosyadan yükleyin."
                 : errorMsg || "Bu cihaz/tarayıcı canlı kamerayı desteklemiyor. Lütfen dosyadan yükleyin."}
             </p>
-            <Button onClick={() => fileInputRef.current?.click()} className="gap-2">
+            <Button variant="foreground" onClick={() => fileInputRef.current?.click()} className="gap-2">
               <Upload className="size-4" /> Dosyadan Yükle
             </Button>
           </div>

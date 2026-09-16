@@ -122,7 +122,7 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
               </a>
             </Button>
             <PrintButton className="print:hidden" />
-            <Button size="default" asChild>
+            <Button variant="foreground" size="default" asChild>
               <Link href="/cashbox/payments/new">
                 <Plus className="size-4" />
                 Yeni Tahsilat

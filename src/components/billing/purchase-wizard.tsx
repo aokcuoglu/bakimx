@@ -328,7 +328,7 @@ export function PurchaseWizard({
                         </Alert>
                       )}
                       <div className="flex justify-end pt-2">
-                        <Button
+                        <Button variant="foreground"
                           type="button"
                           size="lg"
                           onClick={() => next([])}
@@ -474,7 +474,7 @@ export function PurchaseWizard({
                         <Button type="button" variant="outline" size="lg" onClick={() => setStep(0)}>
                           <ChevronLeft className="size-4" /> Geri
                         </Button>
-                        <Button
+                        <Button variant="foreground"
                           type="button"
                           size="lg"                          onClick={() =>
                             next(
@@ -559,7 +559,7 @@ export function PurchaseWizard({
                         <Button type="button" variant="outline" size="lg" onClick={() => setStep(1)}>
                           <ChevronLeft className="size-4" /> Geri
                         </Button>
-                        <Button
+                        <Button variant="foreground"
                           type="button"
                           size="lg"
                           disabled={loading}

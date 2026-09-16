@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import Link from "next/link"
 import { AlertTriangle, RotateCw } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { isChunkLoadError, reloadOnceForChunkError } from "@/lib/chunk-error"
 
 /**
@@ -38,18 +39,16 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
         </p>
       </div>
       <div className="flex items-center gap-2">
-        <button
+        <Button
+          type="button"
+          variant="outline"
           onClick={reset}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
         >
           <RotateCw className="size-4" /> Tekrar dene
-        </button>
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          Panele dön
-        </Link>
+        </Button>
+        <Button asChild variant="foreground">
+          <Link href="/dashboard">Panele dön</Link>
+        </Button>
       </div>
     </div>
   )

@@ -234,7 +234,7 @@ export function TeamManagement({
           <div className="flex flex-col sm:flex-row gap-2 shrink-0">
             {/* İki yol yan yana: e-postası olan davetle, olmayan geçici şifreyle gelir. */}
             {localAssignable.length > 0 && (
-              <Button
+              <Button variant="foreground"
                 size="lg"
                 onClick={() => {
                   setAccountMissingId(null)
@@ -383,7 +383,7 @@ export function TeamManagement({
               />
             </div>
             <div className="flex gap-2">
-              <Button
+              <Button variant="foreground"
                 type="submit"
                 size="lg"
                 disabled={isPending}

@@ -372,7 +372,7 @@ export function SalesConsole({
             </Button>
           )}
           {canManagePipeline && (
-            <Button type="button" onClick={(event) => {
+            <Button variant="foreground" type="button" onClick={(event) => {
               leadFormTriggerRef.current = event.currentTarget
               form.reset()
               setLocationLeadId(null)
@@ -558,7 +558,7 @@ export function SalesConsole({
                 Yine de ekle
               </Button>
             )}
-            <Button type="submit" form="new-sales-lead-form" disabled={pending}>
+            <Button variant="foreground" type="submit" form="new-sales-lead-form" disabled={pending}>
               {locationLeadId ? "Konumu kaydet" : "Portföye ekle"}
             </Button>
           </DialogFooter>
@@ -1116,7 +1116,7 @@ function DiscountCodeSection({
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={pending}>
+            <Button variant="foreground" type="submit" disabled={pending}>
               <Gift className="size-4" /> Kod oluştur
             </Button>
           </form>
@@ -1264,7 +1264,7 @@ function DiscountCodeSection({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingCode(null)}>Vazgeç</Button>
-            <Button onClick={saveExpiry} disabled={pending}>Kaydet</Button>
+            <Button variant="foreground" onClick={saveExpiry} disabled={pending}>Kaydet</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

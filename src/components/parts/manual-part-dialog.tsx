@@ -265,7 +265,7 @@ export function ManualPartDialog({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
             Vazgeç
           </Button>
-          <Button type="button" onClick={() => void submit()} disabled={submitting || !name.trim()}>
+          <Button variant="foreground" type="button" onClick={() => void submit()} disabled={submitting || !name.trim()}>
             {submitting ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
             Ekle
           </Button>

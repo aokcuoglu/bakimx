@@ -153,7 +153,7 @@ export default function PhotoEditor({ sourceUrl, initialAnnotation, onSave, onCa
     </div>}
     {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
     <div className="flex gap-2">
-      <Button type="button" disabled={busy || !img} onClick={save}>{busy ? "Kaydediliyor…" : "Fotoğrafı kaydet"}</Button>
+      <Button variant="foreground" type="button" disabled={busy || !img} onClick={save}>{busy ? "Kaydediliyor…" : "Fotoğrafı kaydet"}</Button>
       <Button type="button" variant="outline" disabled={busy} onClick={() => { if (!dirty || window.confirm("Kaydedilmemiş çizimler silinsin mi?")) onCancel() }}>Vazgeç</Button>
     </div>
   </div>

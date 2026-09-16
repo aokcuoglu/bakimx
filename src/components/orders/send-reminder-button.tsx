@@ -72,12 +72,15 @@ export function SendReminderButton({
           <p className="text-xs text-success-strong">
             {customerName}{vehiclePlate ? ` — ${vehiclePlate}` : ""} için tahsilat hatırlatması gönderildi.
           </p>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
             onClick={() => { setResult(null) }}
-            className="text-xs text-muted-foreground hover:text-foreground font-medium"
+            className="text-muted-foreground"
           >
             Kapat
-          </button>
+          </Button>
         </div>
       )}
 
@@ -97,7 +100,7 @@ export function SendReminderButton({
           <p className="text-xs text-muted-foreground">Müşterinin iletişim izinlerine göre SMS, WhatsApp veya e-posta gönderilir.</p>
           <div className="flex items-center gap-2 justify-end">
             <Button variant="outline" size="sm" onClick={() => setShowConfirm(false)}>Vazgeç</Button>
-            <Button size="sm" onClick={handleSend} disabled={loading}>
+            <Button variant="foreground" size="sm" onClick={handleSend} disabled={loading}>
               {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Send className="size-3.5 mr-1" />}
               Gönder
             </Button>

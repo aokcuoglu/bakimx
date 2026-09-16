@@ -112,7 +112,7 @@ export function ForgotPasswordForm() {
         </div>
       </div>
 
-      <Button type="submit" size="xl" className="w-full" disabled={loading}>
+      <Button type="submit" variant="foreground" size="xl" className="w-full" disabled={loading}>
         {loading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

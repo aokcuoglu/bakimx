@@ -13,7 +13,9 @@ const article = readFileSync(join(root, "components/parts/tecdoc-article-row.tsx
 test("GetirBakım satırı seçilebilir ve UNAVAILABLE satır seçilmez", () => {
   expect(row).toContain("onSelect?: () => void")
   expect(row).toContain("isGetirbakimSelectable")
-  expect(row).toContain("<button type=\"button\" onClick={onSelect}")
+  expect(row).toContain('if (selectable)')
+  expect(row).toContain('<Button type="button" variant="ghost" onClick={onSelect}')
+  expect(row).toContain('return <div className={rowClass}>{body}</div>')
   expect(row).toContain("GETIRBAKIM_SOURCE_LABEL")
 })
 

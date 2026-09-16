@@ -335,13 +335,15 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
       {/* Alt kontroller */}
       <div className="flex items-center justify-center gap-6 p-6 shrink-0">
         {status === "ready" && (
-          <button
+          <Button
+            type="button"
+            variant="ghost"
             onClick={capture}
-            className="flex size-16 items-center justify-center rounded-full border-4 border-white bg-white/20 active:scale-95"
+            className="size-16 rounded-full border-4 border-white bg-white/20 text-white hover:bg-white/30"
             aria-label="Çek"
           >
             <Camera className="size-7" />
-          </button>
+          </Button>
         )}
         {status === "captured" && (
           <>
@@ -349,7 +351,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
               <RefreshCw className="size-4" />
               Tekrar çek
             </Button>
-            <Button onClick={usePhoto} className="gap-2">
+            <Button variant="foreground" onClick={usePhoto} className="gap-2">
               <Check className="size-4" />
               Kullan
             </Button>

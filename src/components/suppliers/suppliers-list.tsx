@@ -118,7 +118,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
           <Truck className="size-5 text-primary" />
           Tedarikçiler
         </h2>
-        <Button size="sm" className="w-full sm:w-auto" asChild>
+        <Button variant="foreground" size="sm" className="w-full sm:w-auto" asChild>
           <Link href="/suppliers/new">
             <Plus className="size-3.5 mr-1" /> Yeni Tedarikçi
           </Link>

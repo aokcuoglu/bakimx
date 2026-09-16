@@ -20,7 +20,7 @@ export default function Error({ reset }: { reset: () => void }) {
             Güncel servis bilgileri alınırken bir sorun oluştu. Lütfen biraz sonra yeniden deneyin.
           </AlertDescription>
         </Alert>
-        <Button size="lg" onClick={reset}>Yeniden Dene</Button>
+        <Button variant="navy" size="lg" onClick={reset}>Yeniden Dene</Button>
       </main>
       <Footer />
     </PublicSite>

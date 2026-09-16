@@ -140,7 +140,7 @@ export function ForcePasswordChange({ displayName }: { displayName: string }) {
               </div>
             </div>
 
-            <Button type="submit" size="xl" disabled={loading} className="w-full">
+            <Button type="submit" variant="foreground" size="xl" disabled={loading} className="w-full">
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="size-4 animate-spin" />

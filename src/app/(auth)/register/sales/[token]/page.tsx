@@ -65,7 +65,7 @@ function StatusPage({ state }: { state: keyof typeof STATUS_CONTENT }) {
         </div>
         <h1 className="mt-5 text-xl font-bold tracking-tight text-foreground">{content.title}</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{content.description}</p>
-        <Button asChild className="mt-6"><Link href="/login">Giriş sayfasına git</Link></Button>
+        <Button variant="foreground" asChild className="mt-6"><Link href="/login">Giriş sayfasına git</Link></Button>
       </div>
     </div>
   )

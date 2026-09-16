@@ -740,7 +740,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
           <Button type="button" variant="outline" onClick={() => (onCancel ? onCancel() : router.back())} disabled={pending}>
             İptal
           </Button>
-          <Button type="submit" disabled={pending} className="gap-1.5">
+          <Button variant="foreground" type="submit" disabled={pending} className="gap-1.5">
             {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             {mode === "edit" ? "Güncelle" : "Müşteri Kaydet"}
           </Button>

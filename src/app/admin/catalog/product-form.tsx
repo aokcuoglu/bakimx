@@ -185,19 +185,17 @@ export function CatalogProductForm({
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
         <div className="sticky top-16 z-20 -mx-4 border-b bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <Link
-              href="/admin/catalog"
-              aria-label="Kataloğa dön"
-              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <ArrowLeft className="size-4" />
-            </Link>
+            <Button variant="ghost" size="icon" className="text-muted-foreground" asChild>
+              <Link href="/admin/catalog" aria-label="Kataloğa dön">
+                <ArrowLeft className="size-4" />
+              </Link>
+            </Button>
             <div className="min-w-0">
               <h1 className="text-lg font-bold text-foreground">{isEdit ? "Ürünü Düzenle" : "Yeni Ürün"}</h1>
               {isEdit && <p className="truncate text-xs text-muted-foreground">{product.sku}</p>}
             </div>
             <div className="ml-auto flex flex-wrap items-center gap-2">
-              <Button type="submit" disabled={pending} className="min-w-32">
+              <Button variant="foreground" type="submit" disabled={pending} className="min-w-32">
                 {pending ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : <Save className="mr-1 size-3.5" />}
                 {isEdit ? "Güncelle" : "Ürünü oluştur"}
               </Button>

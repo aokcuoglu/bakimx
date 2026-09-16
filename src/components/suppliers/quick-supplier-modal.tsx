@@ -123,7 +123,7 @@ export function QuickSupplierModal({
         </div>
 
         <div className="flex gap-2">
-          <Button type="button" onClick={handleSubmit} disabled={pending} className="flex-1 sm:flex-none">
+          <Button variant="foreground" type="button" onClick={handleSubmit} disabled={pending} className="flex-1 sm:flex-none">
             {pending ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Plus className="size-3.5 mr-1" />}
             Oluştur
           </Button>

@@ -84,7 +84,7 @@ export default function AracKabulFormuPage() {
               {ARAC_KABUL_FORMU_INTRO}
             </p>
             <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <Button asChild size="lg">
+              <Button asChild variant="navy" size="lg">
                 <Link href="/dijital-arac-kabul">
                   Dijital araç kabul akışını gör
                   <ArrowRight aria-hidden="true" />

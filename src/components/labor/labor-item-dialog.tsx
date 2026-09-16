@@ -196,7 +196,7 @@ export function LaborItemDialog({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
             Vazgeç
           </Button>
-          <Button type="button" onClick={submit} disabled={submitting || !name.trim()}>
+          <Button variant="foreground" type="button" onClick={submit} disabled={submitting || !name.trim()}>
             {submitting && <Loader2 className="size-4 animate-spin" />}
             {item ? "Kaydet" : "Ekle"}
           </Button>

@@ -368,7 +368,7 @@ export function PricingSummaryCard({
             </p>
           ) : editingMeta ? (
             <div className="flex gap-2">
-              <Button onClick={saveMeta} disabled={loading} size="sm" className="flex-1">
+              <Button variant="foreground" onClick={saveMeta} disabled={loading} size="sm" className="flex-1">
                 {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
                 Kaydet
               </Button>
@@ -470,7 +470,7 @@ export function PaymentHistoryCard({
             Tahsilat Geçmişi
           </CardTitle>
           {!collectionsLocked && (
-            <Button size="sm" onClick={() => setCollectionModalOpen(true)}>
+            <Button variant="foreground" size="sm" onClick={() => setCollectionModalOpen(true)}>
               <Plus className="size-3.5 mr-1" />
               Tahsilat Ekle
             </Button>

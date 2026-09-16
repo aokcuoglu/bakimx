@@ -110,7 +110,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
           <Package className="size-5 text-primary" />
           Stok / Parçalar
         </h2>
-        <Button size="sm" className="w-full sm:w-auto" asChild>
+        <Button variant="foreground" size="sm" className="w-full sm:w-auto" asChild>
           <Link href="/parts/new">
             <Plus className="size-3.5 mr-1" /> Yeni Parça
           </Link>

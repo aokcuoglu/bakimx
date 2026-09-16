@@ -645,7 +645,7 @@ function AddButton({ draft, onSubmit, submitting, disabled }: {
   draft: Row; onSubmit: () => void; submitting: boolean; disabled: boolean
 }) {
   return (
-    <Button type="button" size="default" onClick={onSubmit}
+    <Button variant="foreground" type="button" size="default" onClick={onSubmit}
       disabled={disabled || submitting || !draft.name.trim()}
       className="w-full sm:w-auto">
       {submitting ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}

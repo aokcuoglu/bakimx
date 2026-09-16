@@ -6,6 +6,7 @@ import { formatTRY } from "@/lib/format"
 import type { ActiveWorkOrderRow } from "@/lib/dashboard/queries"
 import { Eye, MessageCircle, ChevronRight, Camera, XCircle } from "lucide-react"
 import { useDashboardPage, DashboardPagination } from "@/components/dashboard/dashboard-pagination"
+import { Button } from "@/components/ui/button"
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—"
@@ -119,13 +120,12 @@ export function ActiveOrdersDesktop({ orders }: { orders: ActiveWorkOrderRow[] }
                 </td>
                 <td className="py-3 px-4 text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <Link
-                      href={`/orders/${o.id}`}
-                      className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md bg-muted hover:bg-muted text-xs font-medium text-foreground transition-colors touch-manipulation"
-                    >
-                      <Eye className="size-3" />
-                      Görüntüle
-                    </Link>
+                    <Button variant="secondary" size="compact" asChild>
+                      <Link href={`/orders/${o.id}`}>
+                        <Eye className="size-3" />
+                        Görüntüle
+                      </Link>
+                    </Button>
                   </div>
                 </td>
               </tr>

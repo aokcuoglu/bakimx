@@ -93,7 +93,7 @@ export function AccountPasswordForm() {
             )}
           />
         </div>
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+        <Button variant="foreground" type="submit" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? "Değiştiriliyor…" : "Şifreyi Değiştir"}
         </Button>
       </form>

@@ -10,7 +10,7 @@ export default function TechnicianOrderError({ reset }: { error: Error; reset: (
         <AlertTitle>İş emri açılamadı</AlertTitle>
         <AlertDescription>Bağlantınızı kontrol edip yeniden deneyin. Girdiğiniz bilgiler silinmedi.</AlertDescription>
       </Alert>
-      <Button size="lg" onClick={reset}>Tekrar dene</Button>
+      <Button variant="foreground" size="lg" onClick={reset}>Tekrar dene</Button>
     </div>
   )
 }

@@ -119,7 +119,7 @@ export function UsageDateFilter({ from, to }: { from: string; to: string }) {
               Sıfırla
             </Button>
           )}
-          <Button type="submit" size="sm">
+          <Button variant="foreground" type="submit" size="sm">
             Uygula
           </Button>
         </div>
@@ -267,7 +267,7 @@ export function WorkshopOrderFilters({
               Filtreleri temizle
             </Button>
           )}
-          <Button type="submit" size="sm">
+          <Button variant="foreground" type="submit" size="sm">
             Uygula
           </Button>
         </div>

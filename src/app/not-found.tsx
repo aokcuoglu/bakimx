@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation"
 
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 
 /**
  * Global 404 sayfası — Next.js'in standart "This page could not be found"
@@ -42,12 +41,9 @@ export default function NotFound() {
           </p>
 
           <div className="flex flex-col gap-2.5">
-            <Link
-              href="/"
-              className={cn(buttonVariants({ size: "xl" }), "w-full")}
-            >
-              Ana sayfaya dön
-            </Link>
+            <Button asChild variant="navy" size="xl" className="w-full">
+              <Link href="/">Ana sayfaya dön</Link>
+            </Button>
             <Button
               variant="outline"
               size="xl"

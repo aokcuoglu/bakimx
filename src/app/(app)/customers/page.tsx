@@ -125,7 +125,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                 Bakiye Özeti
               </Link>
             </Button>
-            <Button size="default" asChild>
+            <Button variant="foreground" size="default" asChild>
               <Link href="/customers/new">
                 <Plus className="size-4" />
                 Yeni Müşteri

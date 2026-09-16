@@ -344,7 +344,7 @@ export function SalesLeadDetail({
                   }}><Copy className="size-4" /> Kopyala</Button>
                 </div>
               )}
-              <Button type="button" disabled={pending} onClick={() => startTransition(async () => {
+              <Button variant="foreground" type="button" disabled={pending} onClick={() => startTransition(async () => {
                 const result = await generateSalesRegistrationLink(lead.id)
                 if (!result.ok) {
                   toast.error(result.error)
@@ -384,7 +384,7 @@ export function SalesLeadDetail({
                   <FormField control={assignmentForm.control} name="advisorId" render={({ field }) => (
                     <FormItem className="flex-1"><FormLabel>Danışman</FormLabel><Select value={field.value ?? ""} onValueChange={(value) => field.onChange(value || null)}><FormControl><SelectTrigger><SelectValue placeholder="Atanmamış" /></SelectTrigger></FormControl><SelectContent><SelectItem value="">Atanmamış havuz</SelectItem>{advisors.map((advisor) => <SelectItem key={advisor.id} value={advisor.id}>{advisor.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                   )} />
-                  <Button type="submit" disabled={pending}>Ata / devret</Button>
+                  <Button variant="foreground" type="submit" disabled={pending}>Ata / devret</Button>
                 </form>
               </Form>
             </section>
@@ -402,7 +402,7 @@ export function SalesLeadDetail({
                 <FormField control={stageForm.control} name="status" render={({ field }) => (
                   <FormItem className="flex-1"><FormLabel>Aşama</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{STATUS_OPTIONS.map(([value, label]) => <SelectItem key={value} value={value} disabled={value === "onboarding"}>{label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
-                <Button type="submit" disabled={pending}>Güncelle</Button>
+                <Button variant="foreground" type="submit" disabled={pending}>Güncelle</Button>
               </form>
             </Form>
           </section>
@@ -419,7 +419,7 @@ export function SalesLeadDetail({
                 {task.note && <p className="mt-2 text-sm text-foreground">{task.note}</p>}
                 {canManage && task.status === "scheduled" && (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Button type="button" size="sm" onClick={() => selectTaskForCompletion(task.id)}>Görüşmeyle tamamla</Button>
+                    <Button variant="foreground" type="button" size="sm" onClick={() => selectTaskForCompletion(task.id)}>Görüşmeyle tamamla</Button>
                     <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => startTransition(async () => { const result = await resolveSalesTask(task.id, "no_show"); if (!result.ok) toast.error(result.error); else toast.success("Görev gelmedi olarak işaretlendi.") })}>Gelmedi</Button>
                     <Button type="button" size="sm" variant="ghost" disabled={pending} onClick={() => startTransition(async () => { const result = await resolveSalesTask(task.id, "cancelled"); if (!result.ok) toast.error(result.error); else toast.success("Görev iptal edildi.") })}>İptal</Button>
                   </div>
@@ -440,7 +440,7 @@ export function SalesLeadDetail({
               <FormField control={taskForm.control} name="startsAt" render={({ field }) => <FormItem><FormLabel>Başlangıç</FormLabel><FormControl><Input {...field} type="datetime-local" /></FormControl><FormMessage /></FormItem>} />
               <FormField control={taskForm.control} name="durationMinutes" render={({ field }) => <FormItem><FormLabel>Süre (dk)</FormLabel><FormControl><Input {...field} type="number" min={5} max={480} step={5} onChange={(event) => field.onChange(event.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>} />
               <FormField control={taskForm.control} name="note" render={({ field }) => <FormItem><FormLabel>Not</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>} />
-              <div className="sm:col-span-2 lg:col-span-4"><Button type="submit" disabled={pending}>Görev ekle</Button></div>
+              <div className="sm:col-span-2 lg:col-span-4"><Button variant="foreground" type="submit" disabled={pending}>Görev ekle</Button></div>
             </form>
           </Form>
         )}
@@ -466,7 +466,7 @@ export function SalesLeadDetail({
                 <FormField control={activityForm.control} name="nextTaskType" render={({ field }) => <FormItem><FormLabel>Sonraki görev türü</FormLabel><Select value={field.value ?? "follow_up"} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{TASK_TYPES.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />
                 <FormField control={activityForm.control} name="nextTaskDurationMinutes" render={({ field }) => <FormItem><FormLabel>Sonraki görev süresi</FormLabel><FormControl><Input {...field} type="number" min={5} max={480} step={5} onChange={(event) => field.onChange(event.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>} />
               </>}
-              <div className="sm:col-span-2 lg:col-span-4"><Button type="submit" disabled={pending}>Görüşmeyi kaydet</Button></div>
+              <div className="sm:col-span-2 lg:col-span-4"><Button variant="foreground" type="submit" disabled={pending}>Görüşmeyi kaydet</Button></div>
             </form>
           </Form>
         </section>

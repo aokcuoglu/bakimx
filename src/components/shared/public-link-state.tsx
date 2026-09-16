@@ -44,7 +44,7 @@ export function PublicLinkState({ problem }: { problem: PublicLinkProblem }) {
         <h1 id="public-link-title" className="text-xl font-bold text-foreground">{title}</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
         {problem === "error" && (
-          <Button asChild size="lg" className="mt-6 w-full">
+          <Button variant="foreground" asChild size="lg" className="mt-6 w-full">
             <Link href="">
               Tekrar dene
             </Link>

@@ -192,32 +192,39 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
           <div className="flex flex-wrap items-center gap-2">
             {isActive ? (
               <>
-                <button
+                <Button
+                  type="button"
+                  variant="success"
+                  size="compact"
                   onClick={() => handleAction("complete")}
                   disabled={actionLoading}
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-success hover:bg-success/90 text-white text-sm font-medium transition-colors disabled:opacity-50 touch-manipulation"
                 >
                   {actionLoading ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
                   <span className="hidden sm:inline">Tamamlandı</span>
-                </button>
-                <button
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="compact"
                   onClick={() => setShowPostpone(!showPostpone)}
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border bg-card text-foreground hover:bg-muted text-sm font-medium transition-colors touch-manipulation"
                 >
                   <Clock className="size-4" />
                   <span className="hidden sm:inline">Ertele</span>
-                </button>
+                </Button>
               </>
             ) : null}
             {!isTerminal ? (
-              <button
+              <Button
+                type="button"
+                variant="outline"
+                size="compact"
                 onClick={() => handleAction("cancel")}
                 disabled={actionLoading}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border bg-card text-destructive-strong hover:bg-destructive/10 text-sm font-medium transition-colors disabled:opacity-50 touch-manipulation"
+                className="border-destructive/20 text-destructive-strong hover:bg-destructive/10"
               >
                 <XCircle className="size-4" />
                 <span className="hidden sm:inline">İptal</span>
-              </button>
+              </Button>
             ) : null}
             <Button variant="outline" size="sm" asChild>
               <Link href={`/reminders/${reminder.id}/edit`}>
@@ -231,22 +238,24 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
         {isActive ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {!reminder.createdAppointmentId ? (
-              <button
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
                 onClick={() => handleAction("create-appointment")}
                 disabled={actionLoading}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-primary/10 text-primary-strong hover:bg-primary/20 text-xs font-medium transition-colors disabled:opacity-50 touch-manipulation"
+                className="border-primary/20 bg-primary/10 text-primary-strong hover:bg-primary/20"
               >
                 <CalendarClock className="size-3.5" />
                 Randevu Oluştur
-              </button>
+              </Button>
             ) : null}
-            <Link
-              href={`/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-muted text-foreground hover:bg-border text-xs font-medium transition-colors touch-manipulation"
-            >
-              <Wrench className="size-3.5" />
-              İş Emri Oluştur
-            </Link>
+            <Button variant="secondary" size="compact" asChild>
+              <Link href={`/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}>
+                <Wrench className="size-3.5" />
+                İş Emri Oluştur
+              </Link>
+            </Button>
           </div>
         ) : null}
       </header>
@@ -272,7 +281,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button type="submit" disabled={actionLoading} size="sm" className="gap-1.5">
+                <Button variant="foreground" type="submit" disabled={actionLoading} size="sm" className="gap-1.5">
                   {actionLoading ? <Loader2 className="size-3.5 animate-spin" /> : null}
                   Ertele
                 </Button>

@@ -45,17 +45,6 @@
   line-height: 1.5;
 }
 
-.form :global([data-slot="button"][data-variant="default"]) {
-  min-height: 38px;
-  border-radius: 6px;
-  background: var(--foreground);
-  color: var(--card);
-}
-
-.form :global([data-slot="button"][data-variant="default"]:hover) {
-  background: color-mix(in srgb, var(--foreground) 88%, var(--card));
-}
-
 .form :global([data-slot="toggle-group-item"]) {
   box-shadow: none;
 }
