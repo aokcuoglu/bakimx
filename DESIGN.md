@@ -70,7 +70,7 @@ Kullanıcının Clutch ekran görüntüsü ve [Clutch](https://www.clutch.securi
 - Boşluklar 4/8px ritminde; alan araları 16–24px, mantıksal bölüm araları 24–40px. Form kontrolleri 40–44px yüksekliğinde, köşeler ölçülü (6–10px) olur. Tablo yoğunluğu göreve göre daha kompakt kalabilir.
 - Birincil / ikincil / üçüncül eylem ayrımı yukarıdaki **Eylemler ve butonlar** tablosuna uyar. Hata, başarı ve uyarı renkleri yalnız gerçek durumu anlatır; kontrast kuralları korunur.
 - Kayıtta yalnız sağdaki form alanı kayar; Header, sol açıklama sütunu ve alt footer görünüm alanında sabit kalır. Kayıt mevcut public `Header` bileşenini kullanır; açıklama sütununda logo tekrar edilmez. Kayıt masaüstünde sakin bir açıklama sütunu ve hesap formundan oluşur; mobilde form önceliklidir. Firma, iletişim ve giriş bilgileri ince ayraçlarla gruplanır. E-posta doğrulaması, KVKK, danışman/referans ve paket sözleşmeleri korunur.
-- Sektör, iş detayları, ekip ve modül seçimleri üyelik sonrası dört adımlı kurulumda gösterilir. Kurulum uygulama kabuğu içinde çalışır; ikinci navigasyon kabuğu eklenmez. Seçenekler düzenli nötr yüzeylerde, seçili durum açık ve klavyeyle erişilebilir sunulur.
+- Sektör, iş detayları, ekip ve modül seçimleri üyelik sonrası dört adımlı kurulumda gösterilir. Seçenekler düzenli nötr yüzeylerde, seçili durum açık ve klavyeyle erişilebilir sunulur. 16 Eylül 2026 URL tabanlı kurulum kararı aşağıda bu ekranın kabuğunu ayrıca tanımlar.
 - Yerel CSS Module veya açık sayfa sınıfları kullanılır. Tasarım revizyonu tek başına global tokenları, shared UI varsayılanlarını, iş davranışını veya fiyat politikasını değiştirmez.
 - Yeni UI işine başlamadan bu belge okunur. 320/390/768/1440px genişliklerde taşma ve okunabilirlik, klavye odağı, hata/başarı ve reduced-motion davranışı doğrulanır.
 
@@ -104,6 +104,12 @@ Test: masaüstünde hareket azaltma kapalıyken ana sayfayı yenileyip yavaş ka
 ## Yerel teslim
 
 Önizleme http://localhost:3000. Karşılaştırmalar `artifacts/issue-635/public-site/` altında. Önceki denemeler korunur. Bu çalışma kayıt dönüşümüne ilişkin ölçüm veya iddia içermez.
+
+## Kurulum ekranı — 16 Eylül 2026 (#661)
+
+Kullanıcının paylaştığı Attio üyelik sonrası ekranları kurulumun yeni yapısal referansıdır. Bekleyen iş yeri sahibi dashboard modalı yerine `/onboarding/sektor`, `/onboarding/is-detaylari`, `/onboarding/ekip` ve `/onboarding/moduller` adreslerini sırayla görür. Üstte marka, ortada odaklı iki sütunlu kart, solda tek adımın formu ve altta ileri/geri eylemleri, sağda BakımX ürün önizlemesi, altta kısa hukuki bağlantılar bulunur. Dar ekranda önizleme gizlenir ve form doğal sayfa kaydırmasını kullanır.
+
+Bu kurulum yüzeyi, verilen koyu Attio ekranlarının yoğunluğunu yerel `dark` tema tokenlarıyla uygular. Önceki açık kayıt ve uygulama tasarımı sürer. Birincil kurulum eylemi yine `foreground` dolgu kullanır; parlak mavi CTA kullanılmaz. Seçimler adımlar arasında ve aynı tarayıcıdaki yenilemede korunur; API, plan ve yetki sözleşmeleri değişmez.
 
 ## 13 Eylül geliştirme uzlaştırması
 

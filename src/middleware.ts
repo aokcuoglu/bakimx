@@ -16,7 +16,6 @@ import {
   isRouteAllowedForTechnician,
 } from "@/lib/technician-route-access"
 import type { NextRequest } from "next/server"
-import { ONBOARDING_PATH_HEADER } from "@/lib/onboarding-route"
 
 // Two subdomains, one container (nginx preserves Host):
 //   bakimx.com      = landing + auth + public token pages + /api
@@ -113,10 +112,8 @@ function clearBounceIfPresent(request: NextRequest, response: NextResponse): Nex
   return response
 }
 
-function continueToApp(request: NextRequest, pathname: string): NextResponse {
-  const requestHeaders = new Headers(request.headers)
-  requestHeaders.set(ONBOARDING_PATH_HEADER, pathname)
-  return clearBounceIfPresent(request, NextResponse.next({ request: { headers: requestHeaders } }))
+function continueToApp(request: NextRequest): NextResponse {
+  return clearBounceIfPresent(request, NextResponse.next())
 }
 
 export async function middleware(request: NextRequest) {
@@ -173,7 +170,7 @@ export async function middleware(request: NextRequest) {
     if (session.surface !== "sales" && isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
       return NextResponse.redirect(new URL("/technician", request.url))
     }
-    return continueToApp(request, pathname)
+    return continueToApp(request)
   }
 
   // ---- PROD: host-aware ----
@@ -214,7 +211,7 @@ export async function middleware(request: NextRequest) {
     if (session.surface !== "sales" && isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
       return NextResponse.redirect(`${APP_ORIGIN}/technician`)
     }
-    return continueToApp(request, pathname)
+    return continueToApp(request)
   }
 
   // ---- LANDING HOST (bakimx.com) + unknown hosts ----

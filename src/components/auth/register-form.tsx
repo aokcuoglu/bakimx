@@ -5,13 +5,13 @@
 import {
   type ComponentType,
   type FormEvent,
-  Fragment,
   useEffect,
   useRef,
   useState,
   useSyncExternalStore,
 } from "react"
 import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 import styles from "./register-design.module.css"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useForm, type UseFormReturn } from "react-hook-form"
@@ -26,7 +26,6 @@ import {
   Building2,
   CalendarDays,
   Car,
-  Check,
   CircleCheck,
   CircleDot,
   CreditCard,
@@ -109,6 +108,8 @@ import { cn } from "@/lib/utils"
 import type { SalePlanTier } from "@/lib/plan"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { createRegisterFormSchema } from "@/lib/validations/register-form"
+import { onboardingSchema } from "@/lib/validations/onboarding"
+import { FIRST_ONBOARDING_PATH, onboardingStepIndex, onboardingStepPath } from "@/lib/onboarding-steps"
 import { typedResolver } from "@/lib/validations/resolver"
 
 type IconType = ComponentType<{ className?: string }>
@@ -246,25 +247,29 @@ export function RegisterForm({
   salesRegistration,
   preferredPlan,
   onSnapshotChange,
-  onStepChange,
+  draftKey,
   mode = "register",
 }: {
   mode?: "register" | "onboarding"
   salesRegistration?: SalesRegistrationPrefill
   preferredPlan?: { tier: SalePlanTier; cycle: "monthly" | "yearly" }
   onSnapshotChange?: (snapshot: RegisterWizardSnapshot) => void
-  onStepChange?: () => void
+  draftKey?: string
 }) {
   const onboarding = mode === "onboarding"
+  const pathname = usePathname()
+  const router = useRouter()
   const reduceMotion = useReducedMotion()
-  const [currentStep, setCurrentStep] = useState(onboarding ? 0 : 4)
+  const currentStep = onboarding ? Math.max(0, onboardingStepIndex(pathname)) : 4
   const [direction, setDirection] = useState(1)
+  const [draftReady, setDraftReady] = useState(!onboarding)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const startedRef = useRef(false)
   const submitRef = useRef(false)
+  const stepScrollRef = useRef<HTMLDivElement>(null)
   const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false)
 
   const form = useForm<WizardFormValues, unknown, WizardFormValues>({
@@ -302,6 +307,44 @@ export function RegisterForm({
   const acquisitionSource = form.watch("acquisitionSource")
 
   useEffect(() => {
+    if (!onboarding || !draftKey) return
+    try {
+      const saved = sessionStorage.getItem(draftKey)
+      if (saved) {
+        const parsed = onboardingSchema.partial().safeParse(JSON.parse(saved))
+        if (parsed.success) form.reset({ ...form.getValues(), ...parsed.data })
+      }
+    } catch {
+      // A damaged or unavailable browser draft does not block setup.
+    }
+    setDraftReady(true)
+
+    const subscription = form.watch((values) => {
+      const candidate = {
+        ...(values.sector ? { sector: values.sector } : {}),
+        businessFeatures: values.businessFeatures,
+        ...(values.teamSize ? { teamSize: values.teamSize } : {}),
+        selectedModules: values.selectedModules,
+        setupPreference: values.setupPreference,
+      }
+      if (onboardingSchema.partial().safeParse(candidate).success) {
+        try { sessionStorage.setItem(draftKey, JSON.stringify(candidate)) } catch { /* storage may be disabled */ }
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [draftKey, form, onboarding])
+
+  useEffect(() => {
+    if (!onboarding || !draftReady) return
+    if (currentStep > 0 && !sector) router.replace(FIRST_ONBOARDING_PATH)
+    else if (currentStep > 2 && !teamSize) router.replace(onboardingStepPath(2))
+  }, [currentStep, draftReady, onboarding, router, sector, teamSize])
+
+  useEffect(() => {
+    if (onboarding) stepScrollRef.current?.scrollTo({ top: 0, behavior: "instant" })
+  }, [currentStep, onboarding])
+
+  useEffect(() => {
     onSnapshotChange?.({
       currentStep,
       sector,
@@ -329,16 +372,12 @@ export function RegisterForm({
     }
     if (currentStep === 3) form.clearErrors(STEP_FIELDS[4])
     setDirection(1)
-    setCurrentStep((step) => Math.min(step + 1, REGISTER_STEPS.length - 2))
-    if (onboarding) onStepChange?.()
-    else window.scrollTo({ top: 0, behavior: reduceMotion ? "instant" : "smooth" })
+    router.push(onboardingStepPath(Math.min(currentStep + 1, 3)))
   }
 
   function goPrevious() {
     setDirection(-1)
-    setCurrentStep((step) => Math.max(step - 1, 0))
-    if (onboarding) onStepChange?.()
-    else window.scrollTo({ top: 0, behavior: reduceMotion ? "instant" : "smooth" })
+    router.push(onboardingStepPath(Math.max(currentStep - 1, 0)))
   }
 
   async function handleSubmit(values: WizardFormValues) {
@@ -359,6 +398,7 @@ export function RegisterForm({
           setError(result.error || "Kurulum kaydedilemedi")
           return
         }
+        if (draftKey) sessionStorage.removeItem(draftKey)
         window.location.assign("/dashboard")
         return
       }
@@ -432,12 +472,13 @@ export function RegisterForm({
   }
 
   return (
-    <div className={styles.form}>
+    <div className={cn(styles.form, onboarding && "flex min-h-0 flex-1 flex-col")}>
       {onboarding && <MobileStepIndicator currentStep={currentStep} />}
       {preferredPlan && <PreferredPlanBanner tier={preferredPlan.tier} cycle={preferredPlan.cycle} />}
 
       <Form {...form}>
         <form
+          className={cn(onboarding && "flex min-h-0 flex-1 flex-col")}
           onSubmit={form.handleSubmit(handleSubmit)}
           onChange={() => {
             if (onboarding || startedRef.current) return
@@ -452,7 +493,7 @@ export function RegisterForm({
             </Alert>
           )}
 
-          <div className="relative min-h-[440px]">
+          <div ref={stepScrollRef} className={cn("relative", onboarding ? "min-h-[400px] lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-3" : "min-h-[440px]")}>
             <AnimatePresence initial={false} mode="wait" custom={direction}>
               <motion.div
                 key={currentStep}
@@ -482,7 +523,7 @@ export function RegisterForm({
             </AnimatePresence>
           </div>
 
-          <div className="mt-7 flex flex-wrap items-center gap-3 border-t border-border pt-5">
+          <div className={cn("mt-7 flex flex-wrap items-center gap-3 border-t border-border pt-5", onboarding && "flex-col gap-2")}>
             {!onboarding ? (
               <Button asChild type="button" variant="outline">
                 <Link href="/">
@@ -491,19 +532,19 @@ export function RegisterForm({
                 </Link>
               </Button>
             ) : currentStep > 0 ? (
-              <Button type="button" variant="outline" onClick={goPrevious}>
+              <Button type="button" variant="ghost" onClick={goPrevious} className="order-2 w-full text-muted-foreground">
                 <ArrowLeft data-icon="inline-start" />
                 Geri
               </Button>
             ) : null}
-            <div className="flex-1" />
+            <div className={onboarding ? "hidden" : "flex-1"} />
             {onboarding && currentStep < REGISTER_STEPS.length - 2 ? (
-              <Button key="next-step" type="button" variant="foreground" onClick={goNext} disabled={currentStep === 0 && !sector}>
+              <Button key="next-step" type="button" variant="foreground" onClick={goNext} disabled={currentStep === 0 && !sector} className="order-1 w-full">
                 Devam Et
                 <ArrowRight data-icon="inline-end" />
               </Button>
             ) : (
-              <Button key="submit-form" type="submit" variant="foreground" disabled={loading || !hydrated} className={styles.submit}>
+              <Button key="submit-form" type="submit" variant="foreground" disabled={loading || !hydrated} className={cn(styles.submit, onboarding && "order-1 w-full")}>
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <BrandSpinner size={18} />
@@ -555,40 +596,25 @@ function PreferredPlanBanner({
 
 function MobileStepIndicator({ currentStep }: { currentStep: number }) {
   return (
-    <nav aria-label="Kurulum adımları" className="mb-7">
-      <div className="flex items-center gap-2">
+    <nav aria-label="Kurulum adımları" className="mb-6">
+      <div className="mb-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+        <span>Adım {currentStep + 1} / 4</span>
+        <span aria-current="step">{REGISTER_STEPS[currentStep].label}</span>
+      </div>
+      <div className="grid grid-cols-4 gap-1.5" aria-hidden="true">
         {REGISTER_STEPS.slice(0, 4).map((step, index) => (
-          <Fragment key={step.label}>
-            <span
-              className={cn(
-                "flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
-                index < currentStep && "border-foreground bg-foreground text-card",
-                index === currentStep && "border-foreground bg-card text-foreground",
-                index > currentStep && "border-border text-muted-foreground",
-              )}
-              aria-current={index === currentStep ? "step" : undefined}
-              aria-label={`${index + 1}. ${step.label}`}
-            >
-              {index < currentStep ? <Check className="size-3.5" /> : index + 1}
-            </span>
-            {index < 3 && (
-              <span className={cn("h-px flex-1 bg-border", index < currentStep && "bg-foreground")} />
-            )}
-          </Fragment>
+          <span key={step.label} className={cn("h-1 rounded-full bg-muted", index <= currentStep && "bg-foreground")} />
         ))}
       </div>
-      <p className="mt-2 text-center text-xs font-medium text-muted-foreground">
-        {REGISTER_STEPS[currentStep].label}
-      </p>
     </nav>
   )
 }
 
 function StepHeading({ title, description }: { title: string; description: React.ReactNode }) {
   return (
-    <div className="mb-9 border-b border-border pb-7">
-      <h1 className="text-2xl font-medium tracking-[-0.035em] text-foreground sm:text-[32px]">{title}</h1>
-      <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">{description}</p>
+    <div className="mb-6">
+      <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
+      <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">{description}</p>
     </div>
   )
 }
@@ -604,7 +630,7 @@ function SectorStep({ form }: { form: WizardForm }) {
         name="sector"
         render={({ field }) => (
           <FormItem>
-            <div className="grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2">
               <ToggleGroup
                 type="single"
                 value={field.value}
@@ -918,7 +944,7 @@ function TeamSizeStep({ form }: { form: WizardForm }) {
               type="single"
               value={field.value}
               onValueChange={(value) => value && field.onChange(value)}
-              className="grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-3"
+              className="grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2"
               aria-label="Ekip büyüklüğü seçimi"
             >
               {TEAM_OPTIONS.map((option) => (
@@ -962,7 +988,7 @@ function ModulesStep({ form }: { form: WizardForm }) {
               type="multiple"
               value={field.value}
               onValueChange={field.onChange}
-              className="grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-2 xl:grid-cols-4"
+              className="grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-2"
               aria-label="Modül seçimi"
             >
               {MODULES.map((module) => {
@@ -1161,7 +1187,7 @@ function SetupStep({ form }: { form: WizardForm }) {
           <p className="mb-3 text-xs leading-5 text-muted-foreground-strong">Hesabı kendiniz kurabilir veya ekibimizden ücretsiz destek isteyebilirsiniz.</p>
           <FormField control={form.control} name="setupPreference" render={({ field }) => (
             <FormItem>
-              <ToggleGroup type="single" value={field.value} onValueChange={(value) => value && field.onChange(value)} className="grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-3" aria-label="Kurulum desteği tercihi">
+              <ToggleGroup type="single" value={field.value} onValueChange={(value) => value && field.onChange(value)} className="grid w-full grid-cols-1 items-stretch gap-2" aria-label="Kurulum desteği tercihi">
                 {SETUP_OPTIONS.map((option) => {
                   const Icon = option.icon
                   return (
