@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Search } from "lucide-react"
 import { PrintButton } from "@/components/shared/print-button"
+import { Input } from "@/components/ui/input"
 import { GuideBlocks } from "@/components/guide/kilavuz-blocks"
 import {
   KILAVUZ_H1,
@@ -79,12 +80,13 @@ export function KilavuzShell() {
             <label className={styles.search}>
               <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
               <span className="sr-only">Kılavuzda ara</span>
-              <input
+              <Input
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Kılavuzda ara…"
                 autoComplete="off"
+                className="h-auto border-0 bg-transparent p-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
               />
             </label>
             <PrintButton label="Kılavuzu yazdır" />
