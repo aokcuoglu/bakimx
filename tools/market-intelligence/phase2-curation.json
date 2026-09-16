@@ -44,5 +44,19 @@
       ],
       "confidence": "MEDIUM"
     }
+  ],
+  "metaFindings": [
+    {
+      "observation": "Üç marka anahtar kelimesiyle yapılan taramada 20 reklam kaydı döndü; PADOK ve ServisData sorgularındaki reklamveren sayfa adları bu markalarla eşleşmedi. Kursoft anahtar kelime sorgusunun özet kaydı sıfır sonuç gösterdi. Actor, Hayat Yazılım ve Kursoft sayfalarının kimliklerini döndürdü; bu iki sayfa URL sorgusu sıfır reklam kaydı döndürdü. Bu pilotta rakip reklam metni doğrulanamadı.",
+      "implication": "Rakip reklam mesajına dayalı bir BakımX iddiası üretmeyin. Sonraki ölçüm gerekirse doğrulanmış Hayat/Kursoft sayfa kimliklerini kullanın ve ServisData sayfa kimliğini önce doğrulayın.",
+      "sourceUrls": [
+        "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=TR&is_targeted_country=false&media_type=all&q=PADOK&search_type=keyword_unordered",
+        "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=TR&is_targeted_country=false&media_type=all&q=ServisData&search_type=keyword_unordered",
+        "https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=TR&is_targeted_country=false&media_type=all&q=Kursoft&search_type=keyword_unordered",
+        "https://www.facebook.com/hayatyazilim/",
+        "https://www.facebook.com/Kursoft"
+      ],
+      "confidence": "HIGH"
+    }
   ]
 }

@@ -72,10 +72,20 @@ export function normalizeSearchDataset(items: unknown, actorRunId: string, fetch
   return { pages, malformedItems: items.length - pages.length }
 }
 
-export function phase2ChargeCap(currentUsage: number, usageAtStart: number, monthlyCreditUsd: number, pilotBudgetUsd: number, actorMinimumUsd: number): number {
-  if ([currentUsage, usageAtStart, monthlyCreditUsd, pilotBudgetUsd, actorMinimumUsd].some((value) => !Number.isFinite(value) || value < 0)) throw new Error("Invalid Apify budget data. No scraping executed.")
+export function phase2ChargeCap(currentUsage: number, usageAtStart: number, monthlyCreditUsd: number, pilotBudgetUsd: number, actorMinimumUsd: number, knownActorSpendUsd = 0): number {
+  if ([currentUsage, usageAtStart, monthlyCreditUsd, pilotBudgetUsd, actorMinimumUsd, knownActorSpendUsd].some((value) => !Number.isFinite(value) || value < 0)) throw new Error("Invalid Apify budget data. No scraping executed.")
   const monthlyHeadroom = Math.min(4.5, monthlyCreditUsd - 0.5) - currentUsage
-  const pilotHeadroom = pilotBudgetUsd - Math.max(0, currentUsage - usageAtStart)
+  const pilotHeadroom = pilotBudgetUsd - Math.max(0, currentUsage - usageAtStart, knownActorSpendUsd)
   const cap = Math.max(0, Math.min(0.5, monthlyHeadroom, pilotHeadroom))
   return cap + 1e-9 >= actorMinimumUsd ? cap : 0
+}
+
+export function settledActorSpend(runs: Array<{ usageTotalUsd: number | null } | null | undefined>): number {
+  let total = 0
+  for (const run of runs) {
+    if (!run) continue
+    if (run.usageTotalUsd === null || !Number.isFinite(run.usageTotalUsd) || run.usageTotalUsd < 0) throw new Error("Prior Actor cost is unavailable. No scraping executed.")
+    total += run.usageTotalUsd
+  }
+  return total
 }

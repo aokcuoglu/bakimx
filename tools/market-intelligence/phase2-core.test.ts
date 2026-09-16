@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { createApifyApi } from "./apify"
-import { googleInput, normalizeSearchDataset, phase2ChargeCap, PHASE2_QUERIES } from "./phase2-core"
+import { googleInput, normalizeSearchDataset, phase2ChargeCap, PHASE2_QUERIES, settledActorSpend } from "./phase2-core"
 
 describe("Phase 2 budget and input", () => {
   test("one page per query, no costly add-ons or HTML snapshots", () => {
@@ -12,6 +12,11 @@ describe("Phase 2 budget and input", () => {
     expect(phase2ChargeCap(0.1, 0.1, 5, 0.5, 0.51)).toBe(0)
     expect(phase2ChargeCap(4.1, 4.1, 5, 0.5, 0.5)).toBe(0)
     expect(phase2ChargeCap(1.01, 0.52, 5, 0.5, 0.5)).toBe(0)
+    expect(phase2ChargeCap(0.1, 0.1, 5, 0.5, 0.0058, 0.49)).toBeCloseTo(0.01)
+  })
+  test("unknown prior run cost blocks additional Actor starts", () => {
+    expect(settledActorSpend([{ usageTotalUsd: 0.0325 }, { usageTotalUsd: 0.1218 }])).toBeCloseTo(0.1543)
+    expect(() => settledActorSpend([{ usageTotalUsd: null }])).toThrow("No scraping executed")
   })
   test("research run cannot exceed $0.50 cap", async () => {
     let calls = 0

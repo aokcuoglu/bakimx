@@ -5,7 +5,7 @@ Collected: 2026-09-16T20:23:29.435Z. Query results are a dated Google snapshot; 
 ## Coverage
 
 Google Search: 7/7 queries, 60 organic results, 1 Actor run. Each query was limited to one results page and at most 10 normalized organic results.
-Meta Ads Library: not run. The official Actor's developer has stated that it forces residential proxy use internally, which conflicts with this pilot's no-residential-proxy constraint. [Actor issue](https://apify.com/apify/facebook-ads-scraper/issues/residential-proxy-fo-YD0alNTBZG9sg23yG).
+Meta Ads Library: 2 Actor runs; 20 normalized keyword results and 0 page-targeted results (20 unique ads). 0 ads were attributable to a tracked competitor. The dataset also held 3 query summary records. Search limits were 10 ads per URL. Residential proxy use was explicitly authorized for these runs. [Actor input](https://apify.com/apify/facebook-ads-scraper/input-schema).
 
 ## Search visibility in the collected top 10
 
@@ -65,6 +65,23 @@ Complete normalized SERP rows and spreadsheet CSV stay in the ignored local data
 2. [Oto Servis- Teknik Servis Modülü](https://blog.kursoft.com.tr/teknik-servis-modulu/)
 3. [Oto Servis Programları - Kursoft Yazılım](https://kursoft.tr/oto-servis-programlari)
 
+## Meta Ad Library findings
+
+Keyword results are attributed to a competitor only when the advertiser page name matches the brand. Zero collected ads does not establish that the advertiser has no ads.
+
+| Search | Verified keyword results | Verified page results | Other keyword results | Evidence |
+| --- | ---: | ---: | ---: | --- |
+| PADOK | 0 | 0 | 10 | [search](https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=TR&is_targeted_country=false&media_type=all&q=PADOK&search_type=keyword_unordered) |
+| ServisData | 0 | 0 | 10 | [search](https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=TR&is_targeted_country=false&media_type=all&q=ServisData&search_type=keyword_unordered) |
+| Kursoft | 0 | 0 | 0 | [search](https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=TR&is_targeted_country=false&media_type=all&q=Kursoft&search_type=keyword_unordered) |
+
+Page URL query summaries (a zero count describes only this Actor query, not the advertiser's overall activity):
+- [Hayat Yazılım](https://www.facebook.com/hayatyazilim/) (page ID 171933922852282): 0 returned; result complete: yes.
+- [Kursoft](https://www.facebook.com/Kursoft) (page ID 128005360587632): 0 returned; result complete: yes.
+
+1. **Gözlem:** Üç marka anahtar kelimesiyle yapılan taramada 20 reklam kaydı döndü; PADOK ve ServisData sorgularındaki reklamveren sayfa adları bu markalarla eşleşmedi. Kursoft anahtar kelime sorgusunun özet kaydı sıfır sonuç gösterdi. Actor, Hayat Yazılım ve Kursoft sayfalarının kimliklerini döndürdü; bu iki sayfa URL sorgusu sıfır reklam kaydı döndürdü. Bu pilotta rakip reklam metni doğrulanamadı. **BakımX testi:** Rakip reklam mesajına dayalı bir BakımX iddiası üretmeyin. Sonraki ölçüm gerekirse doğrulanmış Hayat/Kursoft sayfa kimliklerini kullanın ve ServisData sayfa kimliğini önce doğrulayın. **Confidence:** HIGH. Kanıt: [kaynak](https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=TR&is_targeted_country=false&media_type=all&q=PADOK&search_type=keyword_unordered), [kaynak](https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=TR&is_targeted_country=false&media_type=all&q=ServisData&search_type=keyword_unordered), [kaynak](https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=TR&is_targeted_country=false&media_type=all&q=Kursoft&search_type=keyword_unordered), [kaynak](https://www.facebook.com/hayatyazilim/), [kaynak](https://www.facebook.com/Kursoft).
+
+
 ## Marketing observations
 
 1. **Gözlem:** Üç rakibin marka odaklı sorgusunda kendi alan adı ilk organik sonuçta göründü. Bu ölçüm BakımX marka sorgusunu içermiyor. **BakımX testi:** BakımX marka sorgusunu sonraki ölçüme ekleyin; başlık ve açıklama metinlerinin marka arayan kullanıcıya net ürün vaadi verdiğini test edin. **Confidence:** HIGH. Kanıt: [kaynak](http://www.google.com.tr/search?q=PADOK+Hayat+Yaz%C4%B1l%C4%B1m+oto+servis&lr=lang_tr&hl=tr), [kaynak](http://www.google.com.tr/search?q=ServisData+oto+servis&lr=lang_tr&hl=tr), [kaynak](http://www.google.com.tr/search?q=Kursoft+oto+servis&lr=lang_tr&hl=tr).
@@ -79,13 +96,18 @@ Complete normalized SERP rows and spreadsheet CSV stay in the ignored local data
 
 ## Data gaps
 
-SERP sonuçları organik görünürlüğü gösterir; arama hacmi, tıklama oranı, reklam harcaması, ürün kapsamı veya rakibin reklam yayınlayıp yayınlamadığını doğrulamaz. Meta reklam metinleri bu aşamada doğrulanamadı.
+SERP sonuçları organik görünürlüğü gösterir; arama hacmi, tıklama oranı, reklam harcaması veya ürün kapsamını doğrulamaz. Meta aramaları anahtar kelime eşleşmesidir; sayfa kimliği doğrulanmayan sonuçlar rakibe atfedilmez. Sonuç çıkmaması reklam yokluğu anlamına gelmez.
 
 ## Apify cost
 
 - Monthly usage before Phase 2: $0.08376
 - Google Actor runs: 1
 - Google Actor cost: $0.03250
-- Monthly usage after Phase 2: $0.11627
-- Estimated remaining free credit: $4.88373
-- Phase 2 spend from monthly usage delta: $0.03251
+- Meta keyword Actor runs: 1
+- Meta keyword Actor cost: $0.12180
+- Meta page Actor runs: 1
+- Meta page Actor cost: $0.01160
+- Total Actor cost: $0.16590
+- Monthly usage after Phase 2: $0.24972
+- Estimated remaining free credit: $4.75028
+- Phase 2 spend from monthly usage delta: $0.16597
