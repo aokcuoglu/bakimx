@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { isEmailIdentifier } from "@/lib/user-identity"
+import { cn } from "@/lib/utils"
+import styles from "@/components/auth/register-design.module.css"
 
 // On success, send the user to the app (app.bakimx.com in prod). The app origin is
 // derived from the current host (no build-time env needed); a validated ?redirect
@@ -130,12 +132,12 @@ export function LoginForm({
   }
 
   return (
-    <div className="w-full">
-      <div className="mb-8 border-b border-border pb-7">
+    <div className={styles.form}>
+      <div className="mb-9 border-b border-border pb-7">
         <h1 className="text-2xl font-medium tracking-[-0.035em] text-foreground sm:text-[32px]">
           BakimX hesabınıza giriş yapın
         </h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
           Servis süreçlerinizi yönetmek için giriş yapın.
         </p>
       </div>
@@ -236,10 +238,10 @@ export function LoginForm({
 
         <Button
           type="submit"
-          variant="navy"
+          variant="foreground"
           size="xl"
           disabled={loading}
-          className="w-full"
+          className={cn("w-full", styles.submit)}
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">

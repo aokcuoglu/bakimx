@@ -26,13 +26,13 @@ export default async function LoginPage({
         <LoginSidebar />
         <main
           aria-label="Hesaba giriş formu"
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-5 py-8 sm:px-10 sm:py-12 lg:px-14 xl:px-20"
+          className="no-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-5 py-8 sm:px-10 sm:py-12 lg:px-14 xl:px-20"
         >
-          <div className="mx-auto w-full max-w-md">
-          <LoginForm
-            expiredReason={expired ?? reason}
-            successNotice={advisorInvited === "1" ? "Satış hesabınız oluşturuldu. E-posta adresiniz ve şifrenizle giriş yapabilirsiniz." : undefined}
-          />
+          <div className="w-full max-w-md">
+            <LoginForm
+              expiredReason={expired ?? reason}
+              successNotice={advisorInvited === "1" ? "Satış hesabınız oluşturuldu. E-posta adresiniz ve şifrenizle giriş yapabilirsiniz." : undefined}
+            />
           </div>
         </main>
       </div>
