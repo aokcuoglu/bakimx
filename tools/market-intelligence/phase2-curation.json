@@ -1,0 +1,48 @@
+{
+  "findings": [
+    {
+      "observation": "Üç rakibin marka odaklı sorgusunda kendi alan adı ilk organik sonuçta göründü. Bu ölçüm BakımX marka sorgusunu içermiyor.",
+      "implication": "BakımX marka sorgusunu sonraki ölçüme ekleyin; başlık ve açıklama metinlerinin marka arayan kullanıcıya net ürün vaadi verdiğini test edin.",
+      "sourceUrls": [
+        "http://www.google.com.tr/search?q=PADOK+Hayat+Yaz%C4%B1l%C4%B1m+oto+servis&lr=lang_tr&hl=tr",
+        "http://www.google.com.tr/search?q=ServisData+oto+servis&lr=lang_tr&hl=tr",
+        "http://www.google.com.tr/search?q=Kursoft+oto+servis&lr=lang_tr&hl=tr"
+      ],
+      "confidence": "HIGH"
+    },
+    {
+      "observation": "'oto servis programı' sorgusunun toplanan ilk 10 organik sonucunda dört izlenen alan adı doğrulanamadı; sonuçlar çeşitli servis yazılımı ve dizin sayfalarından oluştu.",
+      "implication": "BakımX için bu terime özel sayfa başlığı ve açılış mesajı test edin: 'Oto servis programı: iş emrinden araç geçmişine tek akış.' Sonraki ölçümde aynı sorguda sıralama değişimini izleyin.",
+      "sourceUrls": ["http://www.google.com.tr/search?q=oto+servis+program%C4%B1&lr=lang_tr&hl=tr"],
+      "confidence": "HIGH"
+    },
+    {
+      "observation": "'iş emri programı' aramasında genel bakım, üretim ve saha işi yazılımları birlikte çıktı; oto servise özel sonuçlar da var.",
+      "implication": "Genel terimle birlikte 'oto servis iş emri programı' mesajını ayrı sayfa veya kampanya deneyinde test edin.",
+      "sourceUrls": [
+        "http://www.google.com.tr/search?q=i%C5%9F+emri+program%C4%B1&lr=lang_tr&hl=tr",
+        "https://autovena.com/tr/cozumler/oto-servis-is-emri-programi/"
+      ],
+      "confidence": "HIGH"
+    },
+    {
+      "observation": "'ruhsat okuma servis' sorgusunda ilk organik sonuç ruhsat okuma vaadini doğrudan başlık ve açıklamada taşıyor; izlenen dört alan adı ilk 10'da doğrulanamadı.",
+      "implication": "BakımX için ruhsattan araç kabulüne geçişi anlatan ayrı arama başlığı ve açılış mesajını test edin.",
+      "sourceUrls": [
+        "http://www.google.com.tr/search?q=ruhsat+okuma+servis&lr=lang_tr&hl=tr",
+        "https://www.servisapp.com.tr/"
+      ],
+      "confidence": "HIGH"
+    },
+    {
+      "observation": "ServisData marka sorgusunda ana sayfa ile oto servis, müşteri/araç takibi ve blog sayfaları göründü. Açıklamalarda iş emri, tahsilat, araç geçmişi ve cari hesap vurguları var; bu sayfalar doğrudan yeniden taranmadı.",
+      "implication": "Phase 1'de erişilemeyen ServisData için SERP snippet'larını keşif sinyali olarak kullanın; ayrıntılı karşılaştırma öncesi ilgili sayfaları tarayıcıda doğrulayın.",
+      "sourceUrls": [
+        "http://www.google.com.tr/search?q=ServisData+oto+servis&lr=lang_tr&hl=tr",
+        "https://www.servisdata.com/",
+        "https://www.servisdata.com/sektorler/oto-servis"
+      ],
+      "confidence": "MEDIUM"
+    }
+  ]
+}
