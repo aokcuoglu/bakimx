@@ -22,11 +22,14 @@ function user(over: Partial<AuthUser> = {}): AuthUser {
     email: null,
     username: "mehmet.yilmaz",
     workshopId: "ws-1",
+    workshopKind: "customer",
     firstName: "Mehmet",
     lastName: "Yılmaz",
     role: "usta",
     isActive: true,
     mustChangePassword: false,
+    dashboardTourCompletedAt: null,
+    technicianId: null,
     ...over,
   }
 }
