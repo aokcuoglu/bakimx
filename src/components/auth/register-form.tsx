@@ -58,6 +58,7 @@ import {
   Zap,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -613,7 +614,7 @@ function MobileStepIndicator({ currentStep }: { currentStep: number }) {
 function StepHeading({ title, description }: { title: string; description: React.ReactNode }) {
   return (
     <div className="mb-6">
-      <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[28px]">{title}</h1>
       <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">{description}</p>
     </div>
   )
@@ -645,47 +646,55 @@ function SectorStep({ form }: { form: WizardForm }) {
                       key={sector.id}
                       value={sector.id}
                       variant="outline"
-                      className="relative h-auto min-h-28 w-full items-start justify-start rounded-lg p-3 text-left whitespace-normal data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                      className="relative h-auto min-h-20 w-full items-start justify-start rounded-lg p-3 text-left whitespace-normal data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground"
                     >
-                      <span className="flex w-full flex-col items-start">
-                        <span className="mb-3 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-foreground group-data-[state=on]/toggle:text-card">
-                          <Icon className="size-4.5" />
+                      <span className="flex w-full items-start gap-3">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-foreground group-data-[state=on]/toggle:text-card">
+                          <Icon className="size-4" />
                         </span>
-                        <span className="text-sm font-semibold text-foreground">{sector.label}</span>
-                        <span className="mt-1 text-xs leading-4 text-muted-foreground">{sector.description}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold text-foreground">{sector.label}</span>
+                          <span className="mt-1 block text-xs leading-4 text-muted-foreground">{sector.description}</span>
+                        </span>
                       </span>
                     </ToggleGroupItem>
                   )
                 })}
               </ToggleGroup>
 
-              {COMING_SOON_SECTORS.map((sector) => {
-                const Icon = sector.icon
-                return (
-                  <Button
-                    key={sector.id}
-                    type="button"
-                    variant="outline"
-                    onClick={() => setInterestSector(sector)}
-                    className="relative h-auto min-h-28 w-full items-start justify-start rounded-lg border-dashed bg-muted/40 p-3 text-left whitespace-normal hover:bg-muted/60"
-                  >
-                    <span className="flex w-full flex-col items-start">
-                      <span className="mb-3 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                        <Icon className="size-4.5" />
-                      </span>
-                      <span className="text-sm font-semibold text-foreground">{sector.label}</span>
-                      <span className="mt-1 text-xs leading-4 text-muted-foreground">{sector.description}</span>
-                      <span className="mt-2 text-[11px] font-medium text-primary-strong">
-                        İlgileniyorum — bizimle iletişime geçin
-                      </span>
-                    </span>
-                    <Badge variant="secondary" className="absolute right-2 top-2">
-                      Yakında
-                    </Badge>
-                  </Button>
-                )
-              })}
             </div>
+            <Accordion type="single" collapsible className="mt-4">
+              <AccordionItem value="coming-soon" className="border-t border-border">
+                <AccordionTrigger className="w-full rounded-none py-3 text-muted-foreground hover:text-foreground hover:no-underline">
+                  Diğer sektörler <span className="ml-1 font-normal">(yakında)</span>
+                </AccordionTrigger>
+                <AccordionContent className="grid grid-cols-1 gap-2 pt-2 sm:grid-cols-2">
+                  {COMING_SOON_SECTORS.map((sector) => {
+                    const Icon = sector.icon
+                    return (
+                      <Button
+                        key={sector.id}
+                        type="button"
+                        variant="outline"
+                        onClick={() => setInterestSector(sector)}
+                        className="h-auto min-h-24 w-full items-start justify-start border-dashed p-3 text-left whitespace-normal hover:bg-muted/60"
+                      >
+                        <span className="flex w-full items-start gap-3">
+                          <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground">
+                            <Icon className="size-4" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold text-foreground">{sector.label}</span>
+                            <span className="mt-1 block text-xs leading-4 text-muted-foreground">{sector.description}</span>
+                            <span className="mt-1 block text-xs font-medium text-primary">İlgileniyorum</span>
+                          </span>
+                        </span>
+                      </Button>
+                    )
+                  })}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
             <FormMessage />
           </FormItem>
         )}

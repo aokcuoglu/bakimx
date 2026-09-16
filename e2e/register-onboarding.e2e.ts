@@ -45,10 +45,19 @@ test("onboarding uses URL steps and gates the app until completion", async ({ pa
       const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
       expect(hasHorizontalOverflow, `${width}px yatay taşma`).toBe(false)
       const preview = page.getByRole("complementary", { name: "BakımX önizlemesi" })
-      if (width >= 1024) await expect(preview).toBeVisible()
+      if (width >= 1024) {
+        await expect(preview).toBeVisible()
+        await expect(page.getByRole("button", { name: /Diğer sektörler/ })).toBeInViewport()
+      }
       else await expect(preview).toBeHidden()
     }
     await page.setViewportSize({ width: 360, height: 800 })
+
+    const otherSectors = page.getByRole("button", { name: /Diğer sektörler/ })
+    await expect(page.getByRole("button", { name: /Oto Döşeme/ })).toBeHidden()
+    await otherSectors.click()
+    await expect(page.getByRole("button", { name: /Oto Döşeme/ })).toBeVisible()
+    await otherSectors.click()
 
     await page.goto("/customers")
     await expect(page).toHaveURL(/\/onboarding\/sektor$/)

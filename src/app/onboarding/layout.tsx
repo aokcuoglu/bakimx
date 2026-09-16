@@ -45,19 +45,19 @@ export default async function OnboardingLayout({ children }: { children: React.R
   if (!plan.hasAccess || user.mustChangePassword) redirect("/dashboard")
 
   return (
-    <div data-onboarding-shell className="dark flex min-h-dvh flex-col bg-background text-foreground">
+    <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-center px-5 py-7 sm:py-9">
         <Link href={FIRST_ONBOARDING_PATH} aria-label="BakımX kurulum başlangıcı" className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground">
-          <BrandLogo variant="icon-dark" size="md" priority alt="" />
+          <BrandLogo variant="icon-light" size="md" priority alt="" />
           BakımX
         </Link>
       </header>
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 items-center px-3 pb-8 sm:px-6">
-        <div className="grid w-full min-h-[min(660px,calc(100dvh-160px))] overflow-hidden rounded-xl border border-border bg-card shadow-lg lg:grid-cols-2">
+        <div className="grid w-full min-h-[min(660px,calc(100dvh-160px))] overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:grid-cols-2">
           <section aria-label="Kurulum formu" className="flex min-h-[560px] min-w-0 flex-col px-5 py-7 sm:px-10 sm:py-9 lg:max-h-[min(740px,calc(100dvh-160px))]">
             <p className="mb-1 text-xs font-medium text-muted-foreground">{workshop.name}</p>
-            <p className="mb-7 text-xs text-muted-foreground">Servisinizi birkaç adımda hazırlayalım.</p>
+            <p className="mb-5 text-xs text-muted-foreground">Servisinizi birkaç adımda hazırlayalım.</p>
             <RegisterForm mode="onboarding" draftKey={`onboarding:${user.workshopId}`} />
           </section>
           <aside aria-label="BakımX önizlemesi" className="hidden min-w-0 items-center justify-center overflow-hidden border-l border-border bg-muted/30 px-8 py-10 lg:flex">

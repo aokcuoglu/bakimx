@@ -109,7 +109,7 @@ Test: masaüstünde hareket azaltma kapalıyken ana sayfayı yenileyip yavaş ka
 
 Kullanıcının paylaştığı Attio üyelik sonrası ekranları kurulumun yeni yapısal referansıdır. Bekleyen iş yeri sahibi dashboard modalı yerine `/onboarding/sektor`, `/onboarding/is-detaylari`, `/onboarding/ekip` ve `/onboarding/moduller` adreslerini sırayla görür. Üstte marka, ortada odaklı iki sütunlu kart, solda tek adımın formu ve altta ileri/geri eylemleri, sağda BakımX ürün önizlemesi, altta kısa hukuki bağlantılar bulunur. Dar ekranda önizleme gizlenir ve form doğal sayfa kaydırmasını kullanır.
 
-Bu kurulum yüzeyi, verilen koyu Attio ekranlarının yoğunluğunu yerel `dark` tema tokenlarıyla uygular. Önceki açık kayıt ve uygulama tasarımı sürer. Birincil kurulum eylemi yine `foreground` dolgu kullanır; parlak mavi CTA kullanılmaz. Seçimler adımlar arasında ve aynı tarayıcıdaki yenilemede korunur; API, plan ve yetki sözleşmeleri değişmez.
+Attio'nun sayfa oranları ve adım akışı yapısal referanstır; yüzeyler BakımX'in Vercel + Linear destekli açık tasarım dilini kullanır: `background` sayfa, `card` form ve ürün çerçevesi, ince `border`, sınırlı gölge, `foreground` başlık ve `muted-foreground` yardımcı metin. Tam ekran koyu tema veya büyük koyu önizleme bloğu kullanılmaz. İlk adımda etkin sektörler doğrudan görünür; henüz açılmamış sektörler ikincil bir açılır bölümde kalır. Birincil kurulum eylemi `foreground` dolgu kullanır; parlak mavi CTA kullanılmaz. Seçimler adımlar arasında ve aynı tarayıcıdaki yenilemede korunur; API, plan ve yetki sözleşmeleri değişmez.
 
 ## 13 Eylül geliştirme uzlaştırması
 

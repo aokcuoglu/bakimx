@@ -816,8 +816,3 @@
     margin-right: 0 !important;
   }
 }
-/* The viewport scrollbar sits outside the scoped dark onboarding shell. */
-html:has([data-onboarding-shell]) {
-  color-scheme: dark;
-  background: var(--foreground);
-}
