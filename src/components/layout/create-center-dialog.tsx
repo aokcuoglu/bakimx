@@ -51,7 +51,13 @@ export function CreateCenterDialog({
     <Dialog open={isOpen} onOpenChange={setOpen}>
       {!isControlled && (
         <DialogTrigger asChild>
-          <Button variant="foreground" type="button" className="w-8 px-0 sm:w-auto sm:px-2.5" aria-label="Yeni kayıt oluştur">
+          <Button
+            variant="foreground"
+            type="button"
+            className="w-8 px-0 sm:w-auto sm:px-2.5"
+            aria-label="Yeni kayıt oluştur"
+            data-tour="create-center"
+          >
             <Plus className="size-4" />
             <span className="hidden sm:inline">Oluştur</span>
           </Button>

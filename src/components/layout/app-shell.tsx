@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { GlobalSearch } from "@/components/layout/global-search-box"
 import { CreateCenterDialog } from "@/components/layout/create-center-dialog"
+import { DashboardProductTour } from "@/components/dashboard/dashboard-product-tour"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
 import { ROLE_LABELS } from "@/lib/roles"
@@ -158,6 +159,13 @@ const NAV_GROUPS: NavGroup[] = [
 
 const COMING_SOON_PREFIXES: string[] = []
 
+/** Stable product-tour anchors for primary sidebar destinations. */
+const NAV_TOUR_ATTR: Partial<Record<string, string>> = {
+  "/dashboard": "nav-dashboard",
+  "/orders": "nav-orders",
+  "/customers": "nav-customers",
+}
+
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
@@ -203,11 +211,13 @@ export function AppShellChrome({
   initialSidebarCollapsed = false,
   enabledFeatures = [],
   userIdentity,
+  showDashboardTour = false,
 }: {
   children: React.ReactNode
   initialSidebarCollapsed?: boolean
   enabledFeatures?: GatedFeature[]
   userIdentity?: UserIdentity
+  showDashboardTour?: boolean
 }) {
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
 
@@ -220,6 +230,7 @@ export function AppShellChrome({
           <main className="flex-1 px-4 sm:px-6 py-4 sm:py-6 pb-24 lg:pb-8">{children}</main>
         </SidebarInset>
         <MobileBottomNav userIdentity={userIdentity} enabledFeatures={enabledFeatures} />
+        {showDashboardTour ? <DashboardProductTour enabled /> : null}
       </SidebarProvider>
     </SetPageHeaderContext.Provider>
   )
@@ -267,6 +278,7 @@ function AppHeader({
 
         {showGlobalSearch && (
           <div
+            data-tour="global-search"
             className={cn(
               "min-w-0 sm:min-w-48 sm:flex-1 sm:shrink sm:basis-auto sm:max-w-xl",
               mobileSearchOpen ? "flex-1 basis-auto" : "shrink-0 basis-9 sm:basis-auto",
@@ -451,7 +463,7 @@ function NavMenuItem({
           tooltip={isLocked ? `${item.label} · Profesyonel` : item.label}
           className={cn(isSoon && !isActive && "opacity-60")}
         >
-          <Link href={item.href}>
+          <Link href={item.href} {...(NAV_TOUR_ATTR[item.href] ? { "data-tour": NAV_TOUR_ATTR[item.href] } : {})}>
             <Icon className="size-4" />
             <span className="flex-1">{item.label}</span>
             {isLocked && (
@@ -570,6 +582,7 @@ function MobileBottomNav({
             label="İş Emirleri"
             icon={WrenchIcon}
             active={pathname === "/orders" || pathname.startsWith("/orders/")}
+            tourId="mobile-nav-orders"
           />
           <MobileNavLink
             href="/technician"
@@ -596,16 +609,19 @@ function MobileNavLink({
   icon: Icon,
   active,
   locked = false,
+  tourId,
 }: {
   href: string
   label: string
   icon: React.ComponentType<{ className?: string }>
   active: boolean
   locked?: boolean
+  tourId?: string
 }) {
   return (
     <Link
       href={href}
+      {...(tourId ? { "data-tour": tourId } : {})}
       className={cn(
         "flex flex-col items-center gap-0.5 text-[10px] py-1.5 rounded-lg transition-colors touch-manipulation",
         active ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"

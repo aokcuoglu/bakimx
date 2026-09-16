@@ -112,7 +112,10 @@ export default async function DashboardPage() {
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Genel Bakış">
       <div className="space-y-5 sm:space-y-6 max-w-full">
-        <div className="relative rounded-lg bg-gradient-to-br from-navy via-navy to-navy-light text-navy-foreground p-5 sm:p-6 shadow-sm overflow-hidden">
+        <div
+          data-tour="welcome-banner"
+          className="relative rounded-lg bg-gradient-to-br from-navy via-navy to-navy-light text-navy-foreground p-5 sm:p-6 shadow-sm overflow-hidden"
+        >
           {/* Dekoratif brand blue accent */}
           <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-brand/15 blur-2xl pointer-events-none" />
           <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-brand/10 blur-2xl pointer-events-none" />
@@ -131,7 +134,7 @@ export default async function DashboardPage() {
               </p>
             </div>
             <Button variant="inverse" size="compact" asChild>
-              <Link href="/orders/new">
+              <Link href="/orders/new" data-tour="welcome-cta">
                 <Plus className="size-4" />
                 Yeni İş Emri
               </Link>
@@ -140,7 +143,11 @@ export default async function DashboardPage() {
         </div>
 
         {needsFirstOrder && (
-          <section aria-labelledby="first-order-heading" className="rounded-xl border bg-card p-4 space-y-3">
+          <section
+            data-tour="first-order"
+            aria-labelledby="first-order-heading"
+            className="rounded-xl border bg-card p-4 space-y-3"
+          >
             <h2 id="first-order-heading" className="text-lg font-semibold">Lite ile ilk işinize başlayın</h2>
             <p className="text-sm text-muted-foreground">Kurulum tercihleriniz kaydedildi. İlk müşterinizi ve aracınızı kaydedin, ardından iş emrinizi açın. İş emri ekranında da müşteri ve araç ekleyebilirsiniz.</p>
             <div className="flex flex-col gap-2 sm:flex-row">
