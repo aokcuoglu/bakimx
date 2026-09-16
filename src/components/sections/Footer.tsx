@@ -95,6 +95,7 @@ const resourceLinks: readonly FooterLink[] = [
   { label: "Blog", href: "/blog" },
   { label: "Neden BakımX", href: "/#neden" },
   { label: "SSS", href: "/#sss" },
+  { label: "Kullanım Kılavuzu", href: "/kilavuz" },
   { label: "Araç Kabul Formu Rehberi", href: "/rehber/arac-kabul-formu" },
   {
     label: "İş Emri Rehberi",
