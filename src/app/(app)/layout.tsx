@@ -5,6 +5,9 @@ import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { GATED_FEATURES, getPlanState, hasFeature, isPlanExpiredLock } from "@/lib/plan"
+import { getPlanPackage } from "@/lib/plans-catalog"
+import { getSidebarPlanStatus } from "@/lib/billing/sidebar-plan-status"
+import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { LOGOUT_REASON_PARAM, SESSION_INVALID_REASON } from "@/lib/session-recovery"
 import { PlanLocked } from "@/components/billing/plan-locked"
 import { ForcePasswordChange } from "@/components/auth/force-password-change"
@@ -57,6 +60,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   const plan = getPlanState(workshop)
+  const isTechnicianRole = isTechnicianRestrictedRole(user.role)
+  const sidebarPlanStatus = isTechnicianRole
+    ? null
+    : getSidebarPlanStatus(plan, getPlanPackage(plan.tier)?.name ?? plan.tier)
 
   // Paywall: deneme/abonelik süresi bitmiş bir oturum uygulamayı hiç göremez.
   // Login'e atıyoruz; `?expired=` gören middleware oturum cookie'sini siler
@@ -132,25 +139,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       )}
       {!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null && (
-        <div className="bg-primary/10 text-primary-strong text-xs sm:text-sm px-4 py-2 text-center">
+        <div className={`bg-primary/10 text-primary-strong text-xs sm:text-sm px-4 py-2 text-center ${isTechnicianRole ? "" : "lg:hidden"}`}>
           Deneme sürenizin bitmesine{" "}
           <span className="font-semibold">{plan.trialDaysLeft} iş günü</span> kaldı.{" "}
-          <Link href="/billing" className="font-semibold underline underline-offset-2">
-            Paketi etkinleştir
-          </Link>
+          {!isTechnicianRole && <Link href="/account#paket" className="font-semibold underline underline-offset-2">Paketleri incele</Link>}
         </div>
       )}
       {!readOnlyLocked && !plan.isTrialing && plan.subscriptionDaysLeft != null && plan.subscriptionDaysLeft <= 7 && (
-        <div className="bg-warning/10 text-warning-strong text-xs sm:text-sm px-4 py-2 text-center">
+        <div className={`bg-warning/10 text-warning-strong text-xs sm:text-sm px-4 py-2 text-center ${isTechnicianRole ? "" : "lg:hidden"}`}>
           Aboneliğinizin bitmesine{" "}
           <span className="font-semibold">{plan.subscriptionDaysLeft} gün</span> kaldı.{" "}
-          <Link href="/billing" className="font-semibold underline underline-offset-2">Yenile</Link>
+          {!isTechnicianRole && <Link href="/account#paket" className="font-semibold underline underline-offset-2">Paketi yönet</Link>}
         </div>
       )}
       <div className="flex-1">
         <AppShellChrome
           initialSidebarCollapsed={initialSidebarCollapsed}
           enabledFeatures={enabledFeatures}
+          planStatus={sidebarPlanStatus}
           userIdentity={{
             firstName: user.firstName,
             lastName: user.lastName,

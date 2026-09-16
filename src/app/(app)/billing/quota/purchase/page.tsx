@@ -45,7 +45,7 @@ export default async function PurchaseQuotaPage() {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Button asChild variant="ghost" size="sm">
-              <Link href="/billing#kullanim">
+              <Link href="/account#kullanim">
                 <ArrowLeft className="size-4" />
                 Geri
               </Link>

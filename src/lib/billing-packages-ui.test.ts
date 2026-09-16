@@ -16,7 +16,7 @@ test("paket karşılaştırması masaüstü semantik tablo ve mobil shadcn Tabs 
 })
 
 test("uygulama içi paket CTA yetkisi billing.manage rolünden gelir", () => {
-  const page = read("src/app/(app)/billing/page.tsx")
+  const page = read("src/app/(app)/account/page.tsx")
   const purchasePage = read("src/app/(app)/billing/quota/purchase/page.tsx")
   const comparison = read("src/components/billing/plan-packages.tsx")
   expect(page).toContain("canManageBilling(user.role)")
@@ -28,7 +28,7 @@ test("uygulama içi paket CTA yetkisi billing.manage rolünden gelir", () => {
 
 test("eski kota sayfası kullanıma yönlenir ve ek kota rotası korunur", () => {
   const redirectPage = read("src/app/(app)/billing/quota/page.tsx")
-  expect(redirectPage).toContain('redirect("/billing#kullanim")')
+  expect(redirectPage).toContain('redirect("/account#kullanim")')
   expect(existsSync(join(root, "src/app/(app)/billing/quota/purchase/page.tsx"))).toBe(true)
 })
 

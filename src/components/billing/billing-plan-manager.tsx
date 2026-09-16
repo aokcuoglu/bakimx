@@ -183,7 +183,7 @@ export function BillingPlanManager({
                   <CheckCircle2 className="mx-auto size-10 text-success-strong" aria-hidden="true" />
                   <h3 className="text-lg font-semibold">{pkg?.name} paketiniz etkin</h3>
                   <p className="text-sm text-muted-foreground">Ücretsiz paket etkinleştirildi. Ödeme yapmanız gerekmiyor.</p>
-                  <Button type="button" variant="outline" onClick={() => closeDialog(false)}>Paketler & Kullanım’a dön</Button>
+                  <Button type="button" variant="outline" onClick={() => closeDialog(false)}>Hesaba dön</Button>
                 </div>
               ) : done.method === "card" ? (
                 <div className="mx-auto max-w-lg py-3">
@@ -203,7 +203,7 @@ export function BillingPlanManager({
                     <dt className="text-muted-foreground">Açıklama</dt><dd className="font-mono font-semibold">{done.reference}</dd>
                   </dl>
                   <p className="text-sm text-muted-foreground">Havale açıklamasına referans kodunu yazın.</p>
-                  <Button type="button" variant="outline" onClick={() => closeDialog(false)}>Paketler & Kullanım’a dön</Button>
+                  <Button type="button" variant="outline" onClick={() => closeDialog(false)}>Hesaba dön</Button>
                 </div>
               )
             ) : view === "compare" ? (

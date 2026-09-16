@@ -159,7 +159,7 @@ export async function createBillingOrder(input: {
         })
         if (!activation.ok) return activation
       }
-      revalidatePath("/billing")
+      revalidatePath("/account")
       revalidatePath("/admin")
       return { ok: true, reference, amountMinor, method: data.method, complimentary }
     } catch (err) {

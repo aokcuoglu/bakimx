@@ -269,7 +269,7 @@ export function TeamManagement({
           {seatLimit <= 1
             ? " Paketiniz tek kullanıcı içeriyor — ekibinize kullanıcı eklemek için "
             : " Yeni kullanıcı eklemek ya da davet etmek için "}
-          <Link href="/billing#paketler" onClick={() => (accessTier === "lite" || accessTier === "pro") && trackMarketingEvent("feature_upgrade_clicked", { feature_id: "team", current_tier: accessTier, target_tier: accessTier === "pro" ? "premium" : "pro", placement: "inline", destination: "plans" })} className="font-semibold underline underline-offset-2">
+          <Link href="/account#paketler" onClick={() => (accessTier === "lite" || accessTier === "pro") && trackMarketingEvent("feature_upgrade_clicked", { feature_id: "team", current_tier: accessTier, target_tier: accessTier === "pro" ? "premium" : "pro", placement: "inline", destination: "plans" })} className="font-semibold underline underline-offset-2">
             {accessTier === "pro" ? `${PLAN_SEATS.premium} kullanıcılı Premium paketini inceleyin` : accessTier === "lite" ? `${PLAN_SEATS.pro} kullanıcılı Profesyonel paketini inceleyin` : "paket seçeneklerini inceleyin"}
           </Link>{" "}
           ya da ek koltuk için bizimle iletişime geçin.

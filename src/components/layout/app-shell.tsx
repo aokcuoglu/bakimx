@@ -10,6 +10,7 @@ import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
 import { ROLE_LABELS } from "@/lib/roles"
 import type { GatedFeature } from "@/lib/plan"
+import type { SidebarPlanStatus } from "@/lib/billing/sidebar-plan-status"
 import type { UserRole } from "@prisma/client"
 import {
   LayoutDashboard,
@@ -148,12 +149,6 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/settings/calendar", label: "Takvim Ayarları", icon: Calendar, feature: "appointments" },
     ],
   },
-  {
-    label: "Abonelik",
-    items: [
-      { href: "/billing", label: "Paketler & Kullanım", icon: Receipt },
-    ],
-  },
 ]
 
 const COMING_SOON_PREFIXES: string[] = []
@@ -203,18 +198,20 @@ export function AppShellChrome({
   initialSidebarCollapsed = false,
   enabledFeatures = [],
   userIdentity,
+  planStatus,
 }: {
   children: React.ReactNode
   initialSidebarCollapsed?: boolean
   enabledFeatures?: GatedFeature[]
   userIdentity?: UserIdentity
+  planStatus?: SidebarPlanStatus | null
 }) {
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
 
   return (
     <SetPageHeaderContext.Provider value={setPageHeader}>
       <SidebarProvider defaultOpen={!initialSidebarCollapsed}>
-        <AppSidebar enabledFeatures={enabledFeatures} userIdentity={userIdentity} />
+        <AppSidebar enabledFeatures={enabledFeatures} userIdentity={userIdentity} planStatus={planStatus} />
         <SidebarInset className="min-h-screen bg-muted">
           <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} enabledFeatures={enabledFeatures} />
           <main className="flex-1 px-4 sm:px-6 py-4 sm:py-6 pb-24 lg:pb-8">{children}</main>
@@ -343,9 +340,11 @@ function AppHeader({
 function AppSidebar({
   enabledFeatures = [],
   userIdentity,
+  planStatus,
 }: {
   enabledFeatures?: GatedFeature[]
   userIdentity?: UserIdentity
+  planStatus?: SidebarPlanStatus | null
 }) {
   const pathname = usePathname()
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
@@ -411,6 +410,22 @@ function AppSidebar({
             </form>
           </SidebarMenuItem>
         </SidebarMenu>
+        {planStatus && (
+          <SidebarMenu className="border-t border-sidebar-border pt-2">
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip={`${planStatus.title} · ${planStatus.detail}`} className="h-auto min-h-12 group-data-[collapsible=icon]:size-8!">
+                <Link href="/account#paket">
+                  <CalendarClock className="size-4" aria-hidden="true" />
+                  <span className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+                    <span className="block truncate text-xs font-medium">{planStatus.title}</span>
+                    <span className="block truncate text-[10px] text-sidebar-foreground/70">{planStatus.detail}</span>
+                  </span>
+                  <span className="rounded-md border border-sidebar-border px-1.5 py-1 text-[10px] group-data-[collapsible=icon]:hidden">{planStatus.action}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
       </SidebarFooter>
 
       <SidebarRail />
