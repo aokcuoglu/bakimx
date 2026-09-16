@@ -36,7 +36,10 @@
     "worktree:env": "bash scripts/setup-worktree-env.sh",
     "release": "node scripts/release.mjs",
     "project:sync": "bash scripts/project-board-sync.sh",
-    "push:vapid-keys": "bunx web-push generate-vapid-keys"
+    "push:vapid-keys": "bunx web-push generate-vapid-keys",
+    "market:intel:preflight": "bun tools/market-intelligence/cli.ts preflight",
+    "market:intel:competitors": "bun tools/market-intelligence/cli.ts competitors",
+    "market:intel:analyze": "bun tools/market-intelligence/cli.ts analyze"
   },
   "prisma": {
     "seed": "bunx tsx prisma/seed.ts"
