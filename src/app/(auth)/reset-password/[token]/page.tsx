@@ -9,6 +9,7 @@ import styles from "@/components/auth/register-design.module.css"
 import { Header } from "@/components/sections/Header"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { hashResetToken, isResetExpired } from "@/lib/password-reset"
 
 export const metadata: Metadata = {
@@ -41,16 +42,7 @@ export default async function ResetPasswordPage({
               <ResetPasswordForm token={token} />
             ) : (
               <div className={styles.form}>
-                <div className="mb-9 border-b border-border pb-7">
-                  <h1 className="text-2xl font-medium tracking-[-0.035em] text-foreground sm:text-[32px]">
-                    Yeni şifre belirleyin
-                  </h1>
-                  <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-                    Bağlantı doğrulanamadı.
-                  </p>
-                </div>
-
-                <Alert variant="warning" className="mb-6">
+                <Alert variant="warning">
                   <TriangleAlert />
                   <AlertTitle>Bağlantı geçersiz</AlertTitle>
                   <AlertDescription>
@@ -59,7 +51,12 @@ export default async function ResetPasswordPage({
                   </AlertDescription>
                 </Alert>
 
-                <Button asChild variant="foreground" size="xl" className={styles.submit}>
+                <Button
+                  asChild
+                  variant="foreground"
+                  size="xl"
+                  className={cn("mt-6", styles.submit)}
+                >
                   <Link href="/forgot-password">Yeni bağlantı talep et</Link>
                 </Button>
               </div>
