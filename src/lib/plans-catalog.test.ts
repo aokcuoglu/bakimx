@@ -62,14 +62,25 @@ test("fotoğraf açıklama değerleri gerçek yükleme sözleşmesinden türetil
   })
 })
 
-test("Premium yol haritasındaki üç özellik de yalnız Premium için Yakında görünür", () => {
+test("Premium yol haritasındaki üç özellik de yalnız Premium için görünür", () => {
   const roadmap = PLAN_COMPARISON.find((category) => category.key === "roadmap")!
   expect(roadmap.rows).toHaveLength(3)
   for (const row of roadmap.rows) {
     expect(row.values.lite.state).toBe("unavailable")
     expect(row.values.pro.state).toBe("unavailable")
-    expect(row.values.premium).toEqual({ state: "coming-soon", label: "Yakında" })
   }
+  expect(roadmap.rows.find((r) => r.key === "eInvoice")?.values.premium).toEqual({
+    state: "coming-soon",
+    label: "Yakında",
+  })
+  expect(roadmap.rows.find((r) => r.key === "multiBranch")?.values.premium).toEqual({
+    state: "included",
+    label: "Dahil",
+  })
+  expect(roadmap.rows.find((r) => r.key === "rbac")?.values.premium).toEqual({
+    state: "coming-soon",
+    label: "Yakında",
+  })
 })
 
 test("Lite pazarlama metni fotoğraf yükleme vaadi içermez", () => {

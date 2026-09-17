@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { canCreateBranch } from "@/lib/membership"
+import { canCreateBranch } from "@/lib/can-create-branch"
 
 const base = {
   planTier: "premium" as const,

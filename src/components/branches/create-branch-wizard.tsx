@@ -322,11 +322,12 @@ export function CreateBranchWizard({
                           {REGISTER_MODULE_IDS.map((id) => {
                             const selected = field.value.includes(id)
                             return (
-                              <button
+                              <Button
                                 key={id}
                                 type="button"
+                                variant="outline"
                                 className={cn(
-                                  "rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                                  "h-auto justify-start rounded-lg px-3 py-2 text-left text-sm whitespace-normal",
                                   selected
                                     ? "border-foreground bg-muted font-medium"
                                     : "border-border bg-background hover:bg-muted/60",
@@ -340,7 +341,7 @@ export function CreateBranchWizard({
                                 }}
                               >
                                 {MODULE_LABELS[id]}
-                              </button>
+                              </Button>
                             )
                           })}
                         </div>

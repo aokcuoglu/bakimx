@@ -103,7 +103,7 @@ export function WorkspaceSwitcher({
                   <span className="truncate font-medium">{current.name}</span>
                   <span className="truncate text-xs text-muted-foreground">{current.city}</span>
                 </div>
-                <ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-60 group-data-[collapsible=icon]:hidden" aria-hidden />
+                <ChevronsUpDown className="ml-auto size-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" aria-hidden />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent

@@ -1,11 +1,5 @@
-import type { Prisma, UserRole, Workshop } from "@prisma/client"
+import type { Prisma, UserRole } from "@prisma/client"
 import { prisma } from "@/lib/db"
-import { hasWorkshopFeature } from "@/lib/plan"
-
-type WorkshopPlanFields = Pick<
-  Workshop,
-  "planTier" | "subscriptionStatus" | "approvalStatus" | "trialEndsAt" | "currentPeriodEnd"
-> & { liteFreeGrantedAt?: Date | null }
 
 export type MembershipWorkshopSummary = {
   id: string
@@ -113,9 +107,4 @@ export async function activateWorkshopForUser(input: {
   })
 }
 
-export function canCreateBranch(
-  input: WorkshopPlanFields & { role: UserRole },
-): boolean {
-  if (input.role !== "owner") return false
-  return hasWorkshopFeature(input, "multiBranch")
-}
+export { canCreateBranch } from "@/lib/can-create-branch"
