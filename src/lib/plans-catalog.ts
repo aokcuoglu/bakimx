@@ -265,7 +265,7 @@ export const PLAN_COMPARISON: readonly PlanComparisonCategory[] = [
     label: "Premium yol haritası",
     rows: [
       featureRow("eInvoice", { label: "e-Fatura / e-Arşiv", comingSoon: true }),
-      featureRow("multiBranch", { comingSoon: true }),
+      featureRow("multiBranch"),
       featureRow("rbac", { comingSoon: true }),
     ],
   },

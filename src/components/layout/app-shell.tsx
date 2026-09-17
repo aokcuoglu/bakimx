@@ -6,6 +6,10 @@ import { cn } from "@/lib/utils"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { GlobalSearch } from "@/components/layout/global-search-box"
 import { CreateCenterDialog } from "@/components/layout/create-center-dialog"
+import {
+  WorkspaceSwitcher,
+  type WorkspaceSwitcherItem,
+} from "@/components/layout/workspace-switcher"
 import { DashboardProductTour } from "@/components/dashboard/dashboard-product-tour"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
@@ -202,6 +206,12 @@ export function AppShell({
   return <>{children}</>
 }
 
+export type WorkspaceSwitcherProps = {
+  currentWorkshopId: string
+  memberships: WorkspaceSwitcherItem[]
+  canCreateBranch: boolean
+}
+
 export function AppShellChrome({
   children,
   initialSidebarCollapsed = false,
@@ -209,6 +219,7 @@ export function AppShellChrome({
   userIdentity,
   showDashboardTour = false,
   planStatus,
+  workspace,
 }: {
   children: React.ReactNode
   initialSidebarCollapsed?: boolean
@@ -216,13 +227,19 @@ export function AppShellChrome({
   userIdentity?: UserIdentity
   showDashboardTour?: boolean
   planStatus?: SidebarPlanStatus | null
+  workspace?: WorkspaceSwitcherProps | null
 }) {
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
 
   return (
     <SetPageHeaderContext.Provider value={setPageHeader}>
       <SidebarProvider defaultOpen={!initialSidebarCollapsed}>
-        <AppSidebar enabledFeatures={enabledFeatures} userIdentity={userIdentity} planStatus={planStatus} />
+        <AppSidebar
+          enabledFeatures={enabledFeatures}
+          userIdentity={userIdentity}
+          planStatus={planStatus}
+          workspace={workspace}
+        />
         <SidebarInset className="min-h-screen bg-muted">
           <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} enabledFeatures={enabledFeatures} />
           <main className="flex-1 px-4 sm:px-6 py-4 sm:py-6 pb-24 lg:pb-8">{children}</main>
@@ -354,10 +371,12 @@ function AppSidebar({
   enabledFeatures = [],
   userIdentity,
   planStatus,
+  workspace,
 }: {
   enabledFeatures?: GatedFeature[]
   userIdentity?: UserIdentity
   planStatus?: SidebarPlanStatus | null
+  workspace?: WorkspaceSwitcherProps | null
 }) {
   const pathname = usePathname()
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
@@ -369,14 +388,22 @@ function AppSidebar({
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border p-4 group-data-[collapsible=icon]:p-2">
-        <Link
-          href={isTechRole ? "/technician" : "/dashboard"}
-          aria-label="BakimX"
-          className="flex size-8 items-center justify-center"
-        >
-          <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
-        </Link>
+      <SidebarHeader className="border-b border-sidebar-border p-2 group-data-[collapsible=icon]:p-2">
+        {workspace && !isTechRole ? (
+          <WorkspaceSwitcher
+            currentWorkshopId={workspace.currentWorkshopId}
+            memberships={workspace.memberships}
+            canCreateBranch={workspace.canCreateBranch}
+          />
+        ) : (
+          <Link
+            href={isTechRole ? "/technician" : "/dashboard"}
+            aria-label="BakimX"
+            className="flex size-8 items-center justify-center"
+          >
+            <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
+          </Link>
+        )}
       </SidebarHeader>
 
       <SidebarContentSlot>

@@ -102,6 +102,10 @@ export async function POST(request: Request) {
       try {
         const order = await prisma.$transaction(async (tx) => {
           assertLiteRegistrationOpen(tier)
+          const organization = await tx.organization.create({
+            data: { name: data.workshopName },
+            select: { id: true },
+          })
           const workshop = await tx.workshop.create({
             data: {
               loginCode,
@@ -114,6 +118,7 @@ export async function POST(request: Request) {
               invoiceTitle: data.invoiceTitle,
               taxNumber: data.taxNumber,
               taxOffice: data.taxOffice || null,
+              organizationId: organization.id,
               // Instant activation: the owner can sign in right away on the
               // trial. The pending havale only gates the paid plan upgrade.
               approvalStatus: "approved",
@@ -146,7 +151,7 @@ export async function POST(request: Request) {
               role: "yonetici",
             },
           })
-          await tx.user.create({
+          const owner = await tx.user.create({
             data: {
               email: data.email,
               password: passwordHash,
@@ -155,6 +160,15 @@ export async function POST(request: Request) {
               workshopId: workshop.id,
               role: "owner",
               technicianId: ownerTechnician.id,
+            },
+            select: { id: true },
+          })
+          await tx.workshopMembership.create({
+            data: {
+              userId: owner.id,
+              workshopId: workshop.id,
+              role: "owner",
+              isActive: true,
             },
           })
           if (tier === "lite") {

@@ -17,6 +17,7 @@ import { VersionUpdateNotice } from "@/components/layout/version-update-notice"
 import { getBuildSignature } from "@/lib/build-signature"
 import { FIRST_ONBOARDING_PATH } from "@/lib/onboarding-steps"
 import { isOnboardingCompleted, isOnboardingPending } from "@/lib/validations/onboarding"
+import { canCreateBranch, listUserMemberships } from "@/lib/membership"
 import { PRIVATE_ROBOTS, TITLE_TEMPLATE } from "@/lib/seo"
 
 export const metadata: Metadata = {
@@ -43,7 +44,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const workshop = await prisma.workshop.findUnique({
     where: { id: user.workshopId },
     select: {
+      id: true,
       name: true,
+      city: true,
       planTier: true,
       subscriptionStatus: true,
       approvalStatus: true,
@@ -85,6 +88,28 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // çözülür; istemciye yalnız "açık olanlar" listesi iner, kapının nasıl
   // hesaplandığı değil.
   const enabledFeatures = GATED_FEATURES.filter((feature) => hasFeature(plan.accessTier, feature))
+
+  const membershipRows = await listUserMemberships(user.id)
+  const workspaceMemberships =
+    membershipRows.length > 0
+      ? membershipRows.map((row) => ({ ...row.workshop, role: row.role }))
+      : [
+          {
+            id: workshop.id,
+            name: workshop.name,
+            city: workshop.city,
+            loginCode: "",
+            organizationId: null,
+            planTier: workshop.planTier,
+            logoUrl: null,
+            role: user.role,
+          },
+        ]
+  const workspaceSwitcher = {
+    currentWorkshopId: user.workshopId,
+    memberships: workspaceMemberships,
+    canCreateBranch: canCreateBranch({ ...workshop, role: user.role }),
+  }
 
   // Full-screen lock: only the approval gate (pending/rejected) blocks the whole
   // app now. Plan-expiry reasons drop to read-only mode below (data visible,
@@ -172,6 +197,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           enabledFeatures={enabledFeatures}
           showDashboardTour={showDashboardTour}
           planStatus={sidebarPlanStatus}
+          workspace={workspaceSwitcher}
           userIdentity={{
             firstName: user.firstName,
             lastName: user.lastName,

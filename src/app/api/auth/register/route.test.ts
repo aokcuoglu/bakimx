@@ -97,6 +97,9 @@ mock.module("@/lib/db", () => ({
                 return { id: "sales-link" }
               },
             },
+            organization: {
+              create: async () => ({ id: "org-new" }),
+            },
             workshop: {
               create: async ({ data }: { data: Record<string, unknown> }) => {
                 createdWorkshopData = data
@@ -110,6 +113,9 @@ mock.module("@/lib/db", () => ({
                 createdOwnerCount += 1
                 return { id: "user-owner" }
               },
+            },
+            workshopMembership: {
+              create: async () => ({ id: "membership-owner" }),
             },
             salesLead: {
               updateMany: async ({ data }: { data: Record<string, unknown> }) => {

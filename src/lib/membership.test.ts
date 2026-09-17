@@ -1,0 +1,43 @@
+import { describe, expect, test } from "bun:test"
+import { canCreateBranch } from "@/lib/membership"
+
+const base = {
+  planTier: "premium" as const,
+  subscriptionStatus: "active" as const,
+  approvalStatus: "approved" as const,
+  trialEndsAt: null,
+  currentPeriodEnd: null,
+}
+
+describe("canCreateBranch", () => {
+  test("allows premium owners", () => {
+    expect(canCreateBranch({ ...base, role: "owner" })).toBe(true)
+  })
+
+  test("blocks non-owners even on premium", () => {
+    expect(canCreateBranch({ ...base, role: "manager" })).toBe(false)
+    expect(canCreateBranch({ ...base, role: "usta" })).toBe(false)
+  })
+
+  test("blocks lite owners", () => {
+    expect(
+      canCreateBranch({
+        ...base,
+        planTier: "lite",
+        role: "owner",
+      }),
+    ).toBe(false)
+  })
+
+  test("allows trialing owners (trial accessTier is premium)", () => {
+    expect(
+      canCreateBranch({
+        ...base,
+        planTier: "pro",
+        subscriptionStatus: "trialing",
+        trialEndsAt: new Date(Date.now() + 7 * 86_400_000),
+        role: "owner",
+      }),
+    ).toBe(true)
+  })
+})
