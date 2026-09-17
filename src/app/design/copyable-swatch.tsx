@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Check, Copy } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 
 /** Large getdesign.md-style color card: swatch block + name + hex + role. */
 export function ColorCard({
@@ -33,11 +34,12 @@ export function ColorCard({
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       onClick={copy}
       className={cn(
-        "group flex flex-col overflow-hidden rounded-lg border border-border bg-card text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        "group h-auto w-full flex-col items-stretch overflow-hidden rounded-lg p-0 text-left whitespace-normal transition-colors hover:bg-muted/40",
         className
       )}
       aria-label={`${name} ${hex} kopyala`}
@@ -49,7 +51,7 @@ export function ColorCard({
       <span className="flex flex-1 flex-col gap-1.5 p-3.5">
         <span className="flex items-start justify-between gap-2">
           <span className="text-sm font-medium text-foreground">{name}</span>
-          <span className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+          <span className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/button:opacity-100 group-focus-visible/button:opacity-100">
             {copied ? (
               <Check className="size-3.5 text-success-strong" aria-hidden />
             ) : (
@@ -61,10 +63,10 @@ export function ColorCard({
         <span className="text-xs leading-relaxed text-muted-foreground">
           {description}
         </span>
-        <span className="mt-auto pt-1 font-mono text-[10px] text-muted-foreground/80">
+        <span className="mt-auto pt-1 font-mono text-[10px] text-muted-foreground">
           {token}
         </span>
       </span>
-    </button>
+    </Button>
   )
 }
