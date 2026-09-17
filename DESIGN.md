@@ -22,7 +22,7 @@ Inter uygulama ve genel public yüzeylerde kullanılır. Kod ve sabit genişlikl
 
 ## Design Palette — 17 Eylül 2026
 
-Canlı önizleme: [`/design`](/design) (yerel `http://localhost:3000/design`; ileride `ui.bakimx.com` adayı). Bu bölüm getdesign.md tarzı token kartlarının kaynağıdır; yeni UI işi buradaki sözleşmeye uyar.
+Canlı önizleme: [`/design`](/design) (yerel `http://localhost:3000/design`; ileride `ui.bakimx.com` adayı). Galeri düzeni [getdesign.md / Linear preview](https://getdesign.md/linear.app/design-md) yapısını izler (01 Palette → 08 Responsive); token değerleri BakımX’e aittir. Yeni UI işi buradaki sözleşmeye uyar.
 
 ### Colors
 

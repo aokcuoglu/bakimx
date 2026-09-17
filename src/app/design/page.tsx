@@ -348,7 +348,7 @@ export default function DesignSystemPage() {
               className="flex shrink-0 items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-ring"
               aria-label="BakımX ana sayfa"
             >
-              <BrandLogo height={28} />
+              <BrandLogo height={32} />
             </Link>
             <nav
               aria-label="Design system"
