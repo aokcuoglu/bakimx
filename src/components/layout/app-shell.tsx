@@ -10,7 +10,9 @@ import {
   WorkspaceSwitcher,
   type WorkspaceSwitcherItem,
 } from "@/components/layout/workspace-switcher"
+import { SettingsNav } from "@/components/settings/settings-nav"
 import { DashboardProductTour } from "@/components/dashboard/dashboard-product-tour"
+import { isSettingsPath } from "@/lib/settings-nav"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
 import { ROLE_LABELS } from "@/lib/roles"
@@ -22,12 +24,10 @@ import {
   Car,
   Users,
   Wrench as WrenchIcon,
-  Settings,
   LogOut,
   Bell,
   FileText,
   CalendarClock,
-  CreditCard,
   BellRing,
   Boxes,
   Truck,
@@ -144,15 +144,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: "İletişim",
     items: [
       { href: "/communications", label: "İletişim Kayıtları", icon: MessageSquare, feature: "communications" },
-    ],
-  },
-  {
-    label: "Ayarlar",
-    items: [
-      { href: "/settings?tab=profile", label: "Ayarlar", icon: Settings },
-      { href: "/settings/team", label: "Ekip", icon: Users, feature: "team" },
-      { href: "/settings/notifications", label: "Bildirim Ayarları", icon: Bell, feature: "automatedReminders" },
-      { href: "/settings/calendar", label: "Takvim Ayarları", icon: Calendar, feature: "appointments" },
     ],
   },
 ]
@@ -380,6 +371,7 @@ function AppSidebar({
 }) {
   const pathname = usePathname()
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
+  const inSettings = isSettingsPath(pathname)
 
   const visibleGroups = (isTechRole ? TECHNICIAN_NAV_GROUPS : NAV_GROUPS).map((group) => ({
     ...group,
@@ -407,22 +399,26 @@ function AppSidebar({
       </SidebarHeader>
 
       <SidebarContentSlot>
-        {visibleGroups.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => (
-                  <NavMenuItem key={item.href} item={item} pathname={pathname} enabledFeatures={enabledFeatures} />
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {inSettings ? (
+          <SettingsNav enabledFeatures={enabledFeatures} role={userIdentity?.role} />
+        ) : (
+          visibleGroups.map((group) => (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {group.items.map((item) => (
+                    <NavMenuItem key={item.href} item={item} pathname={pathname} enabledFeatures={enabledFeatures} />
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))
+        )}
       </SidebarContentSlot>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        {userIdentity && (
+        {userIdentity && !inSettings ? (
           <div className="px-2 py-1.5 group-data-[collapsible=icon]:hidden">
             <p className="text-xs font-medium text-sidebar-foreground/80 truncate">
               {[userIdentity.firstName, userIdentity.lastName].filter(Boolean).join(" ") || userIdentity.email || userIdentity.username}
@@ -431,44 +427,36 @@ function AppSidebar({
               {ROLE_LABELS[userIdentity.role]}
             </p>
           </div>
-        )}
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Hesabım" isActive={pathname === "/account"}>
-              <Link href="/account">
-                <UserCircle className="size-4" />
-                <span>Hesabım</span>
-              </Link>
-            </SidebarMenuButton>
-            {!isTechRole && (
-              <SidebarMenuSub className="group-data-[collapsible=icon]:hidden">
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton asChild isActive={pathname === "/account/plans"}>
-                    <Link href="/account/plans"><span>Paketler</span></Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton asChild isActive={pathname === "/account/billing"}>
-                    <Link href="/account/billing"><CreditCard className="size-3.5" aria-hidden="true" /><span>Faturalandırma</span></Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <form action="/api/auth/logout" method="POST" className="w-full">
-              <SidebarMenuButton type="submit" tooltip="Çıkış Yap">
-                <LogOut className="size-4" />
-                <span>Çıkış Yap</span>
+        ) : null}
+        {!inSettings ? (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip="Hesap ayarları"
+                isActive={pathname === "/settings/profile" || pathname.startsWith("/account")}
+              >
+                <Link href="/settings/profile">
+                  <UserCircle className="size-4" />
+                  <span>Hesap ayarları</span>
+                </Link>
               </SidebarMenuButton>
-            </form>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        {planStatus && (
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <form action="/api/auth/logout" method="POST" className="w-full">
+                <SidebarMenuButton type="submit" tooltip="Çıkış Yap">
+                  <LogOut className="size-4" />
+                  <span>Çıkış Yap</span>
+                </SidebarMenuButton>
+              </form>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        ) : null}
+        {planStatus && !inSettings ? (
           <SidebarMenu className="border-t border-sidebar-border pt-2">
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={`${planStatus.title} · ${planStatus.detail}`} className="h-auto min-h-12 group-data-[collapsible=icon]:size-8!">
-                <Link href="/account/plans">
+                <Link href="/settings/plans">
                   <CalendarClock className="size-4" aria-hidden="true" />
                   <span className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
                     <span className="block truncate text-xs font-medium">{planStatus.title}</span>
@@ -479,7 +467,7 @@ function AppSidebar({
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-        )}
+        ) : null}
       </SidebarFooter>
 
       <SidebarRail />
@@ -623,10 +611,10 @@ function MobileBottomNav({
               </Button>
             </div>
             <MobileNavLink
-              href="/account"
-              label="Hesabım"
+              href="/settings/profile"
+              label="Profil"
               icon={UserCircle}
-              active={pathname === "/account" || pathname.startsWith("/account/")}
+              active={pathname === "/settings/profile" || pathname.startsWith("/account")}
             />
           </div>
           <CreateCenterDialog open={createOpen} onOpenChange={setCreateOpen} enabledFeatures={enabledFeatures} />
@@ -754,12 +742,12 @@ function UserMenu({ userIdentity }: { userIdentity?: UserIdentity }) {
           </div>
           <div className="py-1">
             <Link
-              href="/account"
+              href="/settings/profile"
               onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
             >
               <UserCircle className="size-4 text-muted-foreground" />
-              Hesabım
+              Hesap ayarları
             </Link>
           </div>
           <div className="border-t border-border py-1">
@@ -791,7 +779,7 @@ const TECHNICIAN_NAV_GROUPS: NavGroup[] = [
   {
     label: "Hesap",
     items: [
-      { href: "/account", label: "Hesabım", icon: UserCircle },
+      { href: "/settings/profile", label: "Profil", icon: UserCircle },
     ],
   },
 ]

@@ -1,7 +1,8 @@
 "use client"
 
+import Link from "next/link"
 import { useMemo, useState, useTransition } from "react"
-import { Check, ChevronsUpDown, LockKeyhole, Plus } from "lucide-react"
+import { Building2, Check, ChevronsUpDown, LockKeyhole, LogOut, Plus, UserCircle } from "lucide-react"
 import { toast } from "sonner"
 import { CreateBranchWizard } from "@/components/branches/create-branch-wizard"
 import { Button } from "@/components/ui/button"
@@ -152,7 +153,13 @@ export function WorkspaceSwitcher({
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem asChild className="gap-2 p-2">
-                  <a href="/account/plans">
+                  <Link
+                    href="/settings/plans"
+                    onClick={() => {
+                      setOpen(false)
+                      if (isMobile) setOpenMobile(false)
+                    }}
+                  >
                     <span className="flex size-7 items-center justify-center rounded-md border border-border bg-muted">
                       <LockKeyhole className="size-3.5" />
                     </span>
@@ -160,9 +167,50 @@ export function WorkspaceSwitcher({
                       <span className="block text-sm font-medium">Yeni şube</span>
                       <span className="block text-xs text-muted-foreground">Premium pakette</span>
                     </span>
-                  </a>
+                  </Link>
                 </DropdownMenuItem>
               )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="gap-2 p-2">
+                <Link
+                  href="/settings/profile"
+                  aria-label="Hesap ayarları"
+                  onClick={() => {
+                    setOpen(false)
+                    if (isMobile) setOpenMobile(false)
+                  }}
+                >
+                  <UserCircle className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <span className="text-sm">Hesap ayarları</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="gap-2 p-2">
+                <Link
+                  href="/settings/general"
+                  aria-label="Çalışma alanı ayarları"
+                  onClick={() => {
+                    setOpen(false)
+                    if (isMobile) setOpenMobile(false)
+                  }}
+                >
+                  <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <span className="text-sm">Çalışma alanı ayarları</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <form id="workspace-switcher-logout" action="/api/auth/logout" method="POST" className="hidden" />
+              <DropdownMenuItem
+                className="gap-2 p-2"
+                aria-label="Çıkış yap"
+                onSelect={(event) => {
+                  event.preventDefault()
+                  const form = document.getElementById("workspace-switcher-logout") as HTMLFormElement | null
+                  form?.requestSubmit()
+                }}
+              >
+                <LogOut className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="text-sm">Çıkış yap</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarMenuItem>

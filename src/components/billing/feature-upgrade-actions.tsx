@@ -47,7 +47,7 @@ export function FeatureUpgradeActions({ feature, currentTier, targetTier, placem
         </Link>
       </Button>
       <Button asChild size={compact ? "sm" : "lg"} variant="outline">
-        <Link href="/account/plans" onClick={() => trackClick("plans")}>
+        <Link href="/settings/plans" onClick={() => trackClick("plans")}>
           Paketleri karşılaştır
         </Link>
       </Button>

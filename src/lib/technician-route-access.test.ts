@@ -98,6 +98,7 @@ describe("technician-route-access", () => {
     expect(isRouteAllowedForTechnician("/technician/123")).toBe(true)
     expect(isRouteAllowedForTechnician("/account")).toBe(true)
     expect(isRouteAllowedForTechnician("/account/settings")).toBe(true)
+    expect(isRouteAllowedForTechnician("/settings/profile")).toBe(true)
 
     expect(isRouteAllowedForTechnician("/orders/new")).toBe(true)
     expect(isRouteAllowedForTechnician("/quotes/new")).toBe(true)
@@ -108,7 +109,9 @@ describe("technician-route-access", () => {
     expect(isRouteAllowedForTechnician("/orders")).toBe(false)
     expect(isRouteAllowedForTechnician("/orders/123")).toBe(false)
     expect(isRouteAllowedForTechnician("/quotes/123/edit")).toBe(false)
-    expect(isRouteAllowedForTechnician("/settings")).toBe(false)
+    expect(isRouteAllowedForTechnician("/settings")).toBe(true)
+    expect(isRouteAllowedForTechnician("/settings/general")).toBe(false)
+    expect(isRouteAllowedForTechnician("/settings/team")).toBe(false)
     expect(isRouteAllowedForTechnician("/customers")).toBe(false)
     expect(isRouteAllowedForTechnician("/parts")).toBe(false)
     expect(isRouteAllowedForTechnician("/")).toBe(false)

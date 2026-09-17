@@ -45,9 +45,9 @@ export default async function CheckoutPage({
       })
     : null
 
-  // Planı bitmiş (paywall'a takılmış) workshop'lar /account/billing'e YÖNLENDİRİLEMEZ:
-  // /account/billing (app) grubunda olduğu için layout onları anında çıkışa atar ve
-  // login → /checkout → /account/billing → çıkış sonsuz döngüsü oluşur. Onlara bekleyen
+  // Planı bitmiş (paywall'a takılmış) workshop'lar /settings/billing'e YÖNLENDİRİLEMEZ:
+  // /settings/billing (app) grubunda olduğu için layout onları anında çıkışa atar ve
+  // login → /checkout → /settings/billing → çıkış sonsuz döngüsü oluşur. Onlara bekleyen
   // siparişi bu sayfada, satın alma sihirbazının yerine gösteriyoruz.
   const planLocked = workshop ? isPlanExpiredLock(getPlanState(workshop).lockReason) : false
 
@@ -94,10 +94,10 @@ export default async function CheckoutPage({
     )
   }
 
-  // Ayrı, bağlamsız bir "kilitli" sayfada bırakmak yerine /account/billing'e yönlendirip
+  // Ayrı, bağlamsız bir "kilitli" sayfada bırakmak yerine /settings/billing'e yönlendirip
   // orada bir AlertDialog ile bilgilendiriyoruz (bkz. PendingOrderAlert).
   if (pendingOrder) {
-    redirect("/account/billing?pendingBlocked=1")
+    redirect("/settings/billing?pendingBlocked=1")
   }
 
   return (

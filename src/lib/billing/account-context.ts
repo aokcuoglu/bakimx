@@ -11,7 +11,7 @@ import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 /** Account subpages share the former /billing visibility boundary. */
 export async function getAccountBillingContext() {
   const { user, workshop } = await getAppData()
-  if (isTechnicianRestrictedRole(user.role)) redirect("/account")
+  if (isTechnicianRestrictedRole(user.role)) redirect("/settings/profile")
   if (!workshop) redirect("/dashboard")
 
   const [pendingOrder, seatUsage] = await Promise.all([

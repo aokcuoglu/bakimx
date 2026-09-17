@@ -138,7 +138,7 @@ export function AddLocalMemberForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-4 rounded-lg border border-primary/20 bg-primary/5 space-y-3 mb-4"
+      className="mb-4 space-y-3 rounded-lg border border-border bg-card p-4"
     >
       <div>
         <h4 className="text-sm font-semibold text-foreground">
@@ -156,7 +156,7 @@ export function AddLocalMemberForm({
             {seatLimited && (
               <>
                 {" "}
-                <Link href="/account/plans" className="font-semibold underline underline-offset-2">
+                <Link href="/settings/plans" className="font-semibold underline underline-offset-2">
                   Paketleri görüntüleyin
                 </Link>
               </>

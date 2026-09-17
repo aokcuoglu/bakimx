@@ -175,7 +175,7 @@ export function TechnicianAssign({
             Atama yapabilmek için önce Ayarlar → Ekip sayfasından usta ekleyin.
           </p>
           <Button variant="foreground" size="lg" className="mt-4" asChild>
-            <Link href="/settings?tab=team">
+            <Link href="/settings/team">
               <UserPlus className="size-4" />
               Usta Ekle
             </Link>
