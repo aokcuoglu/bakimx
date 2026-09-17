@@ -40,10 +40,19 @@ describe("design system radius contract", () => {
     expect(designMd).toContain("`/design`")
 
     const page = read("src/app/design/page.tsx")
-    expect(page).toContain("BakımX Design System")
-    expect(page).toContain('id="colors"')
+    expect(page).toContain("Design System Analysis of BakımX")
+    expect(page).toContain('id="palette"')
     expect(page).toContain('id="typography"')
-    expect(page).toContain('id="rounded"')
     expect(page).toContain('id="components"')
+    expect(page).toContain('id="cards"')
+    expect(page).toContain('id="forms"')
+    expect(page).toContain('id="spacing"')
+    expect(page).toContain('id="elevation"')
+    expect(page).toContain('id="responsive"')
+    expect(page).toContain('index="01"')
+    expect(page).toContain("ColorCard")
+    expect(page).toContain("Brand & Accent")
   })
 })
+
+
