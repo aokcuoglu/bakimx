@@ -30,6 +30,7 @@ import {
   XCircle,
   Share2,
 } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useFormStatus } from "react-dom"
 
 type AppointmentDetailData = {
@@ -153,10 +154,10 @@ export function AppointmentDetail({
       </div>
 
       {(statusUpdateError || convertError) && (
-        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm flex items-start gap-2">
-          <Info className="size-4 shrink-0 mt-0.5" />
-          <span>{statusUpdateError || convertError}</span>
-        </div>
+        <Alert variant="destructive">
+          <Info />
+          <AlertDescription>{statusUpdateError || convertError}</AlertDescription>
+        </Alert>
       )}
 
       <div className="flex flex-col gap-3">

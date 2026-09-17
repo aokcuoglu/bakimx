@@ -101,7 +101,7 @@
 .site[data-editorial] :global(main > section:first-of-type figure) {
   width: min(100%, 1040px);
   margin-inline: auto;
-  border-radius: 18px;
+  border-radius: 12px; /* Design Palette xl max */
 }
 .site :global(footer) {
   background: var(--card);

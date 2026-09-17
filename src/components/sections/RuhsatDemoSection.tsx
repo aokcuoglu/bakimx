@@ -307,7 +307,7 @@ function RuhsatDoc({
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold shadow-sm ${
               phase === "scanning"
-                ? "bg-primary text-primary-foreground"
+                ? "border border-border bg-card text-foreground"
                 : "bg-success text-success-foreground"
             }`}
           >

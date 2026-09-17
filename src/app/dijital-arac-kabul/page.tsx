@@ -92,8 +92,8 @@ export default function DijitalAracKabulPage() {
             </div>
 
             <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
-              <div className="absolute -inset-4 -z-10 rotate-2 rounded-3xl bg-primary/10" />
-              <figure className="overflow-hidden rounded-2xl border bg-card shadow-2xl shadow-primary/10">
+              <div className="absolute -inset-4 -z-10 rotate-2 rounded-xl bg-primary/10" />
+              <figure className="overflow-hidden rounded-xl border bg-card shadow-md">
                 <div className="flex items-center justify-between border-b bg-muted/50 px-4 py-3">
                   <span className="font-mono text-xs font-medium text-muted-foreground">ARAÇ KABUL · ÖRNEK EKRAN</span>
                   <span className="flex items-center gap-1.5 text-xs font-medium text-success-strong">
@@ -126,7 +126,7 @@ export default function DijitalAracKabulPage() {
               <h2 id="adimlar-baslik" className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Araç servise girerken dört adım</h2>
               <p className="mt-4 text-base leading-7 text-muted-foreground">Kağıt form veya ayrı bir uygulama gerekmez; kayıt telefonda başlar ve iş emrine bağlanır.</p>
             </div>
-            <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-4">
+            <ol className="mt-10 grid gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-4">
               {steps.map((step, index) => {
                 const Icon = step.icon
                 return (
@@ -156,7 +156,7 @@ export default function DijitalAracKabulPage() {
                 { src: "/landing/screens/digital-intake-photos.png", alt: "BakımX kabul fotoğrafları kontrol listesi ekranı", label: "Kabul fotoğrafları · Örnek veri", text: "Zorunlu açılar tek tek çekilir; eksik olanlar kırmızı etiketle görünür." },
                 { src: "/landing/screens/digital-intake-damage-map.png", alt: "BakımX hasar haritası araç şeması ekranı", label: "Hasar haritası · Örnek veri", text: "Hasarlı bölgeye tıklayıp türünü ve derecesini seçersiniz; kayıt anında listeye eklenir." },
               ].map((screen) => (
-                <figure key={screen.src} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                <figure key={screen.src} className="overflow-hidden rounded-xl border bg-card shadow-sm">
                   <div className="border-b px-4 py-3 font-mono text-xs font-medium text-muted-foreground">{screen.label}</div>
                   <Image src={screen.src} alt={screen.alt} width={1000} height={900} className="h-auto w-full" />
                   <figcaption className="border-t px-5 py-4 text-sm leading-6 text-muted-foreground">{screen.text}</figcaption>
@@ -182,7 +182,7 @@ export default function DijitalAracKabulPage() {
                   ))}
                 </ul>
               </div>
-              <div className="rounded-2xl border bg-muted/35 p-6 sm:p-8">
+              <div className="rounded-xl border bg-muted/35 p-6 sm:p-8">
                 <h3 className="text-xl font-semibold">Hangi durumda uygun olmayabilir?</h3>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">Araç kabul etmeyen, yalnızca ön muhasebe arayan veya internetsiz masaüstü programı kullanmak zorunda olan işletmeler için BakımX doğru araç olmayabilir.</p>
                 <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -215,7 +215,7 @@ export default function DijitalAracKabulPage() {
                 { href: "/rehber/arac-kabul-formu", title: "Araç kabul rehberi", text: "Sahada uygulanabilir eksiksiz araç kabul kontrol listesi." },
                 { href: "/fiyatlar", title: "Paketler ve fiyatlar", text: "Güncel paket kapsamlarını ve KDV dahil fiyatları karşılaştırın." },
               ].map((item) => (
-                <Link key={item.href} href={item.href} className="group rounded-xl border bg-card p-5 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <Link key={item.href} href={item.href} className="group rounded-xl border bg-card p-5 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                   <span className="flex items-center justify-between gap-4 font-semibold text-foreground">
                     {item.title}
                     <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" aria-hidden="true" />

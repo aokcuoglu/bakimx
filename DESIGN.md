@@ -82,6 +82,20 @@ Kontrol yüzeyi ile kart/panel köşeleri bilerek ayrılır. Yeni işte bu skala
 - Durum kutuları ad-hoc border+ikon değil `<Alert variant="…">` kullanır.
 - Call-site’ta `h-*` / `rounded-*` / hex override yerine `size` / `variant` / token sınıfı tercih edilir.
 
+### Site genelinde hizalama — 17 Eylül 2026 (geç)
+
+Palette sözleşmesi public / auth / billing / app / admin yüzeylerine uygulandı:
+
+- Panel/kart `rounded-2xl` / `3xl` / `rounded-[20px]` → `rounded-xl` veya `rounded-lg` (üst sınır 12px). İstisna: `Badge` pill, avatar/`rounded-full`, bilinçli chip.
+- Marketing SEO + rehber sayfalarında `shadow-primary/*` ve `hover:border-primary/40` kaldırıldı; gölge `shadow-md`, hover `hover:bg-muted/60`.
+- Public hero figure 18px → 12px; mac-window 14px → 12px; fiyat kartları 20px → `xl`.
+- Auth Input `rounded-md` override → `rounded-sm`; force/set-password ve register başarı kutuları `<Alert>`.
+- Paywall / upsell / Trust adımlarında parlak `bg-primary` dekoratif dolgu → `muted` / `navy` / açık card.
+- App hata/uyarı şeritleri (iş emri, randevu, teklif, hatırlatma, ekip) `<Alert>`e çekildi.
+- Canlı destek ajan balonu `bg-primary` → `bg-navy` (sohbet sözleşmesi).
+
+Regresyon: `src/app/design/design-system.test.ts` `rounded-2xl`/`3xl` tarar (Badge hariç).
+
 ## Site genelinde metin rengi — 13 Eylül 2026
 
 Kullanıcının Header için onayladığı koyu metin kararı tüm siteye genişletildi: public, blog, kayıt, kurulum, uygulama ve yönetim. Yukarıdaki Vercel ve Linear analizleri yeniden incelendi. Vercel'in nötr `#171717` ana metni ve açık yüzeyleri; Linear'ın kontrollü vurgu, sıkı başlık aralığı ve boyut/ağırlık/boşluk hiyerarşisi esas alınır. Linear'ın koyu pazarlama paleti taşınmaz.

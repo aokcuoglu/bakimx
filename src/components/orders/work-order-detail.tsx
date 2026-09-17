@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -815,53 +816,53 @@ export function WorkOrderDetail({
       />
 
       {error && (
-        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm flex items-start gap-2">
-          <Info className="size-4 text-destructive-strong shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
+        <Alert variant="destructive">
+          <Info />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {/* Teslim adımında fiyatsız kalem varsa: başlıktaki teslim butonu pasif,
           gerekçe ve çıkış yolu burada. Yalnız teslim adımında gösterilir —
           önceki adımlarda fiyat henüz beklenen bir eksik değil. */}
       {unpricedItems.length > 0 && order.status === "ready_for_delivery" && (
-        <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 text-sm flex items-start gap-2">
-          <TriangleAlert className="size-4 text-warning-strong shrink-0 mt-0.5" />
-          <div className="min-w-0 space-y-1">
-            <p className="font-medium">{unpricedItems.length} kalemin fiyatı girilmemiş.</p>
-            <p className="text-muted-foreground truncate">
+        <Alert variant="warning">
+          <TriangleAlert />
+          <AlertTitle>{unpricedItems.length} kalemin fiyatı girilmemiş.</AlertTitle>
+          <AlertDescription>
+            <p className="truncate">
               {unpricedItems.slice(0, 2).map((i) => i.name).join(", ")}
               {unpricedItems.length > 2 && `, +${unpricedItems.length - 2}`}
             </p>
-            <p className="text-muted-foreground text-xs">Teslim için tüm kalemlere fiyat girin (0 TL girilebilir).</p>
+            <p className="text-xs">Teslim için tüm kalemlere fiyat girin (0 TL girilebilir).</p>
             <Button variant="outline" onClick={() => handleTabChange("parca")} className="mt-1">
               Parça sekmesinde tamamla
             </Button>
-          </div>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Karar bekleyen parça talebi: fiyat uyarısından farklı olarak teslim
           adımından ÖNCE de gösterilir — "Teslime Hazır"ı da kapatan engel budur,
           kullanıcı o düğmeyi pasif bulmadan önce nedenini görsün. */}
       {partsDecisionBlocked && !orderLocked && (
-        <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 text-sm flex items-start gap-2">
-          <TriangleAlert className="size-4 text-warning-strong shrink-0 mt-0.5" />
-          <div className="min-w-0 space-y-1">
-            <p className="font-medium">{undecidedRequests.length} parça talebi karar bekliyor.</p>
-            <p className="text-muted-foreground truncate">
+        <Alert variant="warning">
+          <TriangleAlert />
+          <AlertTitle>{undecidedRequests.length} parça talebi karar bekliyor.</AlertTitle>
+          <AlertDescription>
+            <p className="truncate">
               {undecidedRequests.slice(0, 2).map((r) => r.partName).join(", ")}
               {undecidedRequests.length > 2 && `, +${undecidedRequests.length - 2}`}
             </p>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs">
               Her talebi ya kaleme ekleyin ya da iptal edin; karar verilmeden iş emri teslime
               hazırlanamaz ve teslim edilemez.
             </p>
             <Button variant="outline" onClick={() => handleTabChange("parca")} className="mt-1">
               Parça sekmesinde karar ver
             </Button>
-          </div>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {deliveryOtpMode && order.status === "ready_for_delivery" && (

@@ -101,7 +101,7 @@ export default function AracKabulFormuPage() {
             <h2 id="ornek-baslik" className="sr-only">
               Örnek dijital araç kabul ekranı
             </h2>
-            <figure className="overflow-hidden rounded-2xl border bg-card shadow-2xl shadow-primary/10">
+            <figure className="overflow-hidden rounded-xl border bg-card shadow-md">
               <div className="flex items-center justify-between border-b bg-muted/50 px-4 py-3">
                 <span className="font-mono text-xs font-medium text-muted-foreground">ARAÇ KABUL · ÖRNEK EKRAN</span>
               </div>
@@ -140,7 +140,7 @@ export default function AracKabulFormuPage() {
               </div>
               <PrintButton label="Listeyi yazdır" className="shrink-0 border-border bg-transparent text-foreground hover:bg-muted print:hidden" />
             </div>
-            <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 print:mt-4 print:grid-cols-1 print:gap-2 print:rounded-none print:border-0 print:bg-transparent">
+            <ol className="mt-10 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 print:mt-4 print:grid-cols-1 print:gap-2 print:rounded-none print:border-0 print:bg-transparent">
               {ARAC_KABUL_FORMU_CHECKLIST.map((step, index) => (
                 <li
                   key={step.title}
@@ -168,7 +168,7 @@ export default function AracKabulFormuPage() {
 
         <section className="py-16 sm:py-24 print:hidden" aria-labelledby="baglanti-baslik">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            <div className="rounded-2xl border bg-muted/35 p-6 sm:p-8">
+            <div className="rounded-xl border bg-muted/35 p-6 sm:p-8">
               <h2 id="baglanti-baslik" className="text-xl font-semibold">
                 İhtiyacınıza göre ayrıntıya inin
               </h2>
@@ -184,7 +184,7 @@ export default function AracKabulFormuPage() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="group flex flex-col justify-between gap-4 rounded-xl border bg-background p-5 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="group flex flex-col justify-between gap-4 rounded-xl border bg-background p-5 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <span>
                       <span className="block font-semibold text-foreground">{item.title}</span>

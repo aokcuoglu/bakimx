@@ -655,7 +655,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
               key={cat}
               value={cat}
               variant="outline"
-              className="w-full gap-1 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:font-semibold data-[state=on]:text-primary-strong"
+              className="w-full gap-1 text-xs font-medium text-muted-foreground hover:bg-muted/60 hover:bg-primary/5 hover:text-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:font-semibold data-[state=on]:text-primary-strong"
             >
               {category === cat && <Check className="size-3.5" />}
               {CHECKLIST_CATEGORIES[cat].label}

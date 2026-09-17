@@ -281,7 +281,7 @@ function OrderCard({ order }: { order: OrderRow }) {
     <Item
       variant="outline"
       asChild
-      className="cursor-pointer bg-card/80 shadow-xs transition-all hover:border-primary/40 hover:bg-primary/10 hover:ring-2 hover:ring-primary/20"
+      className="cursor-pointer bg-card/80 shadow-xs transition-all hover:bg-muted/60 hover:bg-primary/10 hover:ring-2 hover:ring-primary/20"
     >
       <Link href={`/technician/orders/${order.id}`}>
         <ItemContent>

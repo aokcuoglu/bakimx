@@ -51,7 +51,7 @@ export default function ComparisonPage() {
             <h2 id="secenekler-baslik" className="text-3xl font-bold tracking-tight">Üç yaklaşımın güçlü olduğu yerler</h2>
             <div className="mt-8 grid gap-5 md:grid-cols-3">
               {options.map(({ title, icon: Icon, text }) => (
-                <article key={title} className="rounded-2xl border bg-card p-6">
+                <article key={title} className="rounded-xl border bg-card p-6">
                   <Icon className="size-7 text-primary-strong" aria-hidden="true" />
                   <h3 className="mt-5 text-xl font-semibold">{title}</h3>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">{text}</p>
@@ -68,7 +68,7 @@ export default function ComparisonPage() {
             <p className="mt-3 text-xs font-medium text-muted-foreground sm:hidden">Tüm seçenekleri görmek için tabloyu yatay kaydırın.</p>
             <div
               aria-label="Defter, Excel ve oto servis programı karşılaştırma tablosu"
-              className="mt-8 overflow-x-auto rounded-2xl border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="mt-8 overflow-x-auto rounded-xl border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               tabIndex={0}
             >
               <table className="min-w-[760px] w-full border-collapse text-left text-sm">
@@ -97,7 +97,7 @@ export default function ComparisonPage() {
             <h2 id="incele-baslik" className="text-3xl font-bold tracking-tight">İhtiyacınıza göre ayrıntıya inin</h2>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               {relatedPages.map((item) => (
-                <Link key={item.href} href={item.href} className="group rounded-xl border bg-card p-5 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <Link key={item.href} href={item.href} className="group rounded-xl border bg-card p-5 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                   <span className="flex items-center justify-between gap-4 font-semibold">{item.title}<ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" aria-hidden="true" /></span>
                   <span className="mt-2 block text-sm leading-6 text-muted-foreground">{item.text}</span>
                 </Link>

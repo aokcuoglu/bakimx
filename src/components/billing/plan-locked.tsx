@@ -71,7 +71,7 @@ export function PlanLocked({
         </div>
 
         {showResend && (
-          <div className="mx-auto max-w-md rounded-2xl border bg-background p-6 shadow-sm sm:p-8">
+          <div className="mx-auto max-w-md rounded-xl border bg-background p-6 shadow-sm sm:p-8">
             <ResendVerifyButton />
           </div>
         )}

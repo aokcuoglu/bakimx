@@ -513,7 +513,7 @@ export function SmartCaptureRegistration() {
             </div>
 
             <div
-              className="w-full max-w-md rounded-lg border-2 border-dashed border-border bg-muted/50 p-8 cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors"
+              className="w-full max-w-md rounded-lg border-2 border-dashed border-border bg-muted/50 p-8 cursor-pointer hover:bg-muted/60 hover:bg-primary/5 transition-colors"
               onClick={() => fileInputRef.current?.click()}
             >
               <div className="flex flex-col items-center gap-3">

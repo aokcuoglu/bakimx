@@ -59,7 +59,7 @@ function StatusPage({ state }: { state: keyof typeof STATUS_CONTENT }) {
   const Icon = content.icon
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted p-6">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-7 text-center shadow-sm">
+      <div className="w-full max-w-md rounded-xl border border-border bg-card p-7 text-center shadow-sm">
         <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-muted">
           <Icon className="size-7 text-muted-foreground" />
         </div>

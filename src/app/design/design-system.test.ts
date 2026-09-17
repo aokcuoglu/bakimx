@@ -1,11 +1,21 @@
 import { describe, expect, test } from "bun:test"
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync, statSync } from "node:fs"
 import { join } from "node:path"
 
 const root = join(import.meta.dir, "../../..")
 
 function read(rel: string) {
   return readFileSync(join(root, rel), "utf8")
+}
+
+function walkSrc(dir = join(root, "src"), out: string[] = []) {
+  for (const name of readdirSync(dir)) {
+    const p = join(dir, name)
+    const st = statSync(p)
+    if (st.isDirectory()) walkSrc(p, out)
+    else if (/\.(tsx|ts|css)$/.test(name) && !/\.test\.(ts|tsx)$/.test(name)) out.push(p)
+  }
+  return out
 }
 
 describe("design system radius contract", () => {
@@ -52,6 +62,23 @@ describe("design system radius contract", () => {
     expect(page).toContain('index="01"')
     expect(page).toContain("ColorCard")
     expect(page).toContain("Brand & Accent")
+  })
+
+  test("src has no panel-scale rounded-2xl/3xl outside Badge pills", () => {
+    const offenders: string[] = []
+    for (const file of walkSrc()) {
+      if (file.endsWith(`${join("components", "ui", "badge.tsx")}`)) continue
+      const src = readFileSync(file, "utf8")
+      if (
+        src.includes("rounded-2xl") ||
+        src.includes("rounded-3xl") ||
+        src.includes("rounded-[20px]") ||
+        src.includes("rounded-[2rem]")
+      ) {
+        offenders.push(file.replace(root + "/", ""))
+      }
+    }
+    expect(offenders).toEqual([])
   })
 })
 

@@ -78,7 +78,7 @@ const SalesTerritoryMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <section className="overflow-hidden rounded-2xl border bg-card shadow-sm" aria-label="Türkiye saha haritası yükleniyor">
+      <section className="overflow-hidden rounded-xl border bg-card shadow-sm" aria-label="Türkiye saha haritası yükleniyor">
         <div className="p-4 sm:p-5">
           <div className="h-3 w-28 animate-pulse rounded bg-muted" />
           <div className="mt-3 h-6 w-64 max-w-full animate-pulse rounded bg-muted" />
@@ -402,7 +402,7 @@ export function SalesConsole({
           apiKey={googleMapsApiKey}
           mapId={googleMapsMapId}
         />
-        <aside className="flex flex-col rounded-2xl border bg-card p-4 sm:p-5" aria-labelledby="focus-queue-title">
+        <aside className="flex flex-col rounded-xl border bg-card p-4 sm:p-5" aria-labelledby="focus-queue-title">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">Öncelik sırası</p>
@@ -687,7 +687,7 @@ function SalesMetric({
   }[tone]
 
   return (
-    <article className="relative overflow-hidden rounded-2xl border bg-card p-4 sm:p-5">
+    <article className="relative overflow-hidden rounded-xl border bg-card p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-muted-foreground">{label}</p>
@@ -716,7 +716,7 @@ function MonthlyTargetProgress({ performance }: {
     : 0
 
   return (
-    <section className="rounded-2xl border bg-card p-4 sm:p-5" aria-labelledby="monthly-target-title">
+    <section className="rounded-xl border bg-card p-4 sm:p-5" aria-labelledby="monthly-target-title">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">{performance.periodLabel}</p>
@@ -1030,18 +1030,18 @@ function DiscountCodeSection({
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">
-        <div className="rounded-2xl border border-warning/20 bg-warning/10 p-4 text-warning-strong">
+        <div className="rounded-lg border border-border bg-card p-4 text-foreground">
           <div className="flex items-center gap-2 font-semibold"><WalletCards className="size-4" /> Danışman bütçeli</div>
-          <p className="mt-2 text-sm leading-5">Danışmanın kendi oluşturduğu kod, kendi satış kârlılığından karşılanır ve yalnız kendi portföyünde yönetilir.</p>
+          <p className="mt-2 text-sm leading-5 text-muted-foreground">Danışmanın kendi oluşturduğu kod, kendi satış kârlılığından karşılanır ve yalnız kendi portföyünde yönetilir.</p>
         </div>
-        <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4 text-primary-strong">
+        <div className="rounded-lg border border-border bg-card p-4 text-foreground">
           <div className="flex items-center gap-2 font-semibold"><ShieldCheck className="size-4" /> BakımX destekli</div>
-          <p className="mt-2 text-sm leading-5">BakımX ekibinin tahsis ettiği kodu danışman potansiyel müşterisiyle paylaşır; bütçe ve yönetim platformda kalır.</p>
+          <p className="mt-2 text-sm leading-5 text-muted-foreground">BakımX ekibinin tahsis ettiği kodu danışman potansiyel müşterisiyle paylaşır; bütçe ve yönetim platformda kalır.</p>
         </div>
       </div>
 
       {/* Generate Form */}
-      {canManagePipeline && <div className="rounded-2xl border bg-card p-4 sm:p-5">
+      {canManagePipeline && <div className="rounded-xl border bg-card p-4 sm:p-5">
         <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="font-semibold text-foreground">Yeni kod tahsisi</h3>
@@ -1142,7 +1142,7 @@ function DiscountCodeSection({
 
       {/* Code List */}
       {discountCodes.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border bg-card">
+        <div className="overflow-hidden rounded-xl border bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -1222,7 +1222,7 @@ function DiscountCodeSection({
         </div>
       )}
       {discountCodes.length === 0 && (
-        <div className="rounded-2xl border border-dashed bg-card p-8 text-center">
+        <div className="rounded-xl border border-dashed bg-card p-8 text-center">
           <Gift className="mx-auto size-7 text-muted-foreground-strong" />
           <p className="mt-2 font-medium text-foreground">Henüz indirim kodu yok</p>
           <p className="mt-1 text-sm text-muted-foreground">İlk kod oluşturulduğunda bütçe kaynağıyla birlikte burada görünür.</p>

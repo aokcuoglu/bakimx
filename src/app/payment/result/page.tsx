@@ -30,7 +30,7 @@ function planLabel(tier: PlanTier, cycle: string): string {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-muted px-5 py-10">
-      <div className="w-full max-w-md rounded-2xl border bg-background p-6 shadow-sm sm:p-8">
+      <div className="w-full max-w-md rounded-xl border bg-background p-6 shadow-sm sm:p-8">
         {children}
       </div>
     </main>

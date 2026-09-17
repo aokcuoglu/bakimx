@@ -78,7 +78,7 @@ export function LoginSidebarVisual() {
     <div className="relative">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-2 -z-10 rounded-2xl bg-muted/35"
+        className="pointer-events-none absolute -inset-2 -z-10 rounded-xl bg-muted/35"
       />
       <MiniAppFrame title="app.bakimx.com/orders">
         <div className="space-y-1.5 p-2.5">
@@ -131,7 +131,7 @@ export function RegisterSidebarVisual() {
     <div className="relative">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-2 -z-10 rounded-2xl bg-muted/35"
+        className="pointer-events-none absolute -inset-2 -z-10 rounded-xl bg-muted/35"
       />
       <MiniAppFrame title="Kurulum önizlemesi">
         <div className="space-y-2.5 p-2.5">
@@ -212,7 +212,7 @@ export function ForgotPasswordSidebarVisual() {
     <div className="relative">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-2 -z-10 rounded-2xl bg-muted/35"
+        className="pointer-events-none absolute -inset-2 -z-10 rounded-xl bg-muted/35"
       />
       <MiniAppFrame title="app.bakimx.com/reset">
         <div className="space-y-2.5 p-2.5">
