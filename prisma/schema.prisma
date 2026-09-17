@@ -6,6 +6,16 @@ datasource db {
   provider = "postgresql"
 }
 
+/// Groups one or more Workshops (branches) under a single commercial org.
+/// v1 billing stays on Workshop; Organization is the membership/switcher boundary.
+model Organization {
+  id        String     @id @default(cuid())
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  workshops Workshop[]
+}
+
 model Workshop {
   id           String       @id @default(cuid())
   kind         WorkshopKind @default(customer)
@@ -25,6 +35,9 @@ model Workshop {
   taxNumber    String?
   taxOffice    String?
   invoiceTitle String?
+  /// Parent org for multi-branch; backfilled for legacy single-workshop tenants.
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -118,11 +131,33 @@ model Workshop {
   acquisitionAdvisor        SalesAdvisor?              @relation("WorkshopAcquisitionAdvisor", fields: [acquisitionAdvisorId], references: [id], onDelete: SetNull)
   referredByWorkshop        Workshop?                  @relation("WorkshopReferralAttribution", fields: [referredByWorkshopId], references: [id], onDelete: SetNull)
   referredWorkshops         Workshop[]                 @relation("WorkshopReferralAttribution")
+  memberships               WorkshopMembership[]
 
   @@index([referredByWorkshopId])
   @@index([kind])
   @@index([acquisitionSource])
   @@index([acquisitionAdvisorId])
+  @@index([organizationId])
+}
+
+/// One person (User) can belong to many Workshops under an Organization.
+/// User.workshopId/role remain a last-active mirror for legacy call sites;
+/// membership + session.workshopId are the source of truth for switch/create.
+model WorkshopMembership {
+  id         String   @id @default(cuid())
+  userId     String
+  workshopId String
+  role       UserRole @default(staff)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workshop Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workshopId])
+  @@index([workshopId])
+  @@index([userId])
 }
 
 enum WorkshopKind {
@@ -344,9 +379,11 @@ model User {
   workshop           Workshop    @relation(fields: [workshopId], references: [id])
   // Team/RBAC: default `owner` is backfill-safe — existing/seed users become the
   // workshop owner with no data fixup. Invited users get their role explicitly.
+  // Also mirrored on WorkshopMembership; switch updates both.
   role               UserRole    @default(owner)
   // Soft-disable a seat (blocks sign-in) without deleting history.
   isActive           Boolean     @default(true)
+  memberships        WorkshopMembership[]
   // BAK-39: Opsiyonel bağ — giriş hesabını personel kaydıyla eşler. Bağlı kullanıcılar
   // teknisyen panelinde kendi işlerini görür; bağsız olanlar listedeki ilk teknisyeni seçer.
   // Bağ kaldırıldığında NULL'a döner; eski davranış korunur (geriye dönük kırılma yok).

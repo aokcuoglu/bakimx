@@ -114,6 +114,33 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   if (!user) return null
 
   const { workshop, ...identity } = user
+  const sessionWorkshopId = session.workshopId
+
+  // Prefer session workshop when it differs from the User mirror (multi-branch switch).
+  // Membership is required; stale session workshopIds fall back to the mirrored home.
+  if (sessionWorkshopId && sessionWorkshopId !== user.workshopId) {
+    const membership = await prisma.workshopMembership.findFirst({
+      where: {
+        userId: user.id,
+        workshopId: sessionWorkshopId,
+        isActive: true,
+        workshop: { kind: "customer" },
+      },
+      select: {
+        role: true,
+        workshop: { select: { kind: true } },
+      },
+    })
+    if (membership) {
+      return {
+        ...identity,
+        workshopId: sessionWorkshopId,
+        role: membership.role,
+        workshopKind: membership.workshop.kind,
+      }
+    }
+  }
+
   return { ...identity, workshopKind: workshop.kind }
 }
 

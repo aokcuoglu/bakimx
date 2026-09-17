@@ -550,7 +550,7 @@ export async function createLocalMemberAction(formData: FormData): Promise<Crede
           },
         })
       }
-      return tx.user.create({
+      const created = await tx.user.create({
         data: {
           email: null,
           username,
@@ -565,6 +565,15 @@ export async function createLocalMemberAction(formData: FormData): Promise<Crede
         },
         select: { id: true, firstName: true, lastName: true, username: true },
       })
+      await tx.workshopMembership.create({
+        data: {
+          userId: created.id,
+          workshopId: user.workshopId,
+          role,
+          isActive: true,
+        },
+      })
+      return created
     })
 
     await AuditLogAction(

@@ -42,7 +42,9 @@ const CONFIRM_FLAG = "--confirm"
 
 /** `workshopId` taşıyan her tablo + atölyeye bağlı/ops-only tablolar. */
 export const TENANT_TABLES = [
+  "Organization",
   "Workshop",
+  "WorkshopMembership",
   "WorkshopSettings",
   "User",
   "Invite",

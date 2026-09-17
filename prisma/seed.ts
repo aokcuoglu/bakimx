@@ -36,6 +36,10 @@ async function main() {
 
   let workshop = await prisma.workshop.findFirst({ where: { name: "Demo Oto Servis" } })
   if (!workshop) {
+    const organization = await prisma.organization.create({
+      data: { name: "Demo Oto Servis" },
+      select: { id: true },
+    })
     workshop = await prisma.workshop.create({
       data: {
         // Giriş kodu üretimi tek modülden geçer (BAK-40) — seed de kodsuz
@@ -45,6 +49,7 @@ async function main() {
         phone: "0555 123 4567",
         city: "İstanbul",
         address: "Sanayi Mah. 123. Sk. No:5, Kadıköy",
+        organizationId: organization.id,
         // Demo account is a full-access, approved workshop.
         approvalStatus: "approved",
         subscriptionStatus: "active",
@@ -53,6 +58,16 @@ async function main() {
     })
     console.log(`✅ Workshop created: ${workshop.id}`)
   } else {
+    if (!workshop.organizationId) {
+      const organization = await prisma.organization.create({
+        data: { name: workshop.name },
+        select: { id: true },
+      })
+      workshop = await prisma.workshop.update({
+        where: { id: workshop.id },
+        data: { organizationId: organization.id },
+      })
+    }
     console.log(`ℹ️  Workshop exists: ${workshop.id}`)
   }
 
@@ -72,6 +87,11 @@ async function main() {
   } else {
     console.log(`ℹ️  User exists: ${user.id}`)
   }
+  await prisma.workshopMembership.upsert({
+    where: { userId_workshopId: { userId: user.id, workshopId: workshop.id } },
+    create: { userId: user.id, workshopId: workshop.id, role: "owner", isActive: true },
+    update: { role: "owner", isActive: true },
+  })
 
   // Yerel demo kimliği aynı zamanda `/admin` QA hesabıdır. Admin kapısı tenant
   // rolüne değil PlatformAdmin üyeliğine baktığı için yalnız User seed etmek
@@ -103,8 +123,16 @@ async function main() {
         role: "usta",
       },
     })
+    await prisma.workshopMembership.create({
+      data: { userId: usta.id, workshopId: workshop.id, role: "usta", isActive: true },
+    })
     console.log(`✅ E-postasız usta created: ${usta.id} (${workshop.loginCode} / ${ustaUsername})`)
   } else {
+    await prisma.workshopMembership.upsert({
+      where: { userId_workshopId: { userId: existingUsta.id, workshopId: workshop.id } },
+      create: { userId: existingUsta.id, workshopId: workshop.id, role: "usta", isActive: true },
+      update: { isActive: true },
+    })
     console.log(`ℹ️  E-postasız usta exists: ${existingUsta.id}`)
   }
 

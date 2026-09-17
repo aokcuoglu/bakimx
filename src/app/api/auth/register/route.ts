@@ -221,6 +221,11 @@ export async function POST(request: Request) {
               }
             }
 
+            const organization = await tx.organization.create({
+              data: { name: data.workshopName },
+              select: { id: true },
+            })
+
             const ws = await tx.workshop.create({
               data: {
                 loginCode,
@@ -233,6 +238,7 @@ export async function POST(request: Request) {
                 taxOffice: data.taxOffice || null,
                 taxNumber: data.taxNumber || null,
                 invoiceTitle: data.invoiceTitle || data.workshopName,
+                organizationId: organization.id,
                 onboardingProfile: raw.sector === undefined ? { status: "pending" } : {
                   sector: data.sector,
                   businessFeatures: data.businessFeatures,
@@ -273,7 +279,7 @@ export async function POST(request: Request) {
                 role: "yonetici",
               },
             })
-            await tx.user.create({
+            const owner = await tx.user.create({
               data: {
                 email: data.email,
                 password: passwordHash,
@@ -283,6 +289,15 @@ export async function POST(request: Request) {
                 // The self-serve registrant is the workshop's first user → owner.
                 role: "owner",
                 technicianId: ownerTechnician.id,
+              },
+              select: { id: true },
+            })
+            await tx.workshopMembership.create({
+              data: {
+                userId: owner.id,
+                workshopId: ws.id,
+                role: "owner",
+                isActive: true,
               },
             })
 
