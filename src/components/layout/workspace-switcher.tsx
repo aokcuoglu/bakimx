@@ -10,7 +10,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -95,7 +94,6 @@ export function WorkspaceSwitcher({
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 tooltip={current.name}
                 aria-label={`Şube: ${current.name}${current.city ? `, ${current.city}` : ""}`}
               >
@@ -108,18 +106,18 @@ export function WorkspaceSwitcher({
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-(--radix-dropdown-menu-trigger-width) min-w-64 rounded-lg"
+              aria-label="Çalışma alanı menüsü"
+              className="w-[calc(var(--radix-dropdown-menu-trigger-width)+1rem)] min-w-64 max-w-[calc(100vw-1rem)] rounded-xl border border-border bg-card p-1.5 shadow-lg"
               align="start"
-              side={isMobile ? "bottom" : "right"}
-              sideOffset={4}
+              side="bottom"
+              sideOffset={12}
             >
-              <DropdownMenuLabel className="text-xs text-muted-foreground">Şubeler</DropdownMenuLabel>
               {memberships.map((item) => {
                 const active = item.id === currentWorkshopId
                 return (
                   <DropdownMenuItem
                     key={item.id}
-                    className="gap-2 p-2"
+                    className="min-h-12 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70"
                     disabled={pending}
                     aria-label={`${item.name}${item.city ? `, ${item.city}` : ""}${active ? " (aktif)" : ""}`}
                     onSelect={(event) => {
@@ -132,27 +130,26 @@ export function WorkspaceSwitcher({
                       <p className="truncate text-sm font-medium">{item.name}</p>
                       <p className="truncate text-xs text-muted-foreground">{item.city}</p>
                     </div>
-                    {active ? <Check className="size-4 shrink-0 text-foreground" aria-hidden /> : null}
+                    {active ? <Check className="size-4 shrink-0 text-primary" aria-hidden /> : null}
                   </DropdownMenuItem>
                 )
               })}
-              <DropdownMenuSeparator />
               {canCreateBranch ? (
                 <DropdownMenuItem
-                  className="gap-2 p-2"
+                  className="min-h-11 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70"
                   onSelect={(event) => {
                     event.preventDefault()
                     setOpen(false)
                     setWizardOpen(true)
                   }}
                 >
-                  <span className="flex size-7 items-center justify-center rounded-md border border-border bg-background">
+                  <span className="flex size-7 items-center justify-center">
                     <Plus className="size-4" />
                   </span>
                   <span className="text-sm font-medium">Yeni şube oluştur</span>
                 </DropdownMenuItem>
               ) : (
-                <DropdownMenuItem asChild className="gap-2 p-2">
+                <DropdownMenuItem asChild className="min-h-11 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
                   <Link
                     href="/settings/plans"
                     onClick={() => {
@@ -160,7 +157,7 @@ export function WorkspaceSwitcher({
                       if (isMobile) setOpenMobile(false)
                     }}
                   >
-                    <span className="flex size-7 items-center justify-center rounded-md border border-border bg-muted">
+                    <span className="flex size-7 items-center justify-center">
                       <LockKeyhole className="size-3.5" />
                     </span>
                     <span className="min-w-0 flex-1">
@@ -171,7 +168,7 @@ export function WorkspaceSwitcher({
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild className="gap-2 p-2">
+              <DropdownMenuItem asChild className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
                 <Link
                   href="/settings/profile"
                   aria-label="Hesap ayarları"
@@ -184,7 +181,7 @@ export function WorkspaceSwitcher({
                   <span className="text-sm">Hesap ayarları</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="gap-2 p-2">
+              <DropdownMenuItem asChild className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
                 <Link
                   href="/settings/general"
                   aria-label="Çalışma alanı ayarları"
@@ -200,7 +197,7 @@ export function WorkspaceSwitcher({
               <DropdownMenuSeparator />
               <form id="workspace-switcher-logout" action="/api/auth/logout" method="POST" className="hidden" />
               <DropdownMenuItem
-                className="gap-2 p-2"
+                className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70"
                 aria-label="Çıkış yap"
                 onSelect={(event) => {
                   event.preventDefault()
