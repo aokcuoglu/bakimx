@@ -243,7 +243,7 @@ export async function inviteMemberAction(formData: FormData): Promise<Result> {
     const url = buildInviteUrl(await requestOrigin(), token)
     await sendInviteEmail({ email, role, workshopName: ws?.name ?? "BakimX", url })
 
-    revalidatePath("/settings")
+    revalidatePath("/settings/team")
     return { ok: true, inviteUrl: url }
   } catch (e) {
     return toErr(e)
@@ -285,7 +285,7 @@ export async function resendInviteAction(inviteId: string): Promise<Result> {
     const url = buildInviteUrl(await requestOrigin(), token)
     await sendInviteEmail({ email: invite!.email, role: invite!.role, workshopName: ws?.name ?? "BakimX", url })
 
-    revalidatePath("/settings")
+    revalidatePath("/settings/team")
     return { ok: true, inviteUrl: url }
   } catch (e) {
     return toErr(e)
@@ -303,7 +303,7 @@ export async function revokeInviteAction(inviteId: string): Promise<Result> {
 
     await prisma.invite.update({ where: { id: inviteId }, data: { status: "revoked" } })
     await AuditLogAction(user.workshopId, user.id, "Invite", inviteId, "invite_revoked")
-    revalidatePath("/settings")
+    revalidatePath("/settings/team")
     return { ok: true }
   } catch (e) {
     return toErr(e)
@@ -379,7 +379,7 @@ export async function updateMemberRoleAction(userId: string, role: string): Prom
       "member_role_changed",
       JSON.stringify({ from: target!.role, to: newRole })
     )
-    revalidatePath("/settings")
+    revalidatePath("/settings/team")
     return { ok: true }
   } catch (e) {
     return toErr(e)
@@ -430,7 +430,7 @@ export async function setMemberActiveAction(userId: string, isActive: boolean): 
       userId,
       isActive ? "member_activated" : "member_deactivated"
     )
-    revalidatePath("/settings")
+    revalidatePath("/settings/team")
     return { ok: true }
   } catch (e) {
     return toErr(e)
@@ -585,7 +585,7 @@ export async function createLocalMemberAction(formData: FormData): Promise<Crede
       JSON.stringify({ username, role })
     )
 
-    revalidatePath("/settings")
+    revalidatePath("/settings/team")
     return {
       ok: true,
       credentials: {
@@ -654,7 +654,7 @@ export async function resetMemberPasswordAction(userId: string): Promise<Credent
       JSON.stringify({ username: target!.username })
     )
 
-    revalidatePath("/settings")
+    revalidatePath("/settings/team")
     return {
       ok: true,
       credentials: {
@@ -714,7 +714,7 @@ export async function setMemberTechnicianAction(
       JSON.stringify({ technicianId })
     )
 
-    revalidatePath("/settings")
+    revalidatePath("/settings/team")
     return { ok: true }
   } catch (e) {
     return toErr(e)

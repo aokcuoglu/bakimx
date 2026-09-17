@@ -70,6 +70,7 @@ export async function changeOwnPasswordAction(formData: FormData): Promise<Resul
   // Kapı `(app)/layout.tsx`'te oturum kullanıcısından okunuyor — önbellek
   // temizlenmezse kullanıcı şifreyi değiştirdiği hâlde aynı ekranda kalır.
   revalidatePath("/", "layout")
+  revalidatePath("/settings/profile")
   return { ok: true }
 }
 
@@ -100,5 +101,6 @@ export async function updateOwnProfileAction(formData: FormData): Promise<Result
   await AuditLogAction(user.workshopId, user.id, "User", user.id, "profile_updated")
 
   revalidatePath("/", "layout")
+  revalidatePath("/settings/profile")
   return { ok: true }
 }

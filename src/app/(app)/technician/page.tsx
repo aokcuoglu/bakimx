@@ -63,7 +63,7 @@ export default async function TechnicianPage({
             </CardHeader>
             <CardFooter className="justify-center border-t-0 bg-transparent">
               <Button variant="foreground" asChild>
-                <Link href="/settings?tab=team">
+                <Link href="/settings/team">
                   Ekip Sayfasına Git
                 </Link>
               </Button>

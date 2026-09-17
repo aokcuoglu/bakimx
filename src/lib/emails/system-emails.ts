@@ -99,7 +99,7 @@ export function welcomeTrialEmail(p: {
         `7 iş günlük ücretsiz deneme süreniz başladı; <strong>${trialEndsFormatted}</strong> tarihine kadar tüm özellikleri kullanabilirsiniz.</p>` +
         `<p style="margin:0 0 12px;">Hemen giriş yaparak iş yerinizi kurmaya başlayabilirsiniz.</p>`,
       cta: { label: "Giriş Yap", url: `${appUrl()}/login` },
-      footerNote: `Deneme süreniz bittiğinde size uygun bir paket seçebilirsiniz: <a href="${appUrl()}/account/plans">${appUrl()}/account/plans</a>`,
+      footerNote: `Deneme süreniz bittiğinde size uygun bir paket seçebilirsiniz: <a href="${appUrl()}/settings/plans">${appUrl()}/settings/plans</a>`,
     }),
   }
 }

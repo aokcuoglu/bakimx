@@ -16,7 +16,9 @@ Yönlendirme sayfaları hedefin başlığını alır. Filtre, sıralama, modal v
 
 | Rota | Sekme başlığı |
 | --- | --- |
-| `/account` | Hesabım \| BakımX |
+| `/account` | Yönlendirme hedefinin başlığı |
+| `/account/billing` | Yönlendirme hedefinin başlığı |
+| `/account/plans` | Yönlendirme hedefinin başlığı |
 | `/analytics` | Servis Analizi \| BakımX |
 | `/appointments/[id]` | Randevu Detayı \| BakımX |
 | `/appointments/new` | Yeni Randevu \| BakımX |
@@ -61,10 +63,20 @@ Yönlendirme sayfaları hedefin başlığını alır. Filtre, sıralama, modal v
 | `/reports` | Raporlar \| BakımX |
 | `/reports/parts` | Parça Raporu \| BakımX |
 | `/reports/technicians` | Teknisyen Raporu \| BakımX |
+| `/settings/appointment-rules` | Randevu \| BakımX |
+| `/settings/billing` | Faturalandırma \| BakımX |
+| `/settings/branding` | Marka \| BakımX |
 | `/settings/calendar` | Takvim Ayarları \| BakımX |
+| `/settings/communication` | İletişim \| BakımX |
+| `/settings/general` | Genel \| BakımX |
 | `/settings/notifications` | Bildirim Ayarları \| BakımX |
-| `/settings` | Ayarlar \| BakımX |
-| `/settings/team` | Ekip Yönetimi \| BakımX (erişim ekranı); Ayarlar \| BakımX (yönlendirme sonrası) |
+| `/settings/pdf-templates` | PDF \| BakımX |
+| `/settings/plans` | Paketler \| BakımX |
+| `/settings/profile` | Profil \| BakımX |
+| `/settings` | Ayarlar \| BakımX (hub yönlendirme) |
+| `/settings/security` | Güvenlik \| BakımX |
+| `/settings/team` | Ekip Yönetimi \| BakımX |
+| `/settings/working-hours` | Çalışma saatleri \| BakımX |
 | `/smart-capture/registration` | Ruhsat Okuma \| BakımX |
 | `/suppliers/[id]/edit` | Tedarikçi Düzenle \| BakımX |
 | `/suppliers/[id]` | Tedarikçi Detayı \| BakımX |

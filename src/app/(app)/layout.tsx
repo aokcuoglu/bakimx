@@ -181,14 +181,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className={`bg-primary/10 text-primary-strong text-xs sm:text-sm px-4 py-2 text-center ${isTechnicianRole ? "" : "lg:hidden"}`}>
           Deneme sürenizin bitmesine{" "}
           <span className="font-semibold">{plan.trialDaysLeft} iş günü</span> kaldı.{" "}
-          {!isTechnicianRole && <Link href="/account/plans" className="font-semibold underline underline-offset-2">Paketleri incele</Link>}
+          {!isTechnicianRole && <Link href="/settings/plans" className="font-semibold underline underline-offset-2">Paketleri incele</Link>}
         </div>
       )}
       {!readOnlyLocked && !plan.isTrialing && plan.subscriptionDaysLeft != null && plan.subscriptionDaysLeft <= 7 && (
         <div className={`bg-warning/10 text-warning-strong text-xs sm:text-sm px-4 py-2 text-center ${isTechnicianRole ? "" : "lg:hidden"}`}>
           Aboneliğinizin bitmesine{" "}
           <span className="font-semibold">{plan.subscriptionDaysLeft} gün</span> kaldı.{" "}
-          {!isTechnicianRole && <Link href="/account/billing" className="font-semibold underline underline-offset-2">Paketi yönet</Link>}
+          {!isTechnicianRole && <Link href="/settings/billing" className="font-semibold underline underline-offset-2">Paketi yönet</Link>}
         </div>
       )}
       <div className="flex-1">

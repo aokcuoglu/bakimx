@@ -143,7 +143,8 @@ export async function updateBusinessProfileAction(formData: FormData) {
 
   await auditLog(user.workshopId, user.id, "update_business_profile", "Workshop")
 
-  revalidatePath("/settings")
+  revalidatePath("/settings/general")
+  revalidatePath("/settings/billing")
   return { success: true }
 }
 
@@ -184,7 +185,7 @@ export async function updateBrandingAction(formData: FormData) {
 
   await auditLog(user.workshopId, user.id, "update_branding", "WorkshopSettings")
 
-  revalidatePath("/settings")
+  revalidatePath("/settings/branding")
   return { success: true }
 }
 
@@ -242,7 +243,7 @@ export async function updateCommunicationSettingsAction(formData: FormData) {
 
   await auditLog(user.workshopId, user.id, "update_communication_settings", "WorkshopSettings")
 
-  revalidatePath("/settings")
+  revalidatePath("/settings/communication")
   return { success: true }
 }
 
@@ -292,7 +293,7 @@ export async function updateWorkingHoursAction(formData: FormData) {
 
   await auditLog(user.workshopId, user.id, "update_working_hours", "WorkshopSettings")
 
-  revalidatePath("/settings")
+  revalidatePath("/settings/working-hours")
   return { success: true }
 }
 
@@ -327,7 +328,7 @@ export async function updateAppointmentRulesAction(formData: FormData) {
 
   await auditLog(user.workshopId, user.id, "update_appointment_rules", "WorkshopSettings")
 
-  revalidatePath("/settings")
+  revalidatePath("/settings/appointment-rules")
   return { success: true }
 }
 
@@ -362,6 +363,6 @@ export async function updatePdfTemplateAction(formData: FormData) {
 
   await auditLog(user.workshopId, user.id, "update_pdf_templates", "WorkshopSettings")
 
-  revalidatePath("/settings")
+  revalidatePath("/settings/pdf-templates")
   return { success: true }
 }

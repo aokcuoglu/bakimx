@@ -33,7 +33,7 @@ export function TechnicianStatusWidget({
         </div>
         <div className="text-center py-6 text-muted-foreground text-sm">
           <p>Henüz teknisyen kaydı yok</p>
-          <Link href="/settings?tab=team" className="text-primary hover:underline text-sm mt-1 inline-block">
+          <Link href="/settings/team" className="text-primary hover:underline text-sm mt-1 inline-block">
             Ayarlar → Ekip sayfasından ekleyin
           </Link>
         </div>
