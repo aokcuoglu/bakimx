@@ -145,9 +145,9 @@ function ThreadPanelLoading() {
         </div>
       </div>
       <div className="flex flex-1 flex-col justify-end gap-3 px-3 py-4">
-        <Skeleton className="h-14 w-3/5 rounded-2xl" />
-        <Skeleton className="ml-auto h-12 w-2/5 rounded-2xl" />
-        <Skeleton className="h-16 w-4/5 rounded-2xl" />
+        <Skeleton className="h-14 w-3/5 rounded-xl" />
+        <Skeleton className="ml-auto h-12 w-2/5 rounded-xl" />
+        <Skeleton className="h-16 w-4/5 rounded-xl" />
       </div>
       <div className="border-t p-3">
         <Skeleton className="h-14 w-full rounded-md" />
@@ -254,8 +254,8 @@ function ThreadPanel({ thread, filter }: { thread: ThreadDetail; filter: InboxFi
             <div key={message.id} className={cn("flex", isAgent ? "justify-end" : "justify-start")}>
               <div
                 className={cn(
-                  "max-w-[85%] rounded-2xl px-3 py-2",
-                  isAgent ? "bg-primary text-primary-foreground" : "border bg-muted/40 text-foreground",
+                  "max-w-[85%] rounded-xl px-3 py-2",
+                  isAgent ? "bg-navy text-navy-foreground" : "border bg-muted/40 text-foreground",
                 )}
               >
                 <p className="whitespace-pre-wrap break-words text-sm">{message.body}</p>

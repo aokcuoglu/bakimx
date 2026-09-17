@@ -502,7 +502,7 @@
 .articleCoverFrame {
   position: relative;
   overflow: hidden;
-  border-radius: 0.875rem;
+  border-radius: 0.75rem; /* xl 12px */
   aspect-ratio: 16 / 9;
   background: var(--muted);
 }

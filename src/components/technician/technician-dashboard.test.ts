@@ -27,7 +27,7 @@ describe("teknisyen paneli KPI filtreleri", () => {
   test("iş listelerinde adet, tıklanabilirlik ve aktif iş vurgusu gösterir", () => {
     expect(source).toContain('({section.orders.length})')
     expect(source).toContain('h-auto min-w-0 cursor-pointer')
-    expect(source).toContain('cursor-pointer bg-card/80 shadow-xs transition-all hover:border-primary/40 hover:bg-primary/10 hover:ring-2 hover:ring-primary/20')
+    expect(source).toContain('cursor-pointer bg-card/80 shadow-xs transition-all hover:bg-muted/60 hover:bg-primary/10 hover:ring-2 hover:ring-primary/20')
   })
 
   test("son tamamlananları iki günlük veriyle onarlı sayfalara böler ve tamamlanma tarihini gösterir", () => {

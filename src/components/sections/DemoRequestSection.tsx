@@ -13,7 +13,7 @@ export function DemoRequestSection() {
           Bilgilerinizi bırakın. Araç kabulünden iş emrine, BakımX’in
           servisinizde nasıl çalışacağını birlikte inceleyelim.
         </p>
-        <div className="rounded-2xl border bg-background p-6 sm:p-10">
+        <div className="rounded-xl border bg-background p-6 sm:p-10">
           <HeroLeadForm formLocation="demo_page" showNotes />
         </div>
       </div>

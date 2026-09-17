@@ -274,7 +274,7 @@ export function SalesTerritoryMap({
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border bg-card shadow-sm" aria-labelledby="territory-map-title">
+    <section className="overflow-hidden rounded-xl border bg-card shadow-sm" aria-labelledby="territory-map-title">
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary-strong">Türkiye saha ağı</p>

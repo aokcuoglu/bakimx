@@ -198,7 +198,7 @@ export function RuhsattanOku({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
-            <span className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary-strong">
+            <span className="flex size-16 items-center justify-center rounded-lg border border-border bg-muted text-foreground">
               <ScanLine className="size-8" />
             </span>
             <div className="space-y-1">

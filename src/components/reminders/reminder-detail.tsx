@@ -20,6 +20,7 @@ import {
   Info,
   Loader2,
 } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -158,7 +159,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
       </div>
 
       {actionError ? (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 text-destructive-strong px-4 py-3 text-sm">{actionError}</div>
+        <Alert variant="destructive"><AlertDescription>{actionError}</AlertDescription></Alert>
       ) : null}
 
       <header className="rounded-lg border border-border bg-card p-4 sm:p-5">

@@ -52,7 +52,7 @@ export default async function AdminHomePage() {
           <Link
             key={c.label}
             href={c.href}
-            className="flex items-center gap-2 rounded-lg border bg-card px-4 py-3 text-sm transition-colors hover:border-primary/40"
+            className="flex items-center gap-2 rounded-lg border bg-card px-4 py-3 text-sm transition-colors hover:bg-muted/60"
           >
             <c.icon className={`size-4 ${c.tone}`} />
             <span className="font-semibold text-foreground">{c.value}</span>
@@ -77,7 +77,7 @@ export default async function AdminHomePage() {
               <Link
                 key={w.id}
                 href={`/admin/workshops/${w.id}`}
-                className="flex items-center justify-between rounded-lg border bg-card px-4 py-2.5 text-sm transition-colors hover:border-primary/40"
+                className="flex items-center justify-between rounded-lg border bg-card px-4 py-2.5 text-sm transition-colors hover:bg-muted/60"
               >
                 <span>
                   <span className="font-medium text-foreground">{w.name}</span>
@@ -89,7 +89,7 @@ export default async function AdminHomePage() {
             {workshops.pending > workshops.pendingPreview.length && (
               <Link
                 href="/admin/workshops?approval=pending"
-                className="flex items-center justify-between rounded-lg border border-dashed bg-card px-4 py-2.5 text-sm transition-colors hover:border-primary/40"
+                className="flex items-center justify-between rounded-lg border border-dashed bg-card px-4 py-2.5 text-sm transition-colors hover:bg-muted/60"
               >
                 <span className="text-muted-foreground">
                   +{workshops.pending - workshops.pendingPreview.length} iş yeri daha onay bekliyor
@@ -100,7 +100,7 @@ export default async function AdminHomePage() {
             {billing.orderRows.length > 0 && (
               <Link
                 href="/admin/billing"
-                className="flex items-center justify-between rounded-lg border bg-card px-4 py-2.5 text-sm transition-colors hover:border-primary/40"
+                className="flex items-center justify-between rounded-lg border bg-card px-4 py-2.5 text-sm transition-colors hover:bg-muted/60"
               >
                 <span>
                   <span className="font-medium text-foreground">{billing.orderRows.length} havale</span>

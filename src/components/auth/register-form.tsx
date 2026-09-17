@@ -811,9 +811,11 @@ function ComingSoonSectorInterestForm({
 
       {isSuccess ? (
         <div className="space-y-4 py-2">
-          <div className="rounded-lg border border-success/20 bg-success/10 p-4 text-sm text-success-strong">
-            Talebiniz kaydedildi. Ekibimiz sizinle iletişime geçecek.
-          </div>
+          <Alert variant="success">
+            <AlertDescription>
+              Talebiniz kaydedildi. Ekibimiz sizinle iletişime geçecek.
+            </AlertDescription>
+          </Alert>
           <DialogFooter>
             <Button type="button" variant="foreground" onClick={onClose}>
               Tamam

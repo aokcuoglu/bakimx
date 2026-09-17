@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff, KeyRound, Loader2, Lock } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -50,8 +51,8 @@ export function ForcePasswordChange({ displayName }: { displayName: string }) {
     <div className="min-h-screen bg-muted px-4 py-10">
       <div className="mx-auto w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10">
-            <KeyRound className="size-7 text-primary" />
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border border-border bg-muted">
+            <KeyRound className="size-7 text-foreground" />
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
             Şifrenizi belirleyin
@@ -62,16 +63,12 @@ export function ForcePasswordChange({ displayName }: { displayName: string }) {
           </p>
         </div>
 
-        <div className="rounded-2xl border bg-background p-5 shadow-sm sm:p-6">
+        <div className="rounded-xl border bg-background p-5 shadow-sm sm:p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div
-                role="alert"
-                aria-live="polite"
-                className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm"
-              >
-                {error}
-              </div>
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
 
             <div className="space-y-2">

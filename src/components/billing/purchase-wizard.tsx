@@ -282,7 +282,7 @@ export function PurchaseWizard({
                                 "relative h-auto min-h-16 w-full justify-between rounded-xl p-4 text-left whitespace-normal",
                                 selected
                                   ? "border-primary bg-primary/5 ring-1 ring-primary/40"
-                                  : "border-border hover:border-primary/40 hover:bg-muted/30",
+                                  : "border-border hover:bg-muted/60 hover:bg-muted/30",
                               )}
                             >
                               <div className="min-w-0">
@@ -428,7 +428,7 @@ export function PurchaseWizard({
                                       key={day.value}
                                       value={day.value}
                                       variant="outline"
-                                      className="rounded-lg px-3 py-1.5 text-sm font-medium data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong hover:border-primary/40"
+                                      className="rounded-lg px-3 py-1.5 text-sm font-medium data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong hover:bg-muted/60"
                                     >
                                       {day.short}
                                     </ToggleGroupItem>
@@ -518,7 +518,7 @@ export function PurchaseWizard({
                                   "h-auto min-h-8 justify-start gap-2 rounded-xl p-3 text-left whitespace-normal",
                                   selected
                                     ? "border-primary bg-primary/5 ring-1 ring-primary/40 text-foreground"
-                                    : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30",
+                                    : "border-border text-muted-foreground hover:bg-muted/60 hover:bg-muted/30",
                                 )}
                               >
                                 <Icon className="size-4 shrink-0 text-primary" />

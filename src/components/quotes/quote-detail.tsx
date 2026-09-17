@@ -14,6 +14,7 @@ import { formatDate } from "@/lib/utils-client"
 import { cn } from "@/lib/utils"
 import { updateQuoteStatusAction, convertQuoteToWorkOrderAction } from "@/app/(app)/quotes/actions"
 import { ArrowLeft, Phone, Car, User, FileText, Printer, Share2, Loader2, ArrowRight, Info, Calendar } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { QUOTE_STATUS } from "@/lib/constants"
 import { getWhatsAppShareUrl } from "@/lib/share/whatsapp"
 
@@ -157,10 +158,10 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm flex items-start gap-2">
-          <Info className="size-4 shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
+        <Alert variant="destructive">
+          <Info />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <header className="rounded-lg border border-border bg-card p-4 sm:p-5">

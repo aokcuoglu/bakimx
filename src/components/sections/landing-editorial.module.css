@@ -73,7 +73,7 @@
   align-items: center;
   gap: 18px;
   border: 1px solid var(--border);
-  border-radius: 30px;
+  border-radius: 9999px; /* intentional pill */
   padding: 8px 14px;
   font-size: 12px;
   color: var(--muted-foreground);

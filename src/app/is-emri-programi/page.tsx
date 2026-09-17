@@ -93,8 +93,8 @@ export default function IsEmriProgramiPage() {
             </div>
 
             <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
-              <div className="absolute -inset-4 -z-10 rotate-2 rounded-3xl bg-primary/10" />
-              <figure className="overflow-hidden rounded-2xl border bg-card shadow-2xl shadow-primary/10">
+              <div className="absolute -inset-4 -z-10 rotate-2 rounded-xl bg-primary/10" />
+              <figure className="overflow-hidden rounded-xl border bg-card shadow-md">
                 <div className="flex items-center justify-between border-b bg-muted/50 px-4 py-3">
                   <span className="font-mono text-xs font-medium text-muted-foreground">İŞ EMRİ · ÖRNEK EKRAN</span>
                   <span className="flex items-center gap-1.5 text-xs font-medium text-success-strong">
@@ -125,7 +125,7 @@ export default function IsEmriProgramiPage() {
               <h2 id="akis-baslik" className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Bir iş emri altı adımda ilerler</h2>
               <p className="mt-4 text-base leading-7 text-muted-foreground">Kalemler, kanıt ve onay ayrı dosyalarda değil, aynı iş emrinde birikir. Ekip sıradaki adımı aynı kayıttan görür.</p>
             </div>
-            <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+            <ol className="mt-10 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
               {workflow.map((step, index) => {
                 const Icon = step.icon
                 return (
@@ -155,7 +155,7 @@ export default function IsEmriProgramiPage() {
                 { src: "/landing/screens/parts-catalog.png", alt: "BakımX araca uygun parça kataloğundan iş emrine parça ekleme", label: "Parça ve işçilik kalemi · Örnek veri", text: "Araca uygun parça kataloğundan seçilen kalem stoğu düşürerek iş emrine eklenir." },
                 { src: "/landing/screens/public-tracking.png", alt: "BakımX müşteri araç takip ekranında teklif ve işlem geçmişi", label: "Müşteri takip ekranı · Örnek veri", text: "Müşteri; yapılan işleri, teklif durumunu ve işlem geçmişini kendi ekranından izler." },
               ].map((screen) => (
-                <figure key={screen.src} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                <figure key={screen.src} className="overflow-hidden rounded-xl border bg-card shadow-sm">
                   <div className="border-b px-4 py-3 font-mono text-xs font-medium text-muted-foreground">{screen.label}</div>
                   <Image src={screen.src} alt={screen.alt} width={1200} height={800} className="h-auto w-full" />
                   <figcaption className="border-t px-5 py-4 text-sm leading-6 text-muted-foreground">{screen.text}</figcaption>
@@ -181,7 +181,7 @@ export default function IsEmriProgramiPage() {
                   ))}
                 </ul>
               </div>
-              <div className="rounded-2xl border bg-muted/35 p-6 sm:p-8">
+              <div className="rounded-xl border bg-muted/35 p-6 sm:p-8">
                 <h3 className="text-xl font-semibold">İhtiyacınıza göre ayrıntıya inin</h3>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">Kategoriye karar verirken akışları, güncel paketleri ve araç kabul adımlarını ayrı sayfalarda inceleyin.</p>
                 <div className="mt-8 grid gap-4">
@@ -190,7 +190,7 @@ export default function IsEmriProgramiPage() {
                     { href: "/dijital-arac-kabul", title: "Dijital araç kabul", text: "Ruhsat okuma, kabul fotoğrafları ve hasar kaydı akışı." },
                     { href: "/fiyatlar", title: "Paketler ve fiyatlar", text: "Güncel paket kapsamlarını ve KDV dahil fiyatları karşılaştırın." },
                   ].map((item) => (
-                    <Link key={item.href} href={item.href} className="group flex items-center justify-between gap-4 rounded-xl border bg-background p-5 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    <Link key={item.href} href={item.href} className="group flex items-center justify-between gap-4 rounded-xl border bg-background p-5 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                       <span>
                         <span className="block font-semibold text-foreground">{item.title}</span>
                         <span className="mt-1 block text-sm leading-6 text-muted-foreground">{item.text}</span>

@@ -82,7 +82,7 @@ export function TechnicianAssign({
         assignedTechnicianName
           ? "border-primary/20 bg-primary/10 text-foreground"
           : "border-dashed border-border bg-transparent text-muted-foreground",
-        !locked && "hover:border-primary/40 hover:bg-primary/15",
+        !locked && "hover:bg-muted/60 hover:bg-primary/15",
         className
       )
 

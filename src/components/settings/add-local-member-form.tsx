@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Check, Loader2, UserPlus, X } from "lucide-react"
 import type { UserRole } from "@prisma/client"
 import { cn } from "@/lib/utils"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -149,20 +150,19 @@ export function AddLocalMemberForm({
       </div>
 
       {error && (
-        <div
-          role="alert"
-          className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm"
-        >
-          {error}
-          {seatLimited && (
-            <>
-              {" "}
-              <Link href="/account/plans" className="font-semibold underline underline-offset-2">
-                Paketleri görüntüleyin
-              </Link>
-            </>
-          )}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>
+            {error}
+            {seatLimited && (
+              <>
+                {" "}
+                <Link href="/account/plans" className="font-semibold underline underline-offset-2">
+                  Paketleri görüntüleyin
+                </Link>
+              </>
+            )}
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

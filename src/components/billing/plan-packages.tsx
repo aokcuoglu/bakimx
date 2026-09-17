@@ -156,7 +156,7 @@ function PlanAction({
       asChild
       variant={isOwned ? "secondary" : pkg.popular ? publicCard ? "navy" : "foreground" : "outline"}
       size={compact ? "sm" : "default"}
-      className={cn("w-full", publicCard && "h-9 rounded-lg text-sm font-normal", publicCard && !pkg.popular && "bg-card")}
+      className={cn("w-full", publicCard && "h-9 text-sm font-normal", publicCard && !pkg.popular && "bg-card")}
     >
       <Link
         href={href}
@@ -267,7 +267,7 @@ export function PlanPackages({
                 <Card
                   role="article"
                   aria-labelledby={`paket-${pkg.tier}`}
-                  className={cn("relative h-full min-h-[400px] gap-0 overflow-visible rounded-[20px] border border-border/70 p-6 shadow-sm ring-0", pkg.popular && "border-primary/40 ring-4 ring-primary/10")}
+                  className={cn("relative h-full min-h-[400px] gap-0 overflow-visible rounded-xl border border-border/70 p-6 shadow-sm ring-0", pkg.popular && "border-foreground/20 ring-2 ring-foreground/10")}
                 >
                   <h3 id={`paket-${pkg.tier}`} className="text-xl font-medium tracking-tight">{pkg.name}</h3>
                   <div className="mt-7" aria-live="polite" aria-atomic="true">
@@ -284,7 +284,7 @@ export function PlanPackages({
                           </>
                         )}
                       </p>
-                      {pkg.tier !== "lite" && billing === "yearly" && <Badge variant="outline" className="rounded-lg border-primary/20 bg-primary/10 text-primary-strong font-normal">2 ay bedava</Badge>}
+                      {pkg.tier !== "lite" && billing === "yearly" && <Badge variant="outline" className="rounded-sm border-border bg-muted text-foreground font-normal">2 ay bedava</Badge>}
                     </div>
                     <p className="text-xs leading-5 text-muted-foreground">{pkg.tier === "lite" ? "Lite kampanyasında süresiz ücretsiz" : billing === "monthly" ? "Aylık faturalandırılır · KDV dahil" : "Yıllık faturalandırılır · KDV dahil"}</p>
                   </div>

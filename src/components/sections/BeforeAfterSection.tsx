@@ -44,9 +44,9 @@ export function BeforeAfterSection() {
           <Reveal
             from="right"
             delay={100}
-            className="rounded-xl border-2 border-primary/30 bg-card p-6 sm:p-8 shadow-lg shadow-primary/5"
+            className="rounded-lg border border-border bg-card p-6 sm:p-8 shadow-md"
           >
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-primary">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
               BakimX ile
             </h3>
             <ul className="mt-5 space-y-3.5">
