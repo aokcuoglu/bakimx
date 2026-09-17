@@ -264,7 +264,7 @@ export function MockAppDemo() {
       }}
       onDoubleClick={() => setAutoPlay(true)}
     >
-      {/* ── Sidebar (gerçek AppShell navy) ─────────────────────────────── */}
+      {/* ── Sidebar (gerçek AppShell açık yüzeyi) ───────────────────────── */}
       <aside
         className={cn(
           styles.sidebar,
@@ -272,12 +272,13 @@ export function MockAppDemo() {
         )}
       >
         <div className={cn(styles.sidebarBrand, "flex items-center gap-2 border-b border-sidebar-border px-3 py-3")}>
-          <BrandLogo variant="icon-dark" size="sm" alt="" className="shrink-0" />
+          <BrandLogo variant="icon-light" size="sm" alt="" className="shrink-0 dark:hidden" />
+          <BrandLogo variant="icon-dark" size="sm" alt="" className="hidden shrink-0 dark:block" />
           <div className={cn(styles.sidebarCopy, "min-w-0")}>
             <p className="truncate text-[13px] font-bold tracking-tight">
               Bakım<span className="text-sidebar-primary">X</span>
             </p>
-            <p className="truncate text-[9px] text-sidebar-foreground/50">Demo Oto Servis</p>
+            <p className="truncate text-[9px] text-muted-foreground">Demo Oto Servis</p>
           </div>
         </div>
 
@@ -285,7 +286,7 @@ export function MockAppDemo() {
           <p
             className={cn(
               styles.sidebarCopy,
-              "px-2 pb-1.5 pt-1 text-[9px] font-semibold uppercase tracking-wider text-sidebar-foreground/50",
+              "px-2 pb-1.5 pt-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground",
             )}
           >
             İş Yeri
@@ -311,7 +312,7 @@ export function MockAppDemo() {
                     "h-auto w-full justify-start gap-2 px-2 py-1.5 text-left text-[11px]",
                     active
                       ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     isFlash && styles.navFlash,
                   )}
                   onClick={() => {
@@ -325,7 +326,7 @@ export function MockAppDemo() {
               ) : (
                 <span
                   key={item.id}
-                  className={cn(styles.sidebarItem, "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] text-sidebar-foreground/80")}
+                  className={cn(styles.sidebarItem, "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] text-sidebar-foreground")}
                 >
                   <Icon className="size-3.5 shrink-0" />
                   <span className={cn(styles.sidebarCopy, "truncate")}>{item.label}</span>
@@ -346,7 +347,7 @@ export function MockAppDemo() {
           </span>
           <div className={cn(styles.sidebarCopy, "min-w-0")}>
             <p className="truncate text-[11px] font-medium">Demo Kullanıcı</p>
-            <p className="truncate text-[9px] text-sidebar-foreground/50">Yönetici</p>
+            <p className="truncate text-[9px] text-muted-foreground">Yönetici</p>
           </div>
         </div>
       </aside>

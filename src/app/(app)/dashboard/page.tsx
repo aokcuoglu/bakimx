@@ -106,36 +106,32 @@ export default async function DashboardPage() {
 
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Genel Bakış">
-      <div className="space-y-5 sm:space-y-6 max-w-full">
-        <div
+      <div className="mx-auto max-w-[1440px] space-y-6 sm:space-y-8">
+        <section
           data-tour="welcome-banner"
-          className="relative rounded-lg bg-gradient-to-br from-navy via-navy to-navy-light text-navy-foreground p-5 sm:p-6 shadow-sm overflow-hidden"
+          className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between sm:pb-8"
         >
-          {/* Dekoratif brand blue accent */}
-          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-brand/15 blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-brand/10 blur-2xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold">
-                Hoş Geldiniz, {user.firstName || user.email || user.username || "Kullanıcı"}
-              </h2>
-              <p className="text-sm text-navy-foreground/70 mt-1">
-                {workshop?.name} &bull;{" "}
-                {new Date().toLocaleDateString("tr-TR", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                })}
-              </p>
-            </div>
-            <Button variant="inverse" size="compact" asChild>
-              <Link href="/orders/new" data-tour="welcome-cta">
-                <Plus className="size-4" />
-                Yeni İş Emri
-              </Link>
-            </Button>
+          <div className="min-w-0">
+            <p className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">Genel Bakış</p>
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              Hoş Geldiniz, {user.firstName || user.email || user.username || "Kullanıcı"}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {workshop?.name} &bull;{" "}
+              {new Date().toLocaleDateString("tr-TR", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}
+            </p>
           </div>
-        </div>
+          <Button variant="foreground" size="sm" asChild>
+            <Link href="/orders/new" data-tour="welcome-cta">
+              <Plus className="size-4" />
+              Yeni İş Emri
+            </Link>
+          </Button>
+        </section>
 
         {needsFirstOrder && (
           <section
@@ -169,7 +165,7 @@ export default async function DashboardPage() {
 
         <ActiveOrdersSection orders={activeOrders} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <TodayDeliveries deliveries={todayDeliveries} />
           {canQuotes && <WaitingApprovals approvals={waitingApprovals} />}
           {canPhotos && <MissingPhotos items={missingPhotos} />}
@@ -178,7 +174,7 @@ export default async function DashboardPage() {
         {canAppointments && <TodayAppointments appointments={todayAppointments} />}
 
         {(canInventory || canCashbox || canReminders) && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {canInventory && <CriticalStockWidget items={criticalStock} />}
           <div className="space-y-4 sm:space-y-5">
             {canCashbox && <CashWidget data={{
@@ -192,7 +188,7 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <RecentCustomers customers={recentCustomers} />
           {canTeam && <TechnicianStatusWidget technicians={technicianOverview} unassignedCount={unassignedOrderCount} />}
         </div>

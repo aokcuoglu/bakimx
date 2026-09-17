@@ -29,13 +29,13 @@ export function OperationalAlertsWidget({ recommendations }: { recommendations: 
     return (
       <Link
         href="/analytics"
-        className="block rounded-lg border border-success/20 bg-success/5 p-4 hover:border-success/30 transition-colors"
+        className="block rounded-lg border border-border bg-card transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
           <CheckCircle2 className="size-4 text-success-strong" />
           <h3 className="text-sm font-semibold text-foreground">Operasyon Uyarıları</h3>
         </div>
-        <p className="text-xs text-foreground">Tüm işlemler yolunda.</p>
+        <p className="px-4 py-3 text-sm text-muted-foreground">Tüm işlemler yolunda.</p>
       </Link>
     )
   }
@@ -43,14 +43,14 @@ export function OperationalAlertsWidget({ recommendations }: { recommendations: 
   return (
     <Link
       href="/analytics"
-      className="block rounded-lg border border-border bg-card p-4 hover:shadow-sm hover:border-border transition-all"
+      className="block rounded-lg border border-border bg-card transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         <AlertIcon className="size-4 text-warning-strong" />
         <h3 className="text-sm font-semibold text-foreground">Operasyon Uyarıları</h3>
         <span className="ml-auto text-xs text-muted-foreground">{recommendations.length} öneri</span>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2 px-4 py-3">
         {recommendations.slice(0, 3).map((rec) => {
           const Icon = recIcon(rec.type)
           return (
