@@ -5,9 +5,9 @@ export function StatusChart({ data }: { data: StatusDistribution[] }) {
 
   if (total === 0) {
     return (
-      <div className="rounded-lg border border-border bg-card p-6">
-        <h3 className="text-sm font-semibold text-foreground mb-4">Bu Ay İş Durumları</h3>
-        <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <h3 className="border-b border-border px-5 py-4 text-sm font-semibold text-foreground">Bu Ay İş Durumları</h3>
+        <div className="flex h-36 items-center justify-center px-5 text-sm text-muted-foreground">
           Bu ay iş emri bulunmuyor.
         </div>
       </div>
@@ -15,10 +15,10 @@ export function StatusChart({ data }: { data: StatusDistribution[] }) {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4 sm:p-6">
-      <h3 className="text-sm font-semibold text-foreground mb-4">Bu Ay İş Durumları</h3>
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <h3 className="border-b border-border px-5 py-4 text-sm font-semibold text-foreground">Bu Ay İş Durumları</h3>
 
-      <div className="space-y-3">
+      <div className="space-y-3 px-5 py-4">
         {data.map((s) => {
           const pct = Math.round((s.count / total) * 100)
           return (

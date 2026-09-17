@@ -7,25 +7,28 @@ interface KpiCardProps {
   value: number
   icon: React.ComponentType<{ className?: string }>
   href: string
-  accent: string
-  accentBg: string
+  tone?: "warning" | "destructive"
   subtitle?: string
 }
 
-function KpiCard({ label, value, icon: Icon, href, accent, accentBg, subtitle }: KpiCardProps) {
+function KpiCard({ label, value, icon: Icon, href, tone, subtitle }: KpiCardProps) {
+  const iconTone = value > 0 && tone === "warning"
+    ? "text-warning-strong"
+    : value > 0 && tone === "destructive"
+      ? "text-destructive-strong"
+      : "text-muted-foreground"
+
   return (
     <Link
       href={href}
-      className="rounded-lg border border-border bg-card p-4 hover:shadow-sm hover:border-border transition-all group"
+      className="group min-w-0 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-5"
     >
-      <div className="flex items-center justify-between mb-1">
+      <div className="mb-5 flex items-start justify-between gap-2">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <div className={`size-9 rounded-lg ${accentBg} flex items-center justify-center`}>
-          <Icon className={`size-4 ${accent}`} />
-        </div>
+        <Icon className={`size-4 shrink-0 ${iconTone}`} aria-hidden />
       </div>
-      <p className="text-2xl sm:text-3xl font-bold text-foreground">{value}</p>
-      {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
+      <p className="text-2xl font-semibold tracking-tight tabular-nums text-foreground sm:text-[28px]">{value}</p>
+      {subtitle && <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
     </Link>
   )
 }
@@ -40,22 +43,18 @@ export function KpiCards({
   showPhotoChecklist: boolean
 }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6">
       <KpiCard
         label="Aktif İş Emri"
         value={stats.activeOrders}
         icon={Wrench}
         href="/orders"
-        accent="text-primary"
-        accentBg="bg-primary/10"
       />
       <KpiCard
         label="Bugün Teslim"
         value={stats.todayDeliveries}
         icon={Clock}
         href="/orders"
-        accent="text-success-strong"
-        accentBg="bg-success/10"
       />
       {showQuotes && (
         <KpiCard
@@ -63,8 +62,7 @@ export function KpiCards({
           value={stats.waitingApprovals}
           icon={MessageCircle}
           href="/orders?status=waiting_approval"
-          accent="text-warning-strong"
-          accentBg="bg-warning/10"
+          tone="warning"
         />
       )}
       {showPhotoChecklist && (
@@ -73,8 +71,7 @@ export function KpiCards({
           value={stats.missingPhotoIntakes}
           icon={Camera}
           href="/orders"
-          accent="text-destructive-strong"
-          accentBg="bg-destructive/10"
+          tone="destructive"
         />
       )}
       <KpiCard
@@ -82,16 +79,13 @@ export function KpiCards({
         value={stats.overdueDeliveries}
         icon={AlertTriangle}
         href="/orders"
-        accent="text-destructive-strong"
-        accentBg="bg-destructive/10"
+        tone="destructive"
       />
       <KpiCard
         label="Son 7 Gün"
         value={stats.lastWeekOrders}
         icon={Calendar}
         href="/orders"
-        accent="text-primary"
-        accentBg="bg-primary/10"
       />
     </div>
   )

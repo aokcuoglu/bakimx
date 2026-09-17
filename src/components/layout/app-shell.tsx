@@ -231,7 +231,7 @@ export function AppShellChrome({
           planStatus={planStatus}
           workspace={workspace}
         />
-        <SidebarInset className="min-h-screen bg-muted">
+        <SidebarInset className="min-h-screen bg-background">
           <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} enabledFeatures={enabledFeatures} />
           <main className="flex-1 px-4 sm:px-6 py-4 sm:py-6 pb-24 lg:pb-8">{children}</main>
         </SidebarInset>
@@ -393,7 +393,8 @@ function AppSidebar({
             aria-label="BakimX"
             className="flex size-8 items-center justify-center"
           >
-            <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
+            <BrandLogo variant="icon-light" size="sm" priority alt="BakimX" className="dark:hidden" />
+            <BrandLogo variant="icon-dark" size="sm" alt="BakimX" className="hidden dark:block" />
           </Link>
         )}
       </SidebarHeader>
@@ -420,10 +421,10 @@ function AppSidebar({
       <SidebarFooter className="border-t border-sidebar-border">
         {userIdentity && !inSettings ? (
           <div className="px-2 py-1.5 group-data-[collapsible=icon]:hidden">
-            <p className="text-xs font-medium text-sidebar-foreground/80 truncate">
+            <p className="text-xs font-medium text-sidebar-foreground truncate">
               {[userIdentity.firstName, userIdentity.lastName].filter(Boolean).join(" ") || userIdentity.email || userIdentity.username}
             </p>
-            <p className="text-[10px] text-sidebar-foreground/50 truncate">
+            <p className="text-xs text-muted-foreground truncate">
               {ROLE_LABELS[userIdentity.role]}
             </p>
           </div>
@@ -460,7 +461,7 @@ function AppSidebar({
                   <CalendarClock className="size-4" aria-hidden="true" />
                   <span className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
                     <span className="block truncate text-xs font-medium">{planStatus.title}</span>
-                    <span className="block truncate text-[10px] text-sidebar-foreground/70">{planStatus.detail}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{planStatus.detail}</span>
                   </span>
                   <span className="rounded-md border border-sidebar-border px-1.5 py-1 text-[10px] group-data-[collapsible=icon]:hidden">{planStatus.action}</span>
                 </Link>

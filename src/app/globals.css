@@ -678,16 +678,14 @@
   --chart-4: oklch(0.35 0.10 260);
   --chart-5: oklch(0.15 0.05 260);
   --radius: 0.625rem;
-  /* Sidebar zemini navy (#071F49); accent siyah lekesi gibi görünmesin diye
-     navy üzerinde ~%12 beyaz karışımı (#253A5F) — yumuşak hover/selected.
-     Opak tutulur: tema AA taraması alfa kompozit etmez. */
-  --sidebar: #071F49;
-  --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.54 0.20 258);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: #253A5F;
-  --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  /* Uygulama navigasyonu: açık yüzey, nötr seçim ve ince ayraç. */
+  --sidebar: #fafafa;
+  --sidebar-foreground: #171717;
+  --sidebar-primary: #171717;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #efefef;
+  --sidebar-accent-foreground: #171717;
+  --sidebar-border: #e5e5e5;
   --sidebar-ring: oklch(0.54 0.20 258);
 }
 
@@ -738,12 +736,12 @@
   --chart-3: oklch(0.45 0.15 260);
   --chart-4: oklch(0.35 0.10 260);
   --chart-5: oklch(0.25 0.05 260);
-  --sidebar: #071F49;
-  --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.54 0.20 258);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: #253A5F;
-  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar: oklch(0.18 0.03 260);
+  --sidebar-foreground: oklch(0.96 0.01 250);
+  --sidebar-primary: oklch(0.96 0.01 250);
+  --sidebar-primary-foreground: oklch(0.18 0.03 260);
+  --sidebar-accent: oklch(0.27 0.04 260);
+  --sidebar-accent-foreground: oklch(0.96 0.01 250);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.54 0.20 258);
 }

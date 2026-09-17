@@ -53,7 +53,7 @@ export function AlertBanner({
 
   if (alerts.length === 0) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/5 px-4 py-3">
+      <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
         <CheckCircle2 className="size-4 text-success-strong shrink-0" />
         <p className="text-sm text-foreground">Bugün kritik operasyon uyarısı bulunmuyor.</p>
       </div>
@@ -62,22 +62,13 @@ export function AlertBanner({
 
   const colorMap = {
     red: {
-      bg: "bg-destructive/10 border-destructive/20",
-      text: "text-foreground",
       icon: "text-destructive-strong",
-      hover: "hover:bg-destructive/20",
     },
     rose: {
-      bg: "bg-destructive/10 border-destructive/20",
-      text: "text-foreground",
       icon: "text-destructive-strong",
-      hover: "hover:bg-destructive/20",
     },
     amber: {
-      bg: "bg-warning/10 border-warning/20",
-      text: "text-foreground",
       icon: "text-warning-strong",
-      hover: "hover:bg-warning/20",
     },
   }
 
@@ -90,12 +81,12 @@ export function AlertBanner({
           <Link
             key={i}
             href={alert.href}
-            className={`flex items-center gap-3 rounded-lg border ${colors.bg} ${colors.hover} px-4 py-3 transition-colors group`}
+            className="group flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <div className={`shrink-0 ${colors.icon}`}>
               <Icon className="size-4" />
             </div>
-            <p className={`text-sm font-medium ${colors.text} flex-1`}>{alert.message}</p>
+            <p className="flex-1 text-sm font-medium text-foreground">{alert.message}</p>
           </Link>
         )
       })}
