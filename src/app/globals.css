@@ -79,10 +79,14 @@
      kopyalayarak yeni bir marka rengi tanımlama — istisna WhatsApp'a özgü. */
   --color-whatsapp: #25D366;
   --color-whatsapp-foreground: #FFFFFF;
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
+  /* Radius sözleşmesi (DESIGN.md → Design Palette):
+     kontrol = sm 6px, yüzey = lg 10px (= --radius), üst sınır = xl 12px.
+     2xl+ yalnız legacy / bilinçli istisna (FAB, pill); yeni işte kullanılmaz. */
+  --radius-xs: 0.25rem; /* 4px */
+  --radius-sm: 0.375rem; /* 6px — Button, Input, Select */
+  --radius-md: 0.5rem; /* 8px — menü satırı */
+  --radius-lg: var(--radius); /* 10px — Card, Dialog, Alert */
+  --radius-xl: 0.75rem; /* 12px — büyük panel üst sınırı */
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);

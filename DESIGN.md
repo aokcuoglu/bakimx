@@ -20,6 +20,68 @@ Inter uygulama ve genel public yüzeylerde kullanılır. Kod ve sabit genişlikl
 
 `PublicSite` ve CSS Module yalnız açıkça sarılmış site sayfalarına uygulanır. Uygulamanın global tokenları veya paylaşılan UI bileşenlerinin varsayılanları değiştirilmez. Header/Footer ortak açık görünüm kullanır. Mobil ürün görselleri dikey sıralanır; CTA'lar dar alanda alt alta gelir.
 
+## Design Palette — 17 Eylül 2026
+
+Canlı önizleme: [`/design`](/design) (yerel `http://localhost:3000/design`; ileride `ui.bakimx.com` adayı). Bu bölüm getdesign.md tarzı token kartlarının kaynağıdır; yeni UI işi buradaki sözleşmeye uyar.
+
+### Colors
+
+Hex değerleri yaklaşıkdır; kaynak `src/app/globals.css` (oklch + marka sabitleri). Call-site’ta sabit hex yazılmaz — token sınıfı kullanılır.
+
+| Token | Hex (yaklaşık) | Rol |
+| --- | --- | --- |
+| `navy` | `#071F49` | Public / asistan birincil CTA dolgusu; sidebar zemini |
+| `navy-foreground` | `#FFFFFF` | Navy üzeri metin |
+| `brand` | `#2F84FF` | Marka aksanı (grafik / vurgu) |
+| `primary` | `#0C65E8` | Link, seçim, odak halkası — **CTA dolgusu değil** |
+| `primary-strong` | `#004DCF` | Tonlu `bg-primary/10` üzeri metin |
+| `foreground` | `#171717` | Ana metin; kayıt/kurulum birincil dolgu |
+| `muted-foreground` | `#262626` | Yardımcı metin |
+| `muted-foreground-strong` | `#171717` | Tonlu yüzeylerde yardımcı metin |
+| `background` | `#F7F8FA` | Sayfa zemini |
+| `card` | `#FFFFFF` | Kart / panel |
+| `muted` | `#EDF2F8` | İkincil yüzey, hover |
+| `border` / `input` | `#DCE2E8` | 1px ayraç |
+| `success` / `-strong` | `#189A30` / `#007200` | Başarı durumu |
+| `warning` / `-strong` | `#D19200` / `#874B00` | Uyarı durumu |
+| `destructive` / `-strong` | `#E7000B` / `#BF0000` | Hata durumu |
+| `whatsapp` | `#25D366` | WhatsApp aksiyonu (bilinçli AA istisnası) |
+
+### Typography
+
+| Seviye | Font | Boyut | Ağırlık | Not |
+| --- | --- | --- | --- | --- |
+| App / public body | Inter | 14–16px | 400–500 | Genel UI |
+| App başlık | Inter | 28–36px | 600 | Form / dashboard |
+| Marketing H1 | Inter | ~76–84px | 600 | Sıkı tracking |
+| Button | Inter | 14px | 500 | lh 140%, tracking −0.02em |
+| Blog display | Switzer | — | — | Yalnız `/blog` |
+| Code / mono | Geist Mono | 13px | 400 | Kod / plaka benzeri |
+
+### Rounded (zorunlu skala)
+
+Kontrol yüzeyi ile kart/panel köşeleri bilerek ayrılır. Yeni işte bu skala dışına çıkılmaz.
+
+| Token | px | Tailwind | Kullanım |
+| --- | --- | --- | --- |
+| `none` | 0 | `rounded-none` | Tablo hücresi, ayraç |
+| `xs` | 4 | `rounded-xs` | Küçük chip (nadir) |
+| `sm` | **6** | `rounded-sm` | **Kontrol:** Button, Input, Textarea, Select tetikleyici |
+| `md` | 8 | `rounded-md` | Menü satırı, toast içi |
+| `lg` | **10** | `rounded-lg` | **Yüzey:** Card, Dialog, Sheet, Alert, Popover |
+| `xl` | 12 | `rounded-xl` | Büyük panel üst sınırı |
+| `full` | 9999 | `rounded-full` | Avatar, pill Badge — yalnız bilinçli |
+
+- Shared `Button` köşesi `rounded-[6px]` (= `sm`) kalır (Clutch).
+- `rounded-2xl` / `rounded-3xl` / `rounded-4xl` yeni işte yasaktır (FAB / özel şekil hariç, gerekçeli).
+- CSS Module’ler (kayıt, public) kendi sınıflarında aynı px değerlerini kullanır; paralel “gölge palet” üretmez.
+
+### Bileşen disiplini
+
+- İnteraktif öğeler shadcn/Radix (`components/ui/*`) üzerinden gelir; ham `<button>` / `<input>` yok.
+- Durum kutuları ad-hoc border+ikon değil `<Alert variant="…">` kullanır.
+- Call-site’ta `h-*` / `rounded-*` / hex override yerine `size` / `variant` / token sınıfı tercih edilir.
+
 ## Site genelinde metin rengi — 13 Eylül 2026
 
 Kullanıcının Header için onayladığı koyu metin kararı tüm siteye genişletildi: public, blog, kayıt, kurulum, uygulama ve yönetim. Yukarıdaki Vercel ve Linear analizleri yeniden incelendi. Vercel'in nötr `#171717` ana metni ve açık yüzeyleri; Linear'ın kontrollü vurgu, sıkı başlık aralığı ve boyut/ağırlık/boşluk hiyerarşisi esas alınır. Linear'ın koyu pazarlama paleti taşınmaz.
@@ -48,7 +110,7 @@ Ek kurallar:
 - Panel / modal / widget başlıkları açık `card` + `border-b` olur; `bg-primary` renk bloğu kullanılmaz.
 - Menü satırı ve özellik ikonları nötr `muted` + ince border alır; `bg-primary/10 text-primary-strong` dekoratif ikon kutusu yeni işte tercih edilmez.
 - Sohbet balonları: ziyaretçi koyu (`navy` veya `foreground`), ajan / sistem `muted`; ziyaretçi balonunda parlak `primary` yok.
-- Köşeler ölçülü (`rounded-lg` / `rounded-xl`, ~6–12px). Ağır `shadow-2xl` yerine sınırlı `shadow-md` / `shadow-lg`.
+- Köşeler **Rounded** skalasına uyar: kontrol `sm` (6px), yüzey `lg` (10px), üst sınır `xl` (12px). Ağır `shadow-2xl` yerine sınırlı `shadow-md` / `shadow-lg`.
 - Shared `Button` bileşeninin global `default` variant’ı bu belgeden dolayı değiştirilmez; call-site’ta `navy` / `outline` / `ghost` seçilir. `className` ile `bg-foreground` vermek `button.tsx` birleştirmesinde `bg-primary`’ı her zaman ezmez — public yüzeylerde `variant="navy"` kullan.
 
 ### Clutch buton ölçüleri — 13 Eylül 2026 (#647)
@@ -67,7 +129,7 @@ Kullanıcının Clutch ekran görüntüsü ve [Clutch](https://www.clutch.securi
 
 - Açık `card` yüzey, `border` ile 1px ayraçlar ve `foreground` başlıklar temel düzeni oluşturur. Yardımcı metin `muted-foreground` kullanır. Dekoratif renkli kart yığınları ve büyük koyu arka plan panelleri yerine hizalama ve boşlukla hiyerarşi kurulur.
 - Inter kullanılır. Form ve uygulama başlıkları yaklaşık 28–36px, alan etiketleri ve gövde 14–16px, yardımcı metin en az 12px olur. Pazarlama başlık ölçeği bu ekranlara uygulanmaz.
-- Boşluklar 4/8px ritminde; alan araları 16–24px, mantıksal bölüm araları 24–40px. Form kontrolleri 40–44px yüksekliğinde, köşeler ölçülü (6–10px) olur. Tablo yoğunluğu göreve göre daha kompakt kalabilir.
+- Boşluklar 4/8px ritminde; alan araları 16–24px, mantıksal bölüm araları 24–40px. Form kontrolleri 38–44px yüksekliğinde; kontrol köşesi 6px (`sm`), kart/panel 10px (`lg`). Tablo yoğunluğu göreve göre daha kompakt kalabilir.
 - Birincil / ikincil / üçüncül eylem ayrımı yukarıdaki **Eylemler ve butonlar** tablosuna uyar. Hata, başarı ve uyarı renkleri yalnız gerçek durumu anlatır; kontrast kuralları korunur.
 - Kayıtta yalnız sağdaki form alanı kayar; Header, sol açıklama sütunu ve alt footer görünüm alanında sabit kalır. Kayıt mevcut public `Header` bileşenini kullanır; açıklama sütununda logo tekrar edilmez. Kayıt masaüstünde sakin bir açıklama sütunu ve hesap formundan oluşur; mobilde form önceliklidir. Firma, iletişim ve giriş bilgileri ince ayraçlarla gruplanır. E-posta doğrulaması, KVKK, danışman/referans ve paket sözleşmeleri korunur.
 - Sektör, iş detayları, ekip ve modül seçimleri üyelik sonrası dört adımlı kurulumda gösterilir. Seçenekler düzenli nötr yüzeylerde, seçili durum açık ve klavyeyle erişilebilir sunulur. 16 Eylül 2026 URL tabanlı kurulum kararı aşağıda bu ekranın kabuğunu ayrıca tanımlar.
