@@ -96,13 +96,14 @@ export function WorkspaceSwitcher({
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 tooltip={current.name}
+                aria-label={`Şube: ${current.name}${current.city ? `, ${current.city}` : ""}`}
               >
                 <WorkspaceAvatar name={current.name} />
                 <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-medium">{current.name}</span>
                   <span className="truncate text-xs text-muted-foreground">{current.city}</span>
                 </div>
-                <ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-60 group-data-[collapsible=icon]:hidden" />
+                <ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-60 group-data-[collapsible=icon]:hidden" aria-hidden />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -119,6 +120,7 @@ export function WorkspaceSwitcher({
                     key={item.id}
                     className="gap-2 p-2"
                     disabled={pending}
+                    aria-label={`${item.name}${item.city ? `, ${item.city}` : ""}${active ? " (aktif)" : ""}`}
                     onSelect={(event) => {
                       event.preventDefault()
                       switchTo(item.id)
@@ -129,7 +131,7 @@ export function WorkspaceSwitcher({
                       <p className="truncate text-sm font-medium">{item.name}</p>
                       <p className="truncate text-xs text-muted-foreground">{item.city}</p>
                     </div>
-                    {active ? <Check className="size-4 shrink-0 text-foreground" /> : null}
+                    {active ? <Check className="size-4 shrink-0 text-foreground" aria-hidden /> : null}
                   </DropdownMenuItem>
                 )
               })}
