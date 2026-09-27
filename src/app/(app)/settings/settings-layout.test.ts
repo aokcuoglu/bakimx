@@ -20,9 +20,9 @@ const hubSource = readFileSync(join(SETTINGS_DIR, "page.tsx"), "utf8")
 const navSource = readFileSync(join(process.cwd(), "src/lib/settings-nav.ts"), "utf8")
 
 describe("Ayarlar hub yönlendirmesi", () => {
-  test("hub SETTINGS_TAB_REDIRECTS kullanır ve varsayılan profil", () => {
+  test("hub SETTINGS_TAB_REDIRECTS kullanır ve varsayılan hesap ayarları", () => {
     expect(hubSource).toContain("SETTINGS_TAB_REDIRECTS")
-    expect(hubSource).toContain('redirect("/settings/profile")')
+    expect(hubSource).toContain('redirect("/settings/account")')
     expect(hubSource).not.toContain("SettingsTabs")
     expect(hubSource).not.toMatch(/<AppShell\b/)
   })
@@ -37,16 +37,16 @@ describe("Ayarlar hub yönlendirmesi", () => {
 describe("Ayarlar nav IA", () => {
   test("iki grup: hesap + çalışma alanı", () => {
     expect(SETTINGS_NAV_GROUPS).toHaveLength(2)
-    expect(SETTINGS_NAV_GROUPS[0]?.label).toBe("Hesap ayarları")
-    expect(SETTINGS_NAV_GROUPS[1]?.label).toBe("Çalışma alanı ayarları")
+    expect(SETTINGS_NAV_GROUPS[0]?.label).toBe("Kişisel")
+    expect(SETTINGS_NAV_GROUPS[1]?.label).toBe("Çalışma alanı")
   })
 
-  test("hesap öğeleri profil / paketler / faturalandırma", () => {
+  test("hesap profili ayrı, paketler ve faturalandırma çalışma alanında", () => {
     expect(ACCOUNT_SETTINGS_ITEMS.map((i) => i.href)).toEqual([
-      "/settings/profile",
-      "/settings/plans",
-      "/settings/billing",
+      "/settings/account",
     ])
+    expect(WORKSPACE_SETTINGS_ITEMS.map((i) => i.href)).toContain("/settings/plans")
+    expect(WORKSPACE_SETTINGS_ITEMS.map((i) => i.href)).toContain("/settings/billing")
   })
 
   test("çalışma alanı genel ve ekip path'leri mevcut", () => {

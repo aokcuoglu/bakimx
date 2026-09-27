@@ -39,6 +39,7 @@ import {
   ScanLine,
   HardHat,
   Activity,
+  ArrowLeft,
   MessageSquare,
   Calendar,
   Receipt,
@@ -370,6 +371,7 @@ function AppSidebar({
   const pathname = usePathname()
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
   const inSettings = isSettingsPath(pathname)
+  const { isMobile, setOpenMobile } = useSidebar()
 
   const visibleGroups = (isTechRole ? TECHNICIAN_NAV_GROUPS : NAV_GROUPS).map((group) => ({
     ...group,
@@ -380,7 +382,18 @@ function AppSidebar({
     <Sidebar collapsible="offcanvas">
       <SidebarHeader className="flex-row items-center gap-1 border-b border-sidebar-border p-2">
         <div className="min-w-0 flex-1">
-          {workspace && !isTechRole ? (
+          {inSettings ? (
+            <Button variant="ghost" size="sm" asChild className="justify-start gap-2 px-2 font-semibold">
+              <Link
+                href={isTechRole ? "/technician" : "/dashboard"}
+                aria-label="Ana menüye dön"
+                onClick={() => { if (isMobile) setOpenMobile(false) }}
+              >
+                <ArrowLeft className="size-4" aria-hidden="true" />
+                <span>Ayarlar</span>
+              </Link>
+            </Button>
+          ) : workspace && !isTechRole ? (
             <WorkspaceSwitcher
               currentWorkshopId={workspace.currentWorkshopId}
               memberships={workspace.memberships}
@@ -436,9 +449,9 @@ function AppSidebar({
               <SidebarMenuButton
                 asChild
                 tooltip="Hesap ayarları"
-                isActive={pathname === "/settings/profile" || pathname.startsWith("/account")}
+                isActive={pathname === "/settings/account" || pathname.startsWith("/account")}
               >
-                <Link href="/settings/profile">
+                <Link href="/settings/account">
                   <UserCircle className="size-4" />
                   <span>Hesap ayarları</span>
                 </Link>
@@ -613,10 +626,10 @@ function MobileBottomNav({
               </Button>
             </div>
             <MobileNavLink
-              href="/settings/profile"
+              href="/settings/account"
               label="Profil"
               icon={UserCircle}
-              active={pathname === "/settings/profile" || pathname.startsWith("/account")}
+              active={pathname === "/settings/account" || pathname.startsWith("/account")}
             />
           </div>
           <CreateCenterDialog open={createOpen} onOpenChange={setCreateOpen} enabledFeatures={enabledFeatures} />
@@ -744,7 +757,7 @@ function UserMenu({ userIdentity }: { userIdentity?: UserIdentity }) {
           </div>
           <div className="py-1">
             <Link
-              href="/settings/profile"
+              href="/settings/account"
               onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
             >
@@ -781,7 +794,7 @@ const TECHNICIAN_NAV_GROUPS: NavGroup[] = [
   {
     label: "Hesap",
     items: [
-      { href: "/settings/profile", label: "Profil", icon: UserCircle },
+      { href: "/settings/account", label: "Profil", icon: UserCircle },
     ],
   },
 ]
