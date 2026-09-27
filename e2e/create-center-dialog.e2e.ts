@@ -23,7 +23,7 @@ test("Oluştur modalı klavye ve dar ekranlarda kullanılabilir", async ({
         create: {
           email,
           password: "disabled-qa-password",
-          role: "owner",
+          role: "usta",
           firstName: "QA",
         },
       },
@@ -31,12 +31,12 @@ test("Oluştur modalı klavye ve dar ekranlarda kullanılabilir", async ({
   })
 
   try {
-    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.setViewportSize({ width: 390, height: 900 })
     await page.goto(
-      `/api/auth/dev-login?email=${encodeURIComponent(email)}&redirect=/orders`,
+      `/api/auth/dev-login?email=${encodeURIComponent(email)}&redirect=/technician`,
     )
 
-    const trigger = page.getByRole("button", { name: "Yeni kayıt oluştur" })
+    const trigger = page.getByRole("button", { name: "Oluşturma merkezi" })
     await trigger.click()
 
     const dialog = page.getByRole("dialog", {
@@ -51,7 +51,7 @@ test("Oluştur modalı klavye ve dar ekranlarda kullanılabilir", async ({
       "href",
       "/orders/new",
     )
-    await dialog.screenshot({ path: testInfo.outputPath("create-modal-desktop.png"), animations: "disabled" })
+    await dialog.screenshot({ path: testInfo.outputPath("create-modal-mobile.png"), animations: "disabled" })
 
     await page.keyboard.press("Escape")
     await expect(dialog).toBeHidden()
@@ -61,8 +61,7 @@ test("Oluştur modalı klavye ve dar ekranlarda kullanılabilir", async ({
     await trigger.click()
     await expect(dialog).toBeVisible()
     await expect(dialog.getByRole("link")).toHaveCount(4)
-    await dialog.screenshot({ path: testInfo.outputPath("create-modal-mobile.png"), animations: "disabled" })
-    for (const width of [320, 390, 768, 1440]) {
+    for (const width of [320, 390, 768]) {
       await page.setViewportSize({ width, height: 900 })
       const bounds = await dialog.boundingBox()
       expect(bounds).not.toBeNull()
