@@ -17,9 +17,10 @@ export const TECHNICIAN_RESTRICTED_ROLES: readonly UserRole[] = ["usta", "cirak"
 export const TECHNICIAN_ALLOWED_PREFIXES: readonly string[] = [
   "/technician",
   "/account",
-  // Attio settings shell: technicians may open personal profile only.
+  // Technicians may open personal settings only, including the legacy URL.
   // Broader /settings/* stays deny-by-default via middleware prefix matching.
   "/settings/profile",
+  "/settings/account",
   // Oluşturma merkezi (+) tüm rollere açık: yalnız "new" ekranları izinli,
   // liste/detay (/orders, /quotes…) deny-by-default kalmaya devam eder.
   "/orders/new",
@@ -49,7 +50,7 @@ export function isRouteAllowedForSalesSurface(pathname: string): boolean {
 }
 
 export function isRouteAllowedForTechnician(pathname: string): boolean {
-  // Hub `/settings` redirects to `/settings/profile` for personal settings.
+  // Hub `/settings` redirects to `/settings/account` for personal settings.
   if (pathname === "/settings") return true
   return TECHNICIAN_ALLOWED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)

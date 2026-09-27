@@ -99,6 +99,7 @@ describe("technician-route-access", () => {
     expect(isRouteAllowedForTechnician("/account")).toBe(true)
     expect(isRouteAllowedForTechnician("/account/settings")).toBe(true)
     expect(isRouteAllowedForTechnician("/settings/profile")).toBe(true)
+    expect(isRouteAllowedForTechnician("/settings/account")).toBe(true)
 
     expect(isRouteAllowedForTechnician("/orders/new")).toBe(true)
     expect(isRouteAllowedForTechnician("/quotes/new")).toBe(true)

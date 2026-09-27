@@ -32,9 +32,7 @@ export type SettingsNavGroup = {
 
 /** Account (personal) settings — available to technicians too for Profile. */
 export const ACCOUNT_SETTINGS_ITEMS: SettingsNavItem[] = [
-  { href: "/settings/profile", label: "Profil", icon: UserCircle },
-  { href: "/settings/plans", label: "Paketler", icon: Package },
-  { href: "/settings/billing", label: "Faturalandırma", icon: CreditCard },
+  { href: "/settings/account", label: "Profil", icon: UserCircle },
 ]
 
 /** Workspace settings — hidden from technician-restricted roles in the shell. */
@@ -46,14 +44,16 @@ export const WORKSPACE_SETTINGS_ITEMS: SettingsNavItem[] = [
   { href: "/settings/appointment-rules", label: "Randevu", icon: CalendarClock, feature: "appointments" },
   { href: "/settings/pdf-templates", label: "PDF", icon: FileText },
   { href: "/settings/team", label: "Ekip", icon: Users, feature: "team" },
+  { href: "/settings/plans", label: "Paketler", icon: Package },
+  { href: "/settings/billing", label: "Faturalandırma", icon: CreditCard },
   { href: "/settings/notifications", label: "Bildirimler", icon: Bell, feature: "automatedReminders" },
   { href: "/settings/calendar", label: "Takvim", icon: Calendar, feature: "appointments" },
   { href: "/settings/security", label: "Güvenlik", icon: Shield },
 ]
 
 export const SETTINGS_NAV_GROUPS: SettingsNavGroup[] = [
-  { label: "Hesap ayarları", items: ACCOUNT_SETTINGS_ITEMS },
-  { label: "Çalışma alanı ayarları", items: WORKSPACE_SETTINGS_ITEMS },
+  { label: "Kişisel", items: ACCOUNT_SETTINGS_ITEMS },
+  { label: "Çalışma alanı", items: WORKSPACE_SETTINGS_ITEMS },
 ]
 
 /** Legacy `?tab=` values → path segments under /settings. */
@@ -73,7 +73,7 @@ export function isSettingsPath(pathname: string): boolean {
 }
 
 /** Paths technicians may open under /settings (deny-by-default elsewhere). */
-export const TECHNICIAN_SETTINGS_ALLOWED_PREFIXES = ["/settings/profile"] as const
+export const TECHNICIAN_SETTINGS_ALLOWED_PREFIXES = ["/settings/account", "/settings/profile"] as const
 
 export function isTechnicianAllowedSettingsPath(pathname: string): boolean {
   return TECHNICIAN_SETTINGS_ALLOWED_PREFIXES.some(
