@@ -266,7 +266,7 @@ export function BillingPlanManager({
           pendingActions={hasPendingOrder && pendingReference && canPurchase ? (
             <div className="flex flex-wrap items-center gap-2">
               {pendingMethod === "card" && <>
-                <Button type="button" size="sm" onClick={() => { setManageOpen(false); setPendingPaymentOpen(true) }}>Ödemeye devam et</Button>
+                <Button type="button" variant="navy" size="sm" onClick={() => { setManageOpen(false); setPendingPaymentOpen(true) }}>Ödemeye devam et</Button>
                 <CancelPendingOrderButton reference={pendingReference} />
               </>}
               {pendingMethod !== "card" && <Button asChild variant="outline" size="sm"><Link href={getSupportWhatsAppUrl(`Merhaba, ${pendingReference} numaralı havale talebimi iptal edip başka paket seçmek istiyorum.`)} target="_blank" rel="noopener noreferrer">İptal için destek</Link></Button>}

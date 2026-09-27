@@ -21,7 +21,7 @@ export function InstantLink({
     <Link
       href={href}
       prefetch
-      className={cn(className, pending && "opacity-70")}
+      className={cn(className, pending && "text-muted-foreground")}
       aria-busy={pending || undefined}
       onClick={() => setPending(true)}
     >

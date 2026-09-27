@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation"
 
+export const metadata = { title: "Ekip Yönetimi" }
+
 export default async function TeamSettingsRedirect({
   searchParams,
 }: {

@@ -232,7 +232,7 @@ export function ManagePlanDialog({
                     <p className="text-xs text-muted-foreground">Atölye başına · {pickerCycle === "yearly" ? "aylık karşılık, yıllık faturalandırılır" : "aylık faturalandırılır"}</p>
                     <Button
                       type="button"
-                      variant={owned ? "secondary" : pkg.popular && upgrade ? "default" : "outline"}
+                      variant={owned ? "secondary" : pkg.popular && upgrade ? "navy" : "outline"}
                       className="mt-4 w-full"
                       disabled={owned || !canPurchase || hasPendingOrder}
                       onClick={() => {

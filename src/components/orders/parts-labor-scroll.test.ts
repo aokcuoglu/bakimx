@@ -14,7 +14,7 @@ test("kalem listesi yükseklik sınırında sayfa kaydırmasını serbest bırak
   expect(grid).not.toContain("Yeni kalem ekle")
   expect(grid).toContain('inputClassName="bg-background"')
   expect(grid).toContain("plain")
-  expect(grid).toContain('className="h-8 rounded-lg bg-background text-sm"')
+  expect(grid).toContain('className="h-7 rounded-lg bg-background text-sm"')
 })
 
 test("ortak diyalog viewport dışına taşmadan açılır", () => {

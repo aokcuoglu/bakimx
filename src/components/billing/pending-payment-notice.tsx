@@ -38,7 +38,7 @@ export function PendingPaymentNotice({ order, canPurchase = false }: { order: Pe
       {order.method === "card" && canPurchase && (
         <div className="flex flex-wrap items-center gap-1 self-start sm:self-center">
         <CancelPendingOrderButton reference={order.reference} />
-        <Button type="button" variant="default" size="sm" className="self-start sm:self-center" onClick={() => setPaymentOpen(true)}>
+        <Button type="button" variant="navy" size="sm" className="self-start sm:self-center" onClick={() => setPaymentOpen(true)}>
           Ödemeye devam et
         </Button>
         </div>

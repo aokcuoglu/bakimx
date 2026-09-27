@@ -23,6 +23,10 @@ const ALLOWLIST = new Map<string, string>([
     "Satın alma planı bitmiş atölyenin işi; plan yazma kilidi uygulanamaz. Rol kapısı roleCan ile elde yapılır.",
   ],
   [
+    "(app)/billing/actions.ts::cancelPendingBillingOrder",
+    "Bekleyen ödeme plan kilidindeyken de iptal edilebilir; billing.manage rol kapısı action içinde uygulanır.",
+  ],
+  [
     "(app)/intakes/delivery-actions.ts::requestDeliveryOtpAction",
     "Teslim akışı plan kilidi altında da tamamlanmalı. Rol kapısı assertCan ile elde yapılır.",
   ],

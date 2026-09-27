@@ -181,7 +181,7 @@ export function CardFormFields({
           </div>
           <aside className="flex flex-col gap-4 border-t bg-muted/20 p-4 sm:border-t-0 sm:border-l sm:p-5">
             {summary}
-            <Button variant="default" type="submit" size="sm" disabled={submitting} className="mt-auto w-full">
+            <Button variant="navy" type="submit" size="sm" disabled={submitting} className="mt-auto w-full">
               {submitting ? <><BrandSpinner size={18} /> {submittingLabel}</> : submitLabel}
             </Button>
           </aside>

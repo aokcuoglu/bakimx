@@ -19,7 +19,7 @@ const buttonVariants = cva(
         navy: primaryFill,
         whatsapp: "bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90",
         outline:
-          "border-transparent bg-white text-foreground shadow-[0_0_2px_rgba(28,40,64,0.18),0_1px_3px_rgba(0,0,0,0.04)] hover:bg-[#F6F7F7] aria-expanded:bg-[#F6F7F7] dark:bg-input/30 dark:hover:bg-input/50",
+          "border-transparent bg-card text-foreground shadow-[0_0_2px_rgba(28,40,64,0.18),0_1px_3px_rgba(0,0,0,0.04)] hover:bg-muted aria-expanded:bg-muted dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:

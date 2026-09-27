@@ -495,13 +495,13 @@ export default function DesignSystemPage() {
             <Button variant="navy" size="xs">
               xs
             </Button>
-            <Button variant="default" size="sm">
+            <Button variant="navy" size="sm">
               sm · 28px
             </Button>
-            <Button variant="default" size="lg">
+            <Button variant="navy" size="lg">
               lg · 28px
             </Button>
-            <Button variant="default" size="compact">
+            <Button variant="navy" size="compact">
               compact · 20px
             </Button>
             <Badge variant="outline">status</Badge>
