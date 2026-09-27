@@ -258,10 +258,8 @@ function AppHeader({
   return (
     <header className="sticky top-0 z-30 bg-background border-b border-border">
       <div className="relative flex flex-nowrap items-center gap-2 px-4 py-3 sm:gap-3 sm:px-6">
-        {/* Masaüstünde de görünür: SidebarRail ince bir kenar şeridi, tek başına
-            keşfedilebilir bir kontrol değil — BAK-180 öncesi masaüstünde
-            daraltma/genişletme kontrolü fiilen kayıptı. */}
-        <SidebarTrigger className={cn("-ml-2", mobileSearchOpen && "hidden sm:inline-flex")} />
+        {/* Sidebar açıkken kontrol menü başlığındadır; kapalıyken burada görünür. */}
+        <SidebarTrigger className={cn("-ml-2 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden", mobileSearchOpen && "hidden sm:inline-flex")} />
 
         {/* Logo yalnız dar mobilde (<sm): sm+ arama input açılınca absolute logo
             input'un üstüne biniyordu. lg'de sidebar zaten markayı taşıyor. */}
@@ -379,24 +377,27 @@ function AppSidebar({
   })).filter((group) => group.items.length > 0)
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border p-2 group-data-[collapsible=icon]:p-2">
-        {workspace && !isTechRole ? (
-          <WorkspaceSwitcher
-            currentWorkshopId={workspace.currentWorkshopId}
-            memberships={workspace.memberships}
-            canCreateBranch={workspace.canCreateBranch}
-          />
-        ) : (
-          <Link
-            href={isTechRole ? "/technician" : "/dashboard"}
-            aria-label="BakimX"
-            className="flex size-8 items-center justify-center"
-          >
-            <BrandLogo variant="icon-light" size="sm" priority alt="BakimX" className="dark:hidden" />
-            <BrandLogo variant="icon-dark" size="sm" alt="BakimX" className="hidden dark:block" />
-          </Link>
-        )}
+    <Sidebar collapsible="offcanvas">
+      <SidebarHeader className="flex-row items-center gap-1 border-b border-sidebar-border p-2">
+        <div className="min-w-0 flex-1">
+          {workspace && !isTechRole ? (
+            <WorkspaceSwitcher
+              currentWorkshopId={workspace.currentWorkshopId}
+              memberships={workspace.memberships}
+              canCreateBranch={workspace.canCreateBranch}
+            />
+          ) : (
+            <Link
+              href={isTechRole ? "/technician" : "/dashboard"}
+              aria-label="BakimX"
+              className="flex size-8 items-center justify-center"
+            >
+              <BrandLogo variant="icon-light" size="sm" priority alt="BakimX" className="dark:hidden" />
+              <BrandLogo variant="icon-dark" size="sm" alt="BakimX" className="hidden dark:block" />
+            </Link>
+          )}
+        </div>
+        <SidebarTrigger className="hidden shrink-0 lg:inline-flex" />
       </SidebarHeader>
 
       <SidebarContentSlot>
