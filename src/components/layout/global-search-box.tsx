@@ -19,12 +19,12 @@ import { resultHref, fetchGlobalSearchResults } from "@/components/layout/global
 const MIN_QUERY = 2
 
 /**
- * Üst başlık araması: plaka/müşteri yazınca birleşik arama backend'inden canlı
+ * Genel arama: plaka/müşteri yazınca birleşik arama backend'inden canlı
  * araç/müşteri sonuçları listeler; bir sonuç seçilince ilgili detay sayfasına
  * gider ve kutuyu temizler. part-search-input.tsx ile aynı Base UI Autocomplete
  * desenini izler (serbest metin + async `items`, `filter={null}`).
  */
-export function GlobalSearch({ className, autoFocus }: { className?: string; autoFocus?: boolean }) {
+export function GlobalSearch({ className, autoFocus, placeholder = "Plaka veya müşteri ara" }: { className?: string; autoFocus?: boolean; placeholder?: string }) {
   const router = useRouter()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<UnifiedResult[]>([])
@@ -76,7 +76,7 @@ export function GlobalSearch({ className, autoFocus }: { className?: string; aut
             render={
               <InputGroupInput
                 type="search"
-                placeholder="Plaka veya müşteri ara"
+                placeholder={placeholder}
                 aria-label="Plaka veya müşteri ara"
                 className="text-sm"
                 autoFocus={autoFocus}

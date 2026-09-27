@@ -178,7 +178,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       )}
       {!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null && (
-        <div className={`bg-primary/10 text-primary-strong text-xs sm:text-sm px-4 py-2 text-center ${isTechnicianRole ? "" : "lg:hidden"}`}>
+        <div className="min-h-9 bg-primary text-primary-foreground text-xs sm:text-sm px-4 py-2 text-center lg:sticky lg:top-0 lg:z-50">
           Deneme sürenizin bitmesine{" "}
           <span className="font-semibold">{plan.trialDaysLeft} iş günü</span> kaldı.{" "}
           {!isTechnicianRole && <Link href="/settings/plans" className="font-semibold underline underline-offset-2">Paketleri incele</Link>}
@@ -198,6 +198,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           showDashboardTour={showDashboardTour}
           planStatus={sidebarPlanStatus}
           workspace={workspaceSwitcher}
+          topBannerVisible={!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null}
           userIdentity={{
             firstName: user.firstName,
             lastName: user.lastName,

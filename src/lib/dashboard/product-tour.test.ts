@@ -7,8 +7,8 @@ import {
 } from "@/lib/dashboard/product-tour"
 
 describe("dashboard product tour config", () => {
-  test("desktop and mobile each expose five steps", () => {
-    expect(getDashboardTourSteps(false)).toHaveLength(5)
+  test("desktop exposes four steps and mobile exposes five", () => {
+    expect(getDashboardTourSteps(false)).toHaveLength(4)
     expect(getDashboardTourSteps(true)).toHaveLength(5)
   })
 
@@ -26,6 +26,11 @@ describe("dashboard product tour config", () => {
   test("desktop orders step targets the sidebar", () => {
     const orders = getDashboardTourSteps(false).find((s) => s.id === "orders")
     expect(orders?.targets).toEqual(["nav-orders"])
+  })
+
+  test("search targets the sidebar on desktop and its trigger on mobile", () => {
+    expect(getDashboardTourSteps(false).find((s) => s.id === "search")?.targets).toEqual(["global-search"])
+    expect(getDashboardTourSteps(true).find((s) => s.id === "search")?.targets).toEqual(["sidebar-trigger"])
   })
 
   test("first-order step falls back through welcome anchors", () => {
