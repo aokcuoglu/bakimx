@@ -357,7 +357,7 @@ export function SalesConsole({
           <Badge variant="outline" className="mb-3 gap-1.5 bg-primary/10 text-primary-strong">
             <Radar className="size-3.5" /> Canlı saha görünümü
           </Badge>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Satış operasyon merkezi</h1>
+          <h1 className="text-page-title text-foreground">Satış operasyon merkezi</h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">
             Şirketleri haritada görün, günün temaslarını öne alın ve fırsatları tek bir akıştan ilerletin.
           </p>
@@ -570,7 +570,7 @@ export function SalesConsole({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">Fırsat akışı</p>
-            <h2 className="mt-1 text-xl font-bold text-foreground">Şirket portföyü</h2>
+            <h2 className="text-page-title mt-1 text-foreground">Şirket portföyü</h2>
             <p className="text-sm text-muted-foreground">
               {isAdmin ? "Tüm danışmanların adayları." : "Size atanmış servis adayları."}
             </p>
@@ -1024,7 +1024,7 @@ function DiscountCodeSection({
         </div>
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">Teklif araçları</p>
-          <h2 id="discount-codes-title" className="mt-1 text-xl font-bold text-foreground">İndirim bütçesi</h2>
+          <h2 id="discount-codes-title" className="text-page-title mt-1 text-foreground">İndirim bütçesi</h2>
           <p className="mt-1 text-sm text-muted-foreground">Kodun yüzdesi kadar ekonomik yük, kartta görünen kaynaktan karşılanır.</p>
         </div>
       </div>

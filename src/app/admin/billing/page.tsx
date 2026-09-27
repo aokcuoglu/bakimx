@@ -13,7 +13,7 @@ export default async function AdminBillingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Faturalandırma</h1>
+        <h1 className="text-page-title text-foreground">Faturalandırma</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
           Havaleleri teyit edin, abonelikleri ve geliri görün.
         </p>

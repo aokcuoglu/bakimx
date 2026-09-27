@@ -36,7 +36,7 @@ export default async function AdminLeadsPage({
       {/* Demo Talepleri — potansiyel müşteri talepleri, en önemli bölüm */}
       <section className="space-y-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Demo Talepleri</h1>
+          <h1 className="text-page-title text-foreground">Demo Talepleri</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Public demo formundan gelen potansiyel müşteri talepleri. Yeni olanlar üstte.
           </p>

@@ -158,7 +158,7 @@ export function CookieConsent() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 flex-1"
+                  className="h-7 flex-1"
                   onClick={() => save(DEFAULT_COOKIE_PREFERENCES)}
                 >
                   Reddet
@@ -167,7 +167,7 @@ export function CookieConsent() {
                   type="button"
                   variant="navy"
                   size="sm"
-                  className="h-8 flex-1"
+                  className="h-7 flex-1"
                   onClick={() => save(ACCEPT_ALL_PREFERENCES)}
                 >
                   Kabul et

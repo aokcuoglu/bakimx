@@ -42,11 +42,11 @@ export function BillingUsagePanel({ plan, seatUsage, extraSeats, quota, canPurch
   extraSeats: number
   quota: WorkshopQuotaUsage
   canPurchase: boolean
-  onManageSeats?: () => void
+  onManageSeats: () => void
 }) {
   const seats = summarizeSeatUsage({ ...seatUsage, includedSeats: PLAN_SEATS[plan.accessTier], extraSeats })
   return (
-    <section id="kullanim" aria-label="Paket kullanımı" className="scroll-mt-24 rounded-xl border bg-card">
+    <section id="kullanim" aria-label="Paket kullanımı" className="scroll-mt-24 border-t">
       <div className="grid gap-5 p-4 sm:grid-cols-3 sm:p-5">
         <div className="flex min-w-0 flex-col">
           <UsageHeading title="Koltuklar" icon={Users} description="Aktif üyeler ve bekleyen davetler koltuk hakkınızdan düşer." />
@@ -54,7 +54,7 @@ export function BillingUsagePanel({ plan, seatUsage, extraSeats, quota, canPurch
             <p className="text-sm font-semibold tabular-nums">{seats.used.toLocaleString("tr-TR")} <span className="font-normal text-muted-foreground">/ {seats.limit.toLocaleString("tr-TR")}</span></p>
             <Meter label="Koltuk kullanımı" used={seats.used} limit={seats.limit} />
           </div>
-          <div className="mt-auto pt-5">{onManageSeats ? <Button type="button" variant="outline" size="sm" onClick={onManageSeats}>Üyeleri yönet</Button> : <Button asChild variant="outline" size="sm"><Link href="/settings/team">Üyeleri yönet</Link></Button>}</div>
+          <div className="mt-auto pt-5"><Button type="button" variant="outline" size="sm" onClick={onManageSeats}>Üyeleri yönet</Button></div>
         </div>
         <div className="flex min-w-0 flex-col">
           <UsageHeading title="Kullanımlar" icon={Camera} description="Fotoğraf hakkı her iş emri için ayrıdır. Silinmiş fotoğraflar aktif kullanıma dahil edilmez." />

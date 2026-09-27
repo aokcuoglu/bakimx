@@ -45,7 +45,7 @@ export default async function AdminAdminsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Yöneticiler</h1>
+        <h1 className="text-page-title text-foreground">Yöneticiler</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
           Konsola kimin erişebileceği burada yönetilir — deploy gerekmez. Erişimi kapatılan
           yöneticinin açık oturumu da bir sonraki istekte kesilir.

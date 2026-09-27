@@ -219,7 +219,7 @@ export function GlobalSearch({
             value={query}
             onChange={(event) => changeQuery(event.target.value)}
             onKeyDown={handleInputKeyDown}
-            className="h-10 flex-1 border-0 px-0 text-base leading-5 shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-base"
+            className="h-7 flex-1 border-0 px-0 text-sm leading-5 shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
           />
           <DialogClose asChild>
             <Button type="button" variant="ghost" size="icon-sm" aria-label="Aramayı kapat">
@@ -246,7 +246,7 @@ export function GlobalSearch({
                     variant="ghost"
                     onMouseEnter={() => setActiveIndex(index)}
                     onClick={() => navigate(item)}
-                    className={cn("h-auto min-h-11 w-full justify-start gap-3 rounded-lg px-2 py-2 text-left font-normal", index === selectedIndex && "bg-muted")}
+                    className={cn("h-auto min-h-9 w-full justify-start gap-3 rounded-lg px-2 py-2 text-left font-normal", index === selectedIndex && "bg-muted")}
                   >
                     <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
                       <Icon className="size-4" aria-hidden />

@@ -1,7 +1,7 @@
 import { Prisma, type UserRole } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import type { AuthUser } from "@/lib/auth"
-import { ROLE_RANK, roleCan, type Permission } from "@/lib/roles"
+import { ROLE_RANK, actorCan, roleCan, type Permission } from "@/lib/roles"
 import { getEffectiveSeatLimit, getPlanState, seatLimitMessage, type PlanTier } from "@/lib/plan"
 
 /**
@@ -33,6 +33,7 @@ export {
   ASSIGNABLE_ROLES,
   PERMISSIONS,
   ROLE_PERMISSIONS,
+  actorCan,
   roleCan,
   rolesUpTo,
   type Permission,
@@ -48,7 +49,7 @@ export function canManageBilling(role: UserRole): boolean {
 
 /** İzin yoksa fırlatır. Server action'ların TEK kapı çağrısı budur (#183). */
 export function assertCan(user: AuthUser, permission: Permission): void {
-  if (!roleCan(user.role, permission)) {
+  if (!actorCan(user, permission)) {
     throw new PermissionError(permission)
   }
 }
@@ -74,7 +75,7 @@ export function permissionError(
   user: AuthUser,
   permission: Permission
 ): { error: string } | null {
-  return roleCan(user.role, permission) ? null : { error: "Bu işlem için yetkiniz yok." }
+  return actorCan(user, permission) ? null : { error: "Bu işlem için yetkiniz yok." }
 }
 
 /** Throws if the user may not manage the team. */

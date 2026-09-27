@@ -138,13 +138,10 @@ export function AddLocalMemberForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-4 space-y-3 rounded-lg border border-border bg-card p-4"
+      className="space-y-3"
     >
       <div>
-        <h4 className="text-sm font-semibold text-foreground">
-          {technicianId ? "Personelin giriş hesabını tamamla" : "E-postasız kullanıcı ekle"}
-        </h4>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="text-xs text-muted-foreground">
           E-posta adresi olmayan usta ve çıraklar için. Sistem tek seferlik bir geçici şifre üretir.
         </p>
       </div>

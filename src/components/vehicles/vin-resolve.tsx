@@ -215,7 +215,7 @@ export function VinCandidateList({
             variant="outline"
             onClick={() => onSelect(c)}
             className={cn(
-              "h-auto min-h-8 w-full justify-start gap-2 px-3 py-2 text-left whitespace-normal",
+              "h-auto min-h-7 w-full justify-start gap-2 px-3 py-2 text-left whitespace-normal",
               selected
                 ? "border-primary bg-primary/5 text-foreground"
                 : "border-transparent bg-background hover:border-border"

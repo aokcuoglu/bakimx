@@ -1,5 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
-import { roleCan } from "@/lib/roles"
+import { actorCan } from "@/lib/roles"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
@@ -24,8 +24,8 @@ export default async function OrderDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  // Liste ekranındaki "Düzenle" aksiyonu buraya ?edit=1 ile gelir; sekme
-  // değişince URL ?tab=... ile yeniden yazıldığı için parametre kendiliğinden düşer.
+  // Liste ekranındaki "Düzenle" aksiyonu buraya ?edit=1 ile gelir. Sekme
+  // değişimi sunucuya uğramaz; ?edit= istemcide adresten düşer.
   searchParams: Promise<{ edit?: string }>
 }) {
   const { id } = await params
@@ -379,8 +379,8 @@ export default async function OrderDetailPage({
         laborCatalog={laborCatalog}
         enabledFeatures={enabledFeatures}
         currentTier={plan?.tier ?? "lite"}
-        canReopen={roleCan(user.role, "order.reopen")}
-        canEditInfo={roleCan(user.role, "order.edit")}
+        canReopen={actorCan(user, "order.reopen")}
+        canEditInfo={actorCan(user, "order.edit")}
       />
     </AppShell>
   )

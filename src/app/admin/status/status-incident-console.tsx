@@ -54,7 +54,7 @@ export function StatusIncidentConsole({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Durum Sayfası</h1>
+          <h1 className="text-page-title text-foreground">Durum Sayfası</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Herkese açık{" "}
             <Link href="/status" target="_blank" className="inline-flex items-center gap-1 text-primary hover:underline">

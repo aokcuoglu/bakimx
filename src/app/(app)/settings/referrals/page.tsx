@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { buildReferralRegistrationUrl, isValidReferralCode } from "@/lib/referral-code"
 import { getPlanState } from "@/lib/plan"
-import { roleCan } from "@/lib/roles"
+import { actorCan } from "@/lib/roles"
 import { LOGOUT_REASON_PARAM, SESSION_INVALID_REASON } from "@/lib/session-recovery"
 import { getOrCreateWorkshopReferralCode } from "@/lib/workshop-referral"
 import styles from "./referrals.module.css"
@@ -17,7 +17,7 @@ export default async function ReferralsSettingsPage() {
   if (!user || !user.isActive) {
     redirect(`/login?${LOGOUT_REASON_PARAM}=${SESSION_INVALID_REASON}`)
   }
-  if (!roleCan(user.role, "settings.manage")) redirect("/dashboard")
+  if (!actorCan(user, "settings.manage")) redirect("/dashboard")
 
   const workshop = await prisma.workshop.findUnique({ where: { id: user.workshopId } })
   const referralCode = workshop?.referralCode || (

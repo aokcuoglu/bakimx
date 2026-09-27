@@ -44,6 +44,7 @@ const CONFIRM_FLAG = "--confirm"
 export const TENANT_TABLES = [
   "Organization",
   "Workshop",
+  "WorkshopTeam",
   "WorkshopMembership",
   "WorkshopSettings",
   "User",

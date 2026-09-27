@@ -41,6 +41,17 @@ test("telefon tıklanabilir kalır", () => {
  * `order.edit` yetkisi olan ve kilitli olmayan emirde görünür. Sunucu kapısı
  * `updateIntakeDetailsAction` içinde; buradaki yalnız görünürlük.
  */
+test("sekme geçişi sunucu navigasyonu tetiklemez", () => {
+  expect(SOURCE).toContain("window.history.replaceState")
+  expect(SOURCE).not.toContain("router.replace(`/orders/${order.id}?tab=")
+  expect(SOURCE).toContain("parseOrderTab")
+})
+
+test("kayıt detayı solda, sekmeler sağda durur", () => {
+  expect(SOURCE).toContain("OrderRecordRail")
+  expect(SOURCE).toContain("lg:grid-cols-[280px_minmax(0,1fr)]")
+})
+
 test("düzenleme aksiyonu order.edit yetkisine bağlıdır", () => {
   expect(SOURCE).toContain("const canOpenInfoEditor = canEditInfo && !orderLocked")
   // Başlıktaki "Düzenle" ve boş durumdaki "Bilgi ekle" aynı kapıdan geçer.
@@ -50,5 +61,5 @@ test("düzenleme aksiyonu order.edit yetkisine bağlıdır", () => {
   expect(SOURCE).toContain("editInitially && !orderLocked && canEditInfo")
   // Yetki sunucudan gelir; istemci varsayılanı kapalıdır.
   expect(SOURCE).toContain("canEditInfo = false")
-  expect(PAGE).toContain('canEditInfo={roleCan(user.role, "order.edit")}')
+  expect(PAGE).toContain('canEditInfo={actorCan(user, "order.edit")}')
 })

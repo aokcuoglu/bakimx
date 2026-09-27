@@ -142,15 +142,10 @@ export default async function OrdersPage({
       }
     >
       <div className="space-y-5 sm:space-y-6">
-        <div className="hidden sm:flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">İş Emirleri</span>
-        </div>
+
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">İş Emirleri</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Servis operasyonlarını yönetin</p>
           </div>
           <Button variant="foreground" size="default" className="hidden sm:inline-flex" asChild>

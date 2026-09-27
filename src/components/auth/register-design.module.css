@@ -33,10 +33,15 @@
 .form :global([data-slot="input-group"]),
 .form :global([data-slot="combobox-input"]),
 .form :global([data-slot="combobox-trigger"]) {
-  min-height: 40px;
-  border-radius: 6px;
+  min-height: 28px;
+  border-radius: 8px;
   background: var(--card);
   box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 3%, transparent);
+}
+
+.form :global([data-slot="select-trigger"]) {
+  min-height: 32px;
+  border-radius: 9px;
 }
 
 .form :global([data-slot="form-label"]) {

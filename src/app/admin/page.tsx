@@ -36,7 +36,7 @@ export default async function AdminHomePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Genel Bakış</h1>
+        <h1 className="text-page-title text-foreground">Genel Bakış</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Operasyonel durum ve dikkat gerektirenler.</p>
       </div>
 

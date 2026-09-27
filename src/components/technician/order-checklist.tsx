@@ -467,7 +467,7 @@ function ChecklistRow({
         aria-pressed={isDone}
         onClick={() => state.toggle(item)}
         className={cn(
-          "h-auto min-h-8 flex-1 items-start justify-start gap-2.5 px-2 py-1.5 text-left whitespace-normal",
+          "h-auto min-h-7 flex-1 items-start justify-start gap-2.5 px-2 py-1.5 text-left whitespace-normal",
           // Sunucu yanıtı beklenirken satır kilitli ama SOLUK DEĞİL: iyimser tik
           // zaten göründüğü için soluklaştırmak "işlem geri alındı" gibi okunur.
           "disabled:cursor-default disabled:opacity-100 disabled:hover:bg-transparent"

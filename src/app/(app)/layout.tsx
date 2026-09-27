@@ -103,6 +103,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             planTier: workshop.planTier,
             logoUrl: null,
             role: user.role,
+            teamPermissions: user.teamPermissions,
           },
         ]
   const workspaceSwitcher = {
@@ -178,7 +179,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       )}
       {!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null && (
-        <div className="min-h-9 bg-primary text-primary-foreground text-sm leading-5 font-medium tracking-[-0.005em] px-4 py-2 text-center lg:sticky lg:top-0 lg:z-50">
+        <div className="flex h-8 items-center justify-center bg-primary px-4 text-center text-sm font-medium leading-5 tracking-[-0.07px] text-primary-foreground lg:sticky lg:top-0 lg:z-50">
           Deneme sürenizin bitmesine{" "}
           <span className="font-semibold">{plan.trialDaysLeft} iş günü</span> kaldı.{" "}
           {!isTechnicianRole && <Link href="/settings/plans" className="font-semibold underline underline-offset-2">Paketleri incele</Link>}

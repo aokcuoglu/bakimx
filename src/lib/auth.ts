@@ -1,8 +1,9 @@
+import { cache } from "react"
 import { prisma } from "@/lib/db"
 import type { UserRole, WorkshopKind } from "@prisma/client"
 import { assertFeature, assertWriteAccess, type GatedFeature } from "@/lib/plan"
 import { isImpersonationRevoked } from "@/lib/impersonation"
-import type { Permission } from "@/lib/roles"
+import { parsePermissions, type Permission } from "@/lib/roles"
 import { isCustomerWorkshopKind } from "@/lib/workshop-kind"
 
 export interface AuthUser {
@@ -26,6 +27,11 @@ export interface AuthUser {
   dashboardTourCompletedAt: Date | null
   /** BAK-39: Teknicyen kaydıyla eşleştirilmiş ise bu id'dir, yoksa null. */
   technicianId: string | null
+  /**
+   * Etkin atölyedeki ekibin izinleri. null = ekip yok, statik rol matrisi.
+   * Sahip için dolu olsa da `actorCan` tam yetkiyi korur.
+   */
+  teamPermissions?: Permission[] | null
   /** Set when this is a founder impersonation context (the real admin's id). */
   impersonatorAdminId?: string
   /** True when the impersonation context forbids tenant-data writes. */
@@ -45,7 +51,23 @@ const USER_SELECT = {
   dashboardTourCompletedAt: true,
   technicianId: true,
   workshop: { select: { kind: true } },
+  team: { select: { workshopId: true, permissions: true } },
 } as const
+
+function toAuthUser(
+  row: {
+    workshop: { kind: WorkshopKind }
+    team: { workshopId: string; permissions: string[] } | null
+    [key: string]: unknown
+  },
+  workshopKind: WorkshopKind,
+  effectiveWorkshopId: string,
+): AuthUser {
+  const { workshop: _workshop, team, ...identity } = row
+  const teamPermissions =
+    team && team.workshopId === effectiveWorkshopId ? parsePermissions(team.permissions) : null
+  return { ...(identity as Omit<AuthUser, "workshopKind" | "teamPermissions">), workshopKind, teamPermissions }
+}
 
 /**
  * Oturum çerezini + impersonation katmanını okur.
@@ -74,7 +96,7 @@ async function readSessionState() {
  * kesinti, o an sitede olan herkesi çıkışa yolluyordu. Artık DB hatası yukarı
  * fırlar ve hata sınırı "tekrar deneyin" ekranı gösterir.
  */
-export async function getCurrentUser(): Promise<AuthUser | null> {
+export const getCurrentUser = cache(async function getCurrentUser(): Promise<AuthUser | null> {
   const state = await readSessionState()
   if (!state) return null
   const { session, overlay } = state
@@ -93,10 +115,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       select: USER_SELECT,
     })
     if (target) {
-      const { workshop, ...identity } = target
       return {
-        ...identity,
-        workshopKind: workshop.kind,
+        ...toAuthUser(target, target.workshop.kind, target.workshopId),
         impersonatorAdminId: overlay.adminUserId,
         impersonationReadOnly: overlay.readOnly,
       }
@@ -113,11 +133,11 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   if (!user) return null
 
-  const { workshop, ...identity } = user
   const sessionWorkshopId = session.workshopId
 
   // Prefer session workshop when it differs from the User mirror (multi-branch switch).
   // Membership is required; stale session workshopIds fall back to the mirrored home.
+  // Ekip, kullanıcının ev atölyesine bağlıdır; başka şubede statik üyelik rolü geçerli kalır.
   if (sessionWorkshopId && sessionWorkshopId !== user.workshopId) {
     const membership = await prisma.workshopMembership.findFirst({
       where: {
@@ -132,17 +152,19 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       },
     })
     if (membership) {
+      const base = toAuthUser(user, membership.workshop.kind, user.workshopId)
       return {
-        ...identity,
+        ...base,
         workshopId: sessionWorkshopId,
         role: membership.role,
         workshopKind: membership.workshop.kind,
+        teamPermissions: null,
       }
     }
   }
 
-  return { ...identity, workshopKind: workshop.kind }
-}
+  return toAuthUser(user, user.workshop.kind, user.workshopId)
+})
 
 /** Active identity gate shared by tenant and internal account/security actions. */
 export async function requireIdentity(): Promise<AuthUser> {

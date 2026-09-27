@@ -27,7 +27,7 @@ export function DemoRequestButton({
         <Button
           variant="outline"
           size="xl"
-          className="h-12 px-6"
+          className="h-7 px-2"
           onClick={() => {
             if (onClick) onClick();
             else

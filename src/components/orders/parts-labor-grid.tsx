@@ -269,10 +269,10 @@ export function PartsLaborEditor({
       {!locked && (
         <Tabs defaultValue="parca">
           <TabsList variant="line" className="w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px sm:gap-2">
-            <TabsTrigger value="parca" className="px-3 py-2 shrink-0">
+            <TabsTrigger value="parca" className="shrink-0">
               <PackagePlus className="size-4" /> Parça
             </TabsTrigger>
-            <TabsTrigger value="iscilik" className="px-3 py-2 shrink-0">
+            <TabsTrigger value="iscilik" className="shrink-0">
               <Wrench className="size-4" /> İşçilik
             </TabsTrigger>
           </TabsList>
@@ -710,7 +710,7 @@ function LaborAutocompleteField({ draft, onCell, disabled, catalog }: {
             placeholder="İşçilik ara veya kendi kalemini yaz"
             disabled={disabled}
             title={draft.name || undefined}
-            className="h-8 rounded-lg bg-background text-sm"
+            className="h-7 rounded-lg bg-background text-sm"
           />
         }
       />
@@ -800,7 +800,7 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog }: {
             placeholder="Dış işçilik adı (ör. dış atölye kaporta)"
             title={draft.name || undefined}
             disabled={disabled}
-            className="h-8 rounded-lg bg-background text-sm"
+            className="h-7 rounded-lg bg-background text-sm"
           />
         ) : (
           <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} catalog={catalog} />
@@ -815,7 +815,7 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog }: {
             gereksiz. Tutar NET yazılır, tick yalnız üstüne ne bineceğini söyler. */}
         {vat.perLine && (
           <Field label="KDV">
-            <div className="flex h-8 items-center">
+            <div className="flex h-7 items-center">
               <VatCell row={draft} ed={ed} onCell={onCell} />
             </div>
           </Field>
@@ -1401,7 +1401,7 @@ function PartNameField({ row, onCell, oneLine }: { row: Row; onCell: OnCell; one
         placeholder="Parça tanımı"
         aria-label="Parça tanımı"
         title={hint}
-        className="h-8 min-w-0 flex-1 text-sm font-medium"
+        className="h-7 min-w-0 flex-1 text-sm font-medium"
       />
     </div>
   )
@@ -1442,7 +1442,7 @@ function PartField({ row, ed, onCell, oneLine }: {
 
 function QtyStepper({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
   return (
-    <div data-slot="qty-stepper" className="inline-flex h-8 items-center rounded-lg border border-input bg-background transition-colors">
+    <div data-slot="qty-stepper" className="inline-flex h-7 items-center rounded-lg border border-input bg-background transition-colors">
       <Button type="button" variant="ghost" size="icon-xs" className="rounded-r-none" aria-label="Azalt"
         disabled={!editable || row.quantity <= 1}
         onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })}>
@@ -1484,7 +1484,7 @@ function QuantityField({ row, editable, onCell }: { row: Row; editable: boolean;
       inputMode="decimal"
       value={draft}
       aria-label={`${row.name || "Satır"} miktarı`}
-      className="h-8 w-24 text-center text-sm tabular-nums"
+      className="h-7 w-24 text-center text-sm tabular-nums"
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur() }}
@@ -1500,7 +1500,7 @@ function UnitField({ row, editable, onCell }: { row: Row; editable: boolean; onC
     <OrderItemUnitCombobox
       value={unit}
       ariaLabel={`${row.name || "Parça"} birimi`}
-      className="h-8 w-24"
+      className="h-7 w-24"
       isOptionDisabled={(candidate) =>
         (row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}
       onValueChange={(next) => {
@@ -1561,7 +1561,7 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
       autoComplete="off"
       placeholder="₺0,00"
       aria-label="Birim fiyat"
-      className={cn("h-8 px-2.5 text-right text-sm tabular-nums", tone, wide ? "w-32" : "w-28")}
+      className={cn("h-7 px-2.5 text-right text-sm tabular-nums", tone, wide ? "w-32" : "w-28")}
       value={ed.editingPrice ? ed.priceDraft : row.unitPrice != null ? formatTRY(row.unitPrice) : ""}
       onFocus={(e) => { if (!ed.editingPrice) ed.startPrice(); e.currentTarget.select() }}
       onChange={(e) => { if (!ed.editingPrice) ed.startPrice(); ed.setPriceDraft(e.target.value) }}
@@ -2165,7 +2165,7 @@ const META_FIELD_DESKTOP = cn(
 // bu yüzden kart içinde hafif gri çip görünümü korunur.
 const META_FIELD_MOBILE = cn(
   META_FIELD_BASE,
-  "[&_[data-slot=input-group]]:!h-8",
+  "[&_[data-slot=input-group]]:!h-7",
   "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-muted/60",
   "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background",
 )
@@ -2394,7 +2394,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
           </div>
         </div>
 
-        <div className="mt-2 flex min-h-8 items-center justify-between gap-2 border-t border-border/60 pt-2">
+        <div className="mt-2 flex min-h-7 items-center justify-between gap-2 border-t border-border/60 pt-2">
           {vatPerLine ? (
             <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <VatCell row={row} ed={ed} onCell={onCell} />

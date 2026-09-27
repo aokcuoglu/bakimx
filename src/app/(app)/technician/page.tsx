@@ -53,7 +53,7 @@ export default async function TechnicianPage({
       <AppShell workshopName={workshop?.name} pageTitle="Teknisyen Paneli">
         <div className="space-y-5 sm:space-y-6">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Teknisyen Paneli</h2>
+            <h2 className="text-page-title text-foreground">Teknisyen Paneli</h2>
             <p className="text-sm text-muted-foreground mt-0.5">İş atamalarınızı ve görevlerinizi yönetin</p>
           </div>
           <Card>

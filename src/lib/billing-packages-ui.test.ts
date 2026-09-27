@@ -15,15 +15,15 @@ test("paket karşılaştırması masaüstü semantik tablo ve mobil shadcn Tabs 
   expect(source).not.toContain("framer-motion")
 })
 
-test("uygulama içi paket CTA yetkisi billing.manage rolünden gelir", () => {
+test("uygulama içi paket CTA etkin billing.manage izninden gelir", () => {
   const page = read("src/app/(app)/settings/plans/page.tsx")
   const context = read("src/lib/billing/account-context.ts")
   const purchasePage = read("src/app/(app)/billing/quota/purchase/page.tsx")
   const comparison = read("src/components/billing/plan-packages.tsx")
-  expect(context).toContain("canManageBilling(user.role)")
+  expect(context).toContain('actorCan(user, "billing.manage")')
   expect(context).toContain('isTechnicianRestrictedRole(user.role)')
   expect(page).toContain("canPurchase={canPurchase}")
-  expect(purchasePage).toContain("canManageBilling(user.role)")
+  expect(purchasePage).toContain('actorCan(user, "billing.manage")')
   expect(comparison).toContain("Paket değişikliği için yöneticinizle görüşün.")
   expect(purchasePage).toContain("Paket değişikliği için yöneticinizle görüşün.")
 })

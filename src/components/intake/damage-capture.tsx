@@ -157,7 +157,7 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
       {loaded && <>
         {!readOnly && <div className="flex flex-wrap items-center gap-2">
           <Select value={bodyType} onValueChange={v=>void updateInspection({bodyType:v as BodyType})} disabled={metadataBusy}><SelectTrigger aria-label="Araç şeması" className="w-56"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(BODY_TYPES).map(([key,label])=><SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select>
-          <Button type="button" variant="outline" className="h-auto min-h-9 whitespace-normal text-left" disabled={metadataBusy || marks.length>0} onClick={()=>void updateInspection({inspectionStatus:"no_visible_damage"})}>Kontrol edildi, görünür hasar gözlenmedi</Button>
+          <Button type="button" variant="outline" className="h-auto min-h-7 whitespace-normal text-left" disabled={metadataBusy || marks.length>0} onClick={()=>void updateInspection({inspectionStatus:"no_visible_damage"})}>Kontrol edildi, görünür hasar gözlenmedi</Button>
         </div>}
         <VehicleDamageMap damageMarks={marks} photos={photos} bodyType={bodyType} inspectionStatus={inspectionStatus} inspectedAt={inspectedAt} onZoneClick={readOnly ? undefined : chooseZone} onEditMark={readOnly ? undefined : editMark} onRemoveMark={readOnly ? undefined : setRemoveId} vehicle={vehicle} />
       </>}

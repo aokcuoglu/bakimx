@@ -109,7 +109,7 @@ export function WizardStepper({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-8 justify-start px-1 text-left font-medium text-muted-foreground hover:text-foreground"
+                  className="h-7 justify-start px-1 text-left font-medium text-muted-foreground hover:text-foreground"
                   onClick={() => onStepClick(s.id)}
                 >
                   {s.label}

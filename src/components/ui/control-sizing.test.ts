@@ -4,8 +4,7 @@ import { readFileSync } from "node:fs"
 const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8")
 
 /**
- * Input/Select upstream nova ölçeğini korur. #647 ile Button için onaylanan
- * Clutch ölçüleri DESIGN.md'de tanımlanır; yoğun ve ikon varyantları 32px kalır.
+ * Attio ölçüleri: standart düğme ve girdi 28px, select 32px, kompakt 20px.
  */
 
 /** `size: {` bloğunun gövdesini kaba ama yeterli bir şekilde çıkarır. */
@@ -19,17 +18,19 @@ function buttonSizeBlock() {
 }
 
 describe("kontrol ölçeği — upstream shadcn nova", () => {
-  test("Button Clutch ölçülerini ve yoğun kontrol hit alanlarını korur", () => {
+  test("Button Attio ölçülerini korur", () => {
     const block = buttonSizeBlock()
-    expect(block).toContain('default: "h-[38px] gap-1.5 px-3.5"')
-    expect(block).toContain('sm: "h-[38px] gap-1.5 px-3.5 ')
-    expect(block).toContain('lg: "h-11 gap-1.5 px-4"')
-    expect(block).toContain('xl: "h-12 gap-2 px-6"')
-    expect(block).toContain('xs: "h-8 ')
-    expect(block).toContain('compact: "h-8 ')
-    for (const name of ["icon", "icon-xs", "icon-sm", "icon-lg", "icon-compact"]) {
-      expect(block).toMatch(new RegExp(`"?${name}"?: "size-8`))
-    }
+    expect(block).toContain('default: "h-7 gap-1 py-1 pr-2 pl-1.5"')
+    expect(block).toContain('sm: "h-7 gap-1 py-1 pr-2 pl-1.5"')
+    expect(block).toContain('lg: "h-7 gap-1 py-1 pr-2 pl-1.5"')
+    expect(block).toContain('xl: "h-7 gap-1 py-1 pr-2 pl-1.5"')
+    expect(block).toContain('xs: "h-5 ')
+    expect(block).toContain('compact: "h-5 ')
+    expect(block).toContain('icon: "size-7"')
+    expect(block).toContain('"icon-xs": "size-5 ')
+    expect(block).toContain('"icon-sm": "size-7"')
+    expect(block).toContain('"icon-lg": "size-7"')
+    expect(block).toContain('"icon-compact": "size-5 ')
     expect(block).not.toMatch(/md:(?:h|size|min-h)-/)
     expect(block).not.toContain("has-data-[icon=")
   })
@@ -39,16 +40,16 @@ describe("kontrol ölçeği — upstream shadcn nova", () => {
     const select = read("./select.tsx")
     const inputGroup = read("./input-group.tsx")
 
-    expect(input).toContain('"h-8 w-full min-w-0')
+    expect(input).toContain('"h-7 w-full min-w-0')
     expect(input).not.toMatch(/md:(h|min-h)-/)
 
     expect(select).toContain('size?: "sm" | "default" | "compact"')
     expect(select).toContain("data-[size=default]:h-8")
     expect(select).toContain("data-[size=sm]:h-7")
-    expect(select).toContain("data-[size=compact]:h-7")
+    expect(select).toContain("data-[size=compact]:h-5")
     expect(select).not.toMatch(/md:(h|min-h)-/)
 
-    expect(inputGroup).toContain("relative flex h-8 w-full min-w-0")
+    expect(inputGroup).toContain("relative flex h-7 w-full min-w-0")
     expect(inputGroup).not.toMatch(/md:(h|min-h)-/)
   })
 

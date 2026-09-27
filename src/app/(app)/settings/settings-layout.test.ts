@@ -6,6 +6,7 @@ import {
   SETTINGS_NAV_GROUPS,
   SETTINGS_TAB_REDIRECTS,
   WORKSPACE_SETTINGS_ITEMS,
+  matchesSettingsNavItem,
 } from "@/lib/settings-nav"
 
 /**
@@ -29,7 +30,7 @@ describe("Ayarlar hub yönlendirmesi", () => {
 
   test("eski ?tab= değerleri path'lere map edilir", () => {
     expect(SETTINGS_TAB_REDIRECTS.profile).toBe("/settings/general")
-    expect(SETTINGS_TAB_REDIRECTS.team).toBe("/settings/team")
+    expect(SETTINGS_TAB_REDIRECTS.team).toBe("/settings/members-and-teams/members")
     expect(SETTINGS_TAB_REDIRECTS.branding).toBe("/settings/branding")
   })
 })
@@ -54,8 +55,16 @@ describe("Ayarlar nav IA", () => {
   test("çalışma alanı genel ve ekip path'leri mevcut", () => {
     const hrefs = WORKSPACE_SETTINGS_ITEMS.map((i) => i.href)
     expect(hrefs).toContain("/settings/general")
-    expect(hrefs).toContain("/settings/team")
+    expect(hrefs).toContain("/settings/members-and-teams/members")
     expect(hrefs).toContain("/settings/security")
+  })
+
+  test("üyeler ve ekipler aynı ayar menüsü kaydıyla eşleşir", () => {
+    const item = WORKSPACE_SETTINGS_ITEMS.find((entry) => entry.href === "/settings/members-and-teams/members")!
+    expect(matchesSettingsNavItem(item, "/settings/members-and-teams/members")).toBe(true)
+    expect(matchesSettingsNavItem(item, "/settings/members-and-teams/teams")).toBe(true)
+    expect(matchesSettingsNavItem(item, "/settings/members-and-teams/teams/team-1/members")).toBe(true)
+    expect(matchesSettingsNavItem(item, "/settings/members-and-teams-other")).toBe(false)
   })
 
   test("nav kaynağı settings-nav.ts'de tanımlı", () => {

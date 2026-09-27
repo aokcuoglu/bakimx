@@ -21,6 +21,7 @@ export type SettingsNavItem = {
   href: string
   label: string
   icon: LucideIcon
+  matchPrefix?: string
   feature?: GatedFeature
   /** When true, only owners/managers see the item in nav (content still gated server-side). */
   manageOnly?: boolean
@@ -45,7 +46,7 @@ export const WORKSPACE_SETTINGS_ITEMS: SettingsNavItem[] = [
   { href: "/settings/working-hours", label: "Çalışma saatleri", icon: Clock },
   { href: "/settings/appointment-rules", label: "Randevu", icon: CalendarClock, feature: "appointments" },
   { href: "/settings/pdf-templates", label: "PDF", icon: FileText },
-  { href: "/settings/team", label: "Ekip", icon: Users, feature: "team" },
+  { href: "/settings/members-and-teams/members", matchPrefix: "/settings/members-and-teams", label: "Üyeler ve ekipler", icon: Users, feature: "team" },
   { href: "/settings/plans", label: "Paketler", icon: Package },
   { href: "/settings/billing", label: "Faturalandırma", icon: CreditCard },
   { href: "/settings/notifications", label: "Bildirimler", icon: Bell, feature: "automatedReminders" },
@@ -66,12 +67,17 @@ export const SETTINGS_TAB_REDIRECTS: Record<string, string> = {
   "working-hours": "/settings/working-hours",
   "appointment-rules": "/settings/appointment-rules",
   "pdf-templates": "/settings/pdf-templates",
-  team: "/settings/team",
+  team: "/settings/members-and-teams/members",
   security: "/settings/security",
 }
 
 export function isSettingsPath(pathname: string): boolean {
   return pathname === "/settings" || pathname.startsWith("/settings/")
+}
+
+export function matchesSettingsNavItem(item: SettingsNavItem, pathname: string): boolean {
+  return pathname === item.href || pathname.startsWith(`${item.href}/`) ||
+    Boolean(item.matchPrefix && (pathname === item.matchPrefix || pathname.startsWith(`${item.matchPrefix}/`)))
 }
 
 /** Paths technicians may open under /settings (deny-by-default elsewhere). */

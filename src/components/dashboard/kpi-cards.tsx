@@ -1,4 +1,4 @@
-import Link from "next/link"
+import { HighlightCard } from "@/components/shared/highlight-card"
 import type { DashboardStats } from "@/lib/dashboard/queries"
 import { Wrench, Clock, MessageCircle, Camera, AlertTriangle, Calendar } from "lucide-react"
 
@@ -19,17 +19,13 @@ function KpiCard({ label, value, icon: Icon, href, tone, subtitle }: KpiCardProp
       : "text-muted-foreground"
 
   return (
-    <Link
+    <HighlightCard
+      label={label}
+      value={value}
       href={href}
-      className="group min-w-0 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-5"
-    >
-      <div className="mb-5 flex items-start justify-between gap-2">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <Icon className={`size-4 shrink-0 ${iconTone}`} aria-hidden />
-      </div>
-      <p className="text-2xl font-semibold tracking-tight tabular-nums text-foreground sm:text-[28px]">{value}</p>
-      {subtitle && <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
-    </Link>
+      accessory={<Icon className={iconTone} aria-hidden />}
+      description={subtitle}
+    />
   )
 }
 
@@ -43,7 +39,7 @@ export function KpiCards({
   showPhotoChecklist: boolean
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
       <KpiCard
         label="Aktif İş Emri"
         value={stats.activeOrders}

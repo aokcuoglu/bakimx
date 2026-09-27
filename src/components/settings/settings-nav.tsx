@@ -19,18 +19,21 @@ import type { GatedFeature } from "@/lib/plan"
 import {
   ACCOUNT_SETTINGS_ITEMS,
   SETTINGS_NAV_GROUPS,
+  matchesSettingsNavItem,
   type SettingsNavItem,
 } from "@/lib/settings-nav"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
-import { roleCan } from "@/lib/roles"
+import { actorCan, type Permission } from "@/lib/roles"
 import type { UserRole } from "@prisma/client"
 
 export function SettingsNav({
   enabledFeatures = [],
   role,
+  teamPermissions,
 }: {
   enabledFeatures?: GatedFeature[]
   role?: UserRole
+  teamPermissions?: Permission[] | null
 }) {
   const pathname = usePathname()
   const { isMobile, setOpenMobile } = useSidebar()
@@ -45,7 +48,7 @@ export function SettingsNav({
     .map((group) => ({
       ...group,
       items: group.items.filter((item) =>
-        (!item.manageOnly || (role && roleCan(role, "settings.manage"))) &&
+        (!item.manageOnly || (role && actorCan({ role, teamPermissions }, "settings.manage"))) &&
         item.label.toLocaleLowerCase("tr").includes(normalizedQuery)),
     }))
     .filter((group) => group.items.length > 0)
@@ -56,22 +59,22 @@ export function SettingsNav({
 
   return (
     <>
-      <div className="relative border-b border-sidebar-border px-3 py-3">
-        <Search className="pointer-events-none absolute left-5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+      <div className="relative border-b border-sidebar-border px-3 py-2.5">
+        <Search className="pointer-events-none absolute left-[18px] top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <SidebarInput
           aria-label="Ayarlarda ara"
           placeholder="Ayarlarda ara..."
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          className="pl-8 text-sm leading-5 tracking-[-0.005em]"
+          className="pl-7 text-sm font-medium leading-5 tracking-[-0.005em]"
         />
       </div>
 
-      {visibleGroups.map((group) => (
-        <SidebarGroup key={group.label}>
+      {visibleGroups.map((group, index) => (
+        <SidebarGroup key={group.label} className={index === 0 ? "px-2 py-0 pt-px" : "mt-3 px-2 py-0"}>
           <SidebarGroupLabel className="text-xs leading-4 tracking-normal">{group.label}</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-px pt-px">
               {group.items.map((item) => (
                 <SettingsNavLink
                   key={item.href}
@@ -104,7 +107,7 @@ function SettingsNavLink({
   onNavigate: () => void
 }) {
   const Icon = item.icon
-  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+  const isActive = matchesSettingsNavItem(item, pathname)
   const isLocked = Boolean(item.feature && !enabledFeatures.includes(item.feature))
 
   return (
@@ -113,7 +116,7 @@ function SettingsNavLink({
         asChild
         isActive={isActive}
         tooltip={isLocked ? `${item.label} · Profesyonel` : item.label}
-        className="h-9 text-sm leading-5 font-medium tracking-[-0.005em]"
+        className="h-7 gap-1.5 rounded-[9px] px-2 py-0 text-sm font-medium leading-5 tracking-[-0.005em]"
       >
         <Link href={item.href} onClick={onNavigate}>
           <Icon className="size-4" />

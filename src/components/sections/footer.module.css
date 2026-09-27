@@ -142,14 +142,14 @@
   width: auto;
   min-width: 131px;
   flex-shrink: 0;
-  height: 44px;
-  min-height: 44px;
-  padding: 0 14px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 8px;
   gap: 8px;
   border: 1px solid var(--muted-foreground);
   background: var(--card);
   box-shadow: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   line-height: 20px;
   transition: background-color 150ms ease, border-color 150ms ease;

@@ -45,7 +45,7 @@ export function OrderItemUnitCombobox({
           aria-label={ariaLabel}
           aria-expanded={open}
           className={cn(
-            "h-8 justify-between gap-1.5 rounded-lg bg-transparent px-2.5 text-sm font-normal whitespace-nowrap hover:bg-transparent dark:bg-input/30 dark:hover:bg-input/50",
+            "h-7 justify-between gap-1.5 rounded-lg bg-transparent px-2.5 text-sm font-normal whitespace-nowrap hover:bg-transparent dark:bg-input/30 dark:hover:bg-input/50",
             className,
           )}
         >
@@ -61,7 +61,7 @@ export function OrderItemUnitCombobox({
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Birim ara..."
             aria-label="Birim ara"
-            className="h-8 pl-8"
+            className="h-7 pl-8"
             autoFocus
           />
         </div>

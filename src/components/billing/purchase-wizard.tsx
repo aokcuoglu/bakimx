@@ -520,7 +520,7 @@ export function PurchaseWizard({
                                 aria-pressed={selected}
                                 variant="outline"
                                 className={cn(
-                                  "h-auto min-h-8 justify-start gap-2 rounded-xl p-3 text-left whitespace-normal",
+                                  "h-auto min-h-7 justify-start gap-2 rounded-xl p-3 text-left whitespace-normal",
                                   selected
                                     ? "border-primary bg-primary/5 ring-1 ring-primary/40 text-foreground"
                                     : "border-border text-muted-foreground hover:bg-muted/60 hover:bg-muted/30",

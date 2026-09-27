@@ -467,7 +467,7 @@ export function RegisterForm({
             {preferredPlan?.tier === "lite" ? "Kart bilgisi gerekmez. Lite süreli deneme değildir ve otomatik ücretliye dönüşmez." : "Kart bilgisi gerekmez. Süre sonunda paket satın alınmazsa hesabınız ve verileriniz korunarak erişim dondurulur."}
           </p>
         </div>
-        <Button asChild variant="ghost" className="mt-6 min-h-10 text-muted-foreground">
+        <Button asChild variant="ghost" className="mt-6 min-h-7 text-muted-foreground">
           <Link href="/login"><ArrowLeft aria-hidden="true" className="size-4" />Giriş sayfasına dön</Link>
         </Button>
       </section>

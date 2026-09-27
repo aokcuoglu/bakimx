@@ -74,7 +74,7 @@ export function BrandsList({ brands }: { brands: AdminCatalogBrandRow[] }) {
             <ArrowLeft className="size-4" />
           </Link>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Markalar</h1>
+            <h1 className="text-page-title text-foreground">Markalar</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               Katalog markaları. Pasif marka ürün eklemeyi engellemez; ürünleri ayrıca pasifleştirin.
             </p>

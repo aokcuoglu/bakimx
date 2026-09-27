@@ -28,20 +28,20 @@ describe("design system radius contract", () => {
   })
 
   test("shared controls use sm; surfaces use lg", () => {
-    expect(read("src/components/ui/button.tsx")).toContain("rounded-[6px]")
-    expect(read("src/components/ui/input.tsx")).toContain("rounded-sm")
-    expect(read("src/components/ui/textarea.tsx")).toContain("rounded-sm")
+    expect(read("src/components/ui/button.tsx")).toContain("rounded-[8px]")
+    expect(read("src/components/ui/input.tsx")).toContain("rounded-[8px]")
+    expect(read("src/components/ui/textarea.tsx")).toContain("rounded-[8px]")
     expect(read("src/components/ui/select.tsx")).toContain(
-      "gap-1.5 rounded-sm border border-input"
+      "gap-1.5 rounded-[9px] border border-input"
     )
 
     const card = read("src/components/ui/card.tsx")
-    expect(card).toContain("rounded-lg")
-    expect(card).not.toContain("rounded-xl")
+    expect(card).toContain("rounded-xl")
+    expect(card).not.toContain("ring-foreground/10")
 
     const dialog = read("src/components/ui/dialog.tsx")
-    expect(dialog).toContain("rounded-lg bg-popover")
-    expect(dialog).not.toContain("rounded-xl bg-popover")
+    expect(dialog).toContain("rounded-[var(--radius-dialog)] bg-popover")
+    expect(dialog).toContain("shadow-[var(--shadow-dialog)]")
   })
 
   test("DESIGN.md documents palette and /design gallery exists", () => {

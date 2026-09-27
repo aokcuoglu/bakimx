@@ -17,7 +17,7 @@ export default async function NewCatalogProductPage() {
   if (brands.length === 0) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-bold text-foreground">Yeni Ürün</h1>
+        <h1 className="text-page-title text-foreground">Yeni Ürün</h1>
         <p className="text-sm text-muted-foreground">
           Ürün eklemeden önce en az bir marka tanımlamalısınız.
         </p>

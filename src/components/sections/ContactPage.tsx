@@ -100,7 +100,7 @@ export function ContactPage() {
                 <FormField control={form.control} name="referral" render={({ field }) => <FormItem><FormLabel>Bizi nasıl duydunuz?</FormLabel><FormControl><Input placeholder="LinkedIn, tavsiye, arama…" {...field} /></FormControl><FormMessage /></FormItem>} />
                 <FormField control={form.control} name="message" render={({ field }) => <FormItem><FormLabel>Mesajınız</FormLabel><FormControl><Textarea rows={4} placeholder="Kısaca ne hakkında konuşmak istersiniz?" {...field} /></FormControl><FormMessage /></FormItem>} />
                 <p className={styles.consent}>Formu göndererek <a href="/privacy">gizlilik ve çerez politikamızı</a> okuduğunuzu kabul edersiniz.</p>
-                <Button type="submit" variant="navy" size="xl" className="h-11 w-full" disabled={form.formState.isSubmitting}>
+                <Button type="submit" variant="navy" size="xl" className="h-7 w-full" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? <><Loader2 className="animate-spin" /> Gönderiliyor…</> : "Gönder"}
                 </Button>
               </form>

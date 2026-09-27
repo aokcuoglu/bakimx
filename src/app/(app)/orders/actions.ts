@@ -14,7 +14,7 @@ import {
   undecidedPartsRequestsMessage,
 } from "@/lib/orders/parts-request-guard"
 import { purchaseDeleteDecision } from "@/lib/orders/purchase-delete"
-import { roleCan } from "@/lib/roles"
+import { actorCan } from "@/lib/roles"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 import { getVisibleBakimxProduct } from "@/lib/parts/bakimx-catalog"
@@ -490,7 +490,7 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
   // Düzenleme silme ile AYNI kapıdan geçer (BAK-84): kalemin adını/numarasını/
   // miktarını değiştirmek de kimliğini ve tutarını değiştirir, silemeyen rol
   // düzenleyememeli (tek kaynak: purchaseDeleteDecision).
-  const decision = purchaseDeleteDecision(order.status, roleCan(user.role, "order.edit"))
+  const decision = purchaseDeleteDecision(order.status, actorCan(user, "order.edit"))
   if (!decision.allowed) return { error: decision.reason }
 
   const has = (k: string) => formData.get(k) !== null
@@ -786,7 +786,7 @@ export async function removePurchaseItemAction(itemId: string, orderId: string) 
   })
   if (!order) return { error: "Servis emri bulunamadı" }
 
-  const decision = purchaseDeleteDecision(order.status, roleCan(user.role, "order.edit"))
+  const decision = purchaseDeleteDecision(order.status, actorCan(user, "order.edit"))
   if (!decision.allowed) return { error: decision.reason }
 
   return deleteOrderItemRecord(user, item, orderId, "purchase_removed")

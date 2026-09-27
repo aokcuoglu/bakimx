@@ -172,7 +172,7 @@ export function RuhsatDemoSection() {
                     type="button"
                     onClick={start}
                     variant="navy"
-                    className="h-11 w-full gap-2 text-sm font-semibold"
+                    className="h-7 w-full gap-2 text-sm font-semibold"
                   >
                     <ScanLine className="h-4 w-4" />
                     Örnek ruhsatı okut
@@ -182,7 +182,7 @@ export function RuhsatDemoSection() {
                     type="button"
                     onClick={reset}
                     variant="outline"
-                    className="h-11 w-full gap-2 border-primary/30"
+                    className="h-7 w-full gap-2 border-primary/30"
                   >
                     <RotateCcw className="h-4 w-4" />
                     Yeniden oynat

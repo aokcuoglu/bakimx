@@ -5,7 +5,7 @@ import { getAppData } from "@/app/(app)/data"
 import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { getPlanState, VIN_LOOKUP_QUOTA } from "@/lib/plan"
 import { workshopMonthlyCap } from "@/lib/rapidapi-quota"
-import { canManageBilling } from "@/lib/rbac"
+import { actorCan } from "@/lib/roles"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -37,7 +37,7 @@ export default async function PurchaseQuotaPage() {
   const baseQuota = VIN_LOOKUP_QUOTA[tier] ?? 0
   const extraQuota = workshop.extraVinQuota ?? 0
   const totalCap = workshopMonthlyCap(tier, extraQuota)
-  const canPurchase = canManageBilling(user.role)
+  const canPurchase = actorCan(user, "billing.manage")
 
   return (
     <AppShell workshopName={workshop.name} pageTitle="Ek Kota Satın Al">
@@ -51,7 +51,7 @@ export default async function PurchaseQuotaPage() {
               </Link>
             </Button>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Ek Kota Satın Al</h2>
+          <h2 className="text-page-title text-foreground">Ek Kota Satın Al</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             Mevcut paketinize ek kota ekleyerek sorgu limitinizi artırın
           </p>

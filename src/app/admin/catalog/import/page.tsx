@@ -20,7 +20,7 @@ export default async function CatalogImportPage() {
   if (brands.length === 0) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-bold text-foreground">Ürün İçe Aktarma</h1>
+        <h1 className="text-page-title text-foreground">Ürün İçe Aktarma</h1>
         <p className="text-sm text-muted-foreground">
           İçe aktarma marka bazlıdır. Dosya yüklemeden önce en az bir marka tanımlamalısınız.
         </p>

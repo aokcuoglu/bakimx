@@ -113,7 +113,7 @@ export default async function DashboardPage() {
         >
           <div className="min-w-0">
             <p className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">Genel Bakış</p>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            <h2 className="text-page-title text-foreground">
               Hoş Geldiniz, {user.firstName || user.email || user.username || "Kullanıcı"}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">

@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { PRIVATE_ROBOTS, brandedTitle } from "@/lib/seo"
+import { RecordPatterns } from "./record-patterns"
 import { ColorCard } from "./copyable-swatch"
 import { cn } from "@/lib/utils"
 
@@ -57,7 +58,7 @@ const BRAND_COLORS = [
     name: "Navy",
     hex: "#071F49",
     token: "bg-navy / variant=navy",
-    description: "Public ve asistan birincil CTA dolgusu; sidebar zemini.",
+    description: "Eski koyu CTA. Yeni birincil düğme primary mavisidir.",
     swatchClass: "bg-navy",
   },
   {
@@ -69,9 +70,9 @@ const BRAND_COLORS = [
   },
   {
     name: "Primary",
-    hex: "#0C65E8",
+    hex: "#266DF0",
     token: "bg-primary / text-primary",
-    description: "Link, seçim ve odak halkası. Birincil düğme dolgusu olmaz.",
+    description: "Birincil düğme, bağlantı, seçim ve odak.",
     swatchClass: "bg-primary",
   },
   {
@@ -116,7 +117,7 @@ const SURFACE_COLORS = [
     name: "Sidebar",
     hex: "#071F49",
     token: "bg-sidebar",
-    description: "Uygulama kenar çubuğu (navy).",
+    description: "Uygulama kenar çubuğu (açık nötr yüzey).",
     swatchClass: "bg-sidebar",
   },
 ] as const
@@ -131,9 +132,9 @@ const TEXT_COLORS = [
   },
   {
     name: "Muted foreground",
-    hex: "#262626",
+    hex: "#60646C",
     token: "text-muted-foreground",
-    description: "Yardımcı metin — soluk gri değil, okunaklı koyu ton.",
+    description: "Yardımcı metin — açık yüzeylerde AA kontrastlı nötr gri.",
     swatchClass: "bg-muted-foreground",
   },
   {
@@ -187,27 +188,27 @@ const TYPE_ROWS = [
   {
     id: "display-md",
     sample: "Yeni iş emri oluştur",
-    meta: "Inter · 30–36px · 600 · app title",
-    className: "text-3xl font-semibold tracking-tight text-foreground",
+    meta: "Inter · 20/28px · 600 · app title",
+    className: "text-page-title text-foreground",
   },
   {
     id: "headline",
     sample: "Müşteri ve araç bilgileri",
-    meta: "Inter · 22–28px · 600",
-    className: "text-2xl font-semibold tracking-tight text-foreground",
+    meta: "Inter · 16/20px · 600",
+    className: "text-base leading-5 font-semibold text-foreground",
   },
   {
     id: "card-title",
     sample: "Bugünkü iş emirleri",
-    meta: "Inter · 18px · 600",
-    className: "text-lg font-semibold text-foreground",
+    meta: "Inter · 14/20px · 500",
+    className: "text-sm leading-5 font-medium text-foreground",
   },
   {
     id: "body",
     sample:
       "Açık yüzey, ince border ve koyu metin. Parlak mavi CTA kullanılmaz.",
-    meta: "Inter · 16px · 400 · default body",
-    className: "text-base text-foreground",
+    meta: "Inter · 14/20px · 400 · default body",
+    className: "text-sm leading-5 text-foreground",
   },
   {
     id: "body-sm",
@@ -218,8 +219,8 @@ const TYPE_ROWS = [
   {
     id: "caption",
     sample: "Yardımcı açıklama — muted-foreground.",
-    meta: "Inter · 12–14px · muted",
-    className: "text-sm text-muted-foreground",
+    meta: "Inter · 12/16px · 500 · muted",
+    className: "text-xs leading-4 font-medium text-muted-foreground",
   },
   {
     id: "button",
@@ -495,13 +496,13 @@ export default function DesignSystemPage() {
               xs
             </Button>
             <Button variant="navy" size="sm">
-              sm · 38px
+              sm · 28px
             </Button>
             <Button variant="navy" size="lg">
-              lg · 44px
+              lg · 28px
             </Button>
-            <Button variant="navy" size="xl">
-              xl · 48px
+            <Button variant="navy" size="compact">
+              compact · 20px
             </Button>
             <Badge variant="outline">status</Badge>
             <Badge>default</Badge>
@@ -510,6 +511,7 @@ export default function DesignSystemPage() {
         </Section>
 
         <Section id="cards" index="04" title="Cards & Containers" eyebrow="Cards">
+          <RecordPatterns />
           <div className="grid gap-4 lg:grid-cols-2">
             <Card className="border border-border shadow-none ring-0">
               <CardHeader className="border-b">

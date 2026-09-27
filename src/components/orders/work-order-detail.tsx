@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DetailHeader, type DetailHeaderAction } from "@/components/orders/detail-header"
-import { StatusBadge, PaymentBadge } from "@/components/shared/status-badge"
+import { OrderRecordRail } from "@/components/orders/order-record-rail"
 import {
   Car,
   User,
@@ -122,9 +122,24 @@ const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
   draft: RotateCcw,
 }
 
-// Detay içeriği sekmelere bölünür (uzun tek-scroll yerine). Aktif sekme URL'de
-// `?tab=` ile tutulur; settings-tabs deseniyle aynı.
+// Detay içeriği sekmelere bölünür (uzun tek-scroll yerine). Aktif sekme
+// istemcide durur. Adres `?tab=` ile güncellenir ama `router.replace` ile
+// değil: o çağrı sayfayı (Prisma + aktivite) her sekmede yeniden üretiyordu.
 type TabKey = "ozet" | "parca" | "tahsilat" | "kanit" | "teknisyen" | "gecmis"
+
+function parseOrderTab(value: string | null): TabKey {
+  if (
+    value === "ozet" ||
+    value === "parca" ||
+    value === "tahsilat" ||
+    value === "kanit" ||
+    value === "teknisyen" ||
+    value === "gecmis"
+  ) {
+    return value
+  }
+  return "ozet"
+}
 
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }>; feature?: GatedFeature }[] = [
   { key: "ozet", label: "Özet", icon: Info },
@@ -260,12 +275,23 @@ export function WorkOrderDetail({
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const activeTab = (searchParams.get("tab") as TabKey) || "ozet"
+  // İlk değer sunucu ve istemci hidrasyonunda aynı olsun diye URL'den okunur
+  // (derin bağlantı `?tab=kanit`). Sonraki geçişler state'tedir; Next
+  // `useSearchParams` güncellenmez, sayfa da yeniden istenmez.
+  const [activeTab, setActiveTab] = useState<TabKey>(() => parseOrderTab(searchParams.get("tab")))
 
   useOrderSync(order.id)
 
   function handleTabChange(key: string) {
-    router.replace(`/orders/${order.id}?tab=${key}`, { scroll: false })
+    const next = parseOrderTab(key)
+    setActiveTab(next)
+    if (typeof window === "undefined") return
+    const url = new URL(window.location.href)
+    url.searchParams.set("tab", next)
+    // Liste "Düzenle" ile gelen ?edit=1 sekme değişince düşer; sunucuya gidilmez.
+    url.searchParams.delete("edit")
+    const nextUrl = `${url.pathname}${url.search}`
+    window.history.replaceState(window.history.state, "", nextUrl)
   }
 
   const [loading, setLoading] = useState(false)
@@ -804,12 +830,6 @@ export function WorkOrderDetail({
             />
           ) : undefined
         }
-        badges={
-          <>
-            <StatusBadge status={order.status} size="lg" />
-            {canCashbox && <PaymentBadge status={order.paymentStatus} size="lg" />}
-          </>
-        }
         actions={headerActions}
         loading={loading}
         onBack={() => router.push("/orders")}
@@ -892,10 +912,13 @@ export function WorkOrderDetail({
         </div>
       )}
 
-      {/* Finansal özet şerit — sekmeden bağımsız hep görünür (durum/ödeme rozetleri
-          zaten header'da; burada yalnız header'da olmayan tutarlar). */}
+      {/* Masaüstünde tutarlar sol kayıt listesinde. Şerit yalnız dar ekranda,
+          sekmelerin üstünde kalır. */}
+      <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <OrderRecordRail order={order} customerName={customerName} showCashbox={canCashbox} />
+      <div className="min-w-0 space-y-5">
       {order.totals.hasAnyPrice && (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm lg:hidden">
           {/* İndirim/KDV varken Genel Toplam kalem tutarlarına EŞİT DEĞİLDİR:
               yalnız sonuç gösterilince (ör. ₺400'lük tek kalem → ₺240) rakam
               hatalı sanılıyordu (BAK-55). Zincir hep görünür: ara toplam →
@@ -927,8 +950,8 @@ export function WorkOrderDetail({
             const Icon = t.icon
             const locked = Boolean(t.feature && !enabledFeatures.includes(t.feature))
             return (
-              <TabsTrigger key={t.key} value={t.key} className="px-3 py-2.5 shrink-0 flex-none">
-                <Icon className="size-4" />
+              <TabsTrigger key={t.key} value={t.key} className="shrink-0">
+                <Icon className="size-3.5" />
                 <span>{t.label}</span>
                 {locked && <LockKeyhole className="size-3" aria-label="Profesyonel paket özelliği" />}
               </TabsTrigger>
@@ -955,7 +978,7 @@ export function WorkOrderDetail({
             </Card>
           )}
           {/* Müşteri & Araç */}
-          {(canUsePhotoChecklist || canUseDamageMap) && <Card>
+          {(canUsePhotoChecklist || canUseDamageMap) && <Card className="lg:hidden">
             <CardHeader className="pb-3"><CardTitle className="text-base">Müşteri & Araç</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1588,6 +1611,8 @@ export function WorkOrderDetail({
           <OrderActivityLog entries={activity} />
         </TabsContent>
       </Tabs>
+      </div>
+      </div>
 
       <AlertDialog open={reopenOpen} onOpenChange={(o) => { if (!reopening) setReopenOpen(o) }}>
         <AlertDialogContent>
