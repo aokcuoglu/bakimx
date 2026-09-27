@@ -639,7 +639,7 @@ export function TecdocPartPicker({
                     type="button"
                     variant="ghost"
                     onClick={() => (node.children.length > 0 ? setStack((s) => [...s, node]) : void openLeaf(node))}
-                    className="h-auto min-h-8 w-full justify-between gap-2 rounded-none border-b border-border/60 px-4 py-2 text-left whitespace-normal"
+                    className="h-auto min-h-7 w-full justify-between gap-2 rounded-none border-b border-border/60 px-4 py-2 text-left whitespace-normal"
                   >
                     <span className="flex min-w-0 flex-1 items-center gap-2">
                       {isBakimxNode(node) && <Store className="size-3.5 shrink-0 text-primary" />}

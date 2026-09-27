@@ -49,16 +49,16 @@ export function AccountProfileForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
           <FormField
             control={form.control}
             name="firstName"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Ad</FormLabel>
+              <FormItem className="gap-1">
+                <FormLabel className="text-xs font-medium text-muted-foreground">Ad</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input {...field} className="h-8" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -68,10 +68,10 @@ export function AccountProfileForm({
             control={form.control}
             name="lastName"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Soyad</FormLabel>
+              <FormItem className="gap-1">
+                <FormLabel className="text-xs font-medium text-muted-foreground">Soyad</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input {...field} className="h-8" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

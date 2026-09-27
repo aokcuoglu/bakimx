@@ -28,17 +28,10 @@ export default async function QuotesPage({ searchParams }: { searchParams: Promi
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Teklifler">
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Teklifler</span>
-          <span className="mx-2">/</span>
-          <span className="text-muted-foreground">Tümü</span>
-        </div>
+
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-page-title text-foreground">Teklifler</h2>
             <p className="text-sm text-muted-foreground mt-0.5">{quotes.length} teklif</p>
           </div>
           <div className="flex items-center gap-2">

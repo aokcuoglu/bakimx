@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { PriceRoll } from "./price-roll"
 import Link from "next/link"
-import { Check, CircleCheck, MessageCircle, Minus, Pencil, X } from "lucide-react"
+import { ArrowUpRight, Check, CircleCheck, Hexagon, MessageCircle, Minus, Pencil, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -29,8 +29,15 @@ import { isPlanDowngrade, isPlanUpgrade } from "@/lib/billing/plan-change"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
 import { cn } from "@/lib/utils"
+import { getDiscountedPlanPriceMinor } from "@/lib/billing/referral-discount"
 
 type BillingCycle = "monthly" | "yearly"
+
+function planBillingCaption(tier: SalePlanTier, cycle: BillingCycle): string {
+  return tier === "lite"
+    ? "Atölye başına · ücretsiz"
+    : `Atölye başına · ${cycle === "yearly" ? "yıllık" : "aylık"} faturalandırılır`
+}
 
 function BillingPeriod({
   billing,
@@ -61,8 +68,9 @@ function BillingPeriod({
         spacing={1}
         aria-label={label}
         className={cn(
-          "grid w-64 grid-cols-2 rounded-lg border bg-card p-1",
-          subdued && "w-48 rounded-xl border-0 bg-muted p-0.5",
+          subdued
+            ? "inline-flex w-auto gap-0.5 rounded-lg bg-muted p-0.5"
+            : "grid w-64 grid-cols-2 rounded-lg border bg-card p-1",
         )}
         value={billing}
         onValueChange={(value) => {
@@ -75,10 +83,13 @@ function BillingPeriod({
             value={cycle}
             className={cn(
               "w-full rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm hover:text-foreground",
-              subdued && "h-9 rounded-[10px]",
+              subdued && "h-7! min-w-0 w-auto rounded-lg px-2 py-1 text-sm font-medium tracking-[-0.07px] text-muted-foreground hover:bg-transparent data-[state=on]:!bg-card data-[state=on]:!text-foreground data-[state=on]:shadow-[inset_0_0_0_1px_var(--border),0_1px_2px_-1px_rgba(0,0,0,0.12)]",
             )}
           >
             {cycle === "monthly" ? "Aylık" : "Yıllık"}
+            {subdued && cycle === "yearly" && (
+              <span className="rounded-md bg-primary/10 px-1 text-[11px] font-medium leading-4 text-primary-strong">-17%</span>
+            )}
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
@@ -91,8 +102,8 @@ function ComparisonValue({ value, minimal = false }: { value: PlanComparisonValu
     return (
       <span className="inline-flex items-center justify-center">
         {value.state === "included"
-          ? <CircleCheck className="size-3.5 fill-muted-foreground text-card" aria-hidden="true" />
-          : <X className="size-3.5 text-muted-foreground" aria-hidden="true" />}
+          ? <Check className="size-3.5 text-muted-foreground" strokeWidth={2.25} aria-hidden="true" />
+          : <X className="size-3.5 text-muted-foreground" strokeWidth={2.25} aria-hidden="true" />}
         <span className="sr-only">{value.label}</span>
       </span>
     )
@@ -155,9 +166,9 @@ function PlanAction({
   const popularVariant = publicCard ? "navy" : "foreground"
   const buttonClassName = cn(
     "w-full",
-    publicCard && "h-9 text-sm font-normal",
+    publicCard && "h-7 text-sm font-normal",
     publicCard && !pkg.popular && !isOwned && "bg-card",
-    settingsCard && "h-9 text-sm font-medium",
+    settingsCard && "h-7 text-sm font-medium",
   )
 
   if (!canPurchase) {
@@ -311,10 +322,12 @@ export function PlanPackages({
   onManagePlan,
   onRequestCycleChange,
   onDowngrade,
+  settingsChrome = true,
   trialTier = null,
   currentCycle = null,
   isTrialing = false,
   trialDaysLeft = null,
+  referralDiscountBps = 0,
 }: {
   /** `public` = /fiyatlar marketing layout. `settings` / `comparison` = Attio-compact in-app cards. */
   presentation?: "comparison" | "public" | "settings"
@@ -331,10 +344,13 @@ export function PlanPackages({
   /** “Aylığa geç” / “Yıllığa geç” opens the manage-plan dialog on that cycle. */
   onRequestCycleChange?: (cycle: BillingCycle) => void
   onDowngrade?: (tier: SalePlanTier) => void
+  /** Settings page heading and current-plan card. Hidden when the table is embedded in a dialog. */
+  settingsChrome?: boolean
   trialTier?: SalePlanTier | null
   currentCycle?: BillingCycle | null
   isTrialing?: boolean
   trialDaysLeft?: number | null
+  referralDiscountBps?: number
 }) {
   const isPublic = presentation === "public"
   const [billing, setBilling] = useState<BillingCycle>(currentCycle ?? (isPublic ? "monthly" : "yearly"))
@@ -342,153 +358,183 @@ export function PlanPackages({
 
   if (!isPublic) {
     const currentPkg = PLAN_PACKAGES.find((plan) => plan.tier === (trialTier ?? ownedTier))
-    const currentAmount = !currentPkg
-      ? null
-      : currentPkg.tier === "lite"
-        ? "₺0"
-        : `₺${(billing === "monthly" ? currentPkg.monthlyPrice : currentPkg.yearlyPrice).toLocaleString("tr-TR")}`
+    const stripCycle = currentCycle ?? "yearly"
+    const monthlyEquivalent = (pkg: (typeof PLAN_PACKAGES)[number], cycle: BillingCycle) => {
+      if (pkg.tier === "lite") return 0
+      const discounted = getDiscountedPlanPriceMinor(pkg.tier, cycle, referralDiscountBps) / 100
+      if (cycle === "monthly") return discounted
+      return Math.round(discounted / 12)
+    }
     const supportHref = getSupportWhatsAppUrl(`Merhaba, BakimX paket etkinleştirme hakkında bilgi almak istiyorum.${workshopName ? ` (${workshopName})` : ""}`)
+    const highlightedTier = (tier: SalePlanTier) => tier === activeColumn || (!activeColumn && PLAN_PACKAGES.find((plan) => plan.tier === tier)?.popular)
+    const columnFrame = (tier: SalePlanTier, edge: "top" | "mid" | "bottom") => cn(
+      "border-l border-border",
+      highlightedTier(tier) && "relative z-[1] border-transparent bg-card",
+      highlightedTier(tier) && edge === "top" && "rounded-t-xl shadow-[inset_1px_0_0_var(--primary),inset_-1px_0_0_var(--primary),inset_0_1px_0_var(--primary)]",
+      highlightedTier(tier) && edge === "mid" && "shadow-[inset_1px_0_0_var(--primary),inset_-1px_0_0_var(--primary)]",
+      highlightedTier(tier) && edge === "bottom" && "rounded-b-xl shadow-[inset_1px_0_0_var(--primary),inset_-1px_0_0_var(--primary),inset_0_-1px_0_var(--primary)]",
+    )
     return (
-      <section id="lite" aria-label="Paketleri karşılaştırın" className="scroll-mt-20 min-w-0 space-y-6">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">Paketler</h2>
-          <p className="text-sm text-muted-foreground">
-            Servisinizin aşamasına göre tasarlandı. Aradığınızı bulamazsanız{" "}
-            <a href={supportHref} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-              bize yazın
-            </a>
-            .
-          </p>
-        </div>
-
-        {currentPkg && (
-          <div className="flex flex-col gap-4 rounded-xl border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-start gap-3">
-              <div className="pt-0.5 text-xs text-muted-foreground">
-                <p>Mevcut</p>
-                {isTrialing && trialDaysLeft != null && (
-                  <p className="mt-1 max-w-16 leading-4">{trialDaysLeft} gün deneme</p>
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  {isTrialing ? (
-                    <h3 className="text-base font-semibold tracking-tight">Premium denemesi</h3>
-                  ) : (
-                    <p className="text-base font-semibold tracking-tight">{currentPkg.name}</p>
-                  )}
-                  {isTrialing && <Badge variant="outline">Deneme</Badge>}
-                </div>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  {currentAmount}
-                  {currentPkg.tier === "lite" ? "" : billing === "monthly" ? "/ay" : "/yıl"}
-                  {" · "}
-                  {billing === "yearly" ? "yıllık faturalandırılır" : "aylık faturalandırılır"}
-                  {" · "}
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="compact"
-                    className="h-auto px-0"
-                    onClick={() => {
-                      const next = billing === "yearly" ? "monthly" : "yearly"
-                      if (onRequestCycleChange) onRequestCycleChange(next)
-                      else setBilling(next)
-                    }}
-                  >
-                    {billing === "yearly" ? "Aylığa geç" : "Yıllığa geç"}
-                  </Button>
-                </p>
-              </div>
+      <section id="lite" aria-label="Paketleri karşılaştırın" className="scroll-mt-20 min-w-0 space-y-4">
+        {settingsChrome && (
+          <>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-semibold tracking-[-0.4px] text-foreground">Paketler</h2>
+              <p className="text-sm leading-5 text-muted-foreground">
+                Servisinizin aşamasına göre tasarlandı. Aradığınızı bulamazsanız{" "}
+                <a href={supportHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 text-foreground underline underline-offset-2">
+                  bize yazın
+                  <ArrowUpRight className="size-3.5" aria-hidden="true" />
+                </a>
+                .
+              </p>
             </div>
-            {onManagePlan && (
-              <Button type="button" variant="outline" className="shrink-0" onClick={onManagePlan}>
-                <Pencil className="size-3.5" aria-hidden="true" />
-                Paketi yönet
-              </Button>
+
+            {currentPkg && (
+              <div className="rounded-xl bg-card px-3 py-3 shadow-[inset_0_0_0_1px_var(--border)]">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-5 items-center rounded-md bg-muted px-1.5 text-xs font-medium text-muted-foreground">Mevcut</span>
+                  {isTrialing && trialDaysLeft != null && (
+                    <span className="text-xs font-medium text-muted-foreground">{trialDaysLeft} gün deneme</span>
+                  )}
+                </div>
+                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-primary">
+                      <Hexagon className="size-4" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="text-lg font-semibold leading-6 tracking-[-0.2px] text-foreground">{currentPkg.name}</p>
+                        {isTrialing && (
+                          <span className="inline-flex h-5 items-center rounded-md bg-primary/10 px-1.5 text-xs font-medium text-primary-strong">
+                            Deneme
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs font-medium leading-4 text-muted-foreground">
+                        ₺{monthlyEquivalent(currentPkg, stripCycle).toLocaleString("tr-TR")} / ay
+                        {" · "}
+                        {stripCycle === "yearly" ? "yıllık faturalandırılır" : "aylık faturalandırılır"}
+                        {" · "}
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="compact"
+                          className="h-[18px] px-0 py-px text-xs font-medium text-primary"
+                          onClick={() => {
+                            const next = stripCycle === "yearly" ? "monthly" : "yearly"
+                            if (onRequestCycleChange) onRequestCycleChange(next)
+                            else setBilling(next)
+                          }}
+                        >
+                          {stripCycle === "yearly" ? "Aylığa geç" : "Yıllığa geç"}
+                        </Button>
+                      </p>
+                    </div>
+                  </div>
+                  {onManagePlan && (
+                    <Button type="button" variant="outline" className="h-8 shrink-0 rounded-[9px] px-2.5" onClick={onManagePlan}>
+                      <Pencil className="size-3.5" aria-hidden="true" />
+                      Paketi yönet
+                    </Button>
+                  )}
+                </div>
+              </div>
             )}
-          </div>
+          </>
         )}
 
-        <div className="min-w-0 overflow-x-auto rounded-xl border bg-card">
-          <Table aria-label="Paket özelliklerini karşılaştırın" className="min-w-[720px] table-fixed">
+        <div className="min-w-0 overflow-x-auto rounded-xl bg-card shadow-[inset_0_0_0_1px_var(--border)]">
+          <Table aria-label="Paket özelliklerini karşılaştırın" className="min-w-[720px] table-fixed border-separate border-spacing-0">
             <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead scope="col" className="w-[28%] px-5 py-5 align-bottom whitespace-normal">
-                  <p className="text-sm font-semibold text-foreground">Paketleri karşılaştırın</p>
-                  <p className="mt-1 text-xs font-normal text-muted-foreground">Size uygun paketi bulun</p>
-                  <div className="mt-4">
+              <TableRow className="border-border hover:bg-transparent">
+                <TableHead rowSpan={2} scope="col" className="relative w-[28%] bg-muted/40 px-4 py-4 align-top whitespace-normal rounded-tl-xl">
+                  <p className="text-sm font-semibold leading-5 text-foreground">Paketleri karşılaştırın</p>
+                  <p className="mt-0.5 text-xs font-medium leading-4 text-muted-foreground">Size uygun paketi bulun</p>
+                  <div className="absolute bottom-4 left-4 right-4">
                     <BillingPeriod billing={billing} onChange={setBilling} subdued label="Faturalama dönemi" />
                   </div>
                 </TableHead>
                 {PLAN_PACKAGES.map((pkg) => {
-                  const highlighted = pkg.tier === activeColumn || (!activeColumn && pkg.popular)
-                  const amount = pkg.tier === "lite"
-                    ? "₺0"
-                    : `₺${(billing === "monthly" ? pkg.monthlyPrice : pkg.yearlyPrice).toLocaleString("tr-TR")}`
+                  const amount = monthlyEquivalent(pkg, billing)
                   return (
                     <TableHead
                       key={pkg.tier}
                       scope="col"
                       className={cn(
-                        "w-[24%] border-l px-4 py-5 text-left align-top whitespace-normal",
-                        highlighted && "bg-primary/5 shadow-[inset_0_0_0_1px_var(--primary)]",
+                        "w-[24%] px-4 py-4 text-left align-top whitespace-normal",
+                        columnFrame(pkg.tier, "top"),
                       )}
                     >
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-base font-semibold text-foreground">{pkg.name}</span>
-                        {pkg.popular && <span className="text-xs font-medium text-primary">Popüler</span>}
+                      <div className="min-h-10">
+                        <span className="text-sm font-semibold leading-5 text-foreground">{pkg.name}</span>
+                        {pkg.popular && <p className="text-xs font-medium leading-4 text-primary">Popüler</p>}
                       </div>
-                      <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{amount}<span className="text-base font-medium text-muted-foreground">{billing === "monthly" ? "/ay" : "/yıl"}</span></p>
-                      <p className="mt-1 text-xs font-normal text-muted-foreground">
-                        {pkg.tier === "lite" ? "Lite kampanyasında ücretsiz" : billing === "yearly" ? "yıllık faturalandırılır" : "aylık faturalandırılır"}
+                      <p className="mt-2 text-[24px] font-semibold leading-7 tracking-[-0.48px] text-foreground">
+                        ₺{amount.toLocaleString("tr-TR")}
+                        <span className="ml-0.5 text-xs font-medium leading-4 tracking-normal text-muted-foreground">/ay</span>
                       </p>
-                      <div className="mt-4">
-                        <PlanAction
-                          settingsCard
-                          settingsSurface="table"
-                          compact
-                          tier={pkg.tier}
-                          billing={billing}
-                          checkoutBasePath={checkoutBasePath}
-                          ownedTier={trialTier ?? ownedTier}
-                          hasPendingOrder={hasPendingOrder}
-                          canPurchase={canPurchase}
-                          liteRegistrationOpen={liteRegistrationOpen}
-                          onSelectPlan={onSelectPlan}
-                          onDowngrade={onDowngrade}
-                        />
-                      </div>
+                      <p className="mt-1 min-h-8 text-xs font-medium leading-4 text-muted-foreground">
+                        {planBillingCaption(pkg.tier, billing)}
+                        {referralDiscountBps > 0 && pkg.tier !== "lite" && <><br />İlk yıl %10 indirim</>}
+                      </p>
                     </TableHead>
                   )
                 })}
               </TableRow>
+              <TableRow className="border-border hover:bg-transparent">
+                {PLAN_PACKAGES.map((pkg) => (
+                  <TableCell key={pkg.tier} className={cn("px-4 pb-4 pt-0", columnFrame(pkg.tier, "mid"))}>
+                    <PlanAction
+                      settingsCard
+                      settingsSurface="table"
+                      compact
+                      tier={pkg.tier}
+                      billing={billing}
+                      checkoutBasePath={checkoutBasePath}
+                      ownedTier={trialTier ?? ownedTier}
+                      hasPendingOrder={hasPendingOrder}
+                      canPurchase={canPurchase}
+                      liteRegistrationOpen={liteRegistrationOpen}
+                      onSelectPlan={onSelectPlan}
+                      onDowngrade={onDowngrade}
+                    />
+                  </TableCell>
+                ))}
+              </TableRow>
             </TableHeader>
-            {PLAN_COMPARISON.map((category) => (
+            {PLAN_COMPARISON.map((category, categoryIndex) => (
               <TableBody key={category.key}>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead scope="rowgroup" colSpan={4} className="h-auto px-5 pb-2 pt-8 text-sm font-semibold">
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead scope="rowgroup" className="h-auto bg-muted/40 px-4 pb-1 pt-4 text-sm font-semibold leading-5 text-foreground">
                     {category.label}
                   </TableHead>
+                  {PLAN_PACKAGES.map((pkg) => (
+                    <TableCell key={pkg.tier} className={cn("p-0", columnFrame(pkg.tier, "mid"))} />
+                  ))}
                 </TableRow>
-                {category.rows.map((row) => (
-                  <TableRow key={row.key} className="hover:bg-transparent">
-                    <TableHead scope="row" className="h-auto px-5 py-3 text-sm font-normal whitespace-normal text-foreground">
+                {category.rows.map((row, rowIndex) => {
+                  const lastRow = categoryIndex === PLAN_COMPARISON.length - 1 && rowIndex === category.rows.length - 1
+                  return (
+                  <TableRow key={row.key} className="border-border hover:bg-transparent">
+                    <TableHead scope="row" className="h-auto bg-muted/40 px-4 py-1.5 text-sm font-medium leading-5 tracking-[-0.07px] whitespace-normal text-muted-foreground">
                       {row.label}
                     </TableHead>
                     {PLAN_PACKAGES.map((pkg) => (
                       <TableCell
                         key={pkg.tier}
                         className={cn(
-                          "border-l px-4 py-3 text-center text-sm whitespace-normal",
-                          (pkg.tier === activeColumn || (!activeColumn && pkg.popular)) && "bg-primary/5",
+                          "px-4 py-1.5 text-center text-sm font-medium leading-5 whitespace-normal text-foreground",
+                          columnFrame(pkg.tier, lastRow ? "bottom" : "mid"),
                         )}
                       >
                         <ComparisonValue value={row.values[pkg.tier]} minimal />
                       </TableCell>
                     ))}
                   </TableRow>
-                ))}
+                  )
+                })}
               </TableBody>
             ))}
           </Table>
@@ -535,7 +581,7 @@ export function PlanPackages({
                   </p>
                   {pkg.tier !== "lite" && billing === "yearly" && <Badge variant="outline" className="rounded-sm border-border bg-muted text-foreground font-normal">2 ay bedava</Badge>}
                 </div>
-                <p className="text-xs leading-5 text-muted-foreground">{pkg.tier === "lite" ? "Lite kampanyasında süresiz ücretsiz" : billing === "monthly" ? "Aylık faturalandırılır · KDV dahil" : "Yıllık faturalandırılır · KDV dahil"}</p>
+                <p className="min-h-5 text-xs leading-5 text-muted-foreground">{planBillingCaption(pkg.tier, billing)} · KDV dahil</p>
               </div>
               <p className="mt-8 min-h-10 text-sm font-medium leading-5">{pkg.tagline}</p>
               <ul className="mb-8 mt-2.5 space-y-2.5">
@@ -588,7 +634,7 @@ export function PlanPackages({
                     </div>
                     <p className="min-h-10 text-xs font-normal leading-5 text-muted-foreground">
                       {billing === "monthly" ? pkg.monthlyLabel : pkg.yearlyLabel} · KDV dahil<br />
-                      {pkg.tier === "lite" ? "Lite kampanyasında ücretsiz" : billing === "monthly" ? "Aylık faturalandırılır" : "Yıllık faturalandırılır"}
+                      {planBillingCaption(pkg.tier, billing)}
                     </p>
                   </div>
                   <div className="mt-4">
@@ -642,7 +688,7 @@ export function PlanPackages({
       <Tabs defaultValue={checkoutBasePath.startsWith("/register") ? "lite" : "pro"} className="lg:hidden">
         <TabsList className="sticky top-[68px] z-30 grid h-auto w-full grid-cols-3 border-b bg-card">
           {PLAN_PACKAGES.map((pkg) => (
-            <TabsTrigger key={pkg.tier} value={pkg.tier} className="min-h-10 px-2">
+            <TabsTrigger key={pkg.tier} value={pkg.tier} className="min-h-7 px-2">
               {pkg.name}
             </TabsTrigger>
           ))}

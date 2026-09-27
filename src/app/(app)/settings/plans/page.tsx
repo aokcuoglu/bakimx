@@ -4,6 +4,7 @@ import { PendingPaymentNotice } from "@/components/billing/pending-payment-notic
 import { getAccountBillingContext } from "@/lib/billing/account-context"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import { isLiteRegistrationOpen } from "@/lib/lite-campaign"
+import { getReferralDiscountBps } from "@/lib/billing/referral-discount"
 
 export const metadata = { title: "Paketler" }
 
@@ -13,7 +14,13 @@ export default async function SettingsPlansPage() {
   return (
     <AppShell pageTitle="Paketler" wide workshopName={workshop.name}>
       <div className="space-y-7">
-        {pendingOrder && <PendingPaymentNotice order={pendingOrder} />}
+        {pendingOrder && <PendingPaymentNotice canPurchase={canPurchase} order={{
+          planTier: pendingOrder.planTier,
+          billingCycle: pendingOrder.billingCycle,
+          amountMinor: pendingOrder.amountMinor,
+          method: pendingOrder.method,
+          reference: pendingOrder.reference,
+        }} />}
         <BillingPlanManager
           ownedTier={ownedTier}
           currentPlanName={planName}
@@ -25,6 +32,9 @@ export default async function SettingsPlansPage() {
           hasPendingOrder={!!pendingOrder}
           pendingReference={pendingOrder?.reference}
           pendingMethod={pendingOrder?.method}
+          pendingAmountMinor={pendingOrder?.amountMinor}
+          pendingPlanTier={pendingOrder?.planTier}
+          pendingCycle={pendingOrder?.billingCycle}
           canPurchase={canPurchase}
           liteRegistrationOpen={isLiteRegistrationOpen()}
           liteFreeGranted={!!workshop.liteFreeGrantedAt}
@@ -34,6 +44,7 @@ export default async function SettingsPlansPage() {
           seatUsage={seatUsage}
           extraSeats={Math.max(0, workshop.extraSeats)}
           havale={getHavaleInstructions()}
+          referralDiscountBps={getReferralDiscountBps(workshop)}
         />
       </div>
     </AppShell>

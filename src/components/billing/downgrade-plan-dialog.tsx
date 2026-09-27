@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,6 +14,7 @@ import {
 import { getFeaturesLostOnDowngrade } from "@/lib/billing/plan-change"
 import type { SalePlanTier } from "@/lib/plan"
 import { getPlanPackage } from "@/lib/plans-catalog"
+import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
 
 export function DowngradePlanDialog({
   open,
@@ -20,14 +22,12 @@ export function DowngradePlanDialog({
   fromTier,
   toTier,
   periodEndLabel,
-  onConfirm,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   fromTier: SalePlanTier
   toTier: SalePlanTier
   periodEndLabel: string | null
-  onConfirm: () => void
 }) {
   const target = getPlanPackage(toTier)
   const lost = getFeaturesLostOnDowngrade(fromTier, toTier).slice(0, 8)
@@ -40,14 +40,14 @@ export function DowngradePlanDialog({
       >
         <DialogHeader className="space-y-2 px-5 pb-2 pt-5 pr-12 text-left">
           <DialogTitle className="text-base font-semibold leading-snug">
-            {target?.name} paketine düşülsün mü?
+            {target?.name} paketine geçiş
           </DialogTitle>
           <DialogDescription className="text-sm leading-5 text-muted-foreground">
             {periodEndLabel != null
-              ? `${periodEndLabel} tarihinde ${target?.name} paketine geçeceksiniz.`
-              : `Mevcut abonelik döneminizin sonunda ${target?.name} paketine geçeceksiniz.`}{" "}
-            Para iadesi yapılmaz; dönem sonuna kadar mevcut haklarınız devam eder. Sonrasında şu
-            özelliklere erişiminiz kalkar:
+              ? `Mevcut ücretli döneminiz ${periodEndLabel} tarihinde sona eriyor.`
+              : "Mevcut paketinizin dönem sonu kayıtlı değil."}{" "}
+            Şu anda daha düşük pakete geçiş kaydedilemiyor. Geçiş için destek ekibiyle görüşün.
+            Daha düşük pakette aşağıdaki özellikler bulunmaz:
           </DialogDescription>
           <DialogClose asChild>
             <Button
@@ -77,11 +77,9 @@ export function DowngradePlanDialog({
         </div>
 
         <div className="flex items-center justify-end gap-2 px-5 py-4">
+          <Button asChild variant="outline"><Link href={getSupportWhatsAppUrl(`Merhaba, ${target?.name} paketine geçmek istiyorum.`)} target="_blank" rel="noopener noreferrer">Destekle görüş</Link></Button>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Vazgeç
-          </Button>
-          <Button type="button" variant="destructive" onClick={onConfirm}>
-            Düşür
           </Button>
         </div>
       </DialogContent>

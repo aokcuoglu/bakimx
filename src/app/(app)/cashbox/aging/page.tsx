@@ -2,7 +2,6 @@ import { getAppData } from "@/app/(app)/data"
 import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { getReceivableAging } from "@/lib/cashbox/queries"
-import Link from "next/link"
 import { formatTRY } from "@/lib/format"
 import { Clock, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -31,18 +30,7 @@ export default async function AgingReportPage() {
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Yaşlandırma Raporu">
       <div className="space-y-5 sm:space-y-6 max-w-full">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <Link href="/cashbox" className="hover:text-foreground">Kasa</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Yaşlandırma Raporu</span>
-        </div>
-
-        <div>
-          <h2 className="text-page-title text-foreground">Alacak Yaşlandırma Raporu</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Müşteri alacaklarının vade gruplarına göre dağılımı</p>
-        </div>
+        <p className="text-sm text-muted-foreground">Müşteri alacaklarının vade gruplarına göre dağılımı</p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="rounded-lg border border-border bg-card p-3.5">

@@ -77,7 +77,7 @@ export function BakimxProductRow({
           type="button"
           variant="ghost"
           onClick={onSelect}
-          className="h-auto min-h-8 min-w-0 flex-1 justify-start gap-3 px-3 py-2 text-left whitespace-normal"
+          className="h-auto min-h-7 min-w-0 flex-1 justify-start gap-3 px-3 py-2 text-left whitespace-normal"
         >
           {product.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element

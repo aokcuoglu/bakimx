@@ -117,14 +117,9 @@ export default async function PurchasesPage({
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Dış Alımlar" wide>
       <div className="space-y-5 sm:space-y-6">
-        <div className="hidden sm:flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Dış Alımlar</span>
-        </div>
+
 
         <div>
-          <h2 className="text-page-title text-foreground">Dış Alımlar</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Teknisyenlerin iş emrine dışarıdan aldığı parçalar</p>
         </div>
 

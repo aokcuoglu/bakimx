@@ -11,9 +11,11 @@ import {
   type WorkspaceSwitcherItem,
 } from "@/components/layout/workspace-switcher"
 import { SettingsNav } from "@/components/settings/settings-nav"
+import settingsSidebarStyles from "@/components/settings/settings-sidebar.module.css"
 import { DashboardProductTour } from "@/components/dashboard/dashboard-product-tour"
-import { ACCOUNT_SETTINGS_ITEMS, SETTINGS_NAV_GROUPS, isSettingsPath } from "@/lib/settings-nav"
+import { ACCOUNT_SETTINGS_ITEMS, SETTINGS_NAV_GROUPS, isSettingsPath, matchesSettingsNavItem } from "@/lib/settings-nav"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
+import { roleCan } from "@/lib/roles"
 import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
 import type { GatedFeature } from "@/lib/plan"
 import type { SidebarPlanStatus } from "@/lib/billing/sidebar-plan-status"
@@ -157,7 +159,7 @@ const NAV_TOUR_ATTR: Partial<Record<string, string>> = {
   "/customers": "nav-customers",
 }
 
-const APP_NAV_TEXT = "h-9 text-sm leading-5 font-medium tracking-[-0.005em]"
+const APP_NAV_TEXT = "h-7 text-sm leading-5 font-medium tracking-[-0.005em]"
 
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
@@ -191,9 +193,13 @@ export function AppShell({
   wide?: boolean
 }) {
   const setPageHeader = useContext(SetPageHeaderContext)
+  const pathname = usePathname()
   useEffect(() => {
     setPageHeader({ pageTitle, pageActions, showGlobalSearch })
   }, [setPageHeader, pageTitle, pageActions, showGlobalSearch])
+  if (isSettingsPath(pathname)) {
+    return <div data-settings-content className="mx-auto w-full min-w-0 max-w-3xl pt-6 sm:pt-12">{children}</div>
+  }
   if (wide) return <div className={WIDE_WIDTH_CLASS}>{children}</div>
   if (constrained) return <div className={CONSTRAINED_WIDTH_CLASS}>{children}</div>
   return <>{children}</>
@@ -226,6 +232,7 @@ export function AppShellChrome({
 }) {
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
   const [searchOpen, setSearchOpen] = useState(false)
+  const inSettings = isSettingsPath(usePathname())
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
   const primaryNavigation = (isTechRole ? TECHNICIAN_NAV_GROUPS : NAV_GROUPS)
     .flatMap((group) => group.items.flatMap((item) => [
@@ -235,7 +242,9 @@ export function AppShellChrome({
   const settingsNavigation = isTechRole
     ? ACCOUNT_SETTINGS_ITEMS
     : SETTINGS_NAV_GROUPS.flatMap((group) => group.items)
-  const searchNavigation: SearchDestination[] = [...primaryNavigation, ...settingsNavigation]
+  const visibleSettingsNavigation = settingsNavigation.filter((item) =>
+    !item.manageOnly || (userIdentity?.role && roleCan(userIdentity.role, "settings.manage")))
+  const searchNavigation: SearchDestination[] = [...primaryNavigation, ...visibleSettingsNavigation]
 
   return (
     <SetPageHeaderContext.Provider value={setPageHeader}>
@@ -251,7 +260,7 @@ export function AppShellChrome({
         />
         <SidebarInset className="min-h-screen bg-background">
           <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} topBannerVisible={topBannerVisible} />
-          <main className="flex-1 px-4 sm:px-6 py-4 sm:py-6 pb-24 lg:pb-8">{children}</main>
+          <main className={cn("flex-1 px-4 py-4 pb-24 sm:px-6 sm:py-6 lg:pb-8", inSettings && "bg-card")}>{children}</main>
         </SidebarInset>
         <MobileBottomNav userIdentity={userIdentity} enabledFeatures={enabledFeatures} />
         <GlobalSearch
@@ -278,15 +287,19 @@ function AppHeader({
 }) {
   const { pageTitle, pageActions } = pageHeader
   const pathname = usePathname()
-  const navTitle = [...NAV_GROUPS, ...TECHNICIAN_NAV_GROUPS]
+  const navItem = [...NAV_GROUPS, ...TECHNICIAN_NAV_GROUPS]
+    .flatMap((group) => group.items.flatMap((item) => [item, ...(item.children ?? [])]))
+    .find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+  const settingsNavItem = SETTINGS_NAV_GROUPS
     .flatMap((group) => group.items)
-    .find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.label
-  const headerTitle = pageTitle || navTitle || (isSettingsPath(pathname) ? "Ayarlar" : undefined)
+    .find((item) => matchesSettingsNavItem(item, pathname))
+  const headerTitle = pageTitle || navItem?.label || (isSettingsPath(pathname) ? "Ayarlar" : undefined)
+  const HeaderIcon = settingsNavItem?.icon ?? navItem?.icon
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
 
   return (
-    <header className={cn("sticky top-0 z-30 bg-background border-b border-border", topBannerVisible && "lg:top-9")}>
-      <div className="relative flex flex-nowrap items-center gap-2 px-4 py-3 sm:gap-3 sm:px-6">
+    <header className={cn("sticky top-0 z-30 flex h-12 items-center border-b border-border bg-background", topBannerVisible && "lg:top-8")}>
+      <div className="relative flex h-12 w-full flex-nowrap items-center gap-2 px-4">
         {/* Sidebar açıkken kontrol menü başlığındadır; kapalıyken burada görünür. */}
         <SidebarTrigger data-tour="sidebar-trigger" className="-ml-2 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden" />
 
@@ -297,9 +310,10 @@ function AppHeader({
         </div>
 
         {headerTitle && (
-          <div className="hidden min-w-0 md:flex md:max-w-48 md:flex-col lg:max-w-64">
-            <h1 className="truncate text-base font-semibold leading-5 tracking-[-0.01em] text-foreground">{headerTitle}</h1>
-          </div>
+          <h1 className="hidden min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:flex">
+            {HeaderIcon ? <HeaderIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
+            <span className="truncate">{headerTitle}</span>
+          </h1>
         )}
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -308,7 +322,12 @@ function AppHeader({
       </div>
       {(headerTitle || pageActions) && (
         <div className="sm:hidden flex items-center justify-between gap-2 px-4 pb-3 -mt-1">
-          {headerTitle && <h1 className="truncate text-base font-semibold leading-5 tracking-[-0.01em] text-foreground">{headerTitle}</h1>}
+          {headerTitle && (
+            <h1 className="flex min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground">
+              {HeaderIcon ? <HeaderIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
+              <span className="truncate">{headerTitle}</span>
+            </h1>
+          )}
           {pageActions}
         </div>
       )}
@@ -344,38 +363,42 @@ function AppSidebar({
   })).filter((group) => group.items.length > 0)
 
   return (
-    <Sidebar collapsible="offcanvas" className={topBannerVisible ? "lg:top-9! lg:h-[calc(100svh-2.25rem)]!" : undefined}>
-      <SidebarHeader className="flex-row items-center gap-1 border-b border-sidebar-border p-2">
-        <div className="min-w-0 flex-1">
-          {inSettings ? (
-            <Button variant="ghost" size="sm" asChild className="justify-start gap-2 px-2 text-base font-semibold leading-5 tracking-[-0.01em]">
+    <Sidebar collapsible="offcanvas" className={cn(inSettings && settingsSidebarStyles.sidebar, topBannerVisible && "lg:top-8! lg:h-[calc(100svh-2rem)]!")}>
+      <SidebarHeader className={cn("flex-row items-center border-b border-sidebar-border", inSettings ? "h-[49px] gap-3 px-3 py-0 pr-10" : "gap-1 p-2")}>
+        {inSettings ? (
+          <>
+            <Button variant="ghost" size="icon-sm" asChild className="shrink-0">
               <Link
                 href={isTechRole ? "/technician" : "/dashboard"}
                 aria-label="Ana menüye dön"
                 onClick={() => { if (isMobile) setOpenMobile(false) }}
               >
                 <ArrowLeft className="size-4" aria-hidden="true" />
-                <span>Ayarlar</span>
               </Link>
             </Button>
-          ) : workspace && !isTechRole ? (
-            <WorkspaceSwitcher
-              currentWorkshopId={workspace.currentWorkshopId}
-              memberships={workspace.memberships}
-              canCreateBranch={workspace.canCreateBranch}
-            />
-          ) : (
-            <Link
-              href={isTechRole ? "/technician" : "/dashboard"}
-              aria-label="BakimX"
-              className="flex size-8 items-center justify-center"
-            >
-              <BrandLogo variant="icon-light" size="sm" priority alt="BakimX" className="dark:hidden" />
-              <BrandLogo variant="icon-dark" size="sm" alt="BakimX" className="hidden dark:block" />
-            </Link>
-          )}
-        </div>
-        <SidebarTrigger className="hidden shrink-0 lg:inline-flex" />
+            <span className="min-w-0 truncate text-base font-semibold leading-5 tracking-[-0.01em] text-foreground">Ayarlar</span>
+          </>
+        ) : (
+          <div className="min-w-0 flex-1">
+            {workspace && !isTechRole ? (
+              <WorkspaceSwitcher
+                currentWorkshopId={workspace.currentWorkshopId}
+                memberships={workspace.memberships}
+                canCreateBranch={workspace.canCreateBranch}
+              />
+            ) : (
+              <Link
+                href={isTechRole ? "/technician" : "/dashboard"}
+                aria-label="BakimX"
+                className="flex size-8 items-center justify-center"
+              >
+                <BrandLogo variant="icon-light" size="sm" priority alt="BakimX" className="dark:hidden" />
+                <BrandLogo variant="icon-dark" size="sm" alt="BakimX" className="hidden dark:block" />
+              </Link>
+            )}
+          </div>
+        )}
+        {!inSettings ? <SidebarTrigger className="hidden shrink-0 lg:inline-flex" /> : null}
       </SidebarHeader>
 
       {!inSettings || isTechRole ? (
@@ -389,7 +412,7 @@ function AppSidebar({
                   if (isMobile) setOpenMobile(false)
                   onOpenSearch()
                 }}
-                className="h-9 w-full justify-start gap-2 truncate px-2 text-sm font-medium leading-5 tracking-[-0.005em]"
+                className="h-7 w-full justify-start gap-2 truncate px-2 text-sm font-medium leading-5 tracking-[-0.005em]"
                 aria-label="Genel arama"
               >
                 <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -462,7 +485,7 @@ function AppSidebar({
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Üyeleri davet et" className={APP_NAV_TEXT}>
-                <Link href="/settings/team?invite=1">
+                <Link href="/settings/referrals">
                   <UserRoundPlus className="size-4" />
                   <span>Üyeleri davet et</span>
                 </Link>
@@ -473,7 +496,7 @@ function AppSidebar({
         {planStatus && !inSettings ? (
           <SidebarMenu className="border-t border-sidebar-border pt-2">
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={`${planStatus.title} · ${planStatus.detail}`} className="h-auto min-h-12 group-data-[collapsible=icon]:size-8!">
+              <SidebarMenuButton asChild tooltip={`${planStatus.title} · ${planStatus.detail}`} className="h-auto py-1.5 group-data-[collapsible=icon]:size-7!">
                 <Link href="/settings/plans">
                   <CalendarClock className="size-4" aria-hidden="true" />
                   <span className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">

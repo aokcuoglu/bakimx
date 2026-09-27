@@ -37,6 +37,12 @@ function requireWritableWorkshop(permission: Permission) {
   return requireWritableFeatureWorkshop(permission, "team")
 }
 
+function revalidateMembers() {
+  revalidateMembers()
+  revalidatePath("/settings/members-and-teams/members")
+  revalidatePath("/settings/members-and-teams/teams")
+}
+
 type Ok = { ok: true; inviteUrl?: string }
 /**
  * `code` yalnız arayüzün AYRI davranması gereken hatalar için doldurulur —
@@ -243,7 +249,7 @@ export async function inviteMemberAction(formData: FormData): Promise<Result> {
     const url = buildInviteUrl(await requestOrigin(), token)
     await sendInviteEmail({ email, role, workshopName: ws?.name ?? "BakimX", url })
 
-    revalidatePath("/settings/team")
+    revalidateMembers()
     return { ok: true, inviteUrl: url }
   } catch (e) {
     return toErr(e)
@@ -285,7 +291,7 @@ export async function resendInviteAction(inviteId: string): Promise<Result> {
     const url = buildInviteUrl(await requestOrigin(), token)
     await sendInviteEmail({ email: invite!.email, role: invite!.role, workshopName: ws?.name ?? "BakimX", url })
 
-    revalidatePath("/settings/team")
+    revalidateMembers()
     return { ok: true, inviteUrl: url }
   } catch (e) {
     return toErr(e)
@@ -303,7 +309,7 @@ export async function revokeInviteAction(inviteId: string): Promise<Result> {
 
     await prisma.invite.update({ where: { id: inviteId }, data: { status: "revoked" } })
     await AuditLogAction(user.workshopId, user.id, "Invite", inviteId, "invite_revoked")
-    revalidatePath("/settings/team")
+    revalidateMembers()
     return { ok: true }
   } catch (e) {
     return toErr(e)
@@ -379,7 +385,7 @@ export async function updateMemberRoleAction(userId: string, role: string): Prom
       "member_role_changed",
       JSON.stringify({ from: target!.role, to: newRole })
     )
-    revalidatePath("/settings/team")
+    revalidateMembers()
     return { ok: true }
   } catch (e) {
     return toErr(e)
@@ -430,7 +436,7 @@ export async function setMemberActiveAction(userId: string, isActive: boolean): 
       userId,
       isActive ? "member_activated" : "member_deactivated"
     )
-    revalidatePath("/settings/team")
+    revalidateMembers()
     return { ok: true }
   } catch (e) {
     return toErr(e)
@@ -585,7 +591,7 @@ export async function createLocalMemberAction(formData: FormData): Promise<Crede
       JSON.stringify({ username, role })
     )
 
-    revalidatePath("/settings/team")
+    revalidateMembers()
     return {
       ok: true,
       credentials: {
@@ -654,7 +660,7 @@ export async function resetMemberPasswordAction(userId: string): Promise<Credent
       JSON.stringify({ username: target!.username })
     )
 
-    revalidatePath("/settings/team")
+    revalidateMembers()
     return {
       ok: true,
       credentials: {
@@ -714,7 +720,44 @@ export async function setMemberTechnicianAction(
       JSON.stringify({ technicianId })
     )
 
-    revalidatePath("/settings/team")
+    revalidateMembers()
+    return { ok: true }
+  } catch (e) {
+    return toErr(e)
+  }
+}
+
+export async function assignMemberTeamAction(userId: string, teamId: string): Promise<Result> {
+  const { user } = await requireWritableWorkshop("team.manage")
+  try {
+    assertCanManageTeam(user)
+    if (userId === user.id) return fail("Kendi ekibinizi buradan değiştiremezsiniz.")
+    const [target, team] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, workshopId: true, role: true },
+      }),
+      prisma.workshopTeam.findFirst({
+        where: { id: teamId, workshopId: user.workshopId },
+        select: { id: true, name: true },
+      }),
+    ])
+    assertWorkshopAccess(target, user.workshopId, "Kullanıcı")
+    if (!team) return fail("Ekip bulunamadı.")
+    if (target!.role === "owner") return fail("Yöneticinin yetkisi ekibe bağlanmaz.")
+    if (ROLE_RANK[target!.role] > ROLE_RANK[user.role]) {
+      return fail("Bu kullanıcıyı düzenleme yetkiniz yok.")
+    }
+    await prisma.user.update({ where: { id: userId }, data: { teamId: team.id } })
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "User",
+      userId,
+      "member_team_assigned",
+      JSON.stringify({ teamId: team.id, teamName: team.name }),
+    )
+    revalidateMembers()
     return { ok: true }
   } catch (e) {
     return toErr(e)

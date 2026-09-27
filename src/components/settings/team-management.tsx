@@ -8,13 +8,14 @@ import {
   Users,
   UserPlus,
   Mail,
+  Search,
+  MoreHorizontal,
   Copy,
   Check,
   KeyRound,
   Loader2,
   RotateCw,
   X,
-  ShieldCheck,
   TriangleAlert,
 } from "lucide-react"
 import type { UserRole } from "@prisma/client"
@@ -24,6 +25,22 @@ import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Form,
   FormControl,
@@ -47,6 +64,7 @@ import {
   resendInviteAction,
   resetMemberPasswordAction,
   revokeInviteAction,
+  assignMemberTeamAction,
   updateMemberRoleAction,
   setMemberActiveAction,
 } from "@/app/(app)/settings/team/actions"
@@ -74,6 +92,8 @@ export type TeamMember = {
   isActive: boolean
   /** BAK-39: Teknicyen kaydıyla eşleştirilmiş ise bu id'dir, yoksa null. */
   technicianId: string | null
+  teamId?: string | null
+  teamName?: string | null
 }
 export type PendingInvite = {
   id: string
@@ -119,6 +139,7 @@ function memberName(m: TeamMember) {
 
 export function TeamManagement({
   members,
+  teams = [],
   invites,
   currentUserId,
   currentUserRole,
@@ -133,6 +154,7 @@ export function TeamManagement({
   logoUrl,
 }: {
   members: TeamMember[]
+  teams?: { id: string; name: string }[]
   invites: PendingInvite[]
   currentUserId: string
   currentUserRole: UserRole
@@ -159,6 +181,8 @@ export function TeamManagement({
   const [issued, setIssued] = useState<IssuedCredentials | null>(null)
   const [lastInviteUrl, setLastInviteUrl] = useState("")
   const [copied, setCopied] = useState(false)
+  const [query, setQuery] = useState("")
+  const [roleFilter, setRoleFilter] = useState<UserRole | "">("")
 
   // Varsayılan "staff" idi; #183'te bu rol LEGACY oldu ve atanabilir listesinden
   // çıkarıldı. Varsayılan güncellenmediği için davet formu, seçenekler arasında
@@ -206,64 +230,7 @@ export function TeamManagement({
   return (
     <div className="space-y-5">
       <WorkshopEntryQR workshopName={workshopName} loginCode={loginCode} logoUrl={logoUrl} />
-      <div className="rounded-lg border border-border bg-card p-5">
-        <div className="flex items-center justify-between mb-4 gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <Users className="size-5 text-muted-foreground shrink-0" />
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base font-semibold text-foreground">Ekip</h3>
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
-                  // Sabit renk yerine tema token'ı (proje UI kuralı); açık zeminde
-                  // metin AA geçsin diye warning'in -strong tonu.
-                  atLimit ? "bg-warning/15 text-warning-strong" : "bg-muted text-muted-foreground"
-                )}
-              >
-                {seatUsed} / {seatLimit} koltuk
-              </span>
-            </div>
-            {/* Aşağıdaki "Teknisyenler & Ustalar" kartıyla karışıyordu: iki listede
-                de "Usta" ve "Yönetici" geçiyor. Metin, hangisinin YETKİ verdiğini
-                söylemek zorunda (#274). */}
-            <p className="text-xs text-muted-foreground">
-              Tüm personel ve uygulama yetkileri tek listede yönetilir.
-            </p>
-          </div>
-        </div>
-        {canManage && (
-          <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-            {/* İki yol yan yana: e-postası olan davetle, olmayan geçici şifreyle gelir. */}
-            {localAssignable.length > 0 && (
-              <Button variant="foreground"
-                size="lg"
-                onClick={() => {
-                  setAccountMissingId(null)
-                  setShowAddLocal((s) => !s)
-                  setShowInvite(false)
-                }}
-                className="touch-manipulation"
-              >
-                <UserPlus className="size-4" />
-                Kullanıcı Ekle
-              </Button>
-            )}
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => {
-                setShowInvite((s) => !s)
-                setShowAddLocal(false)
-              }}
-              className="touch-manipulation"
-            >
-              <Mail className="size-4" />
-              Davet Et
-            </Button>
-          </div>
-        )}
-      </div>
+      <div>
 
       {canManage && atLimit && (
         <div className="mb-4 p-3 rounded-lg border border-warning/20 bg-warning/10 text-sm text-warning-strong">
@@ -306,27 +273,47 @@ export function TeamManagement({
         </div>
       )}
 
-      {showAddLocal && canManage && localAssignable.length > 0 && (
-        <AddLocalMemberForm
-          assignableRoles={localAssignable}
-          onCancel={() => {
+      <Dialog
+        open={showAddLocal && canManage && localAssignable.length > 0}
+        onOpenChange={(open) => {
+          if (!open) {
             setShowAddLocal(false)
             setAccountMissingId(null)
-          }}
-          technicianId={accountMissingId ?? undefined}
-          initialFullName={
-            accountMissingPersonnel.find((person) => person.id === accountMissingId)?.fullName
           }
-          onCreated={(credentials) => {
-            setShowAddLocal(false)
-            setAccountMissingId(null)
-            setIssued(credentials)
-            router.refresh()
-          }}
-        />
-      )}
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {accountMissingId ? "Personelin giriş hesabını tamamla" : "Kullanıcı ekle"}
+            </DialogTitle>
+          </DialogHeader>
+          <AddLocalMemberForm
+            key={accountMissingId ?? "new"}
+            assignableRoles={localAssignable}
+            onCancel={() => {
+              setShowAddLocal(false)
+              setAccountMissingId(null)
+            }}
+            technicianId={accountMissingId ?? undefined}
+            initialFullName={
+              accountMissingPersonnel.find((person) => person.id === accountMissingId)?.fullName
+            }
+            onCreated={(credentials) => {
+              setShowAddLocal(false)
+              setAccountMissingId(null)
+              setIssued(credentials)
+              router.refresh()
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
-      {showInvite && canManage && (
+      <Dialog open={showInvite && canManage} onOpenChange={(open) => !open && setShowInvite(false)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Ekip üyesi davet et</DialogTitle>
+          </DialogHeader>
         <Form {...inviteForm}>
           <form
             onSubmit={inviteForm.handleSubmit((values) => {
@@ -342,9 +329,8 @@ export function TeamManagement({
                 }
               )
             })}
-            className="p-4 rounded-lg border border-primary/20 bg-primary/5 space-y-3 mb-4"
+            className="space-y-3"
           >
-            <h4 className="text-sm font-semibold text-foreground">Ekip üyesi davet et</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormField
                 control={inviteForm.control}
@@ -406,94 +392,152 @@ export function TeamManagement({
             </div>
           </form>
         </Form>
-      )}
+        </DialogContent>
+      </Dialog>
 
-      {/* Members */}
-      <div className="space-y-2">
-        {members.map((m) => {
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Ad veya e-posta ara"
+            className="pl-8"
+          />
+        </div>
+        <Select value={roleFilter || "all"} onValueChange={(value) => setRoleFilter(value === "all" ? "" : value as UserRole)}>
+          <SelectTrigger className="w-full sm:w-36">
+            <SelectValue placeholder="Filtre" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tüm roller</SelectItem>
+            {assignable.map((role) => (
+              <SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {canManage ? (
+          <div className="flex gap-2">
+            {localAssignable.length > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setAccountMissingId(null)
+                  setShowInvite(false)
+                  setShowAddLocal(true)
+                }}
+              >
+                <UserPlus className="size-3.5" />
+                Kullanıcı ekle
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="foreground"
+              onClick={() => {
+                setShowAddLocal(false)
+                setAccountMissingId(null)
+                setShowInvite(true)
+              }}
+            >
+              <Mail className="size-3.5" />
+              Davet et
+            </Button>
+          </div>
+        ) : null}
+      </div>
+      <p className="mb-3 text-xs text-muted-foreground">{seatUsed} / {seatLimit} koltuk</p>
+
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="grid grid-cols-[1fr_8rem_8rem_2.5rem] items-center gap-3 border-b border-border px-3 py-2 text-xs font-medium text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5"><Users className="size-3.5" /> Kullanıcı</span>
+          <span>Rol</span>
+          <span>Ekip</span>
+          <span />
+        </div>
+        {members.filter((member) => {
+          const needle = query.trim().toLocaleLowerCase("tr")
+          const haystack = `${memberName(member)} ${memberIdentity(member)}`.toLocaleLowerCase("tr")
+          if (needle && !haystack.includes(needle)) return false
+          if (roleFilter && member.role !== roleFilter) return false
+          return true
+        }).map((m) => {
           const manageable = canManageMember(m)
           const isSelf = m.id === currentUserId
+          const initial = memberName(m).slice(0, 1).toLocaleUpperCase("tr")
           return (
             <div
               key={m.id}
               className={cn(
-                "flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg border",
-                m.isActive ? "border-border bg-card" : "border-border bg-muted"
+                "grid grid-cols-[1fr_8rem_8rem_2.5rem] items-center gap-3 border-b border-border px-3 py-2.5 last:border-b-0",
+                m.isActive ? "bg-card" : "bg-muted",
               )}
             >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="size-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                  <ShieldCheck className="size-5" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={cn("text-sm font-medium truncate", m.isActive ? "text-foreground" : "text-muted-foreground")}>
-                      {memberName(m)}
-                    </span>
-                    {isSelf && <span className="text-[10px] text-muted-foreground">(Siz)</span>}
-                    <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border", ROLE_BADGE[m.role])}>
-                      {ROLE_LABELS[m.role]}
-                    </span>
-                    {!m.isActive && (
-                      <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Pasif</span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">{memberIdentity(m)}</p>
-                </div>
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-warning/15 text-[11px] font-semibold text-warning-strong">
+                  {initial}
+                </span>
+                <span className={cn("truncate text-sm font-medium", m.isActive ? "text-foreground" : "text-muted-foreground")}>
+                  {memberName(m)}
+                  {isSelf ? <span className="ml-1 font-normal text-muted-foreground">(Siz)</span> : null}
+                </span>
+                <span className="hidden truncate text-sm text-muted-foreground sm:inline">{memberIdentity(m)}</span>
+                {!m.isActive ? <span className="text-[10px] text-muted-foreground">Pasif</span> : null}
               </div>
-
-              {manageable && (
-                <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                  <Select
-                    value={m.role}
-                    disabled={isPending}
-                    onValueChange={(v) => v && run(() => updateMemberRoleAction(m.id, v))}
-                  >
-                    <SelectTrigger size="sm" className="text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {assignable.map((r) => (
-                        <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {/* E-postasız üyenin "şifremi unuttum" yolu yok — sıfırlama
-                      buradan geçer ve yeni geçici şifre üretir. */}
-                  {isLocalMember(m) && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        run(
-                          () => resetMemberPasswordAction(m.id),
-                          (r) => r.credentials && setIssued(r.credentials)
-                        )
-                      }
-                      disabled={isPending}
-                      className="touch-manipulation"
-                    >
-                      <KeyRound className="size-3.5" /> Şifre Sıfırla
+              <span className={cn("inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-medium border", ROLE_BADGE[m.role])}>
+                {ROLE_LABELS[m.role]}
+              </span>
+              <span className="truncate text-sm text-foreground">{m.teamName ?? "—"}</span>
+              {manageable ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="ghost" size="icon" className="size-7" aria-label="Üye işlemleri">
+                      <MoreHorizontal className="size-4" />
                     </Button>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => run(() => setMemberActiveAction(m.id, !m.isActive))}
-                    disabled={isPending}
-                    className={cn(
-                      "touch-manipulation",
-                      m.isActive
-                        ? "text-destructive-strong hover:bg-destructive/10 border-destructive/20"
-                        : "text-success-strong hover:bg-success/10 border-success/20"
-                    )}
-                  >
-                    {m.isActive ? "Pasif Yap" : "Aktif Yap"}
-                  </Button>
-                </div>
-              )}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>Rol</DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        {assignable.map((role) => (
+                          <DropdownMenuItem key={role} onClick={() => run(() => updateMemberRoleAction(m.id, role))}>
+                            {ROLE_LABELS[role]}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                    {teams.length > 0 && m.role !== "owner" ? (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>Ekip</DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          {teams.map((team) => (
+                            <DropdownMenuItem key={team.id} onClick={() => run(() => assignMemberTeamAction(m.id, team.id))}>
+                              {team.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    ) : null}
+                    <DropdownMenuSeparator />
+                    {isLocalMember(m) ? (
+                      <DropdownMenuItem
+                        onClick={() =>
+                          run(
+                            () => resetMemberPasswordAction(m.id),
+                            (result) => result.credentials && setIssued(result.credentials),
+                          )
+                        }
+                      >
+                        <KeyRound className="size-3.5" /> Şifre sıfırla
+                      </DropdownMenuItem>
+                    ) : null}
+                    <DropdownMenuItem onClick={() => run(() => setMemberActiveAction(m.id, !m.isActive))}>
+                      {m.isActive ? "Pasif yap" : "Aktif yap"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : <span />}
             </div>
           )
         })}

@@ -176,7 +176,7 @@ export function LoginForm({
               spellCheck={false}
               placeholder="ornek@email.com veya kullanıcı adınız"
               required
-              className="h-10 rounded-sm bg-card pl-9 shadow-xs"
+              className="h-7 rounded-[8px] bg-card pl-9 shadow-xs"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
             />
@@ -200,7 +200,7 @@ export function LoginForm({
                 autoCapitalize="none"
                 spellCheck={false}
                 placeholder="ornek-oto-servis"
-                className="h-10 rounded-sm bg-card pl-9 shadow-xs"
+                className="h-7 rounded-[8px] bg-card pl-9 shadow-xs"
               />
             </div>
             <p className="text-xs text-muted-foreground">
@@ -222,7 +222,7 @@ export function LoginForm({
               autoComplete="current-password"
               placeholder="••••••"
               required
-              className="h-10 rounded-sm bg-card pl-9 pr-9 shadow-xs"
+              className="h-7 rounded-[8px] bg-card pl-9 pr-9 shadow-xs"
             />
             <Button
               type="button"

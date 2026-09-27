@@ -28,11 +28,11 @@ describe("design system radius contract", () => {
   })
 
   test("shared controls use sm; surfaces use lg", () => {
-    expect(read("src/components/ui/button.tsx")).toContain("rounded-[6px]")
-    expect(read("src/components/ui/input.tsx")).toContain("rounded-sm")
-    expect(read("src/components/ui/textarea.tsx")).toContain("rounded-sm")
+    expect(read("src/components/ui/button.tsx")).toContain("rounded-[8px]")
+    expect(read("src/components/ui/input.tsx")).toContain("rounded-[8px]")
+    expect(read("src/components/ui/textarea.tsx")).toContain("rounded-[8px]")
     expect(read("src/components/ui/select.tsx")).toContain(
-      "gap-1.5 rounded-sm border border-input"
+      "gap-1.5 rounded-[9px] border border-input"
     )
 
     const card = read("src/components/ui/card.tsx")

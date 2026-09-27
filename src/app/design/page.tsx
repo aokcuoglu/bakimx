@@ -58,7 +58,7 @@ const BRAND_COLORS = [
     name: "Navy",
     hex: "#071F49",
     token: "bg-navy / variant=navy",
-    description: "Public ve asistan birincil CTA dolgusu; koyu marka yüzeyi.",
+    description: "Eski koyu CTA. Yeni birincil düğme primary mavisidir.",
     swatchClass: "bg-navy",
   },
   {
@@ -70,9 +70,9 @@ const BRAND_COLORS = [
   },
   {
     name: "Primary",
-    hex: "#0C65E8",
+    hex: "#266DF0",
     token: "bg-primary / text-primary",
-    description: "Link, seçim ve odak halkası. Birincil düğme dolgusu olmaz.",
+    description: "Birincil düğme, bağlantı, seçim ve odak.",
     swatchClass: "bg-primary",
   },
   {
@@ -495,14 +495,14 @@ export default function DesignSystemPage() {
             <Button variant="navy" size="xs">
               xs
             </Button>
-            <Button variant="navy" size="sm">
-              sm · 38px
+            <Button variant="default" size="sm">
+              sm · 28px
             </Button>
-            <Button variant="navy" size="lg">
-              lg · 44px
+            <Button variant="default" size="lg">
+              lg · 28px
             </Button>
-            <Button variant="navy" size="xl">
-              xl · 48px
+            <Button variant="default" size="compact">
+              compact · 20px
             </Button>
             <Badge variant="outline">status</Badge>
             <Badge>default</Badge>

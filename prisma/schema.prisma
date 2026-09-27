@@ -86,6 +86,7 @@ model Workshop {
 
   settings                  WorkshopSettings?
   users                     User[]
+  teams                     WorkshopTeam[]
   pushSubscriptions         PushSubscription[]
   customers                 Customer[]
   vehicles                  Vehicle[]
@@ -381,6 +382,10 @@ model User {
   // workshop owner with no data fixup. Invited users get their role explicitly.
   // Also mirrored on WorkshopMembership; switch updates both.
   role               UserRole    @default(owner)
+  /// Atölyenin tanımladığı ekip. Doluysa yetki, statik rolden değil bu ekibin
+  /// izin listesinden okunur. Sahip (owner) ekibe bağlı olsa da tam yetki kalır.
+  teamId             String?
+  team               WorkshopTeam? @relation(fields: [teamId], references: [id], onDelete: SetNull)
   // Soft-disable a seat (blocks sign-in) without deleting history.
   isActive           Boolean     @default(true)
   memberships        WorkshopMembership[]
@@ -424,6 +429,23 @@ model User {
   @@unique([workshopId, username])
   @@index([workshopId])
   @@index([technicianId])
+  @@index([teamId])
+}
+
+/// Atölyenin kendi ekibi. İzinler `src/lib/roles.ts` içindeki Permission anahtarlarıdır.
+model WorkshopTeam {
+  id          String   @id @default(cuid())
+  workshopId  String
+  workshop    Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  permissions String[] @default([])
+  members     User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workshopId, name])
+  @@index([workshopId])
 }
 
 // Workshop-scoped team roles. `staff` is the least-privileged operational role.

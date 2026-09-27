@@ -1,5 +1,6 @@
 "use server"
 
+import { cache } from "react"
 import { getCurrentUser } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/db"
@@ -9,7 +10,7 @@ import {
   SESSION_INVALID_REASON,
 } from "@/lib/session-recovery"
 
-export async function getAppData() {
+export const getAppData = cache(async function getAppData() {
   const user = await getCurrentUser()
   // Düz `/login` yönlendirmesi burada SONSUZ DÖNGÜ yapar: oturum çerezi hâlâ
   // geçerli imzalı olduğu için middleware bizi /dashboard'a geri yollar.
@@ -23,4 +24,4 @@ export async function getAppData() {
   })
 
   return { user, workshop }
-}
+})

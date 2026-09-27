@@ -140,18 +140,9 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Müşteri Bakiye Özeti">
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <Link href="/customers" className="hover:text-foreground">Müşteriler</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Bakiye Özeti</span>
-        </div>
-
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-page-title text-foreground">Bakiye Özeti</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <p className="text-sm text-muted-foreground">
               Tahsilat kayıtlarına dayalı müşteri bakiye görünümü
             </p>
           </div>

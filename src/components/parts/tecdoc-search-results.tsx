@@ -132,7 +132,7 @@ export function TecdocSearchResults({
               type="button"
               variant="ghost"
               onClick={() => onCategorySelect(c)}
-              className="h-auto min-h-8 w-full justify-between gap-2 rounded-none border-b border-border/60 px-4 py-2 text-left whitespace-normal"
+              className="h-auto min-h-7 w-full justify-between gap-2 rounded-none border-b border-border/60 px-4 py-2 text-left whitespace-normal"
             >
               <span className="min-w-0 flex-1">
                 <span className="block text-sm truncate">{c.node.name}</span>
@@ -277,7 +277,7 @@ function BrandChip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "h-auto min-h-8 max-w-[12rem] gap-1 truncate rounded-full px-2.5 text-xs",
+        "h-auto min-h-7 max-w-[12rem] gap-1 truncate rounded-full px-2.5 text-xs",
         active
           ? "border-primary bg-primary text-primary-foreground [&_span]:text-primary-foreground"
           : "border-border bg-background text-foreground hover:bg-muted",

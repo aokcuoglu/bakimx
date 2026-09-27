@@ -486,7 +486,7 @@ export function MockAppDemo() {
                       value={value}
                       placeholder={placeholder}
                       className={cn(
-                        "h-8 rounded-md border border-border bg-background px-2.5 text-xs outline-none",
+                        "h-7 rounded-[8px] border border-border bg-background px-2.5 text-xs outline-none",
                         formFilled && "border-success/40 bg-success/5",
                       )}
                     />

@@ -4,8 +4,8 @@ import { prisma } from "@/lib/db"
 import { ROLE_LABELS } from "@/lib/roles"
 import { LOGOUT_REASON_PARAM, SESSION_INVALID_REASON } from "@/lib/session-recovery"
 import { AppShell } from "@/components/layout/app-shell"
-import { SettingsPageHeader } from "@/components/settings/settings-page-header"
 import { AccountProfilePanel } from "@/components/account/account-profile-panel"
+import { SettingsPageHeader } from "@/components/settings/settings-page-header"
 
 export const metadata = {
   title: "Profil",
@@ -23,11 +23,8 @@ export default async function SettingsProfilePage() {
   })
 
   return (
-    <AppShell pageTitle="Profil" wide workshopName={workshop?.name}>
-      <SettingsPageHeader
-        title="Profil"
-        description="Kişisel bilgilerinizi ve şifrenizi yönetin."
-      />
+    <AppShell pageTitle="Profil" workshopName={workshop?.name}>
+      <SettingsPageHeader title="Profil" description="Kişisel bilgilerinizi ve şifrenizi yönetin." />
       <AccountProfilePanel
         firstName={user.firstName ?? ""}
         lastName={user.lastName ?? ""}

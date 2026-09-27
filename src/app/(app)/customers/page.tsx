@@ -106,14 +106,9 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Müşteriler">
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Müşteriler</span>
-        </div>
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-page-title text-foreground">Müşteriler</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
               {rows.length} müşteri{rows.length === 1 ? "" : ""} kayıtlı
             </p>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { CalendarRange, CreditCard, Gauge, Minus, Plus, Users, X } from "lucide-react"
+import { ArrowLeft, CalendarRange, Check, CreditCard, Gauge, Hexagon, Minus, Plus, Users, X } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,9 +22,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { formatMinor, getPlanPriceMinor } from "@/lib/billing/pricing"
+import { formatMinor } from "@/lib/billing/pricing"
+import { getDiscountedPlanPriceMinor } from "@/lib/billing/referral-discount"
 import { getSeatLimit, VIN_LOOKUP_QUOTA, type SalePlanTier } from "@/lib/plan"
-import { getPlanPackage } from "@/lib/plans-catalog"
+import { isPlanDowngrade, isPlanUpgrade } from "@/lib/billing/plan-change"
+import { PLAN_PACKAGES, getPlanPackage } from "@/lib/plans-catalog"
+import { PlanPackages } from "@/components/billing/plan-packages"
 import { cn } from "@/lib/utils"
 
 type Cycle = "monthly" | "yearly"
@@ -55,7 +58,10 @@ export function ManagePlanDialog({
   currentPeriodEnd,
   canPurchase,
   hasPendingOrder,
+  pendingActions,
   onChangePlan,
+  onSelectPlan,
+  onDowngrade,
   onConfirm,
   preferredCycle = null,
   isTrialing = false,
@@ -64,6 +70,7 @@ export function ManagePlanDialog({
   defaultInvoiceTitle = "",
   defaultTaxNumber = "",
   defaultTaxOffice = "",
+  referralDiscountBps = 0,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -73,7 +80,11 @@ export function ManagePlanDialog({
   currentPeriodEnd: Date | string | null
   canPurchase: boolean
   hasPendingOrder: boolean
+  pendingActions?: React.ReactNode
   onChangePlan: () => void
+  /** Picks a different tier from the in-dialog upgrade cards. */
+  onSelectPlan?: (tier: SalePlanTier, cycle: Cycle) => void
+  onDowngrade?: (tier: SalePlanTier) => void
   onConfirm: (draft: ManagePlanDraft) => void
   preferredCycle?: Cycle | null
   isTrialing?: boolean
@@ -82,6 +93,7 @@ export function ManagePlanDialog({
   defaultInvoiceTitle?: string
   defaultTaxNumber?: string
   defaultTaxOffice?: string
+  referralDiscountBps?: number
 }) {
   const baseline = currentCycle ?? "yearly"
   const [cycle, setCycle] = useState<Cycle>(preferredCycle ?? baseline)
@@ -92,12 +104,14 @@ export function ManagePlanDialog({
   const [addedSeats, setAddedSeats] = useState(extraSeats)
   const [quotaAmount, setQuotaAmount] = useState("0")
   const [error, setError] = useState("")
+  const [picker, setPicker] = useState(false)
+  const [pickerCycle, setPickerCycle] = useState<Cycle>(preferredCycle ?? baseline)
 
   const includedSeats = planTier ? getSeatLimit(planTier, 0) : 1
   const seatTotal = includedSeats + addedSeats
   const includedQuota = planTier ? VIN_LOOKUP_QUOTA[planTier] : 0
   const quotaPack = QUOTA_PACKS.find((pack) => String(pack.amount) === quotaAmount) ?? QUOTA_PACKS[0]
-  const planAmount = planTier != null ? getPlanPriceMinor(planTier, cycle) : 0
+  const planAmount = planTier != null ? getDiscountedPlanPriceMinor(planTier, cycle, referralDiscountBps) : 0
   const total = planAmount
   const periodEnd =
     currentPeriodEnd != null
@@ -107,7 +121,7 @@ export function ManagePlanDialog({
   const locked = !canPurchase || hasPendingOrder
   const dirty = cycle !== baseline || quotaPack.amount > 0 || addedSeats !== extraSeats
   const perMonth = (option: Cycle) => {
-    const optionAmount = planTier ? getPlanPriceMinor(planTier, option) : 0
+    const optionAmount = planTier ? getDiscountedPlanPriceMinor(planTier, option, referralDiscountBps) : 0
     return option === "yearly" ? Math.round(optionAmount / 12) : optionAmount
   }
 
@@ -133,11 +147,21 @@ export function ManagePlanDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex max-h-[min(92dvh,880px)] w-[calc(100%-1.5rem)] max-w-4xl flex-col gap-0 overflow-hidden rounded-xl bg-card p-0 sm:max-w-4xl"
+        className={cn(
+          "flex h-[min(92dvh,880px)] max-h-[min(92dvh,880px)] !w-[min(808px,calc(100%-1.5rem))] !max-w-[808px] flex-col gap-0 overflow-hidden rounded-[var(--radius-dialog)] bg-card p-0 sm:!max-w-[808px]",
+        )}
+        overlayClassName="bg-foreground/25"
         showCloseButton={false}
       >
-        <DialogHeader className="border-b px-5 py-4 pr-12">
-          <DialogTitle className="text-base font-semibold">Paketi yönet</DialogTitle>
+        <DialogHeader className="min-h-11 justify-center border-b px-4 py-2 pr-12">
+          <DialogTitle className="flex items-center gap-2 text-sm font-medium">
+            {picker && (
+              <Button type="button" variant="ghost" size="icon-sm" aria-label="Geri" onClick={() => setPicker(false)}>
+                <ArrowLeft className="size-4" />
+              </Button>
+            )}
+            {picker ? "Paketi yükselt" : "Paketi yönet"}
+          </DialogTitle>
           <DialogDescription className="sr-only">
             Mevcut plan, faturalama dönemi, koltuk, katalog kotası ve ödeme bilgisi.
           </DialogDescription>
@@ -149,21 +173,147 @@ export function ManagePlanDialog({
           </DialogClose>
         </DialogHeader>
 
-        <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
+        {!picker && <div className="flex min-h-16 items-center justify-between gap-3 border-b px-4 py-3">
           <div className="min-w-0">
             <p className="text-xs text-muted-foreground">Mevcut plan</p>
-            <p className="mt-0.5 text-base font-semibold tracking-tight">{pkg ? `${pkg.name} paketini yönet` : planName}</p>
+            <p className="mt-0.5 text-lg font-semibold tracking-tight">{pkg ? `${pkg.name} paketini yönet` : planName}</p>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={onChangePlan} disabled={!canPurchase}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!canPurchase}
+            onClick={() => {
+              if (onSelectPlan) setPicker(true)
+              else onChangePlan()
+            }}
+          >
             Değiştir
           </Button>
-        </div>
+        </div>}
 
-        <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[minmax(0,1.15fr)_minmax(0,22rem)] lg:overflow-hidden">
-          <div className="min-w-0 space-y-6 border-b px-5 py-5 lg:overflow-y-auto lg:border-r lg:border-b-0">
+        {picker ? (
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+            <div className="flex justify-center">
+              <ToggleGroup
+                type="single"
+                value={pickerCycle}
+                onValueChange={(value) => { if (value) setPickerCycle(value as Cycle) }}
+                className="inline-flex gap-0.5 rounded-lg bg-muted p-0.5"
+                aria-label="Faturalama dönemi"
+              >
+                {(["yearly", "monthly"] as const).map((option) => (
+                  <ToggleGroupItem
+                    key={option}
+                    value={option}
+                    className="h-7! min-w-0 rounded-lg px-2 text-sm font-medium text-muted-foreground data-[state=on]:!bg-card data-[state=on]:!text-foreground data-[state=on]:shadow-[inset_0_0_0_1px_var(--border)]"
+                  >
+                    {option === "yearly" ? "Yıllık" : "Aylık"}
+                    {option === "yearly" && <span className="rounded-md bg-primary/10 px-1 text-[11px] font-medium text-primary-strong">-17%</span>}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {PLAN_PACKAGES.filter((pkg) => pkg.tier !== "lite").map((pkg) => {
+                const owned = planTier === pkg.tier
+                const downgrade = isPlanDowngrade(planTier, pkg.tier)
+                const upgrade = isPlanUpgrade(planTier, pkg.tier)
+                const discountedPrice = getDiscountedPlanPriceMinor(pkg.tier, pickerCycle, referralDiscountBps) / 100
+                const perMonth = pickerCycle === "yearly" ? Math.round(discountedPrice / 12) : discountedPrice
+                return (
+                  <article key={pkg.tier} className="rounded-xl border bg-card p-4">
+                    <span className="flex size-9 items-center justify-center rounded-lg bg-muted text-primary">
+                      <Hexagon className="size-4" aria-hidden="true" />
+                    </span>
+                    <h3 className="mt-3 text-lg font-semibold">{pkg.name}</h3>
+                    <p className="mt-2 text-2xl font-semibold tracking-tight">₺{perMonth.toLocaleString("tr-TR")}</p>
+                    {referralDiscountBps > 0 && pkg.tier !== "lite" && <p className="text-xs text-muted-foreground">İlk yıl %10 referans indirimi</p>}
+                    <p className="text-xs text-muted-foreground">Atölye başına · {pickerCycle === "yearly" ? "aylık karşılık, yıllık faturalandırılır" : "aylık faturalandırılır"}</p>
+                    <Button
+                      type="button"
+                      variant={owned ? "secondary" : pkg.popular && upgrade ? "default" : "outline"}
+                      className="mt-4 w-full"
+                      disabled={owned || !canPurchase || hasPendingOrder}
+                      onClick={() => {
+                        if (downgrade) onDowngrade?.(pkg.tier)
+                        else onSelectPlan?.(pkg.tier, pickerCycle)
+                      }}
+                    >
+                      {owned ? "Mevcut paket" : downgrade ? `${pkg.name} paketine düş` : upgrade || planTier == null ? "Yükselt" : "Bu paketi seç"}
+                    </Button>
+                    <p className="mt-4 text-sm font-medium">{pkg.tagline}</p>
+                    <ul className="mt-2 space-y-1.5">
+                      {pkg.highlights.slice(0, 3).map((highlight) => (
+                        <li key={highlight} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <Check className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                          {highlight}
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                )
+              })}
+            </div>
+            {PLAN_PACKAGES.filter((pkg) => pkg.tier === "lite").map((pkg) => {
+              const owned = planTier === pkg.tier
+              const downgrade = isPlanDowngrade(planTier, pkg.tier)
+              return (
+                <article key={pkg.tier} className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-primary">
+                      <Hexagon className="size-4" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <h3 className="text-lg font-semibold">{pkg.name}</h3>
+                      <p className="text-sm text-muted-foreground">{pkg.tagline}</p>
+                      <ul className="mt-2 space-y-1">
+                        {pkg.highlights.slice(0, 3).map((highlight) => (
+                          <li key={highlight} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <Check className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                            {highlight}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0"
+                    disabled={owned || !canPurchase || hasPendingOrder}
+                    onClick={() => {
+                      if (downgrade) onDowngrade?.(pkg.tier)
+                      else onSelectPlan?.(pkg.tier, pickerCycle)
+                    }}
+                  >
+                    {owned ? "Mevcut paket" : "Lite paketine düş"}
+                  </Button>
+                </article>
+              )
+            })}
+            <PlanPackages
+              referralDiscountBps={referralDiscountBps}
+              key={pickerCycle}
+              presentation="settings"
+              settingsChrome={false}
+              ownedTier={planTier}
+              currentCycle={pickerCycle}
+              canPurchase={canPurchase}
+              hasPendingOrder={hasPendingOrder}
+              onSelectPlan={onSelectPlan}
+              onDowngrade={onDowngrade}
+            />
+          </div>
+        ) : (
+        <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:overflow-hidden">
+          <div className="min-w-0 space-y-6 border-b px-4 py-4 lg:overflow-y-auto lg:border-r lg:border-b-0">
             {hasPendingOrder && (
               <Alert variant="warning">
-                <AlertDescription>Bekleyen bir paket talebiniz var. Ödeme tamamlanana kadar yeni sipariş oluşturamazsınız.</AlertDescription>
+                <AlertDescription className="space-y-2">
+                  <p>Bekleyen bir paket talebiniz var. Yeni paket seçmek için önce bu talebi tamamlayın veya iptal edin.</p>
+                  {pendingActions}
+                </AlertDescription>
               </Alert>
             )}
             {!canPurchase && (
@@ -190,7 +340,7 @@ export function ManagePlanDialog({
                   <ToggleGroupItem
                     key={option}
                     value={option}
-                    className="h-auto w-full justify-between gap-3 rounded-lg border bg-card px-3 py-3 text-left font-normal whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/5"
+                    className="h-auto w-full justify-between gap-3 rounded-xl border bg-card px-2.5 py-2 text-left font-normal whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/5 data-[state=on]:ring-2 data-[state=on]:ring-primary/10"
                   >
                     <span className="flex items-center gap-2">
                       <span className={cn("size-4 rounded-full border", cycle === option ? "border-primary bg-primary shadow-[inset_0_0_0_3px_var(--card)]" : "border-input")} aria-hidden="true" />
@@ -266,19 +416,19 @@ export function ManagePlanDialog({
                 aria-label="Ödeme yöntemi"
                 disabled={locked}
               >
-                <ToggleGroupItem value="card" className="h-9 rounded-lg border data-[state=on]:border-primary data-[state=on]:bg-primary/5">Kart</ToggleGroupItem>
-                <ToggleGroupItem value="havale" className="h-9 rounded-lg border data-[state=on]:border-primary data-[state=on]:bg-primary/5">Havale/EFT</ToggleGroupItem>
+                <ToggleGroupItem value="card" className="h-7 rounded-[8px] border data-[state=on]:border-primary data-[state=on]:bg-primary/5">Kart</ToggleGroupItem>
+                <ToggleGroupItem value="havale" className="h-7 rounded-[8px] border data-[state=on]:border-primary data-[state=on]:bg-primary/5">Havale/EFT</ToggleGroupItem>
               </ToggleGroup>
             </section>
           </div>
 
-          <div className="min-w-0 space-y-4 bg-muted/20 px-5 py-5 lg:overflow-y-auto">
+          <div className="min-w-0 space-y-4 bg-muted/20 px-4 py-4 lg:overflow-y-auto">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-medium">Ödeme özeti</p>
               <p className="text-xs text-muted-foreground">{cycle === "yearly" ? "Yıllık" : "Aylık"}</p>
             </div>
             {isTrialing && periodEnd && (
-              <Alert>
+              <Alert variant="info">
                 <AlertDescription>Deneme bitene kadar ({periodEnd}) kartınız çekilmez.</AlertDescription>
               </Alert>
             )}
@@ -313,6 +463,7 @@ export function ManagePlanDialog({
             </p>
           </div>
         </div>
+        )}
       </DialogContent>
     </Dialog>
   )

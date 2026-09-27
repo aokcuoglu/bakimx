@@ -108,17 +108,17 @@ export function WorkspaceSwitcher({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               aria-label="Çalışma alanı menüsü"
-              className="w-[min(24rem,calc(100vw-1rem))] rounded-xl border border-border bg-card p-1.5 shadow-lg"
+              className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-xl border border-border bg-card p-1 shadow-md"
               align="start"
               side="bottom"
-              sideOffset={12}
+              sideOffset={4}
             >
               {memberships.map((item) => {
                 const active = item.id === currentWorkshopId
                 return (
                   <DropdownMenuItem
                     key={item.id}
-                    className="min-h-12 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70"
+                    className="h-8 gap-2 rounded-md px-2 py-0 focus:bg-muted/70"
                     disabled={pending}
                     aria-label={`${item.name}${item.city ? `, ${item.city}` : ""}${active ? " (aktif)" : ""}`}
                     onSelect={(event) => {
@@ -126,31 +126,28 @@ export function WorkspaceSwitcher({
                       switchTo(item.id)
                     }}
                   >
-                    <WorkspaceAvatar name={item.name} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium leading-5 tracking-[-0.005em]">{item.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">{item.city}</p>
-                    </div>
+                    <WorkspaceAvatar name={item.name} className="size-6 rounded-md text-[10px]" />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium leading-5">{item.name}</span>
                     {active ? <Check className="size-4 shrink-0 text-primary" aria-hidden /> : null}
                   </DropdownMenuItem>
                 )
               })}
               {canCreateBranch ? (
                 <DropdownMenuItem
-                  className="min-h-11 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70"
+                  className="h-8 gap-2 rounded-md px-2 py-0 focus:bg-muted/70"
                   onSelect={(event) => {
                     event.preventDefault()
                     setOpen(false)
                     setWizardOpen(true)
                   }}
                 >
-                  <span className="flex size-7 items-center justify-center">
+                  <span className="flex size-6 items-center justify-center">
                     <Plus className="size-4" />
                   </span>
                   <span className="text-sm font-medium leading-5 tracking-[-0.005em]">Yeni şube oluştur</span>
                 </DropdownMenuItem>
               ) : (
-                <DropdownMenuItem asChild className="min-h-11 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
+                <DropdownMenuItem asChild className="h-8 gap-2 rounded-md px-2 py-0 focus:bg-muted/70">
                   <Link
                     href="/settings/plans"
                     onClick={() => {
@@ -158,18 +155,15 @@ export function WorkspaceSwitcher({
                       if (isMobile) setOpenMobile(false)
                     }}
                   >
-                    <span className="flex size-7 items-center justify-center">
+                    <span className="flex size-6 items-center justify-center">
                       <LockKeyhole className="size-3.5" />
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium leading-5 tracking-[-0.005em]">Yeni şube</span>
-                      <span className="block text-xs text-muted-foreground">Premium pakette</span>
-                    </span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium leading-5">Yeni şube · Premium</span>
                   </Link>
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
+              <DropdownMenuItem asChild className="h-8 gap-2 rounded-md px-2 py-0 focus:bg-muted/70">
                 <Link
                   href="/settings/account"
                   aria-label="Hesap ayarları"
@@ -182,7 +176,7 @@ export function WorkspaceSwitcher({
                   <span className="text-sm leading-5 tracking-[-0.005em]">Hesap ayarları</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
+              <DropdownMenuItem asChild className="h-8 gap-2 rounded-md px-2 py-0 focus:bg-muted/70">
                 <Link
                   href="/settings/general"
                   aria-label="Çalışma alanı ayarları"
@@ -198,9 +192,9 @@ export function WorkspaceSwitcher({
               <DropdownMenuSeparator />
               {canInviteMembers ? (
                 <>
-                  <DropdownMenuItem asChild className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
+                  <DropdownMenuItem asChild className="h-8 gap-2 rounded-md px-2 py-0 focus:bg-muted/70">
                     <Link
-                      href="/settings/team?invite=1"
+                      href="/settings/referrals"
                       onClick={() => {
                         setOpen(false)
                         if (isMobile) setOpenMobile(false)
@@ -215,7 +209,7 @@ export function WorkspaceSwitcher({
               ) : null}
               <form id="workspace-switcher-logout" action="/api/auth/logout" method="POST" className="hidden" />
               <DropdownMenuItem
-                className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70"
+                className="h-8 gap-2 rounded-md px-2 py-0 focus:bg-muted/70"
                 aria-label="Çıkış yap"
                 onSelect={(event) => {
                   event.preventDefault()

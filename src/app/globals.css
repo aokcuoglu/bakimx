@@ -618,15 +618,15 @@
   --card-foreground: #171717;
   --popover: oklch(1 0 0);
   --popover-foreground: #171717;
-  --primary: oklch(0.543 0.213 260);
-  --primary-foreground: oklch(0.98 0.002 250);
+  --primary: #266df0;
+  --primary-foreground: #ffffff;
   /* AÇIK YÜZEY ÜZERİNDEKİ METİN/İKON tonu — success/warning/destructive ile
      aynı desen ve aynı L ölçeği (0.47). Temel --primary dolgu olarak canlı
      kalmak zorunda, ama METİN olarak `bg-primary/10` tonlu zeminde AA'nın
      altına düşüyordu: kartta 4.51:1 (kılpayı), sayfa zemininde 4.27:1,
      bg-muted panelde 4.05:1. Yani aynı sınıf çifti yerine göre geçip yerine
      göre kalıyordu (BAK-160). -strong bu dört yüzeyin dördünde de ≥5.5:1. */
-  --primary-strong: oklch(0.47 0.213 260);
+  --primary-strong: #215bc4;
   --secondary: oklch(0.975 0 0);
   --secondary-foreground: #171717;
   --muted: oklch(0.975 0 0);
@@ -654,7 +654,7 @@
   --destructive-strong: oklch(0.47 0.245 27.325);
   --border: oklch(0.94 0.002 260);
   --input: oklch(0.88 0.002 260);
-  --ring: oklch(0.543 0.213 260);
+  --ring: #266df0;
   --success: oklch(0.60 0.18 145);
   /* Yeşil zeminde beyaza yakın metin yalnız 3.47:1 veriyordu (AA altı). Yeşili
      değiştirmek yerine metni koyulaştırdık: 4.94:1. warning ile aynı değer ve

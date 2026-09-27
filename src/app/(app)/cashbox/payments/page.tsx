@@ -101,18 +101,9 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Tahsilatlar">
       <div className="space-y-5 sm:space-y-6 max-w-full">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <Link href="/cashbox" className="hover:text-foreground">Kasa</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Tahsilatlar</span>
-        </div>
-
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-page-title text-foreground">Tahsilatlar</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">{total} kayıt bulundu</p>
+            <p className="text-sm text-muted-foreground">{total} kayıt bulundu</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="print:hidden" asChild>

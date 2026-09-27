@@ -30,13 +30,8 @@ export default async function CommunicationsPage() {
   return (
     <AppShell workshopName={workshop.name} pageTitle="İletişim Kayıtları">
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">İletişim Kayıtları</span>
-        </div>
+
         <div>
-          <h2 className="text-page-title text-foreground">İletişim Kayıtları</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             Müşterilerinize ve hesabınıza gönderilen SMS, WhatsApp ve e-posta kayıtları
           </p>

@@ -45,8 +45,18 @@ test("owner compares plans and validates checkout in the modal; staff can only c
     await expect(page.getByRole("heading", { name: "Paketler", exact: true })).toBeVisible()
     await expect(page.getByRole("table", { name: "Paket özelliklerini karşılaştırın" })).toBeVisible()
     const comparison = page.getByRole("table", { name: "Paket özelliklerini karşılaştırın" })
-    await expect(comparison.getByRole("columnheader", { name: /Profesyonel/ }).getByRole("button", { name: "Mevcut paket" })).toBeDisabled()
-    await expect(comparison.getByRole("columnheader", { name: /Premium/ }).getByRole("button", { name: "Yükselt" })).toBeVisible()
+    await expect(comparison.getByRole("button", { name: "Mevcut paket" })).toBeDisabled()
+    await expect(comparison.getByRole("button", { name: "Yükselt" })).toBeVisible()
+    const priceTops = await comparison.locator('thead tr').first().locator('th[scope="col"] > p:first-of-type').evaluateAll(
+      (prices) => prices.slice(1).map((price) => price.getBoundingClientRect().top),
+    )
+    expect(priceTops).toHaveLength(3)
+    expect(Math.max(...priceTops) - Math.min(...priceTops)).toBeLessThan(1)
+    const actionTops = await comparison.locator("thead tr").nth(1).locator("td button").evaluateAll(
+      (buttons) => buttons.map((button) => button.getBoundingClientRect().top),
+    )
+    expect(actionTops).toHaveLength(3)
+    expect(Math.max(...actionTops) - Math.min(...actionTops)).toBeLessThan(1)
 
     await page.getByRole("button", { name: "Paketi yönet" }).click()
     const manage = page.getByRole("dialog", { name: "Paketi yönet" })
@@ -65,7 +75,7 @@ test("owner compares plans and validates checkout in the modal; staff can only c
     await page.screenshot({ path: testInfo.outputPath("billing-downgrade-desktop.png"), animations: "disabled" })
     await downgrade.getByRole("button", { name: "Vazgeç" }).click()
 
-    await page.getByRole("table", { name: "Paket özelliklerini karşılaştırın" }).getByRole("columnheader", { name: /Premium/ }).getByRole("button", { name: "Yükselt" }).click()
+    await comparison.getByRole("button", { name: "Yükselt" }).click()
     const checkout = page.getByRole("dialog", { name: "Ödemeyi tamamla" })
     await expect(checkout).toBeVisible()
     await checkout.getByRole("radio", { name: /Yıllık/ }).click()
@@ -85,7 +95,7 @@ test("owner compares plans and validates checkout in the modal; staff can only c
     await page.keyboard.press("Escape")
 
     await page.setViewportSize({ width: 1440, height: 900 })
-    await page.getByRole("table", { name: "Paket özelliklerini karşılaştırın" }).getByRole("columnheader", { name: /Premium/ }).getByRole("button", { name: "Yükselt" }).click()
+    await comparison.getByRole("button", { name: "Yükselt" }).click()
     await page.getByRole("dialog", { name: "Ödemeyi tamamla" }).getByRole("radio", { name: /Yıllık/ }).click()
     await page.getByRole("dialog").getByRole("textbox", { name: "Vergi / TC kimlik no" }).fill("1234567890")
     await page.getByRole("dialog").getByRole("radio", { name: "Havale/EFT" }).click()
@@ -132,7 +142,7 @@ test("owner compares plans and validates checkout in the modal; staff can only c
 
     await prisma.billingOrder.deleteMany({ where: { workshopId: workshop.id } })
     await page.reload()
-    await page.getByRole("table", { name: "Paket özelliklerini karşılaştırın" }).getByRole("columnheader", { name: /Premium/ }).getByRole("button", { name: "Yükselt" }).click()
+    await page.getByRole("table", { name: "Paket özelliklerini karşılaştırın" }).getByRole("button", { name: "Yükselt" }).click()
     await page.getByRole("dialog", { name: "Ödemeyi tamamla" }).getByRole("button", { name: "Siparişi oluştur" }).click()
     const cardDialog = page.getByRole("dialog", { name: "Siparişiniz" })
     await expect(cardDialog).toContainText("3D Secure")

@@ -40,7 +40,7 @@ export function RecordPatterns() {
                 <FormField control={form.control} name="title" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="sr-only">Randevu başlığı</FormLabel>
-                    <FormControl><Input {...field} placeholder="Randevu başlığı" className="h-10 border-transparent px-1 text-lg font-semibold shadow-none md:text-lg" /></FormControl>
+                    <FormControl><Input {...field} placeholder="Randevu başlığı" className="h-7 border-transparent px-1 text-base font-semibold shadow-none md:text-base" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

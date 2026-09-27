@@ -16,11 +16,36 @@ export function CardPaymentPanel({
   reference,
   amountMinor,
   planLabel,
+  presentation = "default",
 }: {
   reference: string
   amountMinor: number
   planLabel?: string
+  presentation?: "default" | "attio"
 }) {
+  if (presentation === "attio") {
+    return (
+      <CardFormFields
+        action={INITIATE_URL}
+        hidden={{ reference }}
+        presentation="attio"
+        summary={
+          <>
+            <h3 className="text-sm font-semibold">Ödeme özeti</h3>
+            <div className="space-y-2 border-b pb-3 text-xs">
+              <div className="flex justify-between gap-3"><span className="text-muted-foreground">Paket</span><span className="text-right font-medium">{planLabel}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-muted-foreground">Referans</span><span className="break-all text-right font-mono">{reference}</span></div>
+            </div>
+            <div className="flex items-baseline justify-between gap-3 text-sm font-semibold"><span>Ödenecek</span><span>{formatMinor(amountMinor)}</span></div>
+            <p className="text-xs leading-5 text-muted-foreground">Kart bilgileriniz saklanmaz. Onayınızdan sonra bankanızın 3D Secure ekranına geçersiniz.</p>
+          </>
+        }
+        submitLabel={<><Lock className="size-4" /> {formatMinor(amountMinor)} öde</>}
+        submittingLabel={<>3D Secure&apos;a yönlendiriliyorsunuz…</>}
+      />
+    )
+  }
+
   return (
     <div className="space-y-5">
       <div className="text-center">

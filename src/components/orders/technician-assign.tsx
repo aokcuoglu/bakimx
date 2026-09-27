@@ -141,7 +141,7 @@ export function TechnicianAssign({
         <Button
           type="button"
           variant="ghost"
-          className={cn("h-auto min-h-8 justify-start whitespace-normal", trigger)}
+          className={cn("h-auto min-h-7 justify-start whitespace-normal", trigger)}
           aria-label={
             assignedTechnicianName
               ? `Atanan usta: ${assignedTechnicianName} — değiştir`

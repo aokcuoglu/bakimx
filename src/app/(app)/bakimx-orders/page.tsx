@@ -1,4 +1,3 @@
-import Link from "next/link"
 import { PackageSearch } from "lucide-react"
 import { getAppData } from "@/app/(app)/data"
 import { getWorkshopBakimxOrders } from "@/app/(app)/bakimx-orders/data"
@@ -51,20 +50,9 @@ export default async function BakimxOrdersPage() {
   return (
     <AppShell workshopName={workshop?.name} pageTitle="BakımX Siparişleri" wide>
       <div className="space-y-5 sm:space-y-6">
-        <div className="hidden sm:flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">
-            Ana Panel
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">BakımX Siparişleri</span>
-        </div>
-
-        <div>
-          <h2 className="text-page-title text-foreground">BakımX Siparişleri</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            BakımX kataloğundan istediğiniz ürünler ve talebin durumu
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          BakımX kataloğundan istediğiniz ürünler ve talebin durumu
+        </p>
 
         {!canCreate && (
           <InlineFeatureUpsell feature="procurement" currentTier={currentTier} />

@@ -85,11 +85,7 @@ export function LaborList({
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
-      <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-        <span className="mx-2">/</span>
-        <span className="text-foreground font-medium">Stok / Parçalar</span>
-      </div>
+
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">

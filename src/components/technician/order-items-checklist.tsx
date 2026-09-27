@@ -248,7 +248,7 @@ function ItemGroup({
               aria-pressed={isDone}
               onClick={() => onToggle(item)}
               className={cn(
-                "group h-auto min-h-8 w-full justify-start gap-2.5 px-2 py-1.5 text-left whitespace-normal",
+                "group h-auto min-h-7 w-full justify-start gap-2.5 px-2 py-1.5 text-left whitespace-normal",
                 // Sunucu yanıtı beklenirken satır kilitli ama SOLUK DEĞİL:
                 // iyimser tik zaten göründüğü için soluklaştırmak "işlem geri
                 // alındı" gibi okunuyordu.

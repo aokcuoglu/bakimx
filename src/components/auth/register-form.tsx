@@ -247,6 +247,7 @@ export type SalesRegistrationPrefill = {
 export function RegisterForm({
   salesRegistration,
   preferredPlan,
+  referralCode,
   onSnapshotChange,
   draftKey,
   mode = "register",
@@ -254,6 +255,7 @@ export function RegisterForm({
   mode?: "register" | "onboarding"
   salesRegistration?: SalesRegistrationPrefill
   preferredPlan?: { tier: SalePlanTier; cycle: "monthly" | "yearly" }
+  referralCode?: string
   onSnapshotChange?: (snapshot: RegisterWizardSnapshot) => void
   draftKey?: string
 }) {
@@ -281,8 +283,8 @@ export function RegisterForm({
       teamSize: "",
       selectedModules: recommendedRegisterModules([]),
       setupPreference: "self_service",
-      acquisitionSource: salesRegistration ? "sales_advisor" : "unknown",
-      referralCode: "",
+      acquisitionSource: salesRegistration ? "sales_advisor" : referralCode ? "referral" : "unknown",
+      referralCode: referralCode ?? "",
       workshopName: salesRegistration?.workshopName ?? "",
       phone: salesRegistration?.phone ?? "",
       city: salesRegistration?.city ?? "",
@@ -465,7 +467,7 @@ export function RegisterForm({
             {preferredPlan?.tier === "lite" ? "Kart bilgisi gerekmez. Lite süreli deneme değildir ve otomatik ücretliye dönüşmez." : "Kart bilgisi gerekmez. Süre sonunda paket satın alınmazsa hesabınız ve verileriniz korunarak erişim dondurulur."}
           </p>
         </div>
-        <Button asChild variant="ghost" className="mt-6 min-h-10 text-muted-foreground">
+        <Button asChild variant="ghost" className="mt-6 min-h-7 text-muted-foreground">
           <Link href="/login"><ArrowLeft aria-hidden="true" className="size-4" />Giriş sayfasına dön</Link>
         </Button>
       </section>
@@ -1128,6 +1130,7 @@ function AccountStep({
           </section>
         ) : (
           <section className="border-b border-border pb-7">
+            {acquisitionSource === "referral" && <p className="mb-4 text-sm text-foreground">Geçerli referans koduyla kaydolduğunuzda ücretli paketlerde ilk yıl %10 indirim kazanırsınız.</p>}
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField control={form.control} name="acquisitionSource" render={({ field }) => (
                 <FormItem><FormLabel>Bizi nereden duydunuz?</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger className="w-full"><SelectValue /></SelectTrigger></FormControl><SelectContent>{ACQUISITION_SOURCE_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
