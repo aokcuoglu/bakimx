@@ -1,4 +1,4 @@
-import { getAppData } from "@/app/(app)/data"
+import { requireAuth } from "@/lib/auth"
 import { getWorkshopSettings } from "./actions"
 
 export type SerializedWorkshop = {
@@ -69,12 +69,11 @@ export type SerializedSettingsUser = {
 
 /** Shared workshop + settings payload for path-based settings pages. */
 export async function loadWorkshopSettings() {
-  const { user, workshop } = await getAppData()
+  const user = await requireAuth()
+  const { workshop, settings } = await getWorkshopSettings()
   if (!workshop) {
     return { user, workshop: null as null, settings: null as null, serializedWorkshop: null as null, serializedSettings: null as null, serializedUser: null as null }
   }
-
-  const { settings } = await getWorkshopSettings()
 
   const serializedWorkshop: SerializedWorkshop = {
     id: workshop.id,

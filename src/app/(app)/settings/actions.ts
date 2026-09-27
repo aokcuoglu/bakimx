@@ -32,13 +32,12 @@ async function auditLog(workshopId: string, actorUserId: string | null, action: 
 export async function getWorkshopSettings() {
   const user = await requireAuth()
 
-  const workshop = await prisma.workshop.findUnique({
-    where: { id: user.workshopId },
-  })
+  const [workshop, storedSettings] = await Promise.all([
+    prisma.workshop.findUnique({ where: { id: user.workshopId } }),
+    prisma.workshopSettings.findUnique({ where: { workshopId: user.workshopId } }),
+  ])
 
-  let settings = await prisma.workshopSettings.findUnique({
-    where: { workshopId: user.workshopId },
-  })
+  let settings = storedSettings
 
   if (!settings) {
     settings = await prisma.workshopSettings.create({
