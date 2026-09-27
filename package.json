@@ -39,7 +39,9 @@
     "push:vapid-keys": "bunx web-push generate-vapid-keys",
     "market:intel:preflight": "bun tools/market-intelligence/cli.ts preflight",
     "market:intel:competitors": "bun tools/market-intelligence/cli.ts competitors",
-    "market:intel:analyze": "bun tools/market-intelligence/cli.ts analyze"
+    "market:intel:analyze": "bun tools/market-intelligence/cli.ts analyze",
+    "market:intel:phase2": "bun tools/market-intelligence/phase2-cli.ts run",
+    "market:intel:phase2:analyze": "bun tools/market-intelligence/phase2-cli.ts analyze"
   },
   "prisma": {
     "seed": "bunx tsx prisma/seed.ts"

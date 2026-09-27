@@ -41,6 +41,7 @@ export function CreateCenterDialog({
 } = {}) {
   const [internalOpen, setInternalOpen] = useState(false)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const returnFocusRef = useRef<HTMLElement | null>(null)
   const isControlled = open !== undefined
   const isOpen = isControlled ? open : internalOpen
   const setOpen = (next: boolean) => {
@@ -68,7 +69,13 @@ export function CreateCenterDialog({
         showCloseButton={false}
         onOpenAutoFocus={(event) => {
           event.preventDefault()
+          returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
           closeButtonRef.current?.focus()
+        }}
+        onCloseAutoFocus={(event) => {
+          if (!returnFocusRef.current?.isConnected) return
+          event.preventDefault()
+          returnFocusRef.current.focus()
         }}
         className="top-auto bottom-0 max-h-[calc(100dvh-1rem)] max-w-none translate-y-0 gap-0 overflow-hidden rounded-b-none bg-card p-0 sm:top-1/2 sm:bottom-auto sm:max-w-2xl sm:-translate-y-1/2 sm:rounded-[var(--radius-dialog)]"
       >
