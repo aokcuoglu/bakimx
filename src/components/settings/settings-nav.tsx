@@ -60,13 +60,13 @@ export function SettingsNav({
           placeholder="Ayarlarda ara..."
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          className="pl-8"
+          className="pl-8 text-base leading-6 tracking-[-0.01em]"
         />
       </div>
 
       {visibleGroups.map((group) => (
         <SidebarGroup key={group.label}>
-          <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[clamp(13px,calc(var(--sidebar-width)*0.042),14px)] leading-5 tracking-[-0.01em]">{group.label}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {group.items.map((item) => (
@@ -110,6 +110,7 @@ function SettingsNavLink({
         asChild
         isActive={isActive}
         tooltip={isLocked ? `${item.label} · Profesyonel` : item.label}
+        className="h-9 text-[clamp(16px,calc(var(--sidebar-width)*0.054),18px)] leading-6 font-medium tracking-[-0.01em]"
       >
         <Link href={item.href} onClick={onNavigate}>
           <Icon className="size-4" />
