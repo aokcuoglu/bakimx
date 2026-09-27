@@ -5,7 +5,8 @@ import { getAppData } from "@/app/(app)/data"
 import { prisma } from "@/lib/db"
 import { getPlanState, type PlanTier } from "@/lib/plan"
 import { getPlanPackage } from "@/lib/plans-catalog"
-import { canManageBilling, getSeatUsage } from "@/lib/rbac"
+import { getSeatUsage } from "@/lib/rbac"
+import { actorCan } from "@/lib/roles"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 
 /** Account subpages share the former /billing visibility boundary. */
@@ -27,6 +28,6 @@ export async function getAccountBillingContext() {
 
   return {
     user, workshop, plan, ownedTier, planName, pendingOrder, seatUsage,
-    canPurchase: canManageBilling(user.role),
+    canPurchase: actorCan(user, "billing.manage"),
   }
 }
