@@ -144,14 +144,14 @@ export function BillingPlanManager({
 
   return (
     <>
-      <div className="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+      <div className="rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">Mevcut paket</Badge>
               {isTrialing && <Badge variant="secondary">Deneme</Badge>}
             </div>
-            <h2 className="mt-3 text-lg font-semibold text-foreground">{isTrialing ? "Premium denemesi" : currentPlanName}</h2>
+            <h2 className="mt-2 text-base font-semibold text-foreground sm:text-lg">{isTrialing ? "Premium denemesi" : currentPlanName}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {isTrialing
                 ? `Lite hesabınız Premium haklarını kullanıyor${trialDaysLeft == null ? "." : ` · ${trialDaysLeft} iş günü kaldı.`}`
@@ -167,17 +167,19 @@ export function BillingPlanManager({
         </div>
       </div>
 
-      {showComparison && <div id="paketler" className="scroll-mt-24 pt-2">
-        <PlanPackages
-          ownedTier={ownedTier}
-          workshopName={workshopName}
-          hasPendingOrder={hasPendingOrder}
-          canPurchase={canPurchase}
-          liteRegistrationOpen={liteRegistrationOpen}
-          trialTier={isTrialing ? "premium" : null}
-          onSelectPlan={choosePlan}
-        />
-      </div>}
+      {showComparison && (
+        <div id="paketler" className="scroll-mt-24 pt-2">
+          <PlanPackages
+            ownedTier={ownedTier}
+            workshopName={workshopName}
+            hasPendingOrder={hasPendingOrder}
+            canPurchase={canPurchase}
+            liteRegistrationOpen={liteRegistrationOpen}
+            trialTier={isTrialing ? "premium" : null}
+            onSelectPlan={choosePlan}
+          />
+        </div>
+      )}
 
       <Dialog open={open} onOpenChange={closeDialog}>
         <DialogContent className="flex max-h-[min(92dvh,900px)] w-[calc(100%-1rem)] max-w-5xl flex-col gap-0 overflow-hidden rounded-xl bg-card p-0 sm:max-w-5xl" showCloseButton={false} onOpenAutoFocus={(event) => { event.preventDefault(); closeButtonRef.current?.focus() }} onCloseAutoFocus={(event) => { event.preventDefault(); returnFocusRef.current?.focus() }}>
