@@ -15,7 +15,6 @@ import { DashboardProductTour } from "@/components/dashboard/dashboard-product-t
 import { isSettingsPath } from "@/lib/settings-nav"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
-import { ROLE_LABELS } from "@/lib/roles"
 import type { GatedFeature } from "@/lib/plan"
 import type { SidebarPlanStatus } from "@/lib/billing/sidebar-plan-status"
 import type { UserRole } from "@prisma/client"
@@ -45,12 +44,11 @@ import {
   Receipt,
   PackageSearch,
   UserCircle,
-  Search,
-  X,
+  UserRoundPlus,
   QrCode,
   LockKeyhole,
 } from "lucide-react"
-import { createContext, useContext, useEffect, useState, useRef } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
@@ -212,6 +210,7 @@ export function AppShellChrome({
   showDashboardTour = false,
   planStatus,
   workspace,
+  topBannerVisible = false,
 }: {
   children: React.ReactNode
   initialSidebarCollapsed?: boolean
@@ -220,6 +219,7 @@ export function AppShellChrome({
   showDashboardTour?: boolean
   planStatus?: SidebarPlanStatus | null
   workspace?: WorkspaceSwitcherProps | null
+  topBannerVisible?: boolean
 }) {
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
 
@@ -231,9 +231,11 @@ export function AppShellChrome({
           userIdentity={userIdentity}
           planStatus={planStatus}
           workspace={workspace}
+          showGlobalSearch={pageHeader.showGlobalSearch ?? true}
+          topBannerVisible={topBannerVisible}
         />
         <SidebarInset className="min-h-screen bg-background">
-          <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} enabledFeatures={enabledFeatures} />
+          <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} topBannerVisible={topBannerVisible} />
           <main className="flex-1 px-4 sm:px-6 py-4 sm:py-6 pb-24 lg:pb-8">{children}</main>
         </SidebarInset>
         <MobileBottomNav userIdentity={userIdentity} enabledFeatures={enabledFeatures} />
@@ -246,110 +248,45 @@ export function AppShellChrome({
 function AppHeader({
   pageHeader,
   userIdentity,
-  enabledFeatures,
+  topBannerVisible,
 }: {
   pageHeader: PageHeaderState
   userIdentity?: UserIdentity
-  enabledFeatures: GatedFeature[]
+  topBannerVisible: boolean
 }) {
-  const { pageTitle, pageActions, showGlobalSearch = true } = pageHeader
+  const { pageTitle, pageActions } = pageHeader
+  const pathname = usePathname()
+  const navTitle = [...NAV_GROUPS, ...TECHNICIAN_NAV_GROUPS]
+    .flatMap((group) => group.items)
+    .find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.label
+  const headerTitle = pageTitle || navTitle || (isSettingsPath(pathname) ? "Ayarlar" : undefined)
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-30 bg-background border-b border-border">
+    <header className={cn("sticky top-0 z-30 bg-background border-b border-border", topBannerVisible && "lg:top-9")}>
       <div className="relative flex flex-nowrap items-center gap-2 px-4 py-3 sm:gap-3 sm:px-6">
         {/* Sidebar açıkken kontrol menü başlığındadır; kapalıyken burada görünür. */}
-        <SidebarTrigger className={cn("-ml-2 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden", mobileSearchOpen && "hidden sm:inline-flex")} />
+        <SidebarTrigger data-tour="sidebar-trigger" className="-ml-2 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden" />
 
-        {/* Logo yalnız dar mobilde (<sm): sm+ arama input açılınca absolute logo
-            input'un üstüne biniyordu. lg'de sidebar zaten markayı taşıyor. */}
-        <div
-          className={cn(
-            "absolute left-1/2 -translate-x-1/2 sm:hidden",
-            mobileSearchOpen && "hidden",
-          )}
-        >
+        <div className="absolute left-1/2 -translate-x-1/2 sm:hidden">
           <Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX" className="flex items-center">
             <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
           </Link>
         </div>
 
-        {pageTitle && (
+        {headerTitle && (
           <div className="hidden min-w-0 md:flex md:max-w-48 md:flex-col lg:max-w-64">
-            <h1 className="text-base sm:text-lg font-semibold text-foreground truncate">{pageTitle}</h1>
+            <h1 className="text-base sm:text-lg font-semibold text-foreground truncate">{headerTitle}</h1>
           </div>
         )}
 
-        {showGlobalSearch && (
-          <div
-            data-tour="global-search"
-            className={cn(
-              "min-w-0 sm:min-w-48 sm:flex-1 sm:shrink sm:basis-auto sm:max-w-xl",
-              mobileSearchOpen ? "flex-1 basis-auto" : "shrink-0 basis-9 sm:basis-auto",
-            )}
-          >
-            {mobileSearchOpen ? (
-              <div className="flex items-center gap-1">
-                <GlobalSearch className="w-full min-w-0" autoFocus />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 shrink-0 sm:hidden"
-                  onClick={() => setMobileSearchOpen(false)}
-                  aria-label="Aramayı kapat"
-                >
-                  <X className="size-4" />
-                </Button>
-              </div>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 sm:hidden"
-                  onClick={() => setMobileSearchOpen(true)}
-                  aria-label="Ara"
-                >
-                  <Search className="size-4" />
-                </Button>
-                <div className="hidden sm:block">
-                  <GlobalSearch className="w-full min-w-0" />
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {!showGlobalSearch && <div className="flex-1" />}
-
-        <div
-          className={cn(
-            "ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5",
-            mobileSearchOpen && "hidden sm:flex",
-          )}
-        >
-          <CreateCenterDialog enabledFeatures={enabledFeatures} />
-          {isTechRole ? (
-            <TechnicianNotificationsBell />
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button type="button" variant="ghost" size="icon" className="size-8" aria-label="Bildirimler">
-                  <Bell className="size-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">Bildirimler (yakında)</TooltipContent>
-            </Tooltip>
-          )}
-          <UserMenu userIdentity={userIdentity} />
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {isTechRole ? <div className="lg:hidden"><TechnicianNotificationsBell /></div> : null}
         </div>
       </div>
-      {(pageTitle || pageActions) && !mobileSearchOpen && (
+      {(headerTitle || pageActions) && (
         <div className="sm:hidden flex items-center justify-between gap-2 px-4 pb-3 -mt-1">
-          {pageTitle && <h1 className="text-base font-semibold text-foreground truncate">{pageTitle}</h1>}
+          {headerTitle && <h1 className="text-base font-semibold text-foreground truncate">{headerTitle}</h1>}
           {pageActions}
         </div>
       )}
@@ -362,11 +299,15 @@ function AppSidebar({
   userIdentity,
   planStatus,
   workspace,
+  showGlobalSearch,
+  topBannerVisible,
 }: {
   enabledFeatures?: GatedFeature[]
   userIdentity?: UserIdentity
   planStatus?: SidebarPlanStatus | null
   workspace?: WorkspaceSwitcherProps | null
+  showGlobalSearch: boolean
+  topBannerVisible: boolean
 }) {
   const pathname = usePathname()
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
@@ -379,7 +320,7 @@ function AppSidebar({
   })).filter((group) => group.items.length > 0)
 
   return (
-    <Sidebar collapsible="offcanvas">
+    <Sidebar collapsible="offcanvas" className={topBannerVisible ? "lg:top-9! lg:h-[calc(100svh-2.25rem)]!" : undefined}>
       <SidebarHeader className="flex-row items-center gap-1 border-b border-sidebar-border p-2">
         <div className="min-w-0 flex-1">
           {inSettings ? (
@@ -413,6 +354,28 @@ function AppSidebar({
         <SidebarTrigger className="hidden shrink-0 lg:inline-flex" />
       </SidebarHeader>
 
+      {!inSettings || isTechRole ? (
+        <div className="flex items-center gap-1 px-3 py-2 group-data-[collapsible=icon]:hidden">
+          {!inSettings && showGlobalSearch ? (
+            <div data-tour="global-search" className="min-w-0 flex-1">
+              <GlobalSearch className="min-w-0" placeholder="Ara" />
+            </div>
+          ) : null}
+          {isTechRole ? (
+            !isMobile ? <TechnicianNotificationsBell /> : null
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0" aria-label="Bildirimler">
+                  <Bell className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Bildirimler (yakında)</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      ) : null}
+
       <SidebarContentSlot>
         {inSettings ? (
           <SettingsNav enabledFeatures={enabledFeatures} role={userIdentity?.role} />
@@ -433,17 +396,7 @@ function AppSidebar({
       </SidebarContentSlot>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        {userIdentity && !inSettings ? (
-          <div className="px-2 py-1.5 group-data-[collapsible=icon]:hidden">
-            <p className="text-xs font-medium text-sidebar-foreground truncate">
-              {[userIdentity.firstName, userIdentity.lastName].filter(Boolean).join(" ") || userIdentity.email || userIdentity.username}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">
-              {ROLE_LABELS[userIdentity.role]}
-            </p>
-          </div>
-        ) : null}
-        {!inSettings ? (
+        {!inSettings && (isTechRole || !workspace) ? (
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -464,6 +417,18 @@ function AppSidebar({
                   <span>Çıkış Yap</span>
                 </SidebarMenuButton>
               </form>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        ) : null}
+        {!inSettings && !isTechRole && workspace && (userIdentity?.role === "owner" || userIdentity?.role === "manager") ? (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Üyeleri davet et">
+                <Link href="/settings/team?invite=1">
+                  <UserRoundPlus className="size-4" />
+                  <span>Üyeleri davet et</span>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         ) : null}
@@ -620,6 +585,7 @@ function MobileBottomNav({
                 size="icon"
                 className="-mt-7 size-14 rounded-full shadow-md ring-4 ring-background"
                 aria-label="Oluşturma merkezi"
+                data-tour="create-center"
                 onClick={() => setCreateOpen(true)}
               >
                 <QrCode className="size-6" />
@@ -693,94 +659,6 @@ function MobileNavLink({
       </span>
       <span className="truncate">{label}{locked ? " · Pro" : ""}</span>
     </Link>
-  )
-}
-
-function UserMenu({ userIdentity }: { userIdentity?: UserIdentity }) {
-  const [open, setOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
-    }
-    function handleEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false)
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    document.addEventListener("keydown", handleEscape)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-      document.removeEventListener("keydown", handleEscape)
-    }
-  }, [open])
-
-  const displayName = userIdentity
-    ? [userIdentity.firstName, userIdentity.lastName].filter(Boolean).join(" ") || userIdentity.email || userIdentity.username || "Kullanıcı"
-    : "Kullanıcı"
-  const initials = userIdentity
-    ? [userIdentity.firstName?.[0], userIdentity.lastName?.[0]].filter(Boolean).join("").toUpperCase() || displayName[0]?.toUpperCase() || "?"
-    : "?"
-  const roleLabel = userIdentity ? ROLE_LABELS[userIdentity.role] : ""
-  const identifierText = userIdentity?.email || userIdentity?.username || ""
-
-  return (
-    <div className="relative" ref={menuRef}>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="size-8"
-        aria-label="Kullanıcı menüsü"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-      >
-        <span className="flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary-strong text-[11px] font-semibold">
-          {initials}
-        </span>
-      </Button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 w-64 rounded-lg border border-border bg-popover shadow-lg z-50 py-1">
-          <div className="px-3 py-2.5 border-b border-border">
-            <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
-            {identifierText && (
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{identifierText}</p>
-            )}
-            {roleLabel && (
-              <span className="inline-block mt-1 text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                {roleLabel}
-              </span>
-            )}
-          </div>
-          <div className="py-1">
-            <Link
-              href="/settings/account"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-            >
-              <UserCircle className="size-4 text-muted-foreground" />
-              Hesap ayarları
-            </Link>
-          </div>
-          <div className="border-t border-border py-1">
-            <form action="/api/auth/logout" method="POST">
-              <Button
-                type="submit"
-                variant="ghost"
-                size="sm"
-                className="h-auto w-full justify-start gap-2.5 rounded-none px-3 py-2 font-normal"
-              >
-                <LogOut className="size-4 text-muted-foreground" />
-                Çıkış Yap
-              </Button>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
   )
 }
 

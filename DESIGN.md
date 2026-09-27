@@ -170,6 +170,7 @@ Kullanıcının Clutch ekran görüntüsü ve [Clutch](https://www.clutch.securi
 ## Uygulama, kayıt ve kurulum
 
 - Çalışma alanı menüsü mevcut şube üyeliklerini, hesap/çalışma alanı ayarlarını, yetkili kullanıcı için daveti ve çıkışı toplar. Ayarlara girince ana gezinmenin yerini geri düğmeli, aranabilir ayarlar menüsü alır. Hesap ayarlarının giriş adresi `/settings/account`tır.
+- Uygulama kabuğunda gerçek deneme durumu varsa mavi bilgilendirme bandı masaüstünde de en üstte görünür. Çalışma alanı adı sidebar başlığında tek satırdır; genel arama ve bildirimler sidebar'da yan yanadır. Üst header sayfa başlığını taşır; genel oluşturma ve kullanıcı menüsü burada tekrarlanmaz. Mobil teknisyen bildirimleri sidebar kapalıyken de çalışabilmesi için üst şeritte erişilebilir kalır.
 - Açık `card` yüzey, `border` ile 1px ayraçlar ve `foreground` başlıklar temel düzeni oluşturur. Yardımcı metin `muted-foreground` kullanır. Dekoratif renkli kart yığınları ve büyük koyu arka plan panelleri yerine hizalama ve boşlukla hiyerarşi kurulur.
 - Inter kullanılır. Form ve uygulama başlıkları yaklaşık 28–36px, alan etiketleri ve gövde 14–16px, yardımcı metin en az 12px olur. Pazarlama başlık ölçeği bu ekranlara uygulanmaz.
 - Boşluklar 4/8px ritminde; alan araları 16–24px, mantıksal bölüm araları 24–40px. Form kontrolleri 38–44px yüksekliğinde; kontrol köşesi 6px (`sm`), kart/panel 10px (`lg`). Tablo yoğunluğu göreve göre daha kompakt kalabilir.

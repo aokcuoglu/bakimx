@@ -46,6 +46,23 @@ test.describe("workspace and settings sidebar", () => {
     await expect(page).toHaveURL(/\/settings\/team\?invite=1$/)
     await expect(page.getByRole("button", { name: "Davet Gönder" })).toBeVisible()
   })
+
+  test("app shell places search and notifications beside the workspace navigation", async ({ page }) => {
+    await page.goto("/api/auth/dev-login?redirect=/dashboard")
+
+    const sidebar = page.locator('[data-slot="sidebar"]')
+    const header = page.locator("header").first()
+    await expect(header.getByRole("heading", { name: "Genel Bakış" })).toBeVisible()
+    await expect(sidebar.getByRole("combobox", { name: "Plaka veya müşteri ara" })).toBeVisible()
+    await expect(sidebar.getByRole("button", { name: "Bildirimler" })).toBeVisible()
+    await expect(header.getByRole("combobox", { name: "Plaka veya müşteri ara" })).toHaveCount(0)
+    await expect(header.getByRole("button", { name: "Oluşturma merkezi" })).toHaveCount(0)
+    await expect(header.getByRole("button", { name: "Kullanıcı menüsü" })).toHaveCount(0)
+
+    const workspace = sidebar.getByRole("button", { name: /^Şube:/ })
+    await expect(workspace).toBeVisible()
+    await expect(workspace).not.toContainText("İstanbul")
+  })
 })
 
 test("settings navigation is reachable from the mobile sidebar", async ({ page }) => {
@@ -59,4 +76,12 @@ test("settings navigation is reachable from the mobile sidebar", async ({ page }
   await page.getByRole("link", { name: "Ana menüye dön" }).click()
   await expect(page).toHaveURL(/\/dashboard$/)
   await expect(page.locator('[data-mobile="true"]')).toBeHidden()
+})
+
+test("mobile sidebar exposes global search and notifications", async ({ page }) => {
+  await page.goto("/api/auth/dev-login?redirect=/dashboard")
+  await page.getByRole("button", { name: "Menüyü aç" }).click()
+  const sidebar = page.locator('[data-mobile="true"]')
+  await expect(sidebar.getByRole("combobox", { name: "Plaka veya müşteri ara" })).toBeVisible()
+  await expect(sidebar.getByRole("button", { name: "Bildirimler" })).toBeVisible()
 })

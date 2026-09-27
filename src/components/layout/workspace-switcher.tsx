@@ -96,12 +96,11 @@ export function WorkspaceSwitcher({
               <SidebarMenuButton
                 size="lg"
                 tooltip={current.name}
-                aria-label={`Şube: ${current.name}${current.city ? `, ${current.city}` : ""}`}
+                aria-label={`Şube: ${current.name}`}
               >
                 <WorkspaceAvatar name={current.name} />
                 <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-medium">{current.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">{current.city}</span>
                 </div>
                 <ChevronsUpDown className="ml-auto size-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" aria-hidden />
               </SidebarMenuButton>
