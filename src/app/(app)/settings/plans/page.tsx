@@ -4,6 +4,7 @@ import { PendingPaymentNotice } from "@/components/billing/pending-payment-notic
 import { getAccountBillingContext } from "@/lib/billing/account-context"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import { isLiteRegistrationOpen } from "@/lib/lite-campaign"
+import { getReferralDiscountBps } from "@/lib/billing/referral-discount"
 
 export const metadata = { title: "Paketler" }
 
@@ -33,6 +34,7 @@ export default async function SettingsPlansPage() {
           seatUsage={seatUsage}
           extraSeats={Math.max(0, workshop.extraSeats)}
           havale={getHavaleInstructions()}
+          referralDiscountBps={getReferralDiscountBps(workshop)}
         />
       </div>
     </AppShell>
