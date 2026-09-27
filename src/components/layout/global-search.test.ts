@@ -1,5 +1,5 @@
 import { test, expect, afterEach } from "bun:test"
-import { resultHref, fetchGlobalSearchResults } from "@/components/layout/global-search"
+import { resultHref, fetchGlobalSearchResults, fetchOrderSearchResults } from "@/components/layout/global-search"
 import type { UnifiedResult } from "@/lib/search/unified-results"
 
 const VEHICLE: UnifiedResult = {
@@ -71,4 +71,11 @@ test("fetchGlobalSearchResults: fetch fırlatırsa [] döner", async () => {
     throw new Error("network")
   }) as unknown as typeof fetch
   expect(await fetchGlobalSearchResults("x")).toEqual([])
+})
+
+test("fetchOrderSearchResults: sorguyu kodlayıp iş emirlerini döner", async () => {
+  const order = { id: "o1", label: "İş emri BX-42", sublabel: "34 ABC 123" }
+  const getUrl = stubFetch(200, { results: [order] })
+  expect(await fetchOrderSearchResults("BX 42")).toEqual([order])
+  expect(getUrl()).toBe("/api/search/orders?q=BX%2042")
 })

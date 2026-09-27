@@ -2,12 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LockKeyhole, X } from "lucide-react"
+import { useState } from "react"
+import { LockKeyhole, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarInput,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -32,10 +34,18 @@ export function SettingsNav({
   const pathname = usePathname()
   const { isMobile, setOpenMobile } = useSidebar()
   const isTechRole = isTechnicianRestrictedRole(role)
+  const [query, setQuery] = useState("")
 
   const groups = isTechRole
-    ? [{ label: "Hesap ayarları", items: ACCOUNT_SETTINGS_ITEMS.filter((i) => i.href === "/settings/profile") }]
+    ? [{ label: "Kişisel", items: ACCOUNT_SETTINGS_ITEMS }]
     : SETTINGS_NAV_GROUPS
+  const normalizedQuery = query.trim().toLocaleLowerCase("tr")
+  const visibleGroups = groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => item.label.toLocaleLowerCase("tr").includes(normalizedQuery)),
+    }))
+    .filter((group) => group.items.length > 0)
 
   function closeMobile() {
     if (isMobile) setOpenMobile(false)
@@ -43,24 +53,20 @@ export function SettingsNav({
 
   return (
     <>
-      <SidebarGroup className="pb-0">
-        <SidebarGroupContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Ayarları kapat">
-                <Link href="/dashboard" onClick={closeMobile} aria-label="Ayarları kapat">
-                  <X className="size-4" />
-                  <span>Kapat</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+      <div className="relative border-b border-sidebar-border px-3 py-3">
+        <Search className="pointer-events-none absolute left-5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+        <SidebarInput
+          aria-label="Ayarlarda ara"
+          placeholder="Ayarlarda ara..."
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="pl-8 text-sm leading-5 tracking-[-0.005em]"
+        />
+      </div>
 
-      {groups.map((group) => (
+      {visibleGroups.map((group) => (
         <SidebarGroup key={group.label}>
-          <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs leading-4 tracking-normal">{group.label}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {group.items.map((item) => (
@@ -76,6 +82,9 @@ export function SettingsNav({
           </SidebarGroupContent>
         </SidebarGroup>
       ))}
+      {visibleGroups.length === 0 ? (
+        <p className="px-4 py-6 text-sm text-muted-foreground">Eşleşen ayar bulunamadı.</p>
+      ) : null}
     </>
   )
 }
@@ -101,6 +110,7 @@ function SettingsNavLink({
         asChild
         isActive={isActive}
         tooltip={isLocked ? `${item.label} · Profesyonel` : item.label}
+        className="h-9 text-sm leading-5 font-medium tracking-[-0.005em]"
       >
         <Link href={item.href} onClick={onNavigate}>
           <Icon className="size-4" />

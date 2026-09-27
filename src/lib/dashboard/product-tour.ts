@@ -4,6 +4,7 @@ export type TourTargetId =
   | "mobile-nav-orders"
   | "create-center"
   | "global-search"
+  | "sidebar-trigger"
   | "first-order"
   | "welcome-cta"
 
@@ -21,7 +22,7 @@ const INTRO_STEP: TourStepDef = {
   id: "intro",
   title: "Panele hoş geldiniz",
   description:
-    "Kısa bir turla Genel Bakış, iş emirleri, hızlı oluşturma ve aramayı tanıyalım. İstediğiniz zaman Atla diyebilirsiniz.",
+    "Kısa bir turla iş emirlerini ve aramayı tanıyalım. İstediğiniz zaman Atla diyebilirsiniz.",
   targets: [],
   side: "bottom",
 }
@@ -37,19 +38,11 @@ const DESKTOP_STEPS: TourStepDef[] = [
     side: "right",
   },
   {
-    id: "create",
-    title: "Yeni kayıt",
-    description:
-      "Müşteri, araç veya iş emrini tek yerden hızlıca oluşturun — günlük işin en kısa yolu.",
-    targets: ["create-center"],
-    side: "bottom",
-  },
-  {
     id: "search",
     title: "Arama",
-    description: "Plaka, müşteri adı veya iş emri numarasıyla kayıtlara anında ulaşın.",
+    description: "Plaka veya müşteri adıyla kayıtlara anında ulaşın.",
     targets: ["global-search"],
-    side: "bottom",
+    side: "right",
   },
   {
     id: "first-order",
@@ -75,15 +68,15 @@ const MOBILE_STEPS: TourStepDef[] = [
     id: "create",
     title: "Yeni kayıt",
     description:
-      "Üstteki oluştur düğmesiyle müşteri, araç veya iş emrini hızlıca ekleyin.",
+      "Alttaki oluştur düğmesiyle müşteri, araç veya iş emrini hızlıca ekleyin.",
     targets: ["create-center"],
-    side: "bottom",
+    side: "top",
   },
   {
     id: "search",
     title: "Arama",
-    description: "Büyüteç ile plaka, müşteri veya iş emri arayın.",
-    targets: ["global-search"],
+    description: "Menüyü açarak plaka veya müşteri arayın.",
+    targets: ["sidebar-trigger"],
     side: "bottom",
   },
   {
