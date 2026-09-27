@@ -32,6 +32,7 @@ import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import { ACQUISITION_SOURCE_OPTIONS } from "@/lib/acquisition-sources"
+import { getDiscountedPlanPriceMinor } from "@/lib/billing/referral-discount"
 
 type Mode = "public" | "inapp"
 type Cycle = "monthly" | "yearly"
@@ -58,6 +59,7 @@ export function PurchaseWizard({
   advisors = [],
   seatUsage,
   extraSeats = 0,
+  referralDiscountBps = 0,
 }: {
   mode: Mode
   initialTier?: PlanTier
@@ -70,6 +72,7 @@ export function PurchaseWizard({
   advisors?: { id: string; label: string }[]
   seatUsage?: { activeUsers: number; pendingInvites: number; used: number }
   extraSeats?: number
+  referralDiscountBps?: number
 }) {
   const isPublic = mode === "public"
   const STEPS = isPublic
@@ -189,7 +192,7 @@ export function PurchaseWizard({
 
   return (
     <div className={frameClass}>
-      <BrandRail mode={mode} tier={tier} cycle={cycle} step={done ? 2 : step} />
+      <BrandRail mode={mode} tier={tier} cycle={cycle} step={done ? 2 : step} referralDiscountBps={referralDiscountBps} />
 
       <div className={cn("flex flex-col bg-background", formColClass)}>
         {/* my-auto: boş alan varsa dikey ortalar, içerik taşarsa kırpmadan üstten başlar */}
@@ -270,7 +273,7 @@ export function PurchaseWizard({
                         {PLAN_PACKAGES.map((pkg) => {
                           const isOwned = ownedTier === pkg.tier
                           const selected = tier === pkg.tier
-                          const minor = getPlanPriceMinor(pkg.tier, cycle)
+                          const minor = isPublic ? getPlanPriceMinor(pkg.tier, cycle) : getDiscountedPlanPriceMinor(pkg.tier, cycle, referralDiscountBps)
                           return (
                             <Button
                               key={pkg.tier}
@@ -303,14 +306,16 @@ export function PurchaseWizard({
                                 </p>
                               </div>
                               <div className="ml-3 shrink-0 text-right">
-                                {pkg.listMonthlyLabel && (
+                                {!isPublic && referralDiscountBps > 0 && pkg.tier !== "lite" ? (
+                                  <s className="block text-xs text-muted-foreground">{formatMinor(getPlanPriceMinor(pkg.tier, cycle))}</s>
+                                ) : pkg.listMonthlyLabel && (
                                   <s className="block text-xs text-muted-foreground">
                                     {cycle === "monthly" ? pkg.listMonthlyLabel : pkg.listYearlyLabel}
                                   </s>
                                 )}
                                 <p className="font-bold text-foreground">{formatMinor(minor)}</p>
                                 <p className="text-[11px] text-muted-foreground">
-                                  {pkg.tier === "lite" ? "Açılışa özel · sınırlı süre" : cycle === "monthly" ? "/ay · KDV dahil" : "/yıl · KDV dahil"}
+                                  {pkg.tier === "lite" ? "Açılışa özel · sınırlı süre" : !isPublic && referralDiscountBps > 0 ? "İlk yıl %10 indirim · KDV dahil" : cycle === "monthly" ? "/ay · KDV dahil" : "/yıl · KDV dahil"}
                                 </p>
                               </div>
                             </Button>

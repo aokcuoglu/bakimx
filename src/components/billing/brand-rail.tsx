@@ -3,6 +3,7 @@ import { Check } from "lucide-react"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { getPlanPriceMinor, formatMinor } from "@/lib/billing/pricing"
+import { getDiscountedPlanPriceMinor } from "@/lib/billing/referral-discount"
 import type { PlanTier } from "@/lib/plan"
 
 type Cycle = "monthly" | "yearly"
@@ -18,16 +19,18 @@ export function BrandRail({
   tier,
   cycle,
   step,
+  referralDiscountBps = 0,
 }: {
   mode: Mode
   tier: PlanTier
   cycle: Cycle
   step: number
+  referralDiscountBps?: number
 }) {
   const pkg = getPlanPackage(tier)
   // pkg her zaman katalogda var (kapalı PlanTier union); yine de fiyat aramasını
   // koruyalım ki gelecekte katalogsuz bir tier eklenirse render çökmesin.
-  const amount = formatMinor(pkg ? getPlanPriceMinor(tier, cycle) : 0)
+  const amount = formatMinor(pkg ? mode === "inapp" ? getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps) : getPlanPriceMinor(tier, cycle) : 0)
   const isSummary = step === 2
 
   return (
@@ -75,7 +78,7 @@ export function BrandRail({
                 <Row label="Kullanıcı" value={`${pkg?.seats ?? "—"} kullanıcı`} />
               </div>
               <div className="mt-3 flex items-baseline justify-between border-t border-white/10 pt-3">
-                <span className="text-sm text-navy-foreground/60">Toplam · KDV dahil</span>
+                <span className="text-sm text-navy-foreground/60">{mode === "inapp" ? "Kredi öncesi · KDV dahil" : "Toplam · KDV dahil"}</span>
                 <span className="text-2xl font-extrabold">{amount}</span>
               </div>
             </>

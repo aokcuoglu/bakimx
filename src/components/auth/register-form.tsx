@@ -1130,6 +1130,7 @@ function AccountStep({
           </section>
         ) : (
           <section className="border-b border-border pb-7">
+            {acquisitionSource === "referral" && <p className="mb-4 text-sm text-foreground">Geçerli referans koduyla kaydolduğunuzda ücretli paketlerde ilk yıl %10 indirim kazanırsınız.</p>}
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField control={form.control} name="acquisitionSource" render={({ field }) => (
                 <FormItem><FormLabel>Bizi nereden duydunuz?</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger className="w-full"><SelectValue /></SelectTrigger></FormControl><SelectContent>{ACQUISITION_SOURCE_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>

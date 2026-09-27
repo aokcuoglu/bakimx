@@ -33,9 +33,9 @@ export default async function ReferralsSettingsPage() {
     <AppShell pageTitle="Referanslar">
       <div className={styles.content}>
         <header className="border-b border-border pb-5">
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">BakımX’i paylaşın</h2>
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">İş yerlerine ilk yıl %10 indirim sunun</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Başka iş yerlerine BakımX’i önerin. Referans kodunuz kayıt sırasında kullanıldığında davet sizin iş yerinizle eşleşir.
+            Bağlantınızla kaydolan yeni iş yerleri, ilk yıl boyunca tüm ücretli BakımX paketlerinde %10 indirim kazanır. Lite ücretsiz kalır.
           </p>
         </header>
 

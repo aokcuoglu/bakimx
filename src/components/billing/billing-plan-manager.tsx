@@ -26,6 +26,7 @@ import { typedResolver } from "@/lib/validations/resolver"
 import { checkoutInAppSchema, type CheckoutInAppValues } from "@/lib/validations/billing"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import { cn } from "@/lib/utils"
+import { getDiscountedPlanPriceMinor } from "@/lib/billing/referral-discount"
 
 type Cycle = "monthly" | "yearly"
 type PaymentResult = { reference: string; amountMinor: number; method: "card" | "havale"; complimentary: boolean }
@@ -51,6 +52,7 @@ export function BillingPlanManager({
   havale,
   showComparison = true,
   explorePlansHref,
+  referralDiscountBps = 0,
 }: {
   ownedTier: PlanTier | null
   currentPlanName: string
@@ -72,6 +74,7 @@ export function BillingPlanManager({
   havale: HavaleInfo
   showComparison?: boolean
   explorePlansHref?: string
+  referralDiscountBps?: number
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -98,6 +101,7 @@ export function BillingPlanManager({
   const method = useWatch({ control: form.control, name: "method" })
   const pkg = getPlanPackage(tier)
   const catalogAmount = getPlanPriceMinor(tier, cycle)
+  const discountedAmount = getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps)
   const complimentary = catalogAmount === 0 && (tier !== "lite" || liteFreeGranted || liteRegistrationOpen)
   const excessSeats = Math.max(0, seatUsage.used - getSeatLimit(tier, extraSeats))
   const periodLabel = cycle === "yearly" ? "yıllık" : "aylık"
@@ -177,6 +181,7 @@ export function BillingPlanManager({
             liteRegistrationOpen={liteRegistrationOpen}
             trialTier={isTrialing ? "premium" : null}
             onSelectPlan={choosePlan}
+            referralDiscountBps={referralDiscountBps}
           />
         </div>
       )}
@@ -234,7 +239,8 @@ export function BillingPlanManager({
                       <section key={plan.tier} className={cn("flex flex-col rounded-xl border bg-card p-4", plan.tier === tier && "border-foreground ring-1 ring-foreground")} aria-label={`${plan.name} paketi`}>
                         <div className="flex items-center justify-between gap-2"><h3 className="text-base font-semibold">{plan.name}</h3>{ownedTier === plan.tier && <Badge variant="outline">Mevcut</Badge>}</div>
                         <p className="mt-1 min-h-10 text-xs text-muted-foreground">{plan.tagline}</p>
-                        <p className="mt-4 text-2xl font-semibold">{formatMinor(getPlanPriceMinor(plan.tier, cycle))}</p>
+                        <p className="mt-4 text-2xl font-semibold">{formatMinor(getDiscountedPlanPriceMinor(plan.tier, cycle, referralDiscountBps))}</p>
+                        {referralDiscountBps > 0 && plan.tier !== "lite" && <p className="text-xs text-muted-foreground"><s>{formatMinor(getPlanPriceMinor(plan.tier, cycle))}</s> · İlk yıl referans indirimi %10</p>}
                         <p className="text-xs text-muted-foreground">/{cycle === "yearly" ? "yıl" : "ay"} · KDV dahil</p>
                         <Button type="button" variant={plan.tier === tier ? "foreground" : "outline"} className="mt-4 w-full" disabled={unavailable} onClick={() => choosePlan(plan.tier, cycle)}>
                           {plan.tier === tier ? <><Check className="size-4" /> Seçili paket</> : "Bu paketi seç"}
@@ -288,7 +294,8 @@ export function BillingPlanManager({
                         <div className="flex items-center justify-between gap-3"><div><p className="text-xs text-muted-foreground">Seçilen paket</p><h3 className="mt-1 text-lg font-semibold">{pkg?.name}</h3></div><Badge variant="outline">{pkg?.seats} kullanıcı dahil</Badge></div>
                         <p className="mt-2 text-sm text-muted-foreground">{pkg?.tagline}</p>
                         <div className="mt-5"><BillingCycleSwitch cycle={cycle} onChange={(value) => form.setValue("cycle", value)} /></div>
-                        <p className="mt-4 text-2xl font-semibold">{formatMinor(catalogAmount)} <span className="text-xs font-normal text-muted-foreground">/{cycle === "yearly" ? "yıl" : "ay"} · KDV dahil</span></p>
+                        <p className="mt-4 text-2xl font-semibold">{formatMinor(discountedAmount)} <span className="text-xs font-normal text-muted-foreground">/{cycle === "yearly" ? "yıl" : "ay"} · KDV dahil</span></p>
+                        {referralDiscountBps > 0 && tier !== "lite" && <p className="text-xs text-muted-foreground"><s>{formatMinor(catalogAmount)}</s> · İlk yıl referans indirimi %10</p>}
                       </section>
                       {excessSeats > 0 && <Alert variant="warning"><AlertTriangle /><AlertDescription>
                         Bu paket {getSeatLimit(tier, extraSeats)} koltuk destekliyor. Ödeme teyidinde {excessSeats} fazla kullanıcı veya davet devre dışı bırakılacak. Kayıt geçmişleri silinmeyecek.
@@ -308,10 +315,11 @@ export function BillingPlanManager({
                       <div><h3 className="font-semibold">Ödeme özeti</h3><p className="mt-1 text-xs text-muted-foreground">{pkg?.name} · {periodLabel} dönem</p></div>
                       <dl className="space-y-3 border-b pb-4 text-sm">
                         <div className="flex justify-between gap-3"><dt>Liste tutarı</dt><dd className="font-medium">{formatMinor(catalogAmount)}</dd></div>
+                        {referralDiscountBps > 0 && tier !== "lite" && <div className="flex justify-between gap-3"><dt>Referans indirimi (%10)</dt><dd>−{formatMinor(catalogAmount - discountedAmount)}</dd></div>}
                         <div className="flex justify-between gap-3"><dt>Dahil kullanıcı</dt><dd>{pkg?.seats}</dd></div>
                         {ownedTier && ownedTier !== tier && <div className="flex justify-between gap-3"><dt>Kalan dönem kredisi</dt><dd>Sonraki adımda</dd></div>}
                       </dl>
-                      <div className="flex items-center justify-between gap-3 font-semibold"><span>{complimentary ? "Ödenecek" : "Liste fiyatı"}</span><span>{formatMinor(catalogAmount)}</span></div>
+                      <div className="flex items-center justify-between gap-3 font-semibold"><span>{ownedTier && ownedTier !== tier ? "Kredi öncesi tutar" : "Ödenecek"}</span><span>{formatMinor(discountedAmount)}</span></div>
                       {ownedTier && ownedTier !== tier && <p className="text-xs text-muted-foreground">Kalan dönem kredisi uygulanır; kesin ödeme tutarı sipariş oluşturulduktan sonra gösterilir.</p>}
                       {canPurchase && !hasPendingOrder && !complimentary && <div className="space-y-2 border-t pt-4"><p className="text-sm font-medium">Ödeme yöntemi</p>
                         <ToggleGroup type="single" value={method} onValueChange={(value) => { if (value) form.setValue("method", value as "card" | "havale") }} className="grid grid-cols-2 gap-2" aria-label="Ödeme yöntemi">

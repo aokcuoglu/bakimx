@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 
 export function ReferralShare({ referralUrl, referralCode }: { referralUrl: string; referralCode: string }) {
   const [copied, setCopied] = useState<"link" | "message" | null>(null)
-  const message = `Merhaba, iş yerimizde BakımX kullanıyoruz. Siz de incelemek isterseniz kayıt bağlantımız: ${referralUrl} Referans kodumuz: ${referralCode}`
+  const message = `Merhaba, iş yerimizde BakımX kullanıyoruz. Bu bağlantıyla kaydolursanız tüm ücretli paketlerde ilk yıl %10 indirim kazanırsınız: ${referralUrl} Referans kodumuz: ${referralCode}`
 
   async function copy(value: string, kind: "link" | "message") {
     try {
