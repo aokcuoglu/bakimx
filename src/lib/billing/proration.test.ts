@@ -59,3 +59,12 @@ test("credit is capped at one cycle and the charge is floored at 0", () => {
     })
   ).toBe(0)
 })
+
+test("an upgrade credits the price actually paid when the prior order was discounted", () => {
+  const currentPeriodEnd = new Date(now.getTime() + 15 * 86_400_000)
+  expect(computeUpgradeAmountMinor({
+    currentTier: "pro", currentCycle: "monthly", currentPeriodEnd,
+    newTier: "premium", newCycle: "monthly", now,
+    currentPriceMinor: 161910, newPriceMinor: 269910,
+  })).toBe(188955)
+})

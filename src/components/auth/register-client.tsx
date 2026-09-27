@@ -26,11 +26,13 @@ const INITIAL_SNAPSHOT: RegisterWizardSnapshot = {
 export function RegisterClient({
   salesRegistration,
   preferredPlan,
+  referralCode,
   mode = "register",
 }: {
   mode?: "register" | "onboarding"
   salesRegistration?: SalesRegistrationPrefill
   preferredPlan?: PreferredPlan
+  referralCode?: string
 }) {
   const [snapshot, setSnapshot] = useState(INITIAL_SNAPSHOT)
 
@@ -67,6 +69,7 @@ export function RegisterClient({
               mode={mode}
               salesRegistration={salesRegistration}
               preferredPlan={preferredPlan}
+              referralCode={referralCode}
               onSnapshotChange={handleSnapshotChange}
             />
           </div>

@@ -15,6 +15,7 @@ import { getHavaleInstructions } from "@/lib/billing/provider"
 import { prisma } from "@/lib/db"
 import { isLiteRegistrationOpen } from "@/lib/lite-campaign"
 import { getPlanPackage } from "@/lib/plans-catalog"
+import { getReferralDiscountBps } from "@/lib/billing/referral-discount"
 import { getWorkshopQuotaContext, getWorkshopQuotaUsage } from "@/lib/rapidapi-quota"
 
 export const metadata = { title: "Faturalandırma" }
@@ -73,6 +74,7 @@ export default async function SettingsBillingPage({ searchParams }: {
             seatUsage={seatUsage}
             extraSeats={Math.max(0, workshop.extraSeats)}
             havale={getHavaleInstructions()}
+            referralDiscountBps={getReferralDiscountBps(workshop)}
             showComparison={false}
             explorePlansHref="/settings/plans"
           />

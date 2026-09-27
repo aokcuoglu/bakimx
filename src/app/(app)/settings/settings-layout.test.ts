@@ -44,7 +44,9 @@ describe("Ayarlar nav IA", () => {
   test("hesap profili ayrı, paketler ve faturalandırma çalışma alanında", () => {
     expect(ACCOUNT_SETTINGS_ITEMS.map((i) => i.href)).toEqual([
       "/settings/account",
+      "/settings/referrals",
     ])
+    expect(ACCOUNT_SETTINGS_ITEMS.find((i) => i.href === "/settings/referrals")?.manageOnly).toBe(true)
     expect(WORKSPACE_SETTINGS_ITEMS.map((i) => i.href)).toContain("/settings/plans")
     expect(WORKSPACE_SETTINGS_ITEMS.map((i) => i.href)).toContain("/settings/billing")
   })

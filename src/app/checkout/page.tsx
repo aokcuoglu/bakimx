@@ -11,6 +11,7 @@ import { getPlanState, isPlanExpiredLock, isPlanTier, type PlanTier } from "@/li
 import { Button } from "@/components/ui/button"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
 import { getSeatUsage } from "@/lib/rbac"
+import { getReferralDiscountBps } from "@/lib/billing/referral-discount"
 
 export const metadata = { title: "Siparişi Tamamla", robots: PRIVATE_ROBOTS }
 
@@ -112,6 +113,7 @@ export default async function CheckoutPage({
         defaultInvoiceTitle={workshop?.invoiceTitle || workshop?.name || ""}
         seatUsage={seatUsage ?? undefined}
         extraSeats={workshop?.extraSeats ?? 0}
+        referralDiscountBps={workshop ? getReferralDiscountBps(workshop) : 0}
       />
     </main>
   )

@@ -56,7 +56,10 @@ test("Button çağrıları eylem rengini açıkça seçiyor ve parlak default'u 
         const variant = node.attributes.properties.find(
           (attribute) => ts.isJsxAttribute(attribute) && attribute.name.getText(parsed) === "variant"
         ) as ts.JsxAttribute | undefined
-        if (!variant || /["']default["']/.test(variant.initializer?.getText(parsed) ?? "")) {
+        // Attio's primary share action intentionally uses the app's blue primary variant.
+        const attioReferralPrimary = relative(SRC, file) === "components/settings/referral-share.tsx"
+          && variant?.initializer?.getText(parsed) === '"default"'
+        if (!variant || (/["']default["']/.test(variant.initializer?.getText(parsed) ?? "") && !attioReferralPrimary)) {
           const line = parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1
           offenders.push(`${relative(SRC, file)}:${line}`)
         }

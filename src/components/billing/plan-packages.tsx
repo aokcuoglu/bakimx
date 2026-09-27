@@ -28,6 +28,7 @@ import type { PlanTier, SalePlanTier } from "@/lib/plan"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
 import { cn } from "@/lib/utils"
+import { getDiscountedPlanPriceMinor } from "@/lib/billing/referral-discount"
 
 type BillingCycle = "monthly" | "yearly"
 
@@ -238,6 +239,7 @@ function PlanHeading({
 /** Attio-style pricing cards used on /settings/plans (and plan-locked). */
 function SettingsPlanCards({
   billing,
+  referralDiscountBps,
   ownedTier,
   hasPendingOrder,
   canPurchase,
@@ -247,6 +249,7 @@ function SettingsPlanCards({
   trialTier,
 }: {
   billing: BillingCycle
+  referralDiscountBps: number
   ownedTier: PlanTier | null
   hasPendingOrder: boolean
   canPurchase: boolean
@@ -259,10 +262,9 @@ function SettingsPlanCards({
     <div className="grid gap-4 sm:gap-5 md:grid-cols-3" aria-label="Paketler">
       {PLAN_PACKAGES.map((pkg) => {
         const isOwned = ownedTier === pkg.tier
-        const priceAmount =
-          pkg.tier === "lite"
-            ? "₺0"
-            : `₺${(billing === "monthly" ? pkg.monthlyPrice : pkg.yearlyPrice).toLocaleString("tr-TR")}`
+        const listAmount = billing === "monthly" ? pkg.monthlyPrice : pkg.yearlyPrice
+        const hasReferralDiscount = referralDiscountBps > 0 && pkg.tier !== "lite"
+        const priceAmount = `₺${(getDiscountedPlanPriceMinor(pkg.tier, billing, referralDiscountBps) / 100).toLocaleString("tr-TR")}`
         const period = billing === "monthly" ? "/ay" : "/yıl"
         return (
           <div
@@ -289,7 +291,9 @@ function SettingsPlanCards({
 
             <div className="mt-5" aria-live="polite" aria-atomic="true">
               <div className="flex flex-wrap items-baseline gap-1.5">
-                {pkg.listMonthlyLabel && (
+                {hasReferralDiscount ? (
+                  <s className="text-sm text-muted-foreground">₺{listAmount.toLocaleString("tr-TR")}</s>
+                ) : pkg.listMonthlyLabel && (
                   <s className="text-sm text-muted-foreground">
                     {billing === "monthly" ? pkg.listMonthlyLabel : pkg.listYearlyLabel}
                   </s>
@@ -302,6 +306,8 @@ function SettingsPlanCards({
               <p className="mt-1.5 text-xs text-muted-foreground">
                 {pkg.tier === "lite"
                   ? "Lite kampanyasında süresiz ücretsiz"
+                  : hasReferralDiscount
+                    ? `İlk yıl referans indirimi %10 · ${billing === "yearly" ? "Yıllık" : "Aylık"} · KDV dahil`
                   : billing === "yearly"
                     ? "Yıllık faturalandırılır · KDV dahil"
                     : "Aylık faturalandırılır · KDV dahil"}
@@ -351,6 +357,7 @@ export function PlanPackages({
   liteRegistrationOpen = true,
   onSelectPlan,
   trialTier = null,
+  referralDiscountBps = 0,
 }: {
   presentation?: "comparison" | "public"
   ownedTier?: PlanTier | null
@@ -363,6 +370,7 @@ export function PlanPackages({
   liteRegistrationOpen?: boolean
   onSelectPlan?: (tier: SalePlanTier, cycle: BillingCycle) => void
   trialTier?: SalePlanTier | null
+  referralDiscountBps?: number
 }) {
   const isPublic = presentation === "public"
   const [billing, setBilling] = useState<BillingCycle>(isPublic ? "monthly" : "yearly")
@@ -442,6 +450,7 @@ export function PlanPackages({
           </div>
           <SettingsPlanCards
             billing={billing}
+            referralDiscountBps={referralDiscountBps}
             ownedTier={ownedTier}
             hasPendingOrder={hasPendingOrder}
             canPurchase={canPurchase}
