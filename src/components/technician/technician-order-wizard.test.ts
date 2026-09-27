@@ -100,7 +100,7 @@ describe("teknisyen iş emri adım kabuğu", () => {
     const wizardUi = readFileSync(join(import.meta.dir, "../intake/wizard-ui.tsx"), "utf8")
     expect(wizardUi).toContain("fixed inset-x-0 bottom-16")
     expect(wizardUi).toContain("lg:left-(--sidebar-width)")
-    expect(wizardUi).toContain("group-data-[sidebar-state=collapsed]/sidebar-wrapper:left-(--sidebar-width-icon)")
+    expect(wizardUi).toContain("group-data-[sidebar-state=collapsed]/sidebar-wrapper:left-0")
   })
 
   test("kilitli iş emrini tek uyarıyla salt okunur gösterir", () => {
