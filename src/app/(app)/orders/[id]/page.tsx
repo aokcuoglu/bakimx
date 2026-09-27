@@ -24,8 +24,8 @@ export default async function OrderDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  // Liste ekranındaki "Düzenle" aksiyonu buraya ?edit=1 ile gelir; sekme
-  // değişince URL ?tab=... ile yeniden yazıldığı için parametre kendiliğinden düşer.
+  // Liste ekranındaki "Düzenle" aksiyonu buraya ?edit=1 ile gelir. Sekme
+  // değişimi sunucuya uğramaz; ?edit= istemcide adresten düşer.
   searchParams: Promise<{ edit?: string }>
 }) {
   const { id } = await params
