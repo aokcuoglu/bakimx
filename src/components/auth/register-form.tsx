@@ -247,6 +247,7 @@ export type SalesRegistrationPrefill = {
 export function RegisterForm({
   salesRegistration,
   preferredPlan,
+  referralCode,
   onSnapshotChange,
   draftKey,
   mode = "register",
@@ -254,6 +255,7 @@ export function RegisterForm({
   mode?: "register" | "onboarding"
   salesRegistration?: SalesRegistrationPrefill
   preferredPlan?: { tier: SalePlanTier; cycle: "monthly" | "yearly" }
+  referralCode?: string
   onSnapshotChange?: (snapshot: RegisterWizardSnapshot) => void
   draftKey?: string
 }) {
@@ -281,8 +283,8 @@ export function RegisterForm({
       teamSize: "",
       selectedModules: recommendedRegisterModules([]),
       setupPreference: "self_service",
-      acquisitionSource: salesRegistration ? "sales_advisor" : "unknown",
-      referralCode: "",
+      acquisitionSource: salesRegistration ? "sales_advisor" : referralCode ? "referral" : "unknown",
+      referralCode: referralCode ?? "",
       workshopName: salesRegistration?.workshopName ?? "",
       phone: salesRegistration?.phone ?? "",
       city: salesRegistration?.city ?? "",

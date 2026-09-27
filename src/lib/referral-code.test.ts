@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { businessProfileFormSchema } from "@/lib/validations/settings"
 import { registerSchema } from "@/lib/validations/auth"
-import { isValidReferralCode, normalizeReferralCode } from "@/lib/referral-code"
+import { buildReferralRegistrationUrl, isValidReferralCode, normalizeReferralCode, parseReferralCodeQuery } from "@/lib/referral-code"
 
 const registerInput = {
   email: "owner@example.com",
@@ -57,5 +57,14 @@ describe("workshop referral code contract", () => {
     const saved = businessProfileFormSchema.safeParse({ ...profileInput, referralCode: " servis-2026 " })
     expect(saved.success).toBe(true)
     if (saved.success) expect(saved.data.referralCode).toBe("SERVIS-2026")
+  })
+
+  test("shared registration links prefill only a valid referral code", () => {
+    const url = buildReferralRegistrationUrl("https://bakimx.com/", " ornek-42 ")
+    expect(url).toBe("https://bakimx.com/register?ref=ORNEK-42")
+    expect(parseReferralCodeQuery(new URL(url).searchParams.get("ref") ?? undefined)).toBe("ORNEK-42")
+    expect(parseReferralCodeQuery("ORNEK 42")).toBeUndefined()
+    expect(parseReferralCodeQuery(["ORNEK-42", "BASKA-42"])).toBeUndefined()
+    expect(() => buildReferralRegistrationUrl("https://bakimx.com", "invalid code")).toThrow()
   })
 })

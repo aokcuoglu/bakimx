@@ -14,6 +14,7 @@ import {
   UserCircle,
   Users,
   Package,
+  UserRoundPlus,
 } from "lucide-react"
 
 export type SettingsNavItem = {
@@ -33,6 +34,7 @@ export type SettingsNavGroup = {
 /** Account (personal) settings — available to technicians too for Profile. */
 export const ACCOUNT_SETTINGS_ITEMS: SettingsNavItem[] = [
   { href: "/settings/account", label: "Profil", icon: UserCircle },
+  { href: "/settings/referrals", label: "Referanslar", icon: UserRoundPlus },
 ]
 
 /** Workspace settings — hidden from technician-restricted roles in the shell. */

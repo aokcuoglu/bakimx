@@ -462,7 +462,7 @@ function AppSidebar({
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Üyeleri davet et" className={APP_NAV_TEXT}>
-                <Link href="/settings/team?invite=1">
+                <Link href="/settings/referrals">
                   <UserRoundPlus className="size-4" />
                   <span>Üyeleri davet et</span>
                 </Link>
