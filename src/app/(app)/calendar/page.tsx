@@ -56,7 +56,7 @@ export default async function CalendarPage({
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Takvim</h2>
+            <h2 className="text-page-title text-foreground">Takvim</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Randevular, teslimatlar ve bakım hatırlatmaları</p>
           </div>
         </div>

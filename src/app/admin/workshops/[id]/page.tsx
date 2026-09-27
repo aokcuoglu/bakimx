@@ -158,7 +158,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-foreground">{workshop.name}</h1>
+              <h1 className="text-page-title text-foreground">{workshop.name}</h1>
               <Badge variant="outline" className={cn("text-[11px]", APPROVAL_BADGE[workshop.approvalStatus] ?? "bg-muted")}>
                 {APPROVAL_LABELS[workshop.approvalStatus] ?? workshop.approvalStatus}
               </Badge>

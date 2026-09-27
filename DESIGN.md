@@ -14,6 +14,34 @@
 
 Koleksiyondaki dosyalar üçüncü taraf tasarım analizleridir. BakımX'e uyarlanan kurallar bu belgededir; yabancı marka renkleri, fontları, koyu pazarlama yüzeyleri veya dekoratif gradientler doğrudan aktarılmaz. Mevcut shadcn/Radix ve erişilebilirlik kuralları geçerlidir.
 
+## Uygulama kabuğu — canlı Attio, 26 Eylül 2026
+
+Kaynak, Zen’de açık BakımX çalışma alanı: şirket kaydı Notes (`/company/…/notes`), Settings Profile, Billing ve Plans. Uygulama içi liste, kayıt ve ayar ekranlarının yerleşim ölçüsü bu kabuktur. Linear yoğunluğu ve Vercel’in açık yüzeyi destek olarak kalır. Pazarlama sayfalarının büyük H1’i ve 64–120px bölüm boşluğu bu ekranlara taşınmaz.
+
+### Kabuk
+
+- Sol gezinme yaklaşık 240px, sayfayla aynı açık zemin, gölgesiz. Üstte çalışma alanı, arama, sonra ikon + etiket satırları (yaklaşık 32px). Seçili satır `muted` hap. Bölüm başlıkları küçük ve `muted-foreground`.
+- İçerik beyaz. Kayıtta üst şerit breadcrumb + başlık + ikon eylemler. Ayarlarda üst şerit sayfa adı, sağda yardım.
+
+### Kayıt sayfası
+
+- İki sütun. Sol yaklaşık 300px özellik listesi: etiket `muted-foreground`, değer sağda, kategoriler pill. Altında ilişkili listeler.
+- Sağda altı çizili sekmeler. Aktif sekme alt çizgiyle ayrılır, dolgulu sekme kullanılmaz.
+- Boş durum ortalanır: ince ikon, yaklaşık 16px başlık, tek satır açıklama, tek birincil düğme.
+
+### Ayarlar
+
+- Sol arama + gruplu gezinme, sağda sayfa başlığı (yaklaşık 20–24px, ağırlık 600) ve tek satır açıklama.
+- Etiket alanın üstünde, 13px, `muted-foreground`. Kontrol yüksekliği 36–38px, 1px `border`, beyaz zemin, köşe `sm` (6px). Bölüm aralığı yaklaşık 32px.
+- Bilgi şeridi tam genişlik, `muted` zemin, solda ikon, gölgesiz.
+- Planlar: üstte mevcut paket şeridi (ad, dönem, fiyat, yönet), altta karşılaştırma tablosu. Kart ızgarası yok. Dönem seçici segmented control. Mevcut sütun ince çizgiyle ayrılır.
+
+### Buton rengi
+
+Attio’nun kendi birincil düğmesi doygun mavidir. BakımX’te 13–14 Eylül kararı durur: uygulama birincil dolgusu `foreground`, public/asistan `navy`. Attio’dan alınan şey yerleşim, boşluk, çizgi ve tipografi hiyerarşisidir.
+
+Yeni veya revize edilen uygulama ekranları bu kabuğa uyar. Tüm sayfaları tek geçişte boyamak bu notun kapsamı dışındadır.
+
 ## Görsel dil
 
 Inter uygulama ve genel public yüzeylerde kullanılır. Kod ve sabit genişlikli alanlarda Geist Mono korunur. Blog (`/blog`) Clutch’a yakın display tipografi için **Switzer** kullanır (PP Radio Grotesk referansına yakın Fontshare alternatifi; ITF FFL, yerel WOFF2 dosyaları). Beyaz `card` zemin; ince `border` ayraçlar; koyu `foreground` başlıklar; `muted-foreground` açıklamalar. Mavi, ürün verilerinde ve bağlantılarda vurgu olarak kalır. Büyük renk blokları açık yüzeylere dönüştürülür. Ortak içerik sınırı 1200px, ürün sahnesi 1440px. Bölüm boşlukları masaüstünde 64–120px, mobilde 64px. Ana H1 84px'e, tanıtım sayfaları 76px'e kadar ölçeklenir. Başlıklarda sıkı harf aralığı ve dengeli satır kırılması kullanılır. Rehber ve hukuki metinlerin içerikleri korunur.
@@ -196,3 +224,14 @@ Footer sırası kolonlar → copyright → dekoratif BakımX watermark’tır; �
 ## Demo reklam taslağı uzlaştırması — 15 Eylül 2026 (#649)
 
 Kullanıcı eski reklam/click-ID taslağını ayrı dev PR kapsamında yeniden değerlendirmeyi onayladı. `/demo` ve yazdırılabilir `/demo/ozet` açık PublicSite yüzeylerini, mevcut demo formunu ve onaylı ürün mesajlarını kullanır. Eski koyu bloklar ve doğrulanmamış “maksimum 10 saniyede parça bulma” garantisi taşınmaz. Reklam atfı ve demo dönüşümü yalnız analitik ana anahtarı açıkken ve hedefleme çerezlerine açık rıza varken çalışır. İletişim bilgileri, hash’leri veya CRM kimlik/aşama bilgileri reklam sağlayıcılarına gönderilmez. Lite kampanya atfı ayrı kalır. Dış sağlayıcı aktarımı yalnız Google Ads demo dönüşümüdür; Meta Pixel/CAPI yüklenmez, rızalı fbclid yalnız dahili atıfta saklanır.
+
+## Canlı Attio bileşen kararı — 27 Eylül 2026 (#682)
+
+Kullanıcının Overview/Activity, Highlights kartları ve New meeting görselleri ile canlı DevTools ölçümleri yeni ortak bileşen referansıdır. [Ölçüm ve uygulama kaydı](docs/attio-live-design-audit.md). Bu bölüm önceki “aktif sekmede dolgu yok”, 28–36px uygulama başlığı, #262626 yardımcı metin ve bütün yüzeylerde 10px köşe kurallarının yerini alır. Kullanıcının site geneline uygulama talebi bu bileşen/token değişikliklerini açıkça kapsar.
+
+- Sekme: Inter 14/20, 500; 28px kontrol, 8px köşe; seçili durumda ince çerçeveli nötr yüzey **ve** ayrı 1px alt çizgi. `TabsList variant="line"`; seçenek grupları için segmented `default` korunur.
+- Tipografi: genel gövde 14/20, bölüm etiketi 12/16, kayıt başlığı 16/20, uygulama sayfa başlığı 20/28 (`text-page-title`). Public display ve blog editoryal ölçekler kendi rollerini korur. Mevcut Inter fontu kullanılır.
+- Kart: `Card` 12px köşe, ince border, gölge yok. `HighlightCard` etiketi 12px, değeri 14px; ikon opsiyonel. Dashboard/listelerde kocaman sayı ve aynı değeri tekrar eden badge kullanılmaz.
+- Modal: `Dialog`/`AlertDialog` 16px köşe (`--radius-dialog`, yalnız bu yüzeyler için istisna), ince dış çerçeve, yumuşak katmanlı gölge (`--shadow-dialog`), beyaz başlık/gövde/footer. Başlık 14px, eylemler sağ altta; mobilde sığmazsa içeride kaydırma. Arka yüzey hafifçe örtülür, blur yok. Reduced motion tercihinde animasyon yok.
+- Nötr yardımcı metin `#60646c`; açık zeminlerde AA kontrastı korunur. Tonlu yüzeylerde `-strong` kuralları geçerlidir. Marka ve semantik renkler korunur. Kontrol köşeleri ve mevcut CTA renk politikası bu çalışmada değişmez.
+- `/design#cards` ortak sekme, 3×2 özet kartı ve minimal modalın çalışan örneğidir. Örnekler gerçek müşteri kaydı oluşturmaz.

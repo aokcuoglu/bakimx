@@ -28,7 +28,7 @@ export default async function AdminLiveChatSettingsPage() {
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Canlı Destek Ayarları</h1>
+        <h1 className="text-page-title text-foreground">Canlı Destek Ayarları</h1>
         <p className="text-sm text-muted-foreground">
           Şu an{" "}
           <strong className={availability.online ? "text-success-strong" : "text-foreground"}>

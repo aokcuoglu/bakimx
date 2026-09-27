@@ -269,10 +269,10 @@ export function PartsLaborEditor({
       {!locked && (
         <Tabs defaultValue="parca">
           <TabsList variant="line" className="w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px sm:gap-2">
-            <TabsTrigger value="parca" className="px-3 py-2 shrink-0">
+            <TabsTrigger value="parca" className="shrink-0">
               <PackagePlus className="size-4" /> Parça
             </TabsTrigger>
-            <TabsTrigger value="iscilik" className="px-3 py-2 shrink-0">
+            <TabsTrigger value="iscilik" className="shrink-0">
               <Wrench className="size-4" /> İşçilik
             </TabsTrigger>
           </TabsList>

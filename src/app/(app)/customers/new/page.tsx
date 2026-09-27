@@ -23,7 +23,7 @@ export default async function NewCustomerPage({
           <span className="text-foreground font-medium">Yeni</span>
         </div>
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Yeni Müşteri</h2>
+          <h2 className="text-page-title text-foreground">Yeni Müşteri</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             Bireysel veya kurumsal müşteri bilgilerini girin
           </p>

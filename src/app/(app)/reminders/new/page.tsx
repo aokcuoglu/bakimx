@@ -43,7 +43,7 @@ export default async function NewReminderPage({
         </div>
 
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Yeni Hatırlatma</h2>
+          <h2 className="text-page-title text-foreground">Yeni Hatırlatma</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             Müşteriniz için yeni bir bakım hatırlatması oluşturun.
           </p>

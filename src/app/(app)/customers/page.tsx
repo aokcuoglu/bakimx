@@ -113,7 +113,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Müşteriler</h2>
+            <h2 className="text-page-title text-foreground">Müşteriler</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
               {rows.length} müşteri{rows.length === 1 ? "" : ""} kayıtlı
             </p>

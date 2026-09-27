@@ -24,7 +24,7 @@ export default async function NewQuotePage() {
           <span className="text-foreground font-medium">Yeni</span>
         </div>
 
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Yeni Teklif</h2>
+        <h2 className="text-page-title text-foreground">Yeni Teklif</h2>
 
         <QuoteCreateForm laborCatalog={laborCatalog} />
       </div>

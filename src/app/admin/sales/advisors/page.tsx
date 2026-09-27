@@ -35,7 +35,7 @@ export default async function SalesAdvisorsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Satış Danışmanları</h1>
+        <h1 className="text-page-title text-foreground">Satış Danışmanları</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">Davet, erişim ve oturum güvenliğini yönetin.</p>
       </div>
       <SalesAdvisorManagement

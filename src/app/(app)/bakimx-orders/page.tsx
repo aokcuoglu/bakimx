@@ -60,7 +60,7 @@ export default async function BakimxOrdersPage() {
         </div>
 
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">BakımX Siparişleri</h2>
+          <h2 className="text-page-title text-foreground">BakımX Siparişleri</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             BakımX kataloğundan istediğiniz ürünler ve talebin durumu
           </p>

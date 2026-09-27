@@ -85,7 +85,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
 
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">{formatTRY(collection.amount)}</h2>
+            <h2 className="text-page-title text-foreground">{formatTRY(collection.amount)}</h2>
             <div className="flex items-center gap-2 mt-1">
               <PaymentMethodBadge method={collection.method} size="md" />
               <CollectionStatusBadge status={collection.status} size="md" />

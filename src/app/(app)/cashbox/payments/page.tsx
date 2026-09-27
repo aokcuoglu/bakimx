@@ -111,7 +111,7 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Tahsilatlar</h2>
+            <h2 className="text-page-title text-foreground">Tahsilatlar</h2>
             <p className="text-sm text-muted-foreground mt-0.5">{total} kayıt bulundu</p>
           </div>
           <div className="flex gap-2">

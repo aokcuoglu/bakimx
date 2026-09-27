@@ -127,7 +127,7 @@ export default async function AppointmentsPage({
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Randevular</h2>
+            <h2 className="text-page-title text-foreground">Randevular</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Servis randevularını planlayın ve yönetin</p>
           </div>
           <Button variant="foreground" size="default" className="hidden sm:inline-flex" asChild>

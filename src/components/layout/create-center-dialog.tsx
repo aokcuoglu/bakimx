@@ -70,10 +70,10 @@ export function CreateCenterDialog({
           event.preventDefault()
           closeButtonRef.current?.focus()
         }}
-        className="top-auto bottom-0 max-h-[calc(100dvh-1rem)] max-w-none translate-y-0 gap-0 overflow-hidden rounded-b-none bg-card p-0 shadow-lg sm:top-1/2 sm:bottom-auto sm:max-w-2xl sm:-translate-y-1/2 sm:rounded-lg"
+        className="top-auto bottom-0 max-h-[calc(100dvh-1rem)] max-w-none translate-y-0 gap-0 overflow-hidden rounded-b-none bg-card p-0 sm:top-1/2 sm:bottom-auto sm:max-w-2xl sm:-translate-y-1/2 sm:rounded-[var(--radius-dialog)]"
       >
-        <DialogHeader className="relative shrink-0 gap-1.5 border-b border-border px-5 py-5 pr-14 sm:px-6 sm:py-6 sm:pr-16">
-          <DialogTitle className="text-xl leading-tight font-semibold tracking-tight text-foreground">
+        <DialogHeader className="relative shrink-0 gap-1.5 border-b border-border px-4 py-3 pr-14 sm:px-5 sm:pr-14">
+          <DialogTitle className="text-sm leading-5 font-medium text-foreground">
             Ne oluşturmak istiyorsunuz?
           </DialogTitle>
           <DialogDescription className="leading-relaxed">
@@ -85,14 +85,14 @@ export function CreateCenterDialog({
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="absolute top-4 right-4 text-muted-foreground sm:top-5 sm:right-5"
+              className="absolute top-2 right-2 text-muted-foreground"
               aria-label="Oluşturma merkezini kapat"
             >
               <X className="size-4" />
             </Button>
           </DialogClose>
         </DialogHeader>
-        <div className="grid min-h-0 gap-2 overflow-y-auto p-4 sm:grid-cols-2 sm:gap-3 sm:p-6" role="list" aria-label="Oluşturulabilecek kayıtlar">
+        <div className="grid min-h-0 gap-2 overflow-y-auto p-4 sm:grid-cols-2 sm:gap-3 sm:p-5" role="list" aria-label="Oluşturulabilecek kayıtlar">
           {CREATE_OPTIONS.map((option) => {
             const Icon = OPTION_ICONS[option.id]
             const feature = OPTION_FEATURES[option.id]

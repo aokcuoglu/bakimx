@@ -38,7 +38,7 @@ export default async function QuotesPage({ searchParams }: { searchParams: Promi
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Teklifler</h2>
+            <h2 className="text-page-title text-foreground">Teklifler</h2>
             <p className="text-sm text-muted-foreground mt-0.5">{quotes.length} teklif</p>
           </div>
           <div className="flex items-center gap-2">

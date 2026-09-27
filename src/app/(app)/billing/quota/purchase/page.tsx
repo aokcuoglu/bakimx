@@ -51,7 +51,7 @@ export default async function PurchaseQuotaPage() {
               </Link>
             </Button>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Ek Kota Satın Al</h2>
+          <h2 className="text-page-title text-foreground">Ek Kota Satın Al</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             Mevcut paketinize ek kota ekleyerek sorgu limitinizi artırın
           </p>

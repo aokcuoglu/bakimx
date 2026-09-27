@@ -36,7 +36,7 @@ export default async function CommunicationsPage() {
           <span className="text-foreground font-medium">İletişim Kayıtları</span>
         </div>
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">İletişim Kayıtları</h2>
+          <h2 className="text-page-title text-foreground">İletişim Kayıtları</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             Müşterilerinize ve hesabınıza gönderilen SMS, WhatsApp ve e-posta kayıtları
           </p>

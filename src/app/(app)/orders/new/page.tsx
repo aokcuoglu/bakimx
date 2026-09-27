@@ -29,7 +29,7 @@ export default async function NewOrderPage({
           <span className="text-foreground font-medium">Yeni</span>
         </div>
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Yeni İş Emri</h2>
+          <h2 className="text-page-title text-foreground">Yeni İş Emri</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Adım adım araç kabul formu oluşturun</p>
         </div>
         <IntakeWizard

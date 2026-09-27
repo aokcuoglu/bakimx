@@ -40,7 +40,7 @@ export default async function AgingReportPage() {
         </div>
 
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Alacak Yaşlandırma Raporu</h2>
+          <h2 className="text-page-title text-foreground">Alacak Yaşlandırma Raporu</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Müşteri alacaklarının vade gruplarına göre dağılımı</p>
         </div>
 

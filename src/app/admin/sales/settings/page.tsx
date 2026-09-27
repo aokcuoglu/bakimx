@@ -32,7 +32,7 @@ export default async function SalesCommissionSettingsPage() {
         <Button asChild variant="ghost" size="sm" className="-ml-3 mb-2">
           <Link href="/admin/sales/commissions"><ArrowLeft className="size-4" /> Hakedişlere dön</Link>
         </Button>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="text-page-title flex items-center gap-2 text-foreground">
           <Settings2 className="size-6 text-primary" /> Hakediş kuralları
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">Paket ve faturalama dönemi için yürürlük tarihli yüzde geçmişi.</p>

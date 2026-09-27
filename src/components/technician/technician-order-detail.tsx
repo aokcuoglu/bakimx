@@ -436,7 +436,7 @@ export function TechnicianOrderDetail({
           {steps.map((step) => {
             const Icon = step.icon
             return (
-              <TabsTrigger key={step.id} value={step.id} className="px-3 py-2.5 shrink-0 flex-none">
+              <TabsTrigger key={step.id} value={step.id} className="shrink-0 flex-none">
                 <Icon className="size-4" />
                 <span>{step.label}</span>
               </TabsTrigger>

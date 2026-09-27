@@ -13,7 +13,7 @@ export default async function SalesAccountPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Hesabım</h1>
+        <h1 className="text-page-title text-foreground">Hesabım</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">Profil ve şifre bilgilerinizi yönetin.</p>
       </div>
       <section className="rounded-xl border bg-card p-4 sm:p-6">

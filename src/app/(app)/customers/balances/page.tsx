@@ -150,7 +150,7 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Bakiye Özeti</h2>
+            <h2 className="text-page-title text-foreground">Bakiye Özeti</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
               Tahsilat kayıtlarına dayalı müşteri bakiye görünümü
             </p>

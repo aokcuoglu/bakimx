@@ -51,7 +51,7 @@ export default async function CashboxPage() {
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Kasa</h2>
+            <h2 className="text-page-title text-foreground">Kasa</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Tahsilat ve alacak takibi</p>
           </div>
           <div className="flex flex-wrap gap-2">

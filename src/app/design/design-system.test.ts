@@ -36,12 +36,12 @@ describe("design system radius contract", () => {
     )
 
     const card = read("src/components/ui/card.tsx")
-    expect(card).toContain("rounded-lg")
-    expect(card).not.toContain("rounded-xl")
+    expect(card).toContain("rounded-xl")
+    expect(card).not.toContain("ring-foreground/10")
 
     const dialog = read("src/components/ui/dialog.tsx")
-    expect(dialog).toContain("rounded-lg bg-popover")
-    expect(dialog).not.toContain("rounded-xl bg-popover")
+    expect(dialog).toContain("rounded-[var(--radius-dialog)] bg-popover")
+    expect(dialog).toContain("shadow-[var(--shadow-dialog)]")
   })
 
   test("DESIGN.md documents palette and /design gallery exists", () => {

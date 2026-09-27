@@ -29,7 +29,7 @@ export default async function NewVehiclePage({
               <span className="mx-2">/</span>
               <span className="text-foreground font-medium">Yeni Araç</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground mt-1">Yeni Araç</h2>
+            <h2 className="text-page-title text-foreground mt-1">Yeni Araç</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Araç bilgilerini eksiksiz girin</p>
           </div>
         </div>

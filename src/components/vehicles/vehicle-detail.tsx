@@ -293,7 +293,7 @@ export function VehicleDetail({
             }
           >
             <Tabs defaultValue="own">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList variant="line" className="grid w-full grid-cols-2">
                 <TabsTrigger value="own">Kendi ({workOrders.length})</TabsTrigger>
                 <TabsTrigger value="other">Başkası ({crossWorkshop.orders.length})</TabsTrigger>
               </TabsList>
