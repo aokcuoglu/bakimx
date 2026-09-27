@@ -1,5 +1,4 @@
 import { AppShell } from "@/components/layout/app-shell"
-import { SettingsPageHeader } from "@/components/settings/settings-page-header"
 import { BillingPlanManager } from "@/components/billing/billing-plan-manager"
 import { PendingPaymentNotice } from "@/components/billing/pending-payment-notice"
 import { getAccountBillingContext } from "@/lib/billing/account-context"
@@ -13,10 +12,6 @@ export default async function SettingsPlansPage() {
 
   return (
     <AppShell pageTitle="Paketler" wide workshopName={workshop.name}>
-      <SettingsPageHeader
-        title="Paketler"
-        description="Mevcut paketinizi görün; fiyatları, limitleri ve özellikleri karşılaştırın."
-      />
       <div className="space-y-7">
         {pendingOrder && <PendingPaymentNotice order={pendingOrder} />}
         <BillingPlanManager
