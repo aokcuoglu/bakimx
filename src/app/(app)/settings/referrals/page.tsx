@@ -2,7 +2,10 @@ import { redirect } from "next/navigation"
 import { AppShell } from "@/components/layout/app-shell"
 import { ReferralShare } from "@/components/settings/referral-share"
 import { getCurrentUser } from "@/lib/auth"
+import { prisma } from "@/lib/db"
 import { buildReferralRegistrationUrl, isValidReferralCode } from "@/lib/referral-code"
+import { getPlanState } from "@/lib/plan"
+import { roleCan } from "@/lib/roles"
 import { LOGOUT_REASON_PARAM, SESSION_INVALID_REASON } from "@/lib/session-recovery"
 import { getOrCreateWorkshopReferralCode } from "@/lib/workshop-referral"
 import styles from "./referrals.module.css"
@@ -14,8 +17,14 @@ export default async function ReferralsSettingsPage() {
   if (!user || !user.isActive) {
     redirect(`/login?${LOGOUT_REASON_PARAM}=${SESSION_INVALID_REASON}`)
   }
+  if (!roleCan(user.role, "settings.manage")) redirect("/dashboard")
 
-  const referralCode = await getOrCreateWorkshopReferralCode(user.workshopId)
+  const workshop = await prisma.workshop.findUnique({ where: { id: user.workshopId } })
+  const referralCode = workshop?.referralCode || (
+    workshop && !user.impersonatorAdminId && !user.mustChangePassword && getPlanState(workshop).canWrite
+      ? await getOrCreateWorkshopReferralCode(user.workshopId)
+      : null
+  )
   const referralUrl = referralCode && isValidReferralCode(referralCode)
     ? buildReferralRegistrationUrl(process.env.APP_URL || "http://localhost:3000", referralCode)
     : null
@@ -35,7 +44,11 @@ export default async function ReferralsSettingsPage() {
           <p className="mt-0.5 text-sm text-muted-foreground">
             Bağlantıyı açan kişi kayıt formunda referans kodunuzu hazır bulur.
           </p>
-          {referralUrl && referralCode ? <ReferralShare referralUrl={referralUrl} referralCode={referralCode} /> : null}
+          {referralUrl && referralCode ? (
+            <ReferralShare referralUrl={referralUrl} referralCode={referralCode} />
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">Bu iş yeri için paylaşım bağlantısı şu anda oluşturulamıyor.</p>
+          )}
         </section>
       </div>
     </AppShell>

@@ -34,7 +34,7 @@ export type SettingsNavGroup = {
 /** Account (personal) settings — available to technicians too for Profile. */
 export const ACCOUNT_SETTINGS_ITEMS: SettingsNavItem[] = [
   { href: "/settings/account", label: "Profil", icon: UserCircle },
-  { href: "/settings/referrals", label: "Referanslar", icon: UserRoundPlus },
+  { href: "/settings/referrals", label: "Referanslar", icon: UserRoundPlus, manageOnly: true },
 ]
 
 /** Workspace settings — hidden from technician-restricted roles in the shell. */

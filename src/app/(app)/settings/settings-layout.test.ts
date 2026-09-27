@@ -46,6 +46,7 @@ describe("Ayarlar nav IA", () => {
       "/settings/account",
       "/settings/referrals",
     ])
+    expect(ACCOUNT_SETTINGS_ITEMS.find((i) => i.href === "/settings/referrals")?.manageOnly).toBe(true)
     expect(WORKSPACE_SETTINGS_ITEMS.map((i) => i.href)).toContain("/settings/plans")
     expect(WORKSPACE_SETTINGS_ITEMS.map((i) => i.href)).toContain("/settings/billing")
   })

@@ -14,6 +14,7 @@ import { SettingsNav } from "@/components/settings/settings-nav"
 import { DashboardProductTour } from "@/components/dashboard/dashboard-product-tour"
 import { ACCOUNT_SETTINGS_ITEMS, SETTINGS_NAV_GROUPS, isSettingsPath } from "@/lib/settings-nav"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
+import { roleCan } from "@/lib/roles"
 import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
 import type { GatedFeature } from "@/lib/plan"
 import type { SidebarPlanStatus } from "@/lib/billing/sidebar-plan-status"
@@ -235,7 +236,9 @@ export function AppShellChrome({
   const settingsNavigation = isTechRole
     ? ACCOUNT_SETTINGS_ITEMS
     : SETTINGS_NAV_GROUPS.flatMap((group) => group.items)
-  const searchNavigation: SearchDestination[] = [...primaryNavigation, ...settingsNavigation]
+  const visibleSettingsNavigation = settingsNavigation.filter((item) =>
+    !item.manageOnly || (userIdentity?.role && roleCan(userIdentity.role, "settings.manage")))
+  const searchNavigation: SearchDestination[] = [...primaryNavigation, ...visibleSettingsNavigation]
 
   return (
     <SetPageHeaderContext.Provider value={setPageHeader}>
