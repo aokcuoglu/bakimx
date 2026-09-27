@@ -95,7 +95,7 @@ export function WorkspaceSwitcher({
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
-                className="text-[clamp(18px,calc(var(--sidebar-width)*0.06),20px)] font-semibold leading-6 tracking-[-0.02em]"
+                className="text-base font-semibold leading-5 tracking-[-0.01em]"
                 tooltip={current.name}
                 aria-label={`Şube: ${current.name}`}
               >
@@ -128,7 +128,7 @@ export function WorkspaceSwitcher({
                   >
                     <WorkspaceAvatar name={item.name} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-base font-medium leading-6 tracking-[-0.01em]">{item.name}</p>
+                      <p className="truncate text-sm font-medium leading-5 tracking-[-0.005em]">{item.name}</p>
                       <p className="truncate text-xs text-muted-foreground">{item.city}</p>
                     </div>
                     {active ? <Check className="size-4 shrink-0 text-primary" aria-hidden /> : null}
@@ -147,7 +147,7 @@ export function WorkspaceSwitcher({
                   <span className="flex size-7 items-center justify-center">
                     <Plus className="size-4" />
                   </span>
-                  <span className="text-base font-medium leading-6 tracking-[-0.01em]">Yeni şube oluştur</span>
+                  <span className="text-sm font-medium leading-5 tracking-[-0.005em]">Yeni şube oluştur</span>
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem asChild className="min-h-11 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
@@ -162,7 +162,7 @@ export function WorkspaceSwitcher({
                       <LockKeyhole className="size-3.5" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-base font-medium leading-6 tracking-[-0.01em]">Yeni şube</span>
+                      <span className="block text-sm font-medium leading-5 tracking-[-0.005em]">Yeni şube</span>
                       <span className="block text-xs text-muted-foreground">Premium pakette</span>
                     </span>
                   </Link>
@@ -179,7 +179,7 @@ export function WorkspaceSwitcher({
                   }}
                 >
                   <UserCircle className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="text-base leading-6 tracking-[-0.01em]">Hesap ayarları</span>
+                  <span className="text-sm leading-5 tracking-[-0.005em]">Hesap ayarları</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
@@ -192,7 +192,7 @@ export function WorkspaceSwitcher({
                   }}
                 >
                   <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="text-base leading-6 tracking-[-0.01em]">Çalışma alanı ayarları</span>
+                  <span className="text-sm leading-5 tracking-[-0.005em]">Çalışma alanı ayarları</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -207,7 +207,7 @@ export function WorkspaceSwitcher({
                       }}
                     >
                       <UserRoundPlus className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                      <span className="text-base leading-6 tracking-[-0.01em]">Üyeleri davet et</span>
+                      <span className="text-sm leading-5 tracking-[-0.005em]">Üyeleri davet et</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -224,7 +224,7 @@ export function WorkspaceSwitcher({
                 }}
               >
                 <LogOut className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                <span className="text-base leading-6 tracking-[-0.01em]">Çıkış yap</span>
+                <span className="text-sm leading-5 tracking-[-0.005em]">Çıkış yap</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
