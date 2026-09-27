@@ -77,7 +77,7 @@ export function PlanLocked({
         )}
 
         {showPackages && (
-          <PlanPackages ownedTier={null} workshopName={workshopName} hasPendingOrder={hasPendingOrder} />
+          <PlanPackages presentation="settings" ownedTier={null} workshopName={workshopName} hasPendingOrder={hasPendingOrder} />
         )}
 
         <form action={logoutAction} className="mt-8 text-center">

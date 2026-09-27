@@ -4,7 +4,7 @@ import { useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm, useWatch } from "react-hook-form"
-import { AlertTriangle, ArrowLeft, Check, CheckCircle2, CreditCard, Landmark, Receipt, X } from "lucide-react"
+import { AlertTriangle, ArrowLeft, Check, CheckCircle2, CreditCard, Landmark, X } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,15 +16,19 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { PlanPackages } from "@/components/billing/plan-packages"
+import { ManagePlanDialog } from "@/components/billing/manage-plan-dialog"
+import { DowngradePlanDialog } from "@/components/billing/downgrade-plan-dialog"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { createBillingOrder } from "@/app/(app)/billing/actions"
+import { DOWNGRADE_BLOCKED_MESSAGE, isPlanDowngrade } from "@/lib/billing/plan-change"
 import { formatMinor, getPlanPriceMinor } from "@/lib/billing/pricing"
 import type { HavaleInfo } from "@/lib/billing/provider"
-import { getSeatLimit, type PlanTier, type SalePlanTier } from "@/lib/plan"
+import { getSeatLimit, isSalePlanTier, type PlanTier, type SalePlanTier } from "@/lib/plan"
 import { PLAN_COMPARISON, PLAN_PACKAGES, getPlanPackage } from "@/lib/plans-catalog"
 import { typedResolver } from "@/lib/validations/resolver"
 import { checkoutInAppSchema, type CheckoutInAppValues } from "@/lib/validations/billing"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 type Cycle = "monthly" | "yearly"
@@ -49,6 +53,7 @@ export function BillingPlanManager({
   seatUsage,
   extraSeats,
   havale,
+  currentPeriodEnd = null,
   showComparison = true,
   explorePlansHref,
 }: {
@@ -70,18 +75,31 @@ export function BillingPlanManager({
   seatUsage: { activeUsers: number; pendingInvites: number; used: number }
   extraSeats: number
   havale: HavaleInfo
+  currentPeriodEnd?: Date | string | null
   showComparison?: boolean
   explorePlansHref?: string
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [manageOpen, setManageOpen] = useState(false)
+  const [managePreferredCycle, setManagePreferredCycle] = useState<Cycle | null>(null)
+  const [downgradeTier, setDowngradeTier] = useState<SalePlanTier | null>(null)
   const [view, setView] = useState<"checkout" | "compare">("checkout")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState<PaymentResult | null>(null)
   const returnFocusRef = useRef<HTMLElement | null>(null)
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
-  const initialTier = ownedTier === "lite" || ownedTier === "pro" || ownedTier === "premium" ? ownedTier : "pro"
+  const saleOwned = ownedTier && isSalePlanTier(ownedTier) ? ownedTier : null
+  const initialTier = saleOwned ?? "pro"
+  const periodEndLabel =
+    currentPeriodEnd != null
+      ? new Date(currentPeriodEnd).toLocaleDateString("tr-TR", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : null
   const form = useForm<CheckoutInAppValues, unknown, CheckoutInAppValues>({
     resolver: typedResolver<CheckoutInAppValues>(checkoutInAppSchema),
     defaultValues: {
@@ -103,6 +121,11 @@ export function BillingPlanManager({
   const periodLabel = cycle === "yearly" ? "yıllık" : "aylık"
 
   function choosePlan(nextTier: SalePlanTier, nextCycle: Cycle) {
+    if (isPlanDowngrade(ownedTier, nextTier)) {
+      setDowngradeTier(nextTier)
+      return
+    }
+    setManageOpen(false)
     if (!open) {
       returnFocusRef.current = document.activeElement as HTMLElement | null
       setDone(null)
@@ -112,6 +135,12 @@ export function BillingPlanManager({
     setError("")
     setView("checkout")
     setOpen(true)
+  }
+
+  function openManage(preferred?: Cycle) {
+    returnFocusRef.current = document.activeElement as HTMLElement | null
+    setManagePreferredCycle(preferred ?? null)
+    setManageOpen(true)
   }
 
   function closeDialog(nextOpen: boolean) {
@@ -125,8 +154,22 @@ export function BillingPlanManager({
     }
   }
 
+  function confirmDowngrade() {
+    const target = downgradeTier ? getPlanPackage(downgradeTier) : null
+    setDowngradeTier(null)
+    toast.message("Düşürme dönem sonunda uygulanır", {
+      description: target
+        ? `${target.name} paketine geçiş, para iadesi olmadan ${periodEndLabel ?? "mevcut dönem sonunda"} planlanır. Anlık düşürme yapılmaz.`
+        : DOWNGRADE_BLOCKED_MESSAGE,
+    })
+  }
+
   async function submit(values: CheckoutInAppValues) {
     if (loading || hasPendingOrder || !canPurchase) return
+    if (isPlanDowngrade(ownedTier, values.tier)) {
+      setError(DOWNGRADE_BLOCKED_MESSAGE)
+      return
+    }
     setLoading(true)
     setError("")
     try {
@@ -144,49 +187,97 @@ export function BillingPlanManager({
 
   return (
     <>
-      <div className="rounded-xl border bg-card p-4 shadow-sm sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">Mevcut paket</Badge>
-              {isTrialing && <Badge variant="secondary">Deneme</Badge>}
-            </div>
-            <h2 className="mt-2 text-base font-semibold text-foreground sm:text-lg">{isTrialing ? "Premium denemesi" : currentPlanName}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {isTrialing
-                ? `Lite hesabınız Premium haklarını kullanıyor${trialDaysLeft == null ? "." : ` · ${trialDaysLeft} iş günü kaldı.`}`
-                : `${currentCycle === "yearly" ? "Yıllık" : currentCycle === "monthly" ? "Aylık" : ""} abonelik dönemi`}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {explorePlansHref && <Button asChild variant="outline"><Link href={explorePlansHref}>Paketleri incele</Link></Button>}
-            <Button type="button" variant="foreground" onClick={() => { returnFocusRef.current = document.activeElement as HTMLElement | null; closeDialog(true) }}>
-              <Receipt className="size-4" aria-hidden="true" /> Paketi yönet
-            </Button>
-          </div>
+      {explorePlansHref && (
+        <div className="flex justify-end">
+          <Button asChild variant="outline" size="sm"><Link href={explorePlansHref}>Paketleri incele</Link></Button>
         </div>
-      </div>
+      )}
 
       {showComparison && (
-        <div id="paketler" className="scroll-mt-24 pt-2">
+        <div id="paketler" className="scroll-mt-24">
           <PlanPackages
+            presentation="settings"
             ownedTier={ownedTier}
             workshopName={workshopName}
             hasPendingOrder={hasPendingOrder}
             canPurchase={canPurchase}
             liteRegistrationOpen={liteRegistrationOpen}
             trialTier={isTrialing ? "premium" : null}
+            currentCycle={currentCycle}
+            isTrialing={isTrialing}
+            trialDaysLeft={trialDaysLeft}
             onSelectPlan={choosePlan}
+            onManagePlan={() => openManage()}
+            onRequestCycleChange={(next) => openManage(next)}
+            onDowngrade={(next) => setDowngradeTier(next)}
           />
         </div>
+      )}
+
+      {manageOpen && (
+        <ManagePlanDialog
+          key={`${saleOwned ?? "none"}-${currentCycle ?? "monthly"}-${managePreferredCycle ?? "current"}`}
+          open={manageOpen}
+          onOpenChange={setManageOpen}
+          planName={isTrialing ? "Premium denemesi" : currentPlanName}
+          planTier={saleOwned}
+          currentCycle={currentCycle}
+          currentPeriodEnd={currentPeriodEnd}
+          canPurchase={canPurchase}
+          hasPendingOrder={hasPendingOrder}
+          preferredCycle={managePreferredCycle}
+          isTrialing={isTrialing}
+          seatUsed={seatUsage.used}
+          extraSeats={extraSeats}
+          defaultInvoiceTitle={defaultInvoiceTitle}
+          defaultTaxNumber={defaultTaxNumber}
+          defaultTaxOffice={defaultTaxOffice}
+          onChangePlan={() => {
+            setManageOpen(false)
+            document.getElementById("paketler")?.scrollIntoView({ behavior: "smooth", block: "start" })
+          }}
+          onConfirm={(draft) => {
+            const nextTier = saleOwned ?? "pro"
+            form.setValue("tier", nextTier)
+            form.setValue("cycle", draft.cycle)
+            form.setValue("method", draft.method)
+            form.setValue("invoiceTitle", draft.invoiceTitle)
+            form.setValue("taxNumber", draft.taxNumber)
+            form.setValue("taxOffice", draft.taxOffice)
+            setManageOpen(false)
+            setDone(null)
+            setError("")
+            setView("checkout")
+            setOpen(true)
+            void submit({
+              tier: nextTier,
+              cycle: draft.cycle,
+              method: draft.method,
+              invoiceTitle: draft.invoiceTitle,
+              taxNumber: draft.taxNumber,
+              taxOffice: draft.taxOffice,
+            })
+          }}
+        />
+      )}
+
+      {saleOwned && downgradeTier && (
+        <DowngradePlanDialog
+          open={!!downgradeTier}
+          onOpenChange={(next) => { if (!next) setDowngradeTier(null) }}
+          fromTier={saleOwned}
+          toTier={downgradeTier}
+          periodEndLabel={periodEndLabel}
+          onConfirm={confirmDowngrade}
+        />
       )}
 
       <Dialog open={open} onOpenChange={closeDialog}>
         <DialogContent className="flex max-h-[min(92dvh,900px)] w-[calc(100%-1rem)] max-w-5xl flex-col gap-0 overflow-hidden rounded-xl bg-card p-0 sm:max-w-5xl" showCloseButton={false} onOpenAutoFocus={(event) => { event.preventDefault(); closeButtonRef.current?.focus() }} onCloseAutoFocus={(event) => { event.preventDefault(); returnFocusRef.current?.focus() }}>
           <DialogHeader className="shrink-0 border-b bg-card px-5 py-4 pr-14 sm:px-7">
-            <DialogTitle>{view === "compare" ? "Paketleri karşılaştır" : done ? "Siparişiniz" : "Paketi yönet"}</DialogTitle>
+            <DialogTitle>{view === "compare" ? "Paketleri karşılaştır" : done ? "Siparişiniz" : "Ödemeyi tamamla"}</DialogTitle>
             <DialogDescription>
-              {view === "compare" ? "İhtiyacınıza uygun paketi seçin." : done ? "Sipariş tutarı ve sonraki adımlar aşağıda." : "Paketinizi, fatura bilgilerinizi ve ödeme yönteminizi tek yerden yönetin."}
+              {view === "compare" ? "İhtiyacınıza uygun paketi seçin." : done ? "Sipariş tutarı ve sonraki adımlar aşağıda." : "Fatura bilgilerinizi ve ödeme yönteminizi onaylayın."}
             </DialogDescription>
             <DialogClose asChild><Button ref={closeButtonRef} type="button" variant="ghost" size="icon-sm" className="absolute right-3 top-3 text-muted-foreground"><X className="size-4" /><span className="sr-only">Kapat</span></Button></DialogClose>
           </DialogHeader>
@@ -230,16 +321,22 @@ export function BillingPlanManager({
                 <div className="grid gap-3 md:grid-cols-3">
                   {PLAN_PACKAGES.map((plan) => {
                     const unavailable = plan.tier === "lite" && !liteRegistrationOpen && !liteFreeGranted
+                    const downgradeBlocked = isPlanDowngrade(ownedTier, plan.tier)
                     return (
-                      <section key={plan.tier} className={cn("flex flex-col rounded-xl border bg-card p-4", plan.tier === tier && "border-foreground ring-1 ring-foreground")} aria-label={`${plan.name} paketi`}>
+                      <section key={plan.tier} className={cn("flex flex-col rounded-xl border bg-card p-4", plan.tier === tier && !downgradeBlocked && "border-foreground ring-1 ring-foreground")} aria-label={`${plan.name} paketi`}>
                         <div className="flex items-center justify-between gap-2"><h3 className="text-base font-semibold">{plan.name}</h3>{ownedTier === plan.tier && <Badge variant="outline">Mevcut</Badge>}</div>
                         <p className="mt-1 min-h-10 text-xs text-muted-foreground">{plan.tagline}</p>
                         <p className="mt-4 text-2xl font-semibold">{formatMinor(getPlanPriceMinor(plan.tier, cycle))}</p>
                         <p className="text-xs text-muted-foreground">/{cycle === "yearly" ? "yıl" : "ay"} · KDV dahil</p>
-                        <Button type="button" variant={plan.tier === tier ? "foreground" : "outline"} className="mt-4 w-full" disabled={unavailable} onClick={() => choosePlan(plan.tier, cycle)}>
-                          {plan.tier === tier ? <><Check className="size-4" /> Seçili paket</> : "Bu paketi seç"}
+                        <Button type="button" variant={plan.tier === tier && !downgradeBlocked ? "foreground" : "outline"} className="mt-4 w-full" disabled={unavailable || downgradeBlocked} onClick={() => choosePlan(plan.tier, cycle)}>
+                          {downgradeBlocked ? "Dönem içinde düşürülemez" : plan.tier === tier ? <><Check className="size-4" /> Seçili paket</> : "Bu paketi seç"}
                         </Button>
                         {unavailable && <p className="mt-2 text-xs text-muted-foreground">Yeni Lite kayıtları kapalı.</p>}
+                        {downgradeBlocked && (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            Para iadesi olmadığı için aktif abonelikte alt pakete geçilemez.
+                          </p>
+                        )}
                         <ul className="mt-5 space-y-2 border-t pt-4 text-xs text-muted-foreground">
                           {plan.highlights.slice(0, 4).map((highlight) => <li key={highlight} className="flex gap-2"><Check className="size-3.5 shrink-0 text-foreground" aria-hidden="true" />{highlight}</li>)}
                         </ul>

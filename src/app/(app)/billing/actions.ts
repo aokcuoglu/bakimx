@@ -10,6 +10,7 @@ import { getPlanPriceMinor, isComplimentaryPlan } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
 import { computeUpgradeAmountMinor } from "@/lib/billing/proration"
 import { deriveBillingOrderType } from "@/lib/billing/order-type"
+import { DOWNGRADE_BLOCKED_MESSAGE, isDowngradeBlocked } from "@/lib/billing/plan-change"
 import { createBillingTaxSnapshot } from "@/lib/billing/tax"
 import type { BillingCycle } from "@prisma/client"
 import type { PlanTier } from "@/lib/plan"
@@ -69,6 +70,19 @@ export async function createBillingOrder(input: {
           ? "Zaten bekleyen bir paket talebiniz var. Ödemeniz onaylanana kadar yeni bir talep oluşturamazsınız."
           : "Bu vergi/TC kimlik numarasına ait bekleyen bir paket talebi zaten var.",
     }
+  }
+
+  // Aktif / açık dönemde alt pakete geçiş yok — iade olmadığı için dönem
+  // ortası düşürme ödenmiş hakları boşa harcar. Yenileme ve yükseltme serbest.
+  if (
+    isDowngradeBlocked({
+      subscriptionStatus: workshop.subscriptionStatus,
+      planTier: workshop.planTier,
+      currentPeriodEnd: workshop.currentPeriodEnd,
+      targetTier: tier,
+    })
+  ) {
+    return { ok: false, error: DOWNGRADE_BLOCKED_MESSAGE }
   }
 
   // Sipariş tipini türet. Aktif + aynı paket talebi KASITLI olarak reddedilmez:

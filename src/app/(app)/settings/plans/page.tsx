@@ -18,6 +18,7 @@ export default async function SettingsPlansPage() {
           ownedTier={ownedTier}
           currentPlanName={planName}
           currentCycle={workshop.billingCycle}
+          currentPeriodEnd={workshop.currentPeriodEnd}
           isTrialing={plan.isTrialing}
           trialDaysLeft={plan.trialDaysLeft}
           workshopName={workshop.name}
