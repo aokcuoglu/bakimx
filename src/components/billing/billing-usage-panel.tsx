@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BarChart3, Camera, Users } from "lucide-react"
+import { Camera, Coins, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PLAN_SEATS, type PlanState } from "@/lib/plan"
 import { PHOTO_UPLOAD_POLICY } from "@/lib/plans-catalog"
@@ -46,20 +46,22 @@ export function BillingUsagePanel({ plan, seatUsage, extraSeats, quota, canPurch
           <p className="mt-2 text-xs text-muted-foreground">{seatUsage.activeUsers} aktif kullanıcı · {seatUsage.pendingInvites} davet</p>
         </div>
         <div className="p-5 sm:p-6">
-          <p className="flex items-center gap-2 text-sm font-medium"><BarChart3 className="size-4 text-muted-foreground" aria-hidden="true" /> Aylık katalog sorguları</p>
+          <p className="flex items-center gap-2 text-sm font-medium"><Camera className="size-4 text-muted-foreground" aria-hidden="true" /> Kullanımlar</p>
+          <p className="mt-4 text-sm font-medium">{plan.accessTier === "lite" ? "Fotoğraf kontrol listesi yok" : `İş emri başına ${PHOTO_UPLOAD_POLICY.maxActivePerWorkOrder} aktif fotoğraf`}</p>
+          <p className="mt-2 text-xs text-muted-foreground">İş emri bazında kullanılan fotoğraf hakkını görün.</p>
+          <Button asChild variant="outline" size="compact" className="mt-4"><Link href="/settings/billing/record-usage">Kullanımı gör</Link></Button>
+        </div>
+        <div className="p-5 sm:p-6">
+          <p className="flex items-center gap-2 text-sm font-medium"><Coins className="size-4 text-muted-foreground" aria-hidden="true" /> Krediler</p>
           {quota.totalCap > 0 ? (
             <>
               <p className="mt-4 text-xl font-semibold">{quota.used.toLocaleString("tr-TR")} <span className="text-sm font-normal text-muted-foreground">/ {quota.totalCap.toLocaleString("tr-TR")}</span></p>
-              <Meter label="Aylık katalog sorgu kullanımı" used={quota.used} limit={quota.totalCap} />
-              <p className="mt-2 text-xs text-muted-foreground">VIN {quota.vinUsed.toLocaleString("tr-TR")} · TecDoc {quota.tecdocUsed.toLocaleString("tr-TR")}</p>
+              <Meter label="Aylık katalog kredisi kullanımı" used={quota.used} limit={quota.totalCap} />
+              <p className="mt-2 text-xs text-muted-foreground">VIN {quota.vinUsed.toLocaleString("tr-TR")} · TecDoc {quota.tecdocUsed.toLocaleString("tr-TR")} · Kalan {quota.remaining.toLocaleString("tr-TR")}</p>
             </>
           ) : <p className="mt-4 text-sm text-muted-foreground">Paketinizde bulunmuyor.</p>}
-        </div>
-        <div className="p-5 sm:p-6">
-          <p className="flex items-center gap-2 text-sm font-medium"><Camera className="size-4 text-muted-foreground" aria-hidden="true" /> Fotoğraf ve ek kota</p>
-          <p className="mt-4 text-sm font-medium">{plan.accessTier === "lite" ? "Fotoğraf kontrol listesi yok" : `İş emri başına ${PHOTO_UPLOAD_POLICY.maxActivePerWorkOrder} aktif fotoğraf`}</p>
-          <p className="mt-2 text-xs text-muted-foreground">Ek katalog kotası: {quota.extraQuota.toLocaleString("tr-TR")} sorgu/ay</p>
-          {canPurchase && quota.totalCap > 0 && <Button asChild variant="outline" size="compact" className="mt-4"><Link href="/billing/quota/purchase">Ek kota seçenekleri</Link></Button>}
+          <Button asChild variant="outline" size="compact" className="mt-4"><Link href="/settings/billing/automation-credit-usage">Kredileri gör</Link></Button>
+          {!canPurchase && <p className="mt-2 text-xs text-muted-foreground">Paket değişikliği için yöneticinizle görüşün.</p>}
         </div>
       </div>
       <p className="border-t px-5 py-3 text-xs leading-5 text-muted-foreground sm:px-6">
