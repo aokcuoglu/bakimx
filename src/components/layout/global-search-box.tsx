@@ -219,7 +219,7 @@ export function GlobalSearch({
             value={query}
             onChange={(event) => changeQuery(event.target.value)}
             onKeyDown={handleInputKeyDown}
-            className="h-10 flex-1 border-0 px-0 text-base leading-6 shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-lg"
+            className="h-10 flex-1 border-0 px-0 text-base leading-5 shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-base"
           />
           <DialogClose asChild>
             <Button type="button" variant="ghost" size="icon-sm" aria-label="Aramayı kapat">
@@ -231,7 +231,7 @@ export function GlobalSearch({
         <div id="global-search-results" role="listbox" aria-label="Arama sonuçları" className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
           {sections.map((section) => (
             <div role="group" aria-label={section.title} key={section.title} className="mb-4 last:mb-0">
-              <p className="px-2 pb-2 text-sm font-medium leading-5 text-muted-foreground">{section.title}</p>
+              <p className="px-2 pb-2 text-xs font-medium leading-4 text-muted-foreground">{section.title}</p>
               {section.items.map((item) => {
                 const index = allItems.indexOf(item)
                 const Icon = item.icon
@@ -252,7 +252,7 @@ export function GlobalSearch({
                       <Icon className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-lg font-medium leading-6 text-foreground">{item.label}</span>
+                      <span className="block truncate text-sm font-medium leading-5 tracking-[-0.005em] text-foreground">{item.label}</span>
                       {q && item.sublabel ? <span className="block truncate text-xs leading-4 text-muted-foreground">{item.sublabel}</span> : null}
                     </span>
                     {locked ? <span className="text-xs font-medium text-muted-foreground">PRO</span> : null}

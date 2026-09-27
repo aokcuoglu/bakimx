@@ -157,7 +157,7 @@ const NAV_TOUR_ATTR: Partial<Record<string, string>> = {
   "/customers": "nav-customers",
 }
 
-const APP_NAV_TEXT = "h-9 text-[clamp(16px,calc(var(--sidebar-width)*0.054),18px)] leading-6 font-medium tracking-[-0.01em]"
+const APP_NAV_TEXT = "h-9 text-sm leading-5 font-medium tracking-[-0.005em]"
 
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
@@ -298,7 +298,7 @@ function AppHeader({
 
         {headerTitle && (
           <div className="hidden min-w-0 md:flex md:max-w-48 md:flex-col lg:max-w-64">
-            <h1 className="truncate text-lg font-semibold leading-6 tracking-[-0.02em] text-foreground">{headerTitle}</h1>
+            <h1 className="truncate text-base font-semibold leading-5 tracking-[-0.01em] text-foreground">{headerTitle}</h1>
           </div>
         )}
 
@@ -308,7 +308,7 @@ function AppHeader({
       </div>
       {(headerTitle || pageActions) && (
         <div className="sm:hidden flex items-center justify-between gap-2 px-4 pb-3 -mt-1">
-          {headerTitle && <h1 className="truncate text-base font-semibold leading-6 tracking-[-0.02em] text-foreground">{headerTitle}</h1>}
+          {headerTitle && <h1 className="truncate text-base font-semibold leading-5 tracking-[-0.01em] text-foreground">{headerTitle}</h1>}
           {pageActions}
         </div>
       )}
@@ -348,7 +348,7 @@ function AppSidebar({
       <SidebarHeader className="flex-row items-center gap-1 border-b border-sidebar-border p-2">
         <div className="min-w-0 flex-1">
           {inSettings ? (
-            <Button variant="ghost" size="sm" asChild className="justify-start gap-2 px-2 text-lg font-semibold leading-6 tracking-[-0.02em]">
+            <Button variant="ghost" size="sm" asChild className="justify-start gap-2 px-2 text-base font-semibold leading-5 tracking-[-0.01em]">
               <Link
                 href={isTechRole ? "/technician" : "/dashboard"}
                 aria-label="Ana menüye dön"
@@ -389,7 +389,7 @@ function AppSidebar({
                   if (isMobile) setOpenMobile(false)
                   onOpenSearch()
                 }}
-                className="h-9 w-full justify-start gap-2 truncate px-2 text-[clamp(16px,calc(var(--sidebar-width)*0.054),18px)] font-medium leading-6 tracking-[-0.01em]"
+                className="h-9 w-full justify-start gap-2 truncate px-2 text-sm font-medium leading-5 tracking-[-0.005em]"
                 aria-label="Genel arama"
               >
                 <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -419,7 +419,7 @@ function AppSidebar({
         ) : (
           visibleGroups.map((group) => (
             <SidebarGroup key={group.label}>
-              <SidebarGroupLabel className="text-[clamp(13px,calc(var(--sidebar-width)*0.042),14px)] leading-5 tracking-[-0.01em]">{group.label}</SidebarGroupLabel>
+              <SidebarGroupLabel className="text-xs leading-4 tracking-normal">{group.label}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {group.items.map((item) => (
@@ -477,8 +477,8 @@ function AppSidebar({
                 <Link href="/settings/plans">
                   <CalendarClock className="size-4" aria-hidden="true" />
                   <span className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-                    <span className="block truncate text-base font-medium leading-5 tracking-[-0.01em]">{planStatus.title}</span>
-                  <span className="block truncate text-sm leading-5 text-muted-foreground">{planStatus.detail}</span>
+                    <span className="block truncate text-sm font-medium leading-5 tracking-[-0.005em]">{planStatus.title}</span>
+                    <span className="block truncate text-xs leading-4 text-muted-foreground">{planStatus.detail}</span>
                   </span>
                   <span className="rounded-md border border-sidebar-border px-1.5 py-1 text-[10px] group-data-[collapsible=icon]:hidden">{planStatus.action}</span>
                 </Link>
@@ -564,7 +564,7 @@ function NavMenuItem({
       {expanded && (
         <SidebarMenuSub>
           <SidebarMenuSubItem>
-            <SidebarMenuSubButton asChild isActive={pathname === item.href} className="text-[15px] leading-5 tracking-[-0.01em]">
+            <SidebarMenuSubButton asChild isActive={pathname === item.href} className="text-sm leading-5 tracking-[-0.005em]">
               <Link href={item.href}>
                 <Icon className="size-3.5" />
                 <span>{item.label} Özeti</span>
