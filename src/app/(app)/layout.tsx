@@ -178,7 +178,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       )}
       {!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null && (
-        <div className="min-h-9 bg-primary text-primary-foreground text-xs sm:text-sm px-4 py-2 text-center lg:sticky lg:top-0 lg:z-50">
+        <div className="min-h-9 bg-primary text-primary-foreground text-sm sm:text-base leading-5 font-medium tracking-[-0.01em] px-4 py-2 text-center lg:sticky lg:top-0 lg:z-50">
           Deneme sürenizin bitmesine{" "}
           <span className="font-semibold">{plan.trialDaysLeft} iş günü</span> kaldı.{" "}
           {!isTechnicianRole && <Link href="/settings/plans" className="font-semibold underline underline-offset-2">Paketleri incele</Link>}

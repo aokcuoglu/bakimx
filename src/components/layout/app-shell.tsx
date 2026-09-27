@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { BrandLogo } from "@/components/shared/brand-logo"
-import { GlobalSearch } from "@/components/layout/global-search-box"
+import { GlobalSearch, type SearchDestination } from "@/components/layout/global-search-box"
 import { CreateCenterDialog } from "@/components/layout/create-center-dialog"
 import {
   WorkspaceSwitcher,
@@ -12,7 +12,7 @@ import {
 } from "@/components/layout/workspace-switcher"
 import { SettingsNav } from "@/components/settings/settings-nav"
 import { DashboardProductTour } from "@/components/dashboard/dashboard-product-tour"
-import { isSettingsPath } from "@/lib/settings-nav"
+import { ACCOUNT_SETTINGS_ITEMS, SETTINGS_NAV_GROUPS, isSettingsPath } from "@/lib/settings-nav"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
 import type { GatedFeature } from "@/lib/plan"
@@ -45,6 +45,7 @@ import {
   PackageSearch,
   UserCircle,
   UserRoundPlus,
+  Search,
   QrCode,
   LockKeyhole,
 } from "lucide-react"
@@ -156,6 +157,8 @@ const NAV_TOUR_ATTR: Partial<Record<string, string>> = {
   "/customers": "nav-customers",
 }
 
+const APP_NAV_TEXT = "h-9 text-[clamp(16px,calc(var(--sidebar-width)*0.054),18px)] leading-6 font-medium tracking-[-0.01em]"
+
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
@@ -222,6 +225,17 @@ export function AppShellChrome({
   topBannerVisible?: boolean
 }) {
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
+  const [searchOpen, setSearchOpen] = useState(false)
+  const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
+  const primaryNavigation = (isTechRole ? TECHNICIAN_NAV_GROUPS : NAV_GROUPS)
+    .flatMap((group) => group.items.flatMap((item) => [
+      item,
+      ...(item.children ?? []).map((child) => ({ ...child, feature: child.feature ?? item.feature })),
+    ]))
+  const settingsNavigation = isTechRole
+    ? ACCOUNT_SETTINGS_ITEMS
+    : SETTINGS_NAV_GROUPS.flatMap((group) => group.items)
+  const searchNavigation: SearchDestination[] = [...primaryNavigation, ...settingsNavigation]
 
   return (
     <SetPageHeaderContext.Provider value={setPageHeader}>
@@ -233,12 +247,20 @@ export function AppShellChrome({
           workspace={workspace}
           showGlobalSearch={pageHeader.showGlobalSearch ?? true}
           topBannerVisible={topBannerVisible}
+          onOpenSearch={() => setSearchOpen(true)}
         />
         <SidebarInset className="min-h-screen bg-background">
           <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} topBannerVisible={topBannerVisible} />
           <main className="flex-1 px-4 sm:px-6 py-4 sm:py-6 pb-24 lg:pb-8">{children}</main>
         </SidebarInset>
         <MobileBottomNav userIdentity={userIdentity} enabledFeatures={enabledFeatures} />
+        <GlobalSearch
+          open={searchOpen}
+          onOpenChange={setSearchOpen}
+          navigation={searchNavigation}
+          enabledFeatures={enabledFeatures}
+          role={userIdentity?.role}
+        />
         {showDashboardTour ? <DashboardProductTour enabled /> : null}
       </SidebarProvider>
     </SetPageHeaderContext.Provider>
@@ -276,7 +298,7 @@ function AppHeader({
 
         {headerTitle && (
           <div className="hidden min-w-0 md:flex md:max-w-48 md:flex-col lg:max-w-64">
-            <h1 className="text-base sm:text-lg font-semibold text-foreground truncate">{headerTitle}</h1>
+            <h1 className="truncate text-lg font-semibold leading-6 tracking-[-0.02em] text-foreground">{headerTitle}</h1>
           </div>
         )}
 
@@ -286,7 +308,7 @@ function AppHeader({
       </div>
       {(headerTitle || pageActions) && (
         <div className="sm:hidden flex items-center justify-between gap-2 px-4 pb-3 -mt-1">
-          {headerTitle && <h1 className="text-base font-semibold text-foreground truncate">{headerTitle}</h1>}
+          {headerTitle && <h1 className="truncate text-base font-semibold leading-6 tracking-[-0.02em] text-foreground">{headerTitle}</h1>}
           {pageActions}
         </div>
       )}
@@ -301,6 +323,7 @@ function AppSidebar({
   workspace,
   showGlobalSearch,
   topBannerVisible,
+  onOpenSearch,
 }: {
   enabledFeatures?: GatedFeature[]
   userIdentity?: UserIdentity
@@ -308,6 +331,7 @@ function AppSidebar({
   workspace?: WorkspaceSwitcherProps | null
   showGlobalSearch: boolean
   topBannerVisible: boolean
+  onOpenSearch: () => void
 }) {
   const pathname = usePathname()
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
@@ -324,7 +348,7 @@ function AppSidebar({
       <SidebarHeader className="flex-row items-center gap-1 border-b border-sidebar-border p-2">
         <div className="min-w-0 flex-1">
           {inSettings ? (
-            <Button variant="ghost" size="sm" asChild className="justify-start gap-2 px-2 font-semibold">
+            <Button variant="ghost" size="sm" asChild className="justify-start gap-2 px-2 text-lg font-semibold leading-6 tracking-[-0.02em]">
               <Link
                 href={isTechRole ? "/technician" : "/dashboard"}
                 aria-label="Ana menüye dön"
@@ -358,7 +382,20 @@ function AppSidebar({
         <div className="flex items-center gap-1 px-3 py-2 group-data-[collapsible=icon]:hidden">
           {!inSettings && showGlobalSearch ? (
             <div data-tour="global-search" className="min-w-0 flex-1">
-              <GlobalSearch className="min-w-0" placeholder="Ara" />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (isMobile) setOpenMobile(false)
+                  onOpenSearch()
+                }}
+                className="h-9 w-full justify-start gap-2 truncate px-2 text-[clamp(16px,calc(var(--sidebar-width)*0.054),18px)] font-medium leading-6 tracking-[-0.01em]"
+                aria-label="Genel arama"
+              >
+                <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="min-w-0 flex-1 truncate text-left">Ara</span>
+                <span className="hidden shrink-0 rounded-sm border border-border px-1 text-[11px] leading-4 text-muted-foreground xl:inline">⌘ K</span>
+              </Button>
             </div>
           ) : null}
           {isTechRole ? (
@@ -382,7 +419,7 @@ function AppSidebar({
         ) : (
           visibleGroups.map((group) => (
             <SidebarGroup key={group.label}>
-              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+              <SidebarGroupLabel className="text-[clamp(13px,calc(var(--sidebar-width)*0.042),14px)] leading-5 tracking-[-0.01em]">{group.label}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {group.items.map((item) => (
@@ -403,6 +440,7 @@ function AppSidebar({
                 asChild
                 tooltip="Hesap ayarları"
                 isActive={pathname === "/settings/account" || pathname.startsWith("/account")}
+                className={APP_NAV_TEXT}
               >
                 <Link href="/settings/account">
                   <UserCircle className="size-4" />
@@ -412,7 +450,7 @@ function AppSidebar({
             </SidebarMenuItem>
             <SidebarMenuItem>
               <form action="/api/auth/logout" method="POST" className="w-full">
-                <SidebarMenuButton type="submit" tooltip="Çıkış Yap">
+                <SidebarMenuButton type="submit" tooltip="Çıkış Yap" className={APP_NAV_TEXT}>
                   <LogOut className="size-4" />
                   <span>Çıkış Yap</span>
                 </SidebarMenuButton>
@@ -423,7 +461,7 @@ function AppSidebar({
         {!inSettings && !isTechRole && workspace && (userIdentity?.role === "owner" || userIdentity?.role === "manager") ? (
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Üyeleri davet et">
+              <SidebarMenuButton asChild tooltip="Üyeleri davet et" className={APP_NAV_TEXT}>
                 <Link href="/settings/team?invite=1">
                   <UserRoundPlus className="size-4" />
                   <span>Üyeleri davet et</span>
@@ -439,8 +477,8 @@ function AppSidebar({
                 <Link href="/settings/plans">
                   <CalendarClock className="size-4" aria-hidden="true" />
                   <span className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-                    <span className="block truncate text-xs font-medium">{planStatus.title}</span>
-                  <span className="block truncate text-xs text-muted-foreground">{planStatus.detail}</span>
+                    <span className="block truncate text-base font-medium leading-5 tracking-[-0.01em]">{planStatus.title}</span>
+                  <span className="block truncate text-sm leading-5 text-muted-foreground">{planStatus.detail}</span>
                   </span>
                   <span className="rounded-md border border-sidebar-border px-1.5 py-1 text-[10px] group-data-[collapsible=icon]:hidden">{planStatus.action}</span>
                 </Link>
@@ -486,7 +524,7 @@ function NavMenuItem({
           asChild
           isActive={isActive}
           tooltip={isLocked ? `${item.label} · Profesyonel` : item.label}
-          className={cn(isSoon && !isActive && "opacity-60")}
+          className={cn(APP_NAV_TEXT, isSoon && !isActive && "opacity-60")}
         >
           <Link href={item.href} {...(NAV_TOUR_ATTR[item.href] ? { "data-tour": NAV_TOUR_ATTR[item.href] } : {})}>
             <Icon className="size-4" />
@@ -511,7 +549,7 @@ function NavMenuItem({
         onClick={() => setExpanded(!expanded)}
         isActive={isActive}
         tooltip={isLocked ? `${item.label} · Profesyonel` : item.label}
-        className={cn(isSoon && !isActive && "opacity-60")}
+        className={cn(APP_NAV_TEXT, isSoon && !isActive && "opacity-60")}
       >
         <Icon className="size-4" />
         <span className="flex-1">{item.label}</span>
@@ -526,7 +564,7 @@ function NavMenuItem({
       {expanded && (
         <SidebarMenuSub>
           <SidebarMenuSubItem>
-            <SidebarMenuSubButton asChild isActive={pathname === item.href}>
+            <SidebarMenuSubButton asChild isActive={pathname === item.href} className="text-[15px] leading-5 tracking-[-0.01em]">
               <Link href={item.href}>
                 <Icon className="size-3.5" />
                 <span>{item.label} Özeti</span>
