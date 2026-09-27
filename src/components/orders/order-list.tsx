@@ -1,14 +1,37 @@
 "use client"
 
+import { useMemo, useState } from "react"
 import Link from "next/link"
-import { FileWarning } from "lucide-react"
+import { ChevronDown, FileWarning } from "lucide-react"
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState,
+  type VisibilityState,
+} from "@tanstack/react-table"
 
 import { StatusBadge, PaymentBadge, PlateBadge } from "@/components/shared/status-badge"
+import { OrderTableColumnHeader } from "@/components/orders/order-table-column-header"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ActionsMenu, MobileActionsMenu } from "@/components/shared/actions-menu"
 import { StatCard } from "@/components/shared/stat-card"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatTRY } from "@/lib/format"
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
+import { matchesColumnFilter, ORDER_LIST_COLUMN_LABELS, ORDER_LIST_DATA_COLUMN_ORDER } from "@/lib/orders/list-columns"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import { ACTIVE_ORDER_FILTER } from "@/lib/orders/status-filter"
@@ -64,6 +87,27 @@ function formatDate(iso: string) {
 function customerName(c: OrderRow["customer"]): string {
   if (c.type === "corporate") return c.companyName || "Kurumsal Müşteri"
   return c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "Müşteri"
+}
+
+function statusSearch(order: OrderRow): string {
+  const status = ORDER_STATUS[order.status as keyof typeof ORDER_STATUS]?.label ?? order.status
+  const payment = PAYMENT_STATUS[order.paymentStatus as keyof typeof PAYMENT_STATUS]?.label ?? order.paymentStatus
+  return `${status} ${payment}`
+}
+
+function invoiceSearch(order: OrderRow): string {
+  const value = (order.invoiceNo || "").trim()
+  if (value) return value
+  return order.invoiceMissing ? "Fatura yok" : ""
+}
+
+function technicianSearch(order: OrderRow): string {
+  return order.assignedTechnicianName?.trim() || "Atanmamış"
+}
+
+function textFilter<T>(read: (row: T) => string) {
+  return (row: { original: T }, _columnId: string, value: unknown) =>
+    matchesColumnFilter(read(row.original), value)
 }
 
 /** Faturası eksik iş emri rozeti — ikon + metin; anlam yalnız renkte değil. */
@@ -133,6 +177,199 @@ export function OrderList({
     activeInvoice ? `invoice=${encodeURIComponent(activeInvoice)}` : "",
   ].filter(Boolean)
 
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+
+  const columns = useMemo<ColumnDef<OrderRow>[]>(() => {
+    const byId: Record<(typeof ORDER_LIST_DATA_COLUMN_ORDER)[number], ColumnDef<OrderRow>> = {
+      workOrderNo: {
+        id: "workOrderNo",
+        accessorFn: (order) => order.workOrderNo,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="İş No" />,
+        filterFn: textFilter((order) => order.workOrderNo),
+        cell: ({ row }) => (
+          <Link
+            href={`/orders/${row.original.id}`}
+            className="font-mono text-sm font-bold text-foreground hover:text-primary transition-colors"
+          >
+            {row.original.workOrderNo}
+          </Link>
+        ),
+      },
+      vehicle: {
+        id: "vehicle",
+        accessorFn: (order) => `${order.vehicle.plate} ${order.vehicle.brand} ${order.vehicle.model}`,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Araç" />,
+        filterFn: textFilter((order) => `${order.vehicle.plate} ${order.vehicle.brand} ${order.vehicle.model}`),
+        cell: ({ row }) => {
+          const order = row.original
+          return (
+            <div className="max-w-[11rem]">
+              {order.vehicle.id ? (
+                <Link href={`/vehicles/${order.vehicle.id}`}>
+                  <PlateBadge plate={order.vehicle.plate} size="sm" />
+                </Link>
+              ) : (
+                <PlateBadge plate={order.vehicle.plate} size="sm" />
+              )}
+              <div
+                className="mt-1 text-[11px] leading-tight text-muted-foreground truncate"
+                title={`${order.vehicle.brand} ${order.vehicle.model}`}
+              >
+                {order.vehicle.brand} {order.vehicle.model}
+              </div>
+            </div>
+          )
+        },
+      },
+      customer: {
+        id: "customer",
+        accessorFn: (order) => `${customerName(order.customer)} ${order.customer.phone}`,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Müşteri" />,
+        filterFn: textFilter((order) => `${customerName(order.customer)} ${order.customer.phone}`),
+        cell: ({ row }) => {
+          const order = row.original
+          const name = customerName(order.customer)
+          return (
+            <div className="min-w-[10rem] max-w-[14rem]">
+              {order.customer.id ? (
+                <Link
+                  href={`/customers/${order.customer.id}`}
+                  title={name}
+                  className="text-foreground font-medium hover:text-primary transition-colors block truncate"
+                >
+                  {name}
+                </Link>
+              ) : (
+                <div className="text-foreground font-medium truncate" title={name}>
+                  {name}
+                </div>
+              )}
+              <div className="text-[11px] leading-tight text-muted-foreground tabular-nums truncate">
+                {order.customer.phone}
+              </div>
+            </div>
+          )
+        },
+      },
+      status: {
+        id: "status",
+        accessorFn: statusSearch,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Durum" />,
+        filterFn: textFilter(statusSearch),
+        cell: ({ row }) => (
+          <div className="flex flex-col items-start gap-1">
+            <StatusBadge status={row.original.status} />
+            <PaymentBadge status={row.original.paymentStatus} />
+          </div>
+        ),
+      },
+      invoice: {
+        id: "invoice",
+        accessorFn: invoiceSearch,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Fatura" />,
+        filterFn: textFilter(invoiceSearch),
+        cell: ({ row }) => <InvoiceCell invoiceNo={row.original.invoiceNo} missing={row.original.invoiceMissing} />,
+      },
+      total: {
+        id: "total",
+        accessorFn: (order) => (order.hasPrice ? order.grandTotal : null),
+        sortingFn: (a, b) => {
+          const left = a.original.hasPrice ? a.original.grandTotal : Number.NEGATIVE_INFINITY
+          const right = b.original.hasPrice ? b.original.grandTotal : Number.NEGATIVE_INFINITY
+          return left - right
+        },
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Toplam" align="right" />,
+        filterFn: textFilter((order) => (order.hasPrice ? formatTRY(order.grandTotal) : "")),
+        meta: { align: "right" },
+        cell: ({ row }) => (
+          <div className="text-right font-semibold text-foreground tabular-nums whitespace-nowrap">
+            {row.original.hasPrice ? formatTRY(row.original.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
+          </div>
+        ),
+      },
+      dates: {
+        id: "dates",
+        accessorFn: (order) => order.createdAt,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Tarih" />,
+        filterFn: textFilter((order) => {
+          const created = formatDate(order.createdAt)
+          const delivery = order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : ""
+          return `Giriş ${created} Teslim ${delivery}`
+        }),
+        cell: ({ row }) => {
+          const order = row.original
+          return (
+            <div className="text-xs whitespace-nowrap">
+              <div className="text-muted-foreground tabular-nums">
+                <span className="text-muted-foreground">Giriş</span> {formatDate(order.createdAt)}
+              </div>
+              <div className="mt-0.5 text-muted-foreground tabular-nums">
+                <span className="text-muted-foreground">Teslim</span>{" "}
+                {order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : <span className="text-muted-foreground">—</span>}
+              </div>
+            </div>
+          )
+        },
+      },
+      technician: {
+        id: "technician",
+        accessorFn: technicianSearch,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Teknisyen" />,
+        filterFn: textFilter(technicianSearch),
+        cell: ({ row }) => (
+          <TechnicianAssign
+            orderId={row.original.id}
+            assignedTechnicianId={row.original.assignedTechnicianId}
+            assignedTechnicianName={row.original.assignedTechnicianName}
+            technicians={technicians}
+            locked={isOrderLocked(row.original.status as OrderStatus)}
+            size="sm"
+          />
+        ),
+      },
+    }
+
+    return [
+      ...ORDER_LIST_DATA_COLUMN_ORDER.map((id) => byId[id]),
+      {
+        id: "actions",
+        enableSorting: false,
+        enableHiding: false,
+        enableColumnFilter: false,
+        header: () => <span className="text-xs font-semibold uppercase tracking-wider">İşlem</span>,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end">
+            <ActionsMenu
+              viewHref={`/orders/${row.original.id}`}
+              editHref={
+                isOrderLocked(row.original.status as OrderStatus)
+                  ? undefined
+                  : `/orders/${row.original.id}?edit=1`
+              }
+            />
+          </div>
+        ),
+      },
+    ]
+  }, [technicians])
+
+  const table = useReactTable({
+    data: orders,
+    columns,
+    state: { sorting, columnFilters, columnVisibility },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getRowId: (order) => order.id,
+  })
+
+  const visibleOrders = table.getRowModel().rows.map((row) => row.original)
+
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -153,135 +390,88 @@ export function OrderList({
         })}
       </div>
 
-      <div className="hidden lg:block rounded-lg border border-border bg-card overflow-hidden">
-        <div className="overflow-x-auto max-h-[70vh]">
-          <table className="w-full text-sm">
-            <thead className="bg-muted border-b border-border text-muted-foreground text-xs uppercase tracking-wider sticky top-0 z-10">
-              <tr>
-                {/* İlişkili alanlar iki satırlı tek kolonda toplandı (11 -> 8):
-                    plaka+araç, durum+ödeme, giriş+teslim. Bilgi kaybı yok,
-                    tablo dar ekranlarda da yatay kaydırma gerektirmiyor. */}
-                <th className="px-3 py-2 text-left font-semibold">İş No</th>
-                <th className="px-3 py-2 text-left font-semibold">Araç</th>
-                <th className="px-3 py-2 text-left font-semibold">Müşteri</th>
-                <th className="px-3 py-2 text-left font-semibold">Teknisyen</th>
-                <th className="px-3 py-2 text-left font-semibold">Durum</th>
-                <th className="px-3 py-2 text-left font-semibold">Fatura</th>
-                <th className="px-3 py-2 text-right font-semibold">Toplam</th>
-                <th className="px-3 py-2 text-left font-semibold">Tarih</th>
-                <th className="px-3 py-2 text-right font-semibold sticky right-0 border-l border-border bg-muted">İşlem</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {orders.map((order) => (
-                <tr key={order.id} className="hover:bg-muted/60 transition-colors group">
-                  <td className="px-3 py-2 align-top">
-                    <Link
-                      href={`/orders/${order.id}`}
-                      className="font-mono text-sm font-bold text-foreground hover:text-primary transition-colors"
-                    >
-                      {order.workOrderNo}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    {/* Plaka ve marka/model tek kimlik bloğu: üstte plaka rozeti,
-                        altında kırpılan marka/model. */}
-                    <div className="max-w-[11rem]">
-                      {order.vehicle.id ? (
-                        <Link href={`/vehicles/${order.vehicle.id}`}>
-                          <PlateBadge plate={order.vehicle.plate} size="sm" />
-                        </Link>
-                      ) : (
-                        <PlateBadge plate={order.vehicle.plate} size="sm" />
-                      )}
-                      <div
-                        className="mt-1 text-[11px] leading-tight text-muted-foreground truncate"
-                        title={`${order.vehicle.brand} ${order.vehicle.model}`}
-                      >
-                        {order.vehicle.brand} {order.vehicle.model}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    {/* Kurumsal unvanlar çok uzun olabiliyor; tam ad title ile erişilebilir kalır. */}
-                    <div className="min-w-[10rem] max-w-[14rem]">
-                      {order.customer.id ? (
-                        <Link
-                          href={`/customers/${order.customer.id}`}
-                          title={customerName(order.customer)}
-                          className="text-foreground font-medium hover:text-primary transition-colors block truncate"
-                        >
-                          {customerName(order.customer)}
-                        </Link>
-                      ) : (
-                        <div className="text-foreground font-medium truncate" title={customerName(order.customer)}>
-                          {customerName(order.customer)}
-                        </div>
-                      )}
-                      <div className="text-[11px] leading-tight text-muted-foreground tabular-nums truncate">
-                        {order.customer.phone}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 align-top text-foreground">
-                    <TechnicianAssign
-                      orderId={order.id}
-                      assignedTechnicianId={order.assignedTechnicianId}
-                      assignedTechnicianName={order.assignedTechnicianName}
-                      technicians={technicians}
-                      locked={isOrderLocked(order.status as OrderStatus)}
-                      size="sm"
-                    />
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    {/* İş durumu ve ödeme durumu aynı sütunda alt alta. */}
-                    <div className="flex flex-col items-start gap-1">
-                      <StatusBadge status={order.status} />
-                      <PaymentBadge status={order.paymentStatus} />
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 align-top whitespace-nowrap">
-                    {/* Fatura numarası elle giriliyor; iş bitmiş emirde boş kalması
-                        gözden kaçan fatura demek — ikon + metinle işaretlenir. */}
-                    <InvoiceCell invoiceNo={order.invoiceNo} missing={order.invoiceMissing} />
-                  </td>
-                  <td className="px-3 py-2 align-top text-right font-semibold text-foreground tabular-nums whitespace-nowrap">
-                    {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
-                  </td>
-                  <td className="px-3 py-2 align-top text-xs whitespace-nowrap">
-                    {/* Giriş üstte (her zaman dolu), tahmini teslim altta. */}
-                    <div className="text-muted-foreground tabular-nums">
-                      <span className="text-muted-foreground">Giriş</span> {formatDate(order.createdAt)}
-                    </div>
-                    <div className="mt-0.5 text-muted-foreground tabular-nums">
-                      <span className="text-muted-foreground">Teslim</span>{" "}
-                      {order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : <span className="text-muted-foreground">—</span>}
-                    </div>
-                  </td>
-                  {/* Sticky kolonun zemini opak kalmalı: yarı saydam hover rengiyle
-                      altından kayan içerik sızıp aksiyon butonuyla üst üste biniyordu. */}
-                  <td className="px-3 py-2 align-top sticky right-0 border-l border-border bg-card group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]">
-                    <div className="flex items-center justify-end">
-                      <ActionsMenu
-                        viewHref={`/orders/${order.id}`}
-                        // Teslim/iptal edilmiş emirde düzenleme kapalı → aksiyonu hiç gösterme.
-                        editHref={
-                          isOrderLocked(order.status as OrderStatus)
-                            ? undefined
-                            : `/orders/${order.id}?edit=1`
-                        }
-                      />
-                    </div>
-                  </td>
-                </tr>
+      <div className="hidden lg:flex lg:justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="outline" size="compact">
+              Kolonlar
+              <ChevronDown />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {table
+              .getAllColumns()
+              .filter((column) => column.getCanHide())
+              .map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.id}
+                  checked={column.getIsVisible()}
+                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                >
+                  {ORDER_LIST_COLUMN_LABELS[column.id as keyof typeof ORDER_LIST_COLUMN_LABELS] ?? column.id}
+                </DropdownMenuCheckboxItem>
               ))}
-            </tbody>
-          </table>
-        </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="hidden lg:block rounded-lg border border-border bg-card">
+        <Table containerClassName="max-h-[70vh]" className="text-sm">
+          <TableHeader className="sticky top-0 z-10 bg-muted text-xs uppercase tracking-wider text-muted-foreground">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                {headerGroup.headers.map((header) => {
+                  const sticky = header.column.id === "actions"
+                  return (
+                    <TableHead
+                      key={header.id}
+                      className={
+                        sticky
+                          ? "sticky right-0 z-20 h-auto border-l border-border bg-muted px-3 py-2 text-right"
+                          : "h-auto bg-muted px-3 py-2"
+                      }
+                    >
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} className="group hover:bg-muted/60">
+                  {row.getVisibleCells().map((cell) => {
+                    const sticky = cell.column.id === "actions"
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        className={
+                          sticky
+                            ? "sticky right-0 border-l border-border bg-card px-3 py-2 align-top whitespace-normal group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]"
+                            : "px-3 py-2 align-top whitespace-normal"
+                        }
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    )
+                  })}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                  Bu filtrelere uyan iş emri yok
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       <div className="lg:hidden space-y-2.5">
-        {orders.map((order) => (
+        {visibleOrders.map((order) => (
           <div
             key={order.id}
             className="rounded-lg border border-border bg-card p-3.5 hover:border-border transition-colors"
