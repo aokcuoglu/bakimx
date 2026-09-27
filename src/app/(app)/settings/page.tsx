@@ -5,7 +5,7 @@ export const metadata = {
   title: "Ayarlar",
 }
 
-/** Legacy hub: map `?tab=` to path-based settings, else personal profile. */
+/** Legacy hub: map `?tab=` to path-based settings, else account settings. */
 export default async function SettingsHubPage({
   searchParams,
 }: {
@@ -16,5 +16,5 @@ export default async function SettingsHubPage({
   if (tab && SETTINGS_TAB_REDIRECTS[tab]) {
     redirect(SETTINGS_TAB_REDIRECTS[tab])
   }
-  redirect("/settings/profile")
+  redirect("/settings/account")
 }

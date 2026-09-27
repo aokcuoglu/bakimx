@@ -66,8 +66,8 @@ function AdminSidebar({
   userRoleLabel?: string
 }) {
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border p-4 group-data-[collapsible=icon]:p-2">
+    <Sidebar collapsible="offcanvas">
+      <SidebarHeader className="flex-row items-center justify-between border-b border-sidebar-border p-4">
         <Link
           href="/admin"
           aria-label="BakimX Yönetim"
@@ -75,6 +75,7 @@ function AdminSidebar({
         >
           <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX Yönetim" />
         </Link>
+        <SidebarTrigger className="hidden lg:inline-flex" />
       </SidebarHeader>
 
       <SidebarContentSlot>
@@ -110,7 +111,7 @@ function AdminHeader() {
   return (
     <header className="sticky top-0 z-30 border-b bg-background">
       <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
-        <SidebarTrigger className="-ml-2" />
+        <SidebarTrigger className="-ml-2 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden" />
         <div className="min-w-0">
           <p className="text-base font-semibold text-foreground sm:text-lg">Yönetim Paneli</p>
           <p className="hidden text-xs text-muted-foreground sm:block">BakımX platform operasyonları</p>

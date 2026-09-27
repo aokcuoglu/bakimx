@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useMemo, useState, useTransition } from "react"
-import { Building2, Check, ChevronsUpDown, LockKeyhole, LogOut, Plus, UserCircle } from "lucide-react"
+import { Building2, Check, ChevronsUpDown, LockKeyhole, LogOut, Plus, UserCircle, UserRoundPlus } from "lucide-react"
 import { toast } from "sonner"
 import { CreateBranchWizard } from "@/components/branches/create-branch-wizard"
 import { Button } from "@/components/ui/button"
@@ -62,6 +62,7 @@ export function WorkspaceSwitcher({
   )
 
   if (!current) return null
+  const canInviteMembers = current.role === "owner" || current.role === "manager"
 
   function switchTo(workshopId: string) {
     if (workshopId === currentWorkshopId || pending) return
@@ -94,20 +95,20 @@ export function WorkspaceSwitcher({
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
+                className="text-base font-semibold leading-5 tracking-[-0.01em]"
                 tooltip={current.name}
-                aria-label={`Şube: ${current.name}${current.city ? `, ${current.city}` : ""}`}
+                aria-label={`Şube: ${current.name}`}
               >
                 <WorkspaceAvatar name={current.name} />
-                <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                  <span className="truncate font-medium">{current.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">{current.city}</span>
+                <div className="grid min-w-0 flex-1 text-left group-data-[collapsible=icon]:hidden">
+                  <span className="truncate">{current.name}</span>
                 </div>
                 <ChevronsUpDown className="ml-auto size-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" aria-hidden />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               aria-label="Çalışma alanı menüsü"
-              className="w-[calc(var(--radix-dropdown-menu-trigger-width)+1rem)] min-w-64 max-w-[calc(100vw-1rem)] rounded-xl border border-border bg-card p-1.5 shadow-lg"
+              className="w-[min(24rem,calc(100vw-1rem))] rounded-xl border border-border bg-card p-1.5 shadow-lg"
               align="start"
               side="bottom"
               sideOffset={12}
@@ -127,7 +128,7 @@ export function WorkspaceSwitcher({
                   >
                     <WorkspaceAvatar name={item.name} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{item.name}</p>
+                      <p className="truncate text-sm font-medium leading-5 tracking-[-0.005em]">{item.name}</p>
                       <p className="truncate text-xs text-muted-foreground">{item.city}</p>
                     </div>
                     {active ? <Check className="size-4 shrink-0 text-primary" aria-hidden /> : null}
@@ -146,7 +147,7 @@ export function WorkspaceSwitcher({
                   <span className="flex size-7 items-center justify-center">
                     <Plus className="size-4" />
                   </span>
-                  <span className="text-sm font-medium">Yeni şube oluştur</span>
+                  <span className="text-sm font-medium leading-5 tracking-[-0.005em]">Yeni şube oluştur</span>
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem asChild className="min-h-11 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
@@ -161,7 +162,7 @@ export function WorkspaceSwitcher({
                       <LockKeyhole className="size-3.5" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium">Yeni şube</span>
+                      <span className="block text-sm font-medium leading-5 tracking-[-0.005em]">Yeni şube</span>
                       <span className="block text-xs text-muted-foreground">Premium pakette</span>
                     </span>
                   </Link>
@@ -170,7 +171,7 @@ export function WorkspaceSwitcher({
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
                 <Link
-                  href="/settings/profile"
+                  href="/settings/account"
                   aria-label="Hesap ayarları"
                   onClick={() => {
                     setOpen(false)
@@ -178,7 +179,7 @@ export function WorkspaceSwitcher({
                   }}
                 >
                   <UserCircle className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="text-sm">Hesap ayarları</span>
+                  <span className="text-sm leading-5 tracking-[-0.005em]">Hesap ayarları</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
@@ -191,10 +192,27 @@ export function WorkspaceSwitcher({
                   }}
                 >
                   <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="text-sm">Çalışma alanı ayarları</span>
+                  <span className="text-sm leading-5 tracking-[-0.005em]">Çalışma alanı ayarları</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              {canInviteMembers ? (
+                <>
+                  <DropdownMenuItem asChild className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
+                    <Link
+                      href="/settings/team?invite=1"
+                      onClick={() => {
+                        setOpen(false)
+                        if (isMobile) setOpenMobile(false)
+                      }}
+                    >
+                      <UserRoundPlus className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                      <span className="text-sm leading-5 tracking-[-0.005em]">Üyeleri davet et</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              ) : null}
               <form id="workspace-switcher-logout" action="/api/auth/logout" method="POST" className="hidden" />
               <DropdownMenuItem
                 className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70"
@@ -206,7 +224,7 @@ export function WorkspaceSwitcher({
                 }}
               >
                 <LogOut className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                <span className="text-sm">Çıkış yap</span>
+                <span className="text-sm leading-5 tracking-[-0.005em]">Çıkış yap</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
