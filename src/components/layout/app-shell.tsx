@@ -15,7 +15,7 @@ import settingsSidebarStyles from "@/components/settings/settings-sidebar.module
 import { DashboardProductTour } from "@/components/dashboard/dashboard-product-tour"
 import { ACCOUNT_SETTINGS_ITEMS, SETTINGS_NAV_GROUPS, isSettingsPath, matchesSettingsNavItem } from "@/lib/settings-nav"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
-import { roleCan } from "@/lib/roles"
+import { actorCan, type Permission } from "@/lib/roles"
 import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
 import type { GatedFeature } from "@/lib/plan"
 import type { SidebarPlanStatus } from "@/lib/billing/sidebar-plan-status"
@@ -82,6 +82,7 @@ export type UserIdentity = {
   email: string | null
   username: string | null
   role: UserRole
+  teamPermissions?: Permission[] | null
 }
 
 type NavItem = {
@@ -243,7 +244,7 @@ export function AppShellChrome({
     ? ACCOUNT_SETTINGS_ITEMS
     : SETTINGS_NAV_GROUPS.flatMap((group) => group.items)
   const visibleSettingsNavigation = settingsNavigation.filter((item) =>
-    !item.manageOnly || (userIdentity?.role && roleCan(userIdentity.role, "settings.manage")))
+    !item.manageOnly || (userIdentity && actorCan(userIdentity, "settings.manage")))
   const searchNavigation: SearchDestination[] = [...primaryNavigation, ...visibleSettingsNavigation]
 
   return (
@@ -438,7 +439,7 @@ function AppSidebar({
 
       <SidebarContentSlot>
         {inSettings ? (
-          <SettingsNav enabledFeatures={enabledFeatures} role={userIdentity?.role} />
+          <SettingsNav enabledFeatures={enabledFeatures} role={userIdentity?.role} teamPermissions={userIdentity?.teamPermissions} />
         ) : (
           visibleGroups.map((group) => (
             <SidebarGroup key={group.label}>

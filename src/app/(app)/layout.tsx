@@ -103,6 +103,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             planTier: workshop.planTier,
             logoUrl: null,
             role: user.role,
+            teamPermissions: user.teamPermissions,
           },
         ]
   const workspaceSwitcher = {

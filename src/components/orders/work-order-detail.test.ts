@@ -61,5 +61,5 @@ test("düzenleme aksiyonu order.edit yetkisine bağlıdır", () => {
   expect(SOURCE).toContain("editInitially && !orderLocked && canEditInfo")
   // Yetki sunucudan gelir; istemci varsayılanı kapalıdır.
   expect(SOURCE).toContain("canEditInfo = false")
-  expect(PAGE).toContain('canEditInfo={roleCan(user.role, "order.edit")}')
+  expect(PAGE).toContain('canEditInfo={actorCan(user, "order.edit")}')
 })

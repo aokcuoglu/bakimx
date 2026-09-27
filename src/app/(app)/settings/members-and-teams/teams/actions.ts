@@ -6,7 +6,7 @@ import { requireWritableFeatureWorkshop } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { assertCanManageTeam } from "@/lib/rbac"
-import { PERMISSIONS, parsePermissions } from "@/lib/roles"
+import { PERMISSIONS, actorCan, parsePermissions } from "@/lib/roles"
 
 type Result = { ok: true; id?: string } | { ok: false; error: string }
 
@@ -31,6 +31,9 @@ export async function saveWorkshopTeamAction(input: {
     const permissions = parsePermissions(input.permissions)
     if (permissions.length !== new Set(input.permissions).size || input.permissions.some((p) => !PERMISSIONS.includes(p as never))) {
       return { ok: false, error: "Listede olmayan bir yetki seçildi." }
+    }
+    if (permissions.some((permission) => !actorCan(user, permission))) {
+      return { ok: false, error: "Kendi yetkiniz dışında bir yetki veremezsiniz." }
     }
     const description = input.description.trim().slice(0, 160) || null
 
@@ -80,9 +83,10 @@ export async function deleteWorkshopTeamAction(id: string): Promise<Result> {
     assertCanManageTeam(user)
     const team = await prisma.workshopTeam.findFirst({
       where: { id, workshopId: user.workshopId },
-      select: { id: true },
+      select: { id: true, _count: { select: { members: true } } },
     })
     if (!team) return { ok: false, error: "Ekip bulunamadı." }
+    if (team._count.members > 0) return { ok: false, error: "Ekibi silmeden önce üyelerini taşıyın." }
     await prisma.workshopTeam.delete({ where: { id: team.id } })
     revalidateTeams()
     return { ok: true }

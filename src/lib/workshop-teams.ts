@@ -9,7 +9,6 @@ export type WorkshopTeamRecord = {
   permissions: Permission[]
   memberCount: number
 }
-
 const DEFAULT_TEAM_ROLES = ["manager", "usta", "cirak"] as const
 
 const DEFAULT_NAMES: Record<"manager" | "usta" | "cirak", string> = {
@@ -86,5 +85,3 @@ function serializeTeam(team: {
     memberCount: team._count.members,
   }
 }
-
-

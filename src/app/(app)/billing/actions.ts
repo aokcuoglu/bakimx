@@ -15,7 +15,7 @@ import { DOWNGRADE_BLOCKED_MESSAGE, isDowngradeBlocked } from "@/lib/billing/pla
 import { createBillingTaxSnapshot } from "@/lib/billing/tax"
 import type { BillingCycle } from "@prisma/client"
 import type { PlanTier } from "@/lib/plan"
-import { roleCan } from "@/lib/roles"
+import { actorCan } from "@/lib/roles"
 import { activateBillingOrder } from "@/lib/billing/activate"
 import { canCancelPendingCardOrder } from "@/lib/billing/cancellation"
 
@@ -39,7 +39,7 @@ export async function createBillingOrder(input: {
   const { user, workshop } = await getCurrentUserWithWorkshop()
   // Rol kapısı EVET, plan yazma kilidi HAYIR: satın alma tam da planı bitmiş
   // atölyenin yapacağı iş; requireWritableWorkshop burada checkout'u kilitlerdi.
-  if (!roleCan(user.role, "billing.manage")) {
+  if (!actorCan(user, "billing.manage")) {
     return { ok: false, error: "Bu işlem için yetkiniz yok." }
   }
 
@@ -209,7 +209,7 @@ export async function createBillingOrder(input: {
  * The workshop row is shared with activation and payment initiation as a lock. */
 export async function cancelPendingBillingOrder(reference: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const { user, workshop } = await getCurrentUserWithWorkshop()
-  if (!roleCan(user.role, "billing.manage")) return { ok: false, error: "Bu işlem için yetkiniz yok." }
+  if (!actorCan(user, "billing.manage")) return { ok: false, error: "Bu işlem için yetkiniz yok." }
   if (!/^BX-[A-Z0-9]+$/.test(reference)) return { ok: false, error: "Geçersiz sipariş." }
 
   try {

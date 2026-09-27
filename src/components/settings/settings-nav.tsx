@@ -23,15 +23,17 @@ import {
   type SettingsNavItem,
 } from "@/lib/settings-nav"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
-import { roleCan } from "@/lib/roles"
+import { actorCan, type Permission } from "@/lib/roles"
 import type { UserRole } from "@prisma/client"
 
 export function SettingsNav({
   enabledFeatures = [],
   role,
+  teamPermissions,
 }: {
   enabledFeatures?: GatedFeature[]
   role?: UserRole
+  teamPermissions?: Permission[] | null
 }) {
   const pathname = usePathname()
   const { isMobile, setOpenMobile } = useSidebar()
@@ -46,7 +48,7 @@ export function SettingsNav({
     .map((group) => ({
       ...group,
       items: group.items.filter((item) =>
-        (!item.manageOnly || (role && roleCan(role, "settings.manage"))) &&
+        (!item.manageOnly || (role && actorCan({ role, teamPermissions }, "settings.manage"))) &&
         item.label.toLocaleLowerCase("tr").includes(normalizedQuery)),
     }))
     .filter((group) => group.items.length > 0)
