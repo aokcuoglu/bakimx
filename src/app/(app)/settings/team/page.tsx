@@ -11,7 +11,11 @@ import { loadWorkshopSettings } from "../load-workshop-settings"
 
 export const metadata = { title: "Ekip Yönetimi" }
 
-export default async function TeamSettingsPage() {
+export default async function TeamSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ invite?: string }>
+}) {
   const paywall = await getFeaturePaywall("team")
   if (paywall) return paywall
 
@@ -76,6 +80,7 @@ export default async function TeamSettingsPage() {
     : { activeUsers: 0, pendingInvites: 0, used: 0 }
   const seatLimit = getEffectiveSeatLimit(workshop)
   const canManageTeam = user.role === "owner" || user.role === "manager"
+  const { invite } = await searchParams
 
   return (
     <AppShell wide workshopName={workshop.name} pageTitle="Ekip">
@@ -89,6 +94,7 @@ export default async function TeamSettingsPage() {
         currentUserId={user.id}
         currentUserRole={user.role}
         canManage={canManageTeam}
+        initialInviteOpen={invite === "1"}
         seatUsed={seatUsage.used}
         seatLimit={seatLimit}
         accessTier={getPlanState(workshop).accessTier}

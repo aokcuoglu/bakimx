@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useMemo, useState, useTransition } from "react"
-import { Building2, Check, ChevronsUpDown, LockKeyhole, LogOut, Plus, UserCircle } from "lucide-react"
+import { Building2, Check, ChevronsUpDown, LockKeyhole, LogOut, Plus, UserCircle, UserRoundPlus } from "lucide-react"
 import { toast } from "sonner"
 import { CreateBranchWizard } from "@/components/branches/create-branch-wizard"
 import { Button } from "@/components/ui/button"
@@ -62,6 +62,7 @@ export function WorkspaceSwitcher({
   )
 
   if (!current) return null
+  const canInviteMembers = current.role === "owner" || current.role === "manager"
 
   function switchTo(workshopId: string) {
     if (workshopId === currentWorkshopId || pending) return
@@ -107,7 +108,7 @@ export function WorkspaceSwitcher({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               aria-label="Çalışma alanı menüsü"
-              className="w-[calc(var(--radix-dropdown-menu-trigger-width)+1rem)] min-w-64 max-w-[calc(100vw-1rem)] rounded-xl border border-border bg-card p-1.5 shadow-lg"
+              className="w-[min(24rem,calc(100vw-1rem))] rounded-xl border border-border bg-card p-1.5 shadow-lg"
               align="start"
               side="bottom"
               sideOffset={12}
@@ -170,7 +171,7 @@ export function WorkspaceSwitcher({
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
                 <Link
-                  href="/settings/profile"
+                  href="/settings/account"
                   aria-label="Hesap ayarları"
                   onClick={() => {
                     setOpen(false)
@@ -195,6 +196,23 @@ export function WorkspaceSwitcher({
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              {canInviteMembers ? (
+                <>
+                  <DropdownMenuItem asChild className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70">
+                    <Link
+                      href="/settings/team?invite=1"
+                      onClick={() => {
+                        setOpen(false)
+                        if (isMobile) setOpenMobile(false)
+                      }}
+                    >
+                      <UserRoundPlus className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                      <span className="text-sm">Üyeleri davet et</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              ) : null}
               <form id="workspace-switcher-logout" action="/api/auth/logout" method="POST" className="hidden" />
               <DropdownMenuItem
                 className="min-h-10 gap-3 rounded-lg px-3 py-2 focus:bg-muted/70"

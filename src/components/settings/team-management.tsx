@@ -123,6 +123,7 @@ export function TeamManagement({
   currentUserId,
   currentUserRole,
   canManage,
+  initialInviteOpen = false,
   seatUsed,
   seatLimit,
   accessTier,
@@ -136,6 +137,7 @@ export function TeamManagement({
   currentUserId: string
   currentUserRole: UserRole
   canManage: boolean
+  initialInviteOpen?: boolean
   seatUsed: number
   seatLimit: number
   accessTier: PlanTier
@@ -150,7 +152,7 @@ export function TeamManagement({
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState("")
-  const [showInvite, setShowInvite] = useState(false)
+  const [showInvite, setShowInvite] = useState(canManage && initialInviteOpen)
   const [showAddLocal, setShowAddLocal] = useState(false)
   const [accountMissingId, setAccountMissingId] = useState<string | null>(null)
   /** Dolu olduğu sürece geçici şifre penceresi açık kalır — kapanınca kaybolur. */
