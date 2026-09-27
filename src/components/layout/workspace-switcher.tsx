@@ -194,7 +194,7 @@ export function WorkspaceSwitcher({
                 <>
                   <DropdownMenuItem asChild className="h-8 gap-2 rounded-md px-2 py-0 focus:bg-muted/70">
                     <Link
-                      href="/settings/referrals"
+                      href="/settings/team?invite=1"
                       onClick={() => {
                         setOpen(false)
                         if (isMobile) setOpenMobile(false)

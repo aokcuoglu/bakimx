@@ -43,7 +43,7 @@ test.describe("workspace and settings sidebar", () => {
     await page.goto("/api/auth/dev-login?redirect=/dashboard")
     await page.getByRole("button", { name: /^Şube:/ }).click()
     await page.getByRole("menuitem", { name: "Üyeleri davet et" }).click()
-    await expect(page).toHaveURL(/\/settings\/team\?invite=1$/)
+    await expect(page).toHaveURL(/\/settings\/members-and-teams\/members\?invite=1$/)
     await expect(page.getByRole("button", { name: "Davet Gönder" })).toBeVisible()
   })
 
