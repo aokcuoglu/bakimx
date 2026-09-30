@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ComponentType, type KeyboardEvent as ReactKeyboardEvent } from "react"
 import { useRouter } from "next/navigation"
 import type { UserRole } from "@prisma/client"
-import { ArrowLeft, BellRing, CalendarClock, Car, FileText, Search, Settings2, UserRound, Users, Wrench, X } from "lucide-react"
+import { ArrowDown, ArrowLeft, ArrowUp, BellRing, CornerDownLeft, CalendarClock, Car, FileText, Search, Settings2, UserRound, Users, Wrench, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
@@ -15,6 +15,7 @@ import type { UnifiedResult } from "@/lib/search/unified-results"
 import { trIncludes } from "@/lib/tr-search"
 import type { GatedFeature } from "@/lib/plan"
 import { cn } from "@/lib/utils"
+import styles from "./global-search-box.module.css"
 
 export type SearchDestination = {
   href: string
@@ -195,16 +196,16 @@ export function GlobalSearch({
       <DialogContent
         showCloseButton={false}
         overlayClassName="bg-transparent supports-backdrop-filter:backdrop-blur-none"
-        className="top-[5vh] max-h-[90dvh] w-[calc(100%-1rem)] max-w-none translate-y-0 gap-0 overflow-hidden rounded-xl p-0 shadow-lg sm:top-[14vh] sm:h-[min(70dvh,42.5rem)] sm:max-w-[58rem]"
+        className={styles.panel}
       >
         <DialogTitle className="sr-only">Genel arama</DialogTitle>
         <DialogDescription className="sr-only">Sayfaları, hızlı işlemleri ve kayıtları arayın.</DialogDescription>
-        <div className="flex items-center gap-3 border-b border-border px-4 py-3 sm:px-5">
+        <div className={styles.header}>
           {scope === "records" ? (
             <Button type="button" variant="ghost" size="icon-sm" aria-label="Tüm aramaya dön" onClick={() => { setScope("all"); inputRef.current?.focus() }}>
               <ArrowLeft className="size-4" />
             </Button>
-          ) : <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden />}
+          ) : null}
           <Input
             ref={inputRef}
             autoFocus
@@ -219,7 +220,7 @@ export function GlobalSearch({
             value={query}
             onChange={(event) => changeQuery(event.target.value)}
             onKeyDown={handleInputKeyDown}
-            className="h-7 flex-1 border-0 px-0 text-sm leading-5 shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
+            className={styles.input}
           />
           <DialogClose asChild>
             <Button type="button" variant="ghost" size="icon-sm" aria-label="Aramayı kapat">
@@ -228,10 +229,10 @@ export function GlobalSearch({
           </DialogClose>
         </div>
 
-        <div id="global-search-results" role="listbox" aria-label="Arama sonuçları" className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
+        <div id="global-search-results" role="listbox" aria-label="Arama sonuçları" className={styles.results}>
           {sections.map((section) => (
-            <div role="group" aria-label={section.title} key={section.title} className="mb-4 last:mb-0">
-              <p className="px-2 pb-2 text-xs font-medium leading-4 text-muted-foreground">{section.title}</p>
+            <div role="group" aria-label={section.title} key={section.title}>
+              <p className={styles.sectionTitle}>{section.title}</p>
               {section.items.map((item) => {
                 const index = allItems.indexOf(item)
                 const Icon = item.icon
@@ -246,9 +247,9 @@ export function GlobalSearch({
                     variant="ghost"
                     onMouseEnter={() => setActiveIndex(index)}
                     onClick={() => navigate(item)}
-                    className={cn("h-auto min-h-9 w-full justify-start gap-3 rounded-lg px-2 py-2 text-left font-normal", index === selectedIndex && "bg-muted")}
+                    className={cn(styles.option, index === selectedIndex && styles.selected)}
                   >
-                    <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                    <span className={styles.icon}>
                       <Icon className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
@@ -266,9 +267,17 @@ export function GlobalSearch({
           {q && !loading && allItems.length === 0 ? <p className="px-2 py-8 text-center text-sm text-muted-foreground">Sonuç bulunamadı.</p> : null}
         </div>
 
-        <div className="flex items-center justify-between border-t border-border px-4 py-2 text-xs text-muted-foreground sm:px-5">
-          <span>↑ ↓ gezin · Enter aç · Esc kapat</span>
-          <span>⌘ K</span>
+        <div className={styles.footer}>
+          <span className={styles.keyboardHint}>
+            <span className={styles.arrowKeys} aria-hidden><ArrowUp /><ArrowDown /></span>
+            <span>Gezin<span className={styles.desktopHint}> · Esc kapat</span></span>
+          </span>
+          {selectedIndex >= 0 ? (
+            <Button type="button" variant="foreground" onClick={() => navigate(allItems[selectedIndex]!)} className={styles.action}>
+              <span className="truncate">{allItems[selectedIndex]!.label}</span>
+              <span className={styles.enterKey} aria-hidden><CornerDownLeft className="size-3" /></span>
+            </Button>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
