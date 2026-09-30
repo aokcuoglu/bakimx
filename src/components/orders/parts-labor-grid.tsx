@@ -336,7 +336,7 @@ export function PartsLaborEditor({
             const added = await onAdd(draft)
             if (added) setAddingType(null)
             return added
-          }} disabled={loading} catalog={laborCatalog} allowExternal={allowExternalLabor} />}
+          }} disabled={loading} catalog={laborCatalog} allowExternal={allowExternalLabor} modalLayout />}
         </DialogContent>
       </Dialog>
 
@@ -851,10 +851,11 @@ function LaborAutocompleteField({ draft, onCell, disabled, catalog }: {
 // ── İşçilik composer: İç (katalog öneri + serbest) / Dış (serbest) işçilik.
 // mode+nonce anahtarıyla remount → mod değişince ve her eklemede yerel state
 // (draft, arama kutusu) temiz sıfırlanır.
-function LaborComposer({ onAdd, disabled, catalog, allowExternal = true }: {
+function LaborComposer({ onAdd, disabled, catalog, allowExternal = true, modalLayout = false }: {
   onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; catalog: LaborCatalogRow[]
   /** Teklifte kapalı: QuoteItem tipi yalnız part|labor kabul eder. */
   allowExternal?: boolean
+  modalLayout?: boolean
 }) {
   const [nonce, setNonce] = useState(0)
   const [mode, setMode] = useState<"labor" | "external_labor">("labor")
@@ -869,13 +870,14 @@ function LaborComposer({ onAdd, disabled, catalog, allowExternal = true }: {
         disabled={disabled}
         onAdded={() => setNonce((n) => n + 1)}
         catalog={catalog}
+        modalLayout={modalLayout}
       />
     </div>
   )
 }
 
-function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog }: {
-  mode: "labor" | "external_labor"; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void; catalog: LaborCatalogRow[]
+function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog, modalLayout }: {
+  mode: "labor" | "external_labor"; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void; catalog: LaborCatalogRow[]; modalLayout: boolean
 }) {
   const vat = useVat()
   const [draft, setDraft] = useState<Row>(() => emptyDraft(mode, "manual", vat.defaultLiable))
@@ -895,45 +897,59 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog }: {
     else setSubmitting(false)
   }
 
-  // Tek-satır inline composer (md+): [ad — esner] · Miktar · Birim Fiyat · Toplam ·
-  // Ekle. Mobilde doğal olarak sarar (ad tam genişlik, sonra kontroller, Ekle CTA).
+  const nameField = (
+    <Field label={isExternal ? "Dış İşçilik" : "İşçilik"} className={modalLayout ? "min-w-0" : "sm:flex-1 sm:min-w-[16rem]"}>
+      {isExternal ? (
+        <Input
+          value={draft.name}
+          onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+          placeholder="Dış işçilik adı (ör. dış atölye kaporta)"
+          title={draft.name || undefined}
+          disabled={disabled}
+          className="h-7 rounded-lg bg-background text-sm"
+        />
+      ) : (
+        <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} catalog={catalog} />
+      )}
+    </Field>
+  )
+  const detailFields = (
+    <>
+      <Field label="Miktar"><QtyStepper row={draft} editable onCell={onCell} /></Field>
+      {vat.perLine && (
+        <Field label="KDV"><div className="flex h-7 items-center"><VatCell row={draft} ed={ed} onCell={onCell} /></div></Field>
+      )}
+      <Field label="Birim Fiyat"><PriceField row={draft} ed={ed} wide /></Field>
+    </>
+  )
+  const actions = (
+    <>
+      <TotalPreview lineTotal={ed.grossLineTotal} vatKurus={ed.vatKurus} />
+      <AddButton draft={draft} onSubmit={submit} submitting={submitting} disabled={disabled} />
+    </>
+  )
+
+  if (modalLayout) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+          {nameField}
+          <div className="flex items-end gap-3 sm:contents">{detailFields}</div>
+        </div>
+        <div className="flex items-center justify-between gap-3 border-t border-border pt-3">{actions}</div>
+      </div>
+    )
+  }
+
+  // Tek-satır inline composer (md+): [ad — esner] · Miktar · Birim Fiyat · Toplam · Ekle.
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-      <Field label={isExternal ? "Dış İşçilik" : "İşçilik"} className="sm:flex-1 sm:min-w-[16rem]">
-        {isExternal ? (
-          <Input
-            value={draft.name}
-            onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-            placeholder="Dış işçilik adı (ör. dış atölye kaporta)"
-            title={draft.name || undefined}
-            disabled={disabled}
-            className="h-7 rounded-lg bg-background text-sm"
-          />
-        ) : (
-          <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} catalog={catalog} />
-        )}
-      </Field>
+      {nameField}
       <div className="flex items-end gap-3">
-        <Field label="Miktar">
-          <QtyStepper row={draft} editable onCell={onCell} />
-        </Field>
-        {/* Taslakta da KDV tick'i var (BAK-75): işçilik fiyatı zaten burada
-            yazılıyor, KDV kararını eklemeden sonra ikinci bir tıkla vermek
-            gereksiz. Tutar NET yazılır, tick yalnız üstüne ne bineceğini söyler. */}
-        {vat.perLine && (
-          <Field label="KDV">
-            <div className="flex h-7 items-center">
-              <VatCell row={draft} ed={ed} onCell={onCell} />
-            </div>
-          </Field>
-        )}
-        <Field label="Birim Fiyat">
-          <PriceField row={draft} ed={ed} wide />
-        </Field>
+        {detailFields}
       </div>
       <div className="flex flex-col gap-2 sm:ml-auto sm:flex-row sm:items-center sm:gap-3">
-        <TotalPreview lineTotal={ed.grossLineTotal} vatKurus={ed.vatKurus} />
-        <AddButton draft={draft} onSubmit={submit} submitting={submitting} disabled={disabled} />
+        {actions}
       </div>
     </div>
   )

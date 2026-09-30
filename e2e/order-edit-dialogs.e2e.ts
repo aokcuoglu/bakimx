@@ -17,18 +17,22 @@ for (const width of [390, 1440]) {
     await invoice.getByRole("button", { name: "İptal" }).click()
     await expect(invoice).toBeHidden()
 
-    await page.getByRole("button", { name: "Durumu düzenle" }).click()
-    const status = page.getByRole("dialog", { name: "Durumu düzenle" })
-    await expect(status.getByRole("combobox", { name: "Yeni durum" })).toBeVisible()
-    await status.getByRole("button", { name: "İptal" }).click()
-    await page.getByRole("button", { name: "Servise geliş nedenini düzenle" }).click()
-    const reason = page.getByRole("dialog", { name: "Servise geliş nedenini düzenle" })
-    await expect(reason.getByRole("combobox", { name: "Servise geliş nedeni" })).toBeVisible()
-    await reason.getByRole("button", { name: "İptal" }).click()
+    const orderInfo = page.locator('[data-slot="card"]').filter({ has: page.locator('[data-slot="card-title"]', { hasText: "İş Emri Bilgileri" }) })
+    await expect(orderInfo.getByRole("combobox", { name: "Durum" })).toBeVisible()
+    await expect(orderInfo.getByRole("combobox", { name: "Servise geliş nedeni" })).toBeVisible()
+    await orderInfo.getByRole("combobox", { name: "Durum" }).click()
+    await expect(page.getByRole("listbox")).toBeVisible()
+    await page.keyboard.press("Escape")
+    await expect(page.getByRole("dialog", { name: "Durumu düzenle" })).toHaveCount(0)
 
     await page.getByRole("button", { name: "Şikayet ve notları düzenle" }).click()
     const intake = page.getByRole("dialog", { name: "Şikayet ve notları düzenle" })
     await expect(intake.getByPlaceholder("Müşterinin bildirdiği arıza/şikayet...")).toBeVisible()
+    const save = intake.getByRole("button", { name: "Kaydet" })
+    await expect(save).toBeInViewport()
+    const header = intake.locator('[data-slot="dialog-header"]')
+    const footer = intake.locator('[data-slot="dialog-footer"]')
+    expect((await header.boundingBox())!.y).toBeLessThan((await footer.boundingBox())!.y)
     await page.keyboard.press("Escape")
     await expect(intake).toBeHidden()
 
@@ -51,6 +55,7 @@ for (const width of [390, 1440]) {
 }
 
 test("item edits stay local until the dialog is saved", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
   const itemOrderId = "cmri8ldca002v9yxloej5ia6n"
   let patches = 0
   let savedBody = ""
@@ -68,6 +73,13 @@ test("item edits stay local until the dialog is saved", async ({ page }) => {
 
   await page.getByRole("button", { name: "Parça ekle" }).click()
   await expect(page.getByRole("dialog", { name: "Parça ekle" })).toBeVisible()
+  await page.keyboard.press("Escape")
+
+  await page.getByRole("button", { name: "İşçilik ekle" }).click()
+  const labor = page.getByRole("dialog", { name: "İşçilik ekle" })
+  const labels = ["İşçilik", "Miktar", "KDV", "Birim Fiyat"]
+  const tops = await Promise.all(labels.map(async (label) => (await labor.getByText(label, { exact: true }).first().boundingBox())!.y))
+  expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(6)
   await page.keyboard.press("Escape")
 
   await edit.click()

@@ -1116,62 +1116,59 @@ export function WorkOrderDetail({
           </Card>
 
           <Dialog open={editingInfo} onOpenChange={(open) => { if (!savingInfo) setEditingInfo(open) }}>
-            <DialogContent className="sm:max-w-2xl">
+            <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden sm:max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Şikayet ve notları düzenle</DialogTitle>
-                <DialogDescription>İş emri kabul bilgilerini güncelleyin. Değişiklikler zaman çizelgesine kaydedilir.</DialogDescription>
+                <DialogDescription>İş emri kabul bilgilerini güncelleyin.</DialogDescription>
               </DialogHeader>
-              {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-                <div className="space-y-3 text-sm">
-                  <div>
+              <div className="min-h-0 space-y-4 overflow-y-auto py-4 text-sm">
+                {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+                  <div className="space-y-1.5">
                     <Label htmlFor="edit-complaint">Müşteri Şikayeti</Label>
                     <Textarea id="edit-complaint" value={editComplaint} onChange={(e) => setEditComplaint(e.target.value)} placeholder="Müşterinin bildirdiği arıza/şikayet..." className="min-h-[80px]" />
                   </div>
-                  <div>
+                  <div className="space-y-1.5">
                     <Label htmlFor="edit-note">Teknisyen İç Notu</Label>
                     <Textarea id="edit-note" value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Servis içi notlar (opsiyonel)..." className="min-h-[60px]" />
                   </div>
-                  <div>
+                  <div className="space-y-1.5">
                     <Label htmlFor="edit-mileage">Kilometre (kabul anı)</Label>
                     <Input id="edit-mileage" type="number" inputMode="numeric" min="0" value={editMileage} onChange={(e) => setEditMileage(e.target.value)} placeholder="Örn. 125000" />
                   </div>
-                  <div>
+                  <div className="space-y-1.5">
                     <Label>Yakıt seviyesi (kabul anı)</Label>
-                    <div className="pt-1">
-                      <FuelLevelPicker value={editFuelLevel} onChange={setEditFuelLevel} />
-                    </div>
+                    <FuelLevelPicker value={editFuelLevel} onChange={setEditFuelLevel} />
                   </div>
-                  <div className="rounded-lg border border-border p-3 space-y-3">
+                  <div className="space-y-3 rounded-lg border border-border p-3">
                     <p className="text-sm font-medium text-foreground">Aracı getiren kişi</p>
                     <p className="text-xs text-muted-foreground">Aracı müşterinin kendisi getirdiyse boş bırakın.</p>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
+                      <div className="space-y-1.5">
                         <Label htmlFor="edit-drop-name">Ad Soyad</Label>
                         <Input id="edit-drop-name" value={editDropName} onChange={(e) => setEditDropName(e.target.value)} placeholder="Örn. Ahmet Yılmaz" />
                       </div>
-                      <div>
+                      <div className="space-y-1.5">
                         <Label htmlFor="edit-drop-phone">Telefon</Label>
                         <Input id="edit-drop-phone" type="tel" inputMode="tel" value={editDropPhone} onChange={(e) => setEditDropPhone(e.target.value)} placeholder="Örn. 0532 000 0000" />
                       </div>
                     </div>
                   </div>
-                  <div className="rounded-lg border border-border p-3 space-y-3">
+                  <div className="space-y-3 rounded-lg border border-border p-3">
                     <p className="text-sm font-medium text-foreground">Aracı teslim alacak kişi</p>
                     <p className="text-xs text-muted-foreground">Aracı müşterinin kendisi teslim alacaksa boş bırakın.</p>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
+                      <div className="space-y-1.5">
                         <Label htmlFor="edit-pick-name">Ad Soyad</Label>
                         <Input id="edit-pick-name" value={editPickName} onChange={(e) => setEditPickName(e.target.value)} placeholder="Örn. Ayşe Demir" />
                       </div>
-                      <div>
+                      <div className="space-y-1.5">
                         <Label htmlFor="edit-pick-phone">Telefon</Label>
                         <Input id="edit-pick-phone" type="tel" inputMode="tel" value={editPickPhone} onChange={(e) => setEditPickPhone(e.target.value)} placeholder="Örn. 0532 000 0000" />
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">Yapılan değişiklik zaman çizelgesine ve denetim kaydına işlenir.</p>
                 </div>
-              <DialogFooter>
+              <DialogFooter className="shrink-0">
                 <Button variant="outline" onClick={() => setEditingInfo(false)} disabled={savingInfo}>İptal</Button>
                 <Button variant="foreground" onClick={handleSaveInfo} disabled={savingInfo || !editComplaint.trim()}>
                   {savingInfo ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}
