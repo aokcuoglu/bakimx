@@ -150,9 +150,17 @@ export function WorkshopTeamsPanel({
         setOpen(nextOpen)
         if (!nextOpen) form.reset()
       }}>
-        <DialogContent overlayClassName="bg-foreground/25" className="gap-0 p-0 sm:top-[15vh] sm:max-w-[700px] sm:translate-y-0">
+        <DialogContent overlayClassName="bg-foreground/25" className="gap-0 p-0 sm:top-[calc(15vh-0.375rem)] sm:max-w-[700px] sm:translate-y-0">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(create)}>
+            <form
+              onSubmit={form.handleSubmit(create)}
+              onKeyDown={(event) => {
+                if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !pending) {
+                  event.preventDefault()
+                  void form.handleSubmit(create)()
+                }
+              }}
+            >
               <DialogHeader className="px-4 py-3 pr-10">
                 <DialogTitle className="text-sm font-medium">Yeni ekip</DialogTitle>
               </DialogHeader>
@@ -178,8 +186,12 @@ export function WorkshopTeamsPanel({
                 )} />
               </div>
               <DialogFooter className="mx-0 mb-0 rounded-none border-border px-2 py-2">
-                <Button type="button" variant="outline" onClick={() => { setOpen(false); form.reset() }}>Vazgeç</Button>
-                <Button type="submit" variant="foreground" disabled={pending}>Oluştur</Button>
+                <Button type="button" variant="outline" onClick={() => { setOpen(false); form.reset() }}>
+                  Vazgeç <kbd aria-hidden="true" className="ml-1 rounded border border-border px-1 text-[10px] font-normal leading-4 text-muted-foreground">Esc</kbd>
+                </Button>
+                <Button type="submit" variant="foreground" disabled={pending}>
+                  Oluştur <span aria-hidden="true" className="ml-1 flex gap-0.5 text-xs font-normal text-primary-foreground/80"><kbd className="rounded border border-primary-foreground/20 px-1 leading-4">⌘</kbd><kbd className="rounded border border-primary-foreground/20 px-1 leading-4">↵</kbd></span>
+                </Button>
               </DialogFooter>
             </form>
           </Form>
