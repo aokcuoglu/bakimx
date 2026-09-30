@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DetailHeader, type DetailHeaderAction } from "@/components/orders/detail-header"
 import { OrderRecordRail } from "@/components/orders/order-record-rail"
@@ -316,6 +316,22 @@ export function WorkOrderDetail({
     notes: order.notes || "",
   })
 
+  function setMetaEditorOpen(open: boolean) {
+    if (open) {
+      setError("")
+      setMetaDraft({
+        technicianName: order.technicianName || "",
+        estimatedDeliveryAt: order.estimatedDeliveryAt
+          ? new Date(order.estimatedDeliveryAt).toISOString().slice(0, 16)
+          : "",
+        discountAmount: order.discountAmount != null ? String(kurusToLira(order.discountAmount)) : "",
+        taxRate: order.taxRate != null ? String(bpsToPercent(order.taxRate)) : "",
+        notes: order.notes || "",
+      })
+    }
+    setEditingMeta(open)
+  }
+
   // Intake info edit (complaint/note/mileage)
   // ?edit=1 ile gelindiğinde kart daha ilk render'da açık olsun (önce okuma
   // görünümü çizip sonra düzenlemeye atlama titremesi olmasın).
@@ -362,7 +378,6 @@ export function WorkOrderDetail({
   const [editDropPhone, setEditDropPhone] = useState(openInfoEditor ? order.intake.droppedOffByPhone ?? "" : "")
   const [editPickName, setEditPickName] = useState(openInfoEditor ? order.intake.pickedUpByName ?? "" : "")
   const [editPickPhone, setEditPickPhone] = useState(openInfoEditor ? order.intake.pickedUpByPhone ?? "" : "")
-  const infoCardRef = useRef<HTMLDivElement>(null)
 
   // Photos
   const photosRef = useRef<HTMLDivElement>(null)
@@ -425,13 +440,6 @@ export function WorkOrderDetail({
     pendingPricingScrollRef.current = true
     handleTabChange("ozet")
   }
-
-  // Listeden "Düzenle" ile gelindiğinde kart sayfanın alt kısmında kalıyor;
-  // özellikle mobilde kullanıcı düzenleme alanını göremiyor.
-  useEffect(() => {
-    if (!openInfoEditor) return
-    infoCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-  }, [openInfoEditor])
 
   async function changeStatus(newStatus: string) {
     setLoading(true)
@@ -1048,7 +1056,7 @@ export function WorkOrderDetail({
           />
 
           {/* Şikayet & Notlar (düzenlenebilir) */}
-          <Card ref={infoCardRef}>
+          <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Şikayet & Notlar</span>
@@ -1071,63 +1079,6 @@ export function WorkOrderDetail({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {editingInfo ? (
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <Label>Müşteri Şikayeti</Label>
-                    <Textarea value={editComplaint} onChange={(e) => setEditComplaint(e.target.value)} placeholder="Müşterinin bildirdiği arıza/şikayet..." className="min-h-[80px]" />
-                  </div>
-                  <div>
-                    <Label>Teknisyen İç Notu</Label>
-                    <Textarea value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Servis içi notlar (opsiyonel)..." className="min-h-[60px]" />
-                  </div>
-                  <div>
-                    <Label>Kilometre (kabul anı)</Label>
-                    <Input type="number" inputMode="numeric" min="0" value={editMileage} onChange={(e) => setEditMileage(e.target.value)} placeholder="Örn. 125000" />
-                  </div>
-                  <div>
-                    <Label>Yakıt seviyesi (kabul anı)</Label>
-                    <div className="pt-1">
-                      <FuelLevelPicker value={editFuelLevel} onChange={setEditFuelLevel} />
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-border p-3 space-y-3">
-                    <p className="text-sm font-medium text-foreground">Aracı getiren kişi</p>
-                    <p className="text-xs text-muted-foreground">Aracı müşterinin kendisi getirdiyse boş bırakın.</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <Label>Ad Soyad</Label>
-                        <Input value={editDropName} onChange={(e) => setEditDropName(e.target.value)} placeholder="Örn. Ahmet Yılmaz" />
-                      </div>
-                      <div>
-                        <Label>Telefon</Label>
-                        <Input type="tel" inputMode="tel" value={editDropPhone} onChange={(e) => setEditDropPhone(e.target.value)} placeholder="Örn. 0532 000 0000" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-border p-3 space-y-3">
-                    <p className="text-sm font-medium text-foreground">Aracı teslim alacak kişi</p>
-                    <p className="text-xs text-muted-foreground">Aracı müşterinin kendisi teslim alacaksa boş bırakın.</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <Label>Ad Soyad</Label>
-                        <Input value={editPickName} onChange={(e) => setEditPickName(e.target.value)} placeholder="Örn. Ayşe Demir" />
-                      </div>
-                      <div>
-                        <Label>Telefon</Label>
-                        <Input type="tel" inputMode="tel" value={editPickPhone} onChange={(e) => setEditPickPhone(e.target.value)} placeholder="Örn. 0532 000 0000" />
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Yapılan değişiklik zaman çizelgesine ve denetim kaydına işlenir.</p>
-                  <div className="flex gap-2 pt-1">
-                    <Button variant="foreground" onClick={handleSaveInfo} disabled={savingInfo || !editComplaint.trim()} size="sm" className="flex-1">
-                      {savingInfo ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}
-                    </Button>
-                    <Button variant="outline" onClick={() => setEditingInfo(false)} disabled={savingInfo} size="sm">İptal</Button>
-                  </div>
-                </div>
-              ) : (
                 <div className="space-y-3">
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Müşteri Şikayeti</p>
@@ -1161,9 +1112,73 @@ export function WorkOrderDetail({
                     />
                   </div>
                 </div>
-              )}
             </CardContent>
           </Card>
+
+          <Dialog open={editingInfo} onOpenChange={(open) => { if (!savingInfo) setEditingInfo(open) }}>
+            <DialogContent className="sm:max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Şikayet ve notları düzenle</DialogTitle>
+                <DialogDescription>İş emri kabul bilgilerini güncelleyin. Değişiklikler zaman çizelgesine kaydedilir.</DialogDescription>
+              </DialogHeader>
+              {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <Label htmlFor="edit-complaint">Müşteri Şikayeti</Label>
+                    <Textarea id="edit-complaint" value={editComplaint} onChange={(e) => setEditComplaint(e.target.value)} placeholder="Müşterinin bildirdiği arıza/şikayet..." className="min-h-[80px]" />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-note">Teknisyen İç Notu</Label>
+                    <Textarea id="edit-note" value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Servis içi notlar (opsiyonel)..." className="min-h-[60px]" />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-mileage">Kilometre (kabul anı)</Label>
+                    <Input id="edit-mileage" type="number" inputMode="numeric" min="0" value={editMileage} onChange={(e) => setEditMileage(e.target.value)} placeholder="Örn. 125000" />
+                  </div>
+                  <div>
+                    <Label>Yakıt seviyesi (kabul anı)</Label>
+                    <div className="pt-1">
+                      <FuelLevelPicker value={editFuelLevel} onChange={setEditFuelLevel} />
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-border p-3 space-y-3">
+                    <p className="text-sm font-medium text-foreground">Aracı getiren kişi</p>
+                    <p className="text-xs text-muted-foreground">Aracı müşterinin kendisi getirdiyse boş bırakın.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <Label htmlFor="edit-drop-name">Ad Soyad</Label>
+                        <Input id="edit-drop-name" value={editDropName} onChange={(e) => setEditDropName(e.target.value)} placeholder="Örn. Ahmet Yılmaz" />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-drop-phone">Telefon</Label>
+                        <Input id="edit-drop-phone" type="tel" inputMode="tel" value={editDropPhone} onChange={(e) => setEditDropPhone(e.target.value)} placeholder="Örn. 0532 000 0000" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-border p-3 space-y-3">
+                    <p className="text-sm font-medium text-foreground">Aracı teslim alacak kişi</p>
+                    <p className="text-xs text-muted-foreground">Aracı müşterinin kendisi teslim alacaksa boş bırakın.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <Label htmlFor="edit-pick-name">Ad Soyad</Label>
+                        <Input id="edit-pick-name" value={editPickName} onChange={(e) => setEditPickName(e.target.value)} placeholder="Örn. Ayşe Demir" />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-pick-phone">Telefon</Label>
+                        <Input id="edit-pick-phone" type="tel" inputMode="tel" value={editPickPhone} onChange={(e) => setEditPickPhone(e.target.value)} placeholder="Örn. 0532 000 0000" />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Yapılan değişiklik zaman çizelgesine ve denetim kaydına işlenir.</p>
+                </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditingInfo(false)} disabled={savingInfo}>İptal</Button>
+                <Button variant="foreground" onClick={handleSaveInfo} disabled={savingInfo || !editComplaint.trim()}>
+                  {savingInfo ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Kabul kanıtları */}
           <Card>
@@ -1189,11 +1204,12 @@ export function WorkOrderDetail({
               remainingAmount={order.remainingAmount}
               locked={isOrderLocked(order.status as OrderStatus)}
               editingMeta={editingMeta}
-              setEditingMeta={setEditingMeta}
+              setEditingMeta={setMetaEditorOpen}
               metaDraft={metaDraft}
               setMetaDraft={setMetaDraft}
               saveMeta={saveMeta}
               loading={loading}
+              error={error}
               showCashbox={canCashbox}
             />
           </div>
@@ -1569,7 +1585,7 @@ export function WorkOrderDetail({
               <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-warning-strong" /> Hasar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <DamageCapture reloadKey={JSON.stringify([intake.damageMarks,intake.photos])} intakeFormId={intake.id} vehicle={intake.vehicle} readOnly={orderLocked} />
+              <DamageCapture reloadKey={JSON.stringify([intake.damageMarks,intake.photos])} intakeFormId={intake.id} vehicle={intake.vehicle} readOnly={orderLocked} modalMetadata />
 
               {damagePhotos.length > 0 && (
                 <div className="pt-3 border-t">

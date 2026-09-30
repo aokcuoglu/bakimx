@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   AlertDialog,
@@ -90,6 +91,10 @@ export function OrderInfoCard({
 
   const [changingStatus, setChangingStatus] = useState(false)
   const [changingReason, setChangingReason] = useState(false)
+  const [editingStatus, setEditingStatus] = useState(false)
+  const [statusDraft, setStatusDraft] = useState(order.status)
+  const [editingReason, setEditingReason] = useState(false)
+  const [reasonDraft, setReasonDraft] = useState(order.arrivalReason ?? "")
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false)
   const statusOptions = orderStatusOptions(order.status as OrderStatus)
 
@@ -125,6 +130,7 @@ export function OrderInfoCard({
     // içeriğinin altında; mobilde hiçbir şey olmamış gibi görünmesin diye
     // kullanıcıya nereye bakacağını söylüyoruz.
     if (next === "delivered") {
+      setEditingStatus(false)
       onRequestDelivery?.()
       toast.info("Teslim onay kodu paneli sayfanın üstünde açıldı")
       return
@@ -133,10 +139,11 @@ export function OrderInfoCard({
     // haritası da (NEXT_STATUSES) bu üç durumdan doğrudan iptali esirger.
     // Tek dokunuşla yazmak yerine onay iste; POST yalnız onaylanınca gider.
     if (next === "cancelled") {
+      setEditingStatus(false)
       setConfirmCancelOpen(true)
       return
     }
-    await postStatusChange(next)
+    if (await postStatusChange(next)) setEditingStatus(false)
   }
 
   async function handleConfirmCancel() {
@@ -154,7 +161,10 @@ export function OrderInfoCard({
         body: JSON.stringify({ reason: next }),
       })
       const data = await res.json()
-      if (data.success) router.refresh()
+      if (data.success) {
+        setEditingReason(false)
+        router.refresh()
+      }
       else toast.error(data.error || "Geliş nedeni güncellenemedi")
     } catch {
       toast.error("Bir hata oluştu")
@@ -215,41 +225,7 @@ export function OrderInfoCard({
           {/* SAĞ: fatura, tutar, durum, geliş nedeni.
               Mobilde dikey çizgi yerine üst kenarlık — kolonlar alt alta düşüyor. */}
           <div className="space-y-2.5 border-t pt-3 md:border-t-0 md:border-l md:pt-0 md:pl-6">
-            {editingInvoice ? (
-              <div className="space-y-2.5">
-                <div>
-                  <Label htmlFor="invoice-no">Fatura Numarası</Label>
-                  <Input
-                    id="invoice-no"
-                    value={invoiceNoDraft}
-                    onChange={(e) => setInvoiceNoDraft(e.target.value)}
-                    placeholder="Örn. ABC2026000000123"
-                    maxLength={50}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="invoice-date">Fatura Tarihi</Label>
-                  <DatePicker
-                    id="invoice-date"
-                    value={invoiceDateDraft}
-                    onChange={setInvoiceDateDraft}
-                    placeholder="Tarih seçin"
-                  />
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <Button variant="foreground" onClick={saveInvoice} disabled={savingInvoice} size="sm" className="flex-1">
-                    {savingInvoice ? <Loader2 className="size-3.5 animate-spin" /> : "Kaydet"}
-                  </Button>
-                  <Button variant="outline" onClick={() => setEditingInvoice(false)} disabled={savingInvoice} size="sm">
-                    İptal
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Fatura entegrasyonu yok — bilgileri kendi fatura uygulamanızdan girin.
-                </p>
-              </div>
-            ) : (
-              <>
+            <>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-muted-foreground">Fatura Numarası</span>
                   <span className="flex items-center gap-2">
@@ -277,70 +253,85 @@ export function OrderInfoCard({
                   value={order.invoiceDate ? formatDate(order.invoiceDate) : "—"}
                   icon={Calendar}
                 />
-              </>
-            )}
+            </>
             <InfoRow
               label="Toplam Tutar"
               value={order.totals.hasAnyPrice ? formatTRY(order.totals.grandTotal) : "—"}
             />
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">Durum</span>
-              {/* Durum makinesi tek kaynak: liste orderStatusOptions'tan gelir,
-                  sunucu da aynı geçiş kuralını uygular. Silme seçeneği yoktur —
-                  terminal aksiyon "İptal". */}
-              <Select
-                value={order.status}
-                onValueChange={(v) => handleStatusSelect(v)}
-                disabled={changingStatus || statusOptions.length <= 1}
-              >
-                <SelectTrigger className="w-[170px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((s) => (
-                    <SelectItem
-                      key={s}
-                      value={s}
-                      disabled={
-                        (s === "delivered" && deliveryBlocked) ||
-                        (s === "ready_for_delivery" && partsDecisionBlocked)
-                      }
-                    >
-                      {ORDER_STATUS[s as OrderStatusKey]?.label ?? s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Button variant="ghost" size="sm" disabled={changingStatus || statusOptions.length <= 1}
+                aria-label="Durumu düzenle"
+                onClick={() => { setStatusDraft(order.status); setEditingStatus(true) }}>
+                {ORDER_STATUS[order.status as OrderStatusKey]?.label ?? order.status}
+                {statusOptions.length > 1 && <Pencil className="size-3.5" />}
+              </Button>
             </div>
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">Servise Geliş Nedeni</span>
               {locked ? (
                 <span className="text-sm text-foreground">{arrivalReasonLabel(order.arrivalReason)}</span>
               ) : (
-                <Select
-                  value={order.arrivalReason ?? ""}
-                  onValueChange={(v) => handleReasonSelect(v)}
-                  disabled={changingReason}
-                >
-                  <SelectTrigger className="w-[170px]">
-                    {/* `placeholder` ŞART: geliş nedeni boşken (`value=""`) Radix
-                        seçili kalem metni basmaz, tetikleyici bomboş kalır ve
-                        kırık kontrol gibi görünür. */}
-                    <SelectValue placeholder="Belirtilmedi" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Belirtilmedi</SelectItem>
-                    {ARRIVAL_REASON_ORDER.map((r) => (
-                      <SelectItem key={r} value={r}>{ARRIVAL_REASONS[r].label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Button variant="ghost" size="sm" disabled={changingReason}
+                  aria-label="Servise geliş nedenini düzenle"
+                  onClick={() => { setReasonDraft(order.arrivalReason ?? ""); setEditingReason(true) }}>
+                  {arrivalReasonLabel(order.arrivalReason)} <Pencil className="size-3.5" />
+                </Button>
               )}
             </div>
           </div>
         </div>
       </CardContent>
       </Card>
+
+      <Dialog open={editingInvoice} onOpenChange={(open) => { if (!savingInvoice) setEditingInvoice(open) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Fatura bilgilerini düzenle</DialogTitle>
+            <DialogDescription>Fatura entegrasyonu yok — bilgileri kendi fatura uygulamanızdan girin.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="invoice-no">Fatura Numarası</Label>
+              <Input id="invoice-no" value={invoiceNoDraft} onChange={(e) => setInvoiceNoDraft(e.target.value)} placeholder="Örn. ABC2026000000123" maxLength={50} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="invoice-date">Fatura Tarihi</Label>
+              <DatePicker id="invoice-date" value={invoiceDateDraft} onChange={setInvoiceDateDraft} placeholder="Tarih seçin" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingInvoice(false)} disabled={savingInvoice}>İptal</Button>
+            <Button variant="foreground" onClick={saveInvoice} disabled={savingInvoice}>
+              {savingInvoice ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editingStatus} onOpenChange={(open) => { if (!changingStatus) setEditingStatus(open) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Durumu düzenle</DialogTitle><DialogDescription>İş emrinin yeni durumunu seçin.</DialogDescription></DialogHeader>
+          <Select value={statusDraft} onValueChange={setStatusDraft} disabled={changingStatus}>
+            <SelectTrigger aria-label="Yeni durum"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((s) => <SelectItem key={s} value={s} disabled={(s === "delivered" && deliveryBlocked) || (s === "ready_for_delivery" && partsDecisionBlocked)}>{ORDER_STATUS[s as OrderStatusKey]?.label ?? s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <DialogFooter><Button variant="outline" onClick={() => setEditingStatus(false)} disabled={changingStatus}>İptal</Button><Button variant="foreground" onClick={() => handleStatusSelect(statusDraft)} disabled={changingStatus || statusDraft === order.status}>Kaydet</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editingReason} onOpenChange={(open) => { if (!changingReason) setEditingReason(open) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Servise geliş nedenini düzenle</DialogTitle><DialogDescription>İş emrinin servise geliş nedenini seçin.</DialogDescription></DialogHeader>
+          <Select value={reasonDraft} onValueChange={setReasonDraft} disabled={changingReason}>
+            <SelectTrigger aria-label="Servise geliş nedeni"><SelectValue placeholder="Belirtilmedi" /></SelectTrigger>
+            <SelectContent><SelectItem value="">Belirtilmedi</SelectItem>{ARRIVAL_REASON_ORDER.map((r) => <SelectItem key={r} value={r}>{ARRIVAL_REASONS[r].label}</SelectItem>)}</SelectContent>
+          </Select>
+          <DialogFooter><Button variant="outline" onClick={() => setEditingReason(false)} disabled={changingReason}>İptal</Button><Button variant="foreground" onClick={() => handleReasonSelect(reasonDraft)} disabled={changingReason || reasonDraft === (order.arrivalReason ?? "")}>Kaydet</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={confirmCancelOpen}

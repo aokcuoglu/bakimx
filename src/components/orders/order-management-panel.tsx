@@ -3,9 +3,11 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PaymentBadge } from "@/components/shared/status-badge"
 import type { OrderStatusKey } from "@/lib/constants"
 import { formatTRY } from "@/lib/format"
@@ -23,7 +25,6 @@ import {
   Wrench,
   Loader2,
   Pencil,
-  Save,
   Calculator,
   Wallet,
   ChevronRight,
@@ -264,6 +265,7 @@ export function PricingSummaryCard({
   setMetaDraft,
   saveMeta,
   loading,
+  error,
   showCashbox = true,
 }: {
   totals: Totals
@@ -277,9 +279,11 @@ export function PricingSummaryCard({
   setMetaDraft: (v: PricingMetaDraft) => void
   saveMeta: () => void
   loading: boolean
+  error?: string
   showCashbox?: boolean
 }) {
   return (
+    <>
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -301,56 +305,11 @@ export function PricingSummaryCard({
         <div className="border-t pt-2 mt-2">
           <SummaryRow label="Ara Toplam" value={totals.hasAnyPrice ? formatTRY(totals.subtotal) : "—"} bold />
         </div>
-        {editingMeta ? (
-          <div className="space-y-2.5 pt-2">
-            <div>
-              <Label className="text-xs">İndirim (₺)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={metaDraft.discountAmount}
-                onChange={(e) => setMetaDraft({ ...metaDraft, discountAmount: e.target.value })}
-                placeholder="0"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">KDV Oranı (%)</Label>
-              <Input
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                value={metaDraft.taxRate}
-                onChange={(e) => setMetaDraft({ ...metaDraft, taxRate: e.target.value })}
-                placeholder="0"
-              />
-            </div>
-            <SummaryRow label="KDV Tutarı" value={totals.hasAnyPrice && (Number(metaDraft.taxRate) || 0) > 0 ? formatTRY(applyTaxBps(applyDiscountKurus(totals.subtotal, liraToKurus(Number(metaDraft.discountAmount) || 0)), percentToBps(Number(metaDraft.taxRate) || 0))) : "—"} muted />
-            <div className="border-t pt-2 mt-2">
-              <SummaryRow
-                label="Genel Toplam"
-                value={totals.hasAnyPrice ? formatTRY(calculatePreviewTotal(totals.subtotal, metaDraft)) : "—"}
-                bold
-                large
-              />
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* İndirim/KDV satırları yalnız değer varken görünür; ikisi de sıfırken
-                alttaki "+ İndirim / KDV ekle" butonu tek giriş noktasıdır. */}
-            {totals.discountAmount > 0 && (
-              <SummaryRow label="İndirim" value={formatTRY(totals.discountAmount)} />
-            )}
-            {totals.taxAmount > 0 && (
-              <SummaryRow label={`KDV (${orderTaxRateDisplay(totals)})`} value={formatTRY(totals.taxAmount)} />
-            )}
-            <div className="border-t pt-2 mt-2">
-              <SummaryRow label="Genel Toplam" value={totals.hasAnyPrice ? formatTRY(totals.grandTotal) : "—"} bold large />
-            </div>
-          </>
-        )}
+        {totals.discountAmount > 0 && <SummaryRow label="İndirim" value={formatTRY(totals.discountAmount)} />}
+        {totals.taxAmount > 0 && <SummaryRow label={`KDV (${orderTaxRateDisplay(totals)})`} value={formatTRY(totals.taxAmount)} />}
+        <div className="border-t pt-2 mt-2">
+          <SummaryRow label="Genel Toplam" value={totals.hasAnyPrice ? formatTRY(totals.grandTotal) : "—"} bold large />
+        </div>
 
         {/* Tahsilat satırları Genel Toplam'ın ALTINDA: hesap zinciri (kalemler →
             ara toplam → indirim/KDV → genel toplam) araya ödeme girmeden okunur. */}
@@ -366,16 +325,6 @@ export function PricingSummaryCard({
             <p className="text-xs text-muted-foreground text-center">
               Teslim edilmiş veya iptal edilmiş iş emrinde fiyatlandırma düzenlenemez
             </p>
-          ) : editingMeta ? (
-            <div className="flex gap-2">
-              <Button variant="foreground" onClick={saveMeta} disabled={loading} size="sm" className="flex-1">
-                {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
-                Kaydet
-              </Button>
-              <Button variant="outline" onClick={() => setEditingMeta(false)} size="sm">
-                İptal
-              </Button>
-            </div>
           ) : totals.discountAmount === 0 && totals.taxAmount === 0 ? (
             <Button
               variant="ghost"
@@ -398,6 +347,32 @@ export function PricingSummaryCard({
         </div>
       </CardContent>
     </Card>
+    <Dialog open={editingMeta} onOpenChange={(open) => { if (!loading) setEditingMeta(open) }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>İndirim ve KDV düzenle</DialogTitle>
+          <DialogDescription>İş emrinin toplamına uygulanacak indirim ve KDV oranını girin.</DialogDescription>
+        </DialogHeader>
+        {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="order-discount">İndirim (₺)</Label>
+            <Input id="order-discount" type="number" min="0" step="0.01" value={metaDraft.discountAmount} onChange={(e) => setMetaDraft({ ...metaDraft, discountAmount: e.target.value })} placeholder="0" />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="order-tax">KDV Oranı (%)</Label>
+            <Input id="order-tax" type="number" min="0" max="100" step="0.1" value={metaDraft.taxRate} onChange={(e) => setMetaDraft({ ...metaDraft, taxRate: e.target.value })} placeholder="0" />
+          </div>
+          <SummaryRow label="KDV Tutarı" value={totals.hasAnyPrice && (Number(metaDraft.taxRate) || 0) > 0 ? formatTRY(applyTaxBps(applyDiscountKurus(totals.subtotal, liraToKurus(Number(metaDraft.discountAmount) || 0)), percentToBps(Number(metaDraft.taxRate) || 0))) : "—"} muted />
+          <div className="border-t pt-2"><SummaryRow label="Genel Toplam" value={totals.hasAnyPrice ? formatTRY(calculatePreviewTotal(totals.subtotal, metaDraft)) : "—"} bold large /></div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setEditingMeta(false)} disabled={loading}>İptal</Button>
+          <Button variant="foreground" onClick={saveMeta} disabled={loading}>{loading ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -193,8 +194,8 @@ export type PartsLaborRow = Row
  *
  * Kalıcılık BİLMEZ. Satırları prop olarak alır, değişiklikleri `onAdd`/`onCell`/
  * `onRemove` ile çağırana bildirir. İki adaptörü vardır:
- * - `PartsLaborGrid` (iş emri): her çağrıyı `/api/orders/items` uçlarına yazar,
- *   yani kalem anında kalıcılaşır ve `partId` set edilirse stok düşülür.
+ * - `PartsLaborGrid` (iş emri): yeni kalemi POST ile ekler, mevcut kalemin modal
+ *   taslağını Kaydet'te tek PATCH ile yazar. `partId` set edilirse stok düşülür.
  * - `QuoteItemsEditor` (teklif): değişiklikleri react-hook-form `useFieldArray`
  *   durumunda tutar; kayıt yalnız teklif gönderilirken olur ve stok HİÇ hareket
  *   etmez (bkz. src/lib/quotes/quote-stock-invariant.test.ts).
@@ -204,6 +205,7 @@ export function PartsLaborEditor({
   allowExternalLabor = true, showAttributes = true,
   taxRateBps, onApplyStandardTax, vatPerLine = true, defaultVatLiable = false,
   flash, onAdd, onCell, onRemove,
+  onSaveRow,
 }: {
   rows: Row[]
   vehicle?: PickerVehicle
@@ -233,9 +235,28 @@ export function PartsLaborEditor({
   onAdd: (draft: Row) => Promise<boolean>
   onCell: OnCell
   onRemove: (row: Row) => void
+  /** İş emri satırları bir taslak modalında düzenlenir; teklif editörü inline kalır. */
+  onSaveRow?: (draft: Row, original: Row) => Promise<boolean>
 }) {
   // Parça detay modalı (tek örnek) — arama, katalog picker'ı ve kalem satırları besler.
   const [detail, setDetail] = useState<DetailRequest | null>(null)
+  const [addingType, setAddingType] = useState<"parca" | "iscilik" | null>(null)
+  const [editingRow, setEditingRow] = useState<Row | null>(null)
+  const [savingRow, setSavingRow] = useState(false)
+  const originalRow = editingRow ? rows.find((row) => row.id === editingRow.id) : undefined
+  const editCell: OnCell = (_row, patch) => {
+    setEditingRow((current) => current ? { ...current, ...patch } : null)
+  }
+
+  async function saveEditedRow() {
+    if (!editingRow || !originalRow || !onSaveRow) return
+    setSavingRow(true)
+    try {
+      if (await onSaveRow(editingRow, originalRow)) setEditingRow(null)
+    } finally {
+      setSavingRow(false)
+    }
+  }
 
   const documentTaxSet = (taxRateBps ?? 0) > 0
   const vat = useMemo<VatState>(
@@ -264,9 +285,14 @@ export function PartsLaborEditor({
         değil DÜZENLEYİCİNİN KENDİ genişliğine bakıyor — dar bir kolonda
         (teklif formu ~730px) yatay kaydırmalı tablo yerine kart düzeni çıkar. */}
     <div className="@container min-w-0 space-y-4">
-      {/* Ekleme alanı: tab'lı composer (katalog / manuel). Satır biriktirmez —
-          "Ekle" ile aşağıdaki listeye düşürür ve sıfırlanır. Kilitli emirde gizli. */}
-      {!locked && (
+      {/* İş emrinde ekleme modalı, teklif editöründe mevcut inline composer. */}
+      {!locked && onSaveRow && (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setAddingType("parca")}><PackagePlus className="size-4" /> Parça ekle</Button>
+          <Button variant="outline" onClick={() => setAddingType("iscilik")}><Wrench className="size-4" /> İşçilik ekle</Button>
+        </div>
+      )}
+      {!locked && !onSaveRow && (
         <Tabs defaultValue="parca">
           <TabsList variant="line" className="w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px sm:gap-2">
             <TabsTrigger value="parca" className="shrink-0">
@@ -294,6 +320,25 @@ export function PartsLaborEditor({
           </TabsContent>
         </Tabs>
       )}
+
+      <Dialog open={addingType != null} onOpenChange={(open) => { if (!open) setAddingType(null) }}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{addingType === "iscilik" ? "İşçilik ekle" : "Parça ekle"}</DialogTitle>
+            <DialogDescription>Yeni kalem iş emrine Ekle seçilince kaydedilir.</DialogDescription>
+          </DialogHeader>
+          {addingType === "parca" && <UnifiedPartComposer vehicle={vehicle} onAdd={async (draft) => {
+            const added = await onAdd(draft)
+            if (added) setAddingType(null)
+            return added
+          }} disabled={loading} onShowDetail={setDetail} />}
+          {addingType === "iscilik" && <LaborComposer onAdd={async (draft) => {
+            const added = await onAdd(draft)
+            if (added) setAddingType(null)
+            return added
+          }} disabled={loading} catalog={laborCatalog} allowExternal={allowExternalLabor} />}
+        </DialogContent>
+      </Dialog>
 
       {!locked && <Separator />}
 
@@ -348,6 +393,8 @@ export function PartsLaborEditor({
                   row={row}
                   orderId={orderId}
                   locked={locked}
+                  readOnlyFields={!!onSaveRow}
+                  onEdit={onSaveRow && !locked ? setEditingRow : undefined}
                   vehicle={vehicle}
                   showAttributes={showAttributes}
                   onCell={onCell}
@@ -374,6 +421,8 @@ export function PartsLaborEditor({
               row={row}
               orderId={orderId}
               locked={locked}
+              readOnlyFields={!!onSaveRow}
+              onEdit={onSaveRow && !locked ? setEditingRow : undefined}
               vehicle={vehicle}
               showAttributes={showAttributes}
               onCell={onCell}
@@ -392,6 +441,35 @@ export function PartsLaborEditor({
         onOpenChange={(open) => { if (!open) setDetail(null) }}
         onSelect={detail?.onSelect}
       />
+      <Dialog open={editingRow != null} onOpenChange={(open) => { if (!open && !savingRow) setEditingRow(null) }}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Kalemi düzenle</DialogTitle>
+            <DialogDescription>Değişiklikler Kaydet seçilince iş emrine uygulanır.</DialogDescription>
+          </DialogHeader>
+          {editingRow && (
+            <VatContext.Provider value={{ ...vat, ensureDocumentTax: () => {} }}>
+              <MobilePartRow
+                row={editingRow}
+                orderId={orderId}
+                locked={false}
+                vehicle={vehicle}
+                showAttributes={showAttributes}
+                onCell={editCell}
+                onRemove={() => {}}
+                onShowDetail={setDetail}
+                showActions={false}
+              />
+            </VatContext.Provider>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingRow(null)} disabled={savingRow}>İptal</Button>
+            <Button variant="foreground" onClick={saveEditedRow} disabled={savingRow || !editingRow?.name.trim()}>
+              {savingRow ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
     </TooltipProvider>
     </PartAttrOptionsProvider>
@@ -428,9 +506,9 @@ function PurchaseMarginNotice({ rows }: { rows: Row[] }) {
 }
 
 /**
- * İŞ EMRİ adaptörü: PartsLaborEditor'ün her değişikliğini `/api/orders/items`
- * uçlarına yazar — kalem ANINDA kalıcılaşır ve `__partId` doluysa sunucu stoktan
- * düşer/rezerve eder. Teklif tarafı bu adaptörü KULLANMAZ (bkz. QuoteItemsEditor).
+ * İŞ EMRİ adaptörü: yeni kalemi ekler ve modalda düzenlenen satırı tek PATCH ile
+ * kaydeder. `__partId` doluysa eklemede sunucu stoktan düşer/rezerve eder.
+ * Teklif tarafı bu adaptörü KULLANMAZ (bkz. QuoteItemsEditor).
  */
 export function PartsLaborGrid({
   orderId, status, items, vehicle, onError, loading, laborCatalog, taxRateBps, onApplyStandardTax,
@@ -593,6 +671,34 @@ export function PartsLaborGrid({
     persistUpdate(row.id, patch, opts)
   }
 
+  async function saveRow(draft: Row, original: Row): Promise<boolean> {
+    const fields = ["name", "sku", "unit", "quantity", "unitPrice", "brand", "category", "categoryId", "tecdocArticleId", "includeVat"] as const
+    const changed = fields.filter((field) => draft[field] !== original[field])
+    if (changed.length === 0) return true
+    const fd = new FormData()
+    for (const field of changed) fd.set(field, String(draft[field] ?? ""))
+    if (changed.includes("category") && !changed.includes("categoryId")) fd.set("categoryId", "")
+    try {
+      const res = await fetch(`/api/orders/items?id=${draft.id}&orderId=${orderId}`, { method: "PATCH", body: fd })
+      const data = await res.json()
+      if (!data.success) {
+        const message = data.error || "Kalem güncellenemedi"
+        onError(message)
+        toast.error(message)
+        return false
+      }
+      if (draft.includeVat && original.includeVat === false && (taxRateBps ?? 0) <= 0) onApplyStandardTax?.()
+      setRows((prev) => prev.map((row) => row.id === draft.id ? draft : row))
+      flashRow(draft.id, "saved")
+      router.refresh()
+      return true
+    } catch {
+      onError("Kalem güncellenemedi")
+      toast.error("Kalem güncellenemedi")
+      return false
+    }
+  }
+
   async function removeRow(row: Row) {
     try {
       await fetch(`/api/orders/items?id=${row.id}&orderId=${orderId}`, { method: "DELETE" })
@@ -616,6 +722,7 @@ export function PartsLaborGrid({
       onAdd={addItem}
       onCell={onCell}
       onRemove={removeRow}
+      onSaveRow={saveRow}
     />
   )
 }
@@ -1323,11 +1430,10 @@ type RowEditor = ReturnType<typeof useRowEditor>
  * miktar/fiyat/toplam hücrelerini dikeyde kaydırıyor, tablo tırtıklı okunuyordu.
  * Tam ad `title`'da (hover ipucu) ve mobil kartta sarılı hâliyle görünür.
  */
-function PartIdentity({ row, oneLine }: { row: Row; oneLine?: boolean }) {
-  const lockNote = "İş emri kilitli — parça tanımı değiştirilemez"
+function PartIdentity({ row, oneLine, hint = "İş emri kilitli — parça tanımı değiştirilemez" }: { row: Row; oneLine?: boolean; hint?: string }) {
   // Kırpılan adda `title` ÖNCE tam adı vermeli: kullanıcı hover'da okumak
   // istediği şey kilit gerekçesi değil, görünmeyen ad.
-  const title = oneLine ? `${row.name} — ${lockNote}` : lockNote
+  const title = oneLine ? `${row.name} — ${hint}` : hint
   return (
     <div
       className={cn(
@@ -1415,17 +1521,18 @@ function PartNameField({ row, onCell, oneLine }: { row: Row; onCell: OnCell; one
 // satıra kayıyor (adın uzunluğuna göre), adın yerini yiyor ve dış alım
 // satırında tür kolonundan taşan üçüncü ikonla üst üste biniyorlardı. Artık
 // hepsi satırın sağındaki tek aksiyon grubunda (`RowActions`).
-function PartField({ row, ed, onCell, oneLine }: {
+function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
   row: Row; ed: RowEditor; onCell: OnCell
   /** Masaüstü tablo satırı: ad tek satırda kırpılır (bkz. PartIdentity). */
   oneLine?: boolean
+  readOnlyHint?: string
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
       {ed.isPart && ed.editable ? (
         <PartNameField row={row} onCell={onCell} oneLine={oneLine} />
       ) : ed.isPart ? (
-        <PartIdentity row={row} oneLine={oneLine} />
+        <PartIdentity row={row} oneLine={oneLine} hint={readOnlyHint} />
       ) : (
         <Input
           value={row.name}
@@ -1567,6 +1674,38 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
       onChange={(e) => { if (!ed.editingPrice) ed.startPrice(); ed.setPriceDraft(e.target.value) }}
       onBlur={ed.commitPrice}
       onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
+    />
+  )
+}
+
+// Modalda fiyat ham TL taslağı olarak kalır. Liste editörünün odakta biçim
+// değiştirmesi, dialog açıldıktan sonraki ilk yazıyı eski tutara ekleyebiliyor.
+function ModalPriceField({ row, onCell }: { row: Row; onCell: OnCell }) {
+  const [draft, setDraft] = useState(() => toPriceDraft(row.unitPrice))
+  function commit() {
+    const entered = /[+*/×÷()]/.test(draft) || /-(?!^)/.test(draft)
+      ? evaluateMoneyExpression(draft)
+      : parseTRYToKurus(draft)
+    if (entered == null || entered < 0) {
+      setDraft(toPriceDraft(row.unitPrice))
+      return
+    }
+    if (entered !== row.unitPrice) onCell(row, { unitPrice: entered })
+  }
+  return (
+    <Input
+      data-slot="price-field"
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      placeholder="₺0,00"
+      aria-label="Birim fiyat"
+      className="h-7 w-28 px-2.5 text-right text-sm tabular-nums"
+      value={draft}
+      onFocus={(event) => event.currentTarget.select()}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur() }}
     />
   )
 }
@@ -1791,13 +1930,15 @@ function RowFlash({ kind, iconOnly }: { kind?: FlashKind | null; iconOnly?: bool
  * kullanır: aynı satırda tedarikçi fiyat karşılaştırma da 🏷 idi, iki farklı
  * aksiyon ayırt edilemiyordu.
  */
-function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail }: {
+function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail, onEdit, canDelete }: {
   row: Row
   ed: RowEditor
   orderId?: string
   vehicle?: PickerVehicle
   onRemove: (row: Row) => void
   onShowDetail: OnShowDetail
+  onEdit?: (row: Row) => void
+  canDelete?: boolean
 }) {
   const [priceOpen, setPriceOpen] = useState(false)
   const [purchaseOpen, setPurchaseOpen] = useState(false)
@@ -1843,7 +1984,14 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail }: {
       run: () => setPurchaseOpen(true),
     })
   }
-  if (ed.editable) {
+  if (onEdit) {
+    actions.push({
+      key: "edit", tone: "default", label: "Kalemi düzenle",
+      hint: "Kalemi düzenle", Icon: PencilLine,
+      run: () => onEdit(row),
+    })
+  }
+  if (ed.editable || canDelete) {
     actions.push({
       key: "delete", tone: "danger", label: "Satırı sil",
       hint: "Satırı sil", Icon: Trash2,
@@ -1851,7 +1999,14 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail }: {
     })
   }
 
-  const { inline, overflow } = splitRowActions(actions)
+  const split = splitRowActions(actions)
+  // İş emrinde düzenleme görünür kalmalı; diğer keşif aksiyonları menüye iner.
+  const inline = onEdit && actions.length > 2
+    ? actions.filter((action) => action.key === "edit" || action.key === "delete")
+    : split.inline
+  const overflow = onEdit && actions.length > 2
+    ? actions.filter((action) => action.key !== "edit" && action.key !== "delete")
+    : split.overflow
   const byKey = new Map(actions.map((a) => [a.key, a]))
 
   return (
@@ -1962,7 +2117,7 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail }: {
           open={purchaseOpen}
           onOpenChange={setPurchaseOpen}
           orderId={orderId}
-          editable={ed.editable}
+          editable={ed.editable || !!canDelete}
           item={{
             id: row.id,
             name: row.name,
@@ -2208,11 +2363,13 @@ function VatCell({ row, ed, onCell }: { row: Row; ed: RowEditor; onCell: OnCell 
   )
 }
 
-function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, onCell, onRemove, flash, onShowDetail }: {
+function DesktopPartRow({ row, orderId, locked, readOnlyFields = false, onEdit, vehicle, showAttributes = true, onCell, onRemove, flash, onShowDetail }: {
   row: Row
   /** Yalnız iş emrinde dolu — dış alım detay modalı orderId ister. */
   orderId?: string
   locked: boolean
+  readOnlyFields?: boolean
+  onEdit?: (row: Row) => void
   vehicle?: PickerVehicle
   showAttributes?: boolean
   onCell: OnCell
@@ -2220,7 +2377,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
   flash?: FlashKind | null
   onShowDetail: OnShowDetail
 }) {
-  const ed = useRowEditor(row, vehicle, locked, onCell)
+  const ed = useRowEditor(row, vehicle, locked || readOnlyFields, onCell)
   const { perLine: vatPerLine } = useVat()
   const type = row.type as ItemType
   const showMeta = showAttributes && ed.isPart && (ed.editable || !!row.brand || !!row.category)
@@ -2243,7 +2400,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
           için Marka/Kategori meta satırı */}
       <TableCell className="whitespace-normal py-3.5">
         <div className="min-w-0">
-          <PartField row={row} ed={ed} onCell={onCell} oneLine />
+          <PartField row={row} ed={ed} onCell={onCell} oneLine readOnlyHint={readOnlyFields && !locked ? "Kalemi düzenle ile değiştirin" : undefined} />
           <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
           {showMeta && (
             // Marka + Kategori HER ZAMAN tek satır: sabit genişlik yerine esneyen
@@ -2310,6 +2467,8 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
           vehicle={vehicle}
           onRemove={onRemove}
           onShowDetail={onShowDetail}
+          onEdit={onEdit}
+          canDelete={!locked && readOnlyFields}
         />
       </TableCell>
     </TableRow>
@@ -2317,11 +2476,14 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
 }
 
 // ── Mobil satırı: kart (çarşaf liste) ────────────────────────────────────────
-function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, onCell, onRemove, flash, onShowDetail }: {
+function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, showActions = true, vehicle, showAttributes = true, onCell, onRemove, flash, onShowDetail }: {
   row: Row
   /** Yalnız iş emrinde dolu — dış alım detay modalı orderId ister. */
   orderId?: string
   locked: boolean
+  readOnlyFields?: boolean
+  onEdit?: (row: Row) => void
+  showActions?: boolean
   vehicle?: PickerVehicle
   showAttributes?: boolean
   onCell: OnCell
@@ -2329,7 +2491,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
   flash?: FlashKind | null
   onShowDetail: OnShowDetail
 }) {
-  const ed = useRowEditor(row, vehicle, locked, onCell)
+  const ed = useRowEditor(row, vehicle, locked || readOnlyFields, onCell)
   const { perLine: vatPerLine } = useVat()
   const type = row.type as ItemType
   const showMeta = showAttributes && ed.isPart && (ed.editable || !!row.brand || !!row.category)
@@ -2346,14 +2508,16 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
           <SourceBadge source={row.source} />
           <RowFlash kind={flash} />
         </div>
-        <RowActions
+        {showActions && <RowActions
           row={row}
           ed={ed}
           orderId={orderId}
           vehicle={vehicle}
           onRemove={onRemove}
           onShowDetail={onShowDetail}
-        />
+          onEdit={onEdit}
+          canDelete={!locked && readOnlyFields}
+        />}
       </div>
 
       {/* Parça / İşçilik adı (öne çıkan) — hayalet: kenarlıksız, odakta belirir */}
@@ -2363,7 +2527,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
         "[&_[data-slot=input-group]]:px-0 [&_[data-slot=input]]:!px-0 [&_[data-slot=input]]:font-medium",
         "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-2.5",
       )}>
-        <PartField row={row} ed={ed} onCell={onCell} />
+        <PartField row={row} ed={ed} onCell={onCell} readOnlyHint={readOnlyFields && !locked ? "Kalemi düzenle ile değiştirin" : undefined} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
         <DoneBadge completedAt={row.completedAt} className="mt-1" />
         <ProcurementBadge procurement={row.externalProcurement} />
@@ -2394,7 +2558,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
           </div>
           <div className="min-w-0 space-y-1 [&_[data-slot=price-field]]:!w-full">
             <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Fiyat</span>
-            <PriceField row={row} ed={ed} />
+            {showActions ? <PriceField row={row} ed={ed} /> : <ModalPriceField row={row} onCell={onCell} />}
             <PurchaseCostHint row={row} ed={ed} />
           </div>
         </div>
