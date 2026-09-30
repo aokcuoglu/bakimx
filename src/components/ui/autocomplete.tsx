@@ -49,7 +49,9 @@ function AutocompleteContent({
         side={side}
         sideOffset={sideOffset}
         align={align}
-        className="isolate z-50"
+        // Radix modals disable pointer events on body. A portalled popup must
+        // restore them and sit above the modal, just like ComboboxContent.
+        className="pointer-events-auto isolate z-[60]"
       >
         <AutocompletePrimitive.Popup
           data-slot="autocomplete-content"
