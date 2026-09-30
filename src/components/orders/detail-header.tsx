@@ -92,11 +92,10 @@ export function DetailHeader({
               <div className="flex items-center gap-2">
                 {primary && (
                   <Button
-                    size="compact"
-                    variant="outline"
+                    size="default"
+                    variant="default"
                     onClick={primary.onClick}
                     disabled={loading || primary.disabled}
-                    className="text-sm"
                   >
                     {loading ? (
                       <Loader2 className="size-4 animate-spin" />
