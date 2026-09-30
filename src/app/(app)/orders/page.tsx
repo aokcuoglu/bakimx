@@ -176,6 +176,7 @@ export default async function OrdersPage({
                 <FilterSelect
                   name="status"
                   autoSubmit
+                  singleLine
                   className="w-full sm:w-auto"
                   defaultValue={status}
                   placeholder="Tüm Durumlar"
@@ -195,6 +196,7 @@ export default async function OrdersPage({
                 <FilterSelect
                   name="payment"
                   autoSubmit
+                  singleLine
                   className="w-full sm:w-auto"
                   defaultValue={payment}
                   placeholder="Tüm Ödemeler"
@@ -208,6 +210,7 @@ export default async function OrdersPage({
                 <FilterSelect
                   name="technician"
                   autoSubmit
+                  singleLine
                   className="w-full sm:w-auto"
                   defaultValue={technicianFilter.value}
                   placeholder="Tüm Ustalar"
@@ -220,6 +223,7 @@ export default async function OrdersPage({
                 <FilterSelect
                   name="invoice"
                   autoSubmit
+                  singleLine
                   className="w-full sm:w-auto"
                   defaultValue={invoiceFilter.value}
                   placeholder="Tüm Faturalar"
