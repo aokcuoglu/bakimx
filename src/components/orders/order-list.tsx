@@ -15,7 +15,7 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table"
 
-import { StatusBadge, PaymentBadge, PlateBadge } from "@/components/shared/status-badge"
+import { StatusBadge, PlateBadge } from "@/components/shared/status-badge"
 import { OrderTableColumnHeader } from "@/components/orders/order-table-column-header"
 import { Button } from "@/components/ui/button"
 import {
@@ -91,8 +91,7 @@ function customerName(c: OrderRow["customer"]): string {
 
 function statusSearch(order: OrderRow): string {
   const status = ORDER_STATUS[order.status as keyof typeof ORDER_STATUS]?.label ?? order.status
-  const payment = PAYMENT_STATUS[order.paymentStatus as keyof typeof PAYMENT_STATUS]?.label ?? order.paymentStatus
-  return `${status} ${payment}`
+  return status
 }
 
 function invoiceSearch(order: OrderRow): string {
@@ -110,12 +109,36 @@ function textFilter<T>(read: (row: T) => string) {
     matchesColumnFilter(read(row.original), value)
 }
 
-/** Faturası eksik iş emri rozeti — ikon + metin; anlam yalnız renkte değil. */
+function PaymentText({ status }: { status: string }) {
+  const label = PAYMENT_STATUS[status as keyof typeof PAYMENT_STATUS]?.label ?? status
+  const tone = status === "paid" ? "bg-success" : status === "partial" ? "bg-warning" : "bg-border"
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground">
+      <span className={`size-1.5 shrink-0 rounded-full ${tone}`} aria-hidden="true" />
+      {label}
+    </span>
+  )
+}
+
+/** Supporting information stays available on hover and keyboard focus. */
+function DetailHint({ children, detail }: { children: React.ReactNode; detail: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span tabIndex={0} className="block w-fit max-w-full rounded-xs outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={detail}>
+          {children}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{detail}</TooltipContent>
+    </Tooltip>
+  )
+}
+
+/** Missing invoice remains a single line, without a second status badge. */
 function InvoiceMissingBadge() {
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-md border border-warning/20 bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning-strong"
-      title="Fatura numarası girilmemiş"
+      className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-warning-strong"
     >
       <FileWarning className="size-3.5" aria-hidden="true" />
       Fatura yok
@@ -127,16 +150,16 @@ function InvoiceCell({ invoiceNo, missing }: { invoiceNo: string | null; missing
   const value = (invoiceNo || "").trim()
   if (value) {
     return (
-      <span className="font-mono text-xs text-foreground" title={value}>
-        {value}
-      </span>
+      <DetailHint detail={value}>
+        <span className="block max-w-28 truncate font-mono text-xs text-foreground">{value}</span>
+      </DetailHint>
     )
   }
   if (!missing) return <span className="text-muted-foreground">—</span>
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="inline-flex">
+        <span tabIndex={0} className="inline-flex rounded-xs outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <InvoiceMissingBadge />
         </span>
       </TooltipTrigger>
@@ -179,7 +202,7 @@ export function OrderList({
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({ delivery: false })
 
   const columns = useMemo<ColumnDef<OrderRow>[]>(() => {
     const byId: Record<(typeof ORDER_LIST_DATA_COLUMN_ORDER)[number], ColumnDef<OrderRow>> = {
@@ -191,7 +214,7 @@ export function OrderList({
         cell: ({ row }) => (
           <Link
             href={`/orders/${row.original.id}`}
-            className="font-mono text-sm font-bold text-foreground hover:text-primary transition-colors"
+            className="font-mono text-xs font-medium text-foreground hover:text-primary transition-colors"
           >
             {row.original.workOrderNo}
           </Link>
@@ -205,7 +228,7 @@ export function OrderList({
         cell: ({ row }) => {
           const order = row.original
           return (
-            <div className="max-w-[11rem]">
+            <DetailHint detail={`${order.vehicle.plate} · ${order.vehicle.brand} ${order.vehicle.model}`}>
               {order.vehicle.id ? (
                 <Link href={`/vehicles/${order.vehicle.id}`}>
                   <PlateBadge plate={order.vehicle.plate} size="sm" />
@@ -213,13 +236,7 @@ export function OrderList({
               ) : (
                 <PlateBadge plate={order.vehicle.plate} size="sm" />
               )}
-              <div
-                className="mt-1 text-[11px] leading-tight text-muted-foreground truncate"
-                title={`${order.vehicle.brand} ${order.vehicle.model}`}
-              >
-                {order.vehicle.brand} {order.vehicle.model}
-              </div>
-            </div>
+            </DetailHint>
           )
         },
       },
@@ -232,24 +249,15 @@ export function OrderList({
           const order = row.original
           const name = customerName(order.customer)
           return (
-            <div className="min-w-[10rem] max-w-[14rem]">
+            <DetailHint detail={`${name} · ${order.customer.phone}`}>
               {order.customer.id ? (
-                <Link
-                  href={`/customers/${order.customer.id}`}
-                  title={name}
-                  className="text-foreground font-medium hover:text-primary transition-colors block truncate"
-                >
+                <Link href={`/customers/${order.customer.id}`} className="block max-w-[11rem] truncate font-medium text-foreground transition-colors hover:text-primary">
                   {name}
                 </Link>
               ) : (
-                <div className="text-foreground font-medium truncate" title={name}>
-                  {name}
-                </div>
+                <span className="block max-w-[11rem] truncate font-medium text-foreground">{name}</span>
               )}
-              <div className="text-[11px] leading-tight text-muted-foreground tabular-nums truncate">
-                {order.customer.phone}
-              </div>
-            </div>
+            </DetailHint>
           )
         },
       },
@@ -259,11 +267,15 @@ export function OrderList({
         header: ({ column }) => <OrderTableColumnHeader column={column} title="Durum" />,
         filterFn: textFilter(statusSearch),
         cell: ({ row }) => (
-          <div className="flex flex-col items-start gap-1">
-            <StatusBadge status={row.original.status} />
-            <PaymentBadge status={row.original.paymentStatus} />
-          </div>
+          <StatusBadge status={row.original.status} />
         ),
+      },
+      payment: {
+        id: "payment",
+        accessorFn: (order) => PAYMENT_STATUS[order.paymentStatus as keyof typeof PAYMENT_STATUS]?.label ?? order.paymentStatus,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Ödeme" />,
+        filterFn: textFilter((order) => PAYMENT_STATUS[order.paymentStatus as keyof typeof PAYMENT_STATUS]?.label ?? order.paymentStatus),
+        cell: ({ row }) => <PaymentText status={row.original.paymentStatus} />,
       },
       invoice: {
         id: "invoice",
@@ -292,26 +304,17 @@ export function OrderList({
       dates: {
         id: "dates",
         accessorFn: (order) => order.createdAt,
-        header: ({ column }) => <OrderTableColumnHeader column={column} title="Tarih" />,
-        filterFn: textFilter((order) => {
-          const created = formatDate(order.createdAt)
-          const delivery = order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : ""
-          return `Giriş ${created} Teslim ${delivery}`
-        }),
-        cell: ({ row }) => {
-          const order = row.original
-          return (
-            <div className="text-xs whitespace-nowrap">
-              <div className="text-muted-foreground tabular-nums">
-                <span className="text-muted-foreground">Giriş</span> {formatDate(order.createdAt)}
-              </div>
-              <div className="mt-0.5 text-muted-foreground tabular-nums">
-                <span className="text-muted-foreground">Teslim</span>{" "}
-                {order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : <span className="text-muted-foreground">—</span>}
-              </div>
-            </div>
-          )
-        },
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Giriş tarihi" />,
+        filterFn: textFilter((order) => formatDate(order.createdAt)),
+        cell: ({ row }) => <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">{formatDate(row.original.createdAt)}</span>,
+      },
+      delivery: {
+        id: "delivery",
+        accessorFn: (order) => order.estimatedDeliveryAt,
+        sortUndefined: "last",
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Tahmini teslim" />,
+        filterFn: textFilter((order) => order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : ""),
+        cell: ({ row }) => <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">{row.original.estimatedDeliveryAt ? formatDate(row.original.estimatedDeliveryAt) : "—"}</span>,
       },
       technician: {
         id: "technician",
@@ -326,6 +329,7 @@ export function OrderList({
             technicians={technicians}
             locked={isOrderLocked(row.original.status as OrderStatus)}
             size="sm"
+            variant="meta"
           />
         ),
       },
@@ -338,7 +342,7 @@ export function OrderList({
         enableSorting: false,
         enableHiding: false,
         enableColumnFilter: false,
-        header: () => <span className="text-xs font-semibold uppercase tracking-wider">İşlem</span>,
+        header: () => <span className="text-xs font-medium text-muted-foreground">İşlem</span>,
         cell: ({ row }) => (
           <div className="flex items-center justify-end">
             <ActionsMenu
@@ -390,7 +394,8 @@ export function OrderList({
         })}
       </div>
 
-      <div className="hidden lg:flex lg:justify-end">
+      <div className="hidden lg:flex lg:items-center lg:justify-between">
+        <p className="text-xs text-muted-foreground" aria-live="polite">{visibleOrders.length} iş emri</p>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button type="button" variant="outline" size="compact">
@@ -415,9 +420,9 @@ export function OrderList({
         </DropdownMenu>
       </div>
 
-      <div className="hidden lg:block rounded-lg border border-border bg-card">
+      <div className="hidden lg:block overflow-hidden rounded-lg border border-border bg-card">
         <Table containerClassName="max-h-[70vh]" className="text-sm">
-          <TableHeader className="sticky top-0 z-10 bg-muted text-xs uppercase tracking-wider text-muted-foreground">
+          <TableHeader className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent">
                 {headerGroup.headers.map((header) => {
@@ -427,8 +432,8 @@ export function OrderList({
                       key={header.id}
                       className={
                         sticky
-                          ? "sticky right-0 z-20 h-auto border-l border-border bg-muted px-3 py-2 text-right"
-                          : "h-auto bg-muted px-3 py-2"
+                          ? "sticky right-0 z-20 h-9 border-l border-border bg-card px-3 py-1 text-right"
+                          : "h-9 bg-card px-3 py-1"
                       }
                     >
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
@@ -449,8 +454,8 @@ export function OrderList({
                         key={cell.id}
                         className={
                           sticky
-                            ? "sticky right-0 border-l border-border bg-card px-3 py-2 align-top whitespace-normal group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]"
-                            : "px-3 py-2 align-top whitespace-normal"
+                            ? "sticky right-0 border-l border-border bg-card h-9 px-3 py-1 align-middle whitespace-nowrap group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]"
+                            : "h-9 px-3 py-1 align-middle whitespace-nowrap"
                         }
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -481,7 +486,7 @@ export function OrderList({
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link
                     href={`/orders/${order.id}`}
-                    className="font-mono text-sm font-bold text-foreground hover:text-primary transition-colors"
+                    className="font-mono text-xs font-medium text-foreground hover:text-primary transition-colors"
                   >
                     {order.workOrderNo}
                   </Link>
@@ -514,7 +519,7 @@ export function OrderList({
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <StatusBadge status={order.status} />
-              <PaymentBadge status={order.paymentStatus} />
+              <PaymentText status={order.paymentStatus} />
               {/* Mobil kartta usta hiç görünmüyordu; rozet hem bilgi hem atama tetikleyicisi. */}
               <TechnicianAssign
                 orderId={order.id}
@@ -524,8 +529,10 @@ export function OrderList({
                 locked={isOrderLocked(order.status as OrderStatus)}
                 size="sm"
               />
-              {/* Aynı uyarı mobil kartta da görünmeli. */}
-              {order.invoiceMissing ? <InvoiceMissingBadge /> : null}
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Fatura</span>
+              <InvoiceCell invoiceNo={order.invoiceNo} missing={order.invoiceMissing} />
             </div>
             <div className="mt-3 flex items-center justify-between text-xs">
               <div className="text-muted-foreground">
