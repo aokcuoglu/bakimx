@@ -55,7 +55,7 @@ Kaynak, 27 Eylül 2026 öğleden sonra `app.attio.com/bakimx` Home, Companies li
 ### Ayarlar
 
 - Etiket alanın üstünde, 12px / 500, `rgba(0,0,0,0.5)`. Değer 14px / 500 / `#101112`.
-- Select (saat dilimi) 32px, köşe 9px, 1px `rgba(0,0,0,0.06)`, metin 14px / 500.
+- Select (saat dilimi ve haftanın başlangıcı) 32px, köşe 9px, yaklaşık 1px `rgba(0,0,0,0.06)`, metin 14px / 500 / 20px, iç dolgu solda 10px ve sağda 8px. Açılır liste tetikleyiciyle aynı genişlikte, köşe 12px ve 4px iç dolguludur. Seçenekler 32px yüksek, köşe 8px, 14px / 20px yazı ve yatay 8px dolgu kullanır. Liste gölgesi `0 0 0 1px rgb(28 40 64 / 4%), 0 4px 8px -4px rgb(28 40 64 / 12%), 0 4px 12px -2px rgb(24 41 75 / 16%)`. Liste tetikleyicinin altında ya da alanda yer yoksa üstünde açılır; seçili öğeyi tetikleyicinin üstüne bindiren konum kullanılmaz. Kaynak: 30 Eylül 2026, canlı `app.attio.com/bakimx/settings/account` DevTools ölçümü (`Start week on`).
 - Textarea köşe 8px, padding 6px 10px, 14px / 500, gölge `inset 0 0 0 1px rgba(0,0,0,0.06)`.
 - Planlar: üstte mevcut paket şeridi, altta karşılaştırma tablosu. Kart ızgarası yok.
 
