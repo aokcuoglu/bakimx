@@ -43,7 +43,7 @@ test("görünür etkileşimli kontroller ortak UI primitive'lerini kullanıyor",
   expect(offenders).toEqual([])
 })
 
-test("Button çağrıları eylem rengini açıkça seçiyor ve parlak default'u kullanmıyor", () => {
+test("Button çağrıları eylem rengini açıkça seçiyor ve mavi default'u belirlenmiş yerlerle sınırlıyor", () => {
   const offenders: string[] = []
   for (const file of tsxFiles(SRC)) {
     const source = readFileSync(file, "utf8")
@@ -56,10 +56,12 @@ test("Button çağrıları eylem rengini açıkça seçiyor ve parlak default'u 
         const variant = node.attributes.properties.find(
           (attribute) => ts.isJsxAttribute(attribute) && attribute.name.getText(parsed) === "variant"
         ) as ts.JsxAttribute | undefined
-        // Attio's primary share action intentionally uses the app's blue primary variant.
-        const attioReferralPrimary = relative(SRC, file) === "components/settings/referral-share.tsx"
-          && variant?.initializer?.getText(parsed) === '"default"'
-        if (!variant || (/["']default["']/.test(variant.initializer?.getText(parsed) ?? "") && !attioReferralPrimary)) {
+        // These primary Attio actions intentionally use the app's blue primary variant.
+        const attioPrimary = [
+          "components/settings/referral-share.tsx",
+          "components/orders/detail-header.tsx",
+        ].includes(relative(SRC, file)) && variant?.initializer?.getText(parsed) === '"default"'
+        if (!variant || (/["']default["']/.test(variant.initializer?.getText(parsed) ?? "") && !attioPrimary)) {
           const line = parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1
           offenders.push(`${relative(SRC, file)}:${line}`)
         }
