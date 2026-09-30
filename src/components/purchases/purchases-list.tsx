@@ -132,7 +132,7 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
             onClick={() => setSelected(r)}
             className="h-auto w-full justify-start whitespace-normal p-3.5 text-left"
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono text-sm font-bold text-foreground">{r.workOrderNo}</span>
@@ -145,7 +145,7 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
                 </p>
               </div>
               {r.purchasePriceKurus != null && (
-                <span className="text-sm font-semibold text-foreground shrink-0">{formatTRY(r.purchasePriceKurus)}</span>
+                <span className="text-sm font-semibold text-foreground sm:shrink-0">{formatTRY(r.purchasePriceKurus)}</span>
               )}
             </div>
           </Button>

@@ -162,6 +162,21 @@ const NAV_TOUR_ATTR: Partial<Record<string, string>> = {
 
 const APP_NAV_TEXT = "h-7 text-sm leading-5 font-medium tracking-[-0.005em]"
 
+// These pages already introduce themselves in their content. The mobile bar
+// keeps the brand mark there; list and utility pages use the bar for context.
+const MOBILE_CONTENT_HEADING_PATHS = new Set([
+  "/dashboard",
+  "/orders/new",
+  "/customers/new",
+  "/vehicles/new",
+  "/technician",
+  "/appointments/new",
+  "/parts",
+  "/suppliers",
+  "/analytics",
+  "/reports",
+])
+
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
@@ -297,6 +312,7 @@ function AppHeader({
   const headerTitle = pageTitle || navItem?.label || (isSettingsPath(pathname) ? "Ayarlar" : undefined)
   const HeaderIcon = settingsNavItem?.icon ?? navItem?.icon
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
+  const showMobileTitle = headerTitle && !isSettingsPath(pathname) && !MOBILE_CONTENT_HEADING_PATHS.has(pathname)
 
   return (
     <header className={cn("sticky top-0 z-30 flex h-12 items-center border-b border-border bg-background", topBannerVisible && "lg:top-8")}>
@@ -304,11 +320,17 @@ function AppHeader({
         {/* Sidebar açıkken kontrol menü başlığındadır; kapalıyken burada görünür. */}
         <SidebarTrigger data-tour="sidebar-trigger" className="-ml-2 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden" />
 
-        <div className="absolute left-1/2 -translate-x-1/2 sm:hidden">
-          <Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX" className="flex items-center">
-            <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
-          </Link>
-        </div>
+        {showMobileTitle ? (
+          <h1 className="min-w-0 flex-1 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:hidden">
+            {headerTitle}
+          </h1>
+        ) : (
+          <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
+            <Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX" className="flex items-center">
+              <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
+            </Link>
+          </div>
+        )}
 
         {headerTitle && (
           <h1 className="hidden min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:flex">
@@ -319,19 +341,9 @@ function AppHeader({
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
           {isTechRole ? <div className="lg:hidden"><TechnicianNotificationsBell /></div> : null}
+          <div className="md:hidden">{pageActions}</div>
         </div>
       </div>
-      {(headerTitle || pageActions) && (
-        <div className="sm:hidden flex items-center justify-between gap-2 px-4 pb-3 -mt-1">
-          {headerTitle && (
-            <h1 className="flex min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground">
-              {HeaderIcon ? <HeaderIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
-              <span className="truncate">{headerTitle}</span>
-            </h1>
-          )}
-          {pageActions}
-        </div>
-      )}
     </header>
   )
 }
