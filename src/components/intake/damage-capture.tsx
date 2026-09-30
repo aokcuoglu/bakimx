@@ -21,7 +21,7 @@ import { BrandSpinner } from "@/components/shared/brand-spinner"
 
 type DamageMark = DamageRecord
 
-export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadKey }: { intakeFormId: string; readOnly?: boolean; reloadKey?: string; vehicle: { plate: string; brand: string; model: string } | null }) {
+export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadKey, modalMetadata = false }: { intakeFormId: string; readOnly?: boolean; reloadKey?: string; modalMetadata?: boolean; vehicle: { plate: string; brand: string; model: string } | null }) {
   const [marks, setMarks] = useState<DamageMark[]>([])
   const [photos, setPhotos] = useState<DamagePhoto[]>([])
   const [bodyType, setBodyType] = useState<BodyType>("sedan")
@@ -30,6 +30,9 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [metadataBusy, setMetadataBusy] = useState(false)
+  const [metadataOpen, setMetadataOpen] = useState(false)
+  const [inspectionConfirmOpen, setInspectionConfirmOpen] = useState(false)
+  const [bodyTypeDraft, setBodyTypeDraft] = useState<BodyType>("sedan")
   const [photoDirty, setPhotoDirty] = useState(false)
   const backRequested = useRef(false)
   const discardAndGoBack = useRef(false)
@@ -95,6 +98,8 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
       if (!current.ok) throw new Error("Kontrol kaydedildi; güncel bilgileri görmek için sayfayı yenileyin.")
       const saved = await current.json()
       setBodyType(saved.bodyType); setInspectionStatus(saved.inspectionStatus); setInspectedAt(saved.inspectedAt)
+      setMetadataOpen(false)
+      setInspectionConfirmOpen(false)
     } catch(e) { toast.error(e instanceof Error ? e.message : "Kaydedilemedi") }
     finally {setMetadataBusy(false)}
   }
@@ -156,11 +161,42 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
       {!loaded && !error && <p role="status">Hasar kayıtları yükleniyor…</p>}
       {loaded && <>
         {!readOnly && <div className="flex flex-wrap items-center gap-2">
-          <Select value={bodyType} onValueChange={v=>void updateInspection({bodyType:v as BodyType})} disabled={metadataBusy}><SelectTrigger aria-label="Araç şeması" className="w-56"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(BODY_TYPES).map(([key,label])=><SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select>
-          <Button type="button" variant="outline" className="h-auto min-h-7 whitespace-normal text-left" disabled={metadataBusy || marks.length>0} onClick={()=>void updateInspection({inspectionStatus:"no_visible_damage"})}>Kontrol edildi, görünür hasar gözlenmedi</Button>
+          {modalMetadata ? (
+            <Button variant="outline" onClick={() => { setBodyTypeDraft(bodyType); setMetadataOpen(true) }} disabled={metadataBusy}>Araç şeması: {BODY_TYPES[bodyType]}</Button>
+          ) : (
+            <Select value={bodyType} onValueChange={v=>void updateInspection({bodyType:v as BodyType})} disabled={metadataBusy}><SelectTrigger aria-label="Araç şeması" className="w-56"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(BODY_TYPES).map(([key,label])=><SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select>
+          )}
+          <Button type="button" variant="outline" className="h-auto min-h-7 whitespace-normal text-left" disabled={metadataBusy || marks.length>0} onClick={() => { if (modalMetadata) setInspectionConfirmOpen(true); else void updateInspection({inspectionStatus:"no_visible_damage"}) }}>Kontrol edildi, görünür hasar gözlenmedi</Button>
         </div>}
         <VehicleDamageMap damageMarks={marks} photos={photos} bodyType={bodyType} inspectionStatus={inspectionStatus} inspectedAt={inspectedAt} onZoneClick={readOnly ? undefined : chooseZone} onEditMark={readOnly ? undefined : editMark} onRemoveMark={readOnly ? undefined : setRemoveId} vehicle={vehicle} />
       </>}
+
+      <Dialog open={metadataOpen} onOpenChange={(open) => { if (!metadataBusy) setMetadataOpen(open) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Araç şemasını düzenle</DialogTitle></DialogHeader>
+          <Select value={bodyTypeDraft} onValueChange={(value) => setBodyTypeDraft(value as BodyType)} disabled={metadataBusy}>
+            <SelectTrigger aria-label="Araç şeması"><SelectValue /></SelectTrigger>
+            <SelectContent>{Object.entries(BODY_TYPES).map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMetadataOpen(false)} disabled={metadataBusy}>İptal</Button>
+            <Button variant="foreground" onClick={() => void updateInspection({ bodyType: bodyTypeDraft })} disabled={metadataBusy || bodyTypeDraft === bodyType}>Kaydet</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={inspectionConfirmOpen} onOpenChange={(open) => { if (!metadataBusy) setInspectionConfirmOpen(open) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hasar kontrolü kaydedilsin mi?</AlertDialogTitle>
+            <AlertDialogDescription>Araçta görünür hasar gözlenmediği iş emrine kaydedilir.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={metadataBusy}>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void updateInspection({ inspectionStatus: "no_visible_damage" })} disabled={metadataBusy}>Kaydet</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!form.formState.isSubmitting) { if(open) setDialogOpen(true); else closeEditor() } }}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
