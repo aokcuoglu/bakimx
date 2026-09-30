@@ -10,6 +10,7 @@ import {
 const TERMINAL_STATUSES = new Set<string>(["REJECTED", "RESERVATION_EXPIRED", "CANCELLED", "COMPLETED"])
 const RECONCILE_INTERVAL_MS = 5 * 60 * 1000
 const RECONCILE_LEASE_MS = 2 * 60 * 1000
+const INITIATING_MAX_AGE_MS = 60 * 60 * 1000
 export const MANUAL_RECONCILE_FAILURE_THRESHOLD = 5
 
 export interface StartProcurementInput {
@@ -56,7 +57,7 @@ function projection(order: ProcurementOrder, cancellationRequestedAt: Date | nul
     bindingGrossKurus: order.bindingPrice.grossKurus, currency: order.bindingPrice.currency,
     pricingPolicyVersion: order.bindingPrice.policyVersion,
     reservationExpiresAt: new Date(order.bindingPrice.expiresAt), failureCode: null,
-    cancellationRequestedAt: order.cancellationRequested ? cancellationRequestedAt ?? now : cancellationRequestedAt,
+    cancellationRequestedAt: order.cancellationRequested ? cancellationRequestedAt ?? now : null,
     failedAt: null, lastReconciledAt: now,
     nextReconcileAt: TERMINAL_STATUSES.has(order.status) ? null : new Date(now.getTime() + RECONCILE_INTERVAL_MS),
     reconcileFailureCount: 0, lastReconcileError: null, manualReconcileRequiredAt: null,
@@ -120,30 +121,52 @@ export async function startExternalProcurement(client: ProcurementProviderClient
     if (existing.externalOrderId) return existing
   }
 
-  const local = existing ?? await prisma.$transaction(async (tx) => {
-    const item = await tx.serviceOrderItem.findFirst({
-      where: {
-        id: input.serviceOrderItemId, workshopId: input.workshopId,
-        serviceOrderId: input.serviceOrderId,
-        serviceOrder: { workshopId: input.workshopId },
-      }, select: { id: true, partId: true },
+  let local = existing
+  if (!local) try {
+    local = await prisma.$transaction(async (tx) => {
+      const item = await tx.serviceOrderItem.findFirst({
+        where: {
+          id: input.serviceOrderItemId, workshopId: input.workshopId,
+          serviceOrderId: input.serviceOrderId,
+          serviceOrder: { workshopId: input.workshopId },
+        }, select: { id: true, partId: true },
+      })
+      if (!item) throw new Error("Service order item not found")
+      if (item.partId !== null) throw new Error("External procurement cannot mutate or reserve local inventory")
+      const itemOrder = await tx.externalProcurementOrderItem.findUnique({
+        where: { serviceOrderItemId: input.serviceOrderItemId }, select: { id: true },
+      })
+      if (itemOrder) {
+        throw new ProcurementProviderError("ALREADY_REQUESTED", "A procurement request already exists for this service order item.", false, 409)
+      }
+      return tx.externalProcurementOrder.create({
+        data: {
+          provider: client.provider, workshopId: input.workshopId,
+          serviceOrderId: input.serviceOrderId, requestedByUserId: input.requestedByUserId,
+          idempotencyKey: input.idempotencyKey, requestHash, partnerStatus: "INITIATING",
+          items: { create: {
+            serviceOrderItemId: input.serviceOrderItemId, externalProductId: input.externalProductId,
+            externalOfferId: input.externalOfferId, quantity: input.quantity,
+            productPresentationSnapshot: input.productPresentation,
+            informationalSnapshot: input.informationalSnapshot,
+          } },
+        }, include: { items: true },
+      })
     })
-    if (!item) throw new Error("Service order item not found")
-    if (item.partId !== null) throw new Error("External procurement cannot mutate or reserve local inventory")
-    return tx.externalProcurementOrder.create({
-      data: {
-        provider: client.provider, workshopId: input.workshopId,
-        serviceOrderId: input.serviceOrderId, requestedByUserId: input.requestedByUserId,
-        idempotencyKey: input.idempotencyKey, requestHash, partnerStatus: "INITIATING",
-        items: { create: {
-          serviceOrderItemId: input.serviceOrderItemId, externalProductId: input.externalProductId,
-          externalOfferId: input.externalOfferId, quantity: input.quantity,
-          productPresentationSnapshot: input.productPresentation,
-          informationalSnapshot: input.informationalSnapshot,
-        } },
-      }, include: { items: true },
+  } catch (error) {
+    if ((error as { code?: string })?.code !== "P2002") throw error
+    // Both the idempotency key and the item relation are unique. A concurrent
+    // retry may have created the same attempt while this transaction ran.
+    local = await prisma.externalProcurementOrder.findUnique({
+      where: { provider_workshopId_idempotencyKey: {
+        provider: client.provider, workshopId: input.workshopId, idempotencyKey: input.idempotencyKey,
+      } }, include: { items: true },
     })
-  })
+    if (!local || local.requestHash !== requestHash) {
+      throw new ProcurementProviderError("ALREADY_REQUESTED", "A procurement request already exists for this service order item.", false, 409)
+    }
+    if (local.externalOrderId) return local
+  }
 
   try {
     let result
@@ -171,6 +194,9 @@ export async function startExternalProcurement(client: ProcurementProviderClient
       await prisma.externalProcurementOrder.delete({ where: { id: local.id } })
       throw error
     }
+    // The provider may have created an order before a timeout. Keep this local
+    // attempt and its key so the next user retry can replay the remote result.
+    if (error instanceof ProcurementProviderError && error.retryable) throw error
     const code = error instanceof ProcurementProviderError ? error.code : "PROVIDER_UNAVAILABLE"
     await prisma.externalProcurementOrder.update({
       where: { id: local.id }, data: { partnerStatus: "FAILED", failureCode: code, failedAt: new Date() },
@@ -214,24 +240,28 @@ export function pollCompletionGuard(row: { id: string; partnerVersion: number },
 export async function sweepExternalProcurements(
   client: ProcurementProviderClient,
   options: { limit?: number; now?: Date } = {},
+  database: typeof prisma = prisma,
 ) {
   const now = options.now ?? new Date()
   const limit = Math.min(Math.max(options.limit ?? 50, 1), 100)
-  const rows = await prisma.externalProcurementOrder.findMany({
+  const rows = await database.externalProcurementOrder.findMany({
     where: {
-      provider: client.provider, externalOrderId: { not: null },
-      partnerStatus: { in: PROCUREMENT_STATUSES.filter((status) => !TERMINAL_STATUSES.has(status)) },
-      OR: [{ nextReconcileAt: null }, { nextReconcileAt: { lte: now } }],
+      provider: client.provider,
+      OR: [
+        { externalOrderId: null, partnerStatus: "INITIATING" },
+        { externalOrderId: { not: null }, partnerStatus: { in: PROCUREMENT_STATUSES.filter((status) => !TERMINAL_STATUSES.has(status)) } },
+      ],
+      AND: [{ OR: [{ nextReconcileAt: null }, { nextReconcileAt: { lte: now } }] }],
     },
     orderBy: [{ nextReconcileAt: "asc" }, { updatedAt: "asc" }], take: limit,
-    select: { id: true, externalOrderId: true, partnerVersion: true, reconcileFailureCount: true },
+    select: { id: true, idempotencyKey: true, createdAt: true, externalOrderId: true, partnerVersion: true, reconcileFailureCount: true },
   })
   let processed = 0
   let applied = 0
   let failed = 0
   for (const row of rows) {
     const leaseUntil = new Date(now.getTime() + RECONCILE_LEASE_MS)
-    const claimed = await prisma.externalProcurementOrder.updateMany({
+    const claimed = await database.externalProcurementOrder.updateMany({
       where: {
         id: row.id, partnerVersion: row.partnerVersion,
         OR: [{ nextReconcileAt: null }, { nextReconcileAt: { lte: now } }],
@@ -241,9 +271,26 @@ export async function sweepExternalProcurements(
     if (claimed.count !== 1) continue
     processed += 1
     try {
-      const remote = await client.getOrder(row.externalOrderId!)
-      if (await prisma.$transaction((tx) => applyExternalProcurementProjection(tx, row.id, remote))) applied += 1
-      else await prisma.externalProcurementOrder.updateMany({
+      const remote = row.externalOrderId
+        ? await client.getOrder(row.externalOrderId)
+        : await client.getOrderByIdempotencyKey(row.idempotencyKey)
+      if (!remote) {
+        if (row.createdAt.getTime() <= now.getTime() - INITIATING_MAX_AGE_MS) {
+          // An authoritative partner lookup still found no order well after the
+          // request timeout. Release the local item for a fresh price approval.
+          await database.externalProcurementOrder.deleteMany({
+            where: { ...pollCompletionGuard(row, leaseUntil), partnerStatus: "INITIATING", externalOrderId: null },
+          })
+        } else {
+          await database.externalProcurementOrder.updateMany({
+            where: pollCompletionGuard(row, leaseUntil),
+            data: { lastReconciledAt: now, nextReconcileAt: new Date(now.getTime() + RECONCILE_INTERVAL_MS), reconcileFailureCount: 0, lastReconcileError: null },
+          })
+        }
+        continue
+      }
+      if (await database.$transaction((tx) => applyExternalProcurementProjection(tx, row.id, remote))) applied += 1
+      else await database.externalProcurementOrder.updateMany({
         where: pollCompletionGuard(row, leaseUntil),
         data: { lastReconciledAt: now, nextReconcileAt: TERMINAL_STATUSES.has(remote.status) ? null : new Date(now.getTime() + RECONCILE_INTERVAL_MS), reconcileFailureCount: 0, lastReconcileError: null, manualReconcileRequiredAt: null },
       })
@@ -251,7 +298,7 @@ export async function sweepExternalProcurements(
       failed += 1
       const nextFailureCount = row.reconcileFailureCount + 1
       const code = error instanceof ProcurementProviderError ? error.code : "RECONCILE_FAILED"
-      await prisma.externalProcurementOrder.updateMany({
+      await database.externalProcurementOrder.updateMany({
         where: pollCompletionGuard(row, leaseUntil),
         data: {
           reconcileFailureCount: nextFailureCount, lastReconcileError: code,
