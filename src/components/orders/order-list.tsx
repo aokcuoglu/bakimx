@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { ChevronDown, FileWarning } from "lucide-react"
 import {
@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ActionsMenu, MobileActionsMenu } from "@/components/shared/actions-menu"
-import { StatCard } from "@/components/shared/stat-card"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatTRY } from "@/lib/format"
@@ -77,7 +76,6 @@ type KpiConfig = {
   label: string
   count: number
   filterValue: string
-  accent: string
 }
 
 function formatDate(iso: string) {
@@ -176,6 +174,9 @@ export function OrderList({
   activeTechnician = "",
   activeInvoice = "",
   technicians = [],
+  searchQuery = "",
+  toolbar,
+  emptyState,
 }: {
   orders: OrderRow[]
   kpis: KPIs
@@ -184,17 +185,21 @@ export function OrderList({
   activeTechnician?: string
   activeInvoice?: string
   technicians?: AssignableTechnician[]
+  searchQuery?: string
+  toolbar?: ReactNode
+  emptyState?: ReactNode
 }) {
   const kpiConfigs: KpiConfig[] = [
-    { key: "active", label: "Aktif", count: kpis.active, filterValue: ACTIVE_ORDER_FILTER, accent: "bg-primary/10 text-primary-strong border-primary/20" },
-    { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval", accent: "bg-warning/10 text-warning-strong border-warning/20" },
-    { key: "completed", label: "Tamamlandı", count: kpis.completed, filterValue: "ready_for_delivery", accent: "bg-primary/10 text-primary-strong border-primary/20" },
-    { key: "delivered", label: "Teslim Edildi", count: kpis.delivered, filterValue: "delivered", accent: "bg-success/10 text-success-strong border-success/20" },
-    { key: "cancelled", label: "İptal", count: kpis.cancelled, filterValue: "cancelled", accent: "bg-destructive/10 text-destructive-strong border-destructive/20" },
+    { key: "active", label: "Aktif", count: kpis.active, filterValue: ACTIVE_ORDER_FILTER },
+    { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval" },
+    { key: "completed", label: "Tamamlandı", count: kpis.completed, filterValue: "ready_for_delivery" },
+    { key: "delivered", label: "Teslim Edildi", count: kpis.delivered, filterValue: "delivered" },
+    { key: "cancelled", label: "İptal", count: kpis.cancelled, filterValue: "cancelled" },
   ]
 
   // KPI kartına tıklamak yalnız durumu değiştirmeli; diğer aktif filtreler korunur.
   const keptFilters = [
+    searchQuery ? `q=${encodeURIComponent(searchQuery)}` : "",
     activePayment ? `payment=${activePayment}` : "",
     activeTechnician ? `technician=${encodeURIComponent(activeTechnician)}` : "",
     activeInvoice ? `invoice=${encodeURIComponent(activeInvoice)}` : "",
@@ -330,6 +335,7 @@ export function OrderList({
             locked={isOrderLocked(row.original.status as OrderStatus)}
             size="sm"
             variant="meta"
+            className="px-0"
           />
         ),
       },
@@ -375,179 +381,182 @@ export function OrderList({
   const visibleOrders = table.getRowModel().rows.map((row) => row.original)
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+    <div className="space-y-4">
+      <div aria-label="İş emri durum özeti" className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-card p-1 sm:grid-cols-5">
         {kpiConfigs.map((cfg) => {
           const isActive = activeStatus === cfg.filterValue
           const parts = isActive ? keptFilters : [`status=${cfg.filterValue}`, ...keptFilters]
           const href = parts.length > 0 ? `/orders?${parts.join("&")}` : "/orders"
           return (
-            <StatCard
-              key={cfg.key}
-              label={cfg.label}
-              value={cfg.count}
-              accent={cfg.accent}
-              href={href}
-              active={isActive}
-            />
+            <Button key={cfg.key} variant="ghost" size="sm" asChild
+              className={`w-full justify-between gap-2 px-2 text-xs last:col-span-2 sm:last:col-span-1 ${isActive ? "bg-muted text-foreground" : "text-muted-foreground"}`}>
+              <Link href={href} aria-current={isActive ? "page" : undefined}>
+                <span>{cfg.label}</span>
+                <span className="text-xs font-medium tabular-nums text-foreground">{cfg.count}</span>
+              </Link>
+            </Button>
           )
         })}
       </div>
 
-      <div className="hidden lg:flex lg:items-center lg:justify-between">
-        <p className="text-xs text-muted-foreground" aria-live="polite">{visibleOrders.length} iş emri</p>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type="button" variant="outline" size="compact">
-              Kolonlar
-              <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                >
-                  {ORDER_LIST_COLUMN_LABELS[column.id as keyof typeof ORDER_LIST_COLUMN_LABELS] ?? column.id}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        {toolbar && <div className="border-b border-border p-3 sm:p-4">{toolbar}</div>}
+        <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2 sm:px-4">
+          <p className="text-xs text-muted-foreground" aria-live="polite">{visibleOrders.length} iş emri</p>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" size="sm" className="hidden lg:inline-flex">
+                Kolonlar
+                <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                  >
+                    {ORDER_LIST_COLUMN_LABELS[column.id as keyof typeof ORDER_LIST_COLUMN_LABELS] ?? column.id}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-      <div className="hidden lg:block overflow-hidden rounded-lg border border-border bg-card">
-        <Table containerClassName="max-h-[70vh]" className="text-sm">
-          <TableHeader className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                {headerGroup.headers.map((header) => {
-                  const sticky = header.column.id === "actions"
-                  return (
-                    <TableHead
-                      key={header.id}
-                      className={
-                        sticky
-                          ? "sticky right-0 z-20 h-9 border-l border-border bg-card px-3 py-1 text-right"
-                          : "h-9 bg-card px-3 py-1"
-                      }
-                    >
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="group hover:bg-muted/60">
-                  {row.getVisibleCells().map((cell) => {
-                    const sticky = cell.column.id === "actions"
+        {orders.length === 0 && emptyState}
+        {orders.length > 0 && <div className="hidden lg:block">
+          <Table containerClassName="max-h-[70vh]" className="text-sm">
+            <TableHeader className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                  {headerGroup.headers.map((header) => {
+                    const sticky = header.column.id === "actions"
                     return (
-                      <TableCell
-                        key={cell.id}
+                      <TableHead
+                        key={header.id}
                         className={
                           sticky
-                            ? "sticky right-0 border-l border-border bg-card h-9 px-3 py-1 align-middle whitespace-nowrap group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]"
-                            : "h-9 px-3 py-1 align-middle whitespace-nowrap"
+                            ? "sticky right-0 z-20 h-9 border-l border-border bg-card px-3 py-1 text-right"
+                            : "h-9 bg-card px-3 py-1"
                         }
                       >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
                     )
                   })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  Bu filtrelere uyan iş emri yok
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} className="group hover:bg-muted/60">
+                    {row.getVisibleCells().map((cell) => {
+                      const sticky = cell.column.id === "actions"
+                      return (
+                        <TableCell
+                          key={cell.id}
+                          className={
+                            sticky
+                              ? "sticky right-0 border-l border-border bg-card h-9 px-3 py-1 align-middle whitespace-nowrap group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]"
+                              : "h-9 px-3 py-1 align-middle whitespace-nowrap"
+                          }
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      )
+                    })}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                    Bu filtrelere uyan iş emri yok
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>}
 
-      <div className="lg:hidden space-y-2.5">
-        {visibleOrders.map((order) => (
-          <div
-            key={order.id}
-            className="rounded-lg border border-border bg-card p-3.5 hover:border-border transition-colors"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Link
-                    href={`/orders/${order.id}`}
-                    className="font-mono text-xs font-medium text-foreground hover:text-primary transition-colors"
-                  >
-                    {order.workOrderNo}
-                  </Link>
-                  {order.vehicle.id ? (
-                    <Link href={`/vehicles/${order.vehicle.id}`}>
-                      <PlateBadge plate={order.vehicle.plate} size="sm" />
+        {orders.length > 0 && <div className="lg:hidden space-y-2.5 p-3">
+          {visibleOrders.map((order) => (
+            <div
+              key={order.id}
+              className="rounded-lg border border-border bg-card p-3.5 hover:border-border transition-colors"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      href={`/orders/${order.id}`}
+                      className="font-mono text-xs font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      {order.workOrderNo}
                     </Link>
+                    {order.vehicle.id ? (
+                      <Link href={`/vehicles/${order.vehicle.id}`}>
+                        <PlateBadge plate={order.vehicle.plate} size="sm" />
+                      </Link>
+                    ) : (
+                      <PlateBadge plate={order.vehicle.plate} size="sm" />
+                    )}
+                  </div>
+                  <Link
+                    href={order.customer.id ? `/customers/${order.customer.id}` : "#"}
+                    className="mt-1.5 text-sm font-semibold text-foreground truncate block hover:text-primary transition-colors"
+                  >
+                    {customerName(order.customer)}
+                  </Link>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {order.vehicle.brand} {order.vehicle.model}
+                  </p>
+                </div>
+                <MobileActionsMenu
+                  viewHref={`/orders/${order.id}`}
+                  editHref={
+                    isOrderLocked(order.status as OrderStatus)
+                      ? undefined
+                      : `/orders/${order.id}?edit=1`
+                  }
+                />
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <StatusBadge status={order.status} />
+                <PaymentText status={order.paymentStatus} />
+                {/* Mobil kartta usta hiç görünmüyordu; rozet hem bilgi hem atama tetikleyicisi. */}
+                <TechnicianAssign
+                  orderId={order.id}
+                  assignedTechnicianId={order.assignedTechnicianId}
+                  assignedTechnicianName={order.assignedTechnicianName}
+                  technicians={technicians}
+                  locked={isOrderLocked(order.status as OrderStatus)}
+                  size="sm"
+                />
+              </div>
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Fatura</span>
+                <InvoiceCell invoiceNo={order.invoiceNo} missing={order.invoiceMissing} />
+              </div>
+              <div className="mt-3 flex items-center justify-between text-xs">
+                <div className="text-muted-foreground">
+                  {order.estimatedDeliveryAt ? (
+                    <>Tahmini: <span className="text-foreground font-medium">{formatDate(order.estimatedDeliveryAt)}</span></>
                   ) : (
-                    <PlateBadge plate={order.vehicle.plate} size="sm" />
+                    <span>Giriş: {formatDate(order.createdAt)}</span>
                   )}
                 </div>
-                <Link
-                  href={order.customer.id ? `/customers/${order.customer.id}` : "#"}
-                  className="mt-1.5 text-sm font-semibold text-foreground truncate block hover:text-primary transition-colors"
-                >
-                  {customerName(order.customer)}
-                </Link>
-                <p className="text-xs text-muted-foreground truncate">
-                  {order.vehicle.brand} {order.vehicle.model}
-                </p>
-              </div>
-              <MobileActionsMenu
-                viewHref={`/orders/${order.id}`}
-                editHref={
-                  isOrderLocked(order.status as OrderStatus)
-                    ? undefined
-                    : `/orders/${order.id}?edit=1`
-                }
-              />
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <StatusBadge status={order.status} />
-              <PaymentText status={order.paymentStatus} />
-              {/* Mobil kartta usta hiç görünmüyordu; rozet hem bilgi hem atama tetikleyicisi. */}
-              <TechnicianAssign
-                orderId={order.id}
-                assignedTechnicianId={order.assignedTechnicianId}
-                assignedTechnicianName={order.assignedTechnicianName}
-                technicians={technicians}
-                locked={isOrderLocked(order.status as OrderStatus)}
-                size="sm"
-              />
-            </div>
-            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-              <span>Fatura</span>
-              <InvoiceCell invoiceNo={order.invoiceNo} missing={order.invoiceMissing} />
-            </div>
-            <div className="mt-3 flex items-center justify-between text-xs">
-              <div className="text-muted-foreground">
-                {order.estimatedDeliveryAt ? (
-                  <>Tahmini: <span className="text-foreground font-medium">{formatDate(order.estimatedDeliveryAt)}</span></>
-                ) : (
-                  <span>Giriş: {formatDate(order.createdAt)}</span>
-                )}
-              </div>
-              <div className="font-semibold text-foreground">
-                {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
+                <div className="font-semibold text-foreground">
+                  {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>}
       </div>
     </div>
   )

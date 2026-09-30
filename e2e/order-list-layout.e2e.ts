@@ -49,3 +49,39 @@ test("order list separates status, payment and dates without wrapping cells", as
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   }
 })
+
+test("technician controls align and the compact page preserves search filters", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/api/auth/dev-login?redirect=/orders")
+  const technicians = page.locator("tbody tr td:nth-child(9)")
+  await expect(technicians.getByRole("button").first()).toBeVisible()
+  const positions = await technicians.evaluateAll((cells) => cells.map((cell) => {
+    const icon = cell.querySelector("svg")!
+    return icon.getBoundingClientRect().left
+  }))
+  expect(positions.length).toBeGreaterThan(1)
+  expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(1)
+  await expect(technicians.filter({ hasText: "Ali Teknisyen" }).locator("span.cursor-default").first()).toBeVisible()
+  const summary = page.getByLabel("İş emri durum özeti")
+  expect((await summary.boundingBox())!.height).toBeLessThanOrEqual(40)
+
+  await page.getByRole("textbox", { name: "İş emri ara", exact: true }).fill("34")
+  await page.getByRole("textbox", { name: "İş emri ara", exact: true }).press("Enter")
+  await expect(page).toHaveURL(/q=34/)
+  await summary.getByRole("link", { name: /^Aktif/ }).click()
+  await expect(page).toHaveURL(/q=34/)
+  await expect(page).toHaveURL(/status=active/)
+  await page.getByRole("link", { name: "Temizle", exact: true }).click()
+  await expect(page).toHaveURL(/\/orders$/)
+  await page.getByRole("textbox", { name: "İş emri ara", exact: true }).fill("no-match-709-qa")
+  await page.getByRole("textbox", { name: "İş emri ara", exact: true }).press("Enter")
+  await expect(page.getByText("Filtrelere uyan iş emri bulunamadı", { exact: true })).toBeVisible()
+  await expect(page.getByText("Bu filtrelere uyan iş emri yok", { exact: true })).toHaveCount(0)
+  await page.getByRole("link", { name: "Filtreleri temizle", exact: true }).click()
+  await expect(page.getByRole("table")).toBeVisible()
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await expect(page.getByRole("textbox", { name: "İş emri ara", exact: true })).toBeVisible()
+  }
+})
