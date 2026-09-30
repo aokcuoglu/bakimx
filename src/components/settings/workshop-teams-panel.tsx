@@ -82,7 +82,7 @@ export function WorkshopTeamsPanel({
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="grid grid-cols-[1fr_6rem_6rem_2.5rem] items-center gap-3 border-b border-border px-3 py-2 text-xs font-medium text-muted-foreground">
+        <div className="hidden grid-cols-[minmax(0,1fr)_6rem_6rem_2.5rem] items-center gap-3 border-b border-border px-3 py-2 text-xs font-medium text-muted-foreground sm:grid">
           <span className="inline-flex items-center gap-1.5"><Users className="size-3.5" /> Ekip</span>
           <span>Üye</span>
           <span>Kullanım</span>
@@ -93,7 +93,7 @@ export function WorkshopTeamsPanel({
         ) : visible.map((team) => (
           <div
             key={team.id}
-            className="grid grid-cols-[1fr_6rem_6rem_2.5rem] items-center gap-3 border-b border-border px-3 py-2 last:border-b-0 hover:bg-muted/60"
+            className="grid grid-cols-[minmax(0,1fr)_2.5rem] items-center gap-2 border-b border-border px-3 py-3 last:border-b-0 hover:bg-muted/60 sm:grid-cols-[minmax(0,1fr)_6rem_6rem_2.5rem] sm:gap-3 sm:py-2"
           >
             <InstantLink
               href={`/settings/members-and-teams/teams/${team.id}`}
@@ -104,16 +104,18 @@ export function WorkshopTeamsPanel({
               </span>
               <span className="truncate text-sm font-medium text-foreground">{team.name}</span>
             </InstantLink>
-            <InstantLink href={`/settings/members-and-teams/teams/${team.id}/members`} className="text-sm text-foreground">
-              {team.memberCount}
-            </InstantLink>
-            <InstantLink href={`/settings/members-and-teams/teams/${team.id}/usage`} className="text-sm text-foreground">
-              {team.permissions.length}
-            </InstantLink>
+            <div className="col-span-2 flex gap-4 pl-8 sm:contents">
+              <InstantLink href={`/settings/members-and-teams/teams/${team.id}/members`} className="text-xs text-muted-foreground hover:text-foreground sm:text-sm sm:text-foreground">
+                <span className="sm:hidden">Üye: </span>{team.memberCount}
+              </InstantLink>
+              <InstantLink href={`/settings/members-and-teams/teams/${team.id}/usage`} className="text-xs text-muted-foreground hover:text-foreground sm:text-sm sm:text-foreground">
+                <span className="sm:hidden">Kullanım: </span>{team.permissions.length}
+              </InstantLink>
+            </div>
             {canManage ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="ghost" size="icon" className="size-7" aria-label="Ekip işlemleri">
+                  <Button type="button" variant="ghost" size="icon" className="col-start-2 row-start-1 size-7 sm:col-auto sm:row-auto" aria-label="Ekip işlemleri">
                     <MoreHorizontal className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
