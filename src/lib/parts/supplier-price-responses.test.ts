@@ -25,6 +25,14 @@ describe("supplier price endpoint responses", () => {
       .resolves.toBeUndefined()
   })
 
+  test("accepts an idempotent purchase replay after operator confirmation or shipment", async () => {
+    for (const partnerStatus of ["CONFIRMED", "SHIPPED"] as const) {
+      await expect(readPurchaseResponse(Response.json({ procurement: {
+        id: "local-1", externalOrderId: "remote-1", partnerStatus,
+      } }))).resolves.toBeUndefined()
+    }
+  })
+
   test.each([
     ["offer", () => readOfferResponse(Response.json({ status: "matched", normalizedPartNo: "103803" }))],
     ["quote", () => readQuoteResponse(Response.json({ quote: {} }))],

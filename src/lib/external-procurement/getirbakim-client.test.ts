@@ -14,7 +14,7 @@ describe("GetirBakimClient", () => {
     let request: Request | undefined
     const client = new GetirBakimClient("https://partner.test", "secret", async (input, init) => {
       request = new Request(input, init)
-      return Response.json({ data: { order, replayed: false } }, { status: 201 })
+      return Response.json({ order, replayed: false }, { status: 201 })
     })
     await client.createOrder({ idempotencyKey: "key", selectedOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000, confirmationToken: "opaque-confirmation-token" })
     expect(request!.headers.get("authorization")).toBe("Bearer secret")
@@ -23,17 +23,44 @@ describe("GetirBakimClient", () => {
   })
 
   test("accepts the PR #86 quote shape and preserves its opaque confirmation token", async () => {
-    const client = new GetirBakimClient("https://partner.test", "secret", async () => Response.json({ data: { quote: {
+    const client = new GetirBakimClient("https://partner.test", "secret", async () => Response.json({ quote: {
       selectedOfferId: "offer_1", quantity: 1, bindingNetKurus: 1000, bindingVatKurus: 200,
       bindingGrossKurus: 1200, unitNetKurus: 1000, currency: "TRY", policyVersion: "opaque-v1",
       expiresAt: "2026-08-21T21:00:00.000Z", confirmationToken: "opaque-confirmation-token",
-    } } }))
+    } }))
     await expect(client.quoteOrder("offer_1", 1)).resolves.toMatchObject({ confirmationToken: "opaque-confirmation-token" })
   })
 
   test("fails closed on confidential or malformed provider responses", async () => {
-    const client = new GetirBakimClient("https://partner.test", "secret", async () => Response.json({ data: { ...order, supplierCost: 1 } }))
+    const client = new GetirBakimClient("https://partner.test", "secret", async () => Response.json({ order: { ...order, supplierCost: 1 } }))
     await expect(client.getOrder("remote-1")).rejects.toBeInstanceOf(ProcurementProviderError)
+  })
+
+  test("reads direct order responses and top-level error details", async () => {
+    const read = new GetirBakimClient("https://partner.test", "order-secret", async () => Response.json({ order }))
+    await expect(read.getOrder("remote-1")).resolves.toEqual(order)
+    await expect(read.cancelOrder("remote-1")).resolves.toEqual(order)
+    const rejected = new GetirBakimClient("https://partner.test", "order-secret", async () => Response.json({
+      error: { code: "PRICE_CHANGED", message: "Confirm new price" },
+      details: { bindingNetKurus: 1200, currency: "TRY" }, requestId: "req-1",
+    }, { status: 409 }))
+    const error = await rejected.createOrder({ idempotencyKey: "key", selectedOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000, confirmationToken: "token" }).catch((caught) => caught)
+    expect(error).toMatchObject({ code: "PRICE_CHANGED", status: 409, details: { bindingNetKurus: 1200, currency: "TRY" } })
+  })
+
+  test("reconciles a timed-out create by the same key and treats only ORDER_NOT_FOUND as absent", async () => {
+    let requestedPath = ""
+    const found = new GetirBakimClient("https://partner.test", "order-secret", async (input) => {
+      requestedPath = new URL(input).pathname
+      return Response.json({ order })
+    })
+    await expect(found.getOrderByIdempotencyKey("attempt/1")).resolves.toEqual(order)
+    expect(requestedPath).toBe("/api/partner/v1/orders/by-key/attempt%2F1")
+
+    const missing = new GetirBakimClient("https://partner.test", "order-secret", async () => Response.json({
+      error: { code: "ORDER_NOT_FOUND", message: "Order not found" }, requestId: "req-2",
+    }, { status: 404 }))
+    await expect(missing.getOrderByIdempotencyKey("attempt-2")).resolves.toBeNull()
   })
 
   test.each([

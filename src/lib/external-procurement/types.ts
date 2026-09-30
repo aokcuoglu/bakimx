@@ -39,7 +39,7 @@ export interface CreateProcurementOrder {
 }
 
 export const RECONFIRMATION_REQUIRED_CODES = new Set([
-  "PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED",
+  "PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED", "OFFER_EXPIRED",
 ])
 
 export function requiresProcurementReconfirmation(code: string): boolean {
@@ -64,6 +64,7 @@ export interface ProcurementProviderClient {
   createOrder(input: CreateProcurementOrder): Promise<{ order: ProcurementOrder; replayed: boolean }>
   quoteOrder(selectedOfferId: string, quantity: number): Promise<ProcurementQuote>
   getOrder(id: string): Promise<ProcurementOrder>
+  getOrderByIdempotencyKey(key: string): Promise<ProcurementOrder | null>
   cancelOrder(id: string): Promise<ProcurementOrder>
 }
 
