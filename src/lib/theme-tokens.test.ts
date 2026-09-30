@@ -450,7 +450,6 @@ const OPACITY_EXCEPTIONS: OpacityException[] = [
   { file: "app/(app)/cashbox/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "app/(app)/cashbox/payments/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "app/(app)/customers/balances/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
-  { file: "app/(app)/orders/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "app/(app)/purchases/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "app/(app)/quotes/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "components/appointments/calendar-view.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
