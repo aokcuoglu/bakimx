@@ -57,9 +57,22 @@ export class GetirBakimClient implements ProcurementProviderClient {
     return result.quote
   }
 
-  getOrder(id: string) { return this.request(`/api/partner/v1/orders/${encodeURIComponent(id)}`, procurementOrderSchema) }
-  cancelOrder(id: string) {
-    return this.request(`/api/partner/v1/orders/${encodeURIComponent(id)}`, procurementOrderSchema, { method: "DELETE" })
+  async getOrder(id: string) {
+    const result = await this.request(`/api/partner/v1/orders/${encodeURIComponent(id)}`, z.object({ order: procurementOrderSchema }).strict())
+    return result.order
+  }
+  async getOrderByIdempotencyKey(key: string) {
+    try {
+      const result = await this.request(`/api/partner/v1/orders/by-key/${encodeURIComponent(key)}`, z.object({ order: procurementOrderSchema }).strict())
+      return result.order
+    } catch (error) {
+      if (error instanceof ProcurementProviderError && error.status === 404 && error.code === "ORDER_NOT_FOUND") return null
+      throw error
+    }
+  }
+  async cancelOrder(id: string) {
+    const result = await this.request(`/api/partner/v1/orders/${encodeURIComponent(id)}`, z.object({ order: procurementOrderSchema }).strict(), { method: "DELETE" })
+    return result.order
   }
 
   private async request<T extends z.ZodType>(path: string, schema: T, init: RequestInit = {}): Promise<z.infer<T>> {
@@ -74,17 +87,19 @@ export class GetirBakimClient implements ProcurementProviderClient {
     }
     const body: unknown = await response.json().catch(() => null)
     if (!response.ok) {
-      const error = z.object({ error: z.object({ code: z.string(), message: z.string(), details: z.record(z.string(), z.unknown()).optional() }) }).safeParse(body)
+      const error = z.object({
+        error: z.object({ code: z.string(), message: z.string() }),
+        details: z.record(z.string(), z.unknown()).optional(),
+      }).safeParse(body)
       throw new ProcurementProviderError(
         error.success ? error.data.error.code : "PROVIDER_ERROR",
         error.success ? error.data.error.message : "Procurement provider rejected the request.",
         response.status === 429 || response.status >= 500, response.status,
-        error.success ? error.data.error.details : undefined,
+        error.success ? error.data.details : undefined,
       )
     }
-    const envelope = z.object({ data: z.unknown() }).safeParse(body)
-    const parsed = envelope.success ? schema.safeParse(envelope.data.data) : null
-    if (!parsed?.success) throw new ProcurementProviderError("INVALID_PROVIDER_RESPONSE", "Invalid provider response.", false)
+    const parsed = schema.safeParse(body)
+    if (!parsed.success) throw new ProcurementProviderError("INVALID_PROVIDER_RESPONSE", "Invalid provider response.", false)
     return parsed.data
   }
 }

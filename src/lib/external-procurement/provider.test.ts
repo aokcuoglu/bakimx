@@ -6,6 +6,7 @@ const productionHttp = {
   GETIRBAKIM_PROVIDER: "http",
   GETIRBAKIM_API_URL: "https://getirbakim.example",
   GETIRBAKIM_API_KEY: "test-api-key",
+  GETIRBAKIM_ORDER_API_KEY: "order-api-key",
 }
 
 describe("resolveProcurementProviderConfig", () => {
@@ -17,7 +18,7 @@ describe("resolveProcurementProviderConfig", () => {
     expect(resolveProcurementProviderConfig(productionHttp)).toEqual({
       name: "http",
       baseUrl: "https://getirbakim.example",
-      apiKey: "test-api-key",
+      apiKey: "order-api-key",
     })
   })
 
@@ -38,8 +39,12 @@ describe("resolveProcurementProviderConfig", () => {
   test("production'da eksik API key ile mock'a düşmez", () => {
     expect(() => resolveProcurementProviderConfig({
       ...productionHttp,
-      GETIRBAKIM_API_KEY: undefined,
+      GETIRBAKIM_ORDER_API_KEY: undefined,
     })).toThrow(/configuration is unavailable/)
+  })
+
+  test("catalog-only key cannot enable orders", () => {
+    expect(() => resolveProcurementProviderConfig({ ...productionHttp, GETIRBAKIM_ORDER_API_KEY: undefined })).toThrow(/configuration is unavailable/)
   })
 
   test("production'da eksik URL ile mock'a düşmez", () => {
