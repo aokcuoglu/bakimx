@@ -23,6 +23,8 @@ type FilterSelectProps = {
    * düğmesine basmaya gerek kalmaz). Varsayılan kapalı: bileşen beş sayfada
    * paylaşılıyor, davranış değişikliği yalnız açıkça isteyen sayfaya girsin.
    */
+  /** Size the menu to its labels; keep filter options on one line. */
+  singleLine?: boolean
   autoSubmit?: boolean
 }
 
@@ -34,6 +36,7 @@ export function FilterSelect({
   options,
   className,
   autoSubmit = false,
+  singleLine = false,
 }: FilterSelectProps) {
   const [value, setValue] = useState(defaultValue)
   const hiddenRef = useRef<HTMLInputElement>(null)
@@ -61,9 +64,9 @@ export function FilterSelect({
         <SelectTrigger className={className} aria-label={ariaLabel ?? placeholder ?? name}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className={singleLine ? "w-max min-w-(--radix-select-trigger-width) max-w-(--radix-select-content-available-width)" : undefined}>
           {options.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
+            <SelectItem key={opt.value} value={opt.value} className={singleLine ? "min-w-0 whitespace-nowrap [&>span:last-child]:min-w-0 [&>span:last-child]:truncate [&>span:last-child]:block" : undefined}>
               {opt.label}
             </SelectItem>
           ))}

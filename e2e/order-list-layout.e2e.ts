@@ -85,3 +85,25 @@ test("technician controls align and the compact page preserves search filters", 
     await expect(page.getByRole("textbox", { name: "İş emri ara", exact: true })).toBeVisible()
   }
 })
+
+test("filter options stay on one line and menus fit the viewport", async ({ page }) => {
+  await page.goto("/api/auth/dev-login?redirect=/orders")
+  for (const width of [320, 390, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    for (const name of ["Tüm Durumlar", "Tüm Ödemeler", "Tüm Ustalar", "Tüm Faturalar"]) {
+      await page.getByRole("combobox", { name, exact: true }).click()
+      const menu = page.getByRole("listbox")
+      await expect(menu).toBeVisible()
+      const box = (await menu.boundingBox())!
+      expect(box.x).toBeGreaterThanOrEqual(0)
+      expect(box.x + box.width).toBeLessThanOrEqual(width)
+      const options = page.getByRole("option")
+      for (const option of await options.all()) {
+        await expect(option).toHaveCSS("white-space", "nowrap")
+        expect((await option.boundingBox())!.height).toBeLessThanOrEqual(32)
+      }
+      await page.keyboard.press("Escape")
+      await expect(page.getByRole("combobox", { name, exact: true })).toBeFocused()
+    }
+  }
+})
