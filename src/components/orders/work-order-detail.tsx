@@ -6,6 +6,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -1053,15 +1054,20 @@ export function WorkOrderDetail({
               <CardTitle className="text-base flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Şikayet & Notlar</span>
                 {!editingInfo && canOpenInfoEditor && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    onClick={startEditInfo}
-                    className="gap-1.5 px-2 text-primary"
-                  >
-                    <Pencil className="size-3.5" /> Düzenle
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Şikayet ve notları düzenle"
+                        onClick={startEditInfo}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Şikayet ve notları düzenle</TooltipContent>
+                  </Tooltip>
                 )}
               </CardTitle>
             </CardHeader>

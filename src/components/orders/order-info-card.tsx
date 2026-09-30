@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -254,15 +255,20 @@ export function OrderInfoCard({
                   <span className="flex items-center gap-2">
                     <span className="font-mono text-xs text-foreground">{order.invoiceNo || "—"}</span>
                     {invoiceEditable && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="xs"
-                        onClick={startEditInvoice}
-                        className="gap-1 px-1.5 text-primary"
-                      >
-                        <Pencil className="size-3" /> Düzenle
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Fatura bilgilerini düzenle"
+                            onClick={startEditInvoice}
+                          >
+                            <Pencil className="size-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Fatura bilgilerini düzenle</TooltipContent>
+                      </Tooltip>
                     )}
                   </span>
                 </div>
