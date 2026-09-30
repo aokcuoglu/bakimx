@@ -90,10 +90,6 @@ export function OrderInfoCard({
 
   const [changingStatus, setChangingStatus] = useState(false)
   const [changingReason, setChangingReason] = useState(false)
-  const [editingStatus, setEditingStatus] = useState(false)
-  const [statusDraft, setStatusDraft] = useState(order.status)
-  const [editingReason, setEditingReason] = useState(false)
-  const [reasonDraft, setReasonDraft] = useState(order.arrivalReason ?? "")
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false)
   const statusOptions = orderStatusOptions(order.status as OrderStatus)
 
@@ -129,7 +125,6 @@ export function OrderInfoCard({
     // içeriğinin altında; mobilde hiçbir şey olmamış gibi görünmesin diye
     // kullanıcıya nereye bakacağını söylüyoruz.
     if (next === "delivered") {
-      setEditingStatus(false)
       onRequestDelivery?.()
       toast.info("Teslim onay kodu paneli sayfanın üstünde açıldı")
       return
@@ -138,11 +133,10 @@ export function OrderInfoCard({
     // haritası da (NEXT_STATUSES) bu üç durumdan doğrudan iptali esirger.
     // Tek dokunuşla yazmak yerine onay iste; POST yalnız onaylanınca gider.
     if (next === "cancelled") {
-      setEditingStatus(false)
       setConfirmCancelOpen(true)
       return
     }
-    if (await postStatusChange(next)) setEditingStatus(false)
+    await postStatusChange(next)
   }
 
   async function handleConfirmCancel() {
@@ -161,7 +155,6 @@ export function OrderInfoCard({
       })
       const data = await res.json()
       if (data.success) {
-        setEditingReason(false)
         router.refresh()
       }
       else toast.error(data.error || "Geliş nedeni güncellenemedi")
@@ -255,23 +248,29 @@ export function OrderInfoCard({
             />
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">Durum</span>
-              <Button variant="ghost" size="sm" disabled={changingStatus || statusOptions.length <= 1}
-                aria-label="Durumu düzenle"
-                onClick={() => { setStatusDraft(order.status); setEditingStatus(true) }}>
-                {ORDER_STATUS[order.status as OrderStatusKey]?.label ?? order.status}
-                {statusOptions.length > 1 && <Pencil className="size-3.5" />}
-              </Button>
+              <Select value={order.status} onValueChange={handleStatusSelect} disabled={changingStatus || statusOptions.length <= 1}>
+                <SelectTrigger className="w-[170px]" aria-label="Durum"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((s) => (
+                    <SelectItem key={s} value={s} disabled={(s === "delivered" && deliveryBlocked) || (s === "ready_for_delivery" && partsDecisionBlocked)}>
+                      {ORDER_STATUS[s as OrderStatusKey]?.label ?? s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">Servise Geliş Nedeni</span>
               {locked ? (
                 <span className="text-sm text-foreground">{arrivalReasonLabel(order.arrivalReason)}</span>
               ) : (
-                <Button variant="ghost" size="sm" disabled={changingReason}
-                  aria-label="Servise geliş nedenini düzenle"
-                  onClick={() => { setReasonDraft(order.arrivalReason ?? ""); setEditingReason(true) }}>
-                  {arrivalReasonLabel(order.arrivalReason)} <Pencil className="size-3.5" />
-                </Button>
+                <Select value={order.arrivalReason ?? ""} onValueChange={handleReasonSelect} disabled={changingReason}>
+                  <SelectTrigger className="w-[170px]" aria-label="Servise geliş nedeni"><SelectValue placeholder="Belirtilmedi" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Belirtilmedi</SelectItem>
+                    {ARRIVAL_REASON_ORDER.map((r) => <SelectItem key={r} value={r}>{ARRIVAL_REASONS[r].label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               )}
             </div>
           </div>
@@ -301,30 +300,6 @@ export function OrderInfoCard({
               {savingInvoice ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={editingStatus} onOpenChange={(open) => { if (!changingStatus) setEditingStatus(open) }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Durumu düzenle</DialogTitle><DialogDescription>İş emrinin yeni durumunu seçin.</DialogDescription></DialogHeader>
-          <Select value={statusDraft} onValueChange={setStatusDraft} disabled={changingStatus}>
-            <SelectTrigger aria-label="Yeni durum"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((s) => <SelectItem key={s} value={s} disabled={(s === "delivered" && deliveryBlocked) || (s === "ready_for_delivery" && partsDecisionBlocked)}>{ORDER_STATUS[s as OrderStatusKey]?.label ?? s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <DialogFooter><Button variant="outline" onClick={() => setEditingStatus(false)} disabled={changingStatus}>İptal</Button><Button variant="foreground" onClick={() => handleStatusSelect(statusDraft)} disabled={changingStatus || statusDraft === order.status}>Kaydet</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={editingReason} onOpenChange={(open) => { if (!changingReason) setEditingReason(open) }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Servise geliş nedenini düzenle</DialogTitle><DialogDescription>İş emrinin servise geliş nedenini seçin.</DialogDescription></DialogHeader>
-          <Select value={reasonDraft} onValueChange={setReasonDraft} disabled={changingReason}>
-            <SelectTrigger aria-label="Servise geliş nedeni"><SelectValue placeholder="Belirtilmedi" /></SelectTrigger>
-            <SelectContent><SelectItem value="">Belirtilmedi</SelectItem>{ARRIVAL_REASON_ORDER.map((r) => <SelectItem key={r} value={r}>{ARRIVAL_REASONS[r].label}</SelectItem>)}</SelectContent>
-          </Select>
-          <DialogFooter><Button variant="outline" onClick={() => setEditingReason(false)} disabled={changingReason}>İptal</Button><Button variant="foreground" onClick={() => handleReasonSelect(reasonDraft)} disabled={changingReason || reasonDraft === (order.arrivalReason ?? "")}>Kaydet</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
