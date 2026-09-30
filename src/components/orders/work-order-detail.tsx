@@ -30,7 +30,6 @@ import {
   Info,
   Upload,
   Loader2,
-  BarChart3,
   Link as LinkIcon,
   Eye,
   EyeOff,
@@ -1166,10 +1165,10 @@ export function WorkOrderDetail({
             </CardContent>
           </Card>
 
-          {/* Özet & Kanıt */}
+          {/* Kabul kanıtları */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2"><BarChart3 className="size-4" /> Özet & Kanıt</CardTitle>
+              <CardTitle className="text-base">Kabul kanıtları</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <IntakeEvidenceSummary
