@@ -1726,12 +1726,16 @@ function ProcurementBadge({ procurement }: { procurement?: OrderItem["externalPr
   const router = useRouter()
   const [cancelling, setCancelling] = useState(false)
   if (!procurement) return null
-  const label = procurement.cancellationRequestedAt
-    ? "İptal talebi iletildi"
-    : procurement.status === "REQUESTED"
+  const label = procurement.status === "REQUESTED"
       ? "Tedarik bekleniyor"
+      : procurement.status === "INITIATING"
+        ? "Talep iletiliyor"
       : procurement.status === "CONFIRMED"
-        ? "Tedarik onaylandı"
+        ? procurement.cancellationRequestedAt ? "İptal talebi iletildi" : "Tedarik onaylandı"
+        : procurement.status === "REJECTED"
+          ? "Tedarik reddedildi"
+          : procurement.status === "RESERVATION_EXPIRED"
+            ? "Talep süresi doldu"
         : procurement.status === "SHIPPED"
           ? "Sevkiyatta"
           : procurement.status === "COMPLETED"
@@ -1949,6 +1953,7 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail }: {
           orderId={orderId}
           orderItemId={row.id}
           quantity={row.quantity}
+          procurementExists={!!row.externalProcurement}
         />
       )}
 

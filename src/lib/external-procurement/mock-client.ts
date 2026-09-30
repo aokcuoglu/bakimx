@@ -38,6 +38,10 @@ export class MockProcurementClient implements ProcurementProviderClient {
     return { order, replayed: false }
   }
   async getOrder(id: string) { return this.required(id) }
+  async getOrderByIdempotencyKey(key: string) {
+    const id = this.idempotency.get(key)
+    return id ? this.required(id) : null
+  }
   async cancelOrder(id: string) {
     const order = this.required(id)
     const updated = { ...order, status: "CANCELLED" as const, version: order.version + 1, updatedAt: new Date().toISOString() }

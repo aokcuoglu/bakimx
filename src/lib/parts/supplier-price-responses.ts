@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { readJsonObject } from "@/lib/http/json-response"
+import { PROCUREMENT_STATUSES } from "@/lib/external-procurement/types"
 
 const errorResponseSchema = z.object({
   error: z.string().min(1).optional(),
@@ -51,7 +52,7 @@ export const quoteResponseSchema = z.object({ quote: quoteSchema })
 export const purchaseResponseSchema = z.object({ procurement: z.object({
   id: z.string().min(1),
   externalOrderId: z.string().min(1),
-  partnerStatus: z.literal("REQUESTED"),
+  partnerStatus: z.enum(PROCUREMENT_STATUSES),
 }) })
 
 export type OfferResponse = z.infer<typeof offerResponseSchema>
