@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useMemo, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { MoreHorizontal, Plus, Search, Settings2, Users } from "lucide-react"
@@ -42,6 +42,7 @@ export function WorkshopTeamsPanel({
   const [query, setQuery] = useState("")
   const [open, setOpen] = useState(false)
   const [pending, start] = useTransition()
+  const createButtonRef = useRef<HTMLButtonElement>(null)
   const form = useForm<z.infer<typeof createWorkshopTeamSchema>>({
     resolver: zodResolver(createWorkshopTeamSchema),
     defaultValues: { name: "", description: "" },
@@ -80,7 +81,7 @@ export function WorkshopTeamsPanel({
           />
         </div>
         {canManage ? (
-          <Button type="button" variant="foreground" size="toolbar" onClick={() => setOpen(true)}>
+          <Button ref={createButtonRef} type="button" variant="foreground" size="toolbar" onClick={() => setOpen(true)}>
             <Plus className="size-4" />
             Yeni ekip
           </Button>
@@ -152,7 +153,14 @@ export function WorkshopTeamsPanel({
         setOpen(nextOpen)
         if (!nextOpen) form.reset()
       }}>
-        <DialogContent overlayClassName="bg-foreground/25" className="gap-0 p-0 sm:top-[calc(15vh-0.375rem)] sm:max-w-[700px] sm:translate-y-0">
+        <DialogContent
+          overlayClassName="bg-foreground/25"
+          className="gap-0 p-0 sm:top-[calc(15vh-0.375rem)] sm:max-w-[700px] sm:translate-y-0"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault()
+            createButtonRef.current?.focus()
+          }}
+        >
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(create)}
@@ -192,7 +200,7 @@ export function WorkshopTeamsPanel({
                   Vazgeç <kbd aria-hidden="true" className="ml-1 rounded border border-border px-1 text-[10px] font-normal leading-4 text-muted-foreground">Esc</kbd>
                 </Button>
                 <Button type="submit" variant="foreground" disabled={pending}>
-                  Oluştur <span aria-hidden="true" className="ml-1 flex gap-0.5 text-xs font-normal text-primary-foreground/80"><kbd className="rounded border border-primary-foreground/20 px-1 leading-4">⌘</kbd><kbd className="rounded border border-primary-foreground/20 px-1 leading-4">↵</kbd></span>
+                  Oluştur <span aria-hidden="true" className="ml-1 flex gap-0.5 text-xs font-normal text-primary-foreground"><kbd className="rounded border border-primary-foreground/20 px-1 leading-4">⌘</kbd><kbd className="rounded border border-primary-foreground/20 px-1 leading-4">↵</kbd></span>
                 </Button>
               </DialogFooter>
             </form>
