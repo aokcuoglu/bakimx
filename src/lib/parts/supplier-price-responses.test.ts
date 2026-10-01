@@ -17,6 +17,13 @@ const quote = {
 }
 
 describe("supplier price endpoint responses", () => {
+  test("distinguishes an unconfigured catalog from a real no-match response", async () => {
+    await expect(readOfferResponse(Response.json({ status: "not_configured", normalizedPartNo: "CU29007" })))
+      .resolves.toEqual({ status: "not_configured", normalizedPartNo: "CU29007" })
+    await expect(readOfferResponse(Response.json({ status: "no_match", normalizedPartNo: "CU29007" })))
+      .resolves.toEqual({ status: "no_match", normalizedPartNo: "CU29007" })
+  })
+
   test("preserves valid offer, quote and purchase success contracts", async () => {
     await expect(readOfferResponse(Response.json({ status: "matched", normalizedPartNo: "103803", products: [product] })))
       .resolves.toEqual({ status: "matched", normalizedPartNo: "103803", products: [product] })

@@ -27,7 +27,7 @@ const productSchema = z.object({
 
 export const offerResponseSchema = z.discriminatedUnion("status", [
   z.object({ status: z.enum(["matched", "no_offers"]), normalizedPartNo: z.string(), products: z.array(productSchema) }),
-  z.object({ status: z.enum(["no_match", "upstream_error"]), normalizedPartNo: z.string() }),
+  z.object({ status: z.enum(["no_match", "not_configured", "upstream_error"]), normalizedPartNo: z.string() }),
 ]).superRefine((result, context) => {
   if (result.status === "matched" && !result.products.some((product) => product.offers.length > 0)) {
     context.addIssue({ code: "custom", message: "Matched responses require an offer." })
