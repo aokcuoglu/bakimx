@@ -1,4 +1,4 @@
-import Link from "next/link"
+import { HighlightCard } from "@/components/shared/highlight-card"
 import type { OperationsHealth } from "@/lib/analytics/queries"
 import { Wrench, Clock, MessageCircle, AlertTriangle, Wallet } from "lucide-react"
 
@@ -19,10 +19,10 @@ export function HealthScoreCard({ health }: { health: OperationsHealth }) {
   const offset = circumference - (health.healthScore / 100) * circumference
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5 sm:p-6">
-      <div className="flex flex-col sm:flex-row items-center gap-5">
-        <div className="relative size-32 shrink-0">
-          <svg className="size-32 -rotate-90" viewBox="0 0 100 100">
+    <div className="min-w-0 rounded-xl border border-border bg-card p-5 sm:p-6">
+      <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="relative size-20 shrink-0">
+          <svg className="size-20 -rotate-90" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="45" fill="none" className="stroke-border" strokeWidth="8" />
             <circle
               cx="50"
@@ -37,14 +37,14 @@ export function HealthScoreCard({ health }: { health: OperationsHealth }) {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-bold text-foreground">
+            <span className="text-xl font-semibold text-foreground">
               {health.healthScore}
             </span>
             <span className="text-xs text-muted-foreground">{scoreLabel(health.healthScore)}</span>
           </div>
         </div>
-        <div className="flex-1 text-center sm:text-left">
-          <h3 className="text-lg font-bold text-foreground">Operasyon Sağlık Skoru</h3>
+        <div className="min-w-0 flex-1 text-center sm:text-left">
+          <h3 className="text-sm font-medium text-foreground">Operasyon Sağlık Skoru</h3>
           <p className="text-sm text-muted-foreground mt-1">
             Geciken iş emirleri, kritik stok ve ödenmemiş iş emirleri baz alınarak hesaplanır.
           </p>
@@ -75,47 +75,27 @@ interface MetricCardProps {
   value: number | string
   icon: React.ComponentType<{ className?: string }>
   href: string
-  accent: string
-  accentBg: string
   subtitle?: string
 }
 
-function MetricCard({ label, value, icon: Icon, href, accent, accentBg, subtitle }: MetricCardProps) {
-  return (
-    <Link
-      href={href}
-      className="rounded-lg border border-border bg-card p-4 hover:shadow-sm hover:border-border transition-all group"
-    >
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <div className={`size-8 rounded-lg ${accentBg} flex items-center justify-center`}>
-          <Icon className={`size-3.5 ${accent}`} />
-        </div>
-      </div>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
-      {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
-    </Link>
-  )
+function MetricCard({ label, value, icon: Icon, href, subtitle }: MetricCardProps) {
+  return <HighlightCard label={label} value={value} accessory={<Icon />} description={subtitle} href={href} />
 }
 
 export function HealthMetricCards({ health }: { health: OperationsHealth }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-1 min-[390px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
       <MetricCard
         label="Aktif İş Emri"
         value={health.activeJobs}
         icon={Wrench}
         href="/orders"
-        accent="text-primary"
-        accentBg="bg-primary/10"
       />
       <MetricCard
         label="Geciken İş Emri"
         value={health.delayedJobs}
         icon={Clock}
         href="/analytics"
-        accent="text-destructive-strong"
-        accentBg="bg-destructive/10"
         subtitle={health.delayedJobs > 0 ? "Teslim tarihi geçti" : undefined}
       />
       <MetricCard
@@ -123,24 +103,18 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         value={health.waitingApprovals}
         icon={MessageCircle}
         href="/orders?status=waiting_approval"
-        accent="text-warning-strong"
-        accentBg="bg-warning/10"
       />
       <MetricCard
         label="Kritik Stok"
         value={health.criticalStock}
         icon={AlertTriangle}
         href="/parts"
-        accent="text-warning-strong"
-        accentBg="bg-warning/10"
       />
       <MetricCard
         label="Açık Alacak"
         value={health.unpaidWorkOrders}
         icon={Wallet}
         href="/reports/collections"
-        accent="text-destructive-strong"
-        accentBg="bg-destructive/10"
         subtitle={health.openReceivables > 0 ? "Ödenmemiş iş emri" : undefined}
       />
     </div>

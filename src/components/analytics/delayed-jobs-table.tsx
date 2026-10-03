@@ -1,3 +1,4 @@
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import type { DelayedJobRow } from "@/lib/analytics/queries"
 import Link from "next/link"
 import { formatTRY } from "@/lib/format"
@@ -19,42 +20,42 @@ function statusBadge(status: string): { label: string; color: string } | null {
 export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
   if (jobs.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-card p-8 text-center">
+      <div className="min-w-0 rounded-xl border border-border bg-card p-8 text-center">
         <div className="inline-flex size-12 items-center justify-center rounded-full bg-success/10 text-success-strong mb-3">
           <Clock className="size-6" />
         </div>
-        <h3 className="text-base font-semibold text-foreground">Geciken İş Emri Yok</h3>
+        <h3 className="text-sm font-medium text-foreground">Geciken İş Emri Yok</h3>
         <p className="text-sm text-muted-foreground mt-1">Tüm iş emirleri planlanan sürede.</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card overflow-hidden">
-      <div className="px-4 sm:px-6 py-4 border-b border-border">
+    <div className="min-w-0 rounded-xl border border-border bg-card overflow-hidden">
+      <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-foreground">Geciken İş Emirleri</h3>
+          <h3 className="text-sm font-medium text-foreground">Geciken İş Emirleri</h3>
           <span className="text-sm text-destructive-strong font-medium">{jobs.length} geciken</span>
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/50">
-              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">İş Emri</th>
-              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Gecikme</th>
-              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">Müşteri</th>
-              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Araç</th>
-              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden lg:table-cell">Teknisyen</th>
-              <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Tutar</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="min-w-0">
+        <Table aria-label="Geciken İş Emirleri">
+          <TableHeader>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="px-4 text-xs text-muted-foreground">İş Emri</TableHead>
+              <TableHead className="px-4 text-xs text-muted-foreground">Gecikme</TableHead>
+              <TableHead className="px-4 text-xs text-muted-foreground hidden sm:table-cell">Müşteri</TableHead>
+              <TableHead className="px-4 text-xs text-muted-foreground hidden md:table-cell">Araç</TableHead>
+              <TableHead className="px-4 text-xs text-muted-foreground hidden lg:table-cell">Teknisyen</TableHead>
+              <TableHead className="px-4 text-right text-xs text-muted-foreground">Tutar</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {jobs.map((job) => {
               const badge = statusBadge(job.status)
               return (
-                <tr key={job.id} className="border-b border-border hover:bg-muted/50">
-                  <td className="px-4 py-3">
+                <TableRow key={job.id}>
+                  <TableCell className="px-4 py-2">
                     <Link href={`/orders/${job.id}`} className="font-medium text-primary hover:underline">
                       {job.workOrderNo}
                     </Link>
@@ -63,36 +64,36 @@ export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
                         {badge.label}
                       </span>
                     )}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="px-4 py-2">
                     <span className="inline-flex items-center gap-1 text-destructive-strong font-medium">
                       <Clock className="size-3.5" />
                       {daysLabel(job.daysDelayed)}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 hidden sm:table-cell">
+                  </TableCell>
+                  <TableCell className="px-4 py-2 hidden sm:table-cell">
                     <span className="flex items-center gap-1.5 text-foreground">
                       <User className="size-3.5 text-muted-foreground" />
                       {job.customerName}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
+                  </TableCell>
+                  <TableCell className="px-4 py-2 hidden md:table-cell">
                     <span className="flex items-center gap-1.5 text-foreground">
                       <Car className="size-3.5 text-muted-foreground" />
                       {job.plate}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="px-4 py-2 hidden lg:table-cell text-muted-foreground">
                     {job.technicianName || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right font-medium text-foreground">
+                  </TableCell>
+                  <TableCell className="px-4 py-2 text-right font-medium text-foreground">
                     {job.total > 0 ? formatTRY(job.total) : "—"}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   )
