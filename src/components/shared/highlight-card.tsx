@@ -33,12 +33,12 @@ export function HighlightCard({
       )}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
-        <span className="text-xs leading-4 font-medium text-muted-foreground">{label}</span>
+        <span data-slot="highlight-label" className="text-xs leading-4 font-medium text-muted-foreground">{label}</span>
         {accessory && <span className="shrink-0 text-muted-foreground [&_svg]:size-4">{accessory}</span>}
       </div>
       <div className="mt-auto min-w-0">
-        <div className="text-sm leading-5 font-medium tabular-nums text-foreground wrap-anywhere">{value}</div>
-        {description && <p className="mt-1 text-xs leading-4 text-muted-foreground">{description}</p>}
+        <div data-slot="highlight-value" className="text-sm leading-5 font-medium tabular-nums text-foreground wrap-anywhere">{value}</div>
+        {description && <p data-slot="highlight-description" className="mt-1 text-xs leading-4 text-muted-foreground">{description}</p>}
       </div>
     </Card>
   )
