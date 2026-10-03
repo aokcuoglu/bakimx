@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Wallet, ArrowRight, AlertTriangle } from "lucide-react"
+import { ArrowRight, AlertTriangle } from "lucide-react"
 import { formatTRY } from "@/lib/format"
 
 export type CashWidgetData = {
@@ -11,10 +11,9 @@ export type CashWidgetData = {
 
 export function CashWidget({ data }: { data: CashWidgetData }) {
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col">
       <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-          <Wallet className="size-4 text-primary" />
           Kasa Özeti
         </h3>
         <Link href="/cashbox" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">
@@ -40,7 +39,7 @@ export function CashWidget({ data }: { data: CashWidgetData }) {
           </div>
         )}
       </div>
-      <div className="flex justify-end border-t border-border px-4 py-2">
+      <div className="mt-auto flex justify-end border-t border-border px-4 py-2">
         <Button variant="secondary" size="sm" asChild>
           <Link href="/cashbox/payments/new">+ Yeni Tahsilat</Link>
         </Button>

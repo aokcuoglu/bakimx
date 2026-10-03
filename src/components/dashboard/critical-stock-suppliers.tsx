@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { Truck } from "lucide-react"
 import type { CriticalSupplierInfo } from "@/lib/suppliers/queries"
 
 export function CriticalStockSuppliersWidget({ suppliers }: { suppliers: CriticalSupplierInfo[] }) {
@@ -9,7 +8,6 @@ export function CriticalStockSuppliersWidget({ suppliers }: { suppliers: Critica
     <div className="rounded-xl border border-primary/20 bg-primary/5 overflow-hidden">
       <div className="px-4 py-3 border-b border-primary/10 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Truck className="size-4 text-primary" />
           <h3 className="text-sm font-semibold text-primary">Kritik Stok Tedarikçileri</h3>
         </div>
         <Link href="/suppliers" className="text-xs text-primary hover:underline font-medium">

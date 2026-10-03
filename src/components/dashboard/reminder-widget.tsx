@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { BellRing, Calendar, Gauge, Plus } from "lucide-react"
+import { Calendar, Gauge, Plus } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ReminderStatusBadge, ReminderTypeBadge } from "@/components/reminders/reminder-status-badge"
 import { PlateBadge } from "@/components/shared/plate-badge"
@@ -27,7 +27,6 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
     <Card size="sm">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 border-b">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-          <BellRing className="size-4 text-muted-foreground" />
           Bakım Hatırlatmaları
           {totalCount > 0 ? (
             <span className="text-xs text-muted-foreground font-normal">({totalCount})</span>

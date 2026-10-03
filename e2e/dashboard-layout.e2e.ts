@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test"
 
 // Read-only local acceptance against the seeded workshop.
-test("dashboard panels fit mobile and desktop without stretching empty lists", async ({ page }) => {
+test("dashboard panels fit mobile and desktop with aligned card heights", async ({ page }) => {
   await page.goto("/api/auth/dev-login?redirect=/dashboard")
   const photos = page.getByRole("region", { name: "Eksik fotoğraflar", exact: true })
   await expect(photos.getByRole("table")).toBeVisible()
@@ -16,6 +16,13 @@ test("dashboard panels fit mobile and desktop without stretching empty lists", a
     const delivery = page.getByRole("region", { name: "Bugün teslim edilecekler", exact: true })
     const box = await delivery.boundingBox()
     expect(box!.height).toBeLessThan(160)
+    const pairedHeights = await page.evaluate(() => {
+      const customer = document.querySelector('section[aria-label="Son müşteriler"]')!.getBoundingClientRect()
+      const technician = document.querySelector('section[aria-label="Usta iş durumu"]')!.getBoundingClientRect()
+      return { sameRow: Math.abs(customer.top - technician.top) < 1, difference: Math.abs(customer.height - technician.height) }
+    })
+    if (pairedHeights.sameRow) expect(pairedHeights.difference).toBeLessThanOrEqual(1)
+    await expect(page.getByRole("region", { name: "Usta iş durumu", exact: true }).getByRole("heading").locator("svg")).toHaveCount(0)
     await firstLink.focus()
     await expect(firstLink).toBeFocused()
     await expect(firstLink).toHaveAttribute("href", /\/orders\/.+/)

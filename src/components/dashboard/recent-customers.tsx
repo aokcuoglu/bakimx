@@ -8,7 +8,7 @@ function formatDate(iso: string): string {
 
 export function RecentCustomers({ customers }: { customers: RecentCustomer[] }) {
   return (
-    <div className="rounded-xl border border-border bg-card">
+    <section aria-label="Son müşteriler" className="min-w-0 overflow-hidden rounded-xl border border-border bg-card">
       <div className="px-4 py-3 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground">Son Müşteriler</h3>
       </div>
@@ -22,9 +22,9 @@ export function RecentCustomers({ customers }: { customers: RecentCustomer[] }) 
             <Link
               key={c.id}
               href={`/customers/${c.id}`}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors"
+              className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
             >
-              <div className="size-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
                 <User className="size-4 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
@@ -39,6 +39,6 @@ export function RecentCustomers({ customers }: { customers: RecentCustomer[] }) 
           ))
         )}
       </div>
-    </div>
+    </section>
   )
 }
