@@ -7,7 +7,7 @@ export function CriticalStockWidget({ items }: { items: CriticalStockItem[] }) {
   if (items.length === 0) return null
 
   return (
-    <div className="rounded-lg border border-destructive/20 bg-destructive/5 overflow-hidden">
+    <div className="rounded-xl border border-destructive/20 bg-destructive/5 overflow-hidden">
       <div className="px-4 py-3 border-b border-destructive/20 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <AlertTriangle className="size-4 text-destructive-strong" />

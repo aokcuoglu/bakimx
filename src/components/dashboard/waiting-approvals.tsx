@@ -2,9 +2,8 @@
 
 import Link from "next/link"
 import type { WaitingApprovalItem } from "@/lib/dashboard/queries"
-import { ExternalLink } from "lucide-react"
 import { PlateBadge } from "@/components/shared/status-badge"
-import { Button } from "@/components/ui/button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useDashboardPage, DashboardPagination } from "@/components/dashboard/dashboard-pagination"
 
 function formatDate(iso: string): string {
@@ -15,46 +14,40 @@ export function WaitingApprovals({ approvals }: { approvals: WaitingApprovalItem
   const { page, pageCount, pageItems, setPage } = useDashboardPage(approvals)
 
   return (
-    <div className="rounded-lg border border-border bg-card">
-      <div className="px-4 py-3 border-b border-border">
+    <section aria-label="Onay bekleyenler" className="min-w-0 overflow-hidden rounded-xl border border-border bg-card">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
         <h3 className="text-sm font-semibold text-foreground">Onay Bekleyenler</h3>
+        <span className="text-xs text-muted-foreground">{approvals.length} kayıt</span>
       </div>
-      <div className="max-h-96 divide-y divide-border overflow-y-auto">
-        {approvals.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-muted-foreground text-center">
-            Onay bekleyen kayıt yok.
-          </p>
-        ) : (
-          pageItems.map((a) => (
-            <div key={a.id} className="px-4 py-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <PlateBadge plate={a.plate} />
-                    <span className="text-xs font-mono text-muted-foreground">{a.workOrderNo}</span>
-                  </div>
-                  <p className="text-sm text-foreground truncate">{a.customerName}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{formatDate(a.createdAt)}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <Button
-                  variant="outline"
-                  size="compact"
-                  className="border-warning/20 bg-warning/10 text-warning-strong hover:bg-warning/20"
-                  asChild
-                >
-                  <Link href={`/orders/${a.id}`}>
-                    <ExternalLink className="size-3" />
-                    İş Emri Detayı
+      {approvals.length === 0 ? (
+        <p className="px-4 py-4 text-sm text-muted-foreground">Onay bekleyen kayıt yok.</p>
+      ) : (
+        <Table className="table-fixed" aria-label="Onay bekleyen iş emirleri">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="h-9 px-4 text-xs">Araç / Müşteri</TableHead>
+              <TableHead className="h-9 w-28 px-4 text-right text-xs">İş emri / Tarih</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pageItems.map((a) => (
+              <TableRow key={a.id}>
+                <TableCell className="px-4 py-1.5 whitespace-normal">
+                  <Link href={`/orders/${a.id}`} className="block min-w-0 space-y-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <PlateBadge plate={a.plate} size="sm" />
+                    <span className="block truncate text-xs text-muted-foreground">{a.customerName}</span>
                   </Link>
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+                </TableCell>
+                <TableCell className="px-4 py-1.5 text-right text-xs text-muted-foreground">
+                  <span className="block font-mono">{a.workOrderNo}</span>
+                  <span className="mt-1 block tabular-nums">{formatDate(a.createdAt)}</span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
       <DashboardPagination page={page} pageCount={pageCount} onPageChange={setPage} />
-    </div>
+    </section>
   )
 }

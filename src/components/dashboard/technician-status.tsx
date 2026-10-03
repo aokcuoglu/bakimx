@@ -26,7 +26,7 @@ export function TechnicianStatusWidget({
 }) {
   if (technicians.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-card p-5">
+      <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex items-center gap-2 mb-3">
           <HardHat className="size-4 text-muted-foreground" />
           <h3 className="text-sm font-semibold text-foreground">Usta İş Durumu</h3>
@@ -42,7 +42,7 @@ export function TechnicianStatusWidget({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <HardHat className="size-4 text-muted-foreground" />
@@ -59,7 +59,7 @@ export function TechnicianStatusWidget({
       {unassignedCount > 0 && (
         <Link
           href="/orders?technician=none"
-          className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 transition-colors hover:bg-warning/15"
+          className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-warning/20 bg-warning/10 px-3 py-2 transition-colors hover:bg-warning/15"
         >
           <span className="flex items-center gap-2 text-sm font-medium text-foreground">
             <AlertTriangle className="size-4 text-warning-strong" />

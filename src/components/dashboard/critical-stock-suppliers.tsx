@@ -6,7 +6,7 @@ export function CriticalStockSuppliersWidget({ suppliers }: { suppliers: Critica
   if (suppliers.length === 0) return null
 
   return (
-    <div className="rounded-lg border border-primary/20 bg-primary/5 overflow-hidden">
+    <div className="rounded-xl border border-primary/20 bg-primary/5 overflow-hidden">
       <div className="px-4 py-3 border-b border-primary/10 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Truck className="size-4 text-primary" />
