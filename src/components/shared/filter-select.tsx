@@ -41,6 +41,12 @@ export function FilterSelect({
   const [value, setValue] = useState(defaultValue)
   const hiddenRef = useRef<HTMLInputElement>(null)
   const pendingSubmit = useRef(false)
+  const [previousDefault, setPreviousDefault] = useState(defaultValue)
+  // A client navigation can reuse this component with a different URL filter.
+  if (previousDefault !== defaultValue) {
+    setPreviousDefault(defaultValue)
+    setValue(defaultValue)
+  }
 
   // Submit, state DOM'a yansıdıktan SONRA tetiklenmeli; aynı tick'te
   // requestSubmit çağrılırsa gizli input hâlâ eski değeri taşır.

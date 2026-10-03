@@ -1,7 +1,10 @@
 "use client"
 
-import { useMemo, useState, type ReactNode } from "react"
+import { useMemo, type ReactNode } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { orderDetailHref, readOrderListState, type OrderListState } from "@/lib/orders/list-state"
+import type { Updater } from "@tanstack/react-table"
 import { ChevronDown, FileWarning } from "lucide-react"
 import {
   flexRender,
@@ -205,9 +208,20 @@ export function OrderList({
     activeInvoice ? `invoice=${encodeURIComponent(activeInvoice)}` : "",
   ].filter(Boolean)
 
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({ delivery: false })
+  const searchParams = useSearchParams()
+  const view = searchParams.get("view")
+  const { sorting, columnFilters, columnVisibility } = useMemo(() => readOrderListState(view), [view])
+  const listHref = `/orders${searchParams.size ? `?${searchParams}` : ""}`
+  if (view) keptFilters.push(`view=${encodeURIComponent(view)}`)
+
+  function updateView<K extends keyof OrderListState>(key: K, updater: Updater<OrderListState[K]>) {
+    // Read the current URL so rapid successive changes preserve each other.
+    const params = new URLSearchParams(window.location.search)
+    const current = readOrderListState(params.get("view"))
+    current[key] = typeof updater === "function" ? updater(current[key]) : updater
+    params.set("view", JSON.stringify(current))
+    window.history.replaceState(null, "", `/orders?${params}`)
+  }
 
   const columns = useMemo<ColumnDef<OrderRow>[]>(() => {
     const byId: Record<(typeof ORDER_LIST_DATA_COLUMN_ORDER)[number], ColumnDef<OrderRow>> = {
@@ -218,7 +232,7 @@ export function OrderList({
         filterFn: textFilter((order) => order.workOrderNo),
         cell: ({ row }) => (
           <Link
-            href={`/orders/${row.original.id}`}
+            href={orderDetailHref(row.original.id, listHref)}
             className="font-mono text-xs font-medium text-foreground hover:text-primary transition-colors"
           >
             {row.original.workOrderNo}
@@ -352,26 +366,26 @@ export function OrderList({
         cell: ({ row }) => (
           <div className="flex items-center justify-end">
             <ActionsMenu
-              viewHref={`/orders/${row.original.id}`}
+              viewHref={orderDetailHref(row.original.id, listHref)}
               editHref={
                 isOrderLocked(row.original.status as OrderStatus)
                   ? undefined
-                  : `/orders/${row.original.id}?edit=1`
+                  : orderDetailHref(row.original.id, listHref, true)
               }
             />
           </div>
         ),
       },
     ]
-  }, [technicians])
+  }, [technicians, listHref])
 
   const table = useReactTable({
     data: orders,
     columns,
     state: { sorting, columnFilters, columnVisibility },
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
+    onSortingChange: (updater: Updater<SortingState>) => updateView("sorting", updater),
+    onColumnFiltersChange: (updater: Updater<ColumnFiltersState>) => updateView("columnFilters", updater),
+    onColumnVisibilityChange: (updater: Updater<VisibilityState>) => updateView("columnVisibility", updater),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -400,31 +414,47 @@ export function OrderList({
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
-        {toolbar && <div className="border-b border-border p-3 sm:p-4">{toolbar}</div>}
+        {toolbar && (
+          <div className="border-b border-border p-3 sm:p-4">
+            {view && <input type="hidden" name="view" value={view} form="order-list-filters" />}
+            {toolbar}
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2 sm:px-4">
           <p className="text-xs text-muted-foreground" aria-live="polite">{visibleOrders.length} iş emri</p>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type="button" variant="outline" size="sm" className="hidden lg:inline-flex">
-                Kolonlar
-                <ChevronDown />
+          <div className="flex items-center gap-2">
+            {view && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => {
+                const params = new URLSearchParams(window.location.search)
+                params.delete("view")
+                window.history.replaceState(null, "", `/orders${params.size ? `?${params}` : ""}`)
+              }}>
+                Görünümü sıfırla
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                  >
-                    {ORDER_LIST_COLUMN_LABELS[column.id as keyof typeof ORDER_LIST_COLUMN_LABELS] ?? column.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="outline" size="sm" className="hidden lg:inline-flex">
+                  Kolonlar
+                  <ChevronDown />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    >
+                      {ORDER_LIST_COLUMN_LABELS[column.id as keyof typeof ORDER_LIST_COLUMN_LABELS] ?? column.id}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {orders.length === 0 && emptyState}
@@ -493,7 +523,7 @@ export function OrderList({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link
-                      href={`/orders/${order.id}`}
+                      href={orderDetailHref(order.id, listHref)}
                       className="font-mono text-xs font-medium text-foreground hover:text-primary transition-colors"
                     >
                       {order.workOrderNo}
@@ -517,11 +547,11 @@ export function OrderList({
                   </p>
                 </div>
                 <MobileActionsMenu
-                  viewHref={`/orders/${order.id}`}
+                  viewHref={orderDetailHref(order.id, listHref)}
                   editHref={
                     isOrderLocked(order.status as OrderStatus)
                       ? undefined
-                      : `/orders/${order.id}?edit=1`
+                      : orderDetailHref(order.id, listHref, true)
                   }
                 />
               </div>

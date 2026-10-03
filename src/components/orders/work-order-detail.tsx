@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { orderListReturnHref } from "@/lib/orders/list-state"
 import { DetailHeader, type DetailHeaderAction } from "@/components/orders/detail-header"
 import { OrderRecordRail } from "@/components/orders/order-record-rail"
 import {
@@ -248,6 +249,7 @@ export function WorkOrderDetail({
   technicians,
   activity = [],
   editInitially = false,
+  returnTo,
   laborCatalog,
   canReopen = false,
   canEditInfo = false,
@@ -261,6 +263,7 @@ export function WorkOrderDetail({
   // Listeden "Düzenle" ile gelindiğinde (?edit=1) Şikayet & Notlar kartı
   // doğrudan düzenleme modunda açılır. Kilitli emirde yok sayılır.
   editInitially?: boolean
+  returnTo?: string
   // Atölyenin işçilik kataloğu — İşçilik composer'ının öneri kaynağı.
   laborCatalog: LaborCatalogRow[]
   // #183 — teslim edilmiş iş emrini yeniden açma yetkisi (yalnız Yönetici).
@@ -840,7 +843,7 @@ export function WorkOrderDetail({
         }
         actions={headerActions}
         loading={loading}
-        onBack={() => router.push("/orders")}
+        onBack={() => router.push(orderListReturnHref(returnTo))}
       />
 
       {error && (
