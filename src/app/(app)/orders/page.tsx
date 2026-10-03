@@ -152,7 +152,7 @@ export default async function OrdersPage({
           technicians={technicians}
           searchQuery={q}
           toolbar={
-            <form key={q} id="order-list-filters" action="/orders" method="get" className="space-y-3">
+            <form id="order-list-filters" action="/orders" method="get" className="space-y-3">
               <div className="flex items-center gap-2">
               <div className="relative min-w-0 flex-1 sm:max-w-md">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -239,9 +239,8 @@ export default async function OrdersPage({
                     <Link href="/orders"><X className="size-3.5" />Temizle</Link>
                   </Button>
                 )}
-                {/* Seçim kutuları anında uygular; düğme yalnız yedek. Metin araması
-                    Enter ile gönderilir (tek metin alanı olduğu için tarayıcı örtük
-                    submit yapar), JS yokken de bu düğme formu gönderir. */}
+                {/* Arama yazarken, seçimler değişince uygulanır. Enter ve bu
+                    düğme JS yokken de formu gönderen yedeklerdir. */}
                 <Button
                   variant="outline"
                   size="default"

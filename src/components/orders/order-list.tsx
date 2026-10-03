@@ -36,6 +36,8 @@ import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
 import { matchesColumnFilter, ORDER_LIST_COLUMN_LABELS, ORDER_LIST_DATA_COLUMN_ORDER } from "@/lib/orders/list-columns"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { useOrderListNavigation } from "@/components/orders/use-order-list-navigation"
 import { ACTIVE_ORDER_FILTER } from "@/lib/orders/status-filter"
 
 type OrderRow = {
@@ -192,6 +194,7 @@ export function OrderList({
   toolbar?: ReactNode
   emptyState?: ReactNode
 }) {
+  const { rootRef, isPending, onChange, onSubmit, onClick } = useOrderListNavigation(searchQuery)
   const kpiConfigs: KpiConfig[] = [
     { key: "active", label: "Aktif", count: kpis.active, filterValue: ACTIVE_ORDER_FILTER },
     { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval" },
@@ -395,7 +398,7 @@ export function OrderList({
   const visibleOrders = table.getRowModel().rows.map((row) => row.original)
 
   return (
-    <div className="space-y-4">
+    <div ref={rootRef} className="space-y-4" onChange={onChange} onSubmit={onSubmit} onClickCapture={onClick}>
       <div aria-label="İş emri durum özeti" className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-card p-1 sm:grid-cols-5">
         {kpiConfigs.map((cfg) => {
           const isActive = activeStatus === cfg.filterValue
@@ -418,6 +421,12 @@ export function OrderList({
           <div className="border-b border-border p-3 sm:p-4">
             {view && <input type="hidden" name="view" value={view} form="order-list-filters" />}
             {toolbar}
+          </div>
+        )}
+        <div className="relative" aria-label="İş emri sonuçları" aria-busy={isPending}>
+        {isPending && (
+          <div className="absolute inset-0 z-30 flex min-h-32 items-start justify-center bg-card/90">
+            <BrandSpinner size={32} label="İş emirleri yükleniyor…" className="sticky top-0 py-8" />
           </div>
         )}
         <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2 sm:px-4">
@@ -587,6 +596,7 @@ export function OrderList({
             </div>
           ))}
         </div>}
+        </div>
       </div>
     </div>
   )
