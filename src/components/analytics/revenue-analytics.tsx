@@ -1,27 +1,15 @@
+import { HighlightCard } from "@/components/shared/highlight-card"
 import type { RevenueAnalytics as RevenueAnalyticsType } from "@/lib/analytics/queries"
 import { formatTRY } from "@/lib/format"
 import { TrendingUp, Wallet, Receipt, BarChart3 } from "lucide-react"
 
-function StatCard({ label, value, subtitle, icon: Icon, accent, accentBg }: {
+function StatCard({ label, value, subtitle, icon: Icon }: {
   label: string
   value: string | number
   subtitle?: string
   icon: React.ComponentType<{ className?: string }>
-  accent: string
-  accentBg: string
 }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <div className={`size-8 rounded-lg ${accentBg} flex items-center justify-center`}>
-          <Icon className={`size-3.5 ${accent}`} />
-        </div>
-      </div>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
-      {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
-    </div>
-  )
+  return <HighlightCard label={label} value={value} accessory={<Icon />} description={subtitle} />
 }
 
 export function RevenueAnalyticsSection({ analytics }: { analytics: RevenueAnalyticsType }) {
@@ -29,62 +17,54 @@ export function RevenueAnalyticsSection({ analytics }: { analytics: RevenueAnaly
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 min-[390px]:grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard
           label="Toplam Tahsilat"
           value={formatTRY(analytics.totalCollected)}
           icon={Wallet}
-          accent="text-success-strong"
-          accentBg="bg-success/10"
         />
         <StatCard
           label="Açık Alacak"
           value={formatTRY(analytics.totalReceivable)}
           icon={Receipt}
-          accent="text-destructive-strong"
-          accentBg="bg-destructive/10"
           subtitle={`${analytics.completedOrders} tamamlanan sipariş`}
         />
         <StatCard
           label="Ort. İş Emri Tutarı"
           value={analytics.averageTicketSize > 0 ? formatTRY(analytics.averageTicketSize) : "—"}
           icon={BarChart3}
-          accent="text-primary"
-          accentBg="bg-primary/10"
           subtitle="Tamamlanan siparişler"
         />
         <StatCard
           label="İş Emri Başı Gelir"
           value={analytics.revenuePerWorkOrder > 0 ? formatTRY(analytics.revenuePerWorkOrder) : "—"}
           icon={TrendingUp}
-          accent="text-primary"
-          accentBg="bg-primary/10"
           subtitle={`${analytics.totalOrders} toplam sipariş`}
         />
       </div>
 
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
+      <div className="min-w-0 rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-4 py-3 border-b border-border flex items-center gap-2">
           <TrendingUp className="size-4 text-success-strong" />
-          <h3 className="text-base font-semibold text-foreground">Tahsilat Trendi (Son 6 Ay)</h3>
+          <h3 className="text-sm font-medium text-foreground">Tahsilat Trendi (Son 6 Ay)</h3>
         </div>
-        <div className="p-4 sm:p-6">
+        <div className="overflow-x-auto p-4">
           {analytics.collectionTrend.every((m) => m.amount === 0) ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
               Henüz tahsilat verisi bulunmuyor.
             </div>
           ) : (
-            <div className="flex items-end gap-2 sm:gap-4 h-48">
+            <div className="flex min-w-[480px] items-end gap-4 h-48">
               {analytics.collectionTrend.map((m) => {
                 const height = maxAmount > 0 ? (m.amount / maxAmount) * 100 : 0
                 return (
-                  <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                    <span className="text-xs font-medium text-foreground">
+                  <div key={m.month} className="h-full min-w-0 flex-1 flex flex-col items-center gap-1">
+                    <span className="text-xs font-medium tabular-nums text-foreground">
                       {m.amount > 0 ? formatTRY(m.amount) : "—"}
                     </span>
                     <div className="w-full flex-1 flex items-end">
                       <div
-                        className="w-full rounded-t-md bg-gradient-to-t from-primary to-primary/70 transition-all"
+                        className="w-full rounded-t-md bg-primary"
                         style={{ height: `${Math.max(height, 2)}%` }}
                       />
                     </div>
