@@ -1,3 +1,4 @@
+import styles from "./summary-cards.module.css"
 import { HighlightCard } from "@/components/shared/highlight-card"
 import type { DashboardStats } from "@/lib/dashboard/queries"
 import { Wrench, Clock, MessageCircle, Camera, AlertTriangle, Calendar } from "lucide-react"
@@ -20,6 +21,7 @@ function KpiCard({ label, value, icon: Icon, href, tone, subtitle }: KpiCardProp
 
   return (
     <HighlightCard
+      className={styles.card}
       label={label}
       value={value}
       href={href}
@@ -39,50 +41,52 @@ export function KpiCards({
   showPhotoChecklist: boolean
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-      <KpiCard
-        label="Aktif İş Emri"
-        value={stats.activeOrders}
-        icon={Wrench}
-        href="/orders"
-      />
-      <KpiCard
-        label="Bugün Teslim"
-        value={stats.todayDeliveries}
-        icon={Clock}
-        href="/orders"
-      />
-      {showQuotes && (
+    <div className={styles.summary} aria-label="Operasyon özeti">
+      <div className={styles.kpis}>
         <KpiCard
-          label="Onay Bekleyen"
-          value={stats.waitingApprovals}
-          icon={MessageCircle}
-          href="/orders?status=waiting_approval"
-          tone="warning"
+          label="Aktif İş Emri"
+          value={stats.activeOrders}
+          icon={Wrench}
+          href="/orders"
         />
-      )}
-      {showPhotoChecklist && (
         <KpiCard
-          label="Eksik Fotoğraf"
-          value={stats.missingPhotoIntakes}
-          icon={Camera}
+          label="Bugün Teslim"
+          value={stats.todayDeliveries}
+          icon={Clock}
+          href="/orders"
+        />
+        {showQuotes && (
+          <KpiCard
+            label="Onay Bekleyen"
+            value={stats.waitingApprovals}
+            icon={MessageCircle}
+            href="/orders?status=waiting_approval"
+            tone="warning"
+          />
+        )}
+        {showPhotoChecklist && (
+          <KpiCard
+            label="Eksik Fotoğraf"
+            value={stats.missingPhotoIntakes}
+            icon={Camera}
+            href="/orders"
+            tone="destructive"
+          />
+        )}
+        <KpiCard
+          label="Geciken Teslim"
+          value={stats.overdueDeliveries}
+          icon={AlertTriangle}
           href="/orders"
           tone="destructive"
         />
-      )}
-      <KpiCard
-        label="Geciken Teslim"
-        value={stats.overdueDeliveries}
-        icon={AlertTriangle}
-        href="/orders"
-        tone="destructive"
-      />
-      <KpiCard
-        label="Son 7 Gün"
-        value={stats.lastWeekOrders}
-        icon={Calendar}
-        href="/orders"
-      />
+        <KpiCard
+          label="Son 7 Gün"
+          value={stats.lastWeekOrders}
+          icon={Calendar}
+          href="/orders"
+        />
+      </div>
     </div>
   )
 }
