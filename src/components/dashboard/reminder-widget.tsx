@@ -1,7 +1,8 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { BellRing, Calendar, Gauge, Plus } from "lucide-react"
+import { Calendar, Gauge, Plus } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ReminderStatusBadge, ReminderTypeBadge } from "@/components/reminders/reminder-status-badge"
 import { PlateBadge } from "@/components/shared/plate-badge"
@@ -23,10 +24,9 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
   const totalCount = overdue.length + dueSoon.length
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-3">
+    <Card size="sm">
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 border-b">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-          <BellRing className="size-4 text-muted-foreground" />
           Bakım Hatırlatmaları
           {totalCount > 0 ? (
             <span className="text-xs text-muted-foreground font-normal">({totalCount})</span>
@@ -34,7 +34,7 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
         </CardTitle>
         <div className="flex items-center gap-2">
           {overdue.length > 0 ? (
-            <span className="inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium bg-destructive/10 text-destructive-strong border border-destructive/20">
+            <span className="inline-flex items-center h-5 px-2 rounded-full text-xs font-medium bg-destructive/10 text-destructive-strong border border-destructive/20">
               {overdue.length} Geciken
             </span>
           ) : null}
@@ -49,24 +49,19 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
       </CardHeader>
       <CardContent className="pt-0">
         {!hasItems ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <BellRing className="size-8 mx-auto mb-2 text-muted-foreground/50" />
+          <div className="space-y-2 text-muted-foreground">
             <p className="text-sm">Yaklaşan veya geciken bakım hatırlatması yok.</p>
-            <Link
-              href="/reminders/new"
-              className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:underline font-medium"
-            >
-              <Plus className="size-3.5" />
-              Yeni hatırlatma oluştur
-            </Link>
+            <Button variant="secondary" size="sm" asChild>
+              <Link href="/reminders/new"><Plus className="size-3.5" />Yeni hatırlatma oluştur</Link>
+            </Button>
           </div>
         ) : (
-          <div className="divide-y divide-border -mx-4 sm:-mx-5">
+          <div className="divide-y divide-border -mx-3">
             {[...overdue, ...dueSoon].slice(0, 10).map((r) => (
               <Link
                 key={r.id}
                 href={`/reminders/${r.id}`}
-                className="flex items-center gap-3 px-4 sm:px-5 py-2.5 hover:bg-muted transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted transition-colors"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -77,7 +72,7 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {customerName(r.customer)} — {r.title}
                   </p>
-                  <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-0.5">
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-0.5">
                     {r.dueDate ? (
                       <span className="inline-flex items-center gap-1">
                         <Calendar className="size-3" />

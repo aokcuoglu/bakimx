@@ -26,7 +26,7 @@ export default async function OrderDetailPage({
   params: Promise<{ id: string }>
   // Liste ekranındaki "Düzenle" aksiyonu buraya ?edit=1 ile gelir. Sekme
   // değişimi sunucuya uğramaz; ?edit= istemcide adresten düşer.
-  searchParams: Promise<{ edit?: string }>
+  searchParams: Promise<{ edit?: string; returnTo?: string }>
 }) {
   const { id } = await params
   const sp = await searchParams
@@ -376,6 +376,7 @@ export default async function OrderDetailPage({
         technicians={technicians}
         activity={activity}
         editInitially={editInitially}
+        returnTo={sp.returnTo}
         laborCatalog={laborCatalog}
         enabledFeatures={enabledFeatures}
         currentTier={plan?.tier ?? "lite"}

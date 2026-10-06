@@ -12,6 +12,7 @@ test("vehicleTypeId yalnız pozitif Int32 ondalık kimlik kabul eder", () => {
 describe("exact offer contract", () => {
   test("parça numarasını GetirBakım anahtarıyla aynı biçimde normalize eder", () => {
     expect(normalizePartNo(" 10-38.03 ")).toBe("103803")
+    expect(normalizePartNo("CU 29 007")).toBe(normalizePartNo("CU29007"))
   })
 
   test("yalnız sunum alanlarını parse eder ve güvenilmeyen offer satırını atar", () => {

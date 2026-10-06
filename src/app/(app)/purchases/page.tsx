@@ -4,7 +4,6 @@ import { FeaturePaywall } from "@/components/billing/feature-paywall"
 import { InlineFeatureUpsell } from "@/components/billing/inline-feature-upsell"
 import { prisma } from "@/lib/db"
 import { quantityToNumber } from "@/lib/orders/quantity"
-import Link from "next/link"
 import { Search, Filter, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -137,9 +136,9 @@ export default async function PurchasesPage({
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2">
-            <Input name="from" defaultValue={from} placeholder="Başlangıç (gg.aa.yyyy)" className="w-40" />
-            <Input name="to" defaultValue={to} placeholder="Bitiş (gg.aa.yyyy)" className="w-40" />
+          <div className="grid gap-2 sm:flex">
+            <Input name="from" defaultValue={from} placeholder="Başlangıç (gg.aa.yyyy)" className="min-w-0 w-full sm:w-40" />
+            <Input name="to" defaultValue={to} placeholder="Bitiş (gg.aa.yyyy)" className="min-w-0 w-full sm:w-40" />
             <Button variant="outline" size="default" type="submit">
               <Filter className="size-4" />
               Filtrele

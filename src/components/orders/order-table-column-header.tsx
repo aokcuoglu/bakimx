@@ -42,9 +42,9 @@ export function OrderTableColumnHeader<TData, TValue>({
         <Button
           type="button"
           variant="ghost"
-          size="compact"
+          size="sm"
           className={cn(
-            "-ml-1 h-7 px-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+            "-ml-1 px-1.5 text-xs font-medium text-muted-foreground",
             align === "right" && "ml-auto",
             (sorted || filterValue) && "text-foreground",
           )}

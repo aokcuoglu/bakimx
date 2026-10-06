@@ -1,0 +1,68 @@
+/* Respond to usable content width, including a resized or collapsed sidebar. */
+.summary {
+  container-type: inline-size;
+}
+
+.kpis,
+.reports {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.card {
+  min-height: 0;
+  gap: 12px;
+  padding: 12px;
+}
+
+.card [data-slot="highlight-label"] {
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.card [data-slot="highlight-value"] {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.card [data-slot="highlight-description"] {
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.card svg {
+  width: 18px;
+  height: 18px;
+}
+
+@container (min-width: 340px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 600px) {
+  .card {
+    padding: 16px;
+  }
+
+  .card [data-slot="highlight-value"] {
+    font-size: 24px;
+    line-height: 32px;
+  }
+
+  .card [data-slot="highlight-description"] {
+    font-size: 14px;
+  }
+}
+
+@container (min-width: 720px) {
+  .kpis,
+  .reports {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

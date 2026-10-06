@@ -2,7 +2,7 @@ import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
-import { Plus, ClipboardList, Search, Filter } from "lucide-react"
+import { Plus, ClipboardList, Search, Filter, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { OrderList } from "@/components/orders/order-list"
@@ -141,105 +141,7 @@ export default async function OrdersPage({
         </Button>
       }
     >
-      <div className="space-y-5 sm:space-y-6">
-
-
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <p className="text-sm text-muted-foreground mt-0.5">Servis operasyonlarını yönetin</p>
-          </div>
-          <Button variant="foreground" size="default" className="hidden sm:inline-flex" asChild>
-            <Link href="/orders/new">
-              <Plus className="size-4" />
-              Yeni İş Emri
-            </Link>
-          </Button>
-        </div>
-
-        <form action="/orders" method="get" className="flex flex-col sm:flex-row gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
-              name="q"
-              defaultValue={q}
-              placeholder="İş emri no, plaka veya müşteri adı ile ara..."
-              className="pl-10"
-            />
-          </div>
-          {/* Dört filtre dar ekranda 2'li ızgaraya düşüp geniş ekranda satıra
-              dönüyor; seçimler anında uygulandığı için görünür buton yok. */}
-          <div className="grid grid-cols-2 gap-2 sm:flex">
-            <FilterSelect
-              name="status"
-              autoSubmit
-              className="w-full sm:w-auto"
-              defaultValue={status}
-              placeholder="Tüm Durumlar"
-              options={[
-                { value: "", label: "Tüm Durumlar" },
-                { value: ACTIVE_ORDER_FILTER, label: "Aktif" },
-                { value: "draft", label: "Taslak" },
-                { value: "waiting_approval", label: "Onay Bekliyor" },
-                { value: "approved", label: "Onaylandı" },
-                { value: "in_progress", label: "Devam Ediyor" },
-                { value: "waiting_parts", label: "Parça Bekliyor" },
-                { value: "ready_for_delivery", label: "Teslime Hazır" },
-                { value: "delivered", label: "Teslim Edildi" },
-                { value: "cancelled", label: "İptal" },
-              ]}
-            />
-            <FilterSelect
-              name="payment"
-              autoSubmit
-              className="w-full sm:w-auto"
-              defaultValue={payment}
-              placeholder="Tüm Ödemeler"
-              options={[
-                { value: "", label: "Tüm Ödemeler" },
-                { value: "unpaid", label: "Ödenmedi" },
-                { value: "partial", label: "Kısmi ödeme" },
-                { value: "paid", label: "Ödendi" },
-              ]}
-            />
-            <FilterSelect
-              name="technician"
-              autoSubmit
-              className="w-full sm:w-auto"
-              defaultValue={technicianFilter.value}
-              placeholder="Tüm Ustalar"
-              options={[
-                { value: "", label: "Tüm Ustalar" },
-                { value: UNASSIGNED_TECHNICIAN, label: "Atanmamış" },
-                ...technicians.map((t) => ({ value: t.id, label: t.fullName })),
-              ]}
-            />
-            <FilterSelect
-              name="invoice"
-              autoSubmit
-              className="w-full sm:w-auto"
-              defaultValue={invoiceFilter.value}
-              placeholder="Tüm Faturalar"
-              options={[
-                { value: "", label: "Tüm Faturalar" },
-                { value: INVOICE_WITH, label: "Fatura kesildi" },
-                { value: INVOICE_WITHOUT, label: "Fatura kesilmedi" },
-              ]}
-            />
-            {/* Seçim kutuları anında uygular; düğme yalnız yedek. Metin araması
-                Enter ile gönderilir (tek metin alanı olduğu için tarayıcı örtük
-                submit yapar), JS yokken de bu düğme formu gönderir. */}
-            <Button
-              variant="outline"
-              size="default"
-              type="submit"
-              className="sr-only focus:not-sr-only focus:w-full sm:focus:w-auto"
-            >
-              <Filter className="size-4" />
-              Filtrele
-            </Button>
-          </div>
-        </form>
-
+      <div className="space-y-4">
         <OrderList
           orders={serializedOrders}
           kpis={kpis}
@@ -248,29 +150,131 @@ export default async function OrdersPage({
           activeTechnician={technicianFilter.value}
           activeInvoice={invoiceFilter.value}
           technicians={technicians}
+          searchQuery={q}
+          toolbar={
+            <form id="order-list-filters" action="/orders" method="get" className="space-y-3">
+              <div className="flex items-center gap-2">
+              <div className="relative min-w-0 flex-1 sm:max-w-md">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  name="q"
+                  defaultValue={q}
+                  placeholder="İş emri, plaka veya müşteri ara…"
+                  aria-label="İş emri ara"
+                  className="pl-8"
+                />
+              </div>
+              <Button variant="foreground" size="sm" className="ml-auto" asChild>
+                <Link href="/orders/new"><Plus className="size-3.5" /><span className="hidden sm:inline">Yeni İş Emri</span><span className="sm:hidden">Yeni</span></Link>
+              </Button>
+              </div>
+              {/* Dört filtre dar ekranda 2'li ızgaraya düşüp geniş ekranda satıra
+                  dönüyor; seçimler anında uygulandığı için görünür buton yok. */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="hidden items-center gap-1.5 text-xs font-medium text-muted-foreground sm:inline-flex"><Filter className="size-3.5" />Filtreler</span>
+                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+                <FilterSelect
+                  name="status"
+                  autoSubmit
+                  singleLine
+                  className="w-full sm:w-auto"
+                  defaultValue={status}
+                  placeholder="Tüm Durumlar"
+                  options={[
+                    { value: "", label: "Tüm Durumlar" },
+                    { value: ACTIVE_ORDER_FILTER, label: "Aktif" },
+                    { value: "draft", label: "Taslak" },
+                    { value: "waiting_approval", label: "Onay Bekliyor" },
+                    { value: "approved", label: "Onaylandı" },
+                    { value: "in_progress", label: "Devam Ediyor" },
+                    { value: "waiting_parts", label: "Parça Bekliyor" },
+                    { value: "ready_for_delivery", label: "Teslime Hazır" },
+                    { value: "delivered", label: "Teslim Edildi" },
+                    { value: "cancelled", label: "İptal" },
+                  ]}
+                />
+                <FilterSelect
+                  name="payment"
+                  autoSubmit
+                  singleLine
+                  className="w-full sm:w-auto"
+                  defaultValue={payment}
+                  placeholder="Tüm Ödemeler"
+                  options={[
+                    { value: "", label: "Tüm Ödemeler" },
+                    { value: "unpaid", label: "Ödenmedi" },
+                    { value: "partial", label: "Kısmi ödeme" },
+                    { value: "paid", label: "Ödendi" },
+                  ]}
+                />
+                <FilterSelect
+                  name="technician"
+                  autoSubmit
+                  singleLine
+                  className="w-full sm:w-auto"
+                  defaultValue={technicianFilter.value}
+                  placeholder="Tüm Ustalar"
+                  options={[
+                    { value: "", label: "Tüm Ustalar" },
+                    { value: UNASSIGNED_TECHNICIAN, label: "Atanmamış" },
+                    ...technicians.map((t) => ({ value: t.id, label: t.fullName })),
+                  ]}
+                />
+                <FilterSelect
+                  name="invoice"
+                  autoSubmit
+                  singleLine
+                  className="w-full sm:w-auto"
+                  defaultValue={invoiceFilter.value}
+                  placeholder="Tüm Faturalar"
+                  options={[
+                    { value: "", label: "Tüm Faturalar" },
+                    { value: INVOICE_WITH, label: "Fatura kesildi" },
+                    { value: INVOICE_WITHOUT, label: "Fatura kesilmedi" },
+                  ]}
+                />
+                </div>
+                {hasAnyFilter && (
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/orders"><X className="size-3.5" />Temizle</Link>
+                  </Button>
+                )}
+                {/* Arama yazarken, seçimler değişince uygulanır. Enter ve bu
+                    düğme JS yokken de formu gönderen yedeklerdir. */}
+                <Button
+                  variant="outline"
+                  size="default"
+                  type="submit"
+                  className="sr-only focus:not-sr-only focus:w-full sm:focus:w-auto"
+                >
+                  <Filter className="size-4" />
+                  Filtrele
+                </Button>
+              </div>
+            </form>
+          }
+          emptyState={
+            <div className="px-4 py-12 text-center text-muted-foreground">
+              <ClipboardList className="size-8 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-base font-medium">
+                {hasAnyFilter
+                  ? "Filtrelere uyan iş emri bulunamadı"
+                  : "Henüz iş emri yok"}
+              </p>
+              <p className="text-sm mt-1">
+                {hasAnyFilter
+                  ? "Farklı bir filtre deneyin"
+                  : "Yeni bir iş emri oluşturarak başlayabilirsiniz"}
+              </p>
+              <Button variant={hasAnyFilter ? "outline" : "foreground"} size="sm" className="mt-4" asChild>
+                <Link href={hasAnyFilter ? "/orders" : "/orders/new"}>
+                  {hasAnyFilter ? <X className="size-3.5" /> : <Plus className="size-3.5" />}
+                  {hasAnyFilter ? "Filtreleri temizle" : "Yeni İş Emri"}
+                </Link>
+              </Button>
+            </div>
+          }
         />
-
-        {orders.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground">
-            <ClipboardList className="size-14 mx-auto mb-4 text-muted-foreground/50" />
-            <p className="text-base font-medium">
-              {hasAnyFilter
-                ? "Filtrelere uyan iş emri bulunamadı"
-                : "Henüz iş emri yok"}
-            </p>
-            <p className="text-sm mt-1">
-              {hasAnyFilter
-                ? "Farklı bir filtre deneyin"
-                : "Yeni bir iş emri oluşturarak başlayabilirsiniz"}
-            </p>
-            <Button variant="link" size="sm" className="mt-4" asChild>
-              <Link href="/orders/new">
-                <Plus className="size-4" />
-                Yeni İş Emri
-              </Link>
-            </Button>
-          </div>
-        )}
 
       </div>
     </AppShell>

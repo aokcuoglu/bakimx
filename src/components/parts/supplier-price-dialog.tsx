@@ -133,6 +133,7 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
         <div className="max-h-[60vh] space-y-2 overflow-y-auto p-3">
           {loading ? <StateMessage>Gerçek tedarikçi teklifleri yükleniyor…</StateMessage> : null}
           {!loading && result?.status === "no_match" ? <StateMessage>Bu parça numarasıyla eşleşen GetirBakım ürünü bulunamadı.</StateMessage> : null}
+          {!loading && result?.status === "not_configured" ? <StateMessage>GetirBakım katalog bağlantısı bu ortamda etkin değil. Tedarikçi teklifleri sorgulanamadı.</StateMessage> : null}
           {!loading && result?.status === "no_offers" ? <StateMessage>Ürün eşleşti ancak aktif tedarikçi teklifi bulunmuyor.</StateMessage> : null}
           {!loading && result?.status === "upstream_error" ? <StateMessage error>Teklifler şu anda alınamıyor. Daha sonra yeniden deneyin.</StateMessage> : null}
           {products.map((product) => (

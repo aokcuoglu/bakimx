@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import type { DashboardStats } from "@/lib/dashboard/queries"
 import { AlertTriangle, Camera, MessageCircle, CheckCircle2 } from "lucide-react"
 
@@ -51,45 +52,26 @@ export function AlertBanner({
     })
   }
 
-  if (alerts.length === 0) {
-    return (
-      <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
-        <CheckCircle2 className="size-4 text-success-strong shrink-0" />
-        <p className="text-sm text-foreground">Bugün kritik operasyon uyarısı bulunmuyor.</p>
-      </div>
-    )
-  }
-
-  const colorMap = {
-    red: {
-      icon: "text-destructive-strong",
-    },
-    rose: {
-      icon: "text-destructive-strong",
-    },
-    amber: {
-      icon: "text-warning-strong",
-    },
-  }
-
   return (
-    <div className="space-y-2">
-      {alerts.map((alert, i) => {
-        const colors = colorMap[alert.color as keyof typeof colorMap] || colorMap.amber
+    <section aria-label="Dikkat gerektiren işler" className="space-y-2">
+      <h3 className="text-sm font-semibold text-foreground">Dikkat Gerektiren İşler</h3>
+      {alerts.length === 0 ? (
+        <Alert variant="success">
+          <CheckCircle2 aria-hidden className="size-4" />
+          <AlertTitle>Bugün kritik operasyon uyarısı bulunmuyor.</AlertTitle>
+        </Alert>
+      ) : alerts.map((alert) => {
         const Icon = alert.icon
         return (
-          <Link
-            key={i}
-            href={alert.href}
-            className="group flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <div className={`shrink-0 ${colors.icon}`}>
-              <Icon className="size-4" />
-            </div>
-            <p className="flex-1 text-sm font-medium text-foreground">{alert.message}</p>
-          </Link>
+          <Alert key={alert.href} variant={alert.color === "amber" ? "warning" : "destructive"}>
+            <Icon aria-hidden className="size-4" />
+            <AlertTitle>{alert.message}</AlertTitle>
+            <AlertDescription>
+              <Link href={alert.href} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">İş emirlerini incele →</Link>
+            </AlertDescription>
+          </Alert>
         )
       })}
-    </div>
+    </section>
   )
 }

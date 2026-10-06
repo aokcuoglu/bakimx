@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   AlertDialog,
@@ -153,7 +155,9 @@ export function OrderInfoCard({
         body: JSON.stringify({ reason: next }),
       })
       const data = await res.json()
-      if (data.success) router.refresh()
+      if (data.success) {
+        router.refresh()
+      }
       else toast.error(data.error || "Geliş nedeni güncellenemedi")
     } catch {
       toast.error("Bir hata oluştu")
@@ -214,55 +218,26 @@ export function OrderInfoCard({
           {/* SAĞ: fatura, tutar, durum, geliş nedeni.
               Mobilde dikey çizgi yerine üst kenarlık — kolonlar alt alta düşüyor. */}
           <div className="space-y-2.5 border-t pt-3 md:border-t-0 md:border-l md:pt-0 md:pl-6">
-            {editingInvoice ? (
-              <div className="space-y-2.5">
-                <div>
-                  <Label htmlFor="invoice-no">Fatura Numarası</Label>
-                  <Input
-                    id="invoice-no"
-                    value={invoiceNoDraft}
-                    onChange={(e) => setInvoiceNoDraft(e.target.value)}
-                    placeholder="Örn. ABC2026000000123"
-                    maxLength={50}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="invoice-date">Fatura Tarihi</Label>
-                  <DatePicker
-                    id="invoice-date"
-                    value={invoiceDateDraft}
-                    onChange={setInvoiceDateDraft}
-                    placeholder="Tarih seçin"
-                  />
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <Button variant="foreground" onClick={saveInvoice} disabled={savingInvoice} size="sm" className="flex-1">
-                    {savingInvoice ? <Loader2 className="size-3.5 animate-spin" /> : "Kaydet"}
-                  </Button>
-                  <Button variant="outline" onClick={() => setEditingInvoice(false)} disabled={savingInvoice} size="sm">
-                    İptal
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Fatura entegrasyonu yok — bilgileri kendi fatura uygulamanızdan girin.
-                </p>
-              </div>
-            ) : (
-              <>
+            <>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-muted-foreground">Fatura Numarası</span>
                   <span className="flex items-center gap-2">
                     <span className="font-mono text-xs text-foreground">{order.invoiceNo || "—"}</span>
                     {invoiceEditable && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="xs"
-                        onClick={startEditInvoice}
-                        className="gap-1 px-1.5 text-primary"
-                      >
-                        <Pencil className="size-3" /> Düzenle
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Fatura bilgilerini düzenle"
+                            onClick={startEditInvoice}
+                          >
+                            <Pencil className="size-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Fatura bilgilerini düzenle</TooltipContent>
+                      </Tooltip>
                     )}
                   </span>
                 </div>
@@ -271,35 +246,18 @@ export function OrderInfoCard({
                   value={order.invoiceDate ? formatDate(order.invoiceDate) : "—"}
                   icon={Calendar}
                 />
-              </>
-            )}
+            </>
             <InfoRow
               label="Toplam Tutar"
               value={order.totals.hasAnyPrice ? formatTRY(order.totals.grandTotal) : "—"}
             />
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">Durum</span>
-              {/* Durum makinesi tek kaynak: liste orderStatusOptions'tan gelir,
-                  sunucu da aynı geçiş kuralını uygular. Silme seçeneği yoktur —
-                  terminal aksiyon "İptal". */}
-              <Select
-                value={order.status}
-                onValueChange={(v) => handleStatusSelect(v)}
-                disabled={changingStatus || statusOptions.length <= 1}
-              >
-                <SelectTrigger className="w-[170px]">
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={order.status} onValueChange={handleStatusSelect} disabled={changingStatus || statusOptions.length <= 1}>
+                <SelectTrigger className="w-[170px]" aria-label="Durum"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {statusOptions.map((s) => (
-                    <SelectItem
-                      key={s}
-                      value={s}
-                      disabled={
-                        (s === "delivered" && deliveryBlocked) ||
-                        (s === "ready_for_delivery" && partsDecisionBlocked)
-                      }
-                    >
+                    <SelectItem key={s} value={s} disabled={(s === "delivered" && deliveryBlocked) || (s === "ready_for_delivery" && partsDecisionBlocked)}>
                       {ORDER_STATUS[s as OrderStatusKey]?.label ?? s}
                     </SelectItem>
                   ))}
@@ -311,22 +269,11 @@ export function OrderInfoCard({
               {locked ? (
                 <span className="text-sm text-foreground">{arrivalReasonLabel(order.arrivalReason)}</span>
               ) : (
-                <Select
-                  value={order.arrivalReason ?? ""}
-                  onValueChange={(v) => handleReasonSelect(v)}
-                  disabled={changingReason}
-                >
-                  <SelectTrigger className="w-[170px]">
-                    {/* `placeholder` ŞART: geliş nedeni boşken (`value=""`) Radix
-                        seçili kalem metni basmaz, tetikleyici bomboş kalır ve
-                        kırık kontrol gibi görünür. */}
-                    <SelectValue placeholder="Belirtilmedi" />
-                  </SelectTrigger>
+                <Select value={order.arrivalReason ?? ""} onValueChange={handleReasonSelect} disabled={changingReason}>
+                  <SelectTrigger className="w-[170px]" aria-label="Servise geliş nedeni"><SelectValue placeholder="Belirtilmedi" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Belirtilmedi</SelectItem>
-                    {ARRIVAL_REASON_ORDER.map((r) => (
-                      <SelectItem key={r} value={r}>{ARRIVAL_REASONS[r].label}</SelectItem>
-                    ))}
+                    {ARRIVAL_REASON_ORDER.map((r) => <SelectItem key={r} value={r}>{ARRIVAL_REASONS[r].label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               )}
@@ -335,6 +282,31 @@ export function OrderInfoCard({
         </div>
       </CardContent>
       </Card>
+
+      <Dialog open={editingInvoice} onOpenChange={(open) => { if (!savingInvoice) setEditingInvoice(open) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Fatura bilgilerini düzenle</DialogTitle>
+            <DialogDescription>Fatura entegrasyonu yok — bilgileri kendi fatura uygulamanızdan girin.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="invoice-no">Fatura Numarası</Label>
+              <Input id="invoice-no" value={invoiceNoDraft} onChange={(e) => setInvoiceNoDraft(e.target.value)} placeholder="Örn. ABC2026000000123" maxLength={50} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="invoice-date">Fatura Tarihi</Label>
+              <DatePicker id="invoice-date" value={invoiceDateDraft} onChange={setInvoiceDateDraft} placeholder="Tarih seçin" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingInvoice(false)} disabled={savingInvoice}>İptal</Button>
+            <Button variant="foreground" onClick={saveInvoice} disabled={savingInvoice}>
+              {savingInvoice ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={confirmCancelOpen}

@@ -1,5 +1,5 @@
 import type { Recommendation } from "@/lib/analytics/queries"
-import { AlertTriangle, Info, CheckCircle2, AlertTriangle as AlertIcon } from "lucide-react"
+import { AlertTriangle, Info, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 
 function recIcon(type: Recommendation["type"]) {
@@ -29,10 +29,9 @@ export function OperationalAlertsWidget({ recommendations }: { recommendations: 
     return (
       <Link
         href="/analytics"
-        className="block rounded-lg border border-border bg-card transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="block rounded-xl border border-border bg-card transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-          <CheckCircle2 className="size-4 text-success-strong" />
           <h3 className="text-sm font-semibold text-foreground">Operasyon Uyarıları</h3>
         </div>
         <p className="px-4 py-3 text-sm text-muted-foreground">Tüm işlemler yolunda.</p>
@@ -43,10 +42,9 @@ export function OperationalAlertsWidget({ recommendations }: { recommendations: 
   return (
     <Link
       href="/analytics"
-      className="block rounded-lg border border-border bg-card transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="block rounded-xl border border-border bg-card transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <AlertIcon className="size-4 text-warning-strong" />
         <h3 className="text-sm font-semibold text-foreground">Operasyon Uyarıları</h3>
         <span className="ml-auto text-xs text-muted-foreground">{recommendations.length} öneri</span>
       </div>
@@ -56,7 +54,7 @@ export function OperationalAlertsWidget({ recommendations }: { recommendations: 
           return (
             <div key={rec.id} className="flex items-start gap-2">
               <Icon className={`size-3.5 mt-0.5 shrink-0 ${iconColor(rec.type)}`} />
-              <p className="text-xs text-foreground line-clamp-2">{rec.message}</p>
+              <p className="text-sm text-foreground">{rec.message}</p>
             </div>
           )
         })}

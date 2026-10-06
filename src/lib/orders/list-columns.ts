@@ -7,9 +7,11 @@ export const ORDER_LIST_DATA_COLUMN_ORDER = [
   "vehicle",
   "customer",
   "status",
+  "payment",
   "invoice",
   "total",
   "dates",
+  "delivery",
   "technician",
 ] as const
 
@@ -18,9 +20,11 @@ export const ORDER_LIST_COLUMN_LABELS: Record<(typeof ORDER_LIST_DATA_COLUMN_ORD
   vehicle: "Araç",
   customer: "Müşteri",
   status: "Durum",
+  payment: "Ödeme",
   invoice: "Fatura",
   total: "Toplam",
-  dates: "Tarih",
+  dates: "Giriş tarihi",
+  delivery: "Tahmini teslim",
   technician: "Teknisyen",
 }
 

@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import Link from "next/link"
 import { prisma } from "@/lib/db"
 import { Button } from "@/components/ui/button"
+import styles from "@/components/dashboard/dashboard-layout.module.css"
 import { Plus } from "lucide-react"
 import { getPlanState, hasFeature } from "@/lib/plan"
 
@@ -106,13 +107,12 @@ export default async function DashboardPage() {
 
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Genel Bakış">
-      <div className="mx-auto max-w-[1440px] space-y-6 sm:space-y-8">
+      <div className="mx-auto max-w-[1440px] space-y-6">
         <section
           data-tour="welcome-banner"
-          className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between sm:pb-8"
+          className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="min-w-0">
-            <p className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">Genel Bakış</p>
             <h2 className="text-page-title text-foreground">
               Hoş Geldiniz, {user.firstName || user.email || user.username || "Kullanıcı"}
             </h2>
@@ -152,31 +152,25 @@ export default async function DashboardPage() {
 
         {reportWidgetData && <DashboardReportWidgets data={reportWidgetData} />}
 
-        <AlertBanner stats={stats} showQuotes={canQuotes} showPhotoChecklist={canPhotos} />
-
-        {operationalAlerts && <OperationalAlertsWidget recommendations={operationalAlerts} />}
-
-        {weeklyOps && statusDist && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-            <WeeklyChart data={weeklyOps} />
-            <StatusChart data={statusDist} />
-          </div>
-        )}
+        <section aria-label="Operasyon takibi" className={styles.panels}>
+          <AlertBanner stats={stats} showQuotes={canQuotes} showPhotoChecklist={canPhotos} />
+          {operationalAlerts && <OperationalAlertsWidget recommendations={operationalAlerts} />}
+        </section>
 
         <ActiveOrdersSection orders={activeOrders} />
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <TodayDeliveries deliveries={todayDeliveries} />
-          {canQuotes && <WaitingApprovals approvals={waitingApprovals} />}
+        <section className={styles.panels} aria-label="Günlük iş takibi">
+          <div className="min-w-0 space-y-4">
+            <TodayDeliveries deliveries={todayDeliveries} />
+            {canQuotes && <WaitingApprovals approvals={waitingApprovals} />}
+            {canAppointments && <TodayAppointments appointments={todayAppointments} />}
+          </div>
           {canPhotos && <MissingPhotos items={missingPhotos} />}
-        </div>
-
-        {canAppointments && <TodayAppointments appointments={todayAppointments} />}
+        </section>
 
         {(canInventory || canCashbox || canReminders) && (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {canInventory && <CriticalStockWidget items={criticalStock} />}
-          <div className="space-y-4 sm:space-y-5">
+          <div className={styles.panels}>
+            {canInventory && <CriticalStockWidget items={criticalStock} />}
             {canCashbox && <CashWidget data={{
               todayCollected: stats.todayCollected,
               openReceivable: stats.openReceivable,
@@ -185,10 +179,16 @@ export default async function DashboardPage() {
             {canInventory && canProcurement && <CriticalStockSuppliersWidget suppliers={criticalStockSuppliers} />}
             {canReminders && <ReminderWidget dueSoon={remindersDueSoon} overdue={remindersOverdue} />}
           </div>
-          </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {weeklyOps && statusDist && (
+          <section aria-label="Operasyon raporları" className={styles.panels}>
+            <WeeklyChart data={weeklyOps} />
+            <StatusChart data={statusDist} />
+          </section>
+        )}
+
+        <div className={styles.panels}>
           <RecentCustomers customers={recentCustomers} />
           {canTeam && <TechnicianStatusWidget technicians={technicianOverview} unassignedCount={unassignedOrderCount} />}
         </div>
