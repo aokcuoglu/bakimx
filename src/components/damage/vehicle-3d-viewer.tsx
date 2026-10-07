@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useMemo, useRef, useState, type RefObject } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react"
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber"
 import { ContactShadows, Environment, Lightformer, OrbitControls, useGLTF } from "@react-three/drei"
 import * as THREE from "three"
@@ -29,10 +29,53 @@ const TAP_TOLERANCE_PX = 6
 
 type ZoneAnchor = { center: THREE.Vector3; facing: THREE.Vector3 }
 
-function CarModel({ model, marks, onZoneClick, hovered, setHovered, onReady }: Vehicle3DViewerProps & { hovered: ZoneId | null; setHovered: (zone: ZoneId | null) => void; onReady: (anchors: Map<ZoneId, ZoneAnchor>) => void }) {
+type Triangle = { normal: THREE.Vector3; area: number; centroid: THREE.Vector3 }
+
+/** World-space triangles of a zone, each normal flipped to point away from the car's centre. */
+function outwardTriangles(meshes: THREE.Mesh[], carCenter: THREE.Vector3): Triangle[] {
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), edge = new THREE.Vector3()
+  const triangles: Triangle[] = []
+  for (const mesh of meshes) {
+    const pos = mesh.geometry.getAttribute("position")
+    const index = mesh.geometry.getIndex()
+    const count = index ? index.count : pos.count
+    for (let i = 0; i < count; i += 3) {
+      a.fromBufferAttribute(pos, index ? index.getX(i) : i).applyMatrix4(mesh.matrixWorld)
+      b.fromBufferAttribute(pos, index ? index.getX(i + 1) : i + 1).applyMatrix4(mesh.matrixWorld)
+      c.fromBufferAttribute(pos, index ? index.getX(i + 2) : i + 2).applyMatrix4(mesh.matrixWorld)
+      const normal = new THREE.Vector3().subVectors(b, a).cross(edge.subVectors(c, a))
+      const area = normal.length() / 2
+      if (area === 0) continue
+      const centroid = new THREE.Vector3().addVectors(a, b).add(c).divideScalar(3)
+      if (normal.dot(edge.subVectors(centroid, carCenter)) < 0) normal.negate()
+      triangles.push({ normal: normal.normalize(), area, centroid })
+    }
+  }
+  return triangles
+}
+
+/**
+ * Where a zone faces (area-weighted outward normal) and where its badge sits: the area-weighted
+ * centre of the triangles that face that way, i.e. on the visible skin rather than inside the body.
+ * Returns null when the triangles point every which way and no single direction dominates.
+ */
+function placeAnchor(triangles: Triangle[]): ZoneAnchor | null {
+  const facing = new THREE.Vector3()
+  let total = 0
+  for (const t of triangles) { facing.addScaledVector(t.normal, t.area); total += t.area }
+  if (!total || facing.length() / total < 0.25) return null
+  facing.normalize()
+  const center = new THREE.Vector3()
+  let weight = 0
+  for (const t of triangles) if (t.normal.dot(facing) > 0.6) { center.addScaledVector(t.centroid, t.area); weight += t.area }
+  return weight ? { center: center.divideScalar(weight), facing } : null
+}
+
+
+function CarModel({ model, marks, onZoneClick, hovered, setHovered, onReady }: Vehicle3DViewerProps & { hovered: ZoneId | null; setHovered: (zone: ZoneId | null) => void; onReady: (anchors: Map<ZoneId, ZoneAnchor>, radius: number) => void }) {
   const { scene } = useGLTF(VEHICLE_3D_MODELS[model].url, false, true)
   // Every zone gets its own material copies so tinting one panel never bleeds into another.
-  const { root, zones, ground } = useMemo(() => {
+  const { root, zones, ground, radius } = useMemo(() => {
     const root = scene.clone(true)
     type ZoneEntry = { meshes: THREE.Mesh[]; base: Map<THREE.Material, THREE.Color>; center: THREE.Vector3; facing: THREE.Vector3 }
     const zones = new Map<ZoneId, ZoneEntry>()
@@ -48,31 +91,20 @@ function CarModel({ model, marks, onZoneClick, hovered, setHovered, onReady }: V
     })
     root.updateMatrixWorld(true)
     const carCenter = new THREE.Box3().setFromObject(root).getCenter(new THREE.Vector3())
-    const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3(), out = new THREE.Vector3()
     for (const entry of zones.values()) {
-      new THREE.Box3().setFromObject(entry.meshes[0].parent ?? entry.meshes[0]).getCenter(entry.center)
-      // Area-weighted triangle normals, each flipped to point away from the car's centre, give the
-      // way the panel faces (hood up, door sideways) regardless of inner skins or winding order.
-      for (const mesh of entry.meshes) {
-        const pos = mesh.geometry.getAttribute("position")
-        const index = mesh.geometry.getIndex()
-        const count = index ? index.count : pos.count
-        for (let i = 0; i < count; i += 3) {
-          const [ia, ib, ic] = index ? [index.getX(i), index.getX(i + 1), index.getX(i + 2)] : [i, i + 1, i + 2]
-          a.fromBufferAttribute(pos, ia).applyMatrix4(mesh.matrixWorld)
-          b.fromBufferAttribute(pos, ib).applyMatrix4(mesh.matrixWorld)
-          c.fromBufferAttribute(pos, ic).applyMatrix4(mesh.matrixWorld)
-          n.subVectors(b, a).cross(out.subVectors(c, a))
-          out.addVectors(a, b).add(c).divideScalar(3).sub(carCenter)
-          entry.facing.add(n.dot(out) < 0 ? n.negate() : n)
-        }
-      }
-      entry.facing.normalize()
+      const triangles = outwardTriangles(entry.meshes, carCenter)
+      let anchor = placeAnchor(triangles)
+      // Zones spread around the car (the four wheels) have no direction of their own: pin their
+      // badge to the front-left corner, the one the home camera looks at.
+      if (!anchor) anchor = placeAnchor(triangles.filter((t) => t.centroid.x > carCenter.x && t.centroid.z > carCenter.z))
+      if (anchor) { entry.center.copy(anchor.center); entry.facing.copy(anchor.facing) }
+      else new THREE.Box3().setFromObject(entry.meshes[0].parent ?? entry.meshes[0]).getCenter(entry.center)
     }
-    return { root, zones, ground: new THREE.Box3().setFromObject(root).min.y }
+    const box = new THREE.Box3().setFromObject(root)
+    return { root, zones, ground: box.min.y, radius: box.getBoundingSphere(new THREE.Sphere()).radius }
   }, [scene])
 
-  useEffect(() => onReady(zones), [onReady, zones])
+  useEffect(() => onReady(zones, radius), [onReady, zones, radius])
 
   useEffect(() => {
     for (const [zone, entry] of zones) {
@@ -111,7 +143,7 @@ function CarModel({ model, marks, onZoneClick, hovered, setHovered, onReady }: V
  * Moves the DOM damage badges onto their panels every frame. Badges live outside the canvas in the
  * normal React tree (drei's <Html> mounts a root per badge, which React 19 warns about on unmount).
  * A badge hides once its panel turns away from the camera, so far-side numbers never show through
- * the body; zones without a dominant direction (the four wheels together) always show.
+ * the body; a zone whose direction could not be determined keeps its badge visible.
  */
 const projected = new THREE.Vector3()
 const toCamera = new THREE.Vector3()
@@ -133,15 +165,13 @@ function BadgeProjector({ anchors, badges }: { anchors: Map<ZoneId, ZoneAnchor>;
 
 /** Front three-quarter view, matching how a workshop first walks up to the car. */
 const HOME_DIRECTION = new THREE.Vector3(3.3, 1.45, 3.7).normalize()
-/** Radius of a sphere that encloses a passenger car (metres). */
-const CAR_RADIUS = 2.3
 
 type Orbit = { target: THREE.Vector3; update: () => void; minDistance: number; maxDistance: number }
 /** Puts the camera on the home direction at a distance that fits the car into the canvas aspect. */
-function frameCar(camera: THREE.PerspectiveCamera, orbit: Orbit | null, width: number, height: number) {
+function frameCar(camera: THREE.PerspectiveCamera, orbit: Orbit | null, radius: number, width: number, height: number) {
   const vertical = THREE.MathUtils.degToRad(camera.fov) / 2
   const horizontal = Math.atan(Math.tan(vertical) * (width / height))
-  const distance = (CAR_RADIUS / Math.sin(Math.min(vertical, horizontal))) * 0.82
+  const distance = (radius / Math.sin(Math.min(vertical, horizontal))) * 0.82
   camera.position.copy(HOME_DIRECTION).multiplyScalar(distance)
   if (!orbit) return
   orbit.minDistance = distance * 0.55
@@ -151,18 +181,19 @@ function frameCar(camera: THREE.PerspectiveCamera, orbit: Orbit | null, width: n
 }
 
 /** Keeps the whole car in frame for any canvas aspect; re-runs on resize and on "reset view". */
-function FitCamera({ signal }: { signal: number }) {
+function FitCamera({ signal, radius }: { signal: number; radius: number }) {
   const { camera, controls, size } = useThree()
   useEffect(() => {
-    if (camera instanceof THREE.PerspectiveCamera) frameCar(camera, controls as unknown as Orbit | null, size.width, size.height)
-  }, [signal, camera, controls, size.width, size.height])
+    if (camera instanceof THREE.PerspectiveCamera) frameCar(camera, controls as unknown as Orbit | null, radius, size.width, size.height)
+  }, [signal, radius, camera, controls, size.width, size.height])
   return null
 }
 
 export default function Vehicle3DViewer(props: Vehicle3DViewerProps) {
   const [hovered, setHovered] = useState<ZoneId | null>(null)
   const [reset, setReset] = useState(0)
-  const [anchors, setAnchors] = useState<Map<ZoneId, ZoneAnchor> | null>(null)
+  const [scene, setScene] = useState<{ anchors: Map<ZoneId, ZoneAnchor>; radius: number } | null>(null)
+  const onReady = useCallback((anchors: Map<ZoneId, ZoneAnchor>, radius: number) => setScene({ anchors, radius }), [])
   const badges = useRef(new Map<string, HTMLDivElement>())
   const wrapper = useRef<HTMLDivElement>(null)
   const credit = VEHICLE_3D_MODELS[props.model].credit
@@ -183,18 +214,18 @@ export default function Vehicle3DViewer(props: Vehicle3DViewerProps) {
           <Lightformer form="rect" intensity={0.8} position={[0, 2, 6]} scale={[8, 2, 1]} />
         </Environment>
         <Suspense fallback={null}>
-          <CarModel {...props} hovered={hovered} setHovered={setHovered} onReady={setAnchors} />
+          <CarModel {...props} hovered={hovered} setHovered={setHovered} onReady={onReady} />
         </Suspense>
         <OrbitControls makeDefault enablePan={false} enableDamping minPolarAngle={0.25} maxPolarAngle={Math.PI / 2 - 0.04} />
-        <FitCamera signal={reset} />
-        {anchors && <BadgeProjector anchors={anchors} badges={badges} />}
+        {scene && <FitCamera signal={reset} radius={scene.radius} />}
+        {scene && <BadgeProjector anchors={scene.anchors} badges={badges} />}
       </Canvas>
       {Object.entries(props.marks).filter(([, numbers]) => numbers?.length).map(([zone, numbers]) => (
         <div key={zone} ref={(el) => { if (el) badges.current.set(zone, el); else badges.current.delete(zone) }} className="pointer-events-none invisible absolute left-0 top-0 flex gap-0.5">
           {numbers!.map((n) => <span key={n} className="grid size-6 place-items-center rounded-full bg-foreground text-[11px] font-semibold text-background shadow-sm ring-2 ring-card">{n}</span>)}
         </div>
       ))}
-      {!anchors && <div className="pointer-events-none absolute inset-0 grid place-items-center"><BrandSpinner size={40} label="3B model yükleniyor" /></div>}
+      {!scene && <div className="pointer-events-none absolute inset-0 grid place-items-center"><BrandSpinner size={40} label="3B model yükleniyor" /></div>}
       <div className="pointer-events-none absolute left-3 top-3 min-h-6 text-sm font-medium" aria-live="polite">
         {hovered && <span className="rounded-md bg-background/90 px-2 py-1 shadow-sm">{VEHICLE_ZONES[hovered]}</span>}
       </div>

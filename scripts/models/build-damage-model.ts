@@ -11,7 +11,7 @@
  * The source models are CC-BY 4.0 — keep the credit in src/components/damage/vehicle-3d-credits.ts in sync.
  */
 import { statSync } from "node:fs"
-import { Accessor, Document, NodeIO, type Primitive } from "@gltf-transform/core"
+import { Accessor, Document, NodeIO, type Node as GltfNode, type Primitive } from "@gltf-transform/core"
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions"
 import { clearNodeTransform, dedup, flatten, meshopt, prune, quantize, reorder, weld } from "@gltf-transform/functions"
 import { MeshoptEncoder } from "meshoptimizer"
@@ -29,9 +29,10 @@ const sideOf = (name: string): "left" | "right" | null =>
 
 /** First match wins. `null` drops the part; a function receives the side parsed from the node name. */
 const RULES: Rule[] = [
-  { match: /interior|door-panel|rearview|engine|mechanics|spring|suspension|exhaust|pedal|seat|dashboard|console|steering|carpet|lining|chassis-floor/, zone: null },
-  { match: /^(wheel|tire|brake|rim)/, zone: "wheels" },
-  { match: /^(bumper-front|front-grill|grille-front|bumper-front-grille)/, zone: "front_bumper" },
+  { match: /interior|door-panel|rearview|engine|mechanics|spring|suspension|shock-absorber|exhaust|escape-pipe|pedal|seat|dashboard|console|steering|column-wheel|carpet|lining|chassis-floor|^frame-|radiator|car-bottom/, zone: null },
+  { match: /^wheel-fender/, zone: (s) => `${s}_front_fender` },
+  { match: /^(generic-)?(wheel|tire|brake|rim)/, zone: "wheels" },
+  { match: /^(bumper-front|front-grill|grille-front|honeycomb-grill)/, zone: "front_bumper" },
   { match: /drl|^headlight/, zone: (s) => `${s}_headlight` },
   { match: /^(bumper-rear|rear-splitter|diffuser)/, zone: "rear_bumper" },
   { match: /^hood/, zone: "hood" },
@@ -39,9 +40,9 @@ const RULES: Rule[] = [
   { match: /^glass-sunroof|^roof/, zone: "roof" },
   { match: /^glass-rear-frame/, zone: (s) => `${s}_rear_fender` },
   { match: /^glass-rear|^wiper-rear/, zone: "rear_window" },
-  { match: /^taillight-(body|trunk)-(led|cover|back)-(left|right)|^taillight-(left|right)/, zone: (s) => `${s}_taillight` },
+  { match: /^taillight/, zone: (s) => `${s}_taillight` },
   { match: /^trunk|^tailgate/, zone: "trunk" },
-  { match: /^(door-front|glass-door-front|mirror)/, zone: (s) => `${s}_front_door` },
+  { match: /^(door-front|glass-door-front)|mirror/, zone: (s) => `${s}_front_door` },
   { match: /^(door-rear|glass-door-rear)/, zone: (s) => `${s}_rear_door` },
   { match: /^fender-front/, zone: (s) => `${s}_front_fender` },
   { match: /^fender-rear/, zone: (s) => `${s}_rear_fender` },
@@ -59,9 +60,21 @@ const ROLE_OF_MATERIAL: [RegExp, Role][] = [
 ]
 
 await MeshoptEncoder.ready
+/**
+ * Sketchfab exports name parts either on the mesh node ("door-front-left_body_0") or, in its GLB
+ * conversion, on the parent of an anonymous "Object_12" mesh node ("door-front-l_16").
+ */
+const parentOf = new Map<GltfNode, GltfNode>()
+const partName = (node: GltfNode) => {
+  const own = node.getName()
+  const raw = /^Object_\d+$/.test(own) ? (parentOf.get(node)?.getName() ?? own) : own
+  return raw.toLowerCase().replace(/_[^_]*_\d+$/, "").replace(/_\d+$/, "")
+}
+
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ "meshopt.encoder": MeshoptEncoder })
 const doc = await io.read(source)
 const root = doc.getRoot()
+for (const parent of root.listNodes()) for (const child of parent.listChildren()) parentOf.set(child, parent)
 await doc.transform(flatten())
 for (const node of root.listNodes()) if (node.getMesh()) clearNodeTransform(node)
 
@@ -113,7 +126,7 @@ const unmatched: string[] = []
 for (const node of root.listNodes()) {
   const mesh = node.getMesh()
   if (!mesh) continue
-  const name = node.getName().toLowerCase().replace(/_[^_]*_\d+$/, "")
+  const name = partName(node)
   const rule = RULES.find((r) => r.match.test(name))
   const prims = mesh.listPrimitives()
   if (rule?.zone === null) continue
@@ -121,9 +134,9 @@ for (const node of root.listNodes()) {
   // Trunk-mounted lamp clusters span both sides: split them at the centre line.
   if (/^taillight-trunk-(cover|back)$/.test(name) || /^taillight-(cover|back)$/.test(name)) { sideLights.push(...prims); continue }
   if (!rule?.zone) { unmatched.push(name); continue }
-  const side = sideOf(name)
-  if (typeof rule.zone === "function" && !side) { unmatched.push(name); continue }
-  for (const prim of prims) add(typeof rule.zone === "function" ? rule.zone(side!) : rule.zone, prim)
+  // A few parts carry no side in their name ("headlights-drl.001"); +x is the vehicle's left.
+  const side = sideOf(name) ?? (bounds(prims).min[0] + bounds(prims).max[0] > 0 ? "left" : "right")
+  for (const prim of prims) add(typeof rule.zone === "function" ? rule.zone(side) : rule.zone, prim)
 }
 if (unmatched.length) throw new Error(`unclassified parts — add a rule:\n  ${[...new Set(unmatched)].join("\n  ")}`)
 
@@ -156,10 +169,13 @@ if (missing.length) throw new Error(`model has no geometry for: ${missing.join("
 // Rebuild the scene: one node per zone, everything else removed.
 const scene = root.listScenes()[0]
 for (const node of root.listNodes()) node.dispose()
+// Centre the car on the origin so every model frames the same way in the viewer.
+const all = bounds([...zones.values()].flat())
+const offset = all.min.map((min, k) => -(min + all.max[k]) / 2) as [number, number, number]
 for (const [zone, prims] of zones) {
   const mesh = doc.createMesh(zone)
   for (const prim of prims) mesh.addPrimitive(prim)
-  scene.addChild(doc.createNode(zone).setMesh(mesh))
+  scene.addChild(doc.createNode(zone).setMesh(mesh).setTranslation(offset))
 }
 for (const tex of root.listTextures()) tex.dispose()
 
