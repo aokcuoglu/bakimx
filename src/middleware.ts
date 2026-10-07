@@ -246,5 +246,5 @@ export const config = {
   // takılırsa /login'e 307'lenir, tarayıcı JavaScript yerine HTML alır ve
   // kayıt "unsupported MIME type" ile düşer. İçeriğinde kiracıya ait hiçbir
   // veri yok; payload'ı push mesajı taşır.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|landing/|illustrations/|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|landing/|illustrations/|models/|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
 }
