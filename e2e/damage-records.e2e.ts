@@ -51,7 +51,7 @@ test("damage cards reload, preserve numbering, edit multiple marks and require e
   // The 3D model is the default view; the exploded plan stays one toggle away for keyboard use.
   const showPlan=async()=>{
     await expect(page.locator('canvas[aria-label="3B araç hasar modeli"]')).toBeVisible()
-    await page.getByRole("radio",{name:"Açılım şeması",exact:true}).click()
+    await page.getByRole("radio",{name:"Açılım",exact:true}).click()
   }
   await showPlan()
   const hood=page.getByRole("button",{name:"Kaput — hasar ekle",exact:true})
@@ -96,7 +96,7 @@ test("damage cards reload, preserve numbering, edit multiple marks and require e
     await page.getByRole("button",{name:"İşareti Kaldır",exact:true}).click()
   }
   await expect(page.getByText("Kontrol kaydı yok",{exact:true})).toBeVisible()
-  await page.getByRole("button",{name:"Kontrol edildi, görünür hasar gözlenmedi",exact:true}).click()
+  await page.getByRole("button",{name:"Hasar yok olarak işaretle",exact:true}).click()
   await expect(page.getByText("Kontrol edildi, görünür hasar gözlenmedi",{exact:false}).last()).toBeVisible()
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1)
   await page.goto("/orders")

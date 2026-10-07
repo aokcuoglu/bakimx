@@ -226,7 +226,7 @@ export default function Vehicle3DViewer(props: Vehicle3DViewerProps) {
         </div>
       ))}
       {!scene && <div className="pointer-events-none absolute inset-0 grid place-items-center"><BrandSpinner size={40} label="3B model yükleniyor" /></div>}
-      <div className="pointer-events-none absolute left-3 top-3 min-h-6 text-sm font-medium" aria-live="polite">
+      <div className="pointer-events-none absolute bottom-3 left-3 min-h-6 text-sm font-medium" aria-live="polite">
         {hovered && <span className="rounded-md bg-background/90 px-2 py-1 shadow-sm">{VEHICLE_ZONES[hovered]}</span>}
       </div>
       <Button type="button" variant="outline" size="icon-sm" className="absolute right-3 top-3" aria-label="Görünümü sıfırla" onClick={() => setReset((n) => n + 1)}><RotateCcw /></Button>
