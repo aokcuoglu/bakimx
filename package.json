@@ -5,7 +5,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "postinstall": "bash scripts/setup-git-hooks.sh 2>/dev/null || true; prisma generate",
-    "dev": "next dev",
+    "dev": "next dev --port 3001",
     "dev:tunnel": "bash scripts/dev-with-tunnel.sh",
     "build": "next build",
     "start": "next start",
