@@ -271,9 +271,10 @@ describe("renderIntakePrintoutHtml", () => {
 
 describe("damage evidence report", () => {
   const mark = { number: 17, zone: "hood", damageType: "scratch", severity: "light", note: '<script>unsafe</script>', photos: [{ photoId: "p1" }] }
-  test("keeps permanent numbers across all views and linked photo captions", () => {
+  test("keeps permanent numbers on the exploded diagram and linked photo captions", () => {
     const html = render({ bodyType: "suv", inspectionStatus: "not_recorded", damageMarks: [mark], photos: [{ id: "p1", type: "damage_detail", label: "Hasar", fileUrl: "/s/test-token/photos/p1", phase: "intake" }] })
-    for (const view of ["Ön", "Arka", "Sol", "Sağ", "Üst"]) expect(html).toContain(`aria-label="${view} görünüş"`)
+    expect(html.match(/aria-label="Araç hasar şeması"/g)).toHaveLength(1)
+    expect(html).toContain(">17</text>")
     expect(html).toContain("#17 · Kaput")
     expect(html).toContain('alt="Hasar 17 fotoğrafı"')
     expect(html).toContain('src="/s/test-token/photos/p1"')

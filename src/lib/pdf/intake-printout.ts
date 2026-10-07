@@ -506,10 +506,9 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
     .total-grand { margin-top: 5px; font-size: 13px; font-weight: 700; color: var(--ink); }
 
     .damage-report { margin-bottom: 18px; }
-    .damage-views { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-    .damage-views figure, .damage-images figure { margin: 0; break-inside: avoid; }
-    .damage-views svg { display: block; width: 100%; height: 42mm; }
-    .damage-views figcaption, .damage-images figcaption { text-align: center; font-size: 10px; color: var(--muted); }
+    .damage-diagram, .damage-images figure { margin: 0; break-inside: avoid; }
+    .damage-diagram svg { display: block; width: 100%; height: 110mm; }
+    .damage-images figcaption { text-align: center; font-size: 10px; color: var(--muted); }
     .damage-card { margin-top: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; break-inside: avoid; }
     .damage-card h3 { margin: 0; font-size: 12px; }
     .damage-card p { margin: 4px 0; }

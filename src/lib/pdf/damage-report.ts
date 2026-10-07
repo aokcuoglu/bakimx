@@ -1,4 +1,4 @@
-import { BODY_TYPES, VEHICLE_VIEWS, getVehicleGeometry, type BodyType, type VehicleView } from "@/components/damage/vehicle-geometry"
+import { BODY_TYPES, getVehicleGeometry, type BodyType } from "@/components/damage/vehicle-geometry"
 import { escapeHtml } from "@/lib/html-escape"
 import type { SafeIntakeData } from "@/lib/intake/data-safety"
 
@@ -16,16 +16,17 @@ export function renderDamageReport(data: SafeIntakeData): string {
     : data.inspectionStatus === "no_visible_damage"
       ? "Kontrol edildi, görünür hasar gözlenmedi"
       : "Kontrol kaydı yok"
-  const views = body === "unsupported" ? "" : `<div class="damage-views">${Object.entries(VEHICLE_VIEWS).map(([key, label]) => {
-    const geometry = getVehicleGeometry(body, key as VehicleView)
-    const paths = geometry.panels.map((p) => `<path d="${p.path}" fill="${p.glass ? "var(--line)" : "var(--surface)"}" stroke="var(--ink)" stroke-width="1.5"/>`).join("")
-    const details = geometry.details.map((d) => `<path d="${d}" fill="none" stroke="var(--muted)" stroke-width="1.5"/>`).join("")
+  const geometry = getVehicleGeometry(body)
+  const diagram = body === "unsupported" ? "" : (() => {
+    const paths = geometry.panels.map((p) => `<path d="${p.path}" fill="${p.tire ? "var(--ink)" : p.glass ? "var(--line)" : "var(--surface)"}" stroke="var(--ink)" stroke-width="1.1"/>`).join("")
+    const details = geometry.details.map((d) => `<path d="${d}" fill="var(--line)" stroke="var(--muted)" stroke-width="1"/>`).join("")
+    const labels = geometry.labels.map((l) => `<text x="${l.x}" y="${l.y}"${l.rotate ? ` transform="rotate(${l.rotate} ${l.x} ${l.y})"` : ""} text-anchor="middle" dominant-baseline="central" fill="var(--muted)" font-size="11" font-weight="600" letter-spacing="1.3">${l.text}</text>`).join("")
     const numbers = geometry.panels.map((panel) => {
       const marks = data.damageMarks.filter((m) => m.zone === panel.id)
-      return marks.map((m, i) => `<g transform="translate(${panel.x + (i % 3) * 24 - Math.min(marks.length - 1, 2) * 12},${panel.y + Math.floor(i / 3) * 24})"><circle r="11" fill="var(--primary)"/><text text-anchor="middle" dominant-baseline="central" fill="white" font-size="12" font-weight="700">${m.number}</text></g>`).join("")
+      return marks.map((m, i) => `<g transform="translate(${panel.x + (i % 3) * 22 - Math.min(marks.length - 1, 2) * 11},${panel.y + Math.floor(i / 3) * 22})"><circle r="10" fill="var(--primary)" stroke="white" stroke-width="1.5"/><text text-anchor="middle" dominant-baseline="central" fill="white" font-size="10.5" font-weight="700">${m.number}</text></g>`).join("")
     }).join("")
-    return `<figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" role="img" aria-label="${label} görünüş">${paths}${details}${numbers}</svg><figcaption>${label}</figcaption></figure>`
-  }).join("")}</div>`
+    return `<figure class="damage-diagram"><svg xmlns="http://www.w3.org/2000/svg" viewBox="${geometry.viewBox}" stroke-linejoin="round" role="img" aria-label="Araç hasar şeması">${paths}${details}${labels}${numbers}</svg></figure>`
+  })()
   const cards = data.damageMarks.map((mark) => {
     const photos = data.photos.filter((photo) => mark.photoIds.includes(photo.id))
     const images = photos.map((photo) => {
@@ -34,5 +35,5 @@ export function renderDamageReport(data: SafeIntakeData): string {
     }).filter(Boolean)
     return `<article class="damage-card"><h3>#${mark.number} · ${mark.zoneLabel}</h3><p>${mark.damageTypeLabel} · ${mark.severityLabel}</p>${mark.note ? `<p class="damage-note">${mark.note}</p>` : ""}${images.length ? `<div class="damage-images">${images.join("")}</div>` : `<p class="field-sub">${data.photosVisible === false ? "Fotoğraflar bu paylaşımda gösterilmiyor" : "Fotoğraf eklenmedi"}</p>`}</article>`
   }).join("")
-  return `<section class="damage-report"><h2 class="section-title">Araç Hasar Kontrolü</h2><p>${inspection}${data.inspectedAt ? ` · ${new Date(data.inspectedAt).toLocaleString("tr-TR")}` : ""}</p><p class="field-sub">${BODY_TYPES[body]} · Temsili şema. Sağ ve sol aracın sürüş yönüne göredir.</p>${views}${cards ? `<h2 class="section-title">Hasar Kayıtları</h2>${cards}` : ""}</section>`
+  return `<section class="damage-report"><h2 class="section-title">Araç Hasar Kontrolü</h2><p>${inspection}${data.inspectedAt ? ` · ${new Date(data.inspectedAt).toLocaleString("tr-TR")}` : ""}</p><p class="field-sub">${BODY_TYPES[body]} · Temsili açılım şeması. Sol ve sağ, aracın sürüş yönüne göredir.</p>${diagram}${cards ? `<h2 class="section-title">Hasar Kayıtları</h2>${cards}` : ""}</section>`
 }
