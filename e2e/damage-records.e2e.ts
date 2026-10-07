@@ -60,12 +60,10 @@ test("damage cards reload, preserve numbering, edit multiple marks and require e
   for (const body of ["SUV","Hafif ticari","Binek"]) {
     await page.getByRole("combobox",{name:"Araç şeması"}).click()
     await page.getByRole("option",{name:body,exact:true}).click()
-    for (const view of ["Ön","Arka","Sol","Sağ","Üst"]) {
-      await page.getByRole("tab",{name:view,exact:true}).click()
-      await expect(page.getByRole("group",{name:`${view} araç görünüşü`})).toBeVisible()
-      const panel=page.getByRole("group",{name:`${view} araç görünüşü`}).getByRole("button").first()
-      const region=(await panel.getAttribute("aria-label"))!.split(" — ")[0]
-      await panel.click()
+    const diagram=page.getByRole("group",{name:"Araç hasar şeması"})
+    await expect(diagram.getByRole("button")).toHaveCount(20)
+    for (const region of ["Ön tampon","Sol ön kapı","Sağ arka çamurluk","Tekerlekler"]) {
+      await diagram.getByRole("button",{name:`${region} — hasar ekle`,exact:true}).click()
       await expect(page.getByRole("dialog").getByRole("heading",{name:region,exact:true})).toBeVisible()
       await page.getByRole("dialog").getByRole("button",{name:"Vazgeç",exact:true}).click()
     }

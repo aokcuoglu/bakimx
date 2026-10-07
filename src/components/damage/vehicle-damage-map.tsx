@@ -5,37 +5,44 @@ import { useState } from "react"
 import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES } from "@/lib/constants"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { PhotoLightbox } from "@/components/shared/photo-lightbox"
-import { getVehicleGeometry, VEHICLE_VIEWS, type BodyType, type VehicleView } from "./vehicle-geometry"
+import { cn } from "@/lib/utils"
+import { getVehicleGeometry, type BodyType } from "./vehicle-geometry"
 
 export type DamagePhoto = { id: string; label: string; fileUrl: string | null }
 export type DamageRecord = { id: string; number?: number; zone: string; damageType: string; severity: string; note: string | null; photoIds?: string[] }
 type Props = { damageMarks: DamageRecord[]; bodyType?: BodyType; photos?: DamagePhoto[]; photosVisible?: boolean; onZoneClick?: (zone: string) => void; onEditMark?: (mark: DamageRecord) => void; onRemoveMark?: (id: string) => void; vehicle?: { plate: string; brand: string; model: string } | null; inspectionStatus?: string; inspectedAt?: string | null }
 export function VehicleDamageMap({ damageMarks, bodyType = "sedan", photos = [], photosVisible = true, onZoneClick, onEditMark, onRemoveMark, vehicle, inspectionStatus, inspectedAt }: Props) {
-  const [view,setView] = useState<VehicleView>("top")
   const [activePhotos,setActivePhotos] = useState<DamagePhoto[]>([])
   const [photoIndex,setPhotoIndex] = useState(0)
-  const geometry = getVehicleGeometry(bodyType,view)
+  const geometry = getVehicleGeometry(bodyType)
   return <div className="space-y-3">
     {vehicle && <p className="font-medium">{vehicle.plate} · {vehicle.brand} {vehicle.model}</p>}
     <p className="text-sm text-muted-foreground">{damageMarks.length ? `${damageMarks.length} hasar kaydı` : inspectionStatus === "no_visible_damage" ? "Kontrol edildi, görünür hasar gözlenmedi" : "Kontrol kaydı yok"}{inspectedAt && ` · ${new Date(inspectedAt).toLocaleString("tr-TR")}`}</p>
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="space-y-2">
         {bodyType !== "unsupported" && <>
-          <Tabs className="print:hidden" value={view} onValueChange={v => setView(v as VehicleView)}><TabsList className="w-full">{Object.entries(VEHICLE_VIEWS).map(([key,label]) => <TabsTrigger value={key} key={key}>{label}</TabsTrigger>)}</TabsList><TabsContent value={view}>
-          <svg viewBox={view === "top" ? "120 0 240 300" : "0 0 480 300"} role={onZoneClick ? "group" : "img"} aria-label={`${VEHICLE_VIEWS[view]} araç görünüşü`} className="print:hidden h-[300px] w-full rounded-xl border bg-card sm:h-[340px]">
-            {geometry.panels.map(p => { const marks = damageMarks.filter(m => m.zone === p.id); return <g key={p.id}>
-              <path d={p.path} onClick={onZoneClick ? ()=>onZoneClick(p.id) : undefined} className={onZoneClick ? "cursor-pointer" : undefined} stroke="var(--foreground)" strokeWidth="1.3" fill={marks.length ? "var(--warning)" : p.glass ? "var(--muted)" : "var(--card)"} />
-              {marks.length > 0 && <g><rect x={p.x-19} y={p.y-9} width={Math.max(38,marks.length*22)} height={18} rx={7} fill="var(--foreground)" /><text x={p.x} y={p.y+4} fill="var(--background)" fontSize={11} textAnchor="middle">{marks.map(m=>m.number ?? damageMarks.indexOf(m)+1).join(", ")}</text></g>}
-
-            </g> })}
-            {geometry.details.map((d,i)=><path key={i} d={d} fill="var(--muted)" stroke="var(--foreground)" strokeWidth="1.2" pointerEvents="none" />)}
-            {onZoneClick && geometry.panels.map(p => <Button asChild variant="ghost" key={`target-${p.id}`} className="p-0"><g role="button" tabIndex={0} aria-label={`${VEHICLE_ZONES[p.id as keyof typeof VEHICLE_ZONES]} — hasar ekle`} onClick={()=>onZoneClick(p.id)} onKeyDown={event=>{if(event.key === "Enter" || event.key === " "){event.preventDefault();onZoneClick(p.id)}}}><rect x={p.x-22} y={p.y-20} width={44} height={40} rx={4} fill="transparent" strokeWidth={2} className="stroke-transparent group-focus-visible/button:stroke-ring" pointerEvents="all" /></g></Button>)}
-
-          </svg></TabsContent></Tabs>
-          <div className="hidden print:grid print:grid-cols-2 print:gap-2">{(Object.entries(VEHICLE_VIEWS) as [VehicleView,string][]).map(([printView,label])=><figure key={printView} className="break-inside-avoid"><figcaption className="text-xs">{label}</figcaption><svg viewBox="0 0 480 300" aria-label={`${label} basılı araç görünüşü`}>{getVehicleGeometry(bodyType,printView).panels.map(p=><g key={p.id}><path d={p.path} fill="none" stroke="currentColor" strokeWidth={1.3} /><text x={p.x} y={p.y+4} fontSize={13} textAnchor="middle" fill="currentColor">{damageMarks.filter(m=>m.zone===p.id).map(m=>`#${m.number ?? damageMarks.indexOf(m)+1}`).join(", ")}</text></g>)}{getVehicleGeometry(bodyType,printView).details.map((d,i)=><path key={i} d={d} fill="none" stroke="currentColor" />)}</svg></figure>)}</div>
-          <p className="text-xs text-muted-foreground">Temsili şema. Sağ ve sol sürüş yönüne göredir. {view === "left" || view === "right" ? "Aracın önü soldadır." : ""}</p>
+          <div className="rounded-xl border bg-card p-3 sm:p-4">
+            <svg viewBox={geometry.viewBox} role={onZoneClick ? "group" : "img"} aria-label="Araç hasar şeması" className="mx-auto block h-auto w-full max-w-[380px]" strokeLinejoin="round">
+              {geometry.labels.map(l => <text key={l.text} x={l.x} y={l.y} transform={l.rotate ? `rotate(${l.rotate} ${l.x} ${l.y})` : undefined} textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600} letterSpacing="0.12em" className="fill-muted-foreground">{l.text}</text>)}
+              {geometry.panels.map(p => {
+                const damaged = damageMarks.some(m => m.zone === p.id)
+                const shape = <path d={p.path} strokeWidth={1.2} className={cn("transition-colors", damaged ? "fill-warning/40 stroke-warning-strong" : cn("stroke-foreground/55", p.tire ? "fill-foreground/80" : p.glass ? "fill-muted" : "fill-card"), onZoneClick && cn("cursor-pointer group-focus-visible/button:stroke-ring group-focus-visible/button:stroke-[3]", p.tire ? "hover:fill-foreground/60" : "hover:fill-primary/15"))} />
+                if (!onZoneClick) return <g key={p.id}>{shape}</g>
+                return <Button asChild variant="ghost" key={p.id} className="p-0"><g role="button" tabIndex={0} aria-label={`${VEHICLE_ZONES[p.id as keyof typeof VEHICLE_ZONES]} — hasar ekle`} onClick={()=>onZoneClick(p.id)} onKeyDown={event=>{if(event.key === "Enter" || event.key === " "){event.preventDefault();onZoneClick(p.id)}}}>{shape}</g></Button>
+              })}
+              {geometry.details.map((d,i)=><path key={i} d={d} strokeWidth={1} className="fill-muted stroke-foreground/45" pointerEvents="none" />)}
+              {geometry.panels.map(p => {
+                const numbers = damageMarks.filter(m => m.zone === p.id).map(m => m.number ?? damageMarks.indexOf(m)+1)
+                const perRow = Math.min(numbers.length, 3)
+                return numbers.map((num,i) => <g key={`${p.id}-${num}`} transform={`translate(${p.x + ((i % 3) - (perRow - 1) / 2) * 22},${p.y + Math.floor(i / 3) * 22})`} pointerEvents="none">
+                  <circle r={10} className="fill-foreground stroke-card" strokeWidth={1.5} />
+                  <text textAnchor="middle" dominantBaseline="central" fontSize={10.5} fontWeight={600} className="fill-background">{num}</text>
+                </g>)
+              })}
+            </svg>
+          </div>
+          <p className="text-xs text-muted-foreground">Temsili açılım şeması. Sol ve sağ, aracın sürüş yönüne göredir.</p>
         </>}
         {onZoneClick && <Accordion type="single" collapsible><AccordionItem value="zones"><AccordionTrigger>Bölge listesinden hasar ekle</AccordionTrigger><AccordionContent><div className="grid grid-cols-2 gap-1">{Object.entries(VEHICLE_ZONES).map(([key,label])=><Button key={key} type="button" variant="outline" size="sm" onClick={()=>onZoneClick(key)}>{label}</Button>)}</div></AccordionContent></AccordionItem></Accordion>}
       </div>
