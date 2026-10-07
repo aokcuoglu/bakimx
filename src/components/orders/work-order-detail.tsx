@@ -73,7 +73,7 @@ import type { OrderStatus, PaymentStatus } from "@prisma/client"
 import { DamageCapture } from "@/components/intake/damage-capture"
 import { PhotoGalleryGrid } from "@/components/intake/photo-gallery-grid"
 import { PhotoPhaseMatrix } from "@/components/intake/photo-phase-matrix"
-import { partitionIntakePhotos } from "@/lib/photos/phase-matrix"
+import { partitionIntakePhotos, photoPhaseForStatus } from "@/lib/photos/phase-matrix"
 import { generateWhatsAppShareText, getWhatsAppSendUrl } from "@/lib/share/whatsapp"
 import { calculatePhotoCompletion } from "@/lib/intake/completeness"
 import { IntakeEvidenceSummary } from "@/components/intake/intake-evidence-summary"
@@ -110,6 +110,7 @@ import { MAX_BATCH_PHOTOS, describeUploadFailure, selectPhotoFiles } from "@/lib
 import { InlineFeatureUpsell } from "@/components/billing/inline-feature-upsell"
 import type { GatedFeature, PlanTier } from "@/lib/plan"
 import { compressImagesForUpload } from "@/lib/image/compress-image"
+import { cn } from "@/lib/utils"
 
 // Header aksiyon ikonları (eski orders ekranıyla aynı görünüm).
 const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
@@ -1383,27 +1384,34 @@ export function WorkOrderDetail({
           <div ref={photosRef} className="scroll-mt-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center justify-between">
-                <span className="flex items-center gap-2"><Camera className="size-4" /> Fotoğraflar</span>
+              <CardTitle className="text-base flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2"><Camera className="size-4 text-muted-foreground" /> Fotoğraflar</span>
                 {canUsePhotoChecklist && (
-                  <span className="text-sm font-normal text-muted-foreground">
-                    {photoCompletion.requiredCompleted} / {photoCompletion.required} zorunlu açı
+                  <span className={cn(
+                    "flex items-center gap-1 text-sm font-medium tabular-nums",
+                    missingRequired.length ? "text-warning-strong" : "text-success-strong",
+                  )}>
+                    {missingRequired.length === 0 && <CheckCircle2 className="size-4" />}
+                    {photoCompletion.requiredCompleted}/{photoCompletion.required} zorunlu
                   </span>
                 )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* Tip × aşama matrisi — hasar detayı alt kartta, burada yok */}
-              {canUsePhotoChecklist && (vehiclePhotos.length > 0 || missingRequired.length > 0) ? (
+              {/* Aşama seçici + açı kutucukları — hasar detayı alt kartta, burada yok */}
+              {canUsePhotoChecklist ? (
                 <PhotoPhaseMatrix
                   photos={vehiclePhotos}
+                  defaultPhase={photoPhaseForStatus(order.status)}
                   canDelete={!orderLocked}
                   onDeleted={() => router.refresh()}
-                  onAdd={
-                    orderLocked
-                      ? undefined
-                      : (type, phase) => focusPhoto(type, phase)
-                  }
+                  onAdd={orderLocked ? undefined : (type, phase) => focusPhoto(type, phase)}
+                  onAddOther={orderLocked ? undefined : (phase) => {
+                    setPhotoType("")
+                    setPhotoPhase(phase)
+                    setPhotoContextLocked(false)
+                    setAddingPhoto(true)
+                  }}
                 />
               ) : vehiclePhotos.length > 0 ? (
                 <PhotoGalleryGrid photos={vehiclePhotos} canDelete={!orderLocked} onDeleted={() => router.refresh()} />
@@ -1411,40 +1419,12 @@ export function WorkOrderDetail({
                 <p className="text-sm text-muted-foreground text-center py-3">Henüz araç fotoğrafı eklenmedi</p>
               )}
 
-              {/* Missing required chips */}
-              {canUsePhotoChecklist && (missingRequired.length > 0 ? (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-xs text-muted-foreground">Eksik:</span>
-                  {missingRequired.map(([key, val]) => (
-                    <Button
-                      key={key}
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      onClick={() => focusPhoto(key)}
-                      className="h-auto gap-1 rounded-full border-destructive/20 bg-destructive/10 px-2 py-1 text-[11px] text-destructive-strong hover:bg-destructive/15"
-                    >
-                      <Camera className="size-3" /> {val.label}
-                    </Button>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-success-strong flex items-center gap-1.5"><CheckCircle2 className="size-3.5" /> Tüm zorunlu fotoğraflar tamam</p>
-              ))}
-
               {!canUsePhotoChecklist && (
                 <InlineFeatureUpsell feature="photoChecklist" currentTier={currentTier} />
               )}
 
-              {/* Add photo trigger + dialog */}
+              {/* Ekleme diyaloğu: boş kutucuk (tür + aşama kilitli) ya da "Fotoğraf ekle" kutusu açar */}
               {!orderLocked && canUsePhotoChecklist && (<>
-              <Button variant="outline" onClick={() => {
-                setPhotoContextLocked(false)
-                setAddingPhoto(true)
-              }} className="w-full">
-                <Plus className="size-3.5 mr-1" /> Fotoğraf Ekle
-              </Button>
-
               <Dialog
                 open={addingPhoto}
                 onOpenChange={(o) => {
@@ -1582,14 +1562,14 @@ export function WorkOrderDetail({
           {/* Hasar */}
           {canUseDamageMap ? <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-warning-strong" /> Hasar</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-muted-foreground" /> Hasar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <DamageCapture reloadKey={JSON.stringify([intake.damageMarks,intake.photos])} intakeFormId={intake.id} vehicle={intake.vehicle} readOnly={orderLocked} modalMetadata />
 
               {damagePhotos.length > 0 && (
                 <div className="pt-3 border-t">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Hasar Fotoğrafları ({damagePhotos.length})</p>
+                  <p className="mb-2 text-sm font-medium">Hasar fotoğrafları <span className="font-normal text-muted-foreground">· {damagePhotos.length}</span></p>
                   <PhotoGalleryGrid photos={damagePhotos} canDelete={!orderLocked} onDeleted={() => router.refresh()} />
                 </div>
               )}
