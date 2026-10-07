@@ -17,6 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Loader2 } from "lucide-react"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 
 type DamageMark = DamageRecord
@@ -209,7 +210,7 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
               <FormField control={form.control} name="note" render={({ field }) => <FormItem><FormLabel>Not</FormLabel><FormControl><Input {...field} placeholder="Örn. 5 cm çizik" /></FormControl><FormMessage /></FormItem>} />
               <FormField control={form.control} name="photoIds" render={({ field }) => <FormItem><FormLabel>Bağlı fotoğraflar</FormLabel><p className="text-xs text-muted-foreground">Bir fotoğraf birden fazla hasara bağlanabilir.</p><div className="grid grid-cols-2 gap-2">{photos.map(photo => <div key={photo.id} className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm"><label className="flex items-center gap-2"><Checkbox checked={field.value?.includes(photo.id) || false} onCheckedChange={checked=>field.onChange(checked ? [...(field.value || []),photo.id] : (field.value || []).filter(id=>id!==photo.id))} />{photo.label}</label><PersistedPhotoEditor photoId={photo.id} onDirtyChange={setPhotoDirty} /></div>)}</div><FormMessage /></FormItem>} />
               <PhotoAnnotate onDirtyChange={setPhotoDirty} intakeFormId={intakeFormId} onUploaded={photo=>{setPhotos(current=>[...current,{id:photo.id,label:"Hasar fotoğrafı",fileUrl:photo.fileUrl || `/api/photos?id=${photo.id}`}]);form.setValue("photoIds",[...(form.getValues("photoIds") || []),photo.id],{shouldDirty:true})}} />
-              <DialogFooter><Button type="button" variant="outline" size="lg" onClick={closeEditor}>Vazgeç</Button><Button variant="foreground" type="submit" size="lg" disabled={form.formState.isSubmitting || photoDirty}>{form.formState.isSubmitting ? <BrandSpinner size={18} label="Kaydediliyor…" /> : "Hasarı Kaydet"}</Button></DialogFooter>
+              <DialogFooter><Button type="button" variant="outline" size="lg" onClick={closeEditor}>Vazgeç</Button><Button variant="foreground" type="submit" size="lg" disabled={form.formState.isSubmitting || photoDirty}>{form.formState.isSubmitting ? <><Loader2 className="size-4 animate-spin" aria-hidden="true" />Kaydediliyor…</> : "Hasarı Kaydet"}</Button></DialogFooter>
             </form>
           </Form>
         </DialogContent>
