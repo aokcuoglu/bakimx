@@ -86,6 +86,6 @@ cd "$ROOT"
 # foreground child exits, so `kill`/IDE-stop would hang until next died. The
 # child stays in this script's process group, so terminal Ctrl-C still reaches
 # it directly.
-next dev &
+bun run dev &
 NEXT_PID=$!
 wait "$NEXT_PID"

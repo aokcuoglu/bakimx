@@ -22,7 +22,7 @@ export async function sendVerifyEmail(workshopId: string): Promise<{ ok: boolean
   if (!workshop || !to) return { ok: false }
 
   const token = createVerifyToken(workshopId)
-  const verifyUrl = buildVerifyUrl(process.env.APP_URL || "http://localhost:3000", token)
+  const verifyUrl = buildVerifyUrl(process.env.APP_URL || "http://localhost:3001", token)
   const built = verifyEmailEmail({ verifyUrl, firstName: owner?.firstName || "" })
 
   const res = await sendSystemEmail({

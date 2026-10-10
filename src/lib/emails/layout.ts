@@ -13,7 +13,7 @@ const CTA_BLUE = "#2563eb"
  *  clients (and Gmail's image proxy) fetch the logo anonymously, so the asset
  *  must not be auth-gated. See middleware.ts matcher (root images are exempt). */
 function baseUrl(): string {
-  return process.env.APP_URL || "http://localhost:3000"
+  return process.env.APP_URL || "http://localhost:3001"
 }
 
 /** Only-logo tasarım: koyu (navy) e-posta başlığında beyaz kollu X ikonu.

@@ -61,7 +61,7 @@ bun run db:migrate
 bun run db:seed
 
 # 5) Geliştirme sunucusu
-bun run dev   # http://localhost:3000
+bun run dev   # http://localhost:3001
 ```
 
 Demo giriş bilgileri, tüm ortam değişkenleri (OCR, AI, SMS/WhatsApp/e-posta, cron, takvim, depolama) ve yerel altyapı komutları için **[docs/configuration.md](./docs/configuration.md)**.

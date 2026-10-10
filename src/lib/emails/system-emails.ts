@@ -7,7 +7,7 @@ export interface BuiltEmail {
 }
 
 function appUrl(): string {
-  return process.env.APP_URL || "http://localhost:3000"
+  return process.env.APP_URL || "http://localhost:3001"
 }
 
 function escapeHtml(value: string): string {

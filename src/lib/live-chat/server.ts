@@ -80,7 +80,7 @@ export async function findConversationByToken(token: string | null): Promise<Liv
 /* -------------------------------------------------------------------------- */
 
 function appUrl(): string {
-  return (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "")
+  return (process.env.APP_URL || "http://localhost:3001").replace(/\/$/, "")
 }
 
 /** E-postaya girecek bağlantı. Ham token yalnız burada ve e-posta gövdesinde. */

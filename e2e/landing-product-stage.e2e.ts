@@ -69,7 +69,7 @@ test("editorial hero: responsive composition, accessibility, interactive product
   const noJs = await browser.newContext({ javaScriptEnabled: false });
   const staticPage = await noJs.newPage();
   await staticPage.goto(
-    "http://localhost:" + (process.env.PLAYWRIGHT_PORT || "3000") + "/",
+    "http://localhost:" + (process.env.PLAYWRIGHT_PORT || "3001") + "/",
   );
   await expect(staticPage.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(

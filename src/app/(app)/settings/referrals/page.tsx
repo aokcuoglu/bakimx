@@ -26,7 +26,7 @@ export default async function ReferralsSettingsPage() {
       : null
   )
   const referralUrl = referralCode && isValidReferralCode(referralCode)
-    ? buildReferralRegistrationUrl(process.env.APP_URL || "http://localhost:3000", referralCode)
+    ? buildReferralRegistrationUrl(process.env.APP_URL || "http://localhost:3001", referralCode)
     : null
 
   return (

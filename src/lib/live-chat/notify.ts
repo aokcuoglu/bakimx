@@ -66,7 +66,7 @@ export interface NotifyDeps {
 }
 
 function appUrl(): string {
-  return process.env.APP_URL || "http://localhost:3000"
+  return process.env.APP_URL || "http://localhost:3001"
 }
 
 export function buildVisitorMessageEmail(n: VisitorMessageNotification): { subject: string; html: string } {
