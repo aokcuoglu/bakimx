@@ -8,13 +8,13 @@ async function getWorkshopName(workshopId: string): Promise<string> {
 }
 
 function buildPortalLink(workshopId: string, token?: string): string {
-  const appUrl = process.env.APP_URL || "http://localhost:3000"
+  const appUrl = process.env.APP_URL || "http://localhost:3001"
   if (token) return `${appUrl}/s/${token}`
   return appUrl
 }
 
 function buildPassportLink(token: string): string {
-  const appUrl = process.env.APP_URL || "http://localhost:3000"
+  const appUrl = process.env.APP_URL || "http://localhost:3001"
   return `${appUrl}/p/${token}`
 }
 

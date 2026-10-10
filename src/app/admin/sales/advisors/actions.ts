@@ -19,7 +19,7 @@ type Result = { ok: true; inviteUrl?: string; warning?: string } | { ok: false; 
 
 async function requestOrigin(): Promise<string> {
   const requestHeaders = await headers()
-  const host = requestHeaders.get("host") ?? "localhost:3000"
+  const host = requestHeaders.get("host") ?? "localhost:3001"
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https")
   return `${protocol}://${host}`
 }

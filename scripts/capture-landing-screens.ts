@@ -25,7 +25,7 @@ import { mkdirSync } from "node:fs";
 import path from "node:path";
 
 // NOT: dev-login yalnız request host'u localhost iken yanıt verir — 127.0.0.1 değil.
-const BASE = process.env.BASE_URL ?? "http://localhost:3000";
+const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const ORDER_ID = process.env.ORDER_ID ?? "cmt08wn1w001401ad4dd1rslc";
 const SHARE_TOKEN = process.env.SHARE_TOKEN ?? "landing-shot-mt88o09u";
 const OUT_DIR = path.resolve("public/landing/screens");

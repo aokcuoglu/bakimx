@@ -59,7 +59,7 @@ test("canonical shares, direct hash, related links and list regression", async (
 test("content and anchors remain usable without JavaScript and with reduced motion", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, reducedMotion: "reduce", viewport: { width: 390, height: 844 } })
   const page = await context.newPage()
-  await page.goto(`http://localhost:${process.env.PLAYWRIGHT_PORT || "3000"}${path}`)
+  await page.goto(`http://localhost:${process.env.PLAYWRIGHT_PORT || "3001"}${path}`)
   await expect(page.locator("[data-blog-content]")).toBeVisible()
   const link = page.getByRole("navigation", { name: "İçindekiler", exact: true }).getByRole("link").last()
   const hash = await link.getAttribute("href")

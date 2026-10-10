@@ -3,7 +3,7 @@
 // indirilen script/CSS varlıklarını toplar ve brotli/gzip transfer boyutunu ölçer.
 import { gzipSync, brotliCompressSync } from "node:zlib";
 
-const BASE = process.env.MEASURE_BASE_URL ?? "http://127.0.0.1:3000";
+const BASE = process.env.MEASURE_BASE_URL ?? "http://127.0.0.1:3001";
 const ROUTES = process.argv.slice(2).length ? process.argv.slice(2) : ["/"];
 
 async function fetchAsset(url) {
