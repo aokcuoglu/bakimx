@@ -7,7 +7,7 @@ import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { getEffectiveSeatLimit, getPlanState, hasWorkshopFeature } from "@/lib/plan"
 import { actorCan } from "@/lib/roles"
 import { getSeatUsage } from "@/lib/rbac"
-import { listWorkshopTeams } from "@/lib/workshop-teams"
+import { loadWorkshopTeamsForSettings } from "@/lib/workshop-teams"
 
 export const metadata = { title: "Üyeler" }
 
@@ -23,8 +23,10 @@ export default async function MembersSettingsPage({
   }
   if (!hasWorkshopFeature(workshop, "team")) return getFeaturePaywall("team")
 
-  const [teams, members, invites, technicians, seatUsage] = await Promise.all([
-    listWorkshopTeams(user.workshopId),
+  // Ekipler ÖNCE: ilk ziyarette varsayılan ekipler burada oluşup üyelere
+  // bağlanabilir; üye listesi bunu görmek için sonra okunur (#736).
+  const teams = await loadWorkshopTeamsForSettings(user)
+  const [members, invites, technicians, seatUsage] = await Promise.all([
         prisma.user.findMany({
           where: { workshopId: user.workshopId },
           select: {

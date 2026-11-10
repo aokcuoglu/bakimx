@@ -5,7 +5,7 @@ import { WorkshopTeamsPanel } from "@/components/settings/workshop-teams-panel"
 import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { hasWorkshopFeature } from "@/lib/plan"
 import { actorCan } from "@/lib/roles"
-import { listWorkshopTeams } from "@/lib/workshop-teams"
+import { loadWorkshopTeamsForSettings } from "@/lib/workshop-teams"
 
 export const metadata = { title: "Ekipler" }
 
@@ -16,7 +16,7 @@ export default async function TeamsSettingsPage() {
   }
   if (!hasWorkshopFeature(workshop, "team")) return getFeaturePaywall("team")
 
-  const teams = await listWorkshopTeams(user.workshopId)
+  const teams = await loadWorkshopTeamsForSettings(user)
 
   return (
     <>
