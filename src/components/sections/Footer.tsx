@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ArrowRight } from "lucide-react";
 import styles from "./footer.module.css";
+import { EmailAddress } from "@/components/shared/email-address"
 
 function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -197,7 +198,8 @@ export function Footer() {
               <p className={styles.consentText}>
                 <Link href="/privacy">Gizlilik Politikası</Link>’nı okuduğumu ve adım ile e-posta adresimin
                 pazarlama iletişimi, promosyon ve güncellemeler göndermek amacıyla toplanıp kullanılacağını
-                onaylıyorum. İznimi dilediğim zaman abonelikten çıkarak veya hey@bakimx.com üzerinden
+                onaylıyorum. İznimi dilediğim zaman abonelikten çıkarak veya{" "}
+                <EmailAddress address="hey@bakimx.com" link={false} /> üzerinden
                 iletişime geçerek geri çekebilirim.
               </p>
             </div>

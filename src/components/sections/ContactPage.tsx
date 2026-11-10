@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { contactSchema } from "@/lib/validations/contact"
 import styles from "./contact-page.module.css"
+import { EmailAddress } from "@/components/shared/email-address"
 
 type Values = z.infer<typeof contactSchema>
 
@@ -69,7 +70,7 @@ export function ContactPage() {
           </p>
           <div className={styles.contactDetails}>
             <span>E-posta</span>
-            <a href="mailto:hey@bakimx.com">hey@bakimx.com</a>
+            <EmailAddress address="hey@bakimx.com" />
             <span className={styles.socialHint}>Bizi takip edin</span>
             <div className={styles.socials} aria-label="Sosyal medya bağlantıları">
               <a href="https://www.linkedin.com/company/bakimx/" target="_blank" rel="noreferrer" aria-label="LinkedIn">in</a>

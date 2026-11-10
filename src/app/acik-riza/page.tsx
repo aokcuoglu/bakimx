@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY, LegalPage, LegalSection } from "@/components/legal/legal-page";
 import { publicPageMetadata } from "@/lib/seo";
+import { EmailAddress } from "@/components/shared/email-address"
 
 export const metadata: Metadata = publicPageMetadata({
   path: "/acik-riza",
@@ -83,7 +84,7 @@ export default function AcikRizaPage() {
       <LegalSection title="5. Rızanın Geri Alınması">
         <p>
           Verdiğim açık rızayı dilediğim zaman{" "}
-          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> adresine
+          <EmailAddress address={COMPANY.email} /> adresine
           bildirerek geri alabilirim. Ticari elektronik ileti gönderimini, iletide
           yer alan ret imkânı üzerinden de durdurabilirim. Rızanın geri alınması,
           geri alma tarihine kadar yürütülen hukuka uygun işlemleri etkilemez.
