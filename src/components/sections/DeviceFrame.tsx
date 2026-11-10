@@ -16,7 +16,7 @@ export function BrowserFrame({ children }: { children: React.ReactNode }) {
 
 export function PhoneFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto w-full max-w-[300px] overflow-hidden rounded-[2rem] border-[6px] border-foreground/80 bg-card shadow-2xl">
+    <div className="mx-auto w-full max-w-[300px] overflow-hidden rounded-xl border-[6px] border-foreground/80 bg-card shadow-2xl">
       <div className="flex justify-center bg-card py-1.5">
         <span className="h-1.5 w-16 rounded-full bg-foreground/20" />
       </div>

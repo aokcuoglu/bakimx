@@ -39,7 +39,7 @@ export default async function AdminLiveChatPage({
     <div className="space-y-4">
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Canlı Destek</h1>
+          <h1 className="text-page-title text-foreground">Canlı Destek</h1>
           {config.enabled ? (
             <Badge variant={availability.online ? "default" : "secondary"}>
               {availability.online ? "Çevrimiçi" : "Çevrimdışı"}

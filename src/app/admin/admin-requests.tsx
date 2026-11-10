@@ -216,7 +216,7 @@ function DemoRequestRow({ r, canManage }: { r: AdminDemoRequestRow; canManage: b
                 <Button
                   key={s.value}
                   type="button"
-                  variant={r.status === s.value ? "default" : "outline"}
+                  variant={r.status === s.value ? "secondary" : "outline"}
                   size="sm"
                   disabled={pending}
                   aria-pressed={r.status === s.value}

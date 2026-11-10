@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import {
   buildPhotoPhaseMatrix,
+  photoPhaseForStatus,
   countFilledPhases,
   flattenTypeAcrossPhases,
   isDamagePhotoType,
@@ -84,5 +85,13 @@ describe("buildPhotoPhaseMatrix", () => {
     expect(covers.map((c) => c.phase)).toEqual(["intake", "repair_progress"])
     expect(covers.map((c) => c.photo.id)).toEqual(["i1", "r1"])
     expect(countFilledPhases(front)).toBe(2)
+  })
+})
+
+describe("photoPhaseForStatus", () => {
+  test("opens the photo picker on the phase the work order is in", () => {
+    for (const status of ["draft", "waiting_approval", "approved", "cancelled", "unknown"]) expect(photoPhaseForStatus(status)).toBe("intake")
+    for (const status of ["in_progress", "waiting_parts"]) expect(photoPhaseForStatus(status)).toBe("repair_progress")
+    for (const status of ["ready_for_delivery", "delivered"]) expect(photoPhaseForStatus(status)).toBe("delivery")
   })
 })

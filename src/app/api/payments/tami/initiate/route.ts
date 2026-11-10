@@ -124,18 +124,24 @@ export async function POST(request: Request) {
   // 5) PaymentTransaction (initiated) — amountMinor SNAPSHOT'ı order'dan alınır (client'tan asla).
   const providerOrderId = generateProviderOrderId(order.reference)
   const correlationId = crypto.randomUUID()
-  const txn = await prisma.paymentTransaction.create({
-    data: {
-      billingOrderId: order.id,
-      workshopId: order.workshopId,
-      provider: "tami",
-      providerOrderId,
-      status: "initiated",
-      amountMinor: order.amountMinor,
-      currency: order.currency,
-      correlationId,
-    },
+  const txn = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Workshop" WHERE id = ${order.workshopId} FOR UPDATE`
+    const current = await tx.billingOrder.findUnique({ where: { id: order.id }, select: { status: true } })
+    if (current?.status !== "pending_payment") return null
+    return tx.paymentTransaction.create({
+      data: {
+        billingOrderId: order.id,
+        workshopId: order.workshopId,
+        provider: "tami",
+        providerOrderId,
+        status: "initiated",
+        amountMinor: order.amountMinor,
+        currency: order.currency,
+        correlationId,
+      },
+    })
   })
+  if (!txn) return resultRedirect(request, reference)
 
   // 6) TAMI 3DS auth çağrısı — gövde tek doğruluk kaynağı buildTamiPaymentBody'den
   // gelir (canlı sandbox'ta doğrulanan gerçek wire şeması); tutar order.amountMinor'dan

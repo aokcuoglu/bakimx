@@ -3,10 +3,9 @@
 
 import { useState } from "react"
 import { toast } from "sonner"
-import { Hash, Loader2, Save } from "lucide-react"
+import { Check, Copy, Hash, Loader2, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
   Form,
   FormControl,
@@ -29,6 +28,7 @@ import type { WorkshopPublicContact } from "@/lib/workshop-contact"
 type WorkshopData = {
   id: string
   name: string
+  loginCode?: string
   phone: string
   city: string
   district: string | null
@@ -73,6 +73,13 @@ function toDefaults(workshop: WorkshopData, contact: WorkshopPublicContact | nul
   }
 }
 
+function workshopInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return "?"
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase()
+  return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase()
+}
+
 export function BusinessProfileForm({
   workshop,
   contact = null,
@@ -82,6 +89,7 @@ export function BusinessProfileForm({
 }) {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [copiedCode, setCopiedCode] = useState(false)
 
   const form = useForm<BusinessProfileFormValues, unknown, BusinessProfileFormValues>({
     resolver: typedResolver(businessProfileFormSchema),
@@ -89,6 +97,20 @@ export function BusinessProfileForm({
   })
 
   const city = form.watch("city")
+  const logoUrl = form.watch("logoUrl")
+  const nameValue = form.watch("name")
+
+  async function copyLoginCode() {
+    if (!workshop.loginCode) return
+    try {
+      await navigator.clipboard.writeText(workshop.loginCode)
+      setCopiedCode(true)
+      toast.success("Giriş kodu kopyalandı")
+      window.setTimeout(() => setCopiedCode(false), 1500)
+    } catch {
+      toast.error("Kopyalanamadı")
+    }
+  }
 
   async function onSubmit(values: BusinessProfileFormValues) {
     setError("")
@@ -114,27 +136,51 @@ export function BusinessProfileForm({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>İş Yeri Bilgileri</CardTitle>
-        <CardDescription>İş yeri temel bilgilerinizi güncelleyin</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {error && (
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          {error ? (
+            <div className="border-b border-border px-4 py-4 sm:px-6">
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
-            )}
+            </div>
+          ) : null}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-4 border-b border-border px-4 py-5 sm:flex-row sm:items-center sm:px-6">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold text-foreground">İkon</h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                İş yeri logosunu URL ile bağlayın. Boş bırakılırsa adınızın baş harfleri kullanılır.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- arbitrary workshop logo URL
+                <img src={logoUrl} alt="" className="size-12 rounded-lg border border-border object-cover" />
+              ) : (
+                <span
+                  className="flex size-12 items-center justify-center rounded-lg border border-border bg-muted text-xs font-semibold text-foreground"
+                  aria-hidden
+                >
+                  {workshopInitials(nameValue || workshop.name)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4 border-b border-border px-4 py-5 sm:px-6">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Temel bilgiler</h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">İş yeri adı, logo ve birincil iletişim.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>İş Yeri Adı *</FormLabel>
+                    <FormLabel>İş yeri adı *</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="İş yeri adı" />
                     </FormControl>
@@ -142,7 +188,19 @@ export function BusinessProfileForm({
                   </FormItem>
                 )}
               />
-
+              <FormField
+                control={form.control}
+                name="logoUrl"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Logo URL</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="url" placeholder="https://..." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="phone"
@@ -156,7 +214,6 @@ export function BusinessProfileForm({
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="email"
@@ -170,7 +227,44 @@ export function BusinessProfileForm({
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="website"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Web sitesi</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="url" placeholder="https://..." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
 
+          {workshop.loginCode ? (
+            <div className="flex flex-col gap-3 border-b border-border px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold text-foreground">Giriş kodu</h2>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  Kullanıcı adı ile girişte iş yerinizi ayırt eden kod. Değiştirilemez.
+                </p>
+                <p className="mt-2 font-mono text-sm font-medium text-foreground">{workshop.loginCode}</p>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={copyLoginCode} className="shrink-0 self-start sm:self-auto">
+                {copiedCode ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                {copiedCode ? "Kopyalandı" : "Kopyala"}
+              </Button>
+            </div>
+          ) : null}
+
+          <div className="space-y-4 border-b border-border px-4 py-5 sm:px-6">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Adres</h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">Müşteri ve fatura çıktılarında kullanılan konum.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="city"
@@ -184,7 +278,6 @@ export function BusinessProfileForm({
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="district"
@@ -198,7 +291,6 @@ export function BusinessProfileForm({
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="address"
@@ -212,274 +304,244 @@ export function BusinessProfileForm({
                   </FormItem>
                 )}
               />
+            </div>
+          </div>
 
+          <div className="space-y-4 border-b border-border px-4 py-5 sm:px-6">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Referans kodu</h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Yeni bir iş yerini davet ederken bu kodu paylaşın. Kayıt formuna girildiğinde davet sizin iş yerinizle eşleşir.
+              </p>
+            </div>
+            <FormField
+              control={form.control}
+              name="referralCode"
+              render={({ field }) => (
+                <FormItem className="max-w-md">
+                  <FormLabel>Paylaşılacak kod</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Hash className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        {...field}
+                        autoCapitalize="characters"
+                        autoComplete="off"
+                        placeholder="ÖRN: ORNEK-OTO"
+                        className="pl-9 uppercase"
+                        onChange={(event) => field.onChange(event.target.value.toUpperCase())}
+                      />
+                    </div>
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">4-24 karakter; yalnızca harf, rakam ve tire.</p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="space-y-4 border-b border-border px-4 py-5 sm:px-6">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Fatura bilgileri</h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">Vergi ve fatura ünvanı alanları.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
-                name="website"
+                name="taxOffice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Web Sitesi</FormLabel>
+                    <FormLabel>Vergi dairesi</FormLabel>
                     <FormControl>
-                      <Input {...field} type="url" placeholder="https://..." />
+                      <Input {...field} placeholder="Vergi dairesi" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
-                name="logoUrl"
+                name="taxNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Logo URL</FormLabel>
+                    <FormLabel>Vergi numarası</FormLabel>
                     <FormControl>
-                      <Input {...field} type="url" placeholder="https://..." />
+                      <Input {...field} placeholder="Vergi numarası" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-
-            <div className="mt-4 border-t border-border pt-4">
-              <h3 className="text-sm font-semibold text-foreground">Referans kodu</h3>
-              <p className="mb-3 mt-1 text-xs text-muted-foreground">
-                Yeni bir iş yerini davet ederken bu kodu paylaşın. Kod kayıt formuna girildiğinde davet sizin iş yerinizle eşleşir.
-              </p>
               <FormField
                 control={form.control}
-                name="referralCode"
+                name="invoiceTitle"
                 render={({ field }) => (
-                  <FormItem className="max-w-md">
-                    <FormLabel>Paylaşılacak kod</FormLabel>
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Fatura ünvanı</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Hash className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          {...field}
-                          autoCapitalize="characters"
-                          autoComplete="off"
-                          placeholder="ÖRN: ORNEK-OTO"
-                          className="pl-9 uppercase"
-                          onChange={(event) => field.onChange(event.target.value.toUpperCase())}
-                        />
-                      </div>
+                      <Input {...field} placeholder="Fatura ünvanı" />
                     </FormControl>
-                    <p className="text-xs text-muted-foreground">4-24 karakter; yalnızca harf, rakam ve tire.</p>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+          </div>
 
-            <div className="border-t border-border pt-4 mt-4">
-              <h3 className="text-sm font-semibold text-foreground mb-3">Vergi Bilgileri</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="taxOffice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Vergi Dairesi</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Vergi dairesi" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="taxNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Vergi Numarası</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Vergi numarası" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="invoiceTitle"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
-                      <FormLabel>Fatura Ünvanı</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Fatura ünvanı" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="border-t border-border pt-4 mt-4">
-              <h3 className="text-sm font-semibold text-foreground">İletişim & Sosyal Medya</h3>
-              <p className="text-xs text-muted-foreground mt-1 mb-3">
-                Doldurduğunuz bilgiler müşteriye gönderilen servis özeti, araç pasaportu ve PDF çıktılarının alt
-                kısmında görünür. Boş bıraktığınız alan hiçbir çıktıda yer almaz.
+          <div className="space-y-4 border-b border-border px-4 py-5 sm:px-6">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">İletişim ve sosyal medya</h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Servis özeti, araç pasaportu ve PDF çıktılarının altında görünür. Boş alanlar çıktıda yer almaz.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="publicWhatsappNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>WhatsApp Hattı</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="tel"
-                          inputMode="tel"
-                          placeholder="0544 515 74 08"
-                          onChange={(e) => field.onChange(formatPhoneTR(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="secondaryPhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>İkinci Telefon</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="tel"
-                          inputMode="tel"
-                          placeholder="0212 111 22 33"
-                          onChange={(e) => field.onChange(formatPhoneTR(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="faxNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Faks</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="tel"
-                          inputMode="tel"
-                          placeholder="0212 111 22 44"
-                          onChange={(e) => field.onChange(formatPhoneTR(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="instagramUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Instagram</FormLabel>
-                      <FormControl>
-                        <Input {...field} inputMode="url" placeholder="instagram.com/isyeriniz" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="facebookUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Facebook</FormLabel>
-                      <FormControl>
-                        <Input {...field} inputMode="url" placeholder="facebook.com/isyeriniz" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="xUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>X</FormLabel>
-                      <FormControl>
-                        <Input {...field} inputMode="url" placeholder="x.com/isyeriniz" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="tiktokUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>TikTok</FormLabel>
-                      <FormControl>
-                        <Input {...field} inputMode="url" placeholder="tiktok.com/@isyeriniz" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="youtubeUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>YouTube</FormLabel>
-                      <FormControl>
-                        <Input {...field} inputMode="url" placeholder="youtube.com/@isyeriniz" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="linkedinUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>LinkedIn</FormLabel>
-                      <FormControl>
-                        <Input {...field} inputMode="url" placeholder="linkedin.com/company/isyeriniz" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
             </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="publicWhatsappNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>WhatsApp hattı</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="tel"
+                        inputMode="tel"
+                        placeholder="0544 515 74 08"
+                        onChange={(e) => field.onChange(formatPhoneTR(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="secondaryPhone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>İkinci telefon</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="tel"
+                        inputMode="tel"
+                        placeholder="0212 111 22 33"
+                        onChange={(e) => field.onChange(formatPhoneTR(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="faxNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Faks</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="tel"
+                        inputMode="tel"
+                        placeholder="0212 111 22 44"
+                        onChange={(e) => field.onChange(formatPhoneTR(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="instagramUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Instagram</FormLabel>
+                    <FormControl>
+                      <Input {...field} inputMode="url" placeholder="instagram.com/isyeriniz" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="facebookUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Facebook</FormLabel>
+                    <FormControl>
+                      <Input {...field} inputMode="url" placeholder="facebook.com/isyeriniz" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="xUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>X</FormLabel>
+                    <FormControl>
+                      <Input {...field} inputMode="url" placeholder="x.com/isyeriniz" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tiktokUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>TikTok</FormLabel>
+                    <FormControl>
+                      <Input {...field} inputMode="url" placeholder="tiktok.com/@isyeriniz" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="youtubeUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>YouTube</FormLabel>
+                    <FormControl>
+                      <Input {...field} inputMode="url" placeholder="youtube.com/@isyeriniz" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="linkedinUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>LinkedIn</FormLabel>
+                    <FormControl>
+                      <Input {...field} inputMode="url" placeholder="linkedin.com/company/isyeriniz" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
 
-            <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
+          <div className="flex justify-end px-4 py-4 sm:px-6">
+            <Button variant="foreground" type="submit" className="w-full sm:w-auto" disabled={loading}>
               {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
-              Güncelle
+              Kaydet
             </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          </div>
+        </form>
+      </Form>
+    </div>
   )
 }

@@ -198,7 +198,7 @@ export function RuhsattanOku({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
-            <span className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary-strong">
+            <span className="flex size-16 items-center justify-center rounded-lg border border-border bg-muted text-foreground">
               <ScanLine className="size-8" />
             </span>
             <div className="space-y-1">
@@ -206,7 +206,7 @@ export function RuhsattanOku({
               <p className="text-sm text-muted-foreground">{description}</p>
             </div>
             <div className="flex w-full max-w-sm flex-col gap-2 sm:flex-row">
-              <Button type="button" className="flex-1 gap-2" onClick={() => openScanner(true)}>
+              <Button variant="foreground" type="button" className="flex-1 gap-2" onClick={() => openScanner(true)}>
                 <Camera className="size-4" /> Kamera ile çek
               </Button>
               <Button type="button" variant="outline" className="flex-1 gap-2" onClick={() => fileInputRef.current?.click()}>

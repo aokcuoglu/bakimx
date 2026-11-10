@@ -7,7 +7,7 @@ export interface BuiltEmail {
 }
 
 function appUrl(): string {
-  return process.env.APP_URL || "http://localhost:3000"
+  return process.env.APP_URL || "http://localhost:3001"
 }
 
 function escapeHtml(value: string): string {
@@ -99,7 +99,7 @@ export function welcomeTrialEmail(p: {
         `7 iş günlük ücretsiz deneme süreniz başladı; <strong>${trialEndsFormatted}</strong> tarihine kadar tüm özellikleri kullanabilirsiniz.</p>` +
         `<p style="margin:0 0 12px;">Hemen giriş yaparak iş yerinizi kurmaya başlayabilirsiniz.</p>`,
       cta: { label: "Giriş Yap", url: `${appUrl()}/login` },
-      footerNote: `Deneme süreniz bittiğinde size uygun bir paket seçebilirsiniz: <a href="${appUrl()}/billing">${appUrl()}/billing</a>`,
+      footerNote: `Deneme süreniz bittiğinde size uygun bir paket seçebilirsiniz: <a href="${appUrl()}/settings/plans">${appUrl()}/settings/plans</a>`,
     }),
   }
 }

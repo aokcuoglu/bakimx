@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Zap, MessageCircle, LifeBuoy, ArrowRight } from "lucide-react";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/reveal";
@@ -26,7 +26,7 @@ const reassurances = [
 
 export function TrustOnboardingSection() {
   return (
-    <section className="bg-brand/10 py-16 sm:py-24">
+    <section className="bg-muted/40 py-16 sm:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           badge="Nasıl başlarım"
@@ -39,9 +39,9 @@ export function TrustOnboardingSection() {
             <Reveal
               key={step.title}
               delay={i * 100}
-              className="rounded-xl bg-background/70 p-6"
+              className="rounded-lg border border-border bg-card p-6"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-muted text-sm font-bold text-foreground">
                 {i + 1}
               </div>
               <h3 className="mt-4 text-base font-semibold">{step.title}</h3>
@@ -55,24 +55,16 @@ export function TrustOnboardingSection() {
         <div className="mt-8 grid gap-x-8 gap-y-4 border-t border-border/60 pt-8 sm:grid-cols-3">
           {reassurances.map(({ icon: Icon, title }) => (
             <div key={title} className="flex items-center gap-3">
-              <Icon aria-hidden className="h-5 w-5 shrink-0 text-primary" />
+              <Icon aria-hidden className="h-5 w-5 shrink-0 text-foreground" />
               <p className="text-sm font-semibold">{title}</p>
             </div>
           ))}
         </div>
 
         <div className="mt-10 text-center">
-          <Link
-            href="/register"
-            className={buttonVariants({
-              variant: "gradient",
-              size: "lg",
-              className: "h-12 gap-2 px-8 text-base",
-            })}
-          >
-            Ücretsiz Dene
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          <Button asChild variant="navy" size="xl">
+            <Link href="/register">Ücretsiz Dene <ArrowRight className="size-4" /></Link>
+          </Button>
         </div>
       </div>
     </section>

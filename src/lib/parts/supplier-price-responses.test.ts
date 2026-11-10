@@ -17,12 +17,27 @@ const quote = {
 }
 
 describe("supplier price endpoint responses", () => {
+  test("distinguishes an unconfigured catalog from a real no-match response", async () => {
+    await expect(readOfferResponse(Response.json({ status: "not_configured", normalizedPartNo: "CU29007" })))
+      .resolves.toEqual({ status: "not_configured", normalizedPartNo: "CU29007" })
+    await expect(readOfferResponse(Response.json({ status: "no_match", normalizedPartNo: "CU29007" })))
+      .resolves.toEqual({ status: "no_match", normalizedPartNo: "CU29007" })
+  })
+
   test("preserves valid offer, quote and purchase success contracts", async () => {
     await expect(readOfferResponse(Response.json({ status: "matched", normalizedPartNo: "103803", products: [product] })))
       .resolves.toEqual({ status: "matched", normalizedPartNo: "103803", products: [product] })
     await expect(readQuoteResponse(Response.json({ quote }))).resolves.toEqual(quote)
     await expect(readPurchaseResponse(Response.json({ procurement: { id: "local-1", externalOrderId: "remote-1", partnerStatus: "REQUESTED" } }, { status: 201 })))
       .resolves.toBeUndefined()
+  })
+
+  test("accepts an idempotent purchase replay after operator confirmation or shipment", async () => {
+    for (const partnerStatus of ["CONFIRMED", "SHIPPED"] as const) {
+      await expect(readPurchaseResponse(Response.json({ procurement: {
+        id: "local-1", externalOrderId: "remote-1", partnerStatus,
+      } }))).resolves.toBeUndefined()
+    }
   })
 
   test.each([

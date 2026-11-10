@@ -105,7 +105,7 @@ export default async function AdminWorkshopsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">İş Yerleri</h1>
+        <h1 className="text-page-title text-foreground">İş Yerleri</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
           Yeni kayıtları görüntüleyin, paket taleplerini etkinleştirin. Detay için iş yeri adına tıklayın.
         </p>
@@ -154,7 +154,7 @@ export default async function AdminWorkshopsPage({
           />
         </label>
         <div className="flex gap-2">
-          <Button type="submit">Filtrele</Button>
+          <Button variant="foreground" type="submit">Filtrele</Button>
           {filtered && (
             <Button variant="ghost" asChild>
               <Link href="/admin/workshops">

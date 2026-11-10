@@ -2,7 +2,7 @@
   position: absolute;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow:
     0 4px 8px color-mix(in srgb, var(--color-navy) 4%, transparent),

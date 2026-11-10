@@ -6,7 +6,9 @@ import {
   type CSSProperties,
   type ComponentPropsWithoutRef,
   type ElementType,
+  type HTMLAttributes,
   type ReactNode,
+  type RefAttributes,
 } from "react";
 
 /**
@@ -90,7 +92,9 @@ export function Reveal<T extends ElementType = "div">({
   // `createElement` yerine JSX: ref'i props nesnesinin içinde geçirmek React
   // Compiler'ın `react-hooks/refs` kuralını tetikliyor (render sırasında ref
   // okunuyor sayılıyor).
-  const Component = (as ?? "div") as ElementType;
+  // Props are narrowed to HTML attributes: @react-three/fiber widens the global JSX element
+  // list with three.js elements, and a bare `ElementType` then collapses its props to `never`.
+  const Component = (as ?? "div") as ElementType<HTMLAttributes<HTMLElement> & RefAttributes<HTMLElement>>;
 
   return (
     <Component

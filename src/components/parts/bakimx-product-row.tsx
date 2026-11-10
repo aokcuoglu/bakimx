@@ -73,10 +73,11 @@ export function BakimxProductRow({
   return (
     <div className="border-b border-border/60">
       <div className="flex items-center hover:bg-muted">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={onSelect}
-          className="min-h-8 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left"
+          className="h-auto min-h-7 min-w-0 flex-1 justify-start gap-3 px-3 py-2 text-left whitespace-normal"
         >
           {product.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -109,7 +110,7 @@ export function BakimxProductRow({
               {discountNote && <span className="text-success-strong">· {discountNote}</span>}
             </span>
           </span>
-        </button>
+        </Button>
         <Button
           type="button"
           variant="ghost"
@@ -142,7 +143,7 @@ export function BakimxProductRow({
             className="w-24"
           />
           <span className="text-xs text-muted-foreground">{product.unit}</span>
-          <Button type="button" size="compact" onClick={submitOrder} disabled={pending}>
+          <Button variant="foreground" type="button" size="compact" onClick={submitOrder} disabled={pending}>
             {pending && <Loader2 className="size-3.5 animate-spin" />}
             Talep gönder
           </Button>

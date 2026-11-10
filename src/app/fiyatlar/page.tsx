@@ -52,7 +52,7 @@ export default function FiyatlarPage() {
               Bugün başlayın, kart bilgisi gerekmez.
             </p>
           </div>
-          <div className="mx-auto max-w-[1204px] px-5 sm:px-8">
+          <div className="mx-auto max-w-[1124px] px-5 sm:px-8">
             <PlanPackages presentation="public" checkoutBasePath="/register" liteRegistrationOpen={isLiteRegistrationOpen()} />
           </div>
         </main>

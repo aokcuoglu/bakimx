@@ -54,7 +54,7 @@ export function StatusIncidentConsole({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Durum Sayfası</h1>
+          <h1 className="text-page-title text-foreground">Durum Sayfası</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Herkese açık{" "}
             <Link href="/status" target="_blank" className="inline-flex items-center gap-1 text-primary hover:underline">
@@ -63,7 +63,7 @@ export function StatusIncidentConsole({
             için yayınlanan olayları buradan yönetin.
           </p>
         </div>
-        <Button size="lg" className="w-full sm:w-auto" onClick={() => setCreateOpen(true)}>
+        <Button variant="foreground" size="lg" className="w-full sm:w-auto" onClick={() => setCreateOpen(true)}>
           <Plus className="size-4" aria-hidden="true" /> Yeni Olay Yayınla
         </Button>
       </div>
@@ -273,7 +273,7 @@ function CreateIncidentDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
                 Vazgeç
               </Button>
-              <Button type="submit" size="lg" disabled={pending}>
+              <Button variant="foreground" type="submit" size="lg" disabled={pending}>
                 {pending ? <BrandSpinner size={18} label="Yayınlanıyor…" /> : "Yayınla"}
               </Button>
             </DialogFooter>
@@ -348,7 +348,7 @@ function ResolveIncidentDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
                 Vazgeç
               </Button>
-              <Button type="submit" size="lg" disabled={pending}>
+              <Button variant="foreground" type="submit" size="lg" disabled={pending}>
                 {pending ? (
                   <BrandSpinner size={18} label="İşaretleniyor…" />
                 ) : (

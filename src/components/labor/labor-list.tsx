@@ -85,18 +85,14 @@ export function LaborList({
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
-      <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-        <span className="mx-2">/</span>
-        <span className="text-foreground font-medium">Stok / Parçalar</span>
-      </div>
+
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
           <Wrench className="size-5 text-primary" />
           Stok / Parçalar
         </h2>
-        <Button size="sm" className="w-full sm:w-auto" onClick={openCreate}>
+        <Button variant="foreground" size="sm" className="w-full sm:w-auto" onClick={openCreate}>
           <Plus className="size-3.5 mr-1" /> Yeni İşçilik
         </Button>
       </div>
@@ -117,7 +113,7 @@ export function LaborList({
             Tanımladığınız işçilikler iş emri ve teklif ekranlarında öneri olarak çıkar.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 px-4">
-            <Button size="sm" onClick={openCreate}>
+            <Button variant="foreground" size="sm" onClick={openCreate}>
               <Plus className="size-3.5 mr-1" /> Yeni İşçilik
             </Button>
             <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>

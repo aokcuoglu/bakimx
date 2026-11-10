@@ -87,7 +87,7 @@ export async function acceptInviteAction(token: string, formData: FormData): Pro
           role: technicianRoleForUser(fresh.role),
         },
       })
-      return tx.user.create({
+      const created = await tx.user.create({
         data: {
           email: fresh.email,
           password: passwordHash,
@@ -99,6 +99,15 @@ export async function acceptInviteAction(token: string, formData: FormData): Pro
           technicianId: technician.id,
         },
       })
+      await tx.workshopMembership.create({
+        data: {
+          userId: created.id,
+          workshopId: fresh.workshopId,
+          role: fresh.role,
+          isActive: true,
+        },
+      })
+      return created
     })
 
     await AuditLogAction(newUser.workshopId, newUser.id, "Invite", invite.id, "invite_accepted")

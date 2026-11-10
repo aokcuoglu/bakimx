@@ -328,7 +328,7 @@ function OrderRow({ o, canConfirm }: { o: AdminOrderRow; canConfirm: boolean }) 
           {/* Kartlı akış otomatik — yanlışlıkla elle onaylanıp çifte aktivasyona
               yol açmasın diye kartlı bekleyen siparişte confirm butonu YOK. */}
           {canConfirm && !isCard && (
-            <Button type="button" disabled={pending} onClick={() => run(() => confirmBillingOrder(o.id), "Ödeme onaylandı")} size="sm">
+            <Button variant="foreground" type="button" disabled={pending} onClick={() => run(() => confirmBillingOrder(o.id), "Ödeme onaylandı")} size="sm">
               <Check className="size-3.5" /> Havale alındı
             </Button>
           )}
@@ -405,7 +405,7 @@ function StuckTxnRow({ r }: { r: AdminStuckTxnRow }) {
           {done ? (
             <span className="text-sm font-medium text-success-strong">Aktivasyon tamamlandı</span>
           ) : (
-            <Button type="button" disabled={pending} onClick={retry} size="sm">
+            <Button variant="foreground" type="button" disabled={pending} onClick={retry} size="sm">
               <RefreshCw className="size-3.5" /> Aktivasyonu Tekrar Dene
             </Button>
           )}
@@ -435,7 +435,7 @@ function RecentOrderRow({ o }: { o: AdminOrderRow }) {
   return (
     <Link
       href={`/admin/workshops/${o.workshopId}`}
-      className="group block rounded-xl border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      className="group block rounded-xl border bg-card p-4 transition-colors hover:bg-muted/60 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       aria-label={`${o.workshopName} iş yeri detayını aç`}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

@@ -1,9 +1,8 @@
 "use client"
 
 import type { ComponentType, ReactNode } from "react"
-import { ArrowLeft, Car, User, Loader2, MoreHorizontal } from "lucide-react"
+import { ArrowLeft, Loader2, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { PlateBadge } from "@/components/shared/plate-badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,40 +64,29 @@ export function DetailHeader({
   const hasActions = Boolean(primary) || overflow.length > 0
 
   return (
-    <div className="flex items-start gap-3 sm:items-center">
-        <button
-          onClick={onBack}
-          className="p-2.5 hover:bg-muted rounded-lg touch-manipulation shrink-0"
-          aria-label="Geri"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <div className="flex-1 min-w-0 flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-          {/* `items-start` sütun modunda çocukları içeriğe göre büyüttüğü için
-              `truncate` tek başına devreye girmiyordu: uzun kurumsal müşteri adı
-              üç nokta olmadan ekranın dışına taşıp kırpılıyordu. `max-w-full`
-              çocuğu satır genişliğine bağlar ve kırpma düzgün çalışır. */}
-          <div className="flex w-full flex-col items-start gap-1 min-w-0 sm:w-auto sm:flex-row sm:items-center sm:flex-nowrap sm:gap-2">
-            <PlateBadge plate={plate} size="sm" className="shrink-0" />
-            <span className="hidden sm:inline text-muted-foreground/40 shrink-0">•</span>
-            <span className="inline-flex max-w-full items-center gap-1 min-w-0 text-sm text-muted-foreground">
-              <Car className="size-3.5 shrink-0" />
-              <span className="truncate">{vehicleLabel}</span>
-            </span>
-            <span className="hidden sm:inline text-muted-foreground/40 shrink-0">•</span>
-            <span className="inline-flex max-w-full items-center gap-1 min-w-0 text-sm text-muted-foreground">
-              <User className="size-3.5 shrink-0" />
-              <span className="truncate">{customerLabel}</span>
-            </span>
-            {meta && (
-              <>
-                <span className="hidden sm:inline text-muted-foreground/40 shrink-0">•</span>
-                {meta}
-              </>
-            )}
-          </div>
+    <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="-ml-2 text-muted-foreground"
+          >
+            <ArrowLeft className="size-4" />
+            İş emirleri
+          </Button>
+          <h1 className="mt-1 truncate text-lg font-semibold tracking-tight text-foreground">{plate}</h1>
+          <p className="truncate text-sm text-muted-foreground">
+            {vehicleLabel}
+            <span className="px-1.5 text-muted-foreground/40">·</span>
+            {customerLabel}
+          </p>
+          {meta ? <div className="mt-1">{meta}</div> : null}
+        </div>
+        <div className="flex min-w-0 flex-col items-end gap-1.5">
           {/* Dar ekranda rozet + aksiyon tek satıra sığmayabilir; taşma yerine sarsın. */}
-          <div className="flex flex-wrap items-center gap-2 max-w-full sm:shrink-0">
+          <div className="flex flex-wrap items-center justify-end gap-2 max-w-full">
             {badges}
             {hasActions && (
               <div className="flex items-center gap-2">
@@ -122,7 +110,7 @@ export function DetailHeader({
                     <DropdownMenuTrigger
                       disabled={loading}
                       aria-label="Diğer işlemler"
-                      className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-border transition-colors touch-manipulation hover:bg-muted disabled:opacity-50"
+                      className="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-background transition-colors touch-manipulation hover:bg-muted disabled:opacity-50"
                     >
                       <MoreHorizontal className="size-4 text-muted-foreground" />
                     </DropdownMenuTrigger>
@@ -157,6 +145,6 @@ export function DetailHeader({
             )}
           </div>
         </div>
-      </div>
+    </div>
   )
 }

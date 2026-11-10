@@ -14,7 +14,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await getGetirbakimProvider().findOffersByPartNo(normalizedPartNo)
+    const provider = getGetirbakimProvider()
+    if (provider.name === "mock") {
+      return NextResponse.json({ status: "not_configured", normalizedPartNo })
+    }
+    const result = await provider.findOffersByPartNo(normalizedPartNo)
     if (result.status === "no_match") {
       return NextResponse.json({ status: "no_match", normalizedPartNo })
     }

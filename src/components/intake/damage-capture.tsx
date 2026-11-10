@@ -17,11 +17,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { CheckCircle2, Loader2 } from "lucide-react"
 
 type DamageMark = DamageRecord
 
-export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadKey }: { intakeFormId: string; readOnly?: boolean; reloadKey?: string; vehicle: { plate: string; brand: string; model: string } | null }) {
+export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadKey, modalMetadata = false }: { intakeFormId: string; readOnly?: boolean; reloadKey?: string; modalMetadata?: boolean; vehicle: { plate: string; brand: string; model: string } | null }) {
   const [marks, setMarks] = useState<DamageMark[]>([])
   const [photos, setPhotos] = useState<DamagePhoto[]>([])
   const [bodyType, setBodyType] = useState<BodyType>("sedan")
@@ -30,6 +30,9 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [metadataBusy, setMetadataBusy] = useState(false)
+  const [metadataOpen, setMetadataOpen] = useState(false)
+  const [inspectionConfirmOpen, setInspectionConfirmOpen] = useState(false)
+  const [bodyTypeDraft, setBodyTypeDraft] = useState<BodyType>("sedan")
   const [photoDirty, setPhotoDirty] = useState(false)
   const backRequested = useRef(false)
   const discardAndGoBack = useRef(false)
@@ -95,6 +98,8 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
       if (!current.ok) throw new Error("Kontrol kaydedildi; güncel bilgileri görmek için sayfayı yenileyin.")
       const saved = await current.json()
       setBodyType(saved.bodyType); setInspectionStatus(saved.inspectionStatus); setInspectedAt(saved.inspectedAt)
+      setMetadataOpen(false)
+      setInspectionConfirmOpen(false)
     } catch(e) { toast.error(e instanceof Error ? e.message : "Kaydedilemedi") }
     finally {setMetadataBusy(false)}
   }
@@ -148,19 +153,54 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
 
   return (
     <div className="space-y-3" data-testid="damage-capture">
-      <div>
-        <h3 className="font-medium">Hasar haritası</h3>
-        <p className="text-sm text-muted-foreground">Hasarı panelden veya bölge listesinden ekleyin. Fotoğraf eklemeniz önerilir.</p>
-      </div>
       {error && !dialogOpen && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
       {!loaded && !error && <p role="status">Hasar kayıtları yükleniyor…</p>}
       {loaded && <>
-        {!readOnly && <div className="flex flex-wrap items-center gap-2">
-          <Select value={bodyType} onValueChange={v=>void updateInspection({bodyType:v as BodyType})} disabled={metadataBusy}><SelectTrigger aria-label="Araç şeması" className="w-56"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(BODY_TYPES).map(([key,label])=><SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select>
-          <Button type="button" variant="outline" className="h-auto min-h-9 whitespace-normal text-left" disabled={metadataBusy || marks.length>0} onClick={()=>void updateInspection({inspectionStatus:"no_visible_damage"})}>Kontrol edildi, görünür hasar gözlenmedi</Button>
-        </div>}
-        <VehicleDamageMap damageMarks={marks} photos={photos} bodyType={bodyType} inspectionStatus={inspectionStatus} inspectedAt={inspectedAt} onZoneClick={readOnly ? undefined : chooseZone} onEditMark={readOnly ? undefined : editMark} onRemoveMark={readOnly ? undefined : setRemoveId} vehicle={vehicle} />
+        {/* İş emrinde kartın kendi "Hasar" başlığı var; sihirbazda foto ile aynı kartta durur. */}
+        {!modalMetadata && <h3 className="text-sm font-medium">Hasar</h3>}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            {marks.length ? `${marks.length} hasar kaydı` : inspectionStatus === "no_visible_damage" ? <><CheckCircle2 className="size-4 text-success-strong" aria-hidden="true" />Kontrol edildi, görünür hasar gözlenmedi</> : "Kontrol kaydı yok"}
+            {inspectedAt && <span>· {new Date(inspectedAt).toLocaleString("tr-TR")}</span>}
+          </p>
+          {!readOnly && <div className="flex flex-wrap items-center gap-2">
+            {modalMetadata ? (
+              <Button variant="outline" size="sm" onClick={() => { setBodyTypeDraft(bodyType); setMetadataOpen(true) }} disabled={metadataBusy}>Araç şeması: {BODY_TYPES[bodyType]}</Button>
+            ) : (
+              <Select value={bodyType} onValueChange={v=>void updateInspection({bodyType:v as BodyType})} disabled={metadataBusy}><SelectTrigger aria-label="Araç şeması" className="w-48"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(BODY_TYPES).map(([key,label])=><SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select>
+            )}
+            {marks.length === 0 && inspectionStatus !== "no_visible_damage" && <Button type="button" variant="outline" size="sm" disabled={metadataBusy} onClick={() => { if (modalMetadata) setInspectionConfirmOpen(true); else void updateInspection({inspectionStatus:"no_visible_damage"}) }}>Hasar yok olarak işaretle</Button>}
+          </div>}
+        </div>
+        <VehicleDamageMap showSummary={false} damageMarks={marks} photos={photos} bodyType={bodyType} inspectionStatus={inspectionStatus} inspectedAt={inspectedAt} onZoneClick={readOnly ? undefined : chooseZone} onEditMark={readOnly ? undefined : editMark} onRemoveMark={readOnly ? undefined : setRemoveId} vehicle={vehicle} />
       </>}
+
+      <Dialog open={metadataOpen} onOpenChange={(open) => { if (!metadataBusy) setMetadataOpen(open) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Araç şemasını düzenle</DialogTitle></DialogHeader>
+          <Select value={bodyTypeDraft} onValueChange={(value) => setBodyTypeDraft(value as BodyType)} disabled={metadataBusy}>
+            <SelectTrigger aria-label="Araç şeması"><SelectValue /></SelectTrigger>
+            <SelectContent>{Object.entries(BODY_TYPES).map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMetadataOpen(false)} disabled={metadataBusy}>İptal</Button>
+            <Button variant="foreground" onClick={() => void updateInspection({ bodyType: bodyTypeDraft })} disabled={metadataBusy || bodyTypeDraft === bodyType}>Kaydet</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={inspectionConfirmOpen} onOpenChange={(open) => { if (!metadataBusy) setInspectionConfirmOpen(open) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hasar kontrolü kaydedilsin mi?</AlertDialogTitle>
+            <AlertDialogDescription>Araçta görünür hasar gözlenmediği iş emrine kaydedilir.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={metadataBusy}>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void updateInspection({ inspectionStatus: "no_visible_damage" })} disabled={metadataBusy}>Kaydet</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!form.formState.isSubmitting) { if(open) setDialogOpen(true); else closeEditor() } }}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
@@ -173,7 +213,7 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
               <FormField control={form.control} name="note" render={({ field }) => <FormItem><FormLabel>Not</FormLabel><FormControl><Input {...field} placeholder="Örn. 5 cm çizik" /></FormControl><FormMessage /></FormItem>} />
               <FormField control={form.control} name="photoIds" render={({ field }) => <FormItem><FormLabel>Bağlı fotoğraflar</FormLabel><p className="text-xs text-muted-foreground">Bir fotoğraf birden fazla hasara bağlanabilir.</p><div className="grid grid-cols-2 gap-2">{photos.map(photo => <div key={photo.id} className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm"><label className="flex items-center gap-2"><Checkbox checked={field.value?.includes(photo.id) || false} onCheckedChange={checked=>field.onChange(checked ? [...(field.value || []),photo.id] : (field.value || []).filter(id=>id!==photo.id))} />{photo.label}</label><PersistedPhotoEditor photoId={photo.id} onDirtyChange={setPhotoDirty} /></div>)}</div><FormMessage /></FormItem>} />
               <PhotoAnnotate onDirtyChange={setPhotoDirty} intakeFormId={intakeFormId} onUploaded={photo=>{setPhotos(current=>[...current,{id:photo.id,label:"Hasar fotoğrafı",fileUrl:photo.fileUrl || `/api/photos?id=${photo.id}`}]);form.setValue("photoIds",[...(form.getValues("photoIds") || []),photo.id],{shouldDirty:true})}} />
-              <DialogFooter><Button type="button" variant="outline" size="lg" onClick={closeEditor}>Vazgeç</Button><Button type="submit" size="lg" disabled={form.formState.isSubmitting || photoDirty}>{form.formState.isSubmitting ? <BrandSpinner size={18} label="Kaydediliyor…" /> : "Hasarı Kaydet"}</Button></DialogFooter>
+              <DialogFooter><Button type="button" variant="outline" size="lg" onClick={closeEditor}>Vazgeç</Button><Button variant="foreground" type="submit" size="lg" disabled={form.formState.isSubmitting || photoDirty}>{form.formState.isSubmitting ? <><Loader2 className="size-4 animate-spin" aria-hidden="true" />Kaydediliyor…</> : "Hasarı Kaydet"}</Button></DialogFooter>
             </form>
           </Form>
         </DialogContent>
@@ -181,7 +221,7 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
 
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Kaydedilmemiş değişiklikler var</AlertDialogTitle><AlertDialogDescription>Çıkarsanız hasar düzenlemesi kaydedilmez. Yüklenen fotoğraflar kabul kaydında kalır.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={()=>{backRequested.current=false}}>Düzenlemeye dön</AlertDialogCancel><AlertDialogAction onClick={()=>{discardAndGoBack.current=backRequested.current;setDiscardOpen(false);setDialogOpen(false)}}>Değişiklikleri bırak</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
       <AlertDialog open={removeId !== null} onOpenChange={(open) => { if (!open && !removing) setRemoveId(null) }}>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Hasar işareti kaldırılsın mı?</AlertDialogTitle><AlertDialogDescription>Bu işlem kayıt geçmişine yazılır. Hasar fotoğrafları silinmez.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={removing}>Vazgeç</AlertDialogCancel><AlertDialogAction variant="destructive" disabled={removing} onClick={() => void remove()}>{removing ? <BrandSpinner size={18} label="Kaldırılıyor…" /> : "İşareti Kaldır"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Hasar işareti kaldırılsın mı?</AlertDialogTitle><AlertDialogDescription>Bu işlem kayıt geçmişine yazılır. Hasar fotoğrafları silinmez.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={removing}>Vazgeç</AlertDialogCancel><AlertDialogAction variant="destructive" disabled={removing} onClick={() => void remove()}>{removing ? <><Loader2 className="size-4 animate-spin" aria-hidden="true" />Kaldırılıyor…</> : "İşareti Kaldır"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
     </div>
   )

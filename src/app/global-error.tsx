@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { Button } from "@/components/ui/button"
 import { isChunkLoadError, reloadOnceForChunkError } from "@/lib/chunk-error"
 
 /**
@@ -39,17 +40,19 @@ export default function GlobalError({
           textAlign: "center",
           fontFamily:
             "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
-          background: "#f8fafc",
-          color: "#0f172a",
+          background: "#fff",
+          color: "#171717",
         }}
       >
         <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>
           Bir şeyler ters gitti
         </h1>
-        <p style={{ maxWidth: 360, fontSize: 14, color: "#64748b", margin: 0 }}>
+        <p style={{ maxWidth: 360, fontSize: 14, color: "#262626", margin: 0 }}>
           İşlem tamamlanamadı. Lütfen sayfayı yenileyin.
         </p>
-        <button
+        <Button
+          type="button"
+          variant="foreground"
           onClick={() => {
             // Yeni sürüm yüklenmiş olabilir; reset yerine tam yenileme daha güvenli.
             if (typeof window !== "undefined") window.location.reload()
@@ -60,8 +63,8 @@ export default function GlobalError({
             alignItems: "center",
             gap: 6,
             border: "none",
-            borderRadius: 8,
-            background: "#1e3a8a",
+            borderRadius: 6,
+            background: "#171717",
             color: "#fff",
             padding: "10px 18px",
             fontSize: 14,
@@ -70,7 +73,7 @@ export default function GlobalError({
           }}
         >
           Sayfayı yenile
-        </button>
+        </Button>
       </body>
     </html>
   )

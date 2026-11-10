@@ -400,7 +400,7 @@ export function AppointmentCreateForm() {
         </Card>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button type="submit" disabled={pending} size="lg" className="flex-1">
+          <Button variant="foreground" type="submit" disabled={pending} size="lg" className="flex-1">
             {pending ? <Loader2 className="size-4 animate-spin" /> : <CalendarClock className="size-4" />}
             {pending ? "Kaydediliyor..." : "Randevu Kaydet"}
           </Button>

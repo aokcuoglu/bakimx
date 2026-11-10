@@ -2,6 +2,7 @@ import { PublicSite } from "@/components/public/PublicSite";
 import type { Metadata } from "next";
 import { Header } from "@/components/sections/Header";
 import { Footer } from "@/components/sections/Footer";
+import { DemoCampaignIntro } from "@/components/sections/DemoCampaignIntro";
 import { DemoRequestSection } from "@/components/sections/DemoRequestSection";
 import { publicPageMetadata } from "@/lib/seo";
 
@@ -16,6 +17,7 @@ export default function DemoPage() {
     <PublicSite>
       <Header />
       <main>
+        <DemoCampaignIntro />
         <DemoRequestSection />
       </main>
       <Footer />

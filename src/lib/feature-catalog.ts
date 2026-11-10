@@ -158,7 +158,7 @@ export const FEATURE_CATALOG: Record<GatedFeature, FeatureDefinition> = {
     targetTier: "premium",
     name: "Çoklu şube",
     title: "Şubelerinizi tek merkezden yönetin",
-    description: "Çoklu şube yönetimi ürünleştiğinde Premium paket kapsamında sunulacaktır.",
+    description: "Aynı hesapla birden fazla şube oluşturun ve aralarında geçiş yapın. Premium paket kapsamında sunulur.",
     countLabel: "kaydınız korunuyor",
   },
   rbac: {

@@ -148,7 +148,7 @@ export function SalesLeadFilters({
           )}
         />
         <div className="flex items-end gap-2 md:col-span-2 xl:col-span-6">
-          <Button type="submit">Filtrele</Button>
+          <Button variant="foreground" type="submit">Filtrele</Button>
           <Button type="button" variant="ghost" onClick={() => { form.reset({ q: "", status: "all", follow: "all", advisorId: "all", createdFrom: "", createdTo: "" }); router.push("/admin/sales/leads") }}>
             Temizle
           </Button>

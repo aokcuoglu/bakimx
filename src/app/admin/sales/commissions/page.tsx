@@ -101,7 +101,7 @@ export default async function SalesCommissionsPage({
           <Button asChild variant="ghost" size="sm" className="-ml-3 mb-2">
             <Link href="/admin/sales"><ArrowLeft className="size-4" /> Satış merkezine dön</Link>
           </Button>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-page-title flex items-center gap-2 text-foreground">
             <WalletCards className="size-6 text-primary" /> Hakediş ledger’ı
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -122,11 +122,11 @@ export default async function SalesCommissionsPage({
       </section>
 
       <div className="flex flex-wrap gap-2" aria-label="Hakediş durum filtresi">
-        <Button asChild size="sm" variant={status === null ? "default" : "outline"}>
+        <Button asChild size="sm" variant={status === null ? "secondary" : "outline"}>
           <Link href="/admin/sales/commissions">Tümü</Link>
         </Button>
         {STATUSES.map((item) => (
-          <Button key={item} asChild size="sm" variant={status === item ? "default" : "outline"}>
+          <Button key={item} asChild size="sm" variant={status === item ? "secondary" : "outline"}>
             <Link href={`/admin/sales/commissions?status=${item}`}>{STATUS_LABELS[item]}</Link>
           </Button>
         ))}

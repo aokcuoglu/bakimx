@@ -284,7 +284,7 @@ export function LiveChatView({ onBack }: LiveChatViewProps) {
           }}
           placeholder="Mesajınızı yazın..."
           aria-label="Mesajınız"
-          className="max-h-28 min-h-9 resize-none rounded-lg shadow-none"
+          className="max-h-28 min-h-7 resize-none rounded-lg shadow-none"
         />
         <Button
           type="submit"

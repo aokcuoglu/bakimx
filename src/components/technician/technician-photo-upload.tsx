@@ -130,7 +130,7 @@ export function TechnicianPhotoUpload({
               variant="outline"
               size="sm"
               onClick={() => openWith(key)}
-              className="h-8 rounded-full border-destructive/20 bg-destructive/10 px-2 text-[11px] font-medium text-destructive-strong touch-manipulation"
+              className="h-7 rounded-full border-destructive/20 bg-destructive/10 px-2 text-[11px] font-medium text-destructive-strong touch-manipulation"
             >
               <Camera className="size-3" />
               {PHOTO_TYPES[key].label}
@@ -160,7 +160,7 @@ export function TechnicianPhotoUpload({
         description="Çektiğiniz fotoğrafı bu iş emrinin kanıtlarına ekleyin."
         footer={
           <div className="flex gap-2">
-            <Button
+            <Button variant="foreground"
               type="button"
               size="lg"
               className="flex-1 touch-manipulation"

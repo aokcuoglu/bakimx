@@ -71,7 +71,7 @@ function Turnstile({ siteKey, onToken }: { siteKey: string; onToken: (token: str
 }
 
 function RegisterCta() {
-  return <Button asChild><Link href="/register">Hesap oluştur</Link></Button>;
+  return <Button asChild variant="navy"><Link href="/register">Hesap oluştur</Link></Button>;
 }
 
 export function DemoOcrUpload() {
@@ -213,7 +213,7 @@ export function DemoOcrUpload() {
                 </FormItem>
               )} /> : <Alert><AlertDescription>Güvenlik doğrulaması şu anda kullanılamıyor.</AlertDescription></Alert>}
               {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-              <Button type="submit" disabled={processing || !status.siteKey} className="w-full gap-2">
+              <Button type="submit" variant="navy" disabled={processing || !status.siteKey} className="w-full gap-2">
                 {processing ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /> : <ScanLine className="size-4" />}
                 {processing ? "Ruhsat okunuyor…" : "Ruhsatımı oku"}
               </Button>

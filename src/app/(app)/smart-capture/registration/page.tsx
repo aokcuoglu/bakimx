@@ -25,7 +25,7 @@ export default async function SmartCaptureRegistrationPage() {
         </div>
 
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+          <h2 className="text-page-title text-foreground flex items-center gap-2">
             <ScanLine className="size-6 text-primary" />
             Ruhsat Okuma
           </h2>

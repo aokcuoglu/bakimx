@@ -27,7 +27,7 @@ export default async function SalesPerformancePage({
         <Button asChild variant="ghost" size="sm" className="-ml-3 mb-2">
           <Link href="/admin/sales"><ArrowLeft className="size-4" /> Satış merkezine dön</Link>
         </Button>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="text-page-title flex items-center gap-2 text-foreground">
           <ChartNoAxesCombined className="size-6 text-primary" /> Satış performansı
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">

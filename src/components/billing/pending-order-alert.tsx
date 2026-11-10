@@ -14,19 +14,15 @@ import {
 /**
  * /checkout, zaten bekleyen bir siparişi olan bir workshop'a düşünce buraya
  * yönlendirir — kullanıcıyı ayrı, bağlamsız bir sayfada bırakmak yerine
- * /billing üzerinde bu diyalogla bilgilendirir. Kart siparişlerinde havale
- * talimatı yerine "Ödemeye devam et" ile kart kurtarma sayfasına yönlendirir.
+ * /settings/billing üzerinde bu diyalogla bilgilendirir. Kart ödeme formu
+ * sayfadaki bekleyen ödeme şeridinden açılır.
  */
 export function PendingOrderAlert({ reference, method }: { reference: string; method?: string | null }) {
   const router = useRouter()
   const isCard = method === "card"
 
   function dismiss() {
-    router.replace("/billing")
-  }
-
-  function continuePayment() {
-    router.push(`/payment/result?ref=${encodeURIComponent(reference)}`)
+    router.replace("/settings/billing")
   }
 
   return (
@@ -39,9 +35,8 @@ export function PendingOrderAlert({ reference, method }: { reference: string; me
           <AlertDialogDescription>
             {isCard ? (
               <>
-                Başlattığınız kart ödemesi henüz tamamlanmadı. Ödemenizi tamamlamak için aşağıdan devam
-                edin. Yeni bir talep oluşturabilmek için önce bu ödemeyi tamamlayın veya iptal ekibimizle
-                iletişime geçin.
+                Başlattığınız kart ödemesi henüz tamamlanmadı. Faturalandırma sayfasındaki bekleyen ödeme
+                alanından devam edin. Farklı paket seçmek için bekleyen kart talebinizi aynı sayfadan iptal edin.
               </>
             ) : (
               <>
@@ -53,10 +48,7 @@ export function PendingOrderAlert({ reference, method }: { reference: string; me
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          {isCard && <AlertDialogAction onClick={continuePayment}>Ödemeye devam et</AlertDialogAction>}
-          <AlertDialogAction variant={isCard ? "outline" : "default"} onClick={dismiss}>
-            Anladım
-          </AlertDialogAction>
+          <AlertDialogAction onClick={dismiss}>Faturalandırmaya dön</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -32,13 +32,12 @@ async function auditLog(workshopId: string, actorUserId: string | null, action: 
 export async function getWorkshopSettings() {
   const user = await requireAuth()
 
-  const workshop = await prisma.workshop.findUnique({
-    where: { id: user.workshopId },
-  })
+  const [workshop, storedSettings] = await Promise.all([
+    prisma.workshop.findUnique({ where: { id: user.workshopId } }),
+    prisma.workshopSettings.findUnique({ where: { workshopId: user.workshopId } }),
+  ])
 
-  let settings = await prisma.workshopSettings.findUnique({
-    where: { workshopId: user.workshopId },
-  })
+  let settings = storedSettings
 
   if (!settings) {
     settings = await prisma.workshopSettings.create({
@@ -143,7 +142,8 @@ export async function updateBusinessProfileAction(formData: FormData) {
 
   await auditLog(user.workshopId, user.id, "update_business_profile", "Workshop")
 
-  revalidatePath("/settings")
+  revalidatePath("/settings/general")
+  revalidatePath("/settings/billing")
   return { success: true }
 }
 
@@ -184,7 +184,7 @@ export async function updateBrandingAction(formData: FormData) {
 
   await auditLog(user.workshopId, user.id, "update_branding", "WorkshopSettings")
 
-  revalidatePath("/settings")
+  revalidatePath("/settings/branding")
   return { success: true }
 }
 
@@ -242,7 +242,7 @@ export async function updateCommunicationSettingsAction(formData: FormData) {
 
   await auditLog(user.workshopId, user.id, "update_communication_settings", "WorkshopSettings")
 
-  revalidatePath("/settings")
+  revalidatePath("/settings/communication")
   return { success: true }
 }
 
@@ -292,7 +292,7 @@ export async function updateWorkingHoursAction(formData: FormData) {
 
   await auditLog(user.workshopId, user.id, "update_working_hours", "WorkshopSettings")
 
-  revalidatePath("/settings")
+  revalidatePath("/settings/working-hours")
   return { success: true }
 }
 
@@ -327,7 +327,7 @@ export async function updateAppointmentRulesAction(formData: FormData) {
 
   await auditLog(user.workshopId, user.id, "update_appointment_rules", "WorkshopSettings")
 
-  revalidatePath("/settings")
+  revalidatePath("/settings/appointment-rules")
   return { success: true }
 }
 
@@ -362,6 +362,6 @@ export async function updatePdfTemplateAction(formData: FormData) {
 
   await auditLog(user.workshopId, user.id, "update_pdf_templates", "WorkshopSettings")
 
-  revalidatePath("/settings")
+  revalidatePath("/settings/pdf-templates")
   return { success: true }
 }

@@ -5,7 +5,7 @@ describe("marketing analytics contract", () => {
   test("keeps the BAK-171 event dictionary stable", () => {
     expect(MARKETING_EVENT_NAMES).toEqual([
       "seo_landing_view", "trial_cta_click", "demo_cta_click", "register_started",
-      "register_submitted", "demo_submitted", "purchase_started", "purchase_submitted",
+      "register_submitted", "demo_form_started", "demo_submitted", "purchase_started", "purchase_submitted",
       "feature_paywall_viewed", "feature_upgrade_clicked",
       "lite_cta_click", "lite_registered", "first_work_order_created", "paid_subscription_confirmed",
     ])

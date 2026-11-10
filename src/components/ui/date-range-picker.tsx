@@ -41,9 +41,18 @@ export function DateRangePicker({
   className,
 }: DateRangePickerProps) {
   const label = rangeLabel(value, placeholder)
+  const [open, setOpen] = React.useState(false)
+  const [month, setMonth] = React.useState(value?.from ?? value?.to ?? new Date())
+  const selectionStarted = React.useRef(false)
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={(nextOpen) => {
+      if (nextOpen) {
+        selectionStarted.current = false
+        setMonth(value?.from ?? value?.to ?? new Date())
+      }
+      setOpen(nextOpen)
+    }}>
       <PopoverTrigger asChild>
         <Button
           id={id}
@@ -61,16 +70,33 @@ export function DateRangePicker({
           <span className="truncate">{label}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent aria-label="Tarih aralığı seçimi" className="w-auto bg-popover p-0" align="start">
+      <PopoverContent aria-label="Tarih aralığı seçimi" className="w-auto max-w-[calc(100vw-2rem)] bg-popover p-0" align="start">
         <Calendar
           autoFocus
           mode="range"
           min={0}
           selected={value ? { from: value.from ?? value.to, to: value.to } : undefined}
-          defaultMonth={value?.from}
+          month={month}
+          onMonthChange={setMonth}
+          captionLayout="dropdown"
+          // Keep navigation moving with the displayed month, including old or
+          // future ranges; a fixed draft year window would hide valid dates.
+          startMonth={new Date(month.getFullYear() - 100, 0)}
+          endMonth={new Date(month.getFullYear() + 100, 11)}
           locale={tr}
-          onSelect={onChange}
+          onSelect={(range) => {
+            onChange(range)
+            if (selectionStarted.current && range?.from && range.to) setOpen(false)
+            selectionStarted.current = true
+          }}
         />
+        <div className="flex justify-between border-t border-border p-2">
+          <Button type="button" variant="ghost" size="sm" disabled={!value?.from && !value?.to} onClick={() => {
+            onChange(undefined)
+            setOpen(false)
+          }}>Temizle</Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>Tamam</Button>
+        </div>
       </PopoverContent>
     </Popover>
   )

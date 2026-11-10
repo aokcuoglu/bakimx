@@ -27,7 +27,7 @@ const LANDING_ORIGIN = "https://bakimx.com"
 // /admin-login: platform personelinin Google SSO kapısı (BAK-94). Oturum
 // AÇMADAN erişilebilmesi gerekir, yani public; konsolun kendisi (`/admin`)
 // yönetici olmayana 404 vermeye devam eder.
-const PUBLIC_EXACT = new Set(["/", "/login", "/admin-login", "/forgot-password", "/register", "/privacy", "/terms", "/kvkk", "/acik-riza", "/fiyatlar", "/oto-servis-programi", "/dijital-arac-kabul", "/is-emri-programi", "/karsilastir/defter-excel-oto-servis-programi", "/blog", "/contact-us", "/status", "/robots.txt", "/sitemap.xml", "/llms.txt", "/opengraph-image", "/twitter-image"])
+const PUBLIC_EXACT = new Set(["/", "/login", "/admin-login", "/forgot-password", "/register", "/privacy", "/terms", "/kvkk", "/acik-riza", "/fiyatlar", "/oto-servis-programi", "/dijital-arac-kabul", "/is-emri-programi", "/karsilastir/defter-excel-oto-servis-programi", "/blog", "/contact-us", "/status", "/kilavuz", "/design", "/robots.txt", "/sitemap.xml", "/llms.txt", "/opengraph-image", "/twitter-image"])
 // /payment/result: TAMI 3DS/callback tarayıcıyı oturumsuz (public checkout) da
 // buraya 303'ler; sonuç DB'den okunur, tenant sızıntısı yok (bkz. result/page.tsx).
 // /w/<kod>: İş yeri özel giriş ekranı (BAK-38) — e-postasız kullanıcı için tenant seçimi.
@@ -112,6 +112,10 @@ function clearBounceIfPresent(request: NextRequest, response: NextResponse): Nex
   return response
 }
 
+function continueToApp(request: NextRequest): NextResponse {
+  return clearBounceIfPresent(request, NextResponse.next())
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   const host = (request.headers.get("host") || "").split(":")[0].toLowerCase()
@@ -166,7 +170,7 @@ export async function middleware(request: NextRequest) {
     if (session.surface !== "sales" && isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
       return NextResponse.redirect(new URL("/technician", request.url))
     }
-    return clearBounceIfPresent(request, NextResponse.next())
+    return continueToApp(request)
   }
 
   // ---- PROD: host-aware ----
@@ -207,7 +211,7 @@ export async function middleware(request: NextRequest) {
     if (session.surface !== "sales" && isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
       return NextResponse.redirect(`${APP_ORIGIN}/technician`)
     }
-    return clearBounceIfPresent(request, NextResponse.next())
+    return continueToApp(request)
   }
 
   // ---- LANDING HOST (bakimx.com) + unknown hosts ----
@@ -242,5 +246,5 @@ export const config = {
   // takılırsa /login'e 307'lenir, tarayıcı JavaScript yerine HTML alır ve
   // kayıt "unsupported MIME type" ile düşer. İçeriğinde kiracıya ait hiçbir
   // veri yok; payload'ı push mesajı taşır.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|landing/|illustrations/|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|landing/|illustrations/|models/|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
 }

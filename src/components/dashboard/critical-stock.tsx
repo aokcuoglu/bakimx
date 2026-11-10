@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { AlertTriangle, Package } from "lucide-react"
+import { Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { CriticalStockItem } from "@/lib/parts/queries"
 
@@ -7,10 +7,9 @@ export function CriticalStockWidget({ items }: { items: CriticalStockItem[] }) {
   if (items.length === 0) return null
 
   return (
-    <div className="rounded-lg border border-destructive/20 bg-destructive/5 overflow-hidden">
+    <div className="rounded-xl border border-destructive/20 bg-destructive/5 overflow-hidden">
       <div className="px-4 py-3 border-b border-destructive/20 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <AlertTriangle className="size-4 text-destructive-strong" />
           <h3 className="text-sm font-semibold text-foreground">Kritik Stok</h3>
         </div>
         <Link href="/parts?status=critical" className="text-xs text-destructive-strong hover:text-destructive-strong font-medium">

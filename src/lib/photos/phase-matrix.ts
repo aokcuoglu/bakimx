@@ -116,3 +116,10 @@ export function phaseCoverSlides(row: PhaseMatrixRow): {
 export function countFilledPhases(row: PhaseMatrixRow): number {
   return row.cells.filter((c) => c.photos.some((p) => p.fileUrl)).length
 }
+
+/** Kanıt sekmesindeki fotoğraf seçicisinin açılacağı aşama: iş emrinin bulunduğu yer. */
+export function photoPhaseForStatus(status: string): PhotoPhaseKey {
+  if (status === "in_progress" || status === "waiting_parts") return "repair_progress"
+  if (status === "ready_for_delivery" || status === "delivered") return "delivery"
+  return "intake"
+}

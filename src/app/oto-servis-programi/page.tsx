@@ -81,7 +81,7 @@ export default function OtoServisProgramiPage() {
                 {OTO_SERVIS_PROGRAMI_INTRO}
               </p>
               <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-                <Button asChild size="lg">
+                <Button asChild variant="navy" size="lg">
                   <Link href="/register">
                     Ücretsiz deneyin
                     <ArrowRight aria-hidden="true" />
@@ -92,8 +92,8 @@ export default function OtoServisProgramiPage() {
             </div>
 
             <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
-              <div className="absolute -inset-4 -z-10 rotate-2 rounded-3xl bg-primary/10" />
-              <figure className="overflow-hidden rounded-2xl border bg-card shadow-2xl shadow-primary/10">
+              <div className="absolute -inset-4 -z-10 rotate-2 rounded-xl bg-primary/10" />
+              <figure className="overflow-hidden rounded-xl border bg-card shadow-md">
                 <div className="flex items-center justify-between border-b bg-muted/50 px-4 py-3">
                   <span className="font-mono text-xs font-medium text-muted-foreground">İŞ EMRİ · ÖRNEK EKRAN</span>
                   <span className="flex items-center gap-1.5 text-xs font-medium text-success-strong">
@@ -124,7 +124,7 @@ export default function OtoServisProgramiPage() {
               <h2 id="akis-baslik" className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Bir araç geldiğinde beş adım</h2>
               <p className="mt-4 text-base leading-7 text-muted-foreground">Ekran ekran dolaşmak yerine aracın kaydını ilerletin. Ekip, sıradaki işi aynı akıştan görsün.</p>
             </div>
-            <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-5">
+            <ol className="mt-10 grid gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-5">
               {workflow.map((step, index) => {
                 const Icon = step.icon
                 return (
@@ -158,7 +158,7 @@ export default function OtoServisProgramiPage() {
                   ))}
                 </ul>
               </div>
-              <div className="rounded-2xl border bg-muted/35 p-6 sm:p-8">
+              <div className="rounded-xl border bg-muted/35 p-6 sm:p-8">
                 <h3 className="text-xl font-semibold">Hangi durumda uygun olmayabilir?</h3>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">Yalnızca ön muhasebe arayan, servis operasyonu yürütmeyen veya internetsiz masaüstü programı kullanmak zorunda olan işletmeler için BakımX doğru araç olmayabilir.</p>
                 <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -190,7 +190,7 @@ export default function OtoServisProgramiPage() {
                 { src: "/landing/screens/order-detail.png", alt: "BakımX iş emri detayında parça ve işçilik kayıtları", label: "Servis içi iş emri · Örnek veri", text: "İşler, parçalar ve işçilikler tek iş emrinde izlenir." },
                 { src: "/landing/screens/public-tracking.png", alt: "BakımX müşteri araç takip ekranı", label: "Müşteri takip ekranı · Örnek veri", text: "Araç durumu ve işlem özeti paylaşılabilir ekranda görülür." },
               ].map((screen) => (
-                <figure key={screen.src} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                <figure key={screen.src} className="overflow-hidden rounded-xl border bg-card shadow-sm">
                   <div className="border-b px-4 py-3 font-mono text-xs font-medium text-muted-foreground">{screen.label}</div>
                   <Image src={screen.src} alt={screen.alt} width={1200} height={800} className="h-auto w-full" />
                   <figcaption className="border-t px-5 py-4 text-sm leading-6 text-muted-foreground">{screen.text}</figcaption>
@@ -214,7 +214,7 @@ export default function OtoServisProgramiPage() {
                 { href: "/karsilastir/defter-excel-oto-servis-programi", title: "Defter, Excel ve program karşılaştırması", text: "Kayıt yöntemlerini dengeli ölçütlerle karşılaştırın." },
                 { href: "/demo", title: "Canlı demo talep edin", text: "BakımX'i servisinizin çalışma şekline göre birlikte inceleyin." },
               ].map((item) => (
-                <Link key={item.href} href={item.href} className="group rounded-xl border bg-card p-5 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <Link key={item.href} href={item.href} className="group rounded-xl border bg-card p-5 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                   <span className="flex items-center justify-between gap-4 font-semibold text-foreground">
                     {item.title}
                     <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" aria-hidden="true" />

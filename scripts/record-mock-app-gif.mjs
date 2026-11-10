@@ -3,14 +3,14 @@
  *
  *   bun run scripts/record-mock-app-gif.mjs
  *
- * Önkoşul: `bun run dev` (localhost:3000)
+ * Önkoşul: `bun run dev` (localhost:3001)
  */
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { GIFEncoder, quantize, applyPalette } from "gifenc";
 
-const BASE = process.env.MEASURE_BASE_URL || "http://localhost:3000";
+const BASE = process.env.MEASURE_BASE_URL || "http://localhost:3001";
 const OUT = join(process.cwd(), "public/landing/screens/mock-app-tour.gif");
 const FRAME_MS = 280;
 const DURATION_MS = 10000;

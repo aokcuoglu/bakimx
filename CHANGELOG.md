@@ -3,7 +3,15 @@
 BakımX sürüm geçmişi. Her sürümün ayrıntılı notu [`docs/releases/`](./docs/releases/) altındadır. Sürümler [SemVer](https://semver.org/lang/tr/) ve dev→staging→main akışını izler (bkz. [docs/releasing.md](./docs/releasing.md)).
 
 ## Yayınlanmamış (Unreleased)
-Henüz yok — v0.15.0 tag'lendi, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+Henüz yok — v0.16.0 tag'lendi.
+
+## 0.16.x
+
+| Sürüm | Başlık | Not |
+|---|---|---|
+| 0.16.0 | Çoklu şube, ekip bazlı izinler, Attio tarzı arayüz, 3B hasar modeli | [v0.16.0](./docs/releases/v0.16.0.md) |
+
+0.16.0 öne çıkanlar: **çoklu şube** (`Organization` + `WorkshopMembership`, şube değiştirici, Premium'a kapılı şube oluşturma; şube değişimi üyeliği sunucuda doğrular, taklit modunda engelli) ve **ekip bazlı izinler** (yönetici kendisinde olmayan izni veremez, ekip izni yalnız kendi şubesinde geçerli). Uygulamanın tamamı Attio tarzı yeni arayüze taşındı: ayarlar kabuğu, yan menü, dashboard, analitik, iş emri listesi (yenilemesiz filtreler, korunan tablo durumu) ve diyalog tabanlı detay düzenleme. İş emrinde **3B hasar modeli** ve yeniden tasarlanan **Kanıt sekmesi**. Faturalandırma kullanım ve krediyi gösteriyor — **fiyat değişikliği yok**. GetirBakım sipariş pilotu ayrı anahtar arkasında, prod'da kapalı. **Migration VAR** (4, hepsi ekleyici; şube migration'ı mevcut atölye/kullanıcıları birebir backfill eder). **Zorunlu yeni env yok.**
 
 ## 0.15.x
 

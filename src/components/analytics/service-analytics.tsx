@@ -1,80 +1,67 @@
 import type { ServiceAnalytics as ServiceAnalyticsType } from "@/lib/analytics/queries"
 import { formatTRY } from "@/lib/format"
 import { MessageSquare, Wrench, HardHat } from "lucide-react"
+import { Card } from "@/components/ui/card"
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 
-function TopList({ title, icon: Icon, items, renderRight }: {
+type ServiceItem = { name: string; count: number; detail?: string; revenue?: number }
+
+function TopList({ title, nameLabel, icon: Icon, items, showRevenue = false }: {
   title: string
+  nameLabel: string
   icon: React.ComponentType<{ className?: string }>
-  items: { name: string; count: number; extra?: string }[]
-  renderRight?: (item: { name: string; count: number; extra?: string }) => React.ReactNode
+  items: ServiceItem[]
+  showRevenue?: boolean
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card overflow-hidden">
-      <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
-        <Icon className="size-4 text-primary" />
-        <h3 className="text-base font-semibold text-foreground">{title}</h3>
+    <Card className="min-w-0 gap-0 py-0">
+      <div className="flex items-center gap-2 border-b px-4 py-3">
+        <Icon className="size-4 shrink-0 text-muted-foreground" />
+        <h3 className="text-sm font-medium">{title}</h3>
       </div>
-      {items.length === 0 ? (
-        <div className="p-6 text-center text-sm text-muted-foreground">Veri bulunmuyor.</div>
-      ) : (
-        <div className="divide-y divide-border">
-          {items.map((item, i) => (
-            <div key={i} className="flex items-center justify-between px-4 sm:px-6 py-3">
-              <div className="flex items-center gap-3">
-                <span className="size-6 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-xs font-bold">
-                  {i + 1}
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-foreground truncate max-w-[200px] sm:max-w-none">{item.name}</p>
-                  {item.extra && <p className="text-xs text-muted-foreground">{item.extra}</p>}
-                </div>
-              </div>
-              {renderRight ? renderRight(item) : (
-                <span className="text-sm font-semibold text-foreground">{item.count}×</span>
-              )}
-            </div>
+      <Table aria-label={title} className="table-fixed" containerClassName="min-w-0">
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="px-4 text-xs text-muted-foreground">{nameLabel}</TableHead>
+            <TableHead className="w-16 px-3 text-right text-xs text-muted-foreground">Adet</TableHead>
+            {showRevenue && <TableHead className="w-32 px-4 text-right text-xs text-muted-foreground">Gelir</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={showRevenue ? 3 : 2} className="px-4 py-6 text-center text-muted-foreground">Veri bulunmuyor.</TableCell>
+            </TableRow>
+          ) : items.map((item, i) => (
+            <TableRow key={i}>
+              <TableCell className="px-4 py-2 whitespace-normal wrap-anywhere">
+                <span className="font-medium">{item.name}</span>
+                {item.detail && <p className="mt-0.5 text-xs text-muted-foreground">{item.detail}</p>}
+              </TableCell>
+              <TableCell className="px-3 py-2 text-right tabular-nums whitespace-normal wrap-anywhere">{item.count}</TableCell>
+              {showRevenue && <TableCell className="px-4 py-2 text-right tabular-nums whitespace-normal wrap-anywhere">{formatTRY(item.revenue ?? 0)}</TableCell>}
+            </TableRow>
           ))}
-        </div>
-      )}
-    </div>
+        </TableBody>
+      </Table>
+    </Card>
   )
 }
 
 export function ServiceAnalyticsSection({ analytics }: { analytics: ServiceAnalyticsType }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      <TopList
-        title="En Sık Şikayetler"
-        icon={MessageSquare}
-        items={analytics.topComplaints.map((c) => ({
-          name: c.complaint,
-          count: c.count,
-        }))}
-      />
-      <TopList
-        title="En Sık Onarımlar"
-        icon={Wrench}
+    <div className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-2">
+      <TopList title="En Sık Şikayetler" nameLabel="Şikayet" icon={MessageSquare}
+        items={analytics.topComplaints.map((c) => ({ name: c.complaint, count: c.count }))} />
+      <TopList title="En Sık Onarımlar" nameLabel="Onarım" icon={Wrench}
         items={analytics.topRepairs.map((r) => ({
-          name: r.itemName,
-          count: r.count,
-          extra: r.type === "part" ? "Parça" : r.type === "external_labor" ? "Dış İşçilik" : "İşçilik",
-        }))}
-      />
-      <TopList
-        title="En Çok Yapılan İşçilikler"
-        icon={HardHat}
-        items={analytics.topLaborItems.map((l) => ({
-          name: l.laborName,
-          count: l.count,
-          extra: formatTRY(l.totalRevenue),
-        }))}
-        renderRight={(item) => (
-          <div className="text-right">
-            <p className="text-sm font-semibold text-foreground">{item.extra}</p>
-            <p className="text-xs text-muted-foreground">{item.count}×</p>
-          </div>
-        )}
-      />
+          name: r.itemName, count: r.count,
+          detail: r.type === "part" ? "Parça" : r.type === "external_labor" ? "Dış İşçilik" : "İşçilik",
+        }))} />
+      <div className="min-w-0 xl:col-span-2">
+        <TopList title="En Çok Yapılan İşçilikler" nameLabel="İşçilik" icon={HardHat} showRevenue
+          items={analytics.topLaborItems.map((l) => ({ name: l.laborName, count: l.count, revenue: l.totalRevenue }))} />
+      </div>
     </div>
   )
 }

@@ -1,13 +1,8 @@
 import * as React from "react"
-import Link from "next/link"
-
+import { HighlightCard } from "@/components/shared/highlight-card"
 import { cn } from "@/lib/utils"
 
-/**
- * Liste ekranlarındaki KPI tile'ı (etiket + küçük badge + büyük sayı).
- * `href` verilirse tıklanabilir filtre kartı (aktif halde ring) olur;
- * verilmezse statik bir kart olur.
- */
+/** List summary / filter tile. A badge is shown only when explicitly supplied. */
 export function StatCard({
   label,
   value,
@@ -19,50 +14,24 @@ export function StatCard({
 }: {
   label: string
   value: React.ReactNode
-  /** Sağ üstteki küçük badge içeriği — verilmezse `value` kullanılır. */
   badge?: React.ReactNode
-  /** Badge renk sınıfları (bg/text/border). */
   accent?: string
   href?: string
   active?: boolean
   className?: string
 }) {
-  const inner = (
-    <>
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground font-medium">{label}</span>
-        <span
-          className={cn(
-            "h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold",
-            accent
-          )}
-        >
-          {badge ?? value}
-        </span>
-      </div>
-      <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
-    </>
-  )
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        prefetch={false}
-        className={cn(
-          "rounded-lg border bg-card p-3 sm:p-4 transition-all hover:shadow-sm touch-manipulation",
-          active ? "ring-2 ring-primary border-primary" : "border-border",
-          className
-        )}
-      >
-        {inner}
-      </Link>
-    )
-  }
-
   return (
-    <div className={cn("rounded-lg border border-border bg-card p-3 sm:p-4", className)}>
-      {inner}
-    </div>
+    <HighlightCard
+      label={label}
+      value={value}
+      href={href}
+      active={active}
+      className={className}
+      accessory={badge != null ? (
+        <span className={cn("inline-flex min-h-5 items-center rounded-xs border px-1.5 text-xs font-medium", accent)}>
+          {badge}
+        </span>
+      ) : undefined}
+    />
   )
 }

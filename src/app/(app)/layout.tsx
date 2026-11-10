@@ -5,6 +5,9 @@ import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { GATED_FEATURES, getPlanState, hasFeature, isPlanExpiredLock } from "@/lib/plan"
+import { getPlanPackage } from "@/lib/plans-catalog"
+import { getSidebarPlanStatus } from "@/lib/billing/sidebar-plan-status"
+import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { LOGOUT_REASON_PARAM, SESSION_INVALID_REASON } from "@/lib/session-recovery"
 import { PlanLocked } from "@/components/billing/plan-locked"
 import { ForcePasswordChange } from "@/components/auth/force-password-change"
@@ -12,6 +15,9 @@ import { AppShellChrome } from "@/components/layout/app-shell"
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner"
 import { VersionUpdateNotice } from "@/components/layout/version-update-notice"
 import { getBuildSignature } from "@/lib/build-signature"
+import { FIRST_ONBOARDING_PATH } from "@/lib/onboarding-steps"
+import { isOnboardingCompleted, isOnboardingPending } from "@/lib/validations/onboarding"
+import { canCreateBranch, listUserMemberships } from "@/lib/membership"
 import { PRIVATE_ROBOTS, TITLE_TEMPLATE } from "@/lib/seo"
 
 export const metadata: Metadata = {
@@ -38,7 +44,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const workshop = await prisma.workshop.findUnique({
     where: { id: user.workshopId },
     select: {
+      id: true,
       name: true,
+      city: true,
       planTier: true,
       subscriptionStatus: true,
       approvalStatus: true,
@@ -47,6 +55,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       currentPeriodEnd: true,
       requestedPlanTier: true,
       kind: true,
+      onboardingProfile: true,
     },
   })
   if (!workshop) {
@@ -57,6 +66,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   const plan = getPlanState(workshop)
+  const isTechnicianRole = isTechnicianRestrictedRole(user.role)
+  const sidebarPlanStatus = isTechnicianRole
+    ? null
+    : getSidebarPlanStatus(plan, getPlanPackage(plan.tier)?.name ?? plan.tier)
 
   // Paywall: deneme/abonelik süresi bitmiş bir oturum uygulamayı hiç göremez.
   // Login'e atıyoruz; `?expired=` gören middleware oturum cookie'sini siler
@@ -75,6 +88,29 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // çözülür; istemciye yalnız "açık olanlar" listesi iner, kapının nasıl
   // hesaplandığı değil.
   const enabledFeatures = GATED_FEATURES.filter((feature) => hasFeature(plan.accessTier, feature))
+
+  const membershipRows = await listUserMemberships(user.id)
+  const workspaceMemberships =
+    membershipRows.length > 0
+      ? membershipRows.map((row) => ({ ...row.workshop, role: row.role }))
+      : [
+          {
+            id: workshop.id,
+            name: workshop.name,
+            city: workshop.city,
+            loginCode: "",
+            organizationId: null,
+            planTier: workshop.planTier,
+            logoUrl: null,
+            role: user.role,
+            teamPermissions: user.teamPermissions,
+          },
+        ]
+  const workspaceSwitcher = {
+    currentWorkshopId: user.workshopId,
+    memberships: workspaceMemberships,
+    canCreateBranch: canCreateBranch({ ...workshop, role: user.role }),
+  }
 
   // Full-screen lock: only the approval gate (pending/rejected) blocks the whole
   // app now. Plan-expiry reasons drop to read-only mode below (data visible,
@@ -110,6 +146,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     )
   }
 
+  const requiresOnboarding = user.role === "owner" && !impersonation &&
+    isOnboardingPending(workshop.onboardingProfile)
+  if (requiresOnboarding) redirect(FIRST_ONBOARDING_PATH)
+
+  // Post-wizard product tour: owners who finished onboarding and have not dismissed it yet.
+  const showDashboardTour =
+    user.role === "owner" &&
+    !impersonation &&
+    !user.dashboardTourCompletedAt &&
+    isOnboardingCompleted(workshop.onboardingProfile)
+
   // Salt-okunur bant: buraya artık yalnızca kurucu impersonation'ı düşebilir —
   // gerçek kullanıcı yukarıda çıkışa yönlendirildi. Kurucu kilitli tenant'ı
   // inceleyebilsin diye veri görünür kalır; yazma işlemleri sunucu tarafında
@@ -132,25 +179,27 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       )}
       {!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null && (
-        <div className="bg-primary/10 text-primary-strong text-xs sm:text-sm px-4 py-2 text-center">
+        <div className="flex h-8 items-center justify-center bg-primary px-4 text-center text-sm font-medium leading-5 tracking-[-0.07px] text-primary-foreground lg:sticky lg:top-0 lg:z-50">
           Deneme sürenizin bitmesine{" "}
           <span className="font-semibold">{plan.trialDaysLeft} iş günü</span> kaldı.{" "}
-          <Link href="/billing" className="font-semibold underline underline-offset-2">
-            Paketi etkinleştir
-          </Link>
+          {!isTechnicianRole && <Link href="/settings/plans" className="font-semibold underline underline-offset-2">Paketleri incele</Link>}
         </div>
       )}
       {!readOnlyLocked && !plan.isTrialing && plan.subscriptionDaysLeft != null && plan.subscriptionDaysLeft <= 7 && (
-        <div className="bg-warning/10 text-warning-strong text-xs sm:text-sm px-4 py-2 text-center">
+        <div className={`bg-warning/10 text-warning-strong text-xs sm:text-sm px-4 py-2 text-center ${isTechnicianRole ? "" : "lg:hidden"}`}>
           Aboneliğinizin bitmesine{" "}
           <span className="font-semibold">{plan.subscriptionDaysLeft} gün</span> kaldı.{" "}
-          <Link href="/billing" className="font-semibold underline underline-offset-2">Yenile</Link>
+          {!isTechnicianRole && <Link href="/settings/billing" className="font-semibold underline underline-offset-2">Paketi yönet</Link>}
         </div>
       )}
       <div className="flex-1">
         <AppShellChrome
           initialSidebarCollapsed={initialSidebarCollapsed}
           enabledFeatures={enabledFeatures}
+          showDashboardTour={showDashboardTour}
+          planStatus={sidebarPlanStatus}
+          workspace={workspaceSwitcher}
+          topBannerVisible={!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null}
           userIdentity={{
             firstName: user.firstName,
             lastName: user.lastName,

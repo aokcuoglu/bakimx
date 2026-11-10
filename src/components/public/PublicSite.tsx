@@ -21,8 +21,8 @@ export function PublicSite({
   /** Adds the shared landing-page frame without affecting other public pages. */
   landing?: boolean;
   /**
-   * When `landing` is on, draw the 1280 decorative rail.
-   * Blog index supplies its own 1124 Clutch content rails — turn this off there
+   * When `landing` is on, draw the 1124px decorative rail.
+   * Blog index supplies its own 1124px content rails — turn this off there
    * so the two frames do not nest.
    */
   frame?: boolean;

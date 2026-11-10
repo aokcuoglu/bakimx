@@ -11,7 +11,7 @@ import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ensureChecklistSeeded } from "@/lib/technician/checklist-seed"
-import { roleCan } from "@/lib/roles"
+import { actorCan } from "@/lib/roles"
 import { getLaborCatalog } from "@/lib/labor/queries"
 import { ORDER_ITEM_PERMISSION } from "@/lib/technician/item-editing"
 import { technicianOrderDetailWhere } from "@/lib/technician/order-visibility"
@@ -314,7 +314,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
         // teslime hazır iş emrinde kaydı yalnız düzenleyebilenler kaldırır) ve
         // "Parça & İşçilik" düzenleyicisinin görünürlüğü (BAK-141). İkisi de aynı
         // izne (`order.edit`) dayanır; bkz. src/lib/technician/item-editing.ts.
-        canEditOrder={roleCan(user.role, ORDER_ITEM_PERMISSION)}
+        canEditOrder={actorCan(user, ORDER_ITEM_PERMISSION)}
       />
     </AppShell>
   )

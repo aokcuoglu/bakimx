@@ -3,10 +3,9 @@ import { AppShell } from "@/components/layout/app-shell"
 import Link from "next/link"
 import { prisma } from "@/lib/db"
 import { Button } from "@/components/ui/button"
+import styles from "@/components/dashboard/dashboard-layout.module.css"
 import { Plus } from "lucide-react"
 import { getPlanState, hasFeature } from "@/lib/plan"
-import { redirect } from "next/navigation"
-import { isOnboardingPending } from "@/lib/validations/onboarding"
 
 import {
   getDashboardStats,
@@ -47,9 +46,6 @@ export const metadata = { title: "Genel Bakış" }
 
 export default async function DashboardPage() {
   const { user, workshop } = await getAppData()
-  if (user.role === "owner" && !user.impersonatorAdminId && isOnboardingPending(workshop?.onboardingProfile)) {
-    redirect("/onboarding")
-  }
   const accessTier = getPlanState(workshop!).accessTier
   const canQuotes = hasFeature(accessTier, "quotes")
   const canPhotos = hasFeature(accessTier, "photoChecklist")
@@ -111,42 +107,43 @@ export default async function DashboardPage() {
 
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Genel Bakış">
-      <div className="space-y-5 sm:space-y-6 max-w-full">
-        <div className="relative rounded-lg bg-gradient-to-br from-navy via-navy to-navy-light text-navy-foreground p-5 sm:p-6 shadow-sm overflow-hidden">
-          {/* Dekoratif brand blue accent */}
-          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-brand/15 blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-brand/10 blur-2xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold">
-                Hoş Geldiniz, {user.firstName || user.email || user.username || "Kullanıcı"}
-              </h2>
-              <p className="text-sm text-navy-foreground/70 mt-1">
-                {workshop?.name} &bull;{" "}
-                {new Date().toLocaleDateString("tr-TR", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                })}
-              </p>
-            </div>
-            <Link
-              href="/orders/new"
-              className="inline-flex items-center justify-center gap-2 h-8 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors touch-manipulation shadow-sm"
-            >
+      <div className="mx-auto max-w-[1440px] space-y-6">
+        <section
+          data-tour="welcome-banner"
+          className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="min-w-0">
+            <h2 className="text-page-title text-foreground">
+              Hoş Geldiniz, {user.firstName || user.email || user.username || "Kullanıcı"}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {workshop?.name} &bull;{" "}
+              {new Date().toLocaleDateString("tr-TR", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}
+            </p>
+          </div>
+          <Button variant="foreground" size="sm" asChild>
+            <Link href="/orders/new" data-tour="welcome-cta">
               <Plus className="size-4" />
               Yeni İş Emri
             </Link>
-          </div>
-        </div>
+          </Button>
+        </section>
 
         {needsFirstOrder && (
-          <section aria-labelledby="first-order-heading" className="rounded-xl border bg-card p-4 space-y-3">
+          <section
+            data-tour="first-order"
+            aria-labelledby="first-order-heading"
+            className="rounded-xl border bg-card p-4 space-y-3"
+          >
             <h2 id="first-order-heading" className="text-lg font-semibold">Lite ile ilk işinize başlayın</h2>
             <p className="text-sm text-muted-foreground">Kurulum tercihleriniz kaydedildi. İlk müşterinizi ve aracınızı kaydedin, ardından iş emrinizi açın. İş emri ekranında da müşteri ve araç ekleyebilirsiniz.</p>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button asChild variant="outline"><Link href="/customers/new">İlk müşteriyi ekle</Link></Button>
-              <Button asChild><Link href="/orders/new">İlk iş emrini oluştur</Link></Button>
+              <Button variant="foreground" asChild><Link href="/orders/new">İlk iş emrini oluştur</Link></Button>
             </div>
           </section>
         )}
@@ -155,31 +152,25 @@ export default async function DashboardPage() {
 
         {reportWidgetData && <DashboardReportWidgets data={reportWidgetData} />}
 
-        <AlertBanner stats={stats} showQuotes={canQuotes} showPhotoChecklist={canPhotos} />
-
-        {operationalAlerts && <OperationalAlertsWidget recommendations={operationalAlerts} />}
-
-        {weeklyOps && statusDist && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-            <WeeklyChart data={weeklyOps} />
-            <StatusChart data={statusDist} />
-          </div>
-        )}
+        <section aria-label="Operasyon takibi" className={styles.panels}>
+          <AlertBanner stats={stats} showQuotes={canQuotes} showPhotoChecklist={canPhotos} />
+          {operationalAlerts && <OperationalAlertsWidget recommendations={operationalAlerts} />}
+        </section>
 
         <ActiveOrdersSection orders={activeOrders} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
-          <TodayDeliveries deliveries={todayDeliveries} />
-          {canQuotes && <WaitingApprovals approvals={waitingApprovals} />}
+        <section className={styles.panels} aria-label="Günlük iş takibi">
+          <div className="min-w-0 space-y-4">
+            <TodayDeliveries deliveries={todayDeliveries} />
+            {canQuotes && <WaitingApprovals approvals={waitingApprovals} />}
+            {canAppointments && <TodayAppointments appointments={todayAppointments} />}
+          </div>
           {canPhotos && <MissingPhotos items={missingPhotos} />}
-        </div>
-
-        {canAppointments && <TodayAppointments appointments={todayAppointments} />}
+        </section>
 
         {(canInventory || canCashbox || canReminders) && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-          {canInventory && <CriticalStockWidget items={criticalStock} />}
-          <div className="space-y-4 sm:space-y-5">
+          <div className={styles.panels}>
+            {canInventory && <CriticalStockWidget items={criticalStock} />}
             {canCashbox && <CashWidget data={{
               todayCollected: stats.todayCollected,
               openReceivable: stats.openReceivable,
@@ -188,10 +179,16 @@ export default async function DashboardPage() {
             {canInventory && canProcurement && <CriticalStockSuppliersWidget suppliers={criticalStockSuppliers} />}
             {canReminders && <ReminderWidget dueSoon={remindersDueSoon} overdue={remindersOverdue} />}
           </div>
-          </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+        {weeklyOps && statusDist && (
+          <section aria-label="Operasyon raporları" className={styles.panels}>
+            <WeeklyChart data={weeklyOps} />
+            <StatusChart data={statusDist} />
+          </section>
+        )}
+
+        <div className={styles.panels}>
           <RecentCustomers customers={recentCustomers} />
           {canTeam && <TechnicianStatusWidget technicians={technicianOverview} unassignedCount={unassignedOrderCount} />}
         </div>

@@ -45,7 +45,7 @@ export function OrderItemUnitCombobox({
           aria-label={ariaLabel}
           aria-expanded={open}
           className={cn(
-            "h-8 justify-between gap-1.5 rounded-lg bg-transparent px-2.5 text-sm font-normal whitespace-nowrap hover:bg-transparent dark:bg-input/30 dark:hover:bg-input/50",
+            "h-7 justify-between gap-1.5 rounded-lg bg-transparent px-2.5 text-sm font-normal whitespace-nowrap hover:bg-transparent dark:bg-input/30 dark:hover:bg-input/50",
             className,
           )}
         >
@@ -61,7 +61,7 @@ export function OrderItemUnitCombobox({
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Birim ara..."
             aria-label="Birim ara"
-            className="h-8 pl-8"
+            className="h-7 pl-8"
             autoFocus
           />
         </div>
@@ -71,13 +71,15 @@ export function OrderItemUnitCombobox({
           ) : visibleUnits.map((unit) => {
             const disabled = isOptionDisabled?.(unit)
             return (
-              <button
+              <Button
                 key={unit}
                 type="button"
+                variant="ghost"
+                size="default"
                 role="option"
                 aria-selected={unit === value}
                 disabled={disabled}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm outline-none hover:bg-accent focus-visible:bg-accent disabled:pointer-events-none disabled:opacity-50"
+                className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-left"
                 onClick={() => {
                   onValueChange(unit)
                   changeOpen(false)
@@ -85,7 +87,7 @@ export function OrderItemUnitCombobox({
               >
                 <Check className={cn("size-4", unit === value ? "opacity-100" : "opacity-0")} />
                 {ORDER_ITEM_UNIT_LABELS[unit]}
-              </button>
+              </Button>
             )
           })}
         </div>

@@ -6,7 +6,15 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { Check, HardHat, Loader2, Search, UserPlus, UserX } from "lucide-react"
 
-import { BottomSheet } from "@/components/shared/bottom-sheet"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { TECHNICIAN_ROLES } from "@/lib/constants"
@@ -24,7 +32,7 @@ function roleInfo(role: string) {
 }
 
 /**
- * İş emrinin atanan ustasını gösteren ve tıklanınca atama sheet'ini açan kontrol.
+ * İş emrinin atanan ustasını gösteren ve tıklanınca atama modalını açan kontrol.
  *
  * Tek giriş noktasıdır: detay başlığı, "İş Emri Bilgileri" kartı ve iş emri
  * listesi aynı bileşeni kullanır — atama mantığı tek yerde durur.
@@ -82,7 +90,7 @@ export function TechnicianAssign({
         assignedTechnicianName
           ? "border-primary/20 bg-primary/10 text-foreground"
           : "border-dashed border-border bg-transparent text-muted-foreground",
-        !locked && "hover:border-primary/40 hover:bg-primary/15",
+        !locked && "hover:bg-muted/60 hover:bg-primary/15",
         className
       )
 
@@ -132,15 +140,12 @@ export function TechnicianAssign({
   }
 
   return (
-    <BottomSheet
-      open={open}
-      onOpenChange={setOpen}
-      title="Usta Ata"
-      description="İş emrini üstlenecek ustayı seçin"
-      trigger={
-        <button
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
           type="button"
-          className={trigger}
+          variant="ghost"
+          className={cn("h-auto min-h-7 justify-start whitespace-normal", trigger)}
           aria-label={
             assignedTechnicianName
               ? `Atanan usta: ${assignedTechnicianName} — değiştir`
@@ -149,99 +154,100 @@ export function TechnicianAssign({
         >
           <Icon className={cn("shrink-0", iconSize)} />
           <span className="truncate">{label}</span>
-        </button>
-      }
-      footer={
-        assignedTechnicianId ? (
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full"
-            onClick={handleUnassign}
-            disabled={isPending}
-          >
-            {isPending ? <Loader2 className="size-4 animate-spin" /> : <UserX className="size-4" />}
-            Atamayı Kaldır
-          </Button>
-        ) : undefined
-      }
-    >
-      {technicians.length === 0 ? (
-        <div className="py-8 text-center">
-          <HardHat className="mx-auto mb-3 size-10 text-muted-foreground/40" />
-          <p className="text-sm font-medium text-foreground">Henüz usta kaydı yok</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Atama yapabilmek için önce Ayarlar → Ekip sayfasından usta ekleyin.
-          </p>
-          <Button size="lg" className="mt-4" asChild>
-            <Link href="/settings?tab=team">
-              <UserPlus className="size-4" />
-              Usta Ekle
-            </Link>
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-2 pb-2">
-          {technicians.length >= SEARCH_THRESHOLD && (
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Usta ara..."
-                className="pl-9"
-                autoComplete="off"
-              />
-            </div>
-          )}
-
-          {filtered.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              &quot;{query}&quot; ile eşleşen usta yok
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Usta Ata</DialogTitle>
+          <DialogDescription>İş emrini üstlenecek ustayı seçin</DialogDescription>
+        </DialogHeader>
+        {technicians.length === 0 ? (
+          <div className="py-8 text-center">
+            <HardHat className="mx-auto mb-3 size-10 text-muted-foreground/40" />
+            <p className="text-sm font-medium text-foreground">Henüz usta kaydı yok</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Atama yapabilmek için önce Ayarlar → Ekip sayfasından usta ekleyin.
             </p>
-          ) : (
-            filtered.map((t) => {
-              const info = roleInfo(t.role)
-              const isAssigned = t.id === assignedTechnicianId
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => handleAssign(t)}
-                  disabled={isPending}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors touch-manipulation disabled:opacity-60",
-                    isAssigned
-                      ? "border-primary/30 bg-primary/10"
-                      : "border-border bg-card hover:border-primary/30 hover:bg-primary/5"
-                  )}
-                >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                    <HardHat className="size-4" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2">
-                      <span className="truncate text-sm font-medium text-foreground">{t.fullName}</span>
-                      <span
-                        className={cn(
-                          "inline-flex shrink-0 items-center rounded border px-1.5 py-0.5 text-[10px] font-medium",
-                          info?.color || "border-border bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {info?.label || t.role}
+            <Button variant="foreground" className="mt-4" asChild>
+              <Link href="/settings/team">
+                <UserPlus className="size-4" />
+                Usta Ekle
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2 pb-2">
+            {technicians.length >= SEARCH_THRESHOLD && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Usta ara..."
+                  aria-label="Usta ara"
+                  className="pl-9"
+                  autoComplete="off"
+                />
+              </div>
+            )}
+
+            {filtered.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                &quot;{query}&quot; ile eşleşen usta yok
+              </p>
+            ) : (
+              filtered.map((t) => {
+                const info = roleInfo(t.role)
+                const isAssigned = t.id === assignedTechnicianId
+                return (
+                  <Button
+                    key={t.id}
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleAssign(t)}
+                    disabled={isPending}
+                    className={cn(
+                      "h-auto w-full justify-start gap-3 p-3 text-left whitespace-normal",
+                      isAssigned
+                        ? "border-primary/30 bg-primary/10"
+                        : "border-border bg-card hover:bg-muted"
+                    )}
+                  >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <HardHat className="size-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="truncate text-sm font-medium text-foreground">{t.fullName}</span>
+                        <span
+                          className={cn(
+                            "inline-flex shrink-0 items-center rounded border px-1.5 py-0.5 text-[10px] font-medium",
+                            info?.color || "border-border bg-muted text-muted-foreground"
+                          )}
+                        >
+                          {info?.label || t.role}
+                        </span>
+                      </span>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                        {t.activeJobs > 0 ? `${t.activeJobs} aktif iş` : "Boşta"}
                       </span>
                     </span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                      {t.activeJobs > 0 ? `${t.activeJobs} aktif iş` : "Boşta"}
-                    </span>
-                  </span>
-                  {isAssigned && <Check className="size-4 shrink-0 text-primary" />}
-                </button>
-              )
-            })
-          )}
-        </div>
-      )}
-    </BottomSheet>
+                    {isAssigned && <Check className="size-4 shrink-0 text-primary" />}
+                  </Button>
+                )
+              })
+            )}
+          </div>
+        )}
+        {assignedTechnicianId && (
+          <DialogFooter>
+            <Button variant="outline" onClick={handleUnassign} disabled={isPending}>
+              {isPending ? <Loader2 className="size-4 animate-spin" /> : <UserX className="size-4" />}
+              Atamayı Kaldır
+            </Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }

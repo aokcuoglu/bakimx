@@ -4,7 +4,6 @@ import { FeaturePaywall } from "@/components/billing/feature-paywall"
 import { InlineFeatureUpsell } from "@/components/billing/inline-feature-upsell"
 import { prisma } from "@/lib/db"
 import { quantityToNumber } from "@/lib/orders/quantity"
-import Link from "next/link"
 import { Search, Filter, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -117,14 +116,9 @@ export default async function PurchasesPage({
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Dış Alımlar" wide>
       <div className="space-y-5 sm:space-y-6">
-        <div className="hidden sm:flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Dış Alımlar</span>
-        </div>
+
 
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Dış Alımlar</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Teknisyenlerin iş emrine dışarıdan aldığı parçalar</p>
         </div>
 
@@ -142,9 +136,9 @@ export default async function PurchasesPage({
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2">
-            <Input name="from" defaultValue={from} placeholder="Başlangıç (gg.aa.yyyy)" className="w-40" />
-            <Input name="to" defaultValue={to} placeholder="Bitiş (gg.aa.yyyy)" className="w-40" />
+          <div className="grid gap-2 sm:flex">
+            <Input name="from" defaultValue={from} placeholder="Başlangıç (gg.aa.yyyy)" className="min-w-0 w-full sm:w-40" />
+            <Input name="to" defaultValue={to} placeholder="Bitiş (gg.aa.yyyy)" className="min-w-0 w-full sm:w-40" />
             <Button variant="outline" size="default" type="submit">
               <Filter className="size-4" />
               Filtrele

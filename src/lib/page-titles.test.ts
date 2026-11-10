@@ -15,6 +15,10 @@ function pages(dir: string): string[] {
 const redirects = new Set([
   "(app)/inventory/page.tsx", "(app)/cash/page.tsx",
   "(app)/workshop/page.tsx", "(app)/billing/quota/page.tsx",
+  "(app)/billing/page.tsx",
+  "(app)/account/page.tsx", "(app)/account/plans/page.tsx", "(app)/account/billing/page.tsx",
+  "(app)/settings/page.tsx",
+  "onboarding/page.tsx",
 ])
 
 describe("browser title contract (#642)", () => {

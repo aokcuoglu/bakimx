@@ -27,7 +27,7 @@ export function DemoRequestButton({
         <Button
           variant="outline"
           size="xl"
-          className="h-12 px-6"
+          className="h-7 px-2"
           onClick={() => {
             if (onClick) onClick();
             else
@@ -42,7 +42,7 @@ export function DemoRequestButton({
       </DialogTrigger>
       <DialogContent
         showCloseButton={false}
-        className={`${styles.dialog} gap-7 rounded-2xl bg-background p-6 sm:max-w-[640px] sm:p-10`}
+        className={`${styles.dialog} gap-7 rounded-xl bg-background p-6 sm:max-w-[640px] sm:p-10`}
         data-public-demo
       >
         <DialogClose asChild>

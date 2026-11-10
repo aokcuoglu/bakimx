@@ -19,8 +19,10 @@ describe("SupplierPriceDialog real-offer UI contract", () => {
     expect(source).toContain('aria-hidden="true"')
   })
 
-  test("yükleme, eşleşme yok, teklif yok ve upstream hata durumlarını sunar", () => {
+  test("yükleme, bağlantı yok, eşleşme yok, teklif yok ve upstream hata durumlarını sunar", () => {
     expect(source).toContain("yükleniyor")
+    expect(source).toContain('result?.status === "not_configured"')
+    expect(source).toContain("GetirBakım katalog bağlantısı bu ortamda etkin değil")
     expect(source).toContain('result?.status === "no_match"')
     expect(source).toContain('result?.status === "no_offers"')
     expect(source).toContain('result?.status === "upstream_error"')

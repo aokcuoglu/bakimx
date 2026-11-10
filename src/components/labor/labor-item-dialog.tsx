@@ -156,7 +156,7 @@ export function LaborItemDialog({
             </div>
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">Varsayılan ücret</span>
-              <InputGroup className="h-8">
+              <InputGroup className="h-7">
                 <InputGroupAddon className="text-muted-foreground">₺</InputGroupAddon>
                 <InputGroupInput
                   type="number"
@@ -196,7 +196,7 @@ export function LaborItemDialog({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
             Vazgeç
           </Button>
-          <Button type="button" onClick={submit} disabled={submitting || !name.trim()}>
+          <Button variant="foreground" type="button" onClick={submit} disabled={submitting || !name.trim()}>
             {submitting && <Loader2 className="size-4 animate-spin" />}
             {item ? "Kaydet" : "Ekle"}
           </Button>

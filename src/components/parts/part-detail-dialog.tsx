@@ -224,10 +224,11 @@ export function PartDetailDialog({
                 {/* --- Görsel --- */}
                 <div className="flex justify-center">
                   {imageUrl ? (
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
                       onClick={() => setLightboxOpen(true)}
-                      className="group relative rounded-lg border bg-card p-2"
+                      className="group relative h-auto bg-card p-2"
                       aria-label="Görseli büyüt"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -239,7 +240,7 @@ export function PartDetailDialog({
                       <span className="absolute right-2 bottom-2 inline-flex size-8 items-center justify-center rounded-full bg-foreground/70 text-background opacity-80 transition-opacity group-hover:opacity-100">
                         <ZoomIn className="size-4" />
                       </span>
-                    </button>
+                    </Button>
                   ) : (
                     <div className="flex h-44 w-full max-w-xs items-center justify-center rounded-lg border bg-muted">
                       <PackageSearch className="size-8 text-muted-foreground/40" />
@@ -339,7 +340,7 @@ export function PartDetailDialog({
 
           {onSelect && (
             <div className="border-t p-3">
-              <Button
+              <Button variant="foreground"
                 type="button"
                 className="w-full"
                 size="lg"

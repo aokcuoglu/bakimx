@@ -146,7 +146,7 @@ export function PartSearchInput({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 justify-start gap-2 font-normal"
+            className="h-7 justify-start gap-2 font-normal"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => onCreate(t)}
           >
@@ -159,7 +159,7 @@ export function PartSearchInput({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 justify-start gap-2 font-normal text-muted-foreground"
+            className="h-7 justify-start gap-2 font-normal text-muted-foreground"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => onCreateEdit(t)}
           >
@@ -366,7 +366,7 @@ export function PartSearchInput({
             placeholder={placeholder}
             disabled={disabled}
             title={value || undefined}
-            className={cn("h-8 rounded-lg pr-16 text-sm", inputClassName)}
+            className={cn("h-7 rounded-lg pr-16 text-sm", inputClassName)}
           />
           {plainActions(value)}
         </div>
@@ -430,7 +430,7 @@ export function PartSearchInput({
                 onCommit?.()
               }
             }}
-            render={<Input placeholder={placeholder} disabled={disabled} title={value || undefined} className={cn("h-8 rounded-lg pr-16 text-sm", inputClassName)} />}
+            render={<Input placeholder={placeholder} disabled={disabled} title={value || undefined} className={cn("h-7 rounded-lg pr-16 text-sm", inputClassName)} />}
           />
           {plainActions(query)}
         </div>
@@ -578,10 +578,11 @@ export function PartSearchInput({
                   )}
                 </span>
                 {onShowDetail && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     aria-label="Parça detayı"
-                    title="Özellikler, görsel ve uygunluk"
                     // Satır seçimini TETİKLEMEMELİ: mouseDown input'u blur edip
                     // popup'ı kapatırdı, click ise Autocomplete'in kendi seçim
                     // handler'ına baloncuklanırdı.
@@ -593,10 +594,10 @@ export function PartSearchInput({
                       e.stopPropagation()
                       onShowDetail(a)
                     }}
-                    className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className="shrink-0 text-muted-foreground"
                   >
                     <Info className="size-4" />
-                  </button>
+                  </Button>
                 )}
               </AutocompleteItem>
             ) })())}

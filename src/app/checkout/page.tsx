@@ -11,6 +11,7 @@ import { getPlanState, isPlanExpiredLock, isPlanTier, type PlanTier } from "@/li
 import { Button } from "@/components/ui/button"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
 import { getSeatUsage } from "@/lib/rbac"
+import { getReferralDiscountBps } from "@/lib/billing/referral-discount"
 
 export const metadata = { title: "Siparişi Tamamla", robots: PRIVATE_ROBOTS }
 
@@ -45,9 +46,9 @@ export default async function CheckoutPage({
       })
     : null
 
-  // Planı bitmiş (paywall'a takılmış) workshop'lar /billing'e YÖNLENDİRİLEMEZ:
-  // /billing (app) grubunda olduğu için layout onları anında çıkışa atar ve
-  // login → /checkout → /billing → çıkış sonsuz döngüsü oluşur. Onlara bekleyen
+  // Planı bitmiş (paywall'a takılmış) workshop'lar /settings/billing'e YÖNLENDİRİLEMEZ:
+  // /settings/billing (app) grubunda olduğu için layout onları anında çıkışa atar ve
+  // login → /checkout → /settings/billing → çıkış sonsuz döngüsü oluşur. Onlara bekleyen
   // siparişi bu sayfada, satın alma sihirbazının yerine gösteriyoruz.
   const planLocked = workshop ? isPlanExpiredLock(getPlanState(workshop).lockReason) : false
 
@@ -83,7 +84,7 @@ export default async function CheckoutPage({
             </div>
           </div>
           {isCard && (
-            <Button asChild size="lg" className="mt-5 w-full">
+            <Button variant="foreground" asChild size="lg" className="mt-5 w-full">
               <Link href={`/payment/result?ref=${encodeURIComponent(pendingOrder.reference)}`}>
                 Ödemeye devam et
               </Link>
@@ -94,10 +95,10 @@ export default async function CheckoutPage({
     )
   }
 
-  // Ayrı, bağlamsız bir "kilitli" sayfada bırakmak yerine /billing'e yönlendirip
+  // Ayrı, bağlamsız bir "kilitli" sayfada bırakmak yerine /settings/billing'e yönlendirip
   // orada bir AlertDialog ile bilgilendiriyoruz (bkz. PendingOrderAlert).
   if (pendingOrder) {
-    redirect("/billing?pendingBlocked=1")
+    redirect("/settings/billing?pendingBlocked=1")
   }
 
   return (
@@ -112,6 +113,7 @@ export default async function CheckoutPage({
         defaultInvoiceTitle={workshop?.invoiceTitle || workshop?.name || ""}
         seatUsage={seatUsage ?? undefined}
         extraSeats={workshop?.extraSeats ?? 0}
+        referralDiscountBps={workshop ? getReferralDiscountBps(workshop) : 0}
       />
     </main>
   )

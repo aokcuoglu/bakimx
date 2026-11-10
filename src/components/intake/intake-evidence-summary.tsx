@@ -1,6 +1,7 @@
 "use client"
 
-import { Camera, CheckCircle2, AlertTriangle, XCircle, BarChart3 } from "lucide-react"
+import { AlertTriangle, Camera, CheckCircle2, Images, Link2, ShieldCheck } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 type PhotoCompletionBarProps = {
   percentage: number
@@ -23,76 +24,68 @@ export function PhotoCompletionBar({
   missingLabels,
   onMissingClick,
 }: PhotoCompletionBarProps) {
-  const isComplete = percentage === 100
-  const colorClass = isComplete
-    ? "bg-success"
-    : percentage >= 60
-      ? "bg-warning"
-      : "bg-destructive"
-
-  const textColorClass = "text-foreground"
+  const isComplete = requiredCompleted === required
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium">Fotoğraf Tamamlanma</span>
-        <span className={`font-bold ${textColorClass}`}>{percentage}%</span>
+    <section aria-label="Fotoğraf durumu" className="min-w-0 space-y-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-foreground">Zorunlu fotoğraflar</p>
+          <p className="text-xs text-muted-foreground">
+            {requiredCompleted}/{required} zorunlu açı · Toplam {completed}/{total} fotoğraf
+          </p>
+        </div>
+        <span className="text-xl font-semibold tabular-nums text-foreground">{percentage}%</span>
       </div>
-      <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
+
+      <div
+        role="progressbar"
+        aria-label="Zorunlu fotoğraf tamamlanma oranı"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percentage}
+        className="h-1.5 overflow-hidden rounded-full bg-muted"
+      >
         <div
-          className={`h-full rounded-full transition-all duration-500 ${colorClass}`}
+          className={`h-full rounded-full ${isComplete ? "bg-success" : "bg-primary"}`}
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>
-          Zorunlu: {requiredCompleted}/{required}
-        </span>
-        <span>
-          Toplam: {completed}/{total}
-        </span>
-      </div>
-      {missingLabels.length > 0 && (
-        <div className="space-y-1 pt-1">
-          <p className="text-xs font-medium text-destructive-strong flex items-center gap-1">
-            <AlertTriangle className="size-3" />
-            Eksik zorunlu fotoğraflar — çekmek için dokunun
+
+      {missingLabels.length > 0 ? (
+        <div className="space-y-2">
+          <p className="flex items-center gap-1.5 text-xs text-warning-strong">
+            <AlertTriangle className="size-3.5" aria-hidden="true" />
+            Eksik açıları ekleyin
           </p>
-          <div className="flex flex-wrap gap-1">
-            {missingLabels.map((label, i) => (
-              <button
-                key={label}
+          <div className="flex flex-wrap gap-2">
+            {missingLabels.map((label, index) => (
+              <Button
+                key={missing[index]}
                 type="button"
-                onClick={() => onMissingClick?.(missing[i])}
-                className="inline-flex items-center gap-1 text-xs bg-destructive/10 text-foreground px-2 py-0.5 rounded-full border border-destructive/20 hover:bg-destructive/20 transition-colors"
+                variant="outline"
+                size="xs"
+                onClick={() => onMissingClick?.(missing[index])}
+                aria-label={`${label} fotoğrafını ekle`}
               >
-                <XCircle className="size-3" />
+                <Camera className="size-3" aria-hidden="true" />
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
+      ) : (
+        <p className="flex items-center gap-1.5 text-xs text-success-strong">
+          <CheckCircle2 className="size-3.5" aria-hidden="true" />
+          Tüm zorunlu açılar tamamlandı
+        </p>
       )}
-      {isComplete && (
-        <div className="flex items-center gap-1 text-xs text-success-strong">
-          <CheckCircle2 className="size-3.5" />
-          <span>Tüm zorunlu fotoğraflar tamamlandı</span>
-        </div>
-      )}
-    </div>
+    </section>
   )
 }
 
 type IntakeEvidenceSummaryProps = {
-  photoCompletion: {
-    percentage: number
-    requiredCompleted: number
-    required: number
-    total: number
-    completed: number
-    missing: string[]
-    missingLabels: string[]
-  }
+  photoCompletion: Omit<PhotoCompletionBarProps, "onMissingClick">
   damageCount: number
   approvalStatus: "none" | "pending" | "verified"
   publicLinkStatus: "none" | "active" | "expired"
@@ -106,86 +99,36 @@ export function IntakeEvidenceSummary({
   publicLinkStatus,
   onMissingPhotoClick,
 }: IntakeEvidenceSummaryProps) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm font-semibold">
-        <BarChart3 className="size-4" />
-        Kabul Durum Özeti
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <EvidenceStatCard
-          icon={Camera}
-          label="Fotoğraf"
-          value={`${photoCompletion.percentage}%`}
-          status={photoCompletion.percentage === 100 ? "success" : photoCompletion.percentage >= 60 ? "warning" : "danger"}
-        />
-        <EvidenceStatCard
-          icon={AlertTriangle}
-          label="Hasar"
-          value={`${damageCount}`}
-          status={damageCount > 0 ? "warning" : "success"}
-        />
-        <EvidenceStatCard
-          icon={CheckCircle2}
-          label="Onay"
-          value={approvalStatus === "verified" ? "Onaylı" : approvalStatus === "pending" ? "Bekliyor" : "Yok"}
-          status={approvalStatus === "verified" ? "success" : approvalStatus === "pending" ? "warning" : "neutral"}
-        />
-        <EvidenceStatCard
-          icon={publicLinkStatus === "active" ? CheckCircle2 : AlertTriangle}
-          label="Halka Açık Link"
-          value={publicLinkStatus === "active" ? "Aktif" : publicLinkStatus === "expired" ? "Süresi Dolmuş" : "Yok"}
-          status={publicLinkStatus === "active" ? "success" : publicLinkStatus === "expired" ? "danger" : "neutral"}
-        />
-      </div>
-
-      <PhotoCompletionBar
-        percentage={photoCompletion.percentage}
-        requiredCompleted={photoCompletion.requiredCompleted}
-        required={photoCompletion.required}
-        total={photoCompletion.total}
-        completed={photoCompletion.completed}
-        missing={photoCompletion.missing}
-        missingLabels={photoCompletion.missingLabels}
-        onMissingClick={onMissingPhotoClick}
-      />
-    </div>
-  )
-}
-
-function EvidenceStatCard({
-  icon: Icon,
-  label,
-  value,
-  status,
-}: {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  value: string
-  status: "success" | "warning" | "danger" | "neutral"
-}) {
-  const statusColors = {
-    success: "bg-success/10 border-success/20 text-foreground",
-    warning: "bg-warning/10 border-warning/20 text-foreground",
-    danger: "bg-destructive/10 border-destructive/20 text-foreground",
-    neutral: "bg-muted border-border text-muted-foreground",
-  }
-
-  const iconColors = {
-    success: "text-success-strong",
-    warning: "text-warning-strong",
-    danger: "text-destructive-strong",
-    neutral: "text-muted-foreground",
-  }
+  const approvalText = approvalStatus === "verified" ? "Onaylandı" : approvalStatus === "pending" ? "Bekleniyor" : "Henüz yok"
+  const linkText = publicLinkStatus === "active" ? "Aktif" : publicLinkStatus === "expired" ? "Süresi doldu" : "Oluşturulmadı"
 
   return (
-    <div className={`rounded-lg border p-3 ${statusColors[status]}`}>
-      <div className="flex items-center gap-1.5 mb-1">
-        <Icon className={`size-3.5 ${iconColors[status]}`} />
-        <span className="text-xs font-medium">{label}</span>
-      </div>
-      <p className="text-sm font-bold">{value}</p>
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(220px,1fr)] lg:gap-6">
+      <PhotoCompletionBar {...photoCompletion} onMissingClick={onMissingPhotoClick} />
+
+      <dl className="divide-y divide-border border-t border-border lg:border-t-0 lg:border-l lg:pl-6">
+        <div className="flex items-center justify-between gap-4 py-2 first:pt-0">
+          <dt className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Images className="size-3.5" aria-hidden="true" />
+            Hasar fotoğrafı
+          </dt>
+          <dd className="text-sm font-medium tabular-nums text-foreground">{damageCount} kayıt</dd>
+        </div>
+        <div className="flex items-center justify-between gap-4 py-2">
+          <dt className="flex items-center gap-2 text-xs text-muted-foreground">
+            <ShieldCheck className="size-3.5" aria-hidden="true" />
+            Müşteri onayı
+          </dt>
+          <dd className="text-sm font-medium text-foreground">{approvalText}</dd>
+        </div>
+        <div className="flex items-center justify-between gap-4 py-2 last:pb-0">
+          <dt className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Link2 className="size-3.5" aria-hidden="true" />
+            Müşteri bağlantısı
+          </dt>
+          <dd className="text-sm font-medium text-foreground">{linkText}</dd>
+        </div>
+      </dl>
     </div>
   )
 }

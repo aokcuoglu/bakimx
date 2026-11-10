@@ -274,7 +274,7 @@ export function SalesTerritoryMap({
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border bg-card shadow-sm" aria-labelledby="territory-map-title">
+    <section className="overflow-hidden rounded-xl border bg-card shadow-sm" aria-labelledby="territory-map-title">
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary-strong">Türkiye saha ağı</p>
@@ -331,7 +331,7 @@ export function SalesTerritoryMap({
                 <p className="font-semibold text-foreground">{selectedDiscovery.businessName}</p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">{selectedDiscovery.formattedAddress || "Adres bilgisi bulunamadı"}</p>
                 {onCreateLeadFromPlace && (
-                  <Button type="button" size="sm" className="mt-3" onClick={() => onCreateLeadFromPlace(selectedDiscovery)}>
+                  <Button variant="foreground" type="button" size="sm" className="mt-3" onClick={() => onCreateLeadFromPlace(selectedDiscovery)}>
                     Satış fırsatı oluştur
                   </Button>
                 )}

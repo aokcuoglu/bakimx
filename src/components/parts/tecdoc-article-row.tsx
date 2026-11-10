@@ -1,6 +1,7 @@
 "use client"
 
 import { Info, PackageSearch } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import type { ArticleSummary } from "@/lib/tecdoc/types"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import type { GetirbakimProduct } from "@/lib/parts/getirbakim/types"
@@ -54,10 +55,11 @@ export function TecdocArticleRow({
   return (
     <div>
       <div className="flex items-center border-b border-border/60 hover:bg-muted">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={onSelect}
-          className="min-h-8 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left"
+          className="h-auto min-h-7 min-w-0 flex-1 justify-start gap-3 px-3 py-2 text-left whitespace-normal"
         >
           {article.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -102,17 +104,19 @@ export function TecdocArticleRow({
               </span>
             )}
           </span>
-        </button>
+        </Button>
         {onShowDetail && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             aria-label="Parça detayı"
             title="Özellikler, görsel ve uygunluk"
             onClick={() => onShowDetail(article)}
             className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
           >
             <Info className="size-4" />
-          </button>
+          </Button>
         )}
       </div>
       {nested.map((product) => (

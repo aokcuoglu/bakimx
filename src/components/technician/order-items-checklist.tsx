@@ -240,19 +240,19 @@ function ItemGroup({
               : "—"
 
           return (
-            <button
+            <Button
               key={item.id}
               type="button"
+              variant="ghost"
               disabled={isBusy || locked}
               aria-pressed={isDone}
               onClick={() => onToggle(item)}
               className={cn(
-                "group w-full min-h-8 flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-left",
-                "touch-manipulation cursor-pointer hover:bg-muted transition-colors",
+                "group h-auto min-h-7 w-full justify-start gap-2.5 px-2 py-1.5 text-left whitespace-normal",
                 // Sunucu yanıtı beklenirken satır kilitli ama SOLUK DEĞİL:
                 // iyimser tik zaten göründüğü için soluklaştırmak "işlem geri
                 // alındı" gibi okunuyordu.
-                "disabled:cursor-default disabled:hover:bg-transparent",
+                "disabled:cursor-default disabled:opacity-100 disabled:hover:bg-transparent",
                 // İşaretlendiği an kısa bir yeşil parlama — hangi satıra
                 // dokunulduğu, toplu tamamlamada da tek tek görünür.
                 isFlashing && isDone && "motion-safe:animate-item-done",
@@ -292,7 +292,7 @@ function ItemGroup({
                 {item.quantity > 1 && <span className="mr-1.5 text-xs text-muted-foreground">×{item.quantity}</span>}
                 {price}
               </span>
-            </button>
+            </Button>
           )
         })}
       </div>

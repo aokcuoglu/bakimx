@@ -226,7 +226,7 @@ export function CollectionQuickModal({
                           <Button
                             key={m.key}
                             type="button"
-                            variant={field.value === m.key ? "default" : "outline"}
+                            variant={field.value === m.key ? "secondary" : "outline"}
                             className="justify-start"
                             onClick={() => field.onChange(m.key)}
                           >
@@ -316,7 +316,7 @@ export function CollectionQuickModal({
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
                 Vazgeç
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button variant="foreground" type="submit" disabled={loading}>
                 {loading ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Check className="size-4 mr-2" />}
                 Tahsilatı Kaydet
               </Button>

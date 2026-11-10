@@ -10,7 +10,7 @@
   position: relative;
   z-index: 1;
   margin-inline: auto;
-  max-width: var(--public-width, 1200px);
+  max-width: var(--public-width, 1124px);
   width: calc(100% - 2rem);
   padding: 0 1rem 1.25rem;
 }
@@ -23,8 +23,8 @@
 
 @media (min-width: 1024px) {
   .footer.footer .inner {
-    width: min(100% - 2rem, var(--public-width, 1200px));
-    padding: 0 0 1.5rem;
+    width: min(100% - 2rem, var(--public-width, 1124px));
+    padding: 0 2rem 1.5rem;
   }
 }
 
@@ -48,7 +48,6 @@
     /* Reference proportions: brand 40%, gutter 8%, updates 52%. */
     grid-template-columns: minmax(0, 10fr) minmax(0, 13fr);
     column-gap: 8%;
-    margin-inline: 5rem;
     padding: 4rem 0;
   }
 }
@@ -143,14 +142,14 @@
   width: auto;
   min-width: 131px;
   flex-shrink: 0;
-  height: 44px;
-  min-height: 44px;
-  padding: 0 14px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 8px;
   gap: 8px;
   border: 1px solid var(--muted-foreground);
   background: var(--card);
   box-shadow: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   line-height: 20px;
   transition: background-color 150ms ease, border-color 150ms ease;

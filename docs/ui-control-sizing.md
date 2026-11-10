@@ -1,41 +1,24 @@
 # UI kontrol boyutları
 
-Kontrol ölçeği **upstream shadcn `nova` ile aynıdır**: tek ölçek, breakpoint yok
-(BAK-150). Kaynak `ui.shadcn.com`'un kendi registry JSON'u; `base-nova` ile
-`radix-nova` bu değerlerde birebir aynı, yani ölçek primitive geçişinden
-bağımsızdır.
-
-Öncesinde matris mobilde `h-11` (44px), `md+` ekranda `h-9` (36px) idi. 32px'e
-inildi çünkü WCAG 2.2 **AA** 2.5.8 eşiği 24px'tir ve 32px onu rahatça geçer;
-düşen yalnızca **AAA** 2.5.5'in 44px hedefidir (alpkaan onayı, BAK-149).
+Input, Select ve InputGroup upstream shadcn `nova` ölçeğini korur (BAK-150).
+#647 ile onaylanan Button istisnası Clutch ölçülerini kullanır; tasarım kararı
+DESIGN.md'nin **Clutch buton ölçüleri** bölümündedir. Boyutlar breakpoint'e göre değişmez.
 
 ## Matris
 
 | Kontrol | Ölçü | Not |
 | --- | --- | --- |
-| Button `default` | `h-8` | upstream |
-| Button `xs` | `h-6` | upstream |
-| Button `sm` | `h-7` | upstream |
-| Button `compact` | `h-7` | BakımX — yoğun tablo/araç çubuğu, `text-xs` |
-| Button `icon` | `size-8` | upstream |
-| Button `icon-xs` / `icon-sm` / `icon-lg` | `size-6` / `size-7` / `size-9` | upstream |
-| Button `icon-compact` | `size-7` | BakımX |
-| Input | `h-8` | upstream |
-| InputGroup | `h-8` | upstream |
-| Select `default` / `sm` | `h-8` / `h-7` | upstream |
-| Select `compact` | `h-7` | BakımX, `text-xs` |
+| Button `default` / `sm` | 38px | 14px yatay padding, 14px metin |
+| Button `lg` | 44px | 16px yatay padding |
+| Button `xl` | 48px | 24px yatay padding |
+| Button `xs` / `compact` | 32px | 8px yatay padding, 12px metin |
+| Button tüm ikon varyantları | 32px | Mevcut hit alanı korunur |
+| Input / InputGroup | 32px | upstream |
+| Select `default` / `sm` / `compact` | 32px / 28px / 28px | upstream ve yoğun varyant |
 | Textarea | `min-h-16` | upstream |
 
-## İki istisna — ve neden breakpoint taşıyorlar
-
-| Kontrol | Mobil | `md+` |
-| --- | --- | --- |
-| Button `lg` — birincil CTA | `h-10` | `h-9` (upstream `lg`) |
-| Button `xl` — tam genişlik CTA (auth, public paylaşım, filtre sheet) | `h-11` | `h-10` |
-
-Gerekçe: atölye ortamında telefon çoğu zaman tek elle, eldivenle veya yağlı
-parmakla kullanılıyor. Formu gönderen tek düğmenin ıskalanması diğer
-kontrollerden pahalı. Ekranın geri kalanı upstream yoğunluğunda kalır.
+Button: Inter, ağırlık 500, satır yüksekliği %140, harf aralığı −0.02em,
+6px köşe. Renk variant'ları ve Radix `asChild` sözleşmesi korunur.
 
 **Mobil alt navigasyon** de korunur ama bu matrisin dışındadır: `MobileNavLink`
 bir `Button` değil, `Link` (`src/components/layout/app-shell.tsx`) — yüksekliği

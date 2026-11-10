@@ -180,7 +180,7 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
                 <ArrowLeft className="size-3.5" />
               </Link>
             </Button>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Ürün İçe Aktarma</h1>
+            <h1 className="text-page-title text-foreground">Ürün İçe Aktarma</h1>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
             Marka seçip CSV veya JSON yükleyin. Değişiklikler <strong>siz onaylamadan</strong> uygulanmaz.
@@ -329,7 +329,7 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={runPreview} disabled={!file || !brandId || pending}>
+            <Button variant="foreground" onClick={runPreview} disabled={!file || !brandId || pending}>
               {pending && !preview ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-3.5 mr-1" />}
               Ön izle
             </Button>
@@ -439,7 +439,7 @@ function PreviewPanel({
         )}
 
         <Tabs defaultValue={counts.error > 0 ? "errors" : "creates"}>
-          <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-4">
+          <TabsList variant="line" className="grid h-auto w-full grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="creates">Yeni ({counts.created})</TabsTrigger>
             <TabsTrigger value="updates">Güncellenecek ({counts.updated})</TabsTrigger>
             <TabsTrigger value="skips">Atlanan ({counts.skipped})</TabsTrigger>
@@ -467,7 +467,7 @@ function PreviewPanel({
         </Alert>
 
         <div className="flex flex-wrap gap-2">
-          <Button onClick={onApply} disabled={pending || nothingToDo}>
+          <Button variant="foreground" onClick={onApply} disabled={pending || nothingToDo}>
             {pending && <Loader2 className="size-4 animate-spin" />}
             {counts.created} yeni + {counts.updated} güncellemeyi uygula
           </Button>

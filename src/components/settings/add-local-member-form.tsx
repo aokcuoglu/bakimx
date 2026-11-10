@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Check, Loader2, UserPlus, X } from "lucide-react"
 import type { UserRole } from "@prisma/client"
 import { cn } from "@/lib/utils"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -137,32 +138,28 @@ export function AddLocalMemberForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-4 rounded-lg border border-primary/20 bg-primary/5 space-y-3 mb-4"
+      className="space-y-3"
     >
       <div>
-        <h4 className="text-sm font-semibold text-foreground">
-          {technicianId ? "Personelin giriş hesabını tamamla" : "E-postasız kullanıcı ekle"}
-        </h4>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="text-xs text-muted-foreground">
           E-posta adresi olmayan usta ve çıraklar için. Sistem tek seferlik bir geçici şifre üretir.
         </p>
       </div>
 
       {error && (
-        <div
-          role="alert"
-          className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm"
-        >
-          {error}
-          {seatLimited && (
-            <>
-              {" "}
-              <Link href="/billing" className="font-semibold underline underline-offset-2">
-                Paketleri görüntüleyin
-              </Link>
-            </>
-          )}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>
+            {error}
+            {seatLimited && (
+              <>
+                {" "}
+                <Link href="/settings/plans" className="font-semibold underline underline-offset-2">
+                  Paketleri görüntüleyin
+                </Link>
+              </>
+            )}
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -269,7 +266,7 @@ export function AddLocalMemberForm({
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
-        <Button type="submit" size="lg" disabled={!canSubmit} className="touch-manipulation">
+        <Button variant="foreground" type="submit" size="lg" disabled={!canSubmit} className="touch-manipulation">
           {isPending ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
           Kullanıcıyı Oluştur
         </Button>

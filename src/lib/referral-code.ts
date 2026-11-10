@@ -24,3 +24,16 @@ export function isValidReferralCode(value: string): boolean {
     REFERRAL_CODE_PATTERN.test(code)
   )
 }
+
+export function parseReferralCodeQuery(value: string | string[] | undefined): string | undefined {
+  return typeof value === "string" && isValidReferralCode(value)
+    ? normalizeReferralCode(value)
+    : undefined
+}
+
+export function buildReferralRegistrationUrl(appUrl: string, code: string): string {
+  if (!isValidReferralCode(code)) throw new Error("Invalid referral code")
+  const url = new URL("/register", appUrl)
+  url.searchParams.set("ref", normalizeReferralCode(code))
+  return url.toString()
+}

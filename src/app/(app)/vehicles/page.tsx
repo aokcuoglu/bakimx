@@ -98,7 +98,7 @@ export default async function VehiclesPage({
       workshopName={workshop?.name}
       pageTitle="Araçlar"
       pageActions={
-        <Button size="icon" asChild aria-label="Yeni araç">
+        <Button variant="foreground" size="icon" asChild aria-label="Yeni araç">
           <Link href="/vehicles/new">
             <Plus className="size-5" />
           </Link>
@@ -107,16 +107,11 @@ export default async function VehiclesPage({
     >
       <div className="space-y-5 sm:space-y-6">
         <div className="hidden sm:flex items-center justify-between">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-            <span className="mx-2">/</span>
-            <span className="text-foreground font-medium">Araçlar</span>
-          </div>
+
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Araçlar</h2>
             <p className="text-sm text-muted-foreground mt-0.5">{vehicles.length} araç kayıtlı</p>
           </div>
           <div className="flex items-center gap-2">
@@ -130,7 +125,7 @@ export default async function VehiclesPage({
               <TooltipContent side="top">Plaka tanıma entegrasyonu yakında</TooltipContent>
             </Tooltip>
             <Button
-              variant="default"
+              variant="foreground"
               size="default"
               className="hidden sm:inline-flex"
               asChild

@@ -151,7 +151,7 @@ export function SalesAdvisorManagement({
               )}
             />
             <div className="md:col-span-3">
-              <Button type="submit" disabled={pending}>
+              <Button variant="foreground" type="submit" disabled={pending}>
                 <MailPlus className="size-4" /> Davet gönder
               </Button>
             </div>

@@ -95,7 +95,7 @@ export function SalesTaskAgenda({ tasks, canManage }: { tasks: AgendaTask[]; can
                   {task.note && <p className="mt-1 text-sm text-foreground">{task.note}</p>}
                   {canManage && (
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <Button asChild size="sm">
+                      <Button variant="foreground" asChild size="sm">
                         <Link href={`${salesLeadAdminHref(task.lead.id)}?task=${encodeURIComponent(task.id)}#activity-form`}>Görüşmeyle tamamla</Link>
                       </Button>
                       <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => resolve(task.id, "no_show")}>Gelmedi</Button>

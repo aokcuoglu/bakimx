@@ -12,13 +12,17 @@ fix, develop, or deliver it. Unless the user limits the scope, completion means:
 1. Understand the issue and define testable acceptance criteria.
 2. Implement the smallest complete solution in an isolated worktree.
 3. Validate and review the change in proportion to its risk.
-4. Hand off to the primary checkout for local preview on localhost:3000.
+4. Promote the branch into **local `dev`** (primary checkout stays on `dev`) so
+   localhost:3000 shows the integrated result — see
+   [local-dev-batch-ci.md](./local-dev-batch-ci.md).
 5. Wait for user confirmation, then push and open a PR that closes every tracker:
    `Closes #<github-number>`, plus `Closes <MULTICA-KEY>` when a Multica issue
-   drives the delivery.
-6. Monitor required GitHub Actions, fix failures, and merge only when green.
+   drives the delivery. Default: draft PR **without** the `ci` label (no Actions
+   minutes). "commit + PR" stops here unless the user asks to ship/merge.
+6. When shipping (or evening batch): add `ci`, wait for `quality`, fix failures,
+   merge only when green — [local-dev-batch-ci.md](./local-dev-batch-ci.md).
 7. Verify the issue is closed and its Factory - BakimX project item is Done.
-8. Switch primary back to `dev`, pull merged changes, delete the issue branch.
+8. Sync local `dev` to `origin/dev`, delete the issue branch.
 
 Respect the active agent's authorization and confirmation policies. Never bypass
 branch protection, required reviews, required checks, or repository permissions.
@@ -109,33 +113,34 @@ bun run build
 - If a gate is unavailable or fails for a pre-existing reason, collect evidence,
   distinguish it from regressions, and do not claim full success.
 
-## 5. Local preview
+## 5. Local preview (promote into local `dev`)
 
-After quality gates pass in the worktree, hand the change to the primary checkout
-so the user can verify on localhost:3000 before a PR is opened.
+After quality gates pass in the worktree, merge the issue branch into **local
+`dev`** on the primary checkout. Do **not** switch primary off `dev` onto the
+issue branch — localhost:3000 should keep reflecting integrated local `dev`
+([local-dev-batch-ci.md](./local-dev-batch-ci.md)).
 
 ```sh
-# Push the issue branch from the worktree
+# From the worktree: push the issue branch (needed for the later PR)
 git push -u origin issue/<number>-<slug>
 
-# Remove the worktree (releases the branch for checkout elsewhere)
+# Remove the worktree (releases the branch for merge on primary)
 git worktree remove <worktree-path>
 
-# Switch primary checkout to the issue branch
+# Primary stays on / returns to local dev, then takes the feature
 cd ~/www/bakimx
-git fetch origin
-git checkout issue/<number>-<slug>
-bun install   # if bun.lock changed
+git checkout dev
+git merge --ff-only issue/<number>-<slug>   # if that fails, use a normal merge
+bun install   # if bun.lock changed; restart bun run dev when needed
 ```
 
-- If `bun run dev` is already running, it hot-reloads after checkout. If
-  dependencies changed (`bun.lock` diff), run `bun install` and restart the dev
-  server.
-- Inform the user that changes are ready for testing on localhost:3000 and what
+- If `bun run dev` is already running on `dev`, it hot-reloads after the merge.
+- Inform the user that changes are ready on localhost:3000 (local `dev`) and what
   flows/pages to check.
 - **Wait for user confirmation** before proceeding to §6. If the user reports a
-  bug, fix it directly in the primary checkout (still on the issue branch), push,
-  re-run quality gates, and ask for re-test.
+  bug, fix it on the issue branch (checkout that branch in a worktree or
+  temporarily), merge back into local `dev`, push the issue branch, re-run
+  quality gates, and ask for re-test.
 - Skip this step only when the user explicitly says to proceed without local QA
   (e.g. "PR aç, test etmeme gerek yok").
 
@@ -146,7 +151,10 @@ bun install   # if bun.lock changed
 - Rebase or merge the latest `origin/dev` before the final validation when the
   branch has drifted; never force-push shared work without explicit authorization.
 - The issue branch was already pushed in §5. Push any additional commits from
-  local QA fixes, then open a PR targeting `dev`.
+  local QA fixes, then open a **draft** PR targeting `dev`.
+- **Do not add the `ci` label** on open. Unlabeled `dev` PRs skip `quality` (0
+  Actions minutes). Add `ci` only when shipping or running the evening batch —
+  [local-dev-batch-ci.md](./local-dev-batch-ci.md).
 - Complete the PR template. Include summary, risks, tests and manual QA evidence.
 - Link the PR from its body, not only from a commit or comment. Work that is
   tracked in both systems needs **two closing lines**, one per tracker:
@@ -175,11 +183,18 @@ bun install   # if bun.lock changed
 
 ## 7. Checks, review, and merge
 
-- Monitor every required check to a terminal state. Inspect logs and fix failures
+- If the user only asked for commit/PR (or daytime batch mode), **stop after §6**
+  — do not add `ci`, do not wait on Actions, do not merge.
+- When shipping or running the evening batch: add the `ci` label
+  (`gh pr edit <n> --add-label ci`), mark ready for review if needed, then
+  monitor `quality` to a terminal state. Inspect logs and fix failures
   attributable to the branch; rerun proportionate local validation after fixes.
+- Before CI/merge, merge the latest `origin/dev` into the branch so the gate runs
+  on a current base (repo-guardrails §2.1).
 - Resolve actionable review comments and re-check the diff.
 - Merge only when the PR is non-draft, mergeable, approved as required, current
-  with `dev`, and all required checks are green.
+  with `dev`, and required checks that ran are green (`dev` PRs need `ci` + green
+  `quality`; `main` always requires `quality`).
 - Bu koşullar sağlandığında merge için ayrıca insan onayı BEKLENMEZ — bkz.
   yukarıdaki "Merge yetkisi" notu.
 - Prefer squash merge unless repository policy or release history requires a
@@ -226,18 +241,22 @@ bun run project:sync -- --dry-run # report drift without changing anything
   skipped), remove it now and delete only its local branch. Verify targets exactly
   before either operation.
 - Never use broad cleanup commands such as `git worktree prune`, wildcard branch
-  deletion, `git clean`, or `git reset --hard` as routine cleanup.
-- After merge, the primary checkout is on the issue branch (from §5). Switch it
-  back to `dev` and pull the merged changes:
+  deletion, or `git clean` as routine cleanup.
+- Primary should already be on `dev` (§5). After GitHub squash-merge, local merge
+  commits usually diverge from `origin/dev` even when the tree matches. When every
+  local-only promotion for this batch has landed via PR and the working tree is
+  clean, sync explicitly:
 
 ```sh
 git checkout dev
-git pull --ff-only origin dev
+git fetch origin
+git reset --hard origin/dev    # evening / post-batch sync only — see local-dev-batch-ci.md
 git branch -d issue/<number>-<slug>
 ```
 
-- If the primary is dirty or cannot fast-forward, leave it untouched and report
-  the exact blocker and the already-merged commit.
+- If the primary is dirty, or local `dev` still has commits that never went up as
+  PRs, leave it untouched and report the exact blocker and the already-merged
+  commit. Do not use `reset --hard` as generic cleanup.
 
 ## Final report
 

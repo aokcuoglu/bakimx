@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Eye, EyeOff, Loader2, Lock, User, Mail } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -70,9 +71,9 @@ export function SetPasswordForm({
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
-            {error}
-          </div>
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         <div className="space-y-2">
@@ -111,15 +112,16 @@ export function SetPasswordForm({
               placeholder="En az 8 karakter"
               className="pl-9 pr-9"
             />
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              tabIndex={-1}
+              className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground"
               aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
             >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -140,7 +142,7 @@ export function SetPasswordForm({
           </div>
         </div>
 
-        <Button type="submit" size="xl" disabled={loading} className="w-full">
+        <Button type="submit" variant="foreground" size="xl" disabled={loading} className="w-full">
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <Loader2 className="size-4 animate-spin" />

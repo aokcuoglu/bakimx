@@ -226,14 +226,15 @@ export function PurchaseDetailDialog({
                   </Button>
                 </div>
               ) : (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-muted/40 py-5 text-sm text-muted-foreground"
+                  className="h-auto w-full flex-col gap-1.5 border-dashed bg-muted/40 py-5 text-muted-foreground"
                 >
                   <Camera className="size-5" />
                   {item.purchasePhotoId ? "Fotoğrafı değiştir" : "Fotoğraf ekle"}
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -277,7 +278,7 @@ export function PurchaseDetailDialog({
               <Button type="button" variant="outline" onClick={resetEdit} disabled={submitting}>
                 Vazgeç
               </Button>
-              <Button type="button" onClick={handleSave} disabled={submitting}>
+              <Button variant="foreground" type="button" onClick={handleSave} disabled={submitting}>
                 {submitting ? "Kaydediliyor…" : "Kaydet"}
               </Button>
             </>

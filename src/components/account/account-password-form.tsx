@@ -56,24 +56,24 @@ export function AccountPasswordForm() {
           control={form.control}
           name="currentPassword"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Mevcut Şifre</FormLabel>
+            <FormItem className="gap-1">
+              <FormLabel className="text-xs font-medium text-muted-foreground">Mevcut Şifre</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="current-password" {...field} />
+                <Input type="password" autoComplete="current-password" {...field} className="h-8" />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
           <FormField
             control={form.control}
             name="password"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Yeni Şifre</FormLabel>
+              <FormItem className="gap-1">
+                <FormLabel className="text-xs font-medium text-muted-foreground">Yeni Şifre</FormLabel>
                 <FormControl>
-                  <Input type="password" autoComplete="new-password" {...field} />
+                  <Input type="password" autoComplete="new-password" {...field} className="h-8" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -83,17 +83,17 @@ export function AccountPasswordForm() {
             control={form.control}
             name="confirmPassword"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Yeni Şifre (Tekrar)</FormLabel>
+              <FormItem className="gap-1">
+                <FormLabel className="text-xs font-medium text-muted-foreground">Yeni Şifre (Tekrar)</FormLabel>
                 <FormControl>
-                  <Input type="password" autoComplete="new-password" {...field} />
+                  <Input type="password" autoComplete="new-password" {...field} className="h-8" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+        <Button variant="foreground" type="submit" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? "Değiştiriliyor…" : "Şifreyi Değiştir"}
         </Button>
       </form>

@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { readJsonObject } from "@/lib/http/json-response"
+import { PROCUREMENT_STATUSES } from "@/lib/external-procurement/types"
 
 const errorResponseSchema = z.object({
   error: z.string().min(1).optional(),
@@ -26,7 +27,7 @@ const productSchema = z.object({
 
 export const offerResponseSchema = z.discriminatedUnion("status", [
   z.object({ status: z.enum(["matched", "no_offers"]), normalizedPartNo: z.string(), products: z.array(productSchema) }),
-  z.object({ status: z.enum(["no_match", "upstream_error"]), normalizedPartNo: z.string() }),
+  z.object({ status: z.enum(["no_match", "not_configured", "upstream_error"]), normalizedPartNo: z.string() }),
 ]).superRefine((result, context) => {
   if (result.status === "matched" && !result.products.some((product) => product.offers.length > 0)) {
     context.addIssue({ code: "custom", message: "Matched responses require an offer." })
@@ -51,7 +52,7 @@ export const quoteResponseSchema = z.object({ quote: quoteSchema })
 export const purchaseResponseSchema = z.object({ procurement: z.object({
   id: z.string().min(1),
   externalOrderId: z.string().min(1),
-  partnerStatus: z.literal("REQUESTED"),
+  partnerStatus: z.enum(PROCUREMENT_STATUSES),
 }) })
 
 export type OfferResponse = z.infer<typeof offerResponseSchema>

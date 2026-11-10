@@ -15,7 +15,7 @@ let fixture: SalesE2EFixture | null = null
 let invitedAdvisorId: string | null = null
 let convertedLeadId: string | null = null
 let usedRegistrationUrl: string | null = null
-const localBaseURL = `http://localhost:${process.env.PLAYWRIGHT_PORT || "3000"}`
+const localBaseURL = `http://localhost:${process.env.PLAYWRIGHT_PORT || "3001"}`
 
 async function localContext(browser: Browser) {
   return browser.newContext({ baseURL: localBaseURL })

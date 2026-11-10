@@ -460,17 +460,17 @@ function ChecklistRow({
         isRemoving && "motion-safe:animate-row-remove"
       )}
     >
-      <button
+      <Button
         type="button"
+        variant="ghost"
         disabled={isBusy || locked}
         aria-pressed={isDone}
         onClick={() => state.toggle(item)}
         className={cn(
-          "flex min-h-8 flex-1 items-start gap-2.5 rounded-lg px-2 py-1.5 text-left",
-          "cursor-pointer touch-manipulation transition-colors hover:bg-muted",
+          "h-auto min-h-7 flex-1 items-start justify-start gap-2.5 px-2 py-1.5 text-left whitespace-normal",
           // Sunucu yanıtı beklenirken satır kilitli ama SOLUK DEĞİL: iyimser tik
           // zaten göründüğü için soluklaştırmak "işlem geri alındı" gibi okunur.
-          "disabled:cursor-default disabled:hover:bg-transparent"
+          "disabled:cursor-default disabled:opacity-100 disabled:hover:bg-transparent"
         )}
       >
         {/* Tik anında gelir; `key` durum değişince değişir ki pop animasyonu
@@ -499,7 +499,7 @@ function ChecklistRow({
           </span>
           {item.note && <span className="mt-0.5 block text-xs text-muted-foreground">{item.note}</span>}
         </span>
-      </button>
+      </Button>
 
       {/* Şablon maddeleri de silinebilir: atölye kullanmadığı kontrolü bu iş
           emrinden çıkarabilmeli. Silme yalnız bu iş emrini etkiler, şablon
@@ -507,15 +507,17 @@ function ChecklistRow({
           hover'a bağlı olamaz — dokunmatikte hover yok, buton görünmez ama
           tıklanabilir kalıyordu. */}
       {!locked && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           aria-label={`"${item.description}" maddesini bu iş emrinden sil`}
           onClick={() => state.remove(item)}
           disabled={isBusy}
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive-strong disabled:pointer-events-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+          className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
         >
           <Trash2 className="size-4" />
-        </button>
+        </Button>
       )}
     </div>
   )
@@ -607,7 +609,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
         type="button"
         variant="outline"
         onClick={() => setShow(true)}
-        className="mt-3 w-full justify-center gap-1.5 border-dashed bg-primary/[0.04] text-primary hover:bg-primary/[0.08] hover:text-primary"
+        className="mt-3 w-full justify-center gap-1.5 border-dashed text-muted-foreground hover:text-foreground"
       >
         <Plus className="size-4" />
         Kontrol maddesi ekle
@@ -653,7 +655,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
               key={cat}
               value={cat}
               variant="outline"
-              className="w-full gap-1 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:font-semibold data-[state=on]:text-primary-strong"
+              className="w-full gap-1 text-xs font-medium text-muted-foreground hover:bg-muted/60 hover:bg-primary/5 hover:text-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:font-semibold data-[state=on]:text-primary-strong"
             >
               {category === cat && <Check className="size-3.5" />}
               {CHECKLIST_CATEGORIES[cat].label}
@@ -673,7 +675,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
       />
 
       <div className="flex gap-2">
-        <Button type="submit" size="lg" disabled={isPending || !description.trim()} className="touch-manipulation">
+        <Button variant="foreground" type="submit" size="lg" disabled={isPending || !description.trim()} className="touch-manipulation">
           {isPending ? <BrandSpinner size={16} className="!flex-row !gap-0" /> : <Plus className="size-4" />}
           Ekle
         </Button>

@@ -4,15 +4,7 @@ import { readFileSync } from "node:fs"
 const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8")
 
 /**
- * Kontrol ölçeği artık upstream shadcn `nova` ile aynı: tek ölçek, breakpoint
- * yok (BAK-150). Önceki matris mobilde 44px zorunlu kılıyordu; kaldırıldı çünkü
- * 32px WCAG 2.2 AA 2.5.8'i (min 24px) geçiyor, düşen yalnız AAA 2.5.5.
- *
- * Boyut varyantları yalnız iç boşluk ve tipografiyi değiştirir; görünür her
- * Button 32px yüksekliğindedir. Mobil alt navigasyon Button değil `Link`
- * olduğu için bu matrisin dışında.
- *
- * Ayrıntı: docs/ui-control-sizing.md
+ * Attio ölçüleri: standart düğme ve girdi 28px, select 32px, kompakt 20px.
  */
 
 /** `size: {` bloğunun gövdesini kaba ama yeterli bir şekilde çıkarır. */
@@ -26,24 +18,21 @@ function buttonSizeBlock() {
 }
 
 describe("kontrol ölçeği — upstream shadcn nova", () => {
-  test("Button boyut varyantları 32px yüksekliğinde", () => {
+  test("Button Attio ölçülerini korur", () => {
     const block = buttonSizeBlock()
-
-    // Her varyant aynı dikey ritmi korur.
-    expect(block).toContain('default:\n          "h-8 gap-1.5 px-2.5')
-    expect(block).toContain('xs: "h-8 ')
-    expect(block).toContain('sm: "h-8 ')
-    expect(block).toContain('lg: "h-8 ')
-    expect(block).toContain('xl: "h-8 ')
-    expect(block).toContain('icon: "size-8"')
-    expect(block).toContain('"icon-xs":\n          "size-8 ')
-    expect(block).toContain('"icon-sm":\n          "size-8 ')
-    expect(block).toContain('"icon-lg": "size-8"')
-
-    // BakımX'e özgü yoğun varyantlar
-    expect(block).toContain('compact: "h-8 ')
-    expect(block).toContain('"icon-compact": "size-8"')
-    expect(block).not.toMatch(/\b(?:h-(?:6|7|9|10|11|12)|size-(?:6|7|9|10|11|12)|md:(?:h|size|min-h)-)/)
+    expect(block).toContain('default: "h-7 gap-1 py-1 pr-2 pl-1.5"')
+    expect(block).toContain('sm: "h-7 gap-1 py-1 pr-2 pl-1.5"')
+    expect(block).toContain('lg: "h-7 gap-1 py-1 pr-2 pl-1.5"')
+    expect(block).toContain('xl: "h-7 gap-1 py-1 pr-2 pl-1.5"')
+    expect(block).toContain('xs: "h-5 ')
+    expect(block).toContain('compact: "h-5 ')
+    expect(block).toContain('icon: "size-7"')
+    expect(block).toContain('"icon-xs": "size-5 ')
+    expect(block).toContain('"icon-sm": "size-7"')
+    expect(block).toContain('"icon-lg": "size-7"')
+    expect(block).toContain('"icon-compact": "size-5 ')
+    expect(block).not.toMatch(/md:(?:h|size|min-h)-/)
+    expect(block).not.toContain("has-data-[icon=")
   })
 
   test("Input, Select ve InputGroup tek ölçekte", () => {
@@ -51,16 +40,16 @@ describe("kontrol ölçeği — upstream shadcn nova", () => {
     const select = read("./select.tsx")
     const inputGroup = read("./input-group.tsx")
 
-    expect(input).toContain('"h-8 w-full min-w-0')
+    expect(input).toContain('"h-7 w-full min-w-0')
     expect(input).not.toMatch(/md:(h|min-h)-/)
 
     expect(select).toContain('size?: "sm" | "default" | "compact"')
     expect(select).toContain("data-[size=default]:h-8")
     expect(select).toContain("data-[size=sm]:h-7")
-    expect(select).toContain("data-[size=compact]:h-7")
+    expect(select).toContain("data-[size=compact]:h-5")
     expect(select).not.toMatch(/md:(h|min-h)-/)
 
-    expect(inputGroup).toContain("relative flex h-8 w-full min-w-0")
+    expect(inputGroup).toContain("relative flex h-7 w-full min-w-0")
     expect(inputGroup).not.toMatch(/md:(h|min-h)-/)
   })
 

@@ -32,6 +32,7 @@ import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import { ACQUISITION_SOURCE_OPTIONS } from "@/lib/acquisition-sources"
+import { getDiscountedPlanPriceMinor } from "@/lib/billing/referral-discount"
 
 type Mode = "public" | "inapp"
 type Cycle = "monthly" | "yearly"
@@ -58,6 +59,7 @@ export function PurchaseWizard({
   advisors = [],
   seatUsage,
   extraSeats = 0,
+  referralDiscountBps = 0,
 }: {
   mode: Mode
   initialTier?: PlanTier
@@ -70,6 +72,7 @@ export function PurchaseWizard({
   advisors?: { id: string; label: string }[]
   seatUsage?: { activeUsers: number; pendingInvites: number; used: number }
   extraSeats?: number
+  referralDiscountBps?: number
 }) {
   const isPublic = mode === "public"
   const STEPS = isPublic
@@ -189,7 +192,7 @@ export function PurchaseWizard({
 
   return (
     <div className={frameClass}>
-      <BrandRail mode={mode} tier={tier} cycle={cycle} step={done ? 2 : step} />
+      <BrandRail mode={mode} tier={tier} cycle={cycle} step={done ? 2 : step} referralDiscountBps={referralDiscountBps} />
 
       <div className={cn("flex flex-col bg-background", formColClass)}>
         {/* my-auto: boş alan varsa dikey ortalar, içerik taşarsa kırpmadan üstten başlar */}
@@ -254,11 +257,11 @@ export function PurchaseWizard({
                             key={c}
                             type="button"
                             onClick={() => setCycle(c)}
-                            variant={cycle === c ? "default" : "ghost"}
+                            variant={cycle === c ? "secondary" : "ghost"}
                             className={cn(
                               "flex-1",
                               cycle === c
-                                ? "bg-primary text-primary-foreground shadow-sm"
+                                ? "bg-card text-foreground shadow-sm"
                                 : "text-muted-foreground hover:text-foreground",
                             )}
                           >
@@ -270,7 +273,7 @@ export function PurchaseWizard({
                         {PLAN_PACKAGES.map((pkg) => {
                           const isOwned = ownedTier === pkg.tier
                           const selected = tier === pkg.tier
-                          const minor = getPlanPriceMinor(pkg.tier, cycle)
+                          const minor = isPublic ? getPlanPriceMinor(pkg.tier, cycle) : getDiscountedPlanPriceMinor(pkg.tier, cycle, referralDiscountBps)
                           return (
                             <Button
                               key={pkg.tier}
@@ -282,7 +285,7 @@ export function PurchaseWizard({
                                 "relative h-auto min-h-16 w-full justify-between rounded-xl p-4 text-left whitespace-normal",
                                 selected
                                   ? "border-primary bg-primary/5 ring-1 ring-primary/40"
-                                  : "border-border hover:border-primary/40 hover:bg-muted/30",
+                                  : "border-border hover:bg-muted/60 hover:bg-muted/30",
                               )}
                             >
                               <div className="min-w-0">
@@ -303,14 +306,16 @@ export function PurchaseWizard({
                                 </p>
                               </div>
                               <div className="ml-3 shrink-0 text-right">
-                                {pkg.listMonthlyLabel && (
+                                {!isPublic && referralDiscountBps > 0 && pkg.tier !== "lite" ? (
+                                  <s className="block text-xs text-muted-foreground">{formatMinor(getPlanPriceMinor(pkg.tier, cycle))}</s>
+                                ) : pkg.listMonthlyLabel && (
                                   <s className="block text-xs text-muted-foreground">
                                     {cycle === "monthly" ? pkg.listMonthlyLabel : pkg.listYearlyLabel}
                                   </s>
                                 )}
                                 <p className="font-bold text-foreground">{formatMinor(minor)}</p>
                                 <p className="text-[11px] text-muted-foreground">
-                                  {pkg.tier === "lite" ? "Açılışa özel · sınırlı süre" : cycle === "monthly" ? "/ay · KDV dahil" : "/yıl · KDV dahil"}
+                                  {pkg.tier === "lite" ? "Açılışa özel · sınırlı süre" : !isPublic && referralDiscountBps > 0 ? "İlk yıl %10 indirim · KDV dahil" : cycle === "monthly" ? "/ay · KDV dahil" : "/yıl · KDV dahil"}
                                 </p>
                               </div>
                             </Button>
@@ -328,7 +333,7 @@ export function PurchaseWizard({
                         </Alert>
                       )}
                       <div className="flex justify-end pt-2">
-                        <Button
+                        <Button variant="foreground"
                           type="button"
                           size="lg"
                           onClick={() => next([])}
@@ -428,7 +433,7 @@ export function PurchaseWizard({
                                       key={day.value}
                                       value={day.value}
                                       variant="outline"
-                                      className="rounded-lg px-3 py-1.5 text-sm font-medium data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong hover:border-primary/40"
+                                      className="rounded-lg px-3 py-1.5 text-sm font-medium data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong hover:bg-muted/60"
                                     >
                                       {day.short}
                                     </ToggleGroupItem>
@@ -474,7 +479,7 @@ export function PurchaseWizard({
                         <Button type="button" variant="outline" size="lg" onClick={() => setStep(0)}>
                           <ChevronLeft className="size-4" /> Geri
                         </Button>
-                        <Button
+                        <Button variant="foreground"
                           type="button"
                           size="lg"                          onClick={() =>
                             next(
@@ -515,10 +520,10 @@ export function PurchaseWizard({
                                 aria-pressed={selected}
                                 variant="outline"
                                 className={cn(
-                                  "h-auto min-h-8 justify-start gap-2 rounded-xl p-3 text-left whitespace-normal",
+                                  "h-auto min-h-7 justify-start gap-2 rounded-xl p-3 text-left whitespace-normal",
                                   selected
                                     ? "border-primary bg-primary/5 ring-1 ring-primary/40 text-foreground"
-                                    : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30",
+                                    : "border-border text-muted-foreground hover:bg-muted/60 hover:bg-muted/30",
                                 )}
                               >
                                 <Icon className="size-4 shrink-0 text-primary" />
@@ -559,7 +564,7 @@ export function PurchaseWizard({
                         <Button type="button" variant="outline" size="lg" onClick={() => setStep(1)}>
                           <ChevronLeft className="size-4" /> Geri
                         </Button>
-                        <Button
+                        <Button variant="foreground"
                           type="button"
                           size="lg"
                           disabled={loading}
@@ -603,7 +608,7 @@ function ComplimentaryDonePanel({ mode }: { mode: Mode }) {
           Açılışa özel kampanya uygulandı; ödeme yapmanız gerekmiyor.
         </p>
       </div>
-      <Link href={mode === "public" ? "/login" : "/billing"} className="inline-block text-sm text-primary hover:underline">
+      <Link href={mode === "public" ? "/login" : "/settings/plans"} className="inline-block text-sm text-primary hover:underline">
         {mode === "public" ? "Giriş sayfasına git" : "Paket sayfasına dön"}
       </Link>
     </div>
@@ -663,7 +668,7 @@ function DonePanel({
           Giriş sayfasına git
         </Link>
       ) : (
-        <Link href="/billing" className="inline-block text-sm text-primary hover:underline">
+        <Link href="/settings/billing" className="inline-block text-sm text-primary hover:underline">
           Paket sayfasına dön
         </Link>
       )}

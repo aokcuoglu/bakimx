@@ -14,6 +14,7 @@ import { formatDate } from "@/lib/utils-client"
 import { cn } from "@/lib/utils"
 import { updateQuoteStatusAction, convertQuoteToWorkOrderAction } from "@/app/(app)/quotes/actions"
 import { ArrowLeft, Phone, Car, User, FileText, Printer, Share2, Loader2, ArrowRight, Info, Calendar } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { QUOTE_STATUS } from "@/lib/constants"
 import { getWhatsAppShareUrl } from "@/lib/share/whatsapp"
 
@@ -157,10 +158,10 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm flex items-start gap-2">
-          <Info className="size-4 shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
+        <Alert variant="destructive">
+          <Info />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
@@ -392,7 +393,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                       key={s}
                       type="button"
                       size="sm"
-                      variant={s === "cancelled" ? "outline" : "default"}
+                      variant={s === "cancelled" ? "outline" : "foreground"}
                       className={cn("w-full gap-2", s === "cancelled" && "text-destructive-strong border-destructive/20 hover:bg-destructive/10")}
                       disabled={statusLoading}
                       onClick={() => handleStatusChange(s)}
@@ -421,19 +422,21 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
 
           <div className="space-y-2">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Paylaş</span>
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="lg"
               disabled
-              className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border bg-card text-muted-foreground text-sm cursor-not-allowed touch-manipulation"
-              title="PDF çıktısı yakında"
+              className="w-full justify-start text-muted-foreground"
             >
               <Printer className="size-4" />
               Yazdır / PDF
-            </button>
+            </Button>
             <Button
+              variant="whatsapp"
               type="button"
               size="lg"
-              className="w-full justify-start bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90 touch-manipulation"
+              className="w-full justify-start"
               onClick={handleWhatsApp}
             >
               <Share2 className="size-4" />

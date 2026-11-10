@@ -112,7 +112,7 @@ export default async function AdminAuditPage({
     <div className="space-y-7">
       <div className="space-y-1">
         <p className="text-sm font-medium text-primary">Platform operasyonları</p>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Denetim Kaydı</h1>
+        <h1 className="text-page-title text-foreground">Denetim Kaydı</h1>
         <p className="text-sm text-muted-foreground">
           Tüm yönetici işlemleri. {total} kayıt.
         </p>

@@ -26,11 +26,13 @@ const INITIAL_SNAPSHOT: RegisterWizardSnapshot = {
 export function RegisterClient({
   salesRegistration,
   preferredPlan,
+  referralCode,
   mode = "register",
 }: {
   mode?: "register" | "onboarding"
   salesRegistration?: SalesRegistrationPrefill
   preferredPlan?: PreferredPlan
+  referralCode?: string
 }) {
   const [snapshot, setSnapshot] = useState(INITIAL_SNAPSHOT)
 
@@ -61,12 +63,13 @@ export function RegisterClient({
 
       <div className={styles.layout}>
         <RegisterSidebar snapshot={snapshot} preferredPlan={preferredPlan} mode={mode} />
-        <main aria-label="Hesap kayıt formu" className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-5 py-8 sm:px-10 sm:py-12 lg:px-14 xl:px-20">
-          <div className="mx-auto w-full max-w-2xl">
+        <main aria-label="Hesap kayıt formu" className="no-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-5 py-8 sm:px-10 sm:py-12 lg:px-14 xl:px-20">
+          <div className="w-full max-w-2xl">
             <RegisterForm
               mode={mode}
               salesRegistration={salesRegistration}
               preferredPlan={preferredPlan}
+              referralCode={referralCode}
               onSnapshotChange={handleSnapshotChange}
             />
           </div>

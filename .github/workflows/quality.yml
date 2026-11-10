@@ -9,9 +9,16 @@ name: Pull request quality
 # still be merged into `dev`. That is why the deploy workflows re-run this against
 # the exact commit they are about to ship. See deploy-dev-aws.yml /
 # deploy-prod-aws.yml and docs/agent-workflows/repo-guardrails.md §2.
+#
+# Actions quota (local-dev-batch-ci): PRs into `dev` only run this job when the
+# PR carries the `ci` label. PRs into `main` always run (required check).
+# `labeled` is in types so adding `ci` at end of day starts one batch run;
+# synchronize re-runs while the label stays. workflow_call / workflow_dispatch
+# are unchanged. See docs/agent-workflows/local-dev-batch-ci.md.
 on:
   pull_request:
     branches: [dev, main]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
   workflow_call:
   workflow_dispatch:
 
@@ -28,6 +35,12 @@ concurrency:
 
 jobs:
   quality:
+    # Skip unlabeled PRs targeting `dev` (0 billable minutes). Never skip
+    # `main`, or non-PR callers (deploy gates / manual dispatch).
+    if: >
+      github.event_name != 'pull_request' ||
+      github.base_ref == 'main' ||
+      contains(join(github.event.pull_request.labels.*.name, ','), 'ci')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:

@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation"
-import { getFeaturePaywall } from "@/lib/feature-page-access"
 
 export const metadata = { title: "Ekip Yönetimi" }
 
-export default async function TeamSettingsGatePage() {
-  const paywall = await getFeaturePaywall("team")
-  if (paywall) return paywall
-  redirect("/settings?tab=team")
+export default async function TeamSettingsRedirect({
+  searchParams,
+}: {
+  searchParams: Promise<{ invite?: string }>
+}) {
+  const { invite } = await searchParams
+  redirect(invite === "1" ? "/settings/members-and-teams/members?invite=1" : "/settings/members-and-teams/members")
 }

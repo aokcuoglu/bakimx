@@ -1,16 +1,43 @@
 "use client"
 
+import { useMemo, type ReactNode } from "react"
 import Link from "next/link"
-import { FileWarning } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+import { orderDetailHref, readOrderListState, type OrderListState } from "@/lib/orders/list-state"
+import type { Updater } from "@tanstack/react-table"
+import { ChevronDown, FileWarning } from "lucide-react"
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState,
+  type VisibilityState,
+} from "@tanstack/react-table"
 
-import { StatusBadge, PaymentBadge, PlateBadge } from "@/components/shared/status-badge"
+import { StatusBadge, PlateBadge } from "@/components/shared/status-badge"
+import { OrderTableColumnHeader } from "@/components/orders/order-table-column-header"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ActionsMenu, MobileActionsMenu } from "@/components/shared/actions-menu"
-import { StatCard } from "@/components/shared/stat-card"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatTRY } from "@/lib/format"
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
+import { matchesColumnFilter, ORDER_LIST_COLUMN_LABELS, ORDER_LIST_DATA_COLUMN_ORDER } from "@/lib/orders/list-columns"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { useOrderListNavigation } from "@/components/orders/use-order-list-navigation"
 import { ACTIVE_ORDER_FILTER } from "@/lib/orders/status-filter"
 
 type OrderRow = {
@@ -54,7 +81,6 @@ type KpiConfig = {
   label: string
   count: number
   filterValue: string
-  accent: string
 }
 
 function formatDate(iso: string) {
@@ -66,12 +92,56 @@ function customerName(c: OrderRow["customer"]): string {
   return c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "Müşteri"
 }
 
-/** Faturası eksik iş emri rozeti — ikon + metin; anlam yalnız renkte değil. */
+function statusSearch(order: OrderRow): string {
+  const status = ORDER_STATUS[order.status as keyof typeof ORDER_STATUS]?.label ?? order.status
+  return status
+}
+
+function invoiceSearch(order: OrderRow): string {
+  const value = (order.invoiceNo || "").trim()
+  if (value) return value
+  return order.invoiceMissing ? "Fatura yok" : ""
+}
+
+function technicianSearch(order: OrderRow): string {
+  return order.assignedTechnicianName?.trim() || "Atanmamış"
+}
+
+function textFilter<T>(read: (row: T) => string) {
+  return (row: { original: T }, _columnId: string, value: unknown) =>
+    matchesColumnFilter(read(row.original), value)
+}
+
+function PaymentText({ status }: { status: string }) {
+  const label = PAYMENT_STATUS[status as keyof typeof PAYMENT_STATUS]?.label ?? status
+  const tone = status === "paid" ? "bg-success" : status === "partial" ? "bg-warning" : "bg-border"
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground">
+      <span className={`size-1.5 shrink-0 rounded-full ${tone}`} aria-hidden="true" />
+      {label}
+    </span>
+  )
+}
+
+/** Supporting information stays available on hover and keyboard focus. */
+function DetailHint({ children, detail }: { children: React.ReactNode; detail: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span tabIndex={0} className="block w-fit max-w-full rounded-xs outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={detail}>
+          {children}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{detail}</TooltipContent>
+    </Tooltip>
+  )
+}
+
+/** Missing invoice remains a single line, without a second status badge. */
 function InvoiceMissingBadge() {
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-md border border-warning/20 bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning-strong"
-      title="Fatura numarası girilmemiş"
+      className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-warning-strong"
     >
       <FileWarning className="size-3.5" aria-hidden="true" />
       Fatura yok
@@ -83,16 +153,16 @@ function InvoiceCell({ invoiceNo, missing }: { invoiceNo: string | null; missing
   const value = (invoiceNo || "").trim()
   if (value) {
     return (
-      <span className="font-mono text-xs text-foreground" title={value}>
-        {value}
-      </span>
+      <DetailHint detail={value}>
+        <span className="block max-w-28 truncate font-mono text-xs text-foreground">{value}</span>
+      </DetailHint>
     )
   }
   if (!missing) return <span className="text-muted-foreground">—</span>
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="inline-flex">
+        <span tabIndex={0} className="inline-flex rounded-xs outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <InvoiceMissingBadge />
         </span>
       </TooltipTrigger>
@@ -109,6 +179,9 @@ export function OrderList({
   activeTechnician = "",
   activeInvoice = "",
   technicians = [],
+  searchQuery = "",
+  toolbar,
+  emptyState,
 }: {
   orders: OrderRow[]
   kpis: KPIs
@@ -117,240 +190,413 @@ export function OrderList({
   activeTechnician?: string
   activeInvoice?: string
   technicians?: AssignableTechnician[]
+  searchQuery?: string
+  toolbar?: ReactNode
+  emptyState?: ReactNode
 }) {
+  const { rootRef, isPending, onChange, onSubmit, onClick } = useOrderListNavigation(searchQuery)
   const kpiConfigs: KpiConfig[] = [
-    { key: "active", label: "Aktif", count: kpis.active, filterValue: ACTIVE_ORDER_FILTER, accent: "bg-primary/10 text-primary-strong border-primary/20" },
-    { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval", accent: "bg-warning/10 text-warning-strong border-warning/20" },
-    { key: "completed", label: "Tamamlandı", count: kpis.completed, filterValue: "ready_for_delivery", accent: "bg-primary/10 text-primary-strong border-primary/20" },
-    { key: "delivered", label: "Teslim Edildi", count: kpis.delivered, filterValue: "delivered", accent: "bg-success/10 text-success-strong border-success/20" },
-    { key: "cancelled", label: "İptal", count: kpis.cancelled, filterValue: "cancelled", accent: "bg-destructive/10 text-destructive-strong border-destructive/20" },
+    { key: "active", label: "Aktif", count: kpis.active, filterValue: ACTIVE_ORDER_FILTER },
+    { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval" },
+    { key: "completed", label: "Tamamlandı", count: kpis.completed, filterValue: "ready_for_delivery" },
+    { key: "delivered", label: "Teslim Edildi", count: kpis.delivered, filterValue: "delivered" },
+    { key: "cancelled", label: "İptal", count: kpis.cancelled, filterValue: "cancelled" },
   ]
 
   // KPI kartına tıklamak yalnız durumu değiştirmeli; diğer aktif filtreler korunur.
   const keptFilters = [
+    searchQuery ? `q=${encodeURIComponent(searchQuery)}` : "",
     activePayment ? `payment=${activePayment}` : "",
     activeTechnician ? `technician=${encodeURIComponent(activeTechnician)}` : "",
     activeInvoice ? `invoice=${encodeURIComponent(activeInvoice)}` : "",
   ].filter(Boolean)
 
+  const searchParams = useSearchParams()
+  const view = searchParams.get("view")
+  const { sorting, columnFilters, columnVisibility } = useMemo(() => readOrderListState(view), [view])
+  const listHref = `/orders${searchParams.size ? `?${searchParams}` : ""}`
+  if (view) keptFilters.push(`view=${encodeURIComponent(view)}`)
+
+  function updateView<K extends keyof OrderListState>(key: K, updater: Updater<OrderListState[K]>) {
+    // Read the current URL so rapid successive changes preserve each other.
+    const params = new URLSearchParams(window.location.search)
+    const current = readOrderListState(params.get("view"))
+    current[key] = typeof updater === "function" ? updater(current[key]) : updater
+    params.set("view", JSON.stringify(current))
+    window.history.replaceState(null, "", `/orders?${params}`)
+  }
+
+  const columns = useMemo<ColumnDef<OrderRow>[]>(() => {
+    const byId: Record<(typeof ORDER_LIST_DATA_COLUMN_ORDER)[number], ColumnDef<OrderRow>> = {
+      workOrderNo: {
+        id: "workOrderNo",
+        accessorFn: (order) => order.workOrderNo,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="İş No" />,
+        filterFn: textFilter((order) => order.workOrderNo),
+        cell: ({ row }) => (
+          <Link
+            href={orderDetailHref(row.original.id, listHref)}
+            className="font-mono text-xs font-medium text-foreground hover:text-primary transition-colors"
+          >
+            {row.original.workOrderNo}
+          </Link>
+        ),
+      },
+      vehicle: {
+        id: "vehicle",
+        accessorFn: (order) => `${order.vehicle.plate} ${order.vehicle.brand} ${order.vehicle.model}`,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Araç" />,
+        filterFn: textFilter((order) => `${order.vehicle.plate} ${order.vehicle.brand} ${order.vehicle.model}`),
+        cell: ({ row }) => {
+          const order = row.original
+          return (
+            <DetailHint detail={`${order.vehicle.plate} · ${order.vehicle.brand} ${order.vehicle.model}`}>
+              {order.vehicle.id ? (
+                <Link href={`/vehicles/${order.vehicle.id}`}>
+                  <PlateBadge plate={order.vehicle.plate} size="sm" />
+                </Link>
+              ) : (
+                <PlateBadge plate={order.vehicle.plate} size="sm" />
+              )}
+            </DetailHint>
+          )
+        },
+      },
+      customer: {
+        id: "customer",
+        accessorFn: (order) => `${customerName(order.customer)} ${order.customer.phone}`,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Müşteri" />,
+        filterFn: textFilter((order) => `${customerName(order.customer)} ${order.customer.phone}`),
+        cell: ({ row }) => {
+          const order = row.original
+          const name = customerName(order.customer)
+          return (
+            <DetailHint detail={`${name} · ${order.customer.phone}`}>
+              {order.customer.id ? (
+                <Link href={`/customers/${order.customer.id}`} className="block max-w-[11rem] truncate font-medium text-foreground transition-colors hover:text-primary">
+                  {name}
+                </Link>
+              ) : (
+                <span className="block max-w-[11rem] truncate font-medium text-foreground">{name}</span>
+              )}
+            </DetailHint>
+          )
+        },
+      },
+      status: {
+        id: "status",
+        accessorFn: statusSearch,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Durum" />,
+        filterFn: textFilter(statusSearch),
+        cell: ({ row }) => (
+          <StatusBadge status={row.original.status} />
+        ),
+      },
+      payment: {
+        id: "payment",
+        accessorFn: (order) => PAYMENT_STATUS[order.paymentStatus as keyof typeof PAYMENT_STATUS]?.label ?? order.paymentStatus,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Ödeme" />,
+        filterFn: textFilter((order) => PAYMENT_STATUS[order.paymentStatus as keyof typeof PAYMENT_STATUS]?.label ?? order.paymentStatus),
+        cell: ({ row }) => <PaymentText status={row.original.paymentStatus} />,
+      },
+      invoice: {
+        id: "invoice",
+        accessorFn: invoiceSearch,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Fatura" />,
+        filterFn: textFilter(invoiceSearch),
+        cell: ({ row }) => <InvoiceCell invoiceNo={row.original.invoiceNo} missing={row.original.invoiceMissing} />,
+      },
+      total: {
+        id: "total",
+        accessorFn: (order) => (order.hasPrice ? order.grandTotal : null),
+        sortingFn: (a, b) => {
+          const left = a.original.hasPrice ? a.original.grandTotal : Number.NEGATIVE_INFINITY
+          const right = b.original.hasPrice ? b.original.grandTotal : Number.NEGATIVE_INFINITY
+          return left - right
+        },
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Toplam" align="right" />,
+        filterFn: textFilter((order) => (order.hasPrice ? formatTRY(order.grandTotal) : "")),
+        meta: { align: "right" },
+        cell: ({ row }) => (
+          <div className="text-right font-semibold text-foreground tabular-nums whitespace-nowrap">
+            {row.original.hasPrice ? formatTRY(row.original.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
+          </div>
+        ),
+      },
+      dates: {
+        id: "dates",
+        accessorFn: (order) => order.createdAt,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Giriş tarihi" />,
+        filterFn: textFilter((order) => formatDate(order.createdAt)),
+        cell: ({ row }) => <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">{formatDate(row.original.createdAt)}</span>,
+      },
+      delivery: {
+        id: "delivery",
+        accessorFn: (order) => order.estimatedDeliveryAt,
+        sortUndefined: "last",
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Tahmini teslim" />,
+        filterFn: textFilter((order) => order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : ""),
+        cell: ({ row }) => <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">{row.original.estimatedDeliveryAt ? formatDate(row.original.estimatedDeliveryAt) : "—"}</span>,
+      },
+      technician: {
+        id: "technician",
+        accessorFn: technicianSearch,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Teknisyen" />,
+        filterFn: textFilter(technicianSearch),
+        cell: ({ row }) => (
+          <TechnicianAssign
+            orderId={row.original.id}
+            assignedTechnicianId={row.original.assignedTechnicianId}
+            assignedTechnicianName={row.original.assignedTechnicianName}
+            technicians={technicians}
+            locked={isOrderLocked(row.original.status as OrderStatus)}
+            size="sm"
+            variant="meta"
+            className="px-0"
+          />
+        ),
+      },
+    }
+
+    return [
+      ...ORDER_LIST_DATA_COLUMN_ORDER.map((id) => byId[id]),
+      {
+        id: "actions",
+        enableSorting: false,
+        enableHiding: false,
+        enableColumnFilter: false,
+        header: () => <span className="text-xs font-medium text-muted-foreground">İşlem</span>,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end">
+            <ActionsMenu
+              viewHref={orderDetailHref(row.original.id, listHref)}
+              editHref={
+                isOrderLocked(row.original.status as OrderStatus)
+                  ? undefined
+                  : orderDetailHref(row.original.id, listHref, true)
+              }
+            />
+          </div>
+        ),
+      },
+    ]
+  }, [technicians, listHref])
+
+  const table = useReactTable({
+    data: orders,
+    columns,
+    state: { sorting, columnFilters, columnVisibility },
+    onSortingChange: (updater: Updater<SortingState>) => updateView("sorting", updater),
+    onColumnFiltersChange: (updater: Updater<ColumnFiltersState>) => updateView("columnFilters", updater),
+    onColumnVisibilityChange: (updater: Updater<VisibilityState>) => updateView("columnVisibility", updater),
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getRowId: (order) => order.id,
+  })
+
+  const visibleOrders = table.getRowModel().rows.map((row) => row.original)
+
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+    <div ref={rootRef} className="space-y-4" onChange={onChange} onSubmit={onSubmit} onClickCapture={onClick}>
+      <div aria-label="İş emri durum özeti" className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-card p-1 sm:grid-cols-5">
         {kpiConfigs.map((cfg) => {
           const isActive = activeStatus === cfg.filterValue
           const parts = isActive ? keptFilters : [`status=${cfg.filterValue}`, ...keptFilters]
           const href = parts.length > 0 ? `/orders?${parts.join("&")}` : "/orders"
           return (
-            <StatCard
-              key={cfg.key}
-              label={cfg.label}
-              value={cfg.count}
-              accent={cfg.accent}
-              href={href}
-              active={isActive}
-            />
+            <Button key={cfg.key} variant="ghost" size="sm" asChild
+              className={`w-full justify-between gap-2 px-2 text-xs last:col-span-2 sm:last:col-span-1 ${isActive ? "bg-muted text-foreground" : "text-muted-foreground"}`}>
+              <Link href={href} aria-current={isActive ? "page" : undefined}>
+                <span>{cfg.label}</span>
+                <span className="text-xs font-medium tabular-nums text-foreground">{cfg.count}</span>
+              </Link>
+            </Button>
           )
         })}
       </div>
 
-      <div className="hidden lg:block rounded-lg border border-border bg-card overflow-hidden">
-        <div className="overflow-x-auto max-h-[70vh]">
-          <table className="w-full text-sm">
-            <thead className="bg-muted border-b border-border text-muted-foreground text-xs uppercase tracking-wider sticky top-0 z-10">
-              <tr>
-                {/* İlişkili alanlar iki satırlı tek kolonda toplandı (11 -> 8):
-                    plaka+araç, durum+ödeme, giriş+teslim. Bilgi kaybı yok,
-                    tablo dar ekranlarda da yatay kaydırma gerektirmiyor. */}
-                <th className="px-3 py-2 text-left font-semibold">İş No</th>
-                <th className="px-3 py-2 text-left font-semibold">Araç</th>
-                <th className="px-3 py-2 text-left font-semibold">Müşteri</th>
-                <th className="px-3 py-2 text-left font-semibold">Teknisyen</th>
-                <th className="px-3 py-2 text-left font-semibold">Durum</th>
-                <th className="px-3 py-2 text-left font-semibold">Fatura</th>
-                <th className="px-3 py-2 text-right font-semibold">Toplam</th>
-                <th className="px-3 py-2 text-left font-semibold">Tarih</th>
-                <th className="px-3 py-2 text-right font-semibold sticky right-0 border-l border-border bg-muted">İşlem</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {orders.map((order) => (
-                <tr key={order.id} className="hover:bg-muted/60 transition-colors group">
-                  <td className="px-3 py-2 align-top">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        {toolbar && (
+          <div className="border-b border-border p-3 sm:p-4">
+            {view && <input type="hidden" name="view" value={view} form="order-list-filters" />}
+            {toolbar}
+          </div>
+        )}
+        <div className="relative" aria-label="İş emri sonuçları" aria-busy={isPending}>
+        {isPending && (
+          <div className="absolute inset-0 z-30 flex min-h-32 items-start justify-center bg-card/90">
+            <BrandSpinner size={32} label="İş emirleri yükleniyor…" className="sticky top-0 py-8" />
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2 sm:px-4">
+          <p className="text-xs text-muted-foreground" aria-live="polite">{visibleOrders.length} iş emri</p>
+          <div className="flex items-center gap-2">
+            {view && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => {
+                const params = new URLSearchParams(window.location.search)
+                params.delete("view")
+                window.history.replaceState(null, "", `/orders${params.size ? `?${params}` : ""}`)
+              }}>
+                Görünümü sıfırla
+              </Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="outline" size="sm" className="hidden lg:inline-flex">
+                  Kolonlar
+                  <ChevronDown />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    >
+                      {ORDER_LIST_COLUMN_LABELS[column.id as keyof typeof ORDER_LIST_COLUMN_LABELS] ?? column.id}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {orders.length === 0 && emptyState}
+        {orders.length > 0 && <div className="hidden lg:block">
+          <Table containerClassName="max-h-[70vh]" className="text-sm">
+            <TableHeader className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                  {headerGroup.headers.map((header) => {
+                    const sticky = header.column.id === "actions"
+                    return (
+                      <TableHead
+                        key={header.id}
+                        className={
+                          sticky
+                            ? "sticky right-0 z-20 h-9 border-l border-border bg-card px-3 py-1 text-right"
+                            : "h-9 bg-card px-3 py-1"
+                        }
+                      >
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
+                    )
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} className="group hover:bg-muted/60">
+                    {row.getVisibleCells().map((cell) => {
+                      const sticky = cell.column.id === "actions"
+                      return (
+                        <TableCell
+                          key={cell.id}
+                          className={
+                            sticky
+                              ? "sticky right-0 border-l border-border bg-card h-9 px-3 py-1 align-middle whitespace-nowrap group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]"
+                              : "h-9 px-3 py-1 align-middle whitespace-nowrap"
+                          }
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      )
+                    })}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                    Bu filtrelere uyan iş emri yok
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>}
+
+        {orders.length > 0 && <div className="lg:hidden space-y-2.5 p-3">
+          {visibleOrders.map((order) => (
+            <div
+              key={order.id}
+              className="rounded-lg border border-border bg-card p-3.5 hover:border-border transition-colors"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Link
-                      href={`/orders/${order.id}`}
-                      className="font-mono text-sm font-bold text-foreground hover:text-primary transition-colors"
+                      href={orderDetailHref(order.id, listHref)}
+                      className="font-mono text-xs font-medium text-foreground hover:text-primary transition-colors"
                     >
                       {order.workOrderNo}
                     </Link>
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    {/* Plaka ve marka/model tek kimlik bloğu: üstte plaka rozeti,
-                        altında kırpılan marka/model. */}
-                    <div className="max-w-[11rem]">
-                      {order.vehicle.id ? (
-                        <Link href={`/vehicles/${order.vehicle.id}`}>
-                          <PlateBadge plate={order.vehicle.plate} size="sm" />
-                        </Link>
-                      ) : (
+                    {order.vehicle.id ? (
+                      <Link href={`/vehicles/${order.vehicle.id}`}>
                         <PlateBadge plate={order.vehicle.plate} size="sm" />
-                      )}
-                      <div
-                        className="mt-1 text-[11px] leading-tight text-muted-foreground truncate"
-                        title={`${order.vehicle.brand} ${order.vehicle.model}`}
-                      >
-                        {order.vehicle.brand} {order.vehicle.model}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    {/* Kurumsal unvanlar çok uzun olabiliyor; tam ad title ile erişilebilir kalır. */}
-                    <div className="min-w-[10rem] max-w-[14rem]">
-                      {order.customer.id ? (
-                        <Link
-                          href={`/customers/${order.customer.id}`}
-                          title={customerName(order.customer)}
-                          className="text-foreground font-medium hover:text-primary transition-colors block truncate"
-                        >
-                          {customerName(order.customer)}
-                        </Link>
-                      ) : (
-                        <div className="text-foreground font-medium truncate" title={customerName(order.customer)}>
-                          {customerName(order.customer)}
-                        </div>
-                      )}
-                      <div className="text-[11px] leading-tight text-muted-foreground tabular-nums truncate">
-                        {order.customer.phone}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 align-top text-foreground">
-                    <TechnicianAssign
-                      orderId={order.id}
-                      assignedTechnicianId={order.assignedTechnicianId}
-                      assignedTechnicianName={order.assignedTechnicianName}
-                      technicians={technicians}
-                      locked={isOrderLocked(order.status as OrderStatus)}
-                      size="sm"
-                    />
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    {/* İş durumu ve ödeme durumu aynı sütunda alt alta. */}
-                    <div className="flex flex-col items-start gap-1">
-                      <StatusBadge status={order.status} />
-                      <PaymentBadge status={order.paymentStatus} />
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 align-top whitespace-nowrap">
-                    {/* Fatura numarası elle giriliyor; iş bitmiş emirde boş kalması
-                        gözden kaçan fatura demek — ikon + metinle işaretlenir. */}
-                    <InvoiceCell invoiceNo={order.invoiceNo} missing={order.invoiceMissing} />
-                  </td>
-                  <td className="px-3 py-2 align-top text-right font-semibold text-foreground tabular-nums whitespace-nowrap">
-                    {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
-                  </td>
-                  <td className="px-3 py-2 align-top text-xs whitespace-nowrap">
-                    {/* Giriş üstte (her zaman dolu), tahmini teslim altta. */}
-                    <div className="text-muted-foreground tabular-nums">
-                      <span className="text-muted-foreground">Giriş</span> {formatDate(order.createdAt)}
-                    </div>
-                    <div className="mt-0.5 text-muted-foreground tabular-nums">
-                      <span className="text-muted-foreground">Teslim</span>{" "}
-                      {order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : <span className="text-muted-foreground">—</span>}
-                    </div>
-                  </td>
-                  {/* Sticky kolonun zemini opak kalmalı: yarı saydam hover rengiyle
-                      altından kayan içerik sızıp aksiyon butonuyla üst üste biniyordu. */}
-                  <td className="px-3 py-2 align-top sticky right-0 border-l border-border bg-card group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]">
-                    <div className="flex items-center justify-end">
-                      <ActionsMenu
-                        viewHref={`/orders/${order.id}`}
-                        // Teslim/iptal edilmiş emirde düzenleme kapalı → aksiyonu hiç gösterme.
-                        editHref={
-                          isOrderLocked(order.status as OrderStatus)
-                            ? undefined
-                            : `/orders/${order.id}?edit=1`
-                        }
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="lg:hidden space-y-2.5">
-        {orders.map((order) => (
-          <div
-            key={order.id}
-            className="rounded-lg border border-border bg-card p-3.5 hover:border-border transition-colors"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Link
-                    href={`/orders/${order.id}`}
-                    className="font-mono text-sm font-bold text-foreground hover:text-primary transition-colors"
-                  >
-                    {order.workOrderNo}
-                  </Link>
-                  {order.vehicle.id ? (
-                    <Link href={`/vehicles/${order.vehicle.id}`}>
+                      </Link>
+                    ) : (
                       <PlateBadge plate={order.vehicle.plate} size="sm" />
-                    </Link>
+                    )}
+                  </div>
+                  <Link
+                    href={order.customer.id ? `/customers/${order.customer.id}` : "#"}
+                    className="mt-1.5 text-sm font-semibold text-foreground truncate block hover:text-primary transition-colors"
+                  >
+                    {customerName(order.customer)}
+                  </Link>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {order.vehicle.brand} {order.vehicle.model}
+                  </p>
+                </div>
+                <MobileActionsMenu
+                  viewHref={orderDetailHref(order.id, listHref)}
+                  editHref={
+                    isOrderLocked(order.status as OrderStatus)
+                      ? undefined
+                      : orderDetailHref(order.id, listHref, true)
+                  }
+                />
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <StatusBadge status={order.status} />
+                <PaymentText status={order.paymentStatus} />
+                {/* Mobil kartta usta hiç görünmüyordu; rozet hem bilgi hem atama tetikleyicisi. */}
+                <TechnicianAssign
+                  orderId={order.id}
+                  assignedTechnicianId={order.assignedTechnicianId}
+                  assignedTechnicianName={order.assignedTechnicianName}
+                  technicians={technicians}
+                  locked={isOrderLocked(order.status as OrderStatus)}
+                  size="sm"
+                />
+              </div>
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Fatura</span>
+                <InvoiceCell invoiceNo={order.invoiceNo} missing={order.invoiceMissing} />
+              </div>
+              <div className="mt-3 flex items-center justify-between text-xs">
+                <div className="text-muted-foreground">
+                  {order.estimatedDeliveryAt ? (
+                    <>Tahmini: <span className="text-foreground font-medium">{formatDate(order.estimatedDeliveryAt)}</span></>
                   ) : (
-                    <PlateBadge plate={order.vehicle.plate} size="sm" />
+                    <span>Giriş: {formatDate(order.createdAt)}</span>
                   )}
                 </div>
-                <Link
-                  href={order.customer.id ? `/customers/${order.customer.id}` : "#"}
-                  className="mt-1.5 text-sm font-semibold text-foreground truncate block hover:text-primary transition-colors"
-                >
-                  {customerName(order.customer)}
-                </Link>
-                <p className="text-xs text-muted-foreground truncate">
-                  {order.vehicle.brand} {order.vehicle.model}
-                </p>
-              </div>
-              <MobileActionsMenu
-                viewHref={`/orders/${order.id}`}
-                editHref={
-                  isOrderLocked(order.status as OrderStatus)
-                    ? undefined
-                    : `/orders/${order.id}?edit=1`
-                }
-              />
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <StatusBadge status={order.status} />
-              <PaymentBadge status={order.paymentStatus} />
-              {/* Mobil kartta usta hiç görünmüyordu; rozet hem bilgi hem atama tetikleyicisi. */}
-              <TechnicianAssign
-                orderId={order.id}
-                assignedTechnicianId={order.assignedTechnicianId}
-                assignedTechnicianName={order.assignedTechnicianName}
-                technicians={technicians}
-                locked={isOrderLocked(order.status as OrderStatus)}
-                size="sm"
-              />
-              {/* Aynı uyarı mobil kartta da görünmeli. */}
-              {order.invoiceMissing ? <InvoiceMissingBadge /> : null}
-            </div>
-            <div className="mt-3 flex items-center justify-between text-xs">
-              <div className="text-muted-foreground">
-                {order.estimatedDeliveryAt ? (
-                  <>Tahmini: <span className="text-foreground font-medium">{formatDate(order.estimatedDeliveryAt)}</span></>
-                ) : (
-                  <span>Giriş: {formatDate(order.createdAt)}</span>
-                )}
-              </div>
-              <div className="font-semibold text-foreground">
-                {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
+                <div className="font-semibold text-foreground">
+                  {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>}
+        </div>
       </div>
     </div>
   )

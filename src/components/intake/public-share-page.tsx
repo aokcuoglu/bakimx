@@ -502,17 +502,17 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
 
         {/* Actions (screen only) */}
         <div className="print:hidden space-y-3 pt-2 pb-8 safe-area-bottom">
-          <Button onClick={handlePrint} className="w-full" variant="default" size="xl">
+          <Button onClick={handlePrint} className="w-full" variant="foreground" size="xl">
             <Printer className="size-5" />
             Yazdır / PDF Olarak Kaydet
           </Button>
-          <Button asChild variant="default" size="xl" className="w-full">
+          <Button asChild variant="outline" size="xl" className="w-full">
             <Link href={`/s/${token}/pdf`} target="_blank">
               <FileDown className="size-5" />
               Yazdırılabilir Sayfa
             </Link>
           </Button>
-          <Button onClick={handleWhatsAppShare} className="w-full bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90" size="xl" aria-label="WhatsApp ile paylaş">
+          <Button variant="whatsapp" onClick={handleWhatsAppShare} className="w-full" size="xl" aria-label="WhatsApp ile paylaş">
             <MessageCircle className="size-5" />
             WhatsApp ile Paylaş
           </Button>

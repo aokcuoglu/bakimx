@@ -20,3 +20,9 @@ export function isOnboardingPending(profile: unknown): boolean {
   return typeof profile === "object" && profile !== null &&
     "status" in profile && profile.status === "pending"
 }
+
+/** True after the post-registration wizard has been saved (status completed). Legacy profiles without status are false. */
+export function isOnboardingCompleted(profile: unknown): boolean {
+  return typeof profile === "object" && profile !== null &&
+    "status" in profile && profile.status === "completed"
+}

@@ -43,15 +43,10 @@ export default async function CashboxPage() {
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Kasa">
       <div className="space-y-5 sm:space-y-6 max-w-full">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Kasa</span>
-        </div>
+
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Kasa</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Tahsilat ve alacak takibi</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -61,7 +56,7 @@ export default async function CashboxPage() {
                 Yaşlandırma
               </Link>
             </Button>
-            <Button size="lg" className="touch-manipulation" asChild>
+            <Button variant="foreground" size="lg" className="touch-manipulation" asChild>
               <Link href="/cashbox/payments/new">
                 <Plus className="size-4" />
                 Yeni Tahsilat

@@ -237,7 +237,7 @@ function ExternalLaborSheet({
 
         <DialogFooter>
           <div className="flex gap-2">
-            <Button
+            <Button variant="foreground"
               type="button"
               size="lg"
               className="flex-1 touch-manipulation"

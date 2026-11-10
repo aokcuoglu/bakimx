@@ -189,7 +189,7 @@ export function VehicleDetail({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <VehicleIdentity plate={v.plate} brand={v.brand} model={v.model} />
           <div className="flex flex-wrap items-center gap-2">
-            <Button asChild>
+            <Button variant="foreground" asChild>
               <Link href={`/orders/new?vehicleId=${v.id}`} aria-label="Yeni iş emri oluştur">
                 <Wrench className="size-4" />
                 <span className="hidden sm:inline">Yeni İş Emri</span>
@@ -293,7 +293,7 @@ export function VehicleDetail({
             }
           >
             <Tabs defaultValue="own">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList variant="line" className="grid w-full grid-cols-2">
                 <TabsTrigger value="own">Kendi ({workOrders.length})</TabsTrigger>
                 <TabsTrigger value="other">Başkası ({crossWorkshop.orders.length})</TabsTrigger>
               </TabsList>

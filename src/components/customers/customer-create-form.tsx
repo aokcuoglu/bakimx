@@ -238,7 +238,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                       <Button
                         type="button"
                         onClick={() => field.onChange("individual")}
-                        variant={field.value === "individual" ? "default" : "ghost"}
+                        variant={field.value === "individual" ? "secondary" : "ghost"}
                         size="sm"
                         className={cn(
                           "gap-1.5",
@@ -253,7 +253,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                       <Button
                         type="button"
                         onClick={() => field.onChange("corporate")}
-                        variant={field.value === "corporate" ? "default" : "ghost"}
+                        variant={field.value === "corporate" ? "secondary" : "ghost"}
                         size="sm"
                         className={cn(
                           "gap-1.5",
@@ -521,7 +521,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                               key={opt.key}
                               type="button"
                               onClick={() => field.onChange(opt.key)}
-                              variant={field.value === opt.key ? "default" : "outline"}
+                              variant="outline"
                               size="sm"
                               className={cn(
                                 field.value === opt.key
@@ -584,7 +584,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                               key={opt.key}
                               type="button"
                               onClick={() => field.onChange(opt.key)}
-                              variant={field.value === opt.key ? "default" : "outline"}
+                              variant="outline"
                               size="sm"
                               className={cn(
                                 field.value === opt.key
@@ -740,7 +740,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
           <Button type="button" variant="outline" onClick={() => (onCancel ? onCancel() : router.back())} disabled={pending}>
             İptal
           </Button>
-          <Button type="submit" disabled={pending} className="gap-1.5">
+          <Button variant="foreground" type="submit" disabled={pending} className="gap-1.5">
             {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             {mode === "edit" ? "Güncelle" : "Müşteri Kaydet"}
           </Button>

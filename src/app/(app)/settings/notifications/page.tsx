@@ -1,9 +1,9 @@
 import { getAppData } from "@/app/(app)/data"
 import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
+import { SettingsPageHeader } from "@/components/settings/settings-page-header"
 import { NotificationSettings } from "@/components/settings/notification-settings"
 import { getNotificationTemplates, getCommunicationProviders } from "./actions"
-import Link from "next/link"
 
 export const metadata = { title: "Bildirim Ayarları" }
 
@@ -14,7 +14,7 @@ export default async function NotificationsPage() {
 
   if (!workshop) {
     return (
-      <AppShell>
+      <AppShell wide>
         <div className="text-center py-12 text-muted-foreground">
           <p>İş yeri bilgisi bulunamadı</p>
         </div>
@@ -28,21 +28,12 @@ export default async function NotificationsPage() {
   ])
 
   return (
-    <AppShell constrained workshopName={workshop.name} pageTitle="Bildirim Ayarları">
-      <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <Link href="/settings?tab=profile" className="hover:text-foreground">Ayarlar</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Bildirim Ayarları</span>
-        </div>
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Bildirim Ayarları</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">SMS, WhatsApp ve e-posta bildirim şablonlarını yönetin</p>
-        </div>
-        <NotificationSettings templates={templates} providers={providers} />
-      </div>
+    <AppShell wide workshopName={workshop.name} pageTitle="Bildirimler">
+      <SettingsPageHeader
+        title="Bildirimler"
+        description="SMS, WhatsApp ve e-posta bildirim şablonlarını yönetin."
+      />
+      <NotificationSettings templates={templates} providers={providers} />
     </AppShell>
   )
 }

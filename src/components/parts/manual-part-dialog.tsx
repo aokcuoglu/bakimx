@@ -218,7 +218,7 @@ export function ManualPartDialog({
               <span className="block text-xs font-medium text-muted-foreground">Birim</span>
               <OrderItemUnitCombobox
                 value={unit}
-                className="h-8 w-full"
+                className="h-7 w-full"
                 onValueChange={(next) => {
                   setUnit(next)
                   if (!isDivisibleOrderItemUnit(next)) setQuantity((q) => Math.max(1, Math.round(q)))
@@ -228,7 +228,7 @@ export function ManualPartDialog({
             </div>
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">Birim Fiyat</span>
-              <InputGroup className="h-8 w-32">
+              <InputGroup className="h-7 w-32">
                 <InputGroupAddon className="text-muted-foreground">₺</InputGroupAddon>
                 <InputGroupInput
                   type="text"
@@ -265,7 +265,7 @@ export function ManualPartDialog({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
             Vazgeç
           </Button>
-          <Button type="button" onClick={() => void submit()} disabled={submitting || !name.trim()}>
+          <Button variant="foreground" type="button" onClick={() => void submit()} disabled={submitting || !name.trim()}>
             {submitting ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
             Ekle
           </Button>

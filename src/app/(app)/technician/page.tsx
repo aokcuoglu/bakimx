@@ -53,7 +53,7 @@ export default async function TechnicianPage({
       <AppShell workshopName={workshop?.name} pageTitle="Teknisyen Paneli">
         <div className="space-y-5 sm:space-y-6">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Teknisyen Paneli</h2>
+            <h2 className="text-page-title text-foreground">Teknisyen Paneli</h2>
             <p className="text-sm text-muted-foreground mt-0.5">İş atamalarınızı ve görevlerinizi yönetin</p>
           </div>
           <Card>
@@ -62,8 +62,8 @@ export default async function TechnicianPage({
               <CardDescription>Ayarlar &gt; Ekip sayfasından bir teknisyen ekleyin</CardDescription>
             </CardHeader>
             <CardFooter className="justify-center border-t-0 bg-transparent">
-              <Button asChild>
-                <Link href="/settings?tab=team">
+              <Button variant="foreground" asChild>
+                <Link href="/settings/team">
                   Ekip Sayfasına Git
                 </Link>
               </Button>

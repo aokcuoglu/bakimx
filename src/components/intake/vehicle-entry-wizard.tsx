@@ -546,10 +546,10 @@ export function VehicleEntryWizard({
           />
           <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-6 text-center sm:p-10">
             <div className="flex flex-col items-center gap-4">
-              <span className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary-strong">
+              <span className="flex size-16 items-center justify-center rounded-lg border border-border bg-muted text-foreground">
                 <Barcode className="size-8" />
               </span>
-              <Button type="button" className="gap-2" onClick={() => setScanner("vin")}>
+              <Button variant="foreground" type="button" className="gap-2" onClick={() => setScanner("vin")}>
                 <ScanLine className="size-4" /> Kamerayla şase oku
               </Button>
               <div className="w-full max-w-sm space-y-1.5 text-left">
@@ -577,7 +577,7 @@ export function VehicleEntryWizard({
             onPick={selectExisting}
           />
           <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
-            <Button
+            <Button variant="foreground"
               type="button"
               className="gap-2"
               disabled={!isValidVin(query)}
@@ -617,7 +617,7 @@ export function VehicleEntryWizard({
             onPickCustomer={(c) => { setMethod("customer"); setQuery(""); setResults([]); pickCustomer(c.customerId, c.label) }}
           />
           <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
-            <Button
+            <Button variant="foreground"
               type="button"
               className="gap-2"
               disabled={!query.trim()}
@@ -679,7 +679,7 @@ export function VehicleEntryWizard({
           )}
           <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
             {pickedCustomer && (
-              <Button
+              <Button variant="foreground"
                 type="button"
                 className="gap-2"
                 onClick={() => { setOwner(pickedCustomer); goToVehicleStep() }}
@@ -747,7 +747,7 @@ export function VehicleEntryWizard({
                   <p className="text-xs text-muted-foreground">{duplicate.sublabel}</p>
                 </div>
               </div>
-              <Button type="button" size="sm" className="w-full" onClick={() => selectExisting(duplicate)}>
+              <Button variant="foreground" type="button" size="sm" className="w-full" onClick={() => selectExisting(duplicate)}>
                 <Car className="mr-1 size-4" /> Bu aracı seç
               </Button>
             </div>
@@ -760,7 +760,7 @@ export function VehicleEntryWizard({
           */}
           <CrossWorkshopHistoryLoader plate={normalizePlate(fields.plate)} refreshKey={ocrUnlockKey} />
           <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
-            <Button type="button" className="gap-2" onClick={leaveVehicleStep}>
+            <Button variant="foreground" type="button" className="gap-2" onClick={leaveVehicleStep}>
               Devam <ChevronRight className="size-4" />
             </Button>
           </WizardActions>
@@ -794,7 +794,7 @@ export function VehicleEntryWizard({
             />
           )}
           <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
-            <Button type="button" className="gap-2" disabled={!owner || saving} onClick={createVehicle}>
+            <Button variant="foreground" type="button" className="gap-2" disabled={!owner || saving} onClick={createVehicle}>
               {saving ? <><Loader2 className="size-4 animate-spin" /> Kaydediliyor…</> : <>Aracı kaydet <ChevronRight className="size-4" /></>}
             </Button>
           </WizardActions>
@@ -845,7 +845,7 @@ export function VehicleEntryWizard({
           {/* Seçilen aracın diğer servislerdeki geçmişi (BAK-77). */}
           <CrossWorkshopHistoryLoader vehicleId={confirmed.vehicleId} refreshKey={ocrUnlockKey} />
           <WizardActions back={<Button type="button" variant="outline" onClick={restart}>Başka araç seç</Button>}>
-            <Button type="button" className="gap-2" onClick={onComplete}>
+            <Button variant="foreground" type="button" className="gap-2" onClick={onComplete}>
               Kabul detaylarına geç <ChevronRight className="size-4" />
             </Button>
           </WizardActions>

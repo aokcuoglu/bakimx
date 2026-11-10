@@ -6,8 +6,9 @@ import {
   pollCompletionGuard,
   procurementRequestHash,
   reconcileBackoffMs,
+  sweepExternalProcurements,
 } from "./service"
-import type { ProcurementOrder } from "./types"
+import type { ProcurementOrder, ProcurementProviderClient } from "./types"
 import { requiresProcurementReconfirmation } from "./types"
 
 const root = join(import.meta.dir, "../../..")
@@ -38,7 +39,7 @@ describe("external procurement guardrails", () => {
   })
 
   test("maps the PR #86 conflict contract to the reconfirmation path", () => {
-    for (const code of ["PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED"]) {
+    for (const code of ["PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED", "OFFER_EXPIRED"]) {
       expect(requiresProcurementReconfirmation(code)).toBe(true)
     }
     expect(requiresProcurementReconfirmation("PROVIDER_UNAVAILABLE")).toBe(false)
@@ -104,6 +105,49 @@ describe("external procurement guardrails", () => {
     expect(pollCompletionGuard({ id: "local-1", partnerVersion: 4 }, lease)).toEqual({
       id: "local-1", partnerVersion: 4, nextReconcileAt: lease,
     })
+  })
+
+  test("scheduled reconciliation resolves an ambiguous initiation by its persisted key", async () => {
+    const calls: string[] = []
+    const row = { id: "local-1", idempotencyKey: "attempt-1", createdAt: new Date("2026-08-21T20:00:00Z"), externalOrderId: null, partnerVersion: 0, reconcileFailureCount: 0 }
+    const database = {
+      externalProcurementOrder: {
+        findMany: async () => [row],
+        updateMany: async () => ({ count: 1 }),
+      },
+      $transaction: async (fn: (tx: unknown) => Promise<boolean>) => fn({
+        externalProcurementOrder: {
+          findUnique: async () => ({ externalOrderId: null, partnerVersion: 0, cancellationRequestedAt: null }),
+          updateMany: async () => { calls.push("parent"); return { count: 1 } },
+        },
+        externalProcurementOrderItem: { updateMany: async () => { calls.push("item"); return { count: 1 } } },
+      }),
+    } as unknown as Parameters<typeof sweepExternalProcurements>[2]
+    const client = {
+      provider: "getirbakim",
+      getOrderByIdempotencyKey: async (key: string) => {
+        expect(key).toBe("attempt-1")
+        return { ...remoteOrder, status: "REQUESTED" as const, version: 1 }
+      },
+    } as ProcurementProviderClient
+    expect(await sweepExternalProcurements(client, { now: new Date("2026-08-21T20:01:00Z") }, database)).toEqual({ processed: 1, applied: 1, failed: 0 })
+    expect(calls).toEqual(["parent", "item"])
+  })
+
+  test("an authoritative missing result releases an old unresolved item", async () => {
+    let released = false
+    const row = { id: "local-1", idempotencyKey: "attempt-1", createdAt: new Date("2026-08-21T18:00:00Z"), externalOrderId: null, partnerVersion: 0, reconcileFailureCount: 0 }
+    const database = { externalProcurementOrder: {
+      findMany: async () => [row], updateMany: async () => ({ count: 1 }),
+      deleteMany: async (input: { where: { partnerStatus: string; externalOrderId: null } }) => {
+        expect(input.where).toMatchObject({ partnerStatus: "INITIATING", externalOrderId: null })
+        released = true
+        return { count: 1 }
+      },
+    } } as unknown as Parameters<typeof sweepExternalProcurements>[2]
+    const client = { provider: "getirbakim", getOrderByIdempotencyKey: async () => null } as unknown as ProcurementProviderClient
+    expect(await sweepExternalProcurements(client, { now: new Date("2026-08-21T20:01:00Z") }, database)).toEqual({ processed: 1, applied: 0, failed: 0 })
+    expect(released).toBe(true)
   })
 
   test("schema contains durable event dedupe and manual reconciliation signals", () => {

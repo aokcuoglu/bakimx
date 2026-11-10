@@ -1,0 +1,163 @@
+/* Zen DevTools, app.attio.com/bakimx/home, 2026-09-30 (#712).
+   Inner surface: 740px; header: 52px; option: 36px; footer: 44px.
+   Keep these rules local to the search palette. */
+.panel {
+  top: 14dvh;
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 24px);
+  max-width: 742px;
+  height: min(70dvh, 542px);
+  max-height: calc(100dvh - 24px);
+  translate: -50% 0;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--shadow-dialog);
+  --palette-hover: color-mix(in oklch, var(--card), var(--foreground) 3.5%);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 53px;
+  gap: 4px;
+  padding: 4px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  box-shadow: none;
+}
+
+.input:focus-visible {
+  border: 0;
+  box-shadow: none;
+}
+
+.results {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 10px 8px;
+  scrollbar-width: thin;
+}
+
+.sectionTitle {
+  padding: 16px 6px 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.option {
+  width: 100%;
+  height: auto;
+  min-height: 36px;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 12px;
+  text-align: left;
+  color: var(--foreground);
+}
+
+.option:hover,
+.selected {
+  background: var(--palette-hover);
+}
+
+.icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--palette-hover);
+  color: var(--muted-foreground);
+}
+
+.footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.keyboardHint {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding-left: 4px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.arrowKeys {
+  display: flex;
+  gap: 2px;
+}
+
+.arrowKeys svg {
+  width: 18px;
+  height: 18px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.action {
+  min-width: 0;
+  max-width: 60%;
+  gap: 6px;
+  padding: 4px 6px 4px 8px;
+}
+
+.enterKey {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+}
+
+@media (max-width: 639px) {
+  .panel {
+    top: 5dvh;
+    height: min(85dvh, 542px);
+  }
+
+  .header {
+    padding-inline: 12px;
+  }
+
+  .desktopHint {
+    display: none;
+  }
+}

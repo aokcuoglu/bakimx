@@ -37,5 +37,5 @@ export async function POST() {
   } catch {
     // logoutAction redirects, which throws in API route
   }
-  return NextResponse.redirect(new URL("/login", process.env.APP_URL || "http://localhost:3000"))
+  return NextResponse.redirect(new URL("/login", process.env.APP_URL || "http://localhost:3001"))
 }

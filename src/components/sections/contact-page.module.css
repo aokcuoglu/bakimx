@@ -1,5 +1,5 @@
 .page { background: var(--card); }
-.content { width: min(100% - 2.5rem, 1200px); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); min-height: 760px; border-inline: 1px solid var(--border); }
+.content { width: min(100% - 2.5rem, var(--public-width, 1124px)); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); min-height: 760px; border-inline: 1px solid var(--border); }
 .intro { padding: clamp(3rem, 8vw, 7rem) clamp(1.5rem, 6vw, 6rem); border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; }
 .intro h1 { max-width: 540px; margin: 2.5rem 0 0; font-size: clamp(3rem, 5vw, 5rem); line-height: .98; letter-spacing: -.065em; font-weight: 600; }
 .lead { max-width: 440px; margin: 1.75rem 0 0; color: var(--muted-foreground); font-size: 1.05rem; line-height: 1.65; }

@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { sanitizeDemoAttribution } from "@/lib/demo-attribution";
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -26,6 +28,8 @@ interface DemoRequestBody {
   city: string;
   monthlyVehicles: string;
   notes?: string;
+  attribution?: unknown;
+  targetingConsent?: boolean;
 }
 
 function validateBody(body: DemoRequestBody): Record<string, string> {
@@ -66,6 +70,8 @@ export async function POST(request: Request) {
   try {
     const body: DemoRequestBody = await request.json();
 
+    const attribution = process.env.NEXT_PUBLIC_ANALYTICS_ENABLED === "true" && body.targetingConsent === true
+      ? sanitizeDemoAttribution(body.attribution) : {};
     const validationErrors = validateBody(body);
 
     if (Object.keys(validationErrors).length > 0) {
@@ -102,6 +108,8 @@ export async function POST(request: Request) {
             monthlyVehicles: request.monthlyVehicles,
             notes: request.notes,
             demoRequestId: request.id,
+            ...attribution,
+            attributionRecordedAt: Object.keys(attribution).length > 0 ? new Date() : null,
           },
         })
       }
@@ -127,6 +135,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: true,
+        eventId: randomUUID(),
         message: "Demo talebiniz başarıyla alındı. En kısa sürede sizinle iletişime geçeceğiz.",
       },
       { status: 200 }

@@ -1,6 +1,9 @@
 import type { UnifiedResult } from "@/lib/search/unified-results"
 
 const SEARCH_ENDPOINT = "/api/search/customer-vehicle"
+const ORDER_SEARCH_ENDPOINT = "/api/search/orders"
+
+export type OrderSearchResult = { id: string; label: string; sublabel: string }
 
 /** Bir arama sonucunun gideceği detay sayfası URL'i. */
 export function resultHref(result: UnifiedResult): string {
@@ -22,6 +25,19 @@ export async function fetchGlobalSearchResults(query: string): Promise<UnifiedRe
     if (!res.ok) return []
     const data = await res.json()
     return Array.isArray(data?.results) ? (data.results as UnifiedResult[]) : []
+  } catch {
+    return []
+  }
+}
+
+export async function fetchOrderSearchResults(query: string): Promise<OrderSearchResult[]> {
+  const q = query.trim()
+  if (q.length < 2) return []
+  try {
+    const res = await fetch(`${ORDER_SEARCH_ENDPOINT}?q=${encodeURIComponent(q)}`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return Array.isArray(data?.results) ? (data.results as OrderSearchResult[]) : []
   } catch {
     return []
   }

@@ -196,23 +196,26 @@ export function VinCandidateList({
         <p className="text-xs font-medium text-muted-foreground">
           Katalogda {candidates.length} motor varyantı bulundu — aracınıza uyanı seçin
         </p>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="xs"
           onClick={onDismiss}
-          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+          className="px-1 text-muted-foreground underline underline-offset-2"
         >
           Vazgeç
-        </button>
+        </Button>
       </div>
       {candidates.map((c, i) => {
         const selected = selectedId === c.vehicleTypeId
         return (
-          <button
+          <Button
             key={c.vehicleTypeId}
             type="button"
+            variant="outline"
             onClick={() => onSelect(c)}
             className={cn(
-              "w-full min-h-8 flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors",
+              "h-auto min-h-7 w-full justify-start gap-2 px-3 py-2 text-left whitespace-normal",
               selected
                 ? "border-primary bg-primary/5 text-foreground"
                 : "border-transparent bg-background hover:border-border"
@@ -228,7 +231,7 @@ export function VinCandidateList({
                 En uygun
               </span>
             )}
-          </button>
+          </Button>
         )
       })}
     </div>

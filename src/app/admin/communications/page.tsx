@@ -34,7 +34,7 @@ export default async function AdminCommunicationsPage({ searchParams }: { search
     <div className="space-y-7">
       <div className="space-y-1">
         <p className="text-sm font-medium text-primary">Platform operasyonları</p>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">İletişim Kayıtları</h1>
+        <h1 className="text-page-title text-foreground">İletişim Kayıtları</h1>
         <p className="text-sm text-muted-foreground">{total} gönderim denemesi. Gönderilmeyen kayıtların sebebi görünür tutulur.</p>
       </div>
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { AlertCircle, Clock3, Package, Store } from "lucide-react"
@@ -21,13 +21,14 @@ type SelectedOffer = { product: GetirbakimExactProduct; offer: GetirbakimOffer }
 
 const RECONFIRMATION_REQUIRED_CODES = new Set(["PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED"])
 
-export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderItemId, quantity }: {
+export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderItemId, quantity, procurementExists = false }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   part: PartInfo
   orderId?: string
   orderItemId?: string
   quantity?: number
+  procurementExists?: boolean
 }) {
   const router = useRouter()
   const [request, setRequest] = useState<{ partNo: string; result: OfferResponse } | null>(null)
@@ -35,6 +36,8 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
   const [quote, setQuote] = useState<Quote | null>(null)
   const [pending, setPending] = useState(false)
   const [confirmationChanged, setConfirmationChanged] = useState(false)
+  const [refreshCount, setRefreshCount] = useState(0)
+  const idempotencyKey = useRef<string | null>(null)
   const partNo = part.sku?.trim() ?? ""
   const purchaseQuantity = quantity ?? 1
 
@@ -54,9 +57,10 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
         setRequest({ partNo, result: { status: "upstream_error", normalizedPartNo: partNo } })
       })
     return () => controller.abort()
-  }, [open, partNo])
+  }, [open, partNo, refreshCount])
 
   async function chooseOffer(product: GetirbakimExactProduct, offer: GetirbakimOffer) {
+    idempotencyKey.current = null
     setSelected({ product, offer }); setQuote(null); setConfirmationChanged(false); setPending(true)
     try {
       const response = await fetch("/api/orders/external-procurements", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "quote", selectedOfferId: offer.selectedOfferId, quantity: purchaseQuantity }) })
@@ -67,10 +71,11 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
 
   async function confirmPurchase() {
     if (!selected || !quote || !orderId || !orderItemId) return
+    idempotencyKey.current ??= crypto.randomUUID()
     setPending(true)
     try {
       const response = await fetch("/api/orders/external-procurements", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
-        action: "purchase", orderId, orderItemId, idempotencyKey: crypto.randomUUID(),
+        action: "purchase", orderId, orderItemId, idempotencyKey: idempotencyKey.current,
         externalProductId: selected.product.sourceProductId, selectedOfferId: selected.offer.selectedOfferId,
         quantity: purchaseQuantity, expectedUnitNetKurus: quote.unitNetKurus,
         confirmationToken: quote.confirmationToken,
@@ -86,8 +91,18 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
           setConfirmationChanged(true)
           return
         }
+        if (error instanceof SupplierResponseError && error.code === "OFFER_EXPIRED") {
+          idempotencyKey.current = null
+          setSelected(null)
+          setQuote(null)
+          setRequest(null)
+          setRefreshCount((count) => count + 1)
+          setConfirmationChanged(true)
+          return
+        }
         throw error
       }
+      idempotencyKey.current = null
       toast.success("Satın alma talebi oluşturuldu; tedarik bekleniyor.")
       onOpenChange(false); router.refresh()
     } catch (error) { toast.error(error instanceof Error ? error.message : "Satın alma talebi oluşturulamadı.") }
@@ -118,6 +133,7 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
         <div className="max-h-[60vh] space-y-2 overflow-y-auto p-3">
           {loading ? <StateMessage>Gerçek tedarikçi teklifleri yükleniyor…</StateMessage> : null}
           {!loading && result?.status === "no_match" ? <StateMessage>Bu parça numarasıyla eşleşen GetirBakım ürünü bulunamadı.</StateMessage> : null}
+          {!loading && result?.status === "not_configured" ? <StateMessage>GetirBakım katalog bağlantısı bu ortamda etkin değil. Tedarikçi teklifleri sorgulanamadı.</StateMessage> : null}
           {!loading && result?.status === "no_offers" ? <StateMessage>Ürün eşleşti ancak aktif tedarikçi teklifi bulunmuyor.</StateMessage> : null}
           {!loading && result?.status === "upstream_error" ? <StateMessage error>Teklifler şu anda alınamıyor. Daha sonra yeniden deneyin.</StateMessage> : null}
           {products.map((product) => (
@@ -132,13 +148,14 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
             </section>
           ))}
         </div>
-        {confirmationChanged ? <Alert className="mx-3 mb-3" variant="destructive"><AlertTitle>Bağlayıcı teklif yenilendi</AlertTitle><AlertDescription>Fiyat, politika veya teklif geçerliliği değişti. Yeni bağlayıcı özeti kontrol edip yeniden açıkça onaylayın. Önceki onayınız kullanılmadı.</AlertDescription></Alert> : null}
+        {confirmationChanged ? <Alert className="mx-3 mb-3" variant="destructive"><AlertTitle>Teklif yenilendi</AlertTitle><AlertDescription>Fiyat, politika veya teklif geçerliliği değişti. Güncel teklifi ve bağlayıcı fiyatı kontrol edip yeniden açıkça onaylayın. Önceki onayınız kullanılmadı.</AlertDescription></Alert> : null}
         {selected && quote ? <div className="space-y-3 border-t p-4" aria-live="polite">
           <div className="flex items-center justify-between gap-4"><div><p className="text-sm font-medium">Bağlayıcı toplam</p><p className="text-xs text-muted-foreground">KDV dahil · {new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" }).format(new Date(quote.expiresAt))} tarihine kadar · Politika {quote.policyVersion}</p></div><p className="text-lg font-semibold tabular-nums">{formatTRY(quote.bindingGrossKurus)}</p></div>
-          {orderId && orderItemId ? <Button className="w-full" disabled={pending} onClick={() => void confirmPurchase()}>{pending ? "İşleniyor…" : "Bu fiyatla satın almayı onayla"}</Button> : <p className="text-xs text-muted-foreground">Satın alma yalnız iş emri kaleminden başlatılabilir.</p>}
+          {orderId && orderItemId ? <Button variant="foreground" className="w-full" disabled={pending || procurementExists} onClick={() => void confirmPurchase()}>{pending ? "İşleniyor…" : "Bu fiyatla satın almayı onayla"}</Button> : <p className="text-xs text-muted-foreground">Satın alma yalnız iş emri kaleminden başlatılabilir.</p>}
+          {procurementExists ? <p className="text-xs text-muted-foreground">Bu iş emri kaleminin bir satın alma talebi zaten var.</p> : null}
         </div> : null}
         <div className="border-t bg-muted/40 px-4 py-2.5">
-          <p className="text-[11px] leading-tight text-muted-foreground">Fiyatlar KDV hariç, bilgilendirme amaçlıdır ve bağlayıcı teklif değildir.</p>
+          <p className="text-[11px] leading-tight text-muted-foreground-strong">Listedeki fiyatlar KDV hariç, bilgilendirme amaçlıdır ve bağlayıcı teklif değildir. Sipariş için yukarıdaki bağlayıcı toplam geçerlidir.</p>
         </div>
       </DialogContent>
     </Dialog>

@@ -73,7 +73,7 @@ export function AcquisitionEditor({ workshopId, source, advisorId, advisors }: {
           />
         </div>
         <div className="flex justify-end">
-          <Button type="submit" disabled={form.formState.isSubmitting}>Kaydet</Button>
+          <Button variant="foreground" type="submit" disabled={form.formState.isSubmitting}>Kaydet</Button>
         </div>
       </form>
     </Form>

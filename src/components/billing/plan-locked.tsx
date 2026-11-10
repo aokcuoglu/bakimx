@@ -2,6 +2,7 @@ import { Clock, Lock, Mail } from "lucide-react"
 import { logoutAction } from "@/app/(auth)/login/actions"
 import { PlanPackages } from "@/components/billing/plan-packages"
 import { ResendVerifyButton } from "@/components/billing/resend-verify-button"
+import { Button } from "@/components/ui/button"
 import type { LockReason } from "@/lib/plan"
 
 const COPY: Record<
@@ -70,22 +71,24 @@ export function PlanLocked({
         </div>
 
         {showResend && (
-          <div className="mx-auto max-w-md rounded-2xl border bg-background p-6 shadow-sm sm:p-8">
+          <div className="mx-auto max-w-md rounded-xl border bg-background p-6 shadow-sm sm:p-8">
             <ResendVerifyButton />
           </div>
         )}
 
         {showPackages && (
-          <PlanPackages ownedTier={null} workshopName={workshopName} hasPendingOrder={hasPendingOrder} />
+          <PlanPackages presentation="settings" ownedTier={null} workshopName={workshopName} hasPendingOrder={hasPendingOrder} />
         )}
 
         <form action={logoutAction} className="mt-8 text-center">
-          <button
+          <Button
             type="submit"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
           >
             Çıkış yap
-          </button>
+          </Button>
         </form>
       </div>
     </div>

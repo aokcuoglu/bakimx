@@ -107,7 +107,7 @@ export function SalesPerformanceDashboard({ report }: { report: SalesPerformance
             <Users className="mx-auto size-8 text-muted-foreground" />
             <h2 className="mt-3 text-base font-semibold text-foreground">Etkin satış danışmanı yok</h2>
             <p className="mt-1 text-sm text-muted-foreground">Performans raporu, etkin bir danışman eklendiğinde oluşacak.</p>
-            {report.canManageTargets && <Button asChild className="mt-4"><Link href="/admin/sales/advisors">Danışmanları yönet</Link></Button>}
+            {report.canManageTargets && <Button variant="foreground" asChild className="mt-4"><Link href="/admin/sales/advisors">Danışmanları yönet</Link></Button>}
           </CardContent>
         </Card>
       ) : (
@@ -323,7 +323,7 @@ function TargetEditor({ month, rows }: { month: string; rows: SalesAdvisorPerfor
                 <FormItem><FormLabel>Net satış (₺)</FormLabel><FormControl><Input type="number" min="0" step="0.01" value={field.value} onChange={(event) => field.onChange(Number(event.target.value))} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
-            <Button type="submit" disabled={pending}>{pending ? "Kaydediliyor…" : "Hedefleri kaydet"}</Button>
+            <Button variant="foreground" type="submit" disabled={pending}>{pending ? "Kaydediliyor…" : "Hedefleri kaydet"}</Button>
           </form>
         </Form>
       </CardContent>

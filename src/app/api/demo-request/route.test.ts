@@ -21,6 +21,7 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test"
 
 /** Kaydedilen yazmalar — "limitlenen istek DB'ye düşmez" iddiasının kanıtı. */
 let demoWrites: Record<string, unknown>[] = []
+let leadWrites: Record<string, unknown>[] = []
 let supportWrites: Record<string, unknown>[] = []
 
 /** Paylaşımlı "veritabanı": süreç belleğinden bağımsız, sanal task'ların ortak deposu. */
@@ -29,6 +30,16 @@ let storeIsDown = false
 
 mock.module("@/lib/db", () => ({
   prisma: {
+    $transaction: async (persist: (tx: unknown) => Promise<void>) => persist({
+      demoRequest: { create: async (args: { data: Record<string, unknown> }) => {
+        demoWrites.push(args.data)
+        return { ...args.data, id: `demo-${demoWrites.length}` }
+      } },
+      salesLead: { create: async (args: { data: Record<string, unknown> }) => {
+        leadWrites.push(args.data)
+        return { ...args.data, id: `lead-${leadWrites.length}` }
+      } },
+    }),
     demoRequest: {
       create: async (args: { data: Record<string, unknown> }) => {
         demoWrites.push(args.data)
@@ -107,6 +118,7 @@ beforeEach(() => {
   sharedRows.clear()
   storeIsDown = false
   demoWrites = []
+  leadWrites = []
   supportWrites = []
   process.env.RATE_LIMIT_STORE = "memory"
 })
@@ -173,4 +185,28 @@ describe("POST /api/demo-request hız sınırı", () => {
     expect(support.status).toBe(200)
     expect(supportWrites).toHaveLength(1)
   })
+})
+
+
+test("demo attribution requires master flag and explicit targeting consent at API boundary", async () => {
+  const previous = process.env.NEXT_PUBLIC_ANALYTICS_ENABLED
+  try {
+    for (const [enabled, consent] of [["false", true], ["true", false], ["true", true]] as const) {
+      process.env.NEXT_PUBLIC_ANALYTICS_ENABLED = enabled
+      const response = await POST(new Request("https://www.bakimx.com/api/demo-request", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...VALID_BODY, targetingConsent: consent, attribution: { gclid: "test-click", email: "secret@example.com", landingPage: "/demo" } }),
+      }))
+      expect(response.status).toBe(200)
+      const result = await response.json()
+      expect(result.eventId).toMatch(/^[a-f0-9-]{36}$/)
+      const lead = leadWrites.at(-1)!
+      expect(lead.gclid).toBe(enabled === "true" && consent ? "test-click" : undefined)
+      expect(lead.email).toBeUndefined()
+      expect(lead.attributionRecordedAt instanceof Date).toBe(enabled === "true" && consent)
+    }
+  } finally {
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_ANALYTICS_ENABLED
+    else process.env.NEXT_PUBLIC_ANALYTICS_ENABLED = previous
+  }
 })

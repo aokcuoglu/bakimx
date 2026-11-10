@@ -74,13 +74,13 @@ export function BrandsList({ brands }: { brands: AdminCatalogBrandRow[] }) {
             <ArrowLeft className="size-4" />
           </Link>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Markalar</h1>
+            <h1 className="text-page-title text-foreground">Markalar</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               Katalog markaları. Pasif marka ürün eklemeyi engellemez; ürünleri ayrıca pasifleştirin.
             </p>
           </div>
         </div>
-        <Button size="sm" onClick={openCreate}>
+        <Button variant="foreground" size="sm" onClick={openCreate}>
           <Plus className="size-3.5 mr-1" /> Yeni Marka
         </Button>
       </div>
@@ -286,7 +286,7 @@ function BrandDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
                 Vazgeç
               </Button>
-              <Button type="submit" disabled={pending}>
+              <Button variant="foreground" type="submit" disabled={pending}>
                 {pending && <Loader2 className="size-4 animate-spin" />}
                 {brand ? "Kaydet" : "Ekle"}
               </Button>

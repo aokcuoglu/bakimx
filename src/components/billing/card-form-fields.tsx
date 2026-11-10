@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useId, useState } from "react"
+import { CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { cn } from "@/lib/utils"
 import {
   stripNonDigits,
   luhnValid,
@@ -40,6 +42,8 @@ export function CardFormFields({
   hidden,
   submitLabel,
   submittingLabel,
+  presentation = "default",
+  summary,
 }: {
   action: string
   /** Akışa özel gizli alanlar — satış: `{ reference }`, doğrulama: `{ vtoken }`. */
@@ -48,24 +52,35 @@ export function CardFormFields({
   submitLabel: React.ReactNode
   /** Buton içeriği submit sonrası (BrandSpinner otomatik eklenir). */
   submittingLabel: React.ReactNode
+  presentation?: "default" | "attio"
+  summary?: React.ReactNode
 }) {
   const [holderName, setHolderName] = useState("")
   const [cardDisplay, setCardDisplay] = useState("") // 4'lü gruplu görünen değer
   const [month, setMonth] = useState("")
   const [year, setYear] = useState("")
+  const [expiryDisplay, setExpiryDisplay] = useState("")
   const [cvv, setCvv] = useState("")
   const [errors, setErrors] = useState<Errors>({})
   const [submitting, setSubmitting] = useState(false)
+  const cardErrorId = useId()
 
   const cardDigits = stripNonDigits(cardDisplay)
+  const expiryDigits = stripNonDigits(expiryDisplay)
+  const effectiveMonth = presentation === "attio" ? expiryDigits.slice(0, 2) : month
+  const effectiveYear = presentation === "attio"
+    ? expiryDigits.length === 6 ? expiryDigits.slice(2) : expiryDigits.length === 4 ? `20${expiryDigits.slice(2)}` : ""
+    : year
+  const cardError = errors.number || errors.expiry || errors.cvv
 
   function validate(): Errors {
     const e: Errors = {}
     if (holderName.trim().length < 2) e.holderName = "Kart üzerindeki ismi girin."
     if (cardDigits.length < 12 || cardDigits.length > 19 || !luhnValid(cardDigits))
       e.number = "Geçerli bir kart numarası girin."
-    if (!month || !year) e.expiry = "Son kullanma tarihini seçin."
-    else if (isExpiryPast(Number(month), Number(year)))
+    if (!effectiveMonth || !effectiveYear || Number(effectiveMonth) < 1 || Number(effectiveMonth) > 12)
+      e.expiry = "Geçerli bir son kullanma tarihi girin."
+    else if (isExpiryPast(Number(effectiveMonth), Number(effectiveYear)))
       e.expiry = "Kartın son kullanma tarihi geçmiş."
     if (!/^\d{3,4}$/.test(cvv)) e.cvv = "CVV 3 veya 4 haneli olmalı."
     return e
@@ -84,7 +99,7 @@ export function CardFormFields({
   }
 
   return (
-    <form method="POST" action={action} onSubmit={onSubmit} className="space-y-3" noValidate>
+    <form method="POST" action={action} onSubmit={onSubmit} className={presentation === "attio" ? "grid sm:grid-cols-[minmax(0,1.25fr)_minmax(220px,0.75fr)]" : "space-y-3"} noValidate>
       {/* Submit edilen değerler YALNIZ bu hidden input'lardan gider (asla
           disable edilmez); görünen input'lar salt-formatlama/otomatik-doldurma
           içindir. Böylece submit anındaki React re-render zamanlamasına bağlı
@@ -94,10 +109,85 @@ export function CardFormFields({
       ))}
       <input type="hidden" name="holderName" value={holderName} />
       <input type="hidden" name="number" value={cardDigits} />
-      <input type="hidden" name="expireMonth" value={month} />
-      <input type="hidden" name="expireYear" value={year} />
+      <input type="hidden" name="expireMonth" value={effectiveMonth} />
+      <input type="hidden" name="expireYear" value={effectiveYear} />
       <input type="hidden" name="cvv" value={cvv} />
 
+      {presentation === "attio" ? (
+        <>
+          <div className="space-y-4 p-4 sm:p-5">
+            <div className="flex items-center gap-2 border-b pb-3 text-sm font-semibold">
+              <span className="flex size-7 items-center justify-center rounded-md border bg-muted/30"><CreditCard className="size-4" aria-hidden="true" /></span>
+              <h3>Ödeme bilgileri</h3>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Ödeme bilgileri (zorunlu)</Label>
+              <Input
+                aria-label="Kart üzerindeki isim"
+                autoComplete="cc-name"
+                value={holderName}
+                onChange={(ev) => setHolderName(ev.target.value)}
+                placeholder="Ad Soyad"
+                disabled={submitting}
+                className="h-9"
+                aria-invalid={!!errors.holderName}
+              />
+              {errors.holderName && <p className="text-xs text-destructive-strong">{errors.holderName}</p>}
+              <div role="group" aria-label="Kart bilgileri" aria-describedby={cardError ? cardErrorId : undefined} className={cn("flex h-9 min-w-0 items-center overflow-hidden rounded-md border border-input bg-card focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30", cardError && "border-destructive/50 focus-within:border-destructive/50 focus-within:ring-destructive/20")}>
+                <CreditCard className="ml-2.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <Input
+                  aria-label="Kart numarası"
+                  inputMode="numeric"
+                  autoComplete="cc-number"
+                  value={cardDisplay}
+                  onChange={(ev) => setCardDisplay(formatCardNumber(ev.target.value))}
+                  placeholder="Kart numarası"
+                  disabled={submitting}
+                  className="h-full min-w-0 flex-1 rounded-none border-0 px-2 shadow-none focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0"
+                  aria-invalid={!!cardError}
+                  aria-describedby={cardError ? cardErrorId : undefined}
+                />
+                <Input
+                  aria-label="Son kullanma tarihi"
+                  inputMode="numeric"
+                  autoComplete="cc-exp"
+                  value={expiryDisplay}
+                  onChange={(ev) => {
+                    const digits = stripNonDigits(ev.target.value).slice(0, 6)
+                    setExpiryDisplay(digits.length > 2 ? `${digits.slice(0, 2)} / ${digits.slice(2)}` : digits)
+                  }}
+                  placeholder="AA / YY"
+                  disabled={submitting}
+                  className="h-full w-20 shrink-0 rounded-none border-0 px-1 text-center shadow-none focus-visible:ring-0"
+                  aria-describedby={cardError ? cardErrorId : undefined}
+                />
+                <Input
+                  aria-label="CVV"
+                  inputMode="numeric"
+                  autoComplete="cc-csc"
+                  maxLength={4}
+                  value={cvv}
+                  onChange={(ev) => setCvv(stripNonDigits(ev.target.value).slice(0, 4))}
+                  placeholder="CVV"
+                  disabled={submitting}
+                  className="h-full w-14 shrink-0 rounded-none border-0 px-1 text-center shadow-none focus-visible:ring-0"
+                  aria-describedby={cardError ? cardErrorId : undefined}
+                />
+              </div>
+              {cardError && (
+                <p id={cardErrorId} className="text-xs text-destructive-strong">{cardError}</p>
+              )}
+            </div>
+          </div>
+          <aside className="flex flex-col gap-4 border-t bg-muted/20 p-4 sm:border-t-0 sm:border-l sm:p-5">
+            {summary}
+            <Button variant="navy" type="submit" size="sm" disabled={submitting} className="mt-auto w-full">
+              {submitting ? <><BrandSpinner size={18} /> {submittingLabel}</> : submitLabel}
+            </Button>
+          </aside>
+        </>
+      ) : (
+      <>
       <Field label="Kart üzerindeki isim" error={errors.holderName}>
         <Input
           autoComplete="cc-name"
@@ -165,7 +255,7 @@ export function CardFormFields({
         <p className="text-xs leading-4 text-destructive-strong">{errors.expiry || errors.cvv}</p>
       )}
 
-      <Button type="submit" size="lg" disabled={submitting} className="mt-1 w-full">
+      <Button variant="foreground" type="submit" size="lg" disabled={submitting} className="mt-1 w-full">
         {submitting ? (
           <>
             <BrandSpinner size={18} /> {submittingLabel}
@@ -174,6 +264,8 @@ export function CardFormFields({
           submitLabel
         )}
       </Button>
+      </>
+      )}
     </form>
   )
 }

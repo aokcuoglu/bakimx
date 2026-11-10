@@ -1,100 +1,88 @@
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
+import { HighlightCard } from "@/components/shared/highlight-card"
 import type { CustomerAnalytics as CustomerAnalyticsType } from "@/lib/analytics/queries"
 import Link from "next/link"
 import { formatTRY } from "@/lib/format"
 import { Users, UserPlus, UserCheck, UserX, TrendingUp } from "lucide-react"
 
-function StatCard({ label, value, subtitle, icon: Icon, accent }: {
+function StatCard({ label, value, subtitle, icon: Icon }: {
   label: string
   value: string | number
   subtitle?: string
   icon: React.ComponentType<{ className?: string }>
-  accent: string
 }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <Icon className={`size-4 ${accent}`} />
-      </div>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
-      {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
-    </div>
-  )
+  return <HighlightCard label={label} value={value} accessory={<Icon />} description={subtitle} />
 }
 
 export function CustomerAnalyticsSection({ analytics }: { analytics: CustomerAnalyticsType }) {
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 min-[390px]:grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard
           label="Toplam Müşteri"
           value={analytics.totalCustomers}
           icon={Users}
-          accent="text-primary"
         />
         <StatCard
           label="Bu Ay Yeni"
           value={analytics.newThisMonth}
           icon={UserPlus}
-          accent="text-success-strong"
         />
         <StatCard
           label="Geri Dönüş Oranı"
           value={`%${analytics.repeatCustomerRate}`}
           subtitle={analytics.repeatCustomerRate >= 40 ? "İyi seviye" : analytics.repeatCustomerRate < 20 ? "Düşük" : "Orta"}
           icon={UserCheck}
-          accent="text-primary"
         />
         <StatCard
           label="Pasif Müşteri"
           value={analytics.inactiveCustomers}
           subtitle="90+ gün aktif değil"
           icon={UserX}
-          accent="text-warning-strong"
         />
       </div>
 
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
+      <div className="min-w-0 rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-4 py-3 border-b border-border flex items-center gap-2">
           <TrendingUp className="size-4 text-success-strong" />
-          <h3 className="text-base font-semibold text-foreground">En Yüksek Değerli Müşteriler</h3>
+          <h3 className="text-sm font-medium text-foreground">En Yüksek Değerli Müşteriler</h3>
         </div>
         {analytics.highValueCustomers.length === 0 ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
             Henüz siparişi olan müşteri bulunmuyor.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">#</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Müşteri</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">Telefon</th>
-                  <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">İş Emri</th>
-                  <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Toplam Harcama</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="min-w-0">
+            <Table aria-label="En Yüksek Değerli Müşteriler">
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="px-4 text-xs text-muted-foreground">#</TableHead>
+                  <TableHead className="px-4 text-xs text-muted-foreground">Müşteri</TableHead>
+                  <TableHead className="px-4 text-xs text-muted-foreground">Telefon</TableHead>
+                  <TableHead className="px-4 text-right text-xs text-muted-foreground">İş Emri</TableHead>
+                  <TableHead className="px-4 text-right text-xs text-muted-foreground">Toplam Harcama</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {analytics.highValueCustomers.map((c, i) => (
-                  <tr key={c.id} className="border-b border-border hover:bg-muted/50">
-                    <td className="px-4 py-2.5">
-                      <span className="size-6 rounded-full bg-success/10 text-success-strong inline-flex items-center justify-center text-xs font-bold">
+                  <TableRow key={c.id}>
+                    <TableCell className="px-4 py-2">
+                      <span className="inline-flex text-xs tabular-nums text-muted-foreground">
                         {i + 1}
                       </span>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <Link href={`/customers/${c.id}`} className="font-medium text-primary hover:underline">
+                    </TableCell>
+                    <TableCell className="px-4 py-2">
+                      <Link href={`/customers/${c.id}`} className="block max-w-80 whitespace-normal wrap-anywhere font-medium text-foreground hover:underline focus-visible:outline-ring">
                         {c.name}
                       </Link>
-                    </td>
-                    <td className="px-4 py-2.5 text-muted-foreground hidden sm:table-cell">{c.phone}</td>
-                    <td className="px-4 py-2.5 text-center text-foreground">{c.orderCount}</td>
-                    <td className="px-4 py-2.5 text-right font-medium text-foreground">{formatTRY(c.totalSpent)}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="px-4 py-2 text-muted-foreground">{c.phone}</TableCell>
+                    <TableCell className="px-4 py-2 text-right tabular-nums text-foreground">{c.orderCount}</TableCell>
+                    <TableCell className="px-4 py-2 text-right font-medium tabular-nums text-foreground">{formatTRY(c.totalSpent)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>

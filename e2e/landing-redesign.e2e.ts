@@ -225,7 +225,7 @@ test("landing is accessible and its primary content is available without JavaScr
   const context = await browser.newContext({ javaScriptEnabled: false });
   const noJsPage = await context.newPage();
   await noJsPage.goto(
-    "http://localhost:" + (process.env.PLAYWRIGHT_PORT || "3000") + "/",
+    "http://localhost:" + (process.env.PLAYWRIGHT_PORT || "3001") + "/",
   );
   await expect(noJsPage.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(

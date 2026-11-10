@@ -28,27 +28,20 @@ export default async function QuotesPage({ searchParams }: { searchParams: Promi
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Teklifler">
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Teklifler</span>
-          <span className="mx-2">/</span>
-          <span className="text-muted-foreground">Tümü</span>
-        </div>
+
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Teklifler</h2>
             <p className="text-sm text-muted-foreground mt-0.5">{quotes.length} teklif</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="default" className="hidden sm:inline-flex" asChild>
+            <Button variant="foreground" size="default" className="hidden sm:inline-flex" asChild>
               <Link href="/quotes/new">
                 <Plus className="size-4" />
                 Yeni Teklif
               </Link>
             </Button>
-            <Button
+            <Button variant="foreground"
               size="icon"
               className="sm:hidden"
               asChild
@@ -80,7 +73,7 @@ export default async function QuotesPage({ searchParams }: { searchParams: Promi
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">Henüz teklif yok</h3>
             <p className="text-sm text-muted-foreground mb-4">İlk teklifinizi oluşturmaya başlayın.</p>
-            <Button size="default" asChild>
+            <Button variant="foreground" size="default" asChild>
               <Link href="/quotes/new">
                 <Plus className="size-4" />
                 Yeni Teklif Oluştur

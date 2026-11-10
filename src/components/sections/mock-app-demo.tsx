@@ -20,6 +20,8 @@ import {
   Wrench,
 } from "lucide-react";
 import { BrandLogo } from "@/components/shared/brand-logo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 import styles from "./mock-app-demo.module.css";
@@ -262,7 +264,7 @@ export function MockAppDemo() {
       }}
       onDoubleClick={() => setAutoPlay(true)}
     >
-      {/* ── Sidebar (gerçek AppShell navy) ─────────────────────────────── */}
+      {/* ── Sidebar (gerçek AppShell açık yüzeyi) ───────────────────────── */}
       <aside
         className={cn(
           styles.sidebar,
@@ -270,12 +272,13 @@ export function MockAppDemo() {
         )}
       >
         <div className={cn(styles.sidebarBrand, "flex items-center gap-2 border-b border-sidebar-border px-3 py-3")}>
-          <BrandLogo variant="icon-dark" size="sm" alt="" className="shrink-0" />
+          <BrandLogo variant="icon-light" size="sm" alt="" className="shrink-0 dark:hidden" />
+          <BrandLogo variant="icon-dark" size="sm" alt="" className="hidden shrink-0 dark:block" />
           <div className={cn(styles.sidebarCopy, "min-w-0")}>
             <p className="truncate text-[13px] font-bold tracking-tight">
               Bakım<span className="text-sidebar-primary">X</span>
             </p>
-            <p className="truncate text-[9px] text-sidebar-foreground/50">Demo Oto Servis</p>
+            <p className="truncate text-[9px] text-muted-foreground">Demo Oto Servis</p>
           </div>
         </div>
 
@@ -283,7 +286,7 @@ export function MockAppDemo() {
           <p
             className={cn(
               styles.sidebarCopy,
-              "px-2 pb-1.5 pt-1 text-[9px] font-semibold uppercase tracking-wider text-sidebar-foreground/50",
+              "px-2 pb-1.5 pt-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground",
             )}
           >
             İş Yeri
@@ -296,19 +299,20 @@ export function MockAppDemo() {
                 (item.id === "orders" &&
                   (activeView === "orders" || activeView === "new-order"));
               const isFlash = item.target && flash === item.target;
-              return (
-                <button
+              return item.id === "overview" || item.id === "orders" ? (
+                <Button
                   key={item.id}
                   type="button"
+                  variant="ghost"
+                  size="xs"
                   data-mock-target={item.target}
-                  title={item.label}
                   aria-label={item.label}
                   className={cn(
                     styles.sidebarItem,
-                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] transition-colors",
+                    "h-auto w-full justify-start gap-2 px-2 py-1.5 text-left text-[11px]",
                     active
                       ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     isFlash && styles.navFlash,
                   )}
                   onClick={() => {
@@ -318,7 +322,15 @@ export function MockAppDemo() {
                 >
                   <Icon className="size-3.5 shrink-0" />
                   <span className={cn(styles.sidebarCopy, "truncate")}>{item.label}</span>
-                </button>
+                </Button>
+              ) : (
+                <span
+                  key={item.id}
+                  className={cn(styles.sidebarItem, "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] text-sidebar-foreground")}
+                >
+                  <Icon className="size-3.5 shrink-0" />
+                  <span className={cn(styles.sidebarCopy, "truncate")}>{item.label}</span>
+                </span>
               );
             })}
           </nav>
@@ -335,7 +347,7 @@ export function MockAppDemo() {
           </span>
           <div className={cn(styles.sidebarCopy, "min-w-0")}>
             <p className="truncate text-[11px] font-medium">Demo Kullanıcı</p>
-            <p className="truncate text-[9px] text-sidebar-foreground/50">Yönetici</p>
+            <p className="truncate text-[9px] text-muted-foreground">Yönetici</p>
           </div>
         </div>
       </aside>
@@ -373,14 +385,15 @@ export function MockAppDemo() {
                       Demo Oto Servis · Cumartesi, 12 Eylül
                     </p>
                   </div>
-                  <button
+                  <Button
                     type="button"
-                    className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-sm"
+                    variant="inverse"
+                    size="xs"
                     onClick={() => go("new-order")}
                   >
                     <Plus className="size-3.5" />
                     Yeni İş Emri
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -429,18 +442,20 @@ export function MockAppDemo() {
                   <Search className="size-3.5 shrink-0" />
                   <span className="truncate">Plaka, müşteri veya iş emri ara…</span>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="foreground"
+                  size="xs"
                   data-mock-target="btn-new-order"
                   className={cn(
-                    "inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-sm",
+                    "gap-1.5",
                     flash === "btn-new-order" && styles.btnFlash,
                   )}
                   onClick={() => go("new-order")}
                 >
                   <Plus className="size-3.5" />
                   Yeni İş Emri
-                </button>
+                </Button>
               </div>
               <OrdersTable />
             </>
@@ -466,37 +481,40 @@ export function MockAppDemo() {
                 ).map(([label, value, placeholder]) => (
                   <label key={label} className="grid gap-1">
                     <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
-                    <input
+                    <Input
                       readOnly
                       value={value}
                       placeholder={placeholder}
                       className={cn(
-                        "h-8 rounded-md border border-border bg-background px-2.5 text-xs outline-none",
+                        "h-7 rounded-[8px] border border-border bg-background px-2.5 text-xs outline-none",
                         formFilled && "border-success/40 bg-success/5",
                       )}
                     />
                   </label>
                 ))}
                 <div className="flex justify-end gap-2 pt-1">
-                  <button
+                  <Button
                     type="button"
-                    className="h-8 rounded-md border border-border bg-card px-3 text-xs font-semibold"
+                    variant="outline"
+                    size="xs"
                     onClick={() => go("orders")}
                   >
                     Vazgeç
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="foreground"
+                    size="xs"
                     data-mock-target="btn-create"
                     className={cn(
-                      "inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground",
+                      "gap-1.5",
                       flash === "btn-create" && styles.btnFlash,
                     )}
                     onClick={() => go("orders")}
                   >
                     <Wrench className="size-3.5" />
                     İş emri oluştur
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

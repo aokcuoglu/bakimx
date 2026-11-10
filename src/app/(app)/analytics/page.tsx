@@ -49,51 +49,48 @@ export default async function AnalyticsPage() {
 
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Operasyonel Analiz">
-      <div className="space-y-4 sm:space-y-6 max-w-full">
-        <div className="rounded-lg bg-gradient-to-br from-navy to-navy-light text-navy-foreground p-5 sm:p-6 shadow-sm">
-          <h2 className="text-xl sm:text-2xl font-bold">Operasyonel Analiz</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Atölyenizin operasyonel sağlığını ve performans metriklerini izleyin
-          </p>
-        </div>
+      <div className="min-w-0 space-y-6">
+        <p className="text-sm text-muted-foreground">
+          Atölyenizin operasyonel sağlığını ve performans metriklerini izleyin.
+        </p>
 
         <div className="space-y-3">
           <RecommendationsList recommendations={recommendations} />
         </div>
 
-        <section>
+        <section className="min-w-0">
           <HealthScoreCard health={health} />
           <div className="mt-4">
             <HealthMetricCards health={health} />
           </div>
         </section>
 
-        <section>
+        <section className="min-w-0">
           <DelayedJobsTable jobs={delayedJobs} />
         </section>
 
-        <section>
-          <h2 className="text-lg font-bold text-foreground mb-4">Teknisyen Analizi</h2>
+        <section className="min-w-0">
+          <h2 className="text-base font-semibold text-foreground mb-3">Teknisyen Analizi</h2>
           <TechnicianAnalyticsSection ranking={technicianRanking} />
         </section>
 
-        <section>
-          <h2 className="text-lg font-bold text-foreground mb-4">Müşteri Analizi</h2>
+        <section className="min-w-0">
+          <h2 className="text-base font-semibold text-foreground mb-3">Müşteri Analizi</h2>
           <CustomerAnalyticsSection analytics={customerAnalytics} />
         </section>
 
-        <section>
-          <h2 className="text-lg font-bold text-foreground mb-4">Parça & Stok Analizi</h2>
+        <section className="min-w-0">
+          <h2 className="text-base font-semibold text-foreground mb-3">Parça & Stok Analizi</h2>
           <PartsAnalyticsSection analytics={partsAnalytics} />
         </section>
 
-        <section>
-          <h2 className="text-lg font-bold text-foreground mb-4">Gelir Analizi</h2>
+        <section className="min-w-0">
+          <h2 className="text-base font-semibold text-foreground mb-3">Gelir Analizi</h2>
           <RevenueAnalyticsSection analytics={revenueAnalytics} />
         </section>
 
-        <section>
-          <h2 className="text-lg font-bold text-foreground mb-4">Servis Analizi</h2>
+        <section className="min-w-0">
+          <h2 className="text-base font-semibold text-foreground mb-3">Servis Analizi</h2>
           <ServiceAnalyticsSection analytics={serviceAnalytics} />
         </section>
       </div>

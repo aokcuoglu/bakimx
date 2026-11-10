@@ -24,13 +24,15 @@ export function computeUpgradeAmountMinor(params: {
   newTier: PlanTier
   newCycle: BillingCycle
   now: Date
+  currentPriceMinor?: number
+  newPriceMinor?: number
 }): number {
   const { currentTier, currentCycle, currentPeriodEnd, newTier, newCycle, now } = params
-  const full = getPlanPriceMinor(newTier, newCycle)
+  const full = params.newPriceMinor ?? getPlanPriceMinor(newTier, newCycle)
   if (!currentPeriodEnd) return full
   const remainingMs = currentPeriodEnd.getTime() - now.getTime()
   if (remainingMs <= 0) return full
   const fraction = Math.min(1, remainingMs / (CYCLE_DAYS[currentCycle] * DAY_MS))
-  const creditMinor = Math.round(getPlanPriceMinor(currentTier, currentCycle) * fraction)
+  const creditMinor = Math.round((params.currentPriceMinor ?? getPlanPriceMinor(currentTier, currentCycle)) * fraction)
   return Math.max(0, full - creditMinor)
 }

@@ -30,6 +30,7 @@ import {
   XCircle,
   Share2,
 } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useFormStatus } from "react-dom"
 
 type AppointmentDetailData = {
@@ -72,7 +73,7 @@ function SubmitButton({ label, loading }: { label: string; loading?: boolean }) 
   const { pending } = useFormStatus()
   const isPending = pending || loading
   return (
-    <Button type="submit" disabled={isPending} size="sm">
+    <Button variant="foreground" type="submit" disabled={isPending} size="sm">
       {isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
       {label}
     </Button>
@@ -138,22 +139,25 @@ export function AppointmentDetail({
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
       <div className="flex items-center text-sm text-muted-foreground">
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="xs"
           onClick={() => router.push("/appointments")}
-          className="hover:text-foreground inline-flex items-center gap-1 touch-manipulation"
+          className="px-0 text-muted-foreground"
         >
           <ArrowLeft className="size-3.5" />
           Randevular
-        </button>
+        </Button>
         <span className="mx-2">/</span>
         <span className="text-foreground font-medium">{appointment.appointmentNo}</span>
       </div>
 
       {(statusUpdateError || convertError) && (
-        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm flex items-start gap-2">
-          <Info className="size-4 shrink-0 mt-0.5" />
-          <span>{statusUpdateError || convertError}</span>
-        </div>
+        <Alert variant="destructive">
+          <Info />
+          <AlertDescription>{statusUpdateError || convertError}</AlertDescription>
+        </Alert>
       )}
 
       <div className="flex flex-col gap-3">
@@ -351,7 +355,7 @@ export function AppointmentDetail({
                 <Button
                   onClick={handleConvert}
                   disabled={converting}
-                  variant="default"
+                  variant="foreground"
                   className="w-full"
                 >
                   {converting ? (
@@ -379,20 +383,22 @@ export function AppointmentDetail({
                 <form action={handleStatusUpdate}>
                   <input type="hidden" name="appointmentId" value={appointment.id} />
                   <input type="hidden" name="status" value="cancelled" />
-                  <button
+                  <Button
                     type="submit"
-                    className="inline-flex items-center justify-center gap-2 w-full h-8 px-3 rounded-lg border border-destructive/20 bg-card text-sm font-medium text-destructive-strong hover:bg-destructive/10 transition-colors"
+                    variant="outline"
+                    size="compact"
+                    className="w-full border-destructive/20 text-destructive-strong hover:bg-destructive/10"
                   >
                     <XCircle className="size-4" />
                     Randevuyu İptal Et
-                  </button>
+                  </Button>
                 </form>
               )}
 
-              <Button
+              <Button variant="whatsapp"
                 type="button"
                 size="lg"
-                className="w-full bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90"
+                className="w-full"
                 onClick={() => {
                   const text = `Merhaba ${customerDisplayName(appointment.customer)}, randevu bilgileriniz: ${appointment.appointmentNo} - ${formatDateTime(appointment.appointmentAt)}`
                   window.open(

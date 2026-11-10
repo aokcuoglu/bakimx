@@ -139,7 +139,7 @@ export function PartSupplierPricesField({
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
-                    variant={row.isPreferred ? "default" : "outline"}
+                    variant={row.isPreferred ? "secondary" : "outline"}
                     size="sm"
                     onClick={() => setPreferred(index)}
                     aria-pressed={row.isPreferred}

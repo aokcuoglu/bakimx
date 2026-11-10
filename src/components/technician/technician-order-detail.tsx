@@ -391,7 +391,7 @@ export function TechnicianOrderDetail({
                 </Button>
               )}
               {canStart && (
-                <Button size="sm" className="shrink-0" onClick={handleStartWork} disabled={isPending}>
+                <Button variant="foreground" size="sm" className="shrink-0" onClick={handleStartWork} disabled={isPending}>
                   <Play /> {order.status === "waiting_parts" ? "Tamire devam et" : "Tamire başla"}
                 </Button>
               )}
@@ -436,7 +436,7 @@ export function TechnicianOrderDetail({
           {steps.map((step) => {
             const Icon = step.icon
             return (
-              <TabsTrigger key={step.id} value={step.id} className="px-3 py-2.5 shrink-0 flex-none">
+              <TabsTrigger key={step.id} value={step.id} className="shrink-0 flex-none">
                 <Icon className="size-4" />
                 <span>{step.label}</span>
               </TabsTrigger>
@@ -461,7 +461,7 @@ export function TechnicianOrderDetail({
                 canEdit={canEditOrder}
               />
               <WizardActions sticky>
-                <Button size="sm" onClick={() => goToStep("check")}>Kontrole geç</Button>
+                <Button variant="foreground" size="sm" onClick={() => goToStep("check")}>Kontrole geç</Button>
               </WizardActions>
               {canStart && startReminder && <ChecklistReminder message={startReminder} onReveal={() => goToStep("check")} />}
           </TabsContent>
@@ -470,7 +470,7 @@ export function TechnicianOrderDetail({
               <OrderChecklist orderId={order.id} state={checklist} locked={locked} open={checklistOpen} onOpenChange={setChecklistOpen} containerRef={checklistRef} />
               {order.damageMarks.length > 0 && <DamageMarks marks={order.damageMarks} />}
               <WizardActions sticky back={<Button variant="outline" size="sm" onClick={() => goToStep("start")}>Geri</Button>}>
-                <Button size="sm" onClick={() => goToStep("items")}>Yapılacak işlere geç</Button>
+                <Button variant="foreground" size="sm" onClick={() => goToStep("items")}>Yapılacak işlere geç</Button>
               </WizardActions>
           </TabsContent>
 
@@ -498,7 +498,7 @@ export function TechnicianOrderDetail({
                 </CardContent>
               </Card>
               <WizardActions sticky back={<Button variant="outline" size="sm" onClick={() => goToStep("check")}>Geri</Button>}>
-                <Button size="sm" onClick={() => goToStep("needs")}>Parça ve dış hizmete geç</Button>
+                <Button variant="foreground" size="sm" onClick={() => goToStep("needs")}>Parça ve dış hizmete geç</Button>
               </WizardActions>
           </TabsContent>
 
@@ -535,7 +535,7 @@ export function TechnicianOrderDetail({
                 canDeleteLabor={canEditOrder}
               />
               <WizardActions sticky back={<Button variant="outline" size="sm" onClick={() => goToStep("items")}>Geri</Button>}>
-                <Button size="sm" onClick={() => goToStep("finish")}>Fotoğraf ve bitirmeye geç</Button>
+                <Button variant="foreground" size="sm" onClick={() => goToStep("finish")}>Fotoğraf ve bitirmeye geç</Button>
               </WizardActions>
           </TabsContent>
 
@@ -821,12 +821,13 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
   }, [src])
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       onClick={onOpen}
       disabled={state === "failed"}
       aria-label={`${label} — büyüt`}
-      className="relative w-full aspect-square overflow-hidden rounded-lg border border-border bg-muted touch-manipulation"
+      className="relative h-auto w-full aspect-square overflow-hidden rounded-lg border border-border bg-muted p-0"
     >
       {state !== "ready" && (
         <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-muted-foreground">
@@ -852,7 +853,7 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
           state === "failed" && "opacity-0"
         )}
       />
-    </button>
+    </Button>
   )
 }
 
@@ -1019,7 +1020,7 @@ function AddPurchaseCardButton(props: {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <Button type="button" size="sm" onClick={() => setOpen(true)}>
+      <Button variant="foreground" type="button" size="sm" onClick={() => setOpen(true)}>
         <Plus className="size-4" />
         Dış Parça
       </Button>
@@ -1377,16 +1378,20 @@ function InternalNotesSection({
             </p>
           </div>
           {!locked && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="İç notu sil"
               onClick={() => {
                 startTransition(async () => {
                   await deleteInternalNoteAction(note.id)
                 })
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 text-warning-strong hover:text-destructive-strong transition-opacity"
+              className="text-warning-strong hover:text-destructive-strong md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
             >
               <Trash2 className="size-3.5" />
-            </button>
+            </Button>
           )}
         </div>
       ))}

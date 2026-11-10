@@ -78,7 +78,7 @@ export default function IsEmriRehberPage() {
               {IS_EMRI_REHBER_INTRO}
             </p>
             <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <Button asChild size="lg">
+              <Button asChild variant="navy" size="lg">
                 <Link href="/is-emri-programi">
                   Dijital iş emrini gör
                   <ArrowRight aria-hidden="true" />
@@ -95,7 +95,7 @@ export default function IsEmriRehberPage() {
             <h2 id="ornek-baslik" className="sr-only">
               Örnek iş emri ekranı
             </h2>
-            <figure className="overflow-hidden rounded-2xl border bg-card shadow-2xl shadow-primary/10">
+            <figure className="overflow-hidden rounded-xl border bg-card shadow-md">
               <div className="flex items-center justify-between border-b bg-muted/50 px-4 py-3">
                 <span className="font-mono text-xs font-medium text-muted-foreground">İŞ EMRİ · ÖRNEK EKRAN</span>
               </div>
@@ -127,7 +127,7 @@ export default function IsEmriRehberPage() {
                 Her unsurun ne işe yaradığı ve BakımX&apos;te nasıl uygulandığı aşağıda ayrı ayrı gösteriliyor.
               </p>
             </div>
-            <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+            <ol className="mt-10 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
               {IS_EMRI_REHBER_UNSURLAR.map((unsur, index) => {
                 const Icon = unsurIcons[index]
                 return (
@@ -149,7 +149,7 @@ export default function IsEmriRehberPage() {
 
         <section className="py-16 sm:py-24" aria-labelledby="baglanti-baslik">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            <div className="rounded-2xl border bg-muted/35 p-6 sm:p-8">
+            <div className="rounded-xl border bg-muted/35 p-6 sm:p-8">
               <h2 id="baglanti-baslik" className="text-xl font-semibold">
                 İhtiyacınıza göre ayrıntıya inin
               </h2>
@@ -165,7 +165,7 @@ export default function IsEmriRehberPage() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="group flex flex-col justify-between gap-4 rounded-xl border bg-background p-5 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="group flex flex-col justify-between gap-4 rounded-xl border bg-background p-5 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <span>
                       <span className="block font-semibold text-foreground">{item.title}</span>

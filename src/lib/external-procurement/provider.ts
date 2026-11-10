@@ -9,6 +9,7 @@ interface ProcurementProviderEnv {
   GETIRBAKIM_PROVIDER?: string
   GETIRBAKIM_API_URL?: string
   GETIRBAKIM_API_KEY?: string
+  GETIRBAKIM_ORDER_API_KEY?: string
 }
 
 type ProcurementProviderConfig =
@@ -29,7 +30,8 @@ export function resolveProcurementProviderConfig(
 ): ProcurementProviderConfig {
   const providerName = env.GETIRBAKIM_PROVIDER?.trim().toLowerCase()
   const baseUrl = env.GETIRBAKIM_API_URL?.trim()
-  const apiKey = env.GETIRBAKIM_API_KEY?.trim()
+  // Catalog access never confers authority to quote or create an order.
+  const apiKey = env.GETIRBAKIM_ORDER_API_KEY?.trim()
 
   if (env.NODE_ENV === "production" && providerName !== "http") {
     throw new Error("GetirBakim procurement provider must be configured as http in production")

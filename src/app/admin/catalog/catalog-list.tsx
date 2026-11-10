@@ -105,7 +105,7 @@ export function CatalogList({
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Ürün Kataloğu</h1>
+          <h1 className="text-page-title text-foreground">Ürün Kataloğu</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             BakımX’in kendi ürünleri — fiyat ve stok yönetimi. Fiyatlar KDV hariç girilir.
           </p>
@@ -126,7 +126,7 @@ export function CatalogList({
               <Upload className="size-3.5 mr-1" /> İçe Aktar
             </Link>
           </Button>
-          <Button size="sm" asChild>
+          <Button variant="foreground" size="sm" asChild>
             <Link href="/admin/catalog/new">
               <Plus className="size-3.5 mr-1" /> Yeni Ürün
             </Link>
@@ -257,7 +257,7 @@ export function CatalogList({
         </div>
       )}
 
-      <div className="rounded-lg border bg-card">
+      <div role="region" aria-label="Ürün listesi" tabIndex={0} className="max-h-[calc(100dvh-16rem)] overflow-auto rounded-lg border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         {rows.length === 0 ? (
           <p className="p-6 text-sm text-muted-foreground">
             {hasFilters ? "Filtrelere uyan ürün yok." : "Katalogda henüz ürün yok. “Yeni Ürün” ile başlayın."}
@@ -415,7 +415,7 @@ function BulkPriceDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
             Vazgeç
           </Button>
-          <Button onClick={() => onSubmit(percent)} disabled={!valid || pending}>
+          <Button variant="foreground" onClick={() => onSubmit(percent)} disabled={!valid || pending}>
             {pending && <Loader2 className="size-4 animate-spin" />}
             Uygula
           </Button>
@@ -473,7 +473,7 @@ function BulkStockDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
             Vazgeç
           </Button>
-          <Button onClick={() => onSubmit(mode, quantity)} disabled={!valid || pending}>
+          <Button variant="foreground" onClick={() => onSubmit(mode, quantity)} disabled={!valid || pending}>
             {pending && <Loader2 className="size-4 animate-spin" />}
             Uygula
           </Button>

@@ -14,14 +14,14 @@ export function InlineFeatureUpsell({
 }) {
   const definition = FEATURE_CATALOG[feature]
   return (
-    <div className="rounded-xl border border-primary/20 bg-primary/10 p-4 text-primary-strong">
+    <div className="rounded-lg border border-border bg-card p-4 text-foreground">
       <div className="mb-3 flex items-start gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-foreground">
           <LockKeyhole className="size-4" />
         </div>
         <div>
           <p className="font-semibold">{definition.name}</p>
-          <p className="mt-0.5 text-sm">{definition.description}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{definition.description}</p>
         </div>
       </div>
       <FeatureUpgradeActions
