@@ -5,6 +5,7 @@ import {
   type GetirbakimProduct,
   type GetirbakimProvider,
   type GetirbakimSearchInput,
+  type GetirbakimSearchOutcome,
   type GetirbakimExactOfferResult,
 } from "./types"
 
@@ -43,7 +44,15 @@ export class HttpGetirbakimProvider implements GetirbakimProvider {
   }
 
   async search(input: GetirbakimSearchInput): Promise<GetirbakimProduct[]> {
-    if (!input.oem?.trim() && !input.q?.trim()) return []
+    return (await this.searchOutcome(input)).products
+  }
+
+  /**
+   * `ok: false` = sonuç ALINAMADI (zaman aşımı, ağ, HTTP hatası, geçersiz yanıt). Boş ama başarılı
+   * yanıttan ayrılır ki çağıran tarafa "ürün yok" diye önbelleğe yazılmasın (#739).
+   */
+  async searchOutcome(input: GetirbakimSearchInput): Promise<GetirbakimSearchOutcome> {
+    if (!input.oem?.trim() && !input.q?.trim()) return { products: [], ok: true }
 
     try {
       const res = await fetch(this.url(input), {
@@ -60,16 +69,19 @@ export class HttpGetirbakimProvider implements GetirbakimProvider {
         // Anahtar/kota/sunucu hatası: SESSİZ boş liste. Gövdeyi loga yazmıyoruz,
         // içinde partner anahtarı yankılanmış olabilir.
         console.error(`[getirbakim/http] arama başarısız: HTTP ${res.status}`)
-        return []
+        return { products: [], ok: false }
       }
 
       const body = (await res.json()) as Record<string, unknown>
       const products = body?.products
-      if (!Array.isArray(products)) return []
+      if (!Array.isArray(products)) return { products: [], ok: false }
 
-      return products
-        .map(parseGetirbakimProduct)
-        .filter((p): p is GetirbakimProduct => p !== null)
+      return {
+        products: products
+          .map(parseGetirbakimProduct)
+          .filter((p): p is GetirbakimProduct => p !== null),
+        ok: true,
+      }
     } catch (err) {
       // Zaman aşımı (TimeoutError), ağ hatası, bozuk JSON — hepsi aynı kapıya
       // çıkar: GetirBakım bu sorgu için yok sayılır.
@@ -77,7 +89,7 @@ export class HttpGetirbakimProvider implements GetirbakimProvider {
         "[getirbakim/http] arama düştü:",
         err instanceof Error ? err.message : err,
       )
-      return []
+      return { products: [], ok: false }
     }
   }
 
