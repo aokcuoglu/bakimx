@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY, LegalPage, LegalSection } from "@/components/legal/legal-page";
 import { publicPageMetadata } from "@/lib/seo";
+import { EmailAddress } from "@/components/shared/email-address"
 
 export const metadata: Metadata = publicPageMetadata({
   path: "/terms",
@@ -89,7 +90,7 @@ export default function TermsPage() {
           Kullanıcı, giriş bilgilerinin (e-posta, şifre) gizliliğinden ve hesabı
           üzerinden yapılan tüm işlemlerden sorumludur. Yetkisiz bir erişim veya
           şüpheli bir aktivite fark edildiğinde derhal{" "}
-          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> adresine bildirim
+          <EmailAddress address={COMPANY.email} /> adresine bildirim
           yapılmalıdır.
         </p>
         <p>
@@ -282,7 +283,7 @@ export default function TermsPage() {
       <LegalSection n={17} title="İletişim">
         <p>
           Sözleşme ile ilgili sorularınız için{" "}
-          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> adresine
+          <EmailAddress address={COMPANY.email} /> adresine
           yazabilirsiniz.
         </p>
       </LegalSection>
