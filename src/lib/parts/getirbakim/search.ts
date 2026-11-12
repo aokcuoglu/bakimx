@@ -36,11 +36,13 @@ export async function searchGetirbakimProducts(
   const cached = readGetirbakimCache(key)
   if (cached) return cached
 
-  const products = await getGetirbakimProvider().search({ q, oem, limit, vehicleTypeId })
+  const { products, ok } = await getGetirbakimProvider().searchOutcome({ q, oem, limit, vehicleTypeId })
 
-  // Boş sonuç da yazılır: "bu terim GetirBakım'da yok" bilgisi de tekrar tekrar
-  // dış çağrı yapılmasını engellemeye değer.
-  writeGetirbakimCache(key, products)
+  // Başarılı boş sonuç da yazılır: "bu terim GetirBakım'da yok" bilgisi tekrar
+  // tekrar dış çağrı yapılmasını engellemeye değer. ALINAMAYAN sonuç (zaman
+  // aşımı, hata) YAZILMAZ: yazılsaydı GetirBakım bir kez yavaş kaldığında terim
+  // TTL boyunca "ürün yok" görünürdü (#739).
+  if (ok) writeGetirbakimCache(key, products)
   return products
 }
 

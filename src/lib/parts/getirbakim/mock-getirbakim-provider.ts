@@ -3,6 +3,7 @@ import {
   type GetirbakimProduct,
   type GetirbakimProvider,
   type GetirbakimSearchInput,
+  type GetirbakimSearchOutcome,
   type GetirbakimExactOfferResult,
 } from "./types"
 
@@ -105,6 +106,11 @@ function normalizeCode(value: string): string {
 
 class MockGetirbakimProvider implements GetirbakimProvider {
   readonly name = "mock" as const
+
+  /** Demo veri yerel: her arama sonuç ALINMIŞ sayılır. */
+  async searchOutcome(input: GetirbakimSearchInput): Promise<GetirbakimSearchOutcome> {
+    return { products: await this.search(input), ok: true }
+  }
 
   async search(input: GetirbakimSearchInput): Promise<GetirbakimProduct[]> {
     const limit = clampGetirbakimLimit(input.limit)
