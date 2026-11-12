@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY, LegalPage, LegalSection } from "@/components/legal/legal-page";
 import { publicPageMetadata } from "@/lib/seo";
+import { EmailAddress } from "@/components/shared/email-address"
 
 export const metadata: Metadata = publicPageMetadata({
   path: "/privacy",
@@ -111,7 +112,7 @@ export default function PrivacyPage() {
       <LegalSection title="İletişim">
         <p>
           Gizlilik ve çerez uygulamalarımıza ilişkin sorularınız için{" "}
-          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> adresine
+          <EmailAddress address={COMPANY.email} /> adresine
           yazabilirsiniz.
         </p>
       </LegalSection>

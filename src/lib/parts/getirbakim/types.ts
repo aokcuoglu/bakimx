@@ -89,6 +89,12 @@ export function classifyExactProducts(products: GetirbakimExactProduct[]): Getir
   return products.some((product) => product.offers.length > 0) ? "matched" : "no_offers"
 }
 
+export interface GetirbakimSearchOutcome {
+  products: GetirbakimProduct[]
+  /** Yanıt alındı mı. Boş ama başarılı arama `ok: true`'dur. */
+  ok: boolean
+}
+
 export type GetirbakimProviderName = "mock" | "http"
 
 export interface GetirbakimProvider {
@@ -99,6 +105,12 @@ export interface GetirbakimProvider {
    * atölyenin parça arama akışı da düşmemeli — bkz. http sağlayıcısındaki düşüş.
    */
   search(input: GetirbakimSearchInput): Promise<GetirbakimProduct[]>
+  /**
+   * `search` ile aynı sorgu, ama sonucun ALINIP ALINAMADIĞINI da söyler (#739). Fırlatmaz.
+   * `ok: false` (zaman aşımı, ağ/HTTP hatası, geçersiz yanıt) "ürün yok" anlamına gelmez;
+   * önbelleğe yazılmamalı.
+   */
+  searchOutcome(input: GetirbakimSearchInput): Promise<GetirbakimSearchOutcome>
   /** Exact parça numarası sorgusu. Upstream hatasında fırlatır; route bunu ayırır. */
   findOffersByPartNo(partNo: string): Promise<GetirbakimExactOfferResult>
 }

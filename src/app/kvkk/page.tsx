@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY, LegalPage, LegalSection } from "@/components/legal/legal-page";
 import { publicPageMetadata } from "@/lib/seo";
+import { EmailAddress } from "@/components/shared/email-address"
 
 export const metadata: Metadata = publicPageMetadata({
   path: "/kvkk",
@@ -33,7 +34,7 @@ export default function KvkkPage() {
           <li>Ticaret Sicil No: {COMPANY.tradeRegistryNo}</li>
           <li>Vergi Dairesi / No: {COMPANY.taxOffice} / {COMPANY.taxNo}</li>
           <li>
-            E-posta: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>
+            E-posta: <EmailAddress address={COMPANY.email} />
           </li>
         </ul>
       </LegalSection>
@@ -181,9 +182,9 @@ export default function KvkkPage() {
       <LegalSection n={10} title="Başvuru Yöntemi">
         <p>
           Haklarınıza ilişkin taleplerinizi{" "}
-          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> adresine veya
+          <EmailAddress address={COMPANY.email} /> adresine veya
           resmî/tebligata elverişli KEP adresimize (
-          <strong>{COMPANY.kep}</strong>) iletebilirsiniz. Başvurular, KVKK ve
+          <strong><EmailAddress address={COMPANY.kep} link={false} /></strong>) iletebilirsiniz. Başvurular, KVKK ve
           ilgili mevzuatta öngörülen sürede (kural olarak en geç 30 gün içinde)
           sonuçlandırılır.
         </p>
