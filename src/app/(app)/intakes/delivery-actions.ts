@@ -10,7 +10,7 @@ import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
 import { isOtpExpired } from "@/lib/intake/otp"
 import { checkRateLimit, recordAttempt } from "@/lib/communications/rate-limit"
-import { isMockWhatsAppOtp, sendWhatsAppOtp } from "@/lib/communications/whatsapp/otp"
+import { isMockSmsOtp, sendSmsOtp } from "@/lib/communications/sms/otp"
 import { updateOrderStatusAction } from "@/app/(app)/orders/actions"
 import { assertCan } from "@/lib/rbac"
 
@@ -74,13 +74,9 @@ export async function requestDeliveryOtpAction(intakeFormId: string) {
   if (!intake) return { error: "Kabul formu bulunamadı" }
   if (intake.status !== "ready_for_delivery") return { error: "Araç teslimata hazır değil" }
 
-  // Fiyat ya da parça kararı eksikse WhatsApp kodu hiç gitmesin — müşteri boşuna kod beklemesin.
+  // Fiyat ya da parça kararı eksikse SMS kodu hiç gitmesin — müşteri boşuna kod beklemesin.
   const blockerError = await checkDeliveryBlockers(user.workshopId, intakeFormId, workshop)
   if (blockerError) return { error: blockerError }
-
-  if (!isMockWhatsAppOtp() && !intake.customer.whatsappConsent) {
-    return { error: "Müşterinin WhatsApp iletişim izni bulunmuyor. Müşteri kaydından izni güncelleyin." }
-  }
 
   const sendKey = `delivery-otp-send:${intakeFormId}`
   if (!checkRateLimit(sendKey).allowed) return { error: "Çok sık kod istendi, lütfen biraz sonra tekrar deneyin" }
@@ -110,13 +106,13 @@ export async function requestDeliveryOtpAction(intakeFormId: string) {
     },
   })
 
-  const result = await sendWhatsAppOtp(intake.customer.phone, otpCode)
+  const result = await sendSmsOtp(intake.customer.phone, otpCode)
   if (!result.success) {
     await prisma.approvalRequest.updateMany({
       where: { id: approval.id, workshopId: user.workshopId },
       data: { status: "expired" },
     })
-    return { error: "WhatsApp onay kodu gönderilemedi. Numara ve WhatsApp bağlantısını kontrol edip tekrar deneyin." }
+    return { error: "SMS onay kodu gönderilemedi. Müşterinin telefon numarasını kontrol edip tekrar deneyin." }
   }
   await prisma.approvalRequest.updateMany({
     where: { id: approval.id, workshopId: user.workshopId },
@@ -128,10 +124,10 @@ export async function requestDeliveryOtpAction(intakeFormId: string) {
     workshopId: user.workshopId,
     intakeFormId,
     eventType: "delivery_otp_requested",
-    description: isMockWhatsAppOtp() ? "Teslim onay kodu test modunda oluşturuldu" : "Teslim onay kodu WhatsApp API tarafından kabul edildi",
+    description: isMockSmsOtp() ? "Teslim onay kodu test modunda oluşturuldu" : "Teslim onay kodu SMS ile gönderildi",
   })
 
-  return { success: true as const, otpCode: isMockWhatsAppOtp() ? otpCode : undefined }
+  return { success: true as const, otpCode: isMockSmsOtp() ? otpCode : undefined }
 }
 
 export async function verifyDeliveryOtpAction(intakeFormId: string, code: string) {

@@ -3,7 +3,6 @@ import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join } from "node:path"
 import {
   SMS_PROVIDER_LABELS,
-  WHATSAPP_PROVIDER_LABELS,
   EMAIL_PROVIDER_LABELS,
   NOTIFICATION_PROVIDER_LABELS,
   SENDING_DISABLED_LABEL,
@@ -39,7 +38,6 @@ function walk(dir: string): string[] {
 test("sağlayıcı etiketleri kullanıcıya teknik ad göstermez", () => {
   const maps = [
     SMS_PROVIDER_LABELS,
-    WHATSAPP_PROVIDER_LABELS,
     EMAIL_PROVIDER_LABELS,
     NOTIFICATION_PROVIDER_LABELS,
   ]
@@ -54,7 +52,6 @@ test("sağlayıcı etiketleri kullanıcıya teknik ad göstermez", () => {
 
 test("mock sağlayıcı, gönderimin kapalı olduğunu söyleyen etiketi kullanır", () => {
   expect(SMS_PROVIDER_LABELS.mock).toBe(SENDING_DISABLED_LABEL)
-  expect(WHATSAPP_PROVIDER_LABELS.mock).toBe(SENDING_DISABLED_LABEL)
   expect(EMAIL_PROVIDER_LABELS.mock).toBe(SENDING_DISABLED_LABEL)
   expect(NOTIFICATION_PROVIDER_LABELS.mock).toBe(SENDING_DISABLED_LABEL)
   expect(SENDING_DISABLED_LABEL).toContain("Kapalı")
@@ -65,10 +62,9 @@ test("mock sağlayıcı, gönderimin kapalı olduğunu söyleyen etiketi kullan�
 
 test("gerçek sağlayıcı adları korunur", () => {
   expect(SMS_PROVIDER_LABELS.netgsm).toBe("Netgsm")
-  expect(WHATSAPP_PROVIDER_LABELS.business_api).toBe("WhatsApp Business API")
   expect(EMAIL_PROVIDER_LABELS.resend).toBe("Resend")
-  // Bildirimler ekranı env'den `business` de alabiliyor.
-  expect(NOTIFICATION_PROVIDER_LABELS.business).toBe("WhatsApp Business API")
+  // WhatsApp Business API gönderimi kaldırıldı (#746): sağlayıcı etiketi geri gelmemeli.
+  expect(Object.values(NOTIFICATION_PROVIDER_LABELS).join(" ")).not.toContain("WhatsApp")
   expect(NOTIFICATION_PROVIDER_LABELS.gmail).toBe("Gmail")
 })
 

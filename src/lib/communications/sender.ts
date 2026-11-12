@@ -1,17 +1,16 @@
 import { prisma } from "@/lib/db"
 import { getSMSProvider } from "./sms"
-import { getWhatsAppProvider } from "./whatsapp"
 import { getEmailProvider } from "./email"
 import { getDefaultTemplate, renderTemplate, sanitizeTemplate } from "./templates"
 import { checkRateLimit, recordAttempt } from "./rate-limit"
-import type { CommunicationType, CommunicationTemplateKey, TemplateVariables, CommunicationResult } from "./types"
+import type { CommunicationType, CommunicationTemplateKey, SendableChannel, TemplateVariables, CommunicationResult } from "./types"
 
 interface SendOptions {
   workshopId: string
   customerId: string
   templateKey: CommunicationTemplateKey
   variables: TemplateVariables
-  channels: CommunicationType[]
+  channels: SendableChannel[]
   entityType?: string
   entityId?: string
 }
@@ -24,7 +23,6 @@ async function getCustomerPreferences(workshopId: string, customerId: string) {
       phone: true,
       email: true,
       smsConsent: true,
-      whatsappConsent: true,
       emailConsent: true,
       fullName: true,
       firstName: true,
@@ -61,7 +59,6 @@ async function logCommunication(params: {
 
 export async function sendCommunication(options: SendOptions): Promise<{
   sms?: CommunicationResult
-  whatsapp?: CommunicationResult
   email?: CommunicationResult
 }> {
   const { workshopId, customerId, templateKey, variables, channels, entityType, entityId } = options
@@ -74,13 +71,12 @@ export async function sendCommunication(options: SendOptions): Promise<{
   const channelName = (provider: string) => {
     switch (provider) {
       case "sms": return process.env.SMS_PROVIDER || "mock"
-      case "whatsapp": return process.env.WHATSAPP_PROVIDER || "mock"
       case "email": return process.env.EMAIL_PROVIDER || "mock"
       default: return "mock"
     }
   }
 
-  const results: { sms?: CommunicationResult; whatsapp?: CommunicationResult; email?: CommunicationResult } = {}
+  const results: { sms?: CommunicationResult; email?: CommunicationResult } = {}
 
   const enrichedVars: TemplateVariables = {
     ...variables,
@@ -99,21 +95,6 @@ export async function sendCommunication(options: SendOptions): Promise<{
         entityType: entityType ?? null,
         entityId: entityId ?? null,
         errorMessage: "Müşteri SMS onayı vermemiş",
-        providerId: null,
-      })
-      continue
-    }
-    if (channel === "whatsapp" && !customer.whatsappConsent) {
-      await logCommunication({
-        workshopId,
-        type: channel,
-        provider: "none",
-        recipient: customer.phone,
-        status: "skipped",
-        templateKey,
-        entityType: entityType ?? null,
-        entityId: entityId ?? null,
-        errorMessage: "Müşteri WhatsApp onayı vermemiş",
         providerId: null,
       })
       continue
@@ -151,12 +132,6 @@ export async function sendCommunication(options: SendOptions): Promise<{
           const provider = getSMSProvider()
           providerName = channelName("sms")
           result = await provider.sendSMS(customer.phone, rendered)
-          break
-        }
-        case "whatsapp": {
-          const provider = getWhatsAppProvider()
-          providerName = channelName("whatsapp")
-          result = await provider.sendWhatsApp(customer.phone, rendered)
           break
         }
         case "email": {
@@ -205,11 +180,6 @@ export async function sendCommunication(options: SendOptions): Promise<{
 export async function sendSMSDirect(to: string, message: string): Promise<CommunicationResult> {
   const provider = getSMSProvider()
   return provider.sendSMS(to, message)
-}
-
-export async function sendWhatsAppDirect(to: string, message: string): Promise<CommunicationResult> {
-  const provider = getWhatsAppProvider()
-  return provider.sendWhatsApp(to, message)
 }
 
 export async function sendEmailDirect(to: string, subject: string, htmlBody: string, textBody?: string): Promise<CommunicationResult> {

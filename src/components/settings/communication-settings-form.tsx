@@ -21,21 +21,17 @@ import { typedResolver } from "@/lib/validations/resolver"
 import {
   communicationSettingsFormSchema,
   normalizeSmsProvider,
-  normalizeWhatsAppProvider,
   normalizeEmailProvider,
   type CommunicationSettingsFormValues,
 } from "@/lib/validations/settings"
 import {
   SMS_PROVIDER_LABELS,
-  WHATSAPP_PROVIDER_LABELS,
   EMAIL_PROVIDER_LABELS,
 } from "@/lib/provider-labels"
 
 type SettingsData = {
   smsProvider: string
   smsSenderName: string | null
-  whatsappProvider: string
-  whatsappPhoneNumber: string | null
   emailProvider: string
   emailFromAddress: string | null
   emailFromName: string | null
@@ -49,9 +45,6 @@ function toDefaults(settings: SettingsData): CommunicationSettingsFormValues {
     smsProvider: normalizeSmsProvider(settings.smsProvider),
     smsSenderName: settings.smsSenderName || "",
     smsApiKey: "",
-    whatsappProvider: normalizeWhatsAppProvider(settings.whatsappProvider),
-    whatsappPhoneNumber: settings.whatsappPhoneNumber || "",
-    whatsappApiKey: "",
     emailProvider: normalizeEmailProvider(settings.emailProvider),
     emailFromName: settings.emailFromName || "",
     emailFromAddress: settings.emailFromAddress || "",
@@ -71,8 +64,6 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const smsProvider = form.watch("smsProvider")
-
-  const whatsappProvider = form.watch("whatsappProvider")
 
   const emailProvider = form.watch("emailProvider")
 
@@ -174,74 +165,6 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
               <Alert>
                 <AlertDescription>
                   SMS gönderimi kapalı. Mesajlar müşterilere ulaşmaz, yalnızca iletişim kayıtlarına yazılır. Göndermek için bir sağlayıcı seçin.
-                </AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>WhatsApp Ayarları</CardTitle>
-            <CardDescription>WhatsApp Business API yapılandırması</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="whatsappProvider"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>WhatsApp Sağlayıcı</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="mock">{WHATSAPP_PROVIDER_LABELS.mock}</SelectItem>
-                          <SelectItem value="business_api">{WHATSAPP_PROVIDER_LABELS.business_api}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="whatsappPhoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>WhatsApp Telefon Numarası</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="+905XXXXXXXXX" disabled={whatsappProvider === "mock"} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="whatsappApiKey"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-2">
-                    <FormLabel>WhatsApp API Anahtarı</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="password" placeholder="Yeni anahtar girin" disabled={whatsappProvider === "mock"} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {whatsappProvider === "mock" && (
-              <Alert>
-                <AlertDescription>
-                  WhatsApp gönderimi kapalı. Mesajlar müşterilere ulaşmaz, yalnızca iletişim kayıtlarına yazılır. Göndermek için bir sağlayıcı seçin.
                 </AlertDescription>
               </Alert>
             )}

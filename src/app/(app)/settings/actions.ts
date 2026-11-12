@@ -11,7 +11,6 @@ import {
   appointmentRulesSchema,
   pdfTemplateSchema,
   normalizeSmsProvider,
-  normalizeWhatsAppProvider,
   normalizeEmailProvider,
 } from "@/lib/validations/settings"
 import { normalizeContactNumber, normalizeSocialUrl } from "@/lib/workshop-contact"
@@ -52,7 +51,6 @@ export async function getWorkshopSettings() {
   settings = {
     ...settings,
     smsProvider: normalizeSmsProvider(settings.smsProvider),
-    whatsappProvider: normalizeWhatsAppProvider(settings.whatsappProvider),
     emailProvider: normalizeEmailProvider(settings.emailProvider),
   }
 
@@ -195,9 +193,6 @@ export async function updateCommunicationSettingsAction(formData: FormData) {
     smsProvider: formData.get("smsProvider") as string,
     smsApiKey: formData.get("smsApiKey") as string,
     smsSenderName: formData.get("smsSenderName") as string,
-    whatsappProvider: formData.get("whatsappProvider") as string,
-    whatsappApiKey: formData.get("whatsappApiKey") as string,
-    whatsappPhoneNumber: formData.get("whatsappPhoneNumber") as string,
     emailProvider: formData.get("emailProvider") as string,
     emailApiKey: formData.get("emailApiKey") as string,
     emailFromAddress: formData.get("emailFromAddress") as string,
@@ -212,14 +207,11 @@ export async function updateCommunicationSettingsAction(formData: FormData) {
   const updateData: Record<string, unknown> = {
     smsProvider: parsed.data.smsProvider,
     smsSenderName: parsed.data.smsSenderName || null,
-    whatsappProvider: parsed.data.whatsappProvider,
-    whatsappPhoneNumber: parsed.data.whatsappPhoneNumber || null,
     emailProvider: parsed.data.emailProvider,
     emailFromAddress: parsed.data.emailFromAddress || null,
     emailFromName: parsed.data.emailFromName || null,
   }
   if (parsed.data.smsApiKey) updateData.smsApiKey = parsed.data.smsApiKey
-  if (parsed.data.whatsappApiKey) updateData.whatsappApiKey = parsed.data.whatsappApiKey
   if (parsed.data.emailApiKey) updateData.emailApiKey = parsed.data.emailApiKey
 
   await prisma.workshopSettings.upsert({
@@ -230,9 +222,6 @@ export async function updateCommunicationSettingsAction(formData: FormData) {
       smsProvider: parsed.data.smsProvider,
       smsApiKey: parsed.data.smsApiKey || null,
       smsSenderName: parsed.data.smsSenderName || null,
-      whatsappProvider: parsed.data.whatsappProvider,
-      whatsappApiKey: parsed.data.whatsappApiKey || null,
-      whatsappPhoneNumber: parsed.data.whatsappPhoneNumber || null,
       emailProvider: parsed.data.emailProvider,
       emailApiKey: parsed.data.emailApiKey || null,
       emailFromAddress: parsed.data.emailFromAddress || null,

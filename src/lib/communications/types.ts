@@ -1,4 +1,12 @@
+/**
+ * Kayıtlı iletişim kanalları. `whatsapp` yalnız GEÇMİŞ kayıtları okumak için
+ * durur (CommunicationLog / şablon satırları) — WhatsApp Business API gönderimi
+ * #746 ile kaldırıldı, yeni gönderim yalnız {@link SendableChannel} ile yapılır.
+ */
 export type CommunicationType = "sms" | "whatsapp" | "email"
+
+/** Gerçekten mesaj gönderebilen kanallar (#746). */
+export type SendableChannel = Exclude<CommunicationType, "whatsapp">
 
 export type CommunicationStatus = "pending" | "sent" | "failed" | "skipped"
 
@@ -20,10 +28,6 @@ export interface CommunicationResult {
 
 export interface SMSProvider {
   sendSMS(to: string, message: string): Promise<CommunicationResult>
-}
-
-export interface WhatsAppProvider {
-  sendWhatsApp(to: string, message: string): Promise<CommunicationResult>
 }
 
 export interface EmailProvider {

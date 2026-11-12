@@ -27,8 +27,6 @@ export type SerializedWorkshopSettings = {
   accentColor: string | null
   smsProvider: string
   smsSenderName: string | null
-  whatsappProvider: string
-  whatsappPhoneNumber: string | null
   emailProvider: string
   emailFromAddress: string | null
   emailFromName: string | null
@@ -101,8 +99,6 @@ export async function loadWorkshopSettings() {
     accentColor: settings.accentColor,
     smsProvider: settings.smsProvider,
     smsSenderName: settings.smsSenderName,
-    whatsappProvider: settings.whatsappProvider,
-    whatsappPhoneNumber: settings.whatsappPhoneNumber,
     emailProvider: settings.emailProvider,
     emailFromAddress: settings.emailFromAddress,
     emailFromName: settings.emailFromName,

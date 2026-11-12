@@ -78,22 +78,17 @@ export type BrandingFormValues = z.infer<typeof brandingFormSchema>
 // Allowed provider values — single source of truth for both the form and the
 // action schemas. Kept in sync with the enum values below. Legacy DB values
 // that are no longer supported (iletimerkezi/sendgrid/custom) are normalized
-// back to "mock" via `normalizeSmsProvider`/`normalizeWhatsAppProvider`/
-// `normalizeEmailProvider`.
+// back to "mock" via `normalizeSmsProvider`/`normalizeEmailProvider`.
+// WhatsApp Business API sağlayıcısı #746 ile kaldırıldı; `whatsapp*` kolonları
+// şemada durur ama bu formlar artık onları okumaz/yazmaz.
 export const ALLOWED_SMS_PROVIDERS = ["mock", "netgsm"] as const
-export const ALLOWED_WHATSAPP_PROVIDERS = ["mock", "business_api"] as const
 export const ALLOWED_EMAIL_PROVIDERS = ["mock", "resend"] as const
 
 export type SmsProvider = (typeof ALLOWED_SMS_PROVIDERS)[number]
-export type WhatsAppProvider = (typeof ALLOWED_WHATSAPP_PROVIDERS)[number]
 export type EmailProvider = (typeof ALLOWED_EMAIL_PROVIDERS)[number]
 
 export function normalizeSmsProvider(value: string): SmsProvider {
   return (ALLOWED_SMS_PROVIDERS as readonly string[]).includes(value) ? (value as SmsProvider) : "mock"
-}
-
-export function normalizeWhatsAppProvider(value: string): WhatsAppProvider {
-  return (ALLOWED_WHATSAPP_PROVIDERS as readonly string[]).includes(value) ? (value as WhatsAppProvider) : "mock"
 }
 
 export function normalizeEmailProvider(value: string): EmailProvider {
@@ -104,9 +99,6 @@ export const communicationSettingsFormSchema = z.object({
   smsProvider: z.enum(ALLOWED_SMS_PROVIDERS).default("mock"),
   smsSenderName: z.string().optional().default(""),
   smsApiKey: z.string().optional().default(""),
-  whatsappProvider: z.enum(ALLOWED_WHATSAPP_PROVIDERS).default("mock"),
-  whatsappPhoneNumber: z.string().optional().default(""),
-  whatsappApiKey: z.string().optional().default(""),
   emailProvider: z.enum(ALLOWED_EMAIL_PROVIDERS).default("mock"),
   emailFromName: z.string().optional().default(""),
   emailFromAddress: z.email("Geçerli bir e-posta adresi giriniz").or(z.literal("")).optional().default(""),
@@ -178,9 +170,6 @@ export const communicationSettingsSchema = z.object({
   smsProvider: z.enum(ALLOWED_SMS_PROVIDERS).default("mock"),
   smsApiKey: z.string().optional().or(z.literal("")),
   smsSenderName: z.string().optional().or(z.literal("")),
-  whatsappProvider: z.enum(ALLOWED_WHATSAPP_PROVIDERS).default("mock"),
-  whatsappApiKey: z.string().optional().or(z.literal("")),
-  whatsappPhoneNumber: z.string().optional().or(z.literal("")),
   emailProvider: z.enum(ALLOWED_EMAIL_PROVIDERS).default("mock"),
   emailApiKey: z.string().optional().or(z.literal("")),
   emailFromAddress: z.email("Geçerli bir e-posta adresi giriniz").optional().or(z.literal("")),

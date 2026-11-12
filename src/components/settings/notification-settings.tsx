@@ -18,19 +18,16 @@ type TemplateData = {
 
 type Providers = {
   sms: string
-  whatsapp: string
   email: string
 }
 
 const CHANNEL_LABELS: Record<TemplateChannel, string> = {
   sms: "SMS",
-  whatsapp: "WhatsApp",
   email: "E-posta",
 }
 
 const CHANNEL_COLORS: Record<TemplateChannel, string> = {
   sms: "bg-success/10 text-foreground border-success/20",
-  whatsapp: "bg-success/10 text-foreground border-success/20",
   email: "bg-primary/10 text-foreground border-primary/20",
 }
 
@@ -38,7 +35,6 @@ const PROVIDER_LABELS = NOTIFICATION_PROVIDER_LABELS
 
 const TEST_RECIPIENT_PLACEHOLDER: Record<TemplateChannel, string> = {
   sms: "5xx xxx xx xx",
-  whatsapp: "5xx xxx xx xx",
   email: "ornek@eposta.com",
 }
 
@@ -56,7 +52,7 @@ export function NotificationSettings({
   const [editContent, setEditContent] = useState("")
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-  const [testRecipient, setTestRecipient] = useState<Record<TemplateChannel, string>>({ sms: "", whatsapp: "", email: "" })
+  const [testRecipient, setTestRecipient] = useState<Record<TemplateChannel, string>>({ sms: "", email: "" })
   const [testResult, setTestResult] = useState<Partial<Record<TemplateChannel, TestResult>>>({})
   const [testingChannel, setTestingChannel] = useState<TemplateChannel | null>(null)
 
@@ -143,8 +139,8 @@ export function NotificationSettings({
     <div className="space-y-6">
       <div className="bg-card rounded-lg border border-border p-5">
         <h3 className="text-sm font-semibold text-foreground mb-3">Aktif Sağlayıcılar</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {(["sms", "whatsapp", "email"] as const).map((ch) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {(["sms", "email"] as const).map((ch) => {
             const result = testResult[ch]
             const isTesting = testingChannel === ch
             return (
