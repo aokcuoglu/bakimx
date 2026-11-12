@@ -57,6 +57,24 @@ describe("HttpGetirbakimProvider", () => {
     expect(await provider().search({ q: "103803" })).toEqual([])
   })
 
+  test("searchOutcome 'sonuç yok' ile 'sonuç alınamadı'yı ayırır (#739)", async () => {
+    globalThis.fetch = (async () => jsonResponse({ products: [] })) as typeof fetch
+    expect(await provider().searchOutcome({ q: "balata" })).toEqual({ products: [], ok: true })
+
+    globalThis.fetch = (async () => jsonResponse({}, 502)) as typeof fetch
+    expect(await provider().searchOutcome({ q: "balata" })).toEqual({ products: [], ok: false })
+
+    globalThis.fetch = (async () => jsonResponse({ error: "x" })) as typeof fetch
+    expect(await provider().searchOutcome({ q: "balata" })).toEqual({ products: [], ok: false })
+
+    globalThis.fetch = (async () => {
+      throw new DOMException("The operation was aborted due to timeout", "TimeoutError")
+    }) as typeof fetch
+    expect(await provider().searchOutcome({ q: "balata" })).toEqual({ products: [], ok: false })
+    // Eski sözleşme aynen: search() fırlatmaz, düşüşte boş liste.
+    expect(await provider().search({ q: "balata" })).toEqual([])
+  })
+
   test("başarılı yanıtı DTO'ya çevirir", async () => {
     globalThis.fetch = (async () =>
       jsonResponse({
