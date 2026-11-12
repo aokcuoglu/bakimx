@@ -1,10 +1,10 @@
 import { mock } from "bun:test";
 import { strict as assert } from "node:assert";
 import { createHash } from "node:crypto";
-let mode = true, sendSuccess = true, consent = true, found = true, sentCode = "", sendCount = 0;
+let mode = true, sendSuccess = true, found = true, sentCode = "", sendCount = 0;
 let status = "ready_for_delivery";
 let approval = null;
-const intake = () => found ? { id: "intake", status, customer: { phone: "5423681438", whatsappConsent: consent }, vehicle: { plate: "TEST" } } : null;
+const intake = () => found ? { id: "intake", status, customer: { phone: "5423681438" }, vehicle: { plate: "TEST" } } : null;
 const prisma = {
   vehicleIntakeForm: { findFirst: async ({ where }) => {
     assert.equal(where.workshopId, "tenant");
@@ -36,7 +36,7 @@ mock.module("@/lib/audit", () => ({ AuditLogAction: async () => {} }));
 mock.module("@/lib/intake/timeline", () => ({ addTimelineEvent: async () => {} }));
 mock.module("@/lib/rbac", () => ({ assertCan: (_user, permission) => assert.equal(permission, "order.status") }));
 mock.module("@/lib/communications/rate-limit", () => ({ checkRateLimit: () => ({ allowed: true }), recordAttempt: () => {} }));
-mock.module("@/lib/communications/whatsapp/otp", () => ({ isMockWhatsAppOtp: () => mode, sendWhatsAppOtp: async (_to, code) => {
+mock.module("@/lib/communications/sms/otp", () => ({ isMockSmsOtp: () => mode, sendSmsOtp: async (_to, code) => {
   sentCode = code;
   sendCount++;
   return { success: sendSuccess };
@@ -60,11 +60,7 @@ assert.ok((await request("intake")).error);
 assert.ok((await verify("intake", sentCode)).error);
 assert.equal(status, "ready_for_delivery");
 const before = sendCount;
-consent = false;
-assert.ok((await request("intake")).error);
-assert.equal(sendCount, before);
-consent = true;
 found = false;
 assert.ok((await request("intake")).error);
 assert.equal(sendCount, before);
-console.log("delivery flow passed: mock, real redaction, hash, wrong code, delivery, failure, consent, tenant");
+console.log("delivery flow passed: mock, real redaction, hash, wrong code, delivery, failure, tenant");

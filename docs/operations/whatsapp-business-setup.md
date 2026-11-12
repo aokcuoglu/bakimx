@@ -90,7 +90,7 @@ Yeni GitHub değişkeni veya API anahtarı eklemek zorunlu değildir.
 `NEXT_PUBLIC_*` derlemede sabitlendiği için ECS runtime değişikliği tek başına yetmez.
 
 Bu değişiklik oto servislerin müşteri numaralarını veya paylaşım seçicilerini
-değiştirmez. `WHATSAPP_PROVIDER=mock` korunur. Meta Portfolio, Cloud API, chatbot,
+değiştirmez. Meta Portfolio, Cloud API, chatbot,
 katalog, ücretli servis ve toplu kampanya kurulumu kapsam dışındadır.
 
 Önce DEV PR ve kalite kapıları tamamlanır. Production konfigürasyonu veya yayını
@@ -140,42 +140,9 @@ ayarları ve canlı WhatsApp teslimatı, web bağlantısının testinden ayrı k
 - [WhatsApp Business mesajlaşma politikası](https://business.whatsapp.com/policy)
 - Next.js: kurulu `node_modules/next/dist/docs/01-app/02-guides/environment-variables.md`
 
-## Araç teslim OTP entegrasyonu (#631)
+## Araç teslim OTP'si
 
-Teslimata hazır araçta **WhatsApp Teslim Kodu Gönder** aksiyonu kullanılır.
-İş emri açılışında OTP gönderilmez. SMS fallback yoktur. Kod 10 dakika geçerlidir;
-yeniden kod istendiğinde eski bekleyen kod geçersizleşir. Kodun kendisi veritabanına
-ve sayfa props'una yazılmaz; SHA-256 özeti saklanır. Önceden SMS ile oluşturulmuş
-bekleyen kodlar için yeni WhatsApp kodu istenmelidir.
-
-`WHATSAPP_PROVIDER=mock` ağ isteği yapmaz; ekranda gerçek mesaj gönderilmediği
-belirtilir ve demo kodu gösterilir. `NODE_ENV=development` tek başına gerçek OTP'yi
-görünür yapmaz. Gerçek mod müşterinin `whatsappConsent` iznini gerektirir.
-
-Gerçek aktivasyon için (şu an tamamlandığı varsayılmamalı):
-
-1. Meta Business Portfolio ve WhatsApp Business Account erişimini doğrula.
-   Mevcut Business uygulaması hesabını silme veya numarayı habersiz taşıma.
-   Aynı numarayla uygulamayı korumak için Meta'nın hesapta sunduğu coexistence
-   onboarding uygunluğunu kontrol et; uygun değilse numara kararını hesap sahibi verir.
-2. WhatsApp Manager'da +905423681438 numarasının **Phone Number ID** değerini
-   doğrula. Bu ID telefon numarası değildir; gönderici bu ID ile belirlenir.
-3. `bakimx_teslim_otp` adlı Türkçe (`tr`) AUTHENTICATION, COPY_CODE düğmeli
-   şablonu oluştur; kod süresini 10 dakika olarak ayarla. Şablonun APPROVED
-   olduğunu doğrula. Hesabın authentication template uygunluğu Meta'ya bağlıdır.
-4. Yalnız localhost/AWS Dev gizli yapılandırmasına `WHATSAPP_PHONE_NUMBER_ID`,
-   `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_OTP_TEMPLATE_NAME=bakimx_teslim_otp`,
-   `WHATSAPP_OTP_TEMPLATE_LANGUAGE=tr` ve `WHATSAPP_API_URL=https://graph.facebook.com/v25.0`
-   ekle. Token'ı issue, log veya sohbet içine yazma. AWS'deki eski `WHATSAPP_TOKEN`
-   adı uygulamanın beklediği `WHATSAPP_ACCESS_TOKEN` yerine geçmez; ECS secret
-   eşlemesi doğru adla yapılmalıdır.
-5. Sonra `WHATSAPP_PROVIDER=business` ile yeni Dev task başlat. Onay verilmiş test
-   alıcısında gönderici numarasını ve mesajın telefona ulaştığını kontrol et;
-   yanlış/süresi geçmiş kodla teslimin reddini ve doğru kodla teslimi doğrula.
-   API'nin message ID döndürmesi teslimat kanıtı değildir; teslim webhook'u bu
-   kapsamda yoktur. Gerçek telefonda doğrulanmadan aktivasyonu tamamlandı sayma.
-
-Production/main yayını kullanıcının talimatıyla yasaktır.
-
-Meta şablon protokolü:
-https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/authentication-templates/copy-code-button-authentication-templates
+Teslim onay kodu WhatsApp'tan değil **SMS** sağlayıcısından gider (#746). #631/#632'deki
+WhatsApp Business API (Cloud API, authentication şablonu) entegrasyonu kaldırıldı;
+Meta/Wati üzerinden Coexistence kurulumu takip edilmiyor (#633). Bu belgedeki
+WhatsApp Business **uygulaması** kurulumu bundan etkilenmez.

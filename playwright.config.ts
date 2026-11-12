@@ -36,7 +36,6 @@ export default defineConfig({
     env: {
       EMAIL_PROVIDER: "mock",
       SMS_PROVIDER: "mock",
-      WHATSAPP_PROVIDER: "mock",
     },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

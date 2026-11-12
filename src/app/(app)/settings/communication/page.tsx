@@ -26,7 +26,7 @@ export default async function SettingsCommunicationPage() {
     <AppShell wide workshopName={workshop.name} pageTitle="İletişim">
       <SettingsPageHeader
         title="İletişim"
-        description="SMS, WhatsApp ve e-posta sağlayıcı ayarlarını yönetin."
+        description="SMS ve e-posta sağlayıcı ayarlarını yönetin."
       />
       <CommunicationSettingsForm settings={serializedSettings} />
     </AppShell>

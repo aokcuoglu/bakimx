@@ -8,7 +8,6 @@ import { formatTRY } from "@/lib/format"
 
 type ReminderResult = {
   sms?: { success: boolean; error?: string }
-  whatsapp?: { success: boolean; error?: string }
   email?: { success: boolean; error?: string }
 }
 
@@ -97,7 +96,7 @@ export function SendReminderButton({
               {customerName} müşterisine{vehiclePlate ? ` (${vehiclePlate})` : ""} {formatTRY(remainingAmount)} tutarındaki alacak için hatırlatma gönderilecek.
             </DialogDescription>
           </DialogHeader>
-          <p className="text-xs text-muted-foreground">Müşterinin iletişim izinlerine göre SMS, WhatsApp veya e-posta gönderilir.</p>
+          <p className="text-xs text-muted-foreground">Müşterinin SMS iznine göre SMS gönderilir.</p>
           <div className="flex items-center gap-2 justify-end">
             <Button variant="outline" size="sm" onClick={() => setShowConfirm(false)}>Vazgeç</Button>
             <Button variant="foreground" size="sm" onClick={handleSend} disabled={loading}>

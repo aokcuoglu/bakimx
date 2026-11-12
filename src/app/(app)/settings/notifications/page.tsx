@@ -31,7 +31,7 @@ export default async function NotificationsPage() {
     <AppShell wide workshopName={workshop.name} pageTitle="Bildirimler">
       <SettingsPageHeader
         title="Bildirimler"
-        description="SMS, WhatsApp ve e-posta bildirim şablonlarını yönetin."
+        description="SMS ve e-posta bildirim şablonlarını yönetin."
       />
       <NotificationSettings templates={templates} providers={providers} />
     </AppShell>

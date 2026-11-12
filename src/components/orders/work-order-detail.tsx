@@ -899,13 +899,13 @@ export function WorkOrderDetail({
 
       {deliveryOtpMode && order.status === "ready_for_delivery" && (
         <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-          <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> WhatsApp Teslim Onayı</p>
+          <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> SMS Teslim Onayı</p>
           {order.paymentStatus !== "paid" && (
             <p className="text-xs text-warning-strong">Uyarı: Bu iş emrinde ödeme tamamlanmadı ({order.paymentStatus}).</p>
           )}
-          <p className="text-xs text-muted-foreground">Müşterinin WhatsApp numarasına gönderilen kodu girin. Kod 10 dakika geçerlidir.</p>
+          <p className="text-xs text-muted-foreground">Müşterinin telefonuna SMS ile gönderilen kodu girin. Kod 10 dakika geçerlidir.</p>
           {deliverySentCode && (
-            <p className="text-xs text-muted-foreground">Test modu — gerçek WhatsApp mesajı gönderilmedi. Demo kodu: <span className="font-mono font-bold">{deliverySentCode}</span></p>
+            <p className="text-xs text-muted-foreground">Test modu — gerçek SMS gönderilmedi. Demo kodu: <span className="font-mono font-bold">{deliverySentCode}</span></p>
           )}
           <Input
             value={deliveryOtpCode}
@@ -1296,7 +1296,7 @@ export function WorkOrderDetail({
               {order.status === "ready_for_delivery" && !deliveryOtpMode && (
                 <div className="pt-3 border-t">
                   <Button onClick={handleRequestDeliveryOtp} disabled={loading} variant="outline" className="w-full">
-                    <KeyRound className="size-4 mr-2" /> WhatsApp Teslim Kodu Gönder
+                    <KeyRound className="size-4 mr-2" /> SMS Teslim Kodu Gönder
                   </Button>
                 </div>
               )}

@@ -1,5 +1,5 @@
 import { sendCommunication } from "@/lib/communications"
-import type { CommunicationType, TemplateVariables } from "@/lib/communications/types"
+import type { SendableChannel, TemplateVariables } from "@/lib/communications/types"
 
 async function getWorkshopName(workshopId: string): Promise<string> {
   const { prisma } = await import("@/lib/db")
@@ -42,7 +42,7 @@ export async function notifyAppointmentCreated(
     customerId,
     templateKey: "appointment_created",
     variables,
-    channels: ["sms", "whatsapp", "email"] as CommunicationType[],
+    channels: ["sms", "email"] as SendableChannel[],
     entityType: "appointment",
     entityId,
   })
@@ -72,7 +72,7 @@ export async function notifyAppointmentReminder(
     customerId,
     templateKey: "appointment_reminder",
     variables,
-    channels: ["sms", "whatsapp"] as CommunicationType[],
+    channels: ["sms"] as SendableChannel[],
     entityType: "appointment",
     entityId,
   })
@@ -97,7 +97,7 @@ export async function notifyIntakeApproval(
     customerId,
     templateKey: "intake_approval",
     variables,
-    channels: ["sms", "whatsapp"] as CommunicationType[],
+    channels: ["sms"] as SendableChannel[],
     entityType: "intake",
     entityId,
   })
@@ -126,7 +126,7 @@ export async function notifyQuoteReady(
     customerId,
     templateKey: "quote_ready",
     variables,
-    channels: ["sms", "whatsapp", "email"] as CommunicationType[],
+    channels: ["sms", "email"] as SendableChannel[],
     entityType: "quote",
     entityId,
   })
@@ -155,7 +155,7 @@ export async function notifyWorkOrderCompleted(
     customerId,
     templateKey: "work_order_completed",
     variables,
-    channels: ["sms", "whatsapp", "email"] as CommunicationType[],
+    channels: ["sms", "email"] as SendableChannel[],
     entityType: "order",
     entityId,
   })
@@ -183,7 +183,7 @@ export async function notifyMaintenanceReminder(
     customerId,
     templateKey: "maintenance_reminder",
     variables,
-    channels: ["sms", "whatsapp", "email"] as CommunicationType[],
+    channels: ["sms", "email"] as SendableChannel[],
     entityType: "reminder",
     entityId,
   })
@@ -210,7 +210,7 @@ export async function notifyPaymentReminder(
     customerId,
     templateKey: "payment_reminder",
     variables,
-    channels: ["sms", "whatsapp", "email"] as CommunicationType[],
+    channels: ["sms", "email"] as SendableChannel[],
     entityType: "order",
     entityId,
   })
@@ -235,7 +235,7 @@ export async function notifyVehiclePassportShare(
     customerId,
     templateKey: "vehicle_passport_share",
   variables,
-  channels: ["sms", "whatsapp", "email"] as CommunicationType[],
+  channels: ["sms", "email"] as SendableChannel[],
   entityType: "vehicle",
     entityId,
   })
@@ -248,7 +248,7 @@ export async function notifyCollectionReminder(
   totalAmount: string,
   shareToken?: string,
   entityId?: string,
-  channels: CommunicationType[] = ["sms", "whatsapp", "email"],
+  channels: SendableChannel[] = ["sms", "email"],
 ) {
   const workshopName = await getWorkshopName(workshopId)
   const variables: TemplateVariables = {
