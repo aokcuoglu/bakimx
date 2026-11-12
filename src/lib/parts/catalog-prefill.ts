@@ -41,6 +41,11 @@ function present(value: string | null | undefined): string | undefined {
   return trimmed ? trimmed : undefined
 }
 
+/** Fiyatı girilmemiş katalog ürünü 0 taşıyabilir — 0 "fiyat yok" demektir. */
+function positivePrice(kurus: number | null | undefined): number | null {
+  return kurus != null && kurus > 0 ? kurus : null
+}
+
 function compact(fields: Record<keyof CatalogStockPrefillFields, string | undefined>): CatalogStockPrefillFields {
   const out: Partial<Record<keyof CatalogStockPrefillFields, string>> = {}
   for (const [key, value] of Object.entries(fields) as [keyof CatalogStockPrefillFields, string | undefined][]) {
@@ -62,7 +67,7 @@ export function bakimxStockPrefill(product: BakimxProductSummary): CatalogStockP
       description: present(product.description),
     }),
     // İskontolu alış (BAK-47/BAK-58) — liste fiyatı atölye yüzeyine çıkmaz.
-    purchasePriceKurus: product.displayPriceKurus,
+    purchasePriceKurus: positivePrice(product.displayPriceKurus),
     sourceLabel: "BakımX kataloğu",
   }
 }
@@ -81,7 +86,7 @@ export function getirbakimStockPrefill(product: GetirbakimProduct): CatalogStock
       barcode: undefined,
       description: undefined,
     }),
-    purchasePriceKurus: line.purchasePriceKurus,
+    purchasePriceKurus: positivePrice(line.purchasePriceKurus),
     sourceLabel: "GetirBakım",
   }
 }

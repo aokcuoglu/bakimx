@@ -81,6 +81,10 @@ describe("bakimxStockPrefill", () => {
   })
 })
 
+test("treats an unpriced (0) BakımX product as having no price", () => {
+  expect(bakimxStockPrefill(bakimx({ displayPriceKurus: 0 })).purchasePriceKurus).toBeNull()
+})
+
 describe("getirbakimStockPrefill", () => {
   test("prefers the manufacturer part number and uses the B2B price", () => {
     const p = getirbakimStockPrefill(getirbakim())
