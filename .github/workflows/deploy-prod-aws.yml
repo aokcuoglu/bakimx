@@ -175,6 +175,8 @@ jobs:
           #   SESSION_COOKIE_*   — prod cookie identity (bakimx_session / .bakimx.com); the
           #                        Node routes read these at runtime, the Edge middleware got
           #                        them at build time via build-args above. Explicit for parity.
+          #   GETIRBAKIM_TIMEOUT_MS — GetirBakım partner searches take 2–6 s in prod; the 4 s
+          #                        default emptied the workshop's part list (#741).
           # Idempotent across re-runs. TODO(cdk-backfill): move these into the CDK task def.
           aws ecs describe-task-definition --task-definition "$TASK_FAMILY" \
             --query taskDefinition --output json \
@@ -185,11 +187,13 @@ jobs:
                    | map(select(.name != "DB_SSL_NO_VERIFY"
                                 and .name != "SESSION_COOKIE_NAME"
                                 and .name != "SESSION_COOKIE_DOMAIN"
-                                and .name != "GETIRBAKIM_PROVIDER"))
+                                and .name != "GETIRBAKIM_PROVIDER"
+                                and .name != "GETIRBAKIM_TIMEOUT_MS"))
                    + [{name: "DB_SSL_NO_VERIFY",     value: "true"},
                       {name: "SESSION_COOKIE_NAME",   value: "bakimx_session"},
                       {name: "SESSION_COOKIE_DOMAIN", value: ".bakimx.com"},
-                      {name: "GETIRBAKIM_PROVIDER",  value: "http"}])
+                      {name: "GETIRBAKIM_PROVIDER",  value: "http"},
+                      {name: "GETIRBAKIM_TIMEOUT_MS", value: "10000"}])
               | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
                     .compatibilities, .registeredAt, .registeredBy)
             ' > new-taskdef.json
