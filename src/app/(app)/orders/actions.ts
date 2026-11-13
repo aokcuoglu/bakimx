@@ -36,6 +36,7 @@ import { syncDeliveryToCalendar } from "@/lib/calendar/sync"
 import { z } from "zod/v4"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { lockDamageIntake } from "@/lib/intake/damage"
+import { externalLaborCreatePrices, externalLaborUpdatePrices } from "@/lib/orders/external-labor-cost"
 
 export async function createServiceOrderAction(intakeFormId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
@@ -81,6 +82,14 @@ const orderItemCreateSchema = serviceOrderItemSchema.extend({
   // Dış işçiliğin yaptırıldığı firma ("nerede yaptırıldı"). Yalnız
   // type=external_labor'da yazılır — parça/işçilik satırına tedarikçi sızmasın.
   supplierName: z.string().max(160).optional(),
+  // Dış işçiliğin alış fiyatı — dışarıya ödenen (kuruş, KDV hariç, #749).
+  // Yalnız type=external_labor'da kabul edilir; katalog kalemlerinin alış
+  // fiyatı sunucuda ürün kaydından türetilir, istemciden gelmez.
+  purchasePriceKurus: z.coerce
+    .number()
+    .int("Alış fiyatı kuruş (tam sayı) olmalıdır")
+    .min(0, "Alış fiyatı negatif olamaz")
+    .optional(),
 })
 
 export async function addOrderItemAction(formData: FormData) {
@@ -107,6 +116,7 @@ export async function addOrderItemAction(formData: FormData) {
     bakimxProductId: formData.get("bakimxProductId") as string,
     getirbakimProductId: formData.get("getirbakimProductId") as string,
     includeVat: formData.get("includeVat") as string,
+    purchasePriceKurus: formData.get("purchasePriceKurus") as string | null,
   }
 
   const parsed = orderItemCreateSchema.safeParse({
@@ -128,10 +138,22 @@ export async function addOrderItemAction(formData: FormData) {
     bakimxProductId: raw.bakimxProductId || undefined,
     getirbakimProductId: raw.getirbakimProductId || undefined,
     includeVat: raw.includeVat || undefined,
+    purchasePriceKurus: raw.purchasePriceKurus ? Number(raw.purchasePriceKurus) : undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
   }
+  if (parsed.data.purchasePriceKurus !== undefined && parsed.data.type !== "external_labor") {
+    return { error: "Alış fiyatı yalnız dış işçilik kaleminde girilebilir" }
+  }
+  // Dış işçilikte satış fiyatı verilmezse alıştan ön-dolar (#749).
+  const externalLaborPrices =
+    parsed.data.type === "external_labor"
+      ? externalLaborCreatePrices({
+          unitPrice: parsed.data.unitPrice,
+          purchasePriceKurus: parsed.data.purchasePriceKurus,
+        })
+      : null
   const quantityError = validateQuantityForUnit(parsed.data.quantity, parsed.data.unit, !!parsed.data.partId)
   if (quantityError) return { error: quantityError }
 
@@ -216,7 +238,9 @@ export async function addOrderItemAction(formData: FormData) {
           sku: catalogFields?.sku ?? parsed.data.sku ?? null,
           unit: catalogFields?.unit ?? parsed.data.unit ?? null,
           quantity: parsed.data.quantity,
-          unitPrice: parsed.data.unitPrice ?? catalogFields?.unitPrice ?? null,
+          unitPrice: externalLaborPrices
+            ? externalLaborPrices.unitPrice
+            : parsed.data.unitPrice ?? catalogFields?.unitPrice ?? null,
           totalPrice: parsed.data.totalPrice ?? null,
           note: parsed.data.note || null,
           tecdocArticleId: catalogFields ? null : parsed.data.tecdocArticleId ?? null,
@@ -229,7 +253,10 @@ export async function addOrderItemAction(formData: FormData) {
           bakimxProductId: bakimxFields?.bakimxProductId ?? null,
           getirbakimProductId: getirbakimFields?.getirbakimProductId ?? null,
           // Alış fiyatı anlık görüntüdür: ürün sonradan zamlansa da bu satır donar.
-          purchasePriceKurus: catalogFields?.purchasePriceKurus ?? null,
+          // Dış işçilikte dışarıya ödenen tutar (#749).
+          purchasePriceKurus: externalLaborPrices
+            ? externalLaborPrices.purchasePriceKurus
+            : catalogFields?.purchasePriceKurus ?? null,
           source: catalogFields ? catalogFields.source : parsed.data.source ?? null,
           // "Nerede yaptırıldı" yalnız dış işçilikte anlamlıdır; diğer tiplerde
           // alan boş kalır (satın alma akışı kendi supplierName'ini kendisi yazar).
@@ -828,6 +855,12 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
       ? ((formData.get("tecdocArticleId") as string) === "" ? null : Number(formData.get("tecdocArticleId")))
       : undefined,
     includeVat: has("includeVat") ? (formData.get("includeVat") as string) : undefined,
+    // Boş değer "değiştirme" demektir: 0'a çevrilseydi alışı izleyen satış
+    // fiyatı da sessizce 0'a inerdi.
+    purchasePriceKurus:
+      has("purchasePriceKurus") && formData.get("purchasePriceKurus") !== ""
+        ? Number(formData.get("purchasePriceKurus"))
+        : undefined,
   }
 
   const parsed = serviceOrderItemUpdateSchema.safeParse(raw)
@@ -839,6 +872,11 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     item.type !== "external_labor"
   ) {
     return { error: "Tedarikçi ve tarih yalnız dış işçilik kaleminde güncellenebilir" }
+  }
+  // Dış alım parçasının alışı kendi kapısından (updatePurchaseItemAction),
+  // katalog kaleminin alışı ürün kaydından gelir; bu yol yalnız dış işçilik içindir.
+  if (parsed.data.purchasePriceKurus !== undefined && item.type !== "external_labor") {
+    return { error: "Alış fiyatı yalnız dış işçilik kaleminde güncellenebilir" }
   }
   const currentQuantity = quantityToNumber(item.quantity)
   const effectiveQuantity = parsed.data.quantity ?? currentQuantity
@@ -881,6 +919,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     unit?: string | null
     quantity?: number
     unitPrice?: number | null
+    purchasePriceKurus?: number
     note?: string | null
     supplierName?: string | null
     purchasedAt?: Date
@@ -895,7 +934,17 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   if (parsed.data.sku !== undefined) data.sku = parsed.data.sku || null
   if (parsed.data.unit !== undefined) data.unit = parsed.data.unit || null
   if (parsed.data.quantity !== undefined) data.quantity = parsed.data.quantity
-  if (parsed.data.unitPrice !== undefined) data.unitPrice = parsed.data.unitPrice
+  if (item.type === "external_labor") {
+    // Alış değişince, hâlâ alışı izleyen satış fiyatı da güncellenir; ofisin
+    // koyduğu kâra dokunulmaz (#749, bkz. external-labor-cost.ts).
+    Object.assign(
+      data,
+      externalLaborUpdatePrices(
+        { unitPrice: item.unitPrice, purchasePriceKurus: item.purchasePriceKurus },
+        { unitPrice: parsed.data.unitPrice, purchasePriceKurus: parsed.data.purchasePriceKurus },
+      ),
+    )
+  } else if (parsed.data.unitPrice !== undefined) data.unitPrice = parsed.data.unitPrice
   if (parsed.data.note !== undefined) data.note = parsed.data.note || null
   if (parsed.data.supplierName !== undefined) data.supplierName = parsed.data.supplierName || null
   if (has("purchasedAt")) {

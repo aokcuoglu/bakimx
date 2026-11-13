@@ -41,6 +41,8 @@ import {
 import { splitRowActions } from "@/lib/orders/row-actions"
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
 import { cn } from "@/lib/utils"
+import { Label } from "@/components/ui/label"
+import { salePriceFollowsCost } from "@/lib/orders/external-labor-cost"
 import { searchLaborItems } from "@/lib/labor/search"
 import type { LaborCatalogRow } from "@/lib/labor/types"
 import {
@@ -460,6 +462,9 @@ export function PartsLaborEditor({
                 onShowDetail={setDetail}
                 showActions={false}
               />
+              {editingRow.type === "external_labor" && (
+                <CostPriceField key={editingRow.id} row={editingRow} onCell={editCell} />
+              )}
             </VatContext.Provider>
           )}
           <DialogFooter>
@@ -601,6 +606,10 @@ export function PartsLaborGrid({
     // gönderilen değerler yalnız iyimser satır içindir (bkz. addOrderItemAction).
     if (draft.bakimxProductId) fd.set("bakimxProductId", draft.bakimxProductId)
     if (draft.getirbakimProductId) fd.set("getirbakimProductId", draft.getirbakimProductId)
+    // Dış işçiliğin alış fiyatı (#749) — sunucu yalnız bu tipte kabul eder.
+    if (draft.type === "external_labor" && draft.purchasePriceKurus != null) {
+      fd.set("purchasePriceKurus", String(draft.purchasePriceKurus))
+    }
     // BAK-53 — satır KDV bayrağı. Sunucu varsayılanı da `true`, ama taslakta
     // kullanıcı işareti kaldırdıysa o karar kaybolmamalı.
     if (draft.includeVat !== undefined) fd.set("includeVat", String(draft.includeVat !== false))
@@ -672,8 +681,13 @@ export function PartsLaborGrid({
   }
 
   async function saveRow(draft: Row, original: Row): Promise<boolean> {
-    const fields = ["name", "sku", "unit", "quantity", "unitPrice", "brand", "category", "categoryId", "tecdocArticleId", "includeVat"] as const
-    const changed = fields.filter((field) => draft[field] !== original[field])
+    const baseFields = ["name", "sku", "unit", "quantity", "unitPrice", "brand", "category", "categoryId", "tecdocArticleId", "includeVat"] as const
+    // Alış fiyatı bu yoldan yalnız dış işçilikte düzenlenir (#749); dış alım
+    // parçasının alışı kendi detay modalından gider.
+    const fields = draft.type === "external_labor"
+      ? [...baseFields, "purchasePriceKurus" as const]
+      : baseFields
+    const changed = fields.filter((field) => (draft[field] ?? null) !== (original[field] ?? null))
     if (changed.length === 0) return true
     const fd = new FormData()
     for (const field of changed) fd.set(field, String(draft[field] ?? ""))
@@ -919,7 +933,10 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog, modalLayou
       {vat.perLine && (
         <Field label="KDV"><div className="flex h-7 items-center"><VatCell row={draft} ed={ed} onCell={onCell} /></div></Field>
       )}
-      <Field label="Birim Fiyat"><PriceField row={draft} ed={ed} wide /></Field>
+      {isExternal && (
+        <Field label="Alış Fiyatı"><CostPriceInput row={draft} onCell={onCell} /></Field>
+      )}
+      <Field label={isExternal ? "Satış Fiyatı" : "Birim Fiyat"}><PriceField row={draft} ed={ed} wide /></Field>
     </>
   )
   const actions = (
@@ -932,9 +949,12 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog, modalLayou
   if (modalLayout) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+        <div className={cn(
+          "grid grid-cols-1 items-end gap-3",
+          isExternal ? "sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]" : "sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]",
+        )}>
           {nameField}
-          <div className="flex items-end gap-3 sm:contents">{detailFields}</div>
+          <div className="flex flex-wrap items-end gap-3 sm:contents">{detailFields}</div>
         </div>
         <div className="flex items-center justify-between gap-3 border-t border-border pt-3">{actions}</div>
       </div>
@@ -1723,6 +1743,66 @@ function ModalPriceField({ row, onCell }: { row: Row; onCell: OnCell }) {
       onBlur={commit}
       onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur() }}
     />
+  )
+}
+
+/**
+ * Dış işçiliğin alış fiyatı girdisi (#749) — dışarıya ödenen, KDV hariç.
+ *
+ * Satış fiyatı hâlâ alışı izliyorsa (hiç girilmemiş ya da alışa eşit) onu da
+ * birlikte günceller; elle kâr eklenmiş satış fiyatına dokunmaz. Sunucu aynı
+ * kuralı uygular (external-labor-cost.ts) — burada yalnız anında görünsün diye.
+ * Boş bırakmak "değiştirme" demektir: alış silinip satış 0'a inmesin.
+ */
+function CostPriceInput({ row, onCell, id }: { row: Row; onCell: OnCell; id?: string }) {
+  const [draft, setDraft] = useState(() => toPriceDraft(row.purchasePriceKurus ?? null))
+  function commit() {
+    if (!draft.trim()) {
+      setDraft(toPriceDraft(row.purchasePriceKurus ?? null))
+      return
+    }
+    const entered = /[+*/×÷()]/.test(draft) || /-(?!^)/.test(draft)
+      ? evaluateMoneyExpression(draft)
+      : parseTRYToKurus(draft)
+    if (entered == null || entered < 0) {
+      setDraft(toPriceDraft(row.purchasePriceKurus ?? null))
+      return
+    }
+    if (entered === row.purchasePriceKurus) return
+    const current = { unitPrice: row.unitPrice, purchasePriceKurus: row.purchasePriceKurus ?? null }
+    onCell(row, salePriceFollowsCost(current)
+      ? { purchasePriceKurus: entered, unitPrice: entered }
+      : { purchasePriceKurus: entered })
+  }
+  return (
+    <Input
+      id={id}
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      placeholder="₺0,00"
+      aria-label="Alış fiyatı (KDV hariç)"
+      className="h-7 w-32 px-2.5 text-right text-sm tabular-nums"
+      value={draft}
+      onFocus={(event) => event.currentTarget.select()}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur() }}
+    />
+  )
+}
+
+/** Düzenleme modalında dış işçiliğin alış fiyatı satırı (etiket + girdi + açıklama). */
+function CostPriceField({ row, onCell }: { row: Row; onCell: OnCell }) {
+  const id = `cost-${row.id}`
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-border px-3 py-2">
+      <div className="min-w-0">
+        <Label htmlFor={id} className="text-sm font-medium">Alış fiyatı</Label>
+        <p className="text-xs text-muted-foreground">Dışarıya ödenen tutar, KDV hariç. Müşteri görmez.</p>
+      </div>
+      <CostPriceInput id={id} row={row} onCell={onCell} />
+    </div>
   )
 }
 
