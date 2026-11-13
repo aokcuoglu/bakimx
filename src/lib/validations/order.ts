@@ -50,6 +50,12 @@ export const serviceOrderItemUpdateSchema = z.object({
   // Yalnız dış işçilikte kullanılan "nerede yaptırıldı" bilgisi. Parça
   // tedarikçisi satın alma akışının kendi kapısından güncellenir.
   supplierName: z.string().trim().max(160, "Tedarikçi adı en fazla 160 karakter olabilir").optional(),
+  // Yalnız dış işçilikte: dışarıya ödenen tutar (kuruş, KDV hariç, #749).
+  purchasePriceKurus: z.coerce
+    .number()
+    .int("Alış fiyatı kuruş (tam sayı) olmalıdır")
+    .min(0, "Alış fiyatı negatif olamaz")
+    .optional(),
   brand: z.string().optional(),
   category: z.string().optional(),
   categoryId: z.coerce.number().int("Kategori id tam sayı olmalıdır").positive().nullable().optional(),

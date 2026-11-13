@@ -52,6 +52,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { WizardActions } from "@/components/intake/wizard-ui"
 import { AddExternalLaborButton, EditExternalLaborButton } from "@/components/technician/external-labor-sheet"
+import { externalLaborPaidKurus } from "@/lib/orders/external-labor-cost"
 import { findUndecidedPartsRequests } from "@/lib/orders/parts-request-guard"
 import { isOrderLocked } from "@/lib/status-transitions"
 import { purchaseDeleteDecision, type PurchaseDeleteDecision } from "@/lib/orders/purchase-delete"
@@ -892,9 +893,9 @@ function PurchasesSection({
 
   const totalKurus =
     purchases.reduce((sum, i) => sum + (i.purchasePriceKurus ?? 0), 0) +
-    laborItems.reduce((sum, i) => sum + (i.unitPrice ?? 0) * i.quantity, 0)
+    laborItems.reduce((sum, i) => sum + (externalLaborPaidKurus(i) ?? 0) * i.quantity, 0)
   const hasAnyPrice =
-    purchases.some((i) => i.purchasePriceKurus != null) || laborItems.some((i) => i.unitPrice != null)
+    purchases.some((i) => i.purchasePriceKurus != null) || laborItems.some((i) => externalLaborPaidKurus(i) != null)
 
   const addActions = !locked && (
     <div className="flex shrink-0 items-center gap-2">
@@ -1179,6 +1180,8 @@ function ExternalLaborCard({
   const router = useRouter()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  // Usta dışarıya ödediğini görür, ofisin koyduğu satış fiyatını değil (#749).
+  const paidKurus = externalLaborPaidKurus(item)
 
   async function confirmDelete() {
     setBusy(true)
@@ -1209,9 +1212,9 @@ function ExternalLaborCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <p className="break-words text-sm font-medium text-foreground">{item.name}</p>
-              {item.unitPrice != null && (
+              {paidKurus != null && (
                 <p className="shrink-0 text-sm font-bold tabular-nums text-foreground">
-                  {formatTRY(item.unitPrice * item.quantity)}
+                  {formatTRY(paidKurus * item.quantity)}
                 </p>
               )}
             </div>
@@ -1238,7 +1241,7 @@ function ExternalLaborCard({
                     id: item.id,
                     name: item.name,
                     supplierName: item.supplierName,
-                    unitPrice: item.unitPrice,
+                    purchasePriceKurus: item.purchasePriceKurus,
                     note: item.note,
                     purchasedAt: item.purchasedAt,
                     createdAt: item.createdAt,
