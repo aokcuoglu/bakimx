@@ -1,15 +1,22 @@
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import type { GetirbakimProduct } from "@/lib/parts/getirbakim/types"
+import {
+  getirbakimFitLevel,
+  getirbakimMatchesVehicle,
+  sortGetirbakimByFit,
+} from "@/lib/parts/getirbakim/fitment"
 
 /**
  * Parça arama açılır listesinin satırları.
  *
- * Üç kaynak var ve karışmaları tehlikeli:
+ * Dört kaynak var ve karışmaları tehlikeli:
  *   - `catalog`: TecDoc araması `vehicle_type_id` ile scope'lu → sonuç ARACA UYGUN.
  *   - `bakimx` : BakımX'in kendi ürün kataloğu (BAK-35). Araçtan BAĞIMSIZ (Faz 1'de
  *     yalnız `universal` ürünler yayınlanıyor), o yüzden araç kataloğa bağlı
  *     olmasa da aranabilir. Fiyatı atölyenin ALIŞ fiyatıdır.
+ *   - `getirbakim`: GetirBakım ticari kataloğu (fiyat/stok). Araç verilince satır
+ *     uyum seviyesi taşır (tam / muhtemel / bilinmiyor, #755); uymayanlar da listelenir.
  *   - `stock`  : atölyenin kendi stok kartları, araca bağlı DEĞİL → uyarıyla gösterilir (#181)
  *     ve eklenmeden önce onay istenir (#157).
  *
@@ -35,9 +42,23 @@ export type PartSuggestion =
   | { kind: "getirbakim"; product: GetirbakimProduct }
   | { kind: "stock"; part: StockPartLite }
 
-/** Satırın bu araca uygun olduğu doğrulanmış mı? */
+/**
+ * Satırın bu araca uygun olduğu DOĞRULANMIŞ mı? TecDoc araması araca scope'lu;
+ * GetirBakım satırı yalnız tam araç tipi doğrulandıysa (`CONFIRMED`) sayılır (#755).
+ */
 export function suggestionFitsVehicle(s: PartSuggestion): boolean {
-  return s.kind === "catalog"
+  if (s.kind === "catalog") return true
+  return s.kind === "getirbakim" && getirbakimFitLevel(s.product) === "guaranteed"
+}
+
+/**
+ * "Yalnız bu araca uyanlar" süzgecinde kalır mı? Doğrulanmış uyuma ek olarak
+ * GetirBakım'ın model düzeyindeki "muhtemelen uyumlu" satırları da kalır — rozet
+ * farkı satırda görünür. BakımX (araçtan bağımsız) ve stok kartları elenir.
+ */
+export function suggestionMatchesVehicle(s: PartSuggestion): boolean {
+  if (s.kind === "catalog") return true
+  return s.kind === "getirbakim" && getirbakimMatchesVehicle(s.product)
 }
 
 /** Base UI Autocomplete'in metin karşılığı — dört kaynak için tek yer. */
@@ -56,12 +77,19 @@ export function suggestionKey(s: PartSuggestion): string {
 }
 
 /**
- * Sıra: TecDoc → BakımX → GetirBakım → atölye stoğu.
+ * Sıra (#755): GetirBakım (araca tam/muhtemel uyan) → TecDoc → BakımX →
+ * GetirBakım (diğerleri) → atölye stoğu.
  *
- * Katalog sonuçları ÖNCE gelir: araca uygunluğu doğrulanmış olan onlar, kullanıcı
- * önce onları görmeli. BakımX ürünleri hemen arkasında gelir — araca uygunluğu
- * doğrulanmamıştır ama satılabilirliği ve fiyatı bizde kayıtlıdır. Stok kartları
- * en sonda, uyarıyla listelenir.
+ * Araca uyan GetirBakım satırları EN ÖNDE: hem araca uyumu doğrulanmış (ya da
+ * model düzeyinde olası) hem de fiyatı/stoku olan, doğrudan kaleme yazılabilen
+ * tek kaynak — vitrin arama kutusundaki "uyanlar önce" deneyimi. TecDoc
+ * sonuçları araca scope'lu olduğu için hemen arkasında gelir. BakımX ürünleri
+ * araçtan bağımsızdır ama satılabilirliği ve fiyatı bizde kayıtlıdır. Araca
+ * uymayan (ya da uyumu bilinmeyen) GetirBakım ürünleri ELENMEZ — her parça
+ * aranabilir kalmalı. Stok kartları en sonda, uyarıyla listelenir.
+ *
+ * GetirBakım grubu içinde sıra: tam uyumlu → muhtemelen uyumlu → diğerleri,
+ * her seviyede GetirBakım'ın alaka sırası korunur.
  *
  * Aynı parça iki kaynakta birden çıkabilir (atölye kataloğa da giren bir parçayı
  * stok kartı olarak da tutuyorsa). Bu durumda stok satırı elenir — katalog satırı
@@ -91,10 +119,13 @@ export function buildPartSuggestions(
     const candidates = [p.sku, p.oemNo].map(normalizePartNo).filter(Boolean)
     return !candidates.some((n) => cataloged.has(n))
   })
+  const getirbakim = sortGetirbakimByFit(getirbakimProducts)
+  const getirbakimRow = (product: GetirbakimProduct): PartSuggestion => ({ kind: "getirbakim", product })
   return [
+    ...getirbakim.filter(getirbakimMatchesVehicle).map(getirbakimRow),
     ...articles.map((article): PartSuggestion => ({ kind: "catalog", article })),
     ...bakimxProducts.map((product): PartSuggestion => ({ kind: "bakimx", product })),
-    ...getirbakimProducts.map((product): PartSuggestion => ({ kind: "getirbakim", product })),
+    ...getirbakim.filter((product) => !getirbakimMatchesVehicle(product)).map(getirbakimRow),
     ...stock.map((part): PartSuggestion => ({ kind: "stock", part })),
   ]
 }

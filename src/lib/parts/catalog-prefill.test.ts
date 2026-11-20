@@ -42,6 +42,7 @@ function getirbakim(overrides: Partial<GetirbakimProduct> = {}): GetirbakimProdu
     oemNumbers: ["1K0698151"],
     references: [],
     exactFitment: { requestedVehicleTypeId: null, status: "NOT_REQUESTED", matchedVehicleTypeIds: [] },
+    fitmentLevel: "unknown",
     imageUrl: null,
     listPriceKurus: 120_000,
     b2bPriceKurus: 99_000,

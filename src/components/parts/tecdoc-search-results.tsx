@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ChevronRight, Search } from "lucide-react"
+import { CarFront, ChevronRight, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { Button } from "@/components/ui/button"
+import { Toggle } from "@/components/ui/toggle"
 import { TecdocArticleRow, TECDOC_SOURCE_LABEL } from "./tecdoc-article-row"
 import { BakimxProductRow } from "./bakimx-product-row"
 import { GetirbakimProductRow } from "./getirbakim-product-row"
@@ -15,6 +16,7 @@ import type { ArticleSummary, CategoryMatch } from "@/lib/tecdoc/types"
 import { fetchBakimxMatches } from "@/lib/parts/bakimx-client"
 import { nestGetirbakimUnderArticles } from "@/lib/parts/getirbakim/match"
 import { GETIRBAKIM_SOURCE_LABEL } from "@/lib/parts/getirbakim/labels"
+import { getirbakimMatchesVehicle, sortGetirbakimByFit } from "@/lib/parts/getirbakim/fitment"
 
 const EMPTY_GETIRBAKIM: GetirbakimProduct[] = []
 
@@ -25,6 +27,11 @@ const EMPTY_GETIRBAKIM: GetirbakimProduct[] = []
  * TecDoc ve GetirBakım AYRI bölümlerde durur; parça no/OEM örtüşen GetirBakım
  * satırı TecDoc makalesinin altına yuvalanır. BakımX ile karıştırılmaz —
  * atölye stoğu bizim depomuz sanmasın.
+ *
+ * GetirBakım satırları araca uyuma göre sıralıdır (tam → muhtemel → diğer,
+ * #755). "Yalnız bu araca uyanlar" açıkken BakımX bölümü (araçtan bağımsız) ve
+ * uyumu bilinmeyen GetirBakım satırları gizlenir; TecDoc zaten araca scope'lu.
+ * Süzgeç yalnız istemcide çalışır, yeni sorgu atmaz.
  */
 export function TecdocSearchResults({
   query,
@@ -68,6 +75,7 @@ export function TecdocSearchResults({
   onShowDetail?: (a: ArticleSummary) => void
 }) {
   const [bakimxMatches, setBakimxMatches] = useState<Record<string, BakimxProductSummary>>({})
+  const [onlyFits, setOnlyFits] = useState(false)
   const lastArticlesRef = useRef<typeof articles>(null)
 
   useEffect(() => {
@@ -105,12 +113,24 @@ export function TecdocSearchResults({
     return brandFilter ? articles.filter((a) => a.supplierName === brandFilter) : articles
   }, [articles, brandFilter])
 
-  const visibleBakimx = onBakimxSelect ? (bakimxProducts ?? []) : []
-  const visibleGetirbakim = getirbakimProducts ?? EMPTY_GETIRBAKIM
+  // Süzgeç yalnız araç kataloğa bağlıyken anlamlı; araç değişip bağ koparsa
+  // gizli bir süzgeç sonuçları boşaltmasın.
+  const fitFilterActive = onlyFits && vehicleTypeId != null
+  const allGetirbakim = getirbakimProducts ?? EMPTY_GETIRBAKIM
+  const fittingGetirbakimCount = useMemo(
+    () => allGetirbakim.filter(getirbakimMatchesVehicle).length,
+    [allGetirbakim],
+  )
+  const visibleBakimx = onBakimxSelect && !fitFilterActive ? (bakimxProducts ?? []) : []
+  const visibleGetirbakim = useMemo(() => {
+    const sorted = sortGetirbakimByFit(allGetirbakim)
+    return fitFilterActive ? sorted.filter(getirbakimMatchesVehicle) : sorted
+  }, [allGetirbakim, fitFilterActive])
   const getirbakimLayout = useMemo(
     () => nestGetirbakimUnderArticles(visibleArticles ?? [], visibleGetirbakim),
     [visibleArticles, visibleGetirbakim],
   )
+  const showFitToggle = vehicleTypeId != null && (fittingGetirbakimCount > 0 || onlyFits)
   // "Sonuç yok" ancak BÜTÜN bölümler boşken doğrudur. TecDoc araması hiç
   // çalışmamış olabilir (araç kataloğa bağlı değil → `articles` null kalır); o
   // durumda karar yalnız katalog taraflarına bakar.
@@ -123,6 +143,24 @@ export function TecdocSearchResults({
 
   return (
     <div>
+      {showFitToggle && (
+        <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2">
+          <span className="text-xs text-muted-foreground">
+            {fittingGetirbakimCount} {GETIRBAKIM_SOURCE_LABEL} ürünü bu araca uyumlu
+          </span>
+          <Toggle
+            variant="outline"
+            size="sm"
+            pressed={onlyFits}
+            onPressedChange={setOnlyFits}
+            aria-label="Yalnız bu araca uyan parçaları göster"
+          >
+            <CarFront />
+            Yalnız bu araca uyanlar
+          </Toggle>
+        </div>
+      )}
+
       {categories.length > 0 && (
         <section>
           <SectionHeading>Kategoriler ({categories.length + categoryOverflow})</SectionHeading>
@@ -227,7 +265,7 @@ export function TecdocSearchResults({
         <div className="px-4 py-8 text-center space-y-2">
           <Search className="size-5 mx-auto text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground">
-            &ldquo;{query}&rdquo; için sonuç bulunamadı.
+            &ldquo;{query}&rdquo; için {fitFilterActive ? "bu araca uyan " : ""}sonuç bulunamadı.
           </p>
           {/* Kapsam notu yalnız TecDoc araması GERÇEKTEN çalıştıysa doğrudur;
               araç kataloğa bağlı değilken (`articles` null) yanıltıcı olurdu. */}

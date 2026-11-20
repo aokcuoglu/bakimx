@@ -16,6 +16,7 @@ const product = (over: Partial<GetirbakimProduct> = {}): GetirbakimProduct => ({
   oemNumbers: ["77362261"],
   references: [],
   exactFitment: { requestedVehicleTypeId: null, status: "NOT_REQUESTED", matchedVehicleTypeIds: [] },
+  fitmentLevel: "unknown",
   imageUrl: null,
   listPriceKurus: 189_000,
   b2bPriceKurus: 160_650,

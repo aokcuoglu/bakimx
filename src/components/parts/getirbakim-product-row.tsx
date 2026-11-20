@@ -10,6 +10,7 @@ import {
   getirbakimStockLabel,
 } from "@/lib/parts/getirbakim/labels"
 import { isGetirbakimSelectable } from "@/lib/parts/getirbakim-item"
+import { getirbakimFitLevel } from "@/lib/parts/getirbakim/fitment"
 import type { GetirbakimProduct } from "@/lib/parts/getirbakim/types"
 import { cn } from "@/lib/utils"
 
@@ -39,6 +40,7 @@ export function GetirbakimProductRow({
   const unavailable = product.availability === "UNAVAILABLE"
   const selectable = !!onSelect && isGetirbakimSelectable(product)
   const discountNote = getirbakimDiscountLabel(product.discountBps)
+  const fitLevel = getirbakimFitLevel(product)
 
   const body = (
     <>
@@ -61,9 +63,15 @@ export function GetirbakimProductRow({
           <span className="shrink-0 rounded-sm border border-primary/20 bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary-strong">
             {GETIRBAKIM_SOURCE_LABEL}
           </span>
-          {product.exactFitment.status === "CONFIRMED" && (
+          {fitLevel === "guaranteed" && (
             <span className="shrink-0 rounded-sm bg-success/10 px-1.5 py-px text-[10px] font-medium text-success-strong">
               Araca tam uyumlu
+            </span>
+          )}
+          {/* Model düzeyinde uyum (#755): ikincil, dolgusuz — "tam uyumlu" ile karışmasın. */}
+          {fitLevel === "likely" && (
+            <span className="shrink-0 rounded-sm border border-success/30 px-1.5 py-px text-[10px] font-medium text-success-strong">
+              Muhtemelen uyumlu
             </span>
           )}
         </span>
