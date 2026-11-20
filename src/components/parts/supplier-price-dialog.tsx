@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { formatTRY } from "@/lib/format"
 import type { GetirbakimExactProduct, GetirbakimOffer } from "@/lib/parts/getirbakim/types"
 import {
-  readOfferResponse, readPurchaseResponse, readQuoteResponse, SupplierResponseError,
+  readOfferResponse, readPurchaseResponse, readQuoteResponse, RELEASED_PURCHASE_CODES, SupplierResponseError,
   type OfferResponse, type Quote,
 } from "@/lib/parts/supplier-price-responses"
 import { transactionalAvailability } from "./supplier-offer-availability"
@@ -77,7 +77,8 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
       const response = await fetch("/api/orders/external-procurements", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
         action: "purchase", orderId, orderItemId, idempotencyKey: idempotencyKey.current,
         externalProductId: selected.product.sourceProductId, selectedOfferId: selected.offer.selectedOfferId,
-        quantity: purchaseQuantity, expectedUnitNetKurus: quote.unitNetKurus,
+        // One work-order item = one contract line; GetirBakım binds its quoted unit net price.
+        quantity: purchaseQuantity, expectedUnitNetKurus: quote.lines[0].unitNetKurus,
         confirmationToken: quote.confirmationToken,
         productPresentation: { name: part.name, brand: selected.product.brandName, partNumber: selected.product.manufacturerPartNumber.value },
         informationalSnapshot: { unitPriceKurus: selected.offer.informationalPriceKurus ?? undefined, currency: selected.offer.currency, availability: selected.offer.availability, capturedAt: new Date().toISOString() },
@@ -91,7 +92,7 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
           setConfirmationChanged(true)
           return
         }
-        if (error instanceof SupplierResponseError && error.code === "OFFER_EXPIRED") {
+        if (error instanceof SupplierResponseError && error.code === "OFFER_UNAVAILABLE") {
           idempotencyKey.current = null
           setSelected(null)
           setQuote(null)
@@ -99,6 +100,11 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
           setRefreshCount((count) => count + 1)
           setConfirmationChanged(true)
           return
+        }
+        // The server released this attempt; a retry must not replay the old key.
+        if (error instanceof SupplierResponseError && error.code && RELEASED_PURCHASE_CODES.has(error.code)) {
+          idempotencyKey.current = null
+          setQuote(null)
         }
         throw error
       }
@@ -148,9 +154,15 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
             </section>
           ))}
         </div>
-        {confirmationChanged ? <Alert className="mx-3 mb-3" variant="destructive"><AlertTitle>Teklif yenilendi</AlertTitle><AlertDescription>Fiyat, politika veya teklif geçerliliği değişti. Güncel teklifi ve bağlayıcı fiyatı kontrol edip yeniden açıkça onaylayın. Önceki onayınız kullanılmadı.</AlertDescription></Alert> : null}
+        {confirmationChanged ? <Alert className="mx-3 mb-3" variant="destructive"><AlertTitle>Teklif yenilendi</AlertTitle><AlertDescription>Fiyat, kargo ücreti veya teklif geçerliliği değişti. Güncel teklifi ve bağlayıcı fiyatı kontrol edip yeniden açıkça onaylayın. Önceki onayınız kullanılmadı.</AlertDescription></Alert> : null}
         {selected && quote ? <div className="space-y-3 border-t p-4" aria-live="polite">
-          <div className="flex items-center justify-between gap-4"><div><p className="text-sm font-medium">Bağlayıcı toplam</p><p className="text-xs text-muted-foreground">KDV dahil · {new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" }).format(new Date(quote.expiresAt))} tarihine kadar · Politika {quote.policyVersion}</p></div><p className="text-lg font-semibold tabular-nums">{formatTRY(quote.bindingGrossKurus)}</p></div>
+          <dl className="space-y-1 text-xs text-muted-foreground">
+            <div className="flex justify-between gap-4"><dt>Parça (KDV hariç)</dt><dd className="tabular-nums">{formatTRY(quote.totals.netKurus)}</dd></div>
+            <div className="flex justify-between gap-4"><dt>KDV</dt><dd className="tabular-nums">{formatTRY(quote.totals.vatKurus)}</dd></div>
+            <div className="flex justify-between gap-4"><dt>Kargo (KDV dahil)</dt><dd className="tabular-nums">{quote.totals.shippingKurus === 0 ? "Ücretsiz" : formatTRY(quote.totals.shippingKurus)}</dd></div>
+          </dl>
+          <div className="flex items-center justify-between gap-4"><div><p className="text-sm font-medium">Bağlayıcı toplam</p><p className="text-xs text-muted-foreground">KDV ve kargo dahil · {new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" }).format(new Date(quote.expiresAt))} tarihine kadar · Cari hesaba yazılır</p></div><p className="text-lg font-semibold tabular-nums">{formatTRY(quote.totals.grossKurus)}</p></div>
+          <p className="text-xs text-muted-foreground">Parçalar atölyenin Ayarlar › Genel sayfasındaki adresine gönderilir.</p>
           {orderId && orderItemId ? <Button variant="foreground" className="w-full" disabled={pending || procurementExists} onClick={() => void confirmPurchase()}>{pending ? "İşleniyor…" : "Bu fiyatla satın almayı onayla"}</Button> : <p className="text-xs text-muted-foreground">Satın alma yalnız iş emri kaleminden başlatılabilir.</p>}
           {procurementExists ? <p className="text-xs text-muted-foreground">Bu iş emri kaleminin bir satın alma talebi zaten var.</p> : null}
         </div> : null}

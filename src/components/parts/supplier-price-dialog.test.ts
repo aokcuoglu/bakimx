@@ -49,7 +49,9 @@ describe("SupplierPriceDialog real-offer UI contract", () => {
     expect(source).not.toContain("expectedExpiresAt: quote.expiresAt")
     expect(source).toContain("RECONFIRMATION_REQUIRED_CODES.has(error.code)")
     expect(source).toContain("setQuote(null)")
-    expect(source).toContain("Politika {quote.policyVersion}")
+    // Contract v2.0 quotes carry no policy version; the total shows shipping instead.
+    expect(source).not.toContain("quote.policyVersion")
+    expect(source).toContain("Kargo (KDV dahil)")
     expect(source).toContain("yeniden açıkça onaylayın")
   })
 })

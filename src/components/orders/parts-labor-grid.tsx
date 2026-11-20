@@ -55,6 +55,8 @@ import {
 } from "@/components/ui/autocomplete"
 import { Checkbox } from "@/components/ui/checkbox"
 import { formatTRY } from "@/lib/format"
+import { procurementCancelAction, procurementCanRefresh, procurementStatusLabel } from "@/lib/external-procurement/presentation"
+import { readCancellationResponse } from "@/lib/parts/supplier-price-responses"
 import { formatItemAddedMessage } from "@/lib/orders/item-added-message"
 import { kurusToLira, parseTRYToKurus } from "@/lib/money"
 import { evaluateMoneyExpression } from "@/lib/money-expression"
@@ -1959,36 +1961,47 @@ function DoneBadge({ completedAt, className }: { completedAt?: string | null; cl
 
 function ProcurementBadge({ procurement }: { procurement?: OrderItem["externalProcurement"] }) {
   const router = useRouter()
-  const [cancelling, setCancelling] = useState(false)
+  const [busy, setBusy] = useState<"cancel" | "refresh" | null>(null)
   if (!procurement) return null
-  const label = procurement.status === "REQUESTED"
-      ? "Tedarik bekleniyor"
-      : procurement.status === "INITIATING"
-        ? "Talep iletiliyor"
-      : procurement.status === "CONFIRMED"
-        ? procurement.cancellationRequestedAt ? "İptal talebi iletildi" : "Tedarik onaylandı"
-        : procurement.status === "REJECTED"
-          ? "Tedarik reddedildi"
-          : procurement.status === "RESERVATION_EXPIRED"
-            ? "Talep süresi doldu"
-        : procurement.status === "SHIPPED"
-          ? "Sevkiyatta"
-          : procurement.status === "COMPLETED"
-            ? "Tedarik tamamlandı"
-            : procurement.status === "CANCELLED"
-              ? "Tedarik iptal edildi"
-              : procurement.status === "FAILED" ? "Tedarik başarısız" : procurement.status
-  async function requestCancellation() {
-    setCancelling(true)
-    try {
-      const response = await fetch("/api/orders/external-procurements", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "cancel", procurementId: procurement!.id }) })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || "İptal talebi iletilemedi.")
-      toast.success("İptal talebi GetirBakım'a iletildi."); router.refresh()
-    } catch (error) { toast.error(error instanceof Error ? error.message : "İptal talebi iletilemedi.") }
-    finally { setCancelling(false) }
+  const label = procurementStatusLabel(procurement)
+  const cancelAction = procurementCancelAction(procurement)
+  async function post(action: "cancel" | "refresh") {
+    return fetch("/api/orders/external-procurements", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, procurementId: procurement!.id }) })
   }
-  return <span className="mt-1.5 flex flex-wrap items-center gap-2"><Badge variant="outline">{label}</Badge>{procurement.status === "CONFIRMED" && !procurement.cancellationRequestedAt ? <Button type="button" variant="link" size="sm" className="h-auto px-0 text-destructive-strong" disabled={cancelling} onClick={() => void requestCancellation()}>{cancelling ? "İletiliyor…" : "İptal talep et"}</Button> : null}</span>
+  async function cancel() {
+    setBusy("cancel")
+    try {
+      const result = await readCancellationResponse(await post("cancel"))
+      toast.success(result.cancellation === "CANCELLED" ? "GetirBakım siparişi iptal edildi." : "İptal talebi GetirBakım'a iletildi.")
+    } catch (error) { toast.error(error instanceof Error ? error.message : "İptal isteği iletilemedi.") }
+    finally { setBusy(null); router.refresh() }
+  }
+  // Contract v2.0 has no webhooks: pull the current state from GetirBakım.
+  async function refresh() {
+    setBusy("refresh")
+    try {
+      const response = await post("refresh")
+      if (!response.ok) {
+        const data = await response.json().catch(() => null) as { error?: string } | null
+        throw new Error(data?.error || "Durum güncellenemedi.")
+      }
+      router.refresh()
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Durum güncellenemedi.") }
+    finally { setBusy(null) }
+  }
+  return (
+    <span className="mt-1.5 flex flex-wrap items-center gap-2">
+      <Badge variant="outline">{label}</Badge>
+      {procurement.grossKurus != null ? (
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {formatTRY(procurement.grossKurus)}
+          {procurement.shippingKurus ? ` · kargo ${formatTRY(procurement.shippingKurus)} dahil` : ""}
+        </span>
+      ) : null}
+      {procurementCanRefresh(procurement) ? <Button type="button" variant="link" size="sm" className="h-auto px-0" disabled={busy !== null} onClick={() => void refresh()}>{busy === "refresh" ? "Güncelleniyor…" : "Durumu güncelle"}</Button> : null}
+      {cancelAction ? <Button type="button" variant="link" size="sm" className="h-auto px-0 text-destructive-strong" disabled={busy !== null} onClick={() => void cancel()}>{busy === "cancel" ? "İletiliyor…" : cancelAction === "cancel" ? "Siparişi iptal et" : "İptal talep et"}</Button> : null}
+    </span>
+  )
 }
 
 // Başarılı otosave ("Kaydedildi") veya yeni ekleme ("Eklendi") sonrası 2 sn'lik
