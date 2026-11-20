@@ -135,6 +135,47 @@ describe("parseGetirbakimProduct — dayanıklılık", () => {
     expect(parseGetirbakimProduct({ id: "42", name: "X" })?.exactFitment.status).toBe("NOT_REQUESTED")
   })
 
+  test("sözleşme 1.3 fitmentLevel'ı okunur, 1.2'de exactFitment'tan türetilir (#755)", () => {
+    const fit = (requestedVehicleTypeId: number, status: string, matched: number[]) => ({
+      requestedVehicleTypeId, status, matchedVehicleTypeIds: matched,
+    })
+    const v13 = (fitmentLevel: unknown, exactFitment: unknown) =>
+      parseGetirbakimProduct({ id: "1", name: "X", contractVersion: "1.3", fitmentLevel, exactFitment })
+
+    expect(v13("guaranteed", fit(7, "CONFIRMED", [7]))?.contractVersion).toBe("1.3")
+    expect(v13("guaranteed", fit(7, "CONFIRMED", [7]))?.fitmentLevel).toBe("guaranteed")
+    expect(v13("likely", fit(7, "NOT_CONFIRMED", []))?.fitmentLevel).toBe("likely")
+    expect(v13("unknown", fit(7, "NOT_CONFIRMED", []))?.fitmentLevel).toBe("unknown")
+    // Alan yok (1.2 yanıtı): CONFIRMED tam uyum, diğerleri bilinmiyor.
+    const v12 = (exactFitment: unknown) =>
+      parseGetirbakimProduct({ id: "1", name: "X", contractVersion: "1.2", exactFitment })
+    expect(v12(fit(7, "CONFIRMED", [7]))?.fitmentLevel).toBe("guaranteed")
+    expect(v12(fit(7, "NOT_CONFIRMED", []))?.fitmentLevel).toBe("unknown")
+    expect(parseGetirbakimProduct({ id: "1", name: "X" })?.fitmentLevel).toBe("unknown")
+  })
+
+  test("fitmentLevel exactFitment'tan güçlü bir iddia taşıyamaz", () => {
+    // Doğrulanmamış "guaranteed" → bilinmiyor; araç istenmeden "likely" → bilinmiyor.
+    const dishonest = parseGetirbakimProduct({
+      id: "1", name: "X", fitmentLevel: "guaranteed",
+      exactFitment: { requestedVehicleTypeId: 7, status: "CONFIRMED", matchedVehicleTypeIds: [8] },
+    })
+    expect(dishonest?.fitmentLevel).toBe("unknown")
+    expect(parseGetirbakimProduct({ id: "1", name: "X", fitmentLevel: "likely" })?.fitmentLevel).toBe("unknown")
+    expect(parseGetirbakimProduct({ id: "1", name: "X", fitmentLevel: "ŞEY" })?.fitmentLevel).toBe("unknown")
+    // CONFIRMED doğrulandıysa alan ne derse desin tam uyumlu.
+    expect(parseGetirbakimProduct({
+      id: "1", name: "X", fitmentLevel: "unknown",
+      exactFitment: { requestedVehicleTypeId: 7, status: "CONFIRMED", matchedVehicleTypeIds: [7] },
+    })?.fitmentLevel).toBe("guaranteed")
+  })
+
+  test("tanınmayan sözleşme sürümü null olur ama satır atılmaz", () => {
+    const p = parseGetirbakimProduct({ id: "1", name: "X", contractVersion: "9.9" })
+    expect(p?.contractVersion).toBeNull()
+    expect(p?.name).toBe("X")
+  })
+
   test("zorunlu alanı eksik satır null döner", () => {
     expect(parseGetirbakimProduct({ name: "id yok" })).toBeNull()
     expect(parseGetirbakimProduct({ id: "1" })).toBeNull()

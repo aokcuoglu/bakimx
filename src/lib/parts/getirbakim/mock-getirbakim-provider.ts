@@ -1,5 +1,7 @@
+import { sortGetirbakimByFit } from "./fitment"
 import {
   clampGetirbakimLimit,
+  type GetirbakimFitmentLevel,
   type GetirbakimProduct,
   type GetirbakimProvider,
   type GetirbakimSearchInput,
@@ -20,7 +22,7 @@ import {
 
 const MOCK_PRODUCTS: GetirbakimProduct[] = [
   {
-    contractVersion: "1.1",
+    contractVersion: "1.3",
     sourceProductId: "gb-1001",
     id: "gb-1001",
     partNo: "GDB1330",
@@ -31,6 +33,7 @@ const MOCK_PRODUCTS: GetirbakimProduct[] = [
     oemNumbers: ["77362261", "9948080"],
     references: [{ type: "OEM", value: "77362261", normalized: "77362261", brand: "FIAT" }],
     exactFitment: { requestedVehicleTypeId: null, status: "NOT_REQUESTED", matchedVehicleTypeIds: [] },
+    fitmentLevel: "unknown",
     imageUrl: null,
     listPriceKurus: 189000,
     b2bPriceKurus: 160650,
@@ -42,7 +45,7 @@ const MOCK_PRODUCTS: GetirbakimProduct[] = [
     lastSyncedAt: "2026-08-20T06:00:00.000Z",
   },
   {
-    contractVersion: "1.1",
+    contractVersion: "1.3",
     sourceProductId: "gb-1002",
     id: "gb-1002",
     partNo: "OC90",
@@ -53,6 +56,7 @@ const MOCK_PRODUCTS: GetirbakimProduct[] = [
     oemNumbers: ["55256470"],
     references: [{ type: "OEM", value: "55256470", normalized: "55256470", brand: null }],
     exactFitment: { requestedVehicleTypeId: null, status: "NOT_REQUESTED", matchedVehicleTypeIds: [] },
+    fitmentLevel: "unknown",
     imageUrl: null,
     listPriceKurus: 24500,
     b2bPriceKurus: 20825,
@@ -65,7 +69,7 @@ const MOCK_PRODUCTS: GetirbakimProduct[] = [
     lastSyncedAt: "2026-08-20T06:00:00.000Z",
   },
   {
-    contractVersion: "1.1",
+    contractVersion: "1.3",
     sourceProductId: "gb-1003",
     id: "gb-1003",
     partNo: "1K0615301AA",
@@ -76,6 +80,7 @@ const MOCK_PRODUCTS: GetirbakimProduct[] = [
     oemNumbers: ["1K0615301AA"],
     references: [{ type: "OEM", value: "1K0615301AA", normalized: "1K0615301AA", brand: "VW" }],
     exactFitment: { requestedVehicleTypeId: null, status: "NOT_REQUESTED", matchedVehicleTypeIds: [] },
+    fitmentLevel: "unknown",
     imageUrl: null,
     // Fiyatsız satır: yüzey "fiyat sorulur" durumunu da göstermeli.
     listPriceKurus: null,
@@ -88,6 +93,20 @@ const MOCK_PRODUCTS: GetirbakimProduct[] = [
     lastSyncedAt: null,
   },
 ]
+
+const FIT_CYCLE: GetirbakimFitmentLevel[] = ["guaranteed", "likely", "unknown"]
+
+/**
+ * Demo uyumu (#755) — DETERMİNİSTİK: aynı (ürün, araç) çifti hep aynı seviyeyi
+ * alır, ve her araçta demo ürünlerinden biri tam uyumlu, biri muhtemelen
+ * uyumlu, biri bilinmiyor olur. Rozetler yerelde ve testte görünsün diye;
+ * gerçek bir uyum verisi DEĞİLDİR.
+ */
+export function mockGetirbakimFitLevel(productId: string, vehicleTypeId: number): GetirbakimFitmentLevel {
+  const index = MOCK_PRODUCTS.findIndex((product) => product.id === productId)
+  if (index < 0) return "unknown"
+  return FIT_CYCLE[(vehicleTypeId + index) % FIT_CYCLE.length]
+}
 
 function matches(product: GetirbakimProduct, term: string): boolean {
   const needle = term.toLocaleLowerCase("tr")
@@ -122,21 +141,37 @@ class MockGetirbakimProvider implements GetirbakimProvider {
         (p) =>
           normalizeCode(p.partNo) === needle ||
           p.oemNumbers.some((code) => normalizeCode(code) === needle),
-      ).slice(0, limit), input.vehicleTypeId)
+      ), input.vehicleTypeId).slice(0, limit)
     }
 
     const q = input.q?.trim()
     if (!q) return []
 
-    return this.withFitment(MOCK_PRODUCTS.filter((p) => matches(p, q)).slice(0, limit), input.vehicleTypeId)
+    // 1.3 gibi: önce uyanlar öne alınır, SONRA kırpılır.
+    return this.withFitment(MOCK_PRODUCTS.filter((p) => matches(p, q)), input.vehicleTypeId).slice(0, limit)
   }
 
+  /**
+   * Sözleşme 1.3 davranışının taklidi: araç verilince satırlar uyum seviyesi
+   * taşır ve uyanlar önce gelir; hiçbir satır elenmez.
+   */
   private withFitment(products: GetirbakimProduct[], vehicleTypeId?: number | null): GetirbakimProduct[] {
-    return products.map((product) => ({
-      ...product,
-      exactFitment: vehicleTypeId == null
-        ? { requestedVehicleTypeId: null, status: "NOT_REQUESTED", matchedVehicleTypeIds: [] }
-        : { requestedVehicleTypeId: vehicleTypeId, status: "NOT_CONFIRMED", matchedVehicleTypeIds: [] },
+    if (vehicleTypeId == null) {
+      return products.map((product) => ({
+        ...product,
+        exactFitment: { requestedVehicleTypeId: null, status: "NOT_REQUESTED", matchedVehicleTypeIds: [] },
+        fitmentLevel: "unknown",
+      }))
+    }
+    return sortGetirbakimByFit(products.map((product): GetirbakimProduct => {
+      const level = mockGetirbakimFitLevel(product.id, vehicleTypeId)
+      return {
+        ...product,
+        exactFitment: level === "guaranteed"
+          ? { requestedVehicleTypeId: vehicleTypeId, status: "CONFIRMED", matchedVehicleTypeIds: [vehicleTypeId] }
+          : { requestedVehicleTypeId: vehicleTypeId, status: "NOT_CONFIRMED", matchedVehicleTypeIds: [] },
+        fitmentLevel: level,
+      }
     }))
   }
 
