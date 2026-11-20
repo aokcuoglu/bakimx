@@ -3,13 +3,17 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import {
   applyExternalProcurementProjection,
+  itemProjections,
   pollCompletionGuard,
+  procurementCancellationCode,
+  procurementOrderRevision,
   procurementRequestHash,
   reconcileBackoffMs,
   sweepExternalProcurements,
 } from "./service"
+import { contractOrder, contractShippingAddress } from "./contract-v2.fixtures"
 import type { ProcurementOrder, ProcurementProviderClient } from "./types"
-import { requiresProcurementReconfirmation } from "./types"
+import { releasesProcurementAttempt, requiresProcurementReconfirmation } from "./types"
 
 const root = join(import.meta.dir, "../../..")
 const schema = readFileSync(join(root, "prisma/schema.prisma"), "utf8")
@@ -21,28 +25,70 @@ const input = {
   requestedByUserId: "user-a", idempotencyKey: "key-a", externalProductId: "p1",
   externalOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000,
   confirmationToken: "opaque-confirmation-token-a",
+  shippingAddress: contractShippingAddress,
   productPresentation: { name: "Filtre" },
 }
 
-const remoteOrder: ProcurementOrder = {
-  id: "remote-1", status: "CONFIRMED", version: 4,
-  bindingPrice: { netKurus: 1000, vatKurus: 200, grossKurus: 1200, currency: "TRY", policyVersion: "v1", expiresAt: "2026-08-21T21:00:00.000Z" },
-  items: [{ sourceProductId: "p1", selectedOfferId: "o1", quantity: 1, unitNetKurus: 1000, unitVatKurus: 200, unitGrossKurus: 1200 }],
-  cancellationRequested: false, createdAt: "2026-08-21T20:00:00.000Z", updatedAt: "2026-08-21T20:01:00.000Z",
-}
+const remoteOrder = { ...contractOrder, status: "CONFIRMED" } as ProcurementOrder
 
 describe("external procurement guardrails", () => {
   test("idempotency identity includes payload but excludes presentation-only fields", () => {
     expect(procurementRequestHash(input)).toBe(procurementRequestHash({ ...input, productPresentation: { name: "Yeni ad" } }))
     expect(procurementRequestHash(input)).not.toBe(procurementRequestHash({ ...input, quantity: 2 }))
     expect(procurementRequestHash(input)).not.toBe(procurementRequestHash({ ...input, confirmationToken: "opaque-confirmation-token-b" }))
+    expect(procurementRequestHash(input)).not.toBe(procurementRequestHash({ ...input, shippingAddress: { ...contractShippingAddress, district: "Üsküdar" } }))
   })
 
-  test("maps the PR #86 conflict contract to the reconfirmation path", () => {
-    for (const code of ["PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED", "OFFER_EXPIRED"]) {
+  test("maps v2.0 quote conflicts to the reconfirmation path", () => {
+    for (const code of ["PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED"]) {
       expect(requiresProcurementReconfirmation(code)).toBe(true)
     }
-    expect(requiresProcurementReconfirmation("PROVIDER_UNAVAILABLE")).toBe(false)
+    for (const code of ["PROVIDER_UNAVAILABLE", "OFFER_UNAVAILABLE", "CREDIT_LIMIT_EXCEEDED"]) {
+      expect(requiresProcurementReconfirmation(code)).toBe(false)
+    }
+  })
+
+  test("releases the local attempt on every definite creation rejection except IDEMPOTENCY_CONFLICT", () => {
+    for (const code of ["OFFER_UNAVAILABLE", "QUANTITY_UNAVAILABLE", "PRICE_CHANGED", "QUOTE_EXPIRED", "QUOTE_CHANGED", "CREDIT_LIMIT_EXCEEDED"]) {
+      expect(releasesProcurementAttempt({ code, status: 409, retryable: false })).toBe(true)
+    }
+    expect(releasesProcurementAttempt({ code: "VALIDATION_ERROR", status: 400, retryable: false })).toBe(true)
+    expect(releasesProcurementAttempt({ code: "IDEMPOTENCY_CONFLICT", status: 409, retryable: false })).toBe(false)
+    // Ambiguous: the order may exist; it is reconciled by key instead.
+    expect(releasesProcurementAttempt({ code: "SUPPLIER_CHECK_UNAVAILABLE", status: 503, retryable: true })).toBe(false)
+    expect(releasesProcurementAttempt({ code: "INVALID_PROVIDER_RESPONSE", retryable: false })).toBe(false)
+  })
+
+  test("derives a revision every contract transition strictly raises", () => {
+    const at = (patch: Partial<ProcurementOrder>) => procurementOrderRevision({ ...remoteOrder, ...patch })
+    const shipment = { carrier: "Yurtiçi Kargo", trackingNo: "1", trackingUrl: null, shippedAt: "2026-11-19T08:00:00.000Z", deliveredAt: null }
+    const pending = { status: "PENDING" as const, requestedAt: "2026-11-18T11:00:00.000Z", decidedAt: null }
+    const rejected = { ...pending, status: "REJECTED" as const, decidedAt: "2026-11-18T12:00:00.000Z" }
+    const approved = { ...rejected, status: "APPROVED" as const }
+    const paths = [
+      [at({ status: "REQUESTED" }), at({ status: "CONFIRMED" }), at({ status: "SHIPPED", shipment }), at({ status: "COMPLETED", shipment })],
+      [at({ status: "REQUESTED" }), at({ status: "CANCELLED", cancelledBy: "PARTNER" })],
+      [at({ status: "CONFIRMED" }), at({ status: "CONFIRMED", cancellationRequest: pending }), at({ status: "CANCELLED", cancellationRequest: approved })],
+      [at({ status: "CONFIRMED", cancellationRequest: pending }), at({ status: "CONFIRMED", cancellationRequest: rejected }), at({ status: "SHIPPED", cancellationRequest: rejected, shipment })],
+    ]
+    for (const path of paths) {
+      for (let index = 1; index < path.length; index += 1) expect(path[index]).toBeGreaterThan(path[index - 1])
+    }
+  })
+
+  test("summarises cancellation state in the existing cancellationCode column", () => {
+    expect(procurementCancellationCode(remoteOrder)).toBeNull()
+    expect(procurementCancellationCode({ ...remoteOrder, status: "CANCELLED", cancelledBy: "GETIRBAKIM" })).toBe("CANCELLED_BY_GETIRBAKIM")
+    expect(procurementCancellationCode({ ...remoteOrder, status: "CANCELLED", cancelledBy: "PARTNER" })).toBe("CANCELLED_BY_PARTNER")
+    expect(procurementCancellationCode({ ...remoteOrder, cancellationRequest: { status: "PENDING", requestedAt: "2026-11-18T11:00:00.000Z", decidedAt: null } })).toBe("REQUEST_PENDING")
+    expect(procurementCancellationCode({ ...remoteOrder, cancellationRequest: { status: "REJECTED", requestedAt: "2026-11-18T11:00:00.000Z", decidedAt: "2026-11-18T12:00:00.000Z" } })).toBe("REQUEST_REJECTED")
+  })
+
+  test("projects each contract line onto its local item by offer id", () => {
+    expect(itemProjections(remoteOrder)).toEqual([{
+      externalOfferId: contractOrder.lines[0].selectedOfferId,
+      data: { quantity: 2, unitNetKurus: 13000, unitVatKurus: 2600, unitGrossKurus: 15600 },
+    }])
   })
 
   test("schema is additive, provider-neutral, and does not alter OrderItemSource", () => {
@@ -61,17 +107,18 @@ describe("external procurement guardrails", () => {
 
   test("all projection paths share an atomic monotonic projector", () => {
     expect(service).toContain("applyExternalProcurementProjection")
-    expect(service).toContain("partnerVersion: { lt: order.version }")
+    expect(service).toContain("partnerVersion: { lt: revision }")
     expect(service).toContain("externalProcurementOrderItem.updateMany")
     expect(service).toContain("provider: client.provider")
   })
 
   test("projector applies a newer parent and item together, but ignores stale/equal versions", async () => {
     const calls: string[] = []
+    let projected: Record<string, unknown> = {}
     const newerTx = {
       externalProcurementOrder: {
-        findUnique: async () => ({ externalOrderId: "remote-1", partnerVersion: 3, cancellationRequestedAt: null }),
-        updateMany: async () => { calls.push("parent"); return { count: 1 } },
+        findUnique: async () => ({ externalOrderId: contractOrder.id, partnerVersion: 100 }),
+        updateMany: async ({ data }: { data: Record<string, unknown> }) => { calls.push("parent"); projected = data; return { count: 1 } },
       },
       externalProcurementOrderItem: {
         updateMany: async () => { calls.push("item"); return { count: 1 } },
@@ -79,11 +126,16 @@ describe("external procurement guardrails", () => {
     } as unknown as Parameters<typeof applyExternalProcurementProjection>[0]
     expect(await applyExternalProcurementProjection(newerTx, "local-1", remoteOrder)).toBe(true)
     expect(calls).toEqual(["parent", "item"])
+    expect(projected).toMatchObject({
+      partnerStatus: "CONFIRMED", partnerVersion: 200, pricingPolicyVersion: "2.0", reservationExpiresAt: null,
+      // Gross carries the shipping fee: 26000 + 5200 + 5000.
+      bindingNetKurus: 26000, bindingVatKurus: 5200, bindingGrossKurus: 36200, cancellationCode: null,
+    })
 
     const staleCalls: string[] = []
     const staleTx = {
       externalProcurementOrder: {
-        findUnique: async () => ({ externalOrderId: "remote-1", partnerVersion: 4, cancellationRequestedAt: null }),
+        findUnique: async () => ({ externalOrderId: contractOrder.id, partnerVersion: 200 }),
         updateMany: async () => { staleCalls.push("parent"); return { count: 1 } },
       },
       externalProcurementOrderItem: {
@@ -117,7 +169,7 @@ describe("external procurement guardrails", () => {
       },
       $transaction: async (fn: (tx: unknown) => Promise<boolean>) => fn({
         externalProcurementOrder: {
-          findUnique: async () => ({ externalOrderId: null, partnerVersion: 0, cancellationRequestedAt: null }),
+          findUnique: async () => ({ externalOrderId: null, partnerVersion: 0 }),
           updateMany: async () => { calls.push("parent"); return { count: 1 } },
         },
         externalProcurementOrderItem: { updateMany: async () => { calls.push("item"); return { count: 1 } } },
@@ -127,7 +179,7 @@ describe("external procurement guardrails", () => {
       provider: "getirbakim",
       getOrderByIdempotencyKey: async (key: string) => {
         expect(key).toBe("attempt-1")
-        return { ...remoteOrder, status: "REQUESTED" as const, version: 1 }
+        return { ...remoteOrder, status: "REQUESTED" as const }
       },
     } as ProcurementProviderClient
     expect(await sweepExternalProcurements(client, { now: new Date("2026-08-21T20:01:00Z") }, database)).toEqual({ processed: 1, applied: 1, failed: 0 })

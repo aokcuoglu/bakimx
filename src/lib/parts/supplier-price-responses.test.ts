@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
+import { contractQuote } from "@/lib/external-procurement/contract-v2.fixtures"
 import {
-  readOfferResponse, readPurchaseResponse, readQuoteResponse, SupplierResponseError,
+  readCancellationResponse, readOfferResponse, readPurchaseResponse, readQuoteResponse, SupplierResponseError,
 } from "./supplier-price-responses"
 
 const offer = {
@@ -11,10 +12,7 @@ const product = {
   sourceProductId: "product-1", brandName: "Marka",
   manufacturerPartNumber: { value: "103803", normalized: "103803" }, offers: [offer],
 }
-const quote = {
-  bindingNetKurus: 100, bindingVatKurus: 20, bindingGrossKurus: 120, unitNetKurus: 100,
-  currency: "TRY", policyVersion: "v1", expiresAt: "2026-08-22T20:00:00Z", confirmationToken: "opaque",
-}
+const { contractVersion: _contractVersion, ...quote } = contractQuote
 
 describe("supplier price endpoint responses", () => {
   test("distinguishes an unconfigured catalog from a real no-match response", async () => {
@@ -30,6 +28,22 @@ describe("supplier price endpoint responses", () => {
     await expect(readQuoteResponse(Response.json({ quote }))).resolves.toEqual(quote)
     await expect(readPurchaseResponse(Response.json({ procurement: { id: "local-1", externalOrderId: "remote-1", partnerStatus: "REQUESTED" } }, { status: 201 })))
       .resolves.toBeUndefined()
+  })
+
+  test("keeps the v2.0 shipping total and rejects the 1.0 quote shape", async () => {
+    await expect(readQuoteResponse(Response.json({ quote: contractQuote }))).resolves.toMatchObject({ totals: { shippingKurus: 5000, grossKurus: 36200 } })
+    await expect(readQuoteResponse(Response.json({ quote: {
+      bindingNetKurus: 100, bindingVatKurus: 20, bindingGrossKurus: 120, unitNetKurus: 100,
+      currency: "TRY", policyVersion: "v1", expiresAt: "2026-08-22T20:00:00Z", confirmationToken: "opaque",
+    } }))).rejects.toThrow("Sunucudan geçersiz yanıt alındı")
+  })
+
+  test("reads cancel answers and surfaces final DELETE conflicts", async () => {
+    await expect(readCancellationResponse(Response.json({ cancellation: "REQUESTED", procurement: { status: "CONFIRMED" } })))
+      .resolves.toEqual({ cancellation: "REQUESTED", procurement: { status: "CONFIRMED" } })
+    const error = await readCancellationResponse(Response.json({ error: "Sipariş kargoya verildi; iptal edilemez.", code: "ORDER_ALREADY_SHIPPED" }, { status: 409 })).catch((caught) => caught)
+    expect(error).toBeInstanceOf(SupplierResponseError)
+    expect(error).toMatchObject({ code: "ORDER_ALREADY_SHIPPED" })
   })
 
   test("accepts an idempotent purchase replay after operator confirmation or shipment", async () => {

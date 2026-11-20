@@ -81,6 +81,11 @@ export type OrderItem = {
     id: string
     status: string
     cancellationRequestedAt: string | null
+    /** GetirBakım v2.0 cancellation summary (see procurementCancellationCode). */
+    cancellationCode?: string | null
+    /** Binding total incl. VAT and the VAT-inclusive shipping fee. */
+    grossKurus?: number | null
+    shippingKurus?: number | null
   } | null
 }
 

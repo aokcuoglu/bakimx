@@ -37,13 +37,21 @@ export const offerResponseSchema = z.discriminatedUnion("status", [
   }
 })
 
+const kurus = z.number().int().nonnegative()
+
+/** GetirBakım contract v2.0 quote as relayed by /api/orders/external-procurements. */
 const quoteSchema = z.object({
-  bindingNetKurus: z.number().int().nonnegative(),
-  bindingVatKurus: z.number().int().nonnegative(),
-  bindingGrossKurus: z.number().int().nonnegative(),
-  unitNetKurus: z.number().int().nonnegative(),
+  lines: z.array(z.object({
+    selectedOfferId: z.string().min(1),
+    quantity: z.number().int().positive(),
+    unitNetKurus: kurus,
+    vatRateBps: kurus,
+    lineNetKurus: kurus,
+    lineVatKurus: kurus,
+    lineGrossKurus: kurus,
+  })).min(1),
+  totals: z.object({ netKurus: kurus, vatKurus: kurus, shippingKurus: kurus, grossKurus: kurus }),
   currency: z.string().min(1),
-  policyVersion: z.string().min(1),
   expiresAt: z.string().datetime(),
   confirmationToken: z.string().min(1),
 })
@@ -54,13 +62,24 @@ export const purchaseResponseSchema = z.object({ procurement: z.object({
   externalOrderId: z.string().min(1),
   partnerStatus: z.enum(PROCUREMENT_STATUSES),
 }) })
+export const cancellationResponseSchema = z.object({
+  cancellation: z.enum(["CANCELLED", "REQUESTED"]),
+  procurement: z.object({ status: z.enum(PROCUREMENT_STATUSES) }),
+})
 
 export type OfferResponse = z.infer<typeof offerResponseSchema>
 export type Quote = z.infer<typeof quoteSchema>
+export type CancellationResponse = z.infer<typeof cancellationResponseSchema>
 
 export class SupplierResponseError extends Error {
   constructor(message: string, readonly code?: string) { super(message) }
 }
+
+/** After these purchase errors the attempt was released: the next try needs a new key (and, for some, a new quote). */
+export const RELEASED_PURCHASE_CODES = new Set([
+  "PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED", "OFFER_UNAVAILABLE",
+  "QUANTITY_UNAVAILABLE", "CREDIT_LIMIT_EXCEEDED", "VALIDATION_ERROR", "UNAUTHORIZED",
+])
 
 async function readFailure(response: Response, fallback: string): Promise<never> {
   const data = await readJsonObject(response, errorResponseSchema)
@@ -80,4 +99,9 @@ export async function readQuoteResponse(response: Response): Promise<Quote> {
 export async function readPurchaseResponse(response: Response): Promise<void> {
   if (!response.ok) return readFailure(response, "Satın alma talebi oluşturulamadı.")
   await readJsonObject(response, purchaseResponseSchema)
+}
+
+export async function readCancellationResponse(response: Response): Promise<CancellationResponse> {
+  if (!response.ok) return readFailure(response, "İptal isteği iletilemedi.")
+  return readJsonObject(response, cancellationResponseSchema)
 }

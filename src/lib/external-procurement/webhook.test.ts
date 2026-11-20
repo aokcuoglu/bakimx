@@ -8,28 +8,26 @@ import {
   verifyProcurementWebhook,
 } from "./webhook"
 import { applyExternalProcurementProjection, pollCompletionGuard } from "./service"
+import { contractOrder } from "./contract-v2.fixtures"
 import type { ProcurementOrder, ProcurementStatus } from "./types"
 
 const secret = "test-webhook-secret"
 const timestamp = "1787342400"
 const nowMs = Number(timestamp) * 1000
 const body = '{"type":"order.updated","order":{"id":"remote-1"}}'
-const order = {
-  contractVersion: "1.0", id: "remote-1", status: "REQUESTED", version: 1,
-  bindingPrice: { netKurus: 1000, vatKurus: 200, grossKurus: 1200, currency: "TRY", policyVersion: "v1", expiresAt: "2026-08-21T21:00:00.000Z" },
-  items: [{ sourceProductId: "p1", selectedOfferId: "o1", quantity: 1, unitNetKurus: 1000, unitVatKurus: 200, unitGrossKurus: 1200 }],
-  cancellationRequested: false, createdAt: "2026-08-21T20:00:00.000Z", updatedAt: "2026-08-21T20:00:00.000Z",
-}
+const order = { ...contractOrder, id: "remote-1" }
 const envelope = procurementWebhookSchema.parse({
   specVersion: "1.0", eventId: "evt-1", eventType: "partner.order.updated",
   occurredAt: "2026-08-21T20:01:00.000Z", partnerId: "bakimx", order,
 })
 
-function lifecycleEnvelope(eventId: string, version: number, status: ProcurementStatus, orderId = "remote-1") {
+const STATUS_STEP: Record<ProcurementStatus, number> = { REQUESTED: 1, CONFIRMED: 2, SHIPPED: 3, COMPLETED: 4, CANCELLED: 5 }
+
+function lifecycleEnvelope(eventId: string, status: ProcurementStatus, orderId = "remote-1") {
   return procurementWebhookSchema.parse({
     ...envelope, eventId,
-    occurredAt: new Date(Date.parse(envelope.occurredAt) + version * 1000).toISOString(),
-    order: { ...order, id: orderId, version, status },
+    occurredAt: new Date(Date.parse(envelope.occurredAt) + STATUS_STEP[status] * 1000).toISOString(),
+    order: { ...order, id: orderId, status },
   })
 }
 
@@ -150,26 +148,26 @@ describe("procurement webhook verification", () => {
       return processProcurementWebhook({ provider: "getirbakim", eventId: event.eventId, contractVersion: "1.0", event: parsed }, database)
     }
 
-    expect(await deliver(lifecycleEnvelope("evt-confirmed", 2, "CONFIRMED"))).toMatchObject({ status: "processed", applied: true })
-    expect(await deliver(lifecycleEnvelope("evt-shipped", 3, "SHIPPED"))).toMatchObject({ status: "processed", applied: true })
-    expect(state.partnerVersion).toBe(3)
-    expect(itemVersion).toBe(3)
-    expect(await deliver(lifecycleEnvelope("evt-shipped", 3, "SHIPPED"))).toMatchObject({ status: "duplicate", applied: false })
-    expect(await deliver(lifecycleEnvelope("evt-late", 2, "CONFIRMED"))).toMatchObject({ status: "ignored_stale", applied: false })
-    expect(state.partnerVersion).toBe(3)
-    expect(await deliver(lifecycleEnvelope("evt-poison", 1, "REQUESTED", "unknown-order"))).toMatchObject({ status: "failed", failureCode: "ORDER_NOT_FOUND" })
+    expect(await deliver(lifecycleEnvelope("evt-confirmed", "CONFIRMED"))).toMatchObject({ status: "processed", applied: true })
+    expect(await deliver(lifecycleEnvelope("evt-shipped", "SHIPPED"))).toMatchObject({ status: "processed", applied: true })
+    expect(state.partnerVersion).toBe(300)
+    expect(itemVersion).toBe(300)
+    expect(await deliver(lifecycleEnvelope("evt-shipped", "SHIPPED"))).toMatchObject({ status: "duplicate", applied: false })
+    expect(await deliver(lifecycleEnvelope("evt-late", "CONFIRMED"))).toMatchObject({ status: "ignored_stale", applied: false })
+    expect(state.partnerVersion).toBe(300)
+    expect(await deliver(lifecycleEnvelope("evt-poison", "REQUESTED", "unknown-order"))).toMatchObject({ status: "failed", failureCode: "ORDER_NOT_FOUND" })
 
     const lease = new Date("2026-08-21T20:10:00.000Z")
     state.nextReconcileAt = lease
-    const polledV4 = lifecycleEnvelope("unused-poll", 4, "SHIPPED").order as ProcurementOrder
-    expect(await deliver(lifecycleEnvelope("evt-completed", 5, "COMPLETED"))).toMatchObject({ status: "processed", applied: true })
-    expect(await applyExternalProcurementProjection(typedTx, "local-1", polledV4)).toBe(false)
+    const polledShipped = lifecycleEnvelope("unused-poll", "SHIPPED").order as ProcurementOrder
+    expect(await deliver(lifecycleEnvelope("evt-completed", "COMPLETED"))).toMatchObject({ status: "processed", applied: true })
+    expect(await applyExternalProcurementProjection(typedTx, "local-1", polledShipped)).toBe(false)
     const stalePollCompletion = await tx.externalProcurementOrder.updateMany({
-      where: pollCompletionGuard({ id: "local-1", partnerVersion: 3 }, lease),
+      where: pollCompletionGuard({ id: "local-1", partnerVersion: 300 }, lease),
       data: { lastReconcileError: null, nextReconcileAt: new Date() },
     })
     expect(stalePollCompletion.count).toBe(0)
-    expect(state.partnerVersion).toBe(5)
+    expect(state.partnerVersion).toBe(400)
     expect(state.nextReconcileAt).toBeNull()
   })
 })
