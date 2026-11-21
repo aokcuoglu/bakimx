@@ -15,10 +15,10 @@ import {
   AutocompleteItem,
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
-import { CarFront, Info, PackageSearch, Search, XIcon, Plus, PencilLine, TriangleAlert, Store } from "lucide-react"
+import { Info, PackageSearch, Search, XIcon, Plus, PencilLine, TriangleAlert, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Toggle } from "@/components/ui/toggle"
+import { VehicleFitToggle } from "@/components/parts/vehicle-fit-toggle"
 import { formatTRY } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
@@ -471,24 +471,15 @@ export function PartSearchInput({
         categoryId != null) && (
         <AutocompleteContent>
           {showFitToggle && (
-            <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-1.5">
-              <span className="truncate text-xs text-muted-foreground">
-                {fittingCount} parça bu araca uyumlu
-              </span>
-              <Toggle
-                variant="outline"
-                size="sm"
-                pressed={onlyFits}
-                onPressedChange={setOnlyFits}
-                // Odak input'ta kalsın: blur popup'ı kapatırdı.
-                onMouseDown={(e) => e.preventDefault()}
-                aria-label="Yalnız bu araca uyan parçaları göster"
-                className="shrink-0"
-              >
-                <CarFront />
-                Yalnız bu araca uyanlar
-              </Toggle>
-            </div>
+            <VehicleFitToggle
+              pressed={onlyFits}
+              onPressedChange={setOnlyFits}
+              fitting={fittingCount}
+              total={allSuggestions.length}
+              // Odak input'ta kalsın: blur popup'ı kapatırdı.
+              onMouseDown={(e) => e.preventDefault()}
+              className="px-2 py-1.5"
+            />
           )}
           <AutocompleteEmpty className="flex-col gap-1.5">
             <span>{fitFilterActive ? "Bu araca uyan parça yok" : "Eşleşen parça yok"}</span>

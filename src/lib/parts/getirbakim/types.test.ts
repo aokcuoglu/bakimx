@@ -49,12 +49,20 @@ describe("exact offer contract", () => {
     expect(product).not.toHaveProperty("offers.0.costTry")
     expect(product).not.toHaveProperty("offers.0.supplierId")
     expect(product?.brandName).toBe("TRW")
+    expect(product?.discountBps).toBe(0)
+  })
+
+  test("ürün düzeyindeki partner iskontosunu GetirBakım'ın verdiği gibi taşır (#760)", () => {
+    const base = { sourceProductId: "1", brandName: "TRW", manufacturerPartNumber: { value: "X1", normalized: "X1" }, offers: [] }
+    expect(parseGetirbakimExactProduct({ ...base, discountBps: 1000 })?.discountBps).toBe(1000)
+    expect(parseGetirbakimExactProduct({ ...base, discountBps: -5 })?.discountBps).toBe(0)
+    expect(parseGetirbakimExactProduct({ ...base, discountBps: "1000" })?.discountBps).toBe(0)
   })
 
   test("0..N ürünün route durumunu tüm offerlar üzerinden sınıflandırır", () => {
     const product = (offers: GetirbakimExactProduct["offers"]): GetirbakimExactProduct => ({
       sourceProductId: "1", brandName: "TRW",
-      manufacturerPartNumber: { value: "103803", normalized: "103803" }, offers,
+      manufacturerPartNumber: { value: "103803", normalized: "103803" }, discountBps: 0, offers,
     })
     expect(classifyExactProducts([])).toBe("no_match")
     expect(classifyExactProducts([product([]), { ...product([]), sourceProductId: "2" }])).toBe("no_offers")

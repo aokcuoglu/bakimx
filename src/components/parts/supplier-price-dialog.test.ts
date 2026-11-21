@@ -54,4 +54,22 @@ describe("SupplierPriceDialog real-offer UI contract", () => {
     expect(source).toContain("Kargo (KDV dahil)")
     expect(source).toContain("yeniden açıkça onaylayın")
   })
+
+  test("iskonto değişikliği sonrası eskimiş teklif gönderilmez; canlı teklif yeniden alınır (#760)", () => {
+    expect(source).toContain("if (isQuoteExpired(quote))")
+    const expiredBranch = source.slice(source.indexOf("if (isQuoteExpired(quote))"))
+    expect(expiredBranch.slice(0, 400)).toContain("await chooseOffer(selected.product, selected.offer)")
+    expect(expiredBranch.slice(0, 400)).toContain("setConfirmationChanged(true)")
+    expect(source).toContain("GetirBakım iş ortağı iskontosu dahil")
+    expect(source).toContain("Teklifi yeniden al")
+  })
+
+  test("GetirBakım'ın partner iskontosunu gösterir ama fiyatı kendisi hesaplamaz (#760)", () => {
+    expect(source).toContain("product.discountBps > 0")
+    expect(source).toContain("formatDiscountPercent(selected.product.discountBps)")
+    expect(source).toContain("expectedUnitNetKurus: quote.lines[0].unitNetKurus")
+    // Bağlayıcı fiyat GetirBakım teklifinden gelir; yerel iskonto çarpımı yok.
+    expect(source).not.toMatch(/discountBps\s*\/\s*10000/)
+    expect(source).not.toMatch(/\*\s*\(1\s*-/)
+  })
 })

@@ -28,6 +28,23 @@ describe("GetirBakimClient (contract v2.0)", () => {
     expect(await requests[0].json()).toEqual({ lines: [{ selectedOfferId: OFFER_ID, quantity: 2 }] })
   })
 
+  test("quotes are always live and pass GetirBakım's discounted unit price through untouched (#760)", async () => {
+    const discounted = {
+      ...contractQuote,
+      lines: [{ ...contractQuote.lines[0], unitNetKurus: 11700, lineNetKurus: 23400, lineVatKurus: 4680, lineGrossKurus: 28080 }],
+      totals: { netKurus: 23400, vatKurus: 4680, shippingKurus: 5000, grossKurus: 33080 },
+    }
+    const inits: RequestInit[] = []
+    const client = new GetirBakimClient("https://partner.test", "secret", async (_input, init) => {
+      inits.push(init ?? {})
+      return Response.json({ quote: discounted })
+    })
+    const quote = await client.quoteOrder([{ selectedOfferId: OFFER_ID, quantity: 2 }])
+    expect(quote.lines[0].unitNetKurus).toBe(11700)
+    expect(quote.totals).toEqual(discounted.totals)
+    expect(inits[0].cache).toBe("no-store")
+  })
+
   test("refuses line sets the contract would refuse, before any request", async () => {
     const { client, requests } = capture(() => Response.json({ quote: contractQuote }))
     for (const lines of [

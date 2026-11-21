@@ -16,9 +16,18 @@ export const GETIRBAKIM_SOURCE_LABEL = "GetirBakım"
  * iskonto GetirBakım'ın partner oranı — yanlış kaynağı işaret ederdi.
  */
 export function getirbakimDiscountLabel(discountBps: number): string {
-  if (discountBps <= 0) return ""
-  const percent = discountBps / 100
-  return `%${percent} ${GETIRBAKIM_SOURCE_LABEL} iskontosu uygulandı`
+  if (!Number.isFinite(discountBps) || discountBps <= 0) return ""
+  return `${formatDiscountPercent(discountBps)} ${GETIRBAKIM_SOURCE_LABEL} iskontosu uygulandı`
+}
+
+/**
+ * bps → Türkçe yüzde ("%10", "%10,5"). Oran GetirBakım'dan GELDİĞİ GİBİ basılır
+ * (#760): iskonto GetirBakım panelinde partner bazında yönetilir, BakımX onu
+ * hesaplamaz ve fiyata uygulamaz — `b2bPriceKurus` zaten iskontoludur.
+ */
+export function formatDiscountPercent(discountBps: number): string {
+  const percent = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 2 }).format(discountBps / 100)
+  return `%${percent}`
 }
 
 export function getirbakimStockLabel(product: GetirbakimProduct): string {

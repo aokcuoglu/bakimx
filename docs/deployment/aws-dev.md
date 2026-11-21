@@ -76,6 +76,9 @@ SESSION_COOKIE_DOMAIN = app-dev.bakimx.com     # cookie'yi prod'un .bakimx.com'u
 ```
 > `SESSION_COOKIE_*`, workflow'da **ayrıca build-arg** olarak da geçilir (Edge middleware bunları build-time inline eder). **Build-arg'lar CI'da kalır** (image derleme derdi); yalnızca **runtime env** CDK task-def'ine taşınır (Node route'ları runtime'da okur). İkisi de aynı değer olmalı. `DB_SSL_NO_VERIFY` sadece runtime.
 
+### 1e. `GETIRBAKIM_ORDER_API_KEY` secret girdisi (2026-11-21, #760 → CDK'ya taşınacak)
+BakımX → GetirBakım siparişi yalnız `GETIRBAKIM_ORDER_API_KEY` tanımlıyken açılır (`src/lib/external-procurement/provider.ts`). Workflow'daki jq yaması `app` container'ına, CDK'nın `GETIRBAKIM_API_KEY` girdisiyle **aynı `valueFrom`**'lu (Secrets Manager `bakimx/dev/getirbakim-api-key`) bir `secrets[]` girdisi ekler; execution rolü bu ARN'i zaten okuduğu için ek IAM yok (2026-11-21 doğrulandı). İdempotent; `GETIRBAKIM_API_KEY` girdisi yoksa adım açık hatayla düşer. **Dikkat:** app-dev de üretim GetirBakım'ına (`getirbakim.com`) bağlı — dev'de onaylanan bir satın alma GERÇEK GetirBakım siparişidir. Ayrıntı ve CDK karşılığı: [aws-prod.md §1f](./aws-prod.md).
+
 ---
 
 ## 2. CDK örnek (aws-cdk-lib v2, TypeScript)
@@ -122,7 +125,7 @@ Kaynaklar CLI ile **aynı isimlerle** zaten var. CDK aynı isimle **oluşturmaya
 
 ## 3. Backfill sonrası temizlik
 1d ve build-arg'lar CDK/CI'da yerine oturunca:
-- **CI'daki jq env-enjeksiyonunu kaldır** — `.github/workflows/deploy-dev-aws.yml` "Register new task definition" adımındaki `DB_SSL_NO_VERIFY`/`SESSION_COOKIE_*` enjeksiyonu (yanındaki `TODO(cdk-backfill)`). Enjeksiyon idempotent, CDK env'i ezmiyor; yine de tek kaynak (CDK) kalması için çıkarılmalı. **Build-arg'ları çıkarma.**
+- **CI'daki jq env-enjeksiyonunu kaldır** — `.github/workflows/deploy-dev-aws.yml` "Register new task definition" adımındaki `DB_SSL_NO_VERIFY`/`SESSION_COOKIE_*` env'i ve `GETIRBAKIM_ORDER_API_KEY` secret enjeksiyonu (yanındaki `TODO(cdk-backfill)`). Enjeksiyon idempotent, CDK env'i ezmiyor; yine de tek kaynak (CDK) kalması için çıkarılmalı. **Build-arg'ları çıkarma.**
 - OIDC/rol/policy CDK'ya geçtiyse yukarıdaki CLI kaynakları silinmeli (isim çakışmasını önlemek için CDK deploy öncesi).
 
 ---

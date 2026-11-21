@@ -22,6 +22,8 @@ const productSchema = z.object({
   sourceProductId: z.string().min(1),
   brandName: z.string(),
   manufacturerPartNumber: z.object({ value: z.string().min(1), normalized: z.string().min(1) }),
+  // Shown only; GetirBakım already applies it to the binding quote (#760).
+  discountBps: z.number().int().nonnegative().default(0),
   offers: z.array(offerSchema),
 })
 
@@ -104,4 +106,14 @@ export async function readPurchaseResponse(response: Response): Promise<void> {
 export async function readCancellationResponse(response: Response): Promise<CancellationResponse> {
   if (!response.ok) return readFailure(response, "İptal isteği iletilemedi.")
   return readJsonObject(response, cancellationResponseSchema)
+}
+
+/**
+ * A quote past its expiry would be refused with QUOTE_EXPIRED (#760). The dialog
+ * re-quotes instead of sending it, so the user confirms the live price (e.g. after
+ * GetirBakım changed the partner discount) rather than hitting an error.
+ */
+export function isQuoteExpired(quote: Pick<Quote, "expiresAt">, now: number = Date.now()): boolean {
+  const expiresAt = Date.parse(quote.expiresAt)
+  return !Number.isFinite(expiresAt) || expiresAt <= now
 }

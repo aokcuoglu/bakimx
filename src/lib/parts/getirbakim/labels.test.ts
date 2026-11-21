@@ -77,4 +77,10 @@ describe("getirbakimDiscountLabel", () => {
     expect(label).toBe(`%15 ${GETIRBAKIM_SOURCE_LABEL} iskontosu uygulandı`)
     expect(label).not.toContain("BakımX iskontosu")
   })
+
+  test("küsuratlı oranı Türkçe yazar, GetirBakım'ın oranını yuvarlamadan basar (#760)", () => {
+    expect(getirbakimDiscountLabel(1050)).toBe(`%10,5 ${GETIRBAKIM_SOURCE_LABEL} iskontosu uygulandı`)
+    expect(getirbakimDiscountLabel(1000)).toBe(`%10 ${GETIRBAKIM_SOURCE_LABEL} iskontosu uygulandı`)
+    expect(getirbakimDiscountLabel(Number.NaN)).toBe("")
+  })
 })
