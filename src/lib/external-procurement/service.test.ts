@@ -54,6 +54,7 @@ describe("external procurement guardrails", () => {
     }
     expect(releasesProcurementAttempt({ code: "VALIDATION_ERROR", status: 400, retryable: false })).toBe(true)
     expect(releasesProcurementAttempt({ code: "IDEMPOTENCY_CONFLICT", status: 409, retryable: false })).toBe(false)
+    expect(releasesProcurementAttempt({ code: "ORDER_INTAKE_PAUSED", status: 503, retryable: false })).toBe(true)
     // Ambiguous: the order may exist; it is reconciled by key instead.
     expect(releasesProcurementAttempt({ code: "SUPPLIER_CHECK_UNAVAILABLE", status: 503, retryable: true })).toBe(false)
     expect(releasesProcurementAttempt({ code: "INVALID_PROVIDER_RESPONSE", retryable: false })).toBe(false)

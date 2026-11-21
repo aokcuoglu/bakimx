@@ -136,10 +136,14 @@ export function requiresProcurementReconfirmation(code: string): boolean {
  * Whether a failed POST /orders certainly created nothing, so the local attempt
  * can be released for a new quote and a new Idempotency-Key. The contract asks
  * for exactly that on every order-creation 409 except IDEMPOTENCY_CONFLICT; a
- * 400 VALIDATION_ERROR or 401 is a rejection too. Retryable (429/5xx/network)
+ * 400 VALIDATION_ERROR or 401 is a rejection too, and so is 503
+ * ORDER_INTAKE_PAUSED. Retryable (429/5xx/network)
  * and unreadable 2xx answers stay ambiguous and are reconciled by key instead.
  */
 export function releasesProcurementAttempt(error: { code: string; status?: number; retryable: boolean }): boolean {
+  // A paused intake is checked again when the order is created, so a 503
+  // ORDER_INTAKE_PAUSED means no order exists for this key.
+  if (error.code === "ORDER_INTAKE_PAUSED" && error.status === 503) return true
   if (error.retryable || error.status == null) return false
   return error.status >= 400 && error.status < 500 && error.code !== "IDEMPOTENCY_CONFLICT"
 }
@@ -160,6 +164,7 @@ const PROCUREMENT_ERROR_MESSAGES: Record<string, string> = {
   ORDER_ALREADY_SHIPPED: "Sipariş kargoya verildi; iptal edilemez. İade için GetirBakım ile görüşün.",
   RATE_LIMITED: "GetirBakım'a çok sık istek gönderildi. Biraz sonra yeniden deneyin.",
   QUOTE_CONFIGURATION_UNAVAILABLE: "GetirBakım teklif servisi şu anda kullanılamıyor. Daha sonra yeniden deneyin.",
+  ORDER_INTAKE_PAUSED: "GetirBakım bu hesap için yeni sipariş alımını geçici olarak durdurdu. Mevcut siparişleriniz etkilenmez; sipariş alımı yeniden açılınca tekrar deneyin.",
   ORDER_LIMIT_UNAVAILABLE: "GetirBakım cari hesap limitiniz tanımlı değil; sipariş verilemiyor. GetirBakım ile görüşün.",
   SUPPLIER_CHECK_UNAVAILABLE: "Tedarikçi kontrolü şu anda yapılamadı. Biraz sonra yeniden deneyin.",
   PROVIDER_UNAVAILABLE: "GetirBakım'a şu anda ulaşılamıyor. Biraz sonra yeniden deneyin.",

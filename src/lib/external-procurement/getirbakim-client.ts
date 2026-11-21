@@ -162,10 +162,11 @@ export class GetirBakimClient implements ProcurementProviderClient {
     const body: unknown = await response.json().catch(() => null)
     if (!response.ok) {
       const error = errorSchema.safeParse(body)
+      const code = error.success ? error.data.error.code : "PROVIDER_ERROR"
       throw new ProcurementProviderError(
-        error.success ? error.data.error.code : "PROVIDER_ERROR",
+        code,
         error.success ? error.data.error.message : "Procurement provider rejected the request.",
-        response.status === 429 || response.status >= 500, response.status,
+        isRetryableProviderStatus(response.status, code), response.status,
         error.success ? error.data.error.details ?? error.data.details : undefined,
       )
     }
@@ -173,4 +174,13 @@ export class GetirBakimClient implements ProcurementProviderClient {
     if (!parsed.success) throw new ProcurementProviderError("INVALID_PROVIDER_RESPONSE", "Invalid provider response.", false)
     return parsed.data
   }
+}
+
+/**
+ * 429/5xx are transient, except a paused intake: GetirBakım refuses new quotes
+ * and orders until it reopens intake and the contract forbids automatic retries.
+ */
+function isRetryableProviderStatus(status: number, code: string): boolean {
+  if (code === "ORDER_INTAKE_PAUSED") return false
+  return status === 429 || status >= 500
 }
