@@ -1,11 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { CarFront, ChevronRight, Search } from "lucide-react"
+import { ChevronRight, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { Button } from "@/components/ui/button"
-import { Toggle } from "@/components/ui/toggle"
+import { VehicleFitToggle } from "./vehicle-fit-toggle"
 import { TecdocArticleRow, TECDOC_SOURCE_LABEL } from "./tecdoc-article-row"
 import { BakimxProductRow } from "./bakimx-product-row"
 import { GetirbakimProductRow } from "./getirbakim-product-row"
@@ -144,21 +144,14 @@ export function TecdocSearchResults({
   return (
     <div>
       {showFitToggle && (
-        <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2">
-          <span className="text-xs text-muted-foreground">
-            {fittingGetirbakimCount} {GETIRBAKIM_SOURCE_LABEL} ürünü bu araca uyumlu
-          </span>
-          <Toggle
-            variant="outline"
-            size="sm"
-            pressed={onlyFits}
-            onPressedChange={setOnlyFits}
-            aria-label="Yalnız bu araca uyan parçaları göster"
-          >
-            <CarFront />
-            Yalnız bu araca uyanlar
-          </Toggle>
-        </div>
+        <VehicleFitToggle
+          pressed={onlyFits}
+          onPressedChange={setOnlyFits}
+          fitting={fittingGetirbakimCount}
+          total={allGetirbakim.length}
+          noun={`${GETIRBAKIM_SOURCE_LABEL} ürünü`}
+          className="border-border/60 px-4 py-2"
+        />
       )}
 
       {categories.length > 0 && (

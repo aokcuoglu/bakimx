@@ -98,11 +98,14 @@ SESSION_COOKIE_DOMAIN = .bakimx.com     # bakimx.com ↔ app.bakimx.com paylaş�
 ### 1e. `ADMIN_EMAILS` → SSM (2026-08-17, elle yapıldı → CDK'ya taşınacak)
 `ADMIN_EMAILS`, `/bakimx/<env>/ADMIN_EMAILS` SSM parametresi var olmasına rağmen task-def'te **düz `environment` girdisiydi**; yani parametre hiç okunmuyordu ve "SSM'i güncelledim" demek hiçbir şeyi değiştirmiyordu. Elle düzeltildi (dev `:198`, prod `:28`): değişken `secrets[]`e taşındı ve diğer sağlayıcı env'leriyle aynı deseni izliyor. Parametre okuma izni, CDK'nın kendi `...DefaultPolicy` politikasına dokunmamak için task execution rolüne **ayrı** bir satır içi politikayla verildi (`AdminEmailsSsmRead`). CDK'ya taşırken ikisi birden gerekir: `secrets[]` girdisi **ve** `grantRead`. Aksi hâlde task `ResourceInitializationError` ile hiç başlamaz. Operasyonel kullanım: [platform-admin-model.md](../operations/platform-admin-model.md).
 
+### 1f. `GETIRBAKIM_ORDER_API_KEY` → CI enjeksiyonu (2026-11-21, #760 → CDK'ya taşınacak)
+BakımX → GetirBakım siparişi (teklif + sipariş) yalnız `GETIRBAKIM_ORDER_API_KEY` tanımlıyken açılır (`src/lib/external-procurement/provider.ts`). CDK task-def'i yalnız `GETIRBAKIM_API_KEY`'i (`secrets[]`, Secrets Manager `bakimx/<env>/getirbakim-api-key`) taşıyor. Sözleşme v2.0'da GetirBakım tüm partner uçlarını aynı anahtarla açtığı için deploy workflow'undaki jq yaması konteynere **aynı `valueFrom`** ile ikinci bir `secrets[]` girdisi ekler: `GETIRBAKIM_ORDER_API_KEY`. Değer task-def'e düz metin olarak yazılmaz; execution rolü bu ARN'i `GETIRBAKIM_API_KEY` için zaten okuduğundan ek IAM gerekmez (2026-11-21'de iki ortamda doğrulandı). Yama idempotenttir; `GETIRBAKIM_API_KEY` girdisi yoksa adım açık bir jq hatasıyla düşer (sipariş anahtarı sessizce eksik kalmasın). CDK'ya taşırken: `secrets: { GETIRBAKIM_ORDER_API_KEY: ecs.Secret.fromSecretsManager(<aynı secret>) }`, sonra CI yaması kaldırılır. Siparişi kapatmak için girdiyi silmek yetmez (sonraki deploy geri ekler) — workflow'daki satırı kaldırıp yeniden deploy edin.
+
 ---
 
 ## 2. Backfill sonrası temizlik
 1d ve build-arg'lar CDK'ya oturunca:
-- CI'daki jq env-enjeksiyonunu (`DB_SSL_NO_VERIFY`/`SESSION_COOKIE_*`, `TODO(cdk-backfill)` yanında) kaldır. **Build-arg'ları çıkarma.**
+- CI'daki jq env-enjeksiyonunu (`DB_SSL_NO_VERIFY`/`SESSION_COOKIE_*`/`GETIRBAKIM_*` env'i ve `GETIRBAKIM_ORDER_API_KEY` secret girdisi, `TODO(cdk-backfill)` yanında) kaldır. **Build-arg'ları çıkarma.**
 - OIDC/rol/policy CDK'ya geçtiyse CLI kaynakları CDK deploy öncesi silinmeli (isim çakışması). OIDC provider'ı **silme** (tekil, referanslanıyor).
 
 ---

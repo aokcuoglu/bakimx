@@ -88,6 +88,12 @@ export interface GetirbakimExactProduct {
   sourceProductId: string
   brandName: string
   manufacturerPartNumber: { value: string; normalized: string }
+  /**
+   * Partner iskontosu (bps), GetirBakım'ın ürün düzeyinde verdiği gibi (#760). Yalnız
+   * GÖSTERİLİR: bağlayıcı fiyat (`order-quotes` → `unitNetKurus`) iskontoyu GetirBakım
+   * tarafında zaten içerir; BakımX bu oranla hiçbir fiyat hesaplamaz.
+   */
+  discountBps: number
   offers: GetirbakimOffer[]
 }
 
@@ -203,6 +209,7 @@ export function parseGetirbakimExactProduct(raw: unknown): GetirbakimExactProduc
     sourceProductId,
     brandName: asString(row.brandName) ?? "",
     manufacturerPartNumber: { value, normalized },
+    discountBps: Math.max(0, asInt(row.discountBps) ?? 0),
     offers,
   }
 }

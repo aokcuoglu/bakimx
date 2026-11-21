@@ -1,8 +1,9 @@
-import { afterEach, beforeEach, expect, mock, test } from "bun:test"
+import { afterEach, beforeEach, expect, mock, setSystemTime, test } from "bun:test"
 
 mock.module("server-only", () => ({}))
 
-import { resetGetirbakimCache } from "./cache"
+import { GETIRBAKIM_CACHE_TTL_MS, resetGetirbakimCache } from "./cache"
+import { getirbakimLineItemFields } from "../getirbakim-item"
 import { resetGetirbakimProvider } from "./provider"
 
 /**
@@ -88,4 +89,38 @@ test("başarılı boş sonuç önbelleğe yazılır (tekrar dış çağrı yapı
   expect(await searchGetirbakimProducts({ q: "olmayan parca" })).toEqual([])
   expect(await searchGetirbakimProducts({ q: "olmayan parca" })).toEqual([])
   expect(calls).toBe(1)
+})
+
+test("GetirBakım'da değişen partner iskontosu TTL sonunda aramaya ve kalem alış fiyatına yansır (#760)", async () => {
+  const { resolveGetirbakimProduct, searchGetirbakimProducts } = await import("./search")
+  let discountBps = 0
+  let calls = 0
+  globalThis.fetch = (async () => {
+    calls++
+    // GetirBakım iskontoyu kendisi uygular; BakımX yalnız okur.
+    const b2bPriceKurus = Math.round(20000 * (1 - discountBps / 10000))
+    return jsonResponse({ products: [{ ...product, b2bPriceKurus, discountBps }] })
+  }) as typeof fetch
+
+  const start = new Date("2026-11-21T10:00:00Z")
+  try {
+    setSystemTime(start)
+    const before = await searchGetirbakimProducts({ q: "fren balatasi" })
+    expect(before[0].b2bPriceKurus).toBe(20000)
+    expect(before[0].discountBps).toBe(0)
+
+    discountBps = 1000 // panelde %10 tanımlandı
+    setSystemTime(new Date(start.getTime() + GETIRBAKIM_CACHE_TTL_MS + 1))
+    const after = await searchGetirbakimProducts({ q: "fren balatasi" })
+    expect(after[0].b2bPriceKurus).toBe(18000)
+    expect(after[0].discountBps).toBe(1000)
+
+    // Kalem yazımı ürünü sağlayıcıdan yeniden çözer: alış = GetirBakım'ın iskontolu fiyatı, yerel hesap yok.
+    const resolved = await resolveGetirbakimProduct("1", "GDB1330")
+    expect(resolved).not.toBeNull()
+    expect(getirbakimLineItemFields(resolved!).purchasePriceKurus).toBe(18000)
+    expect(calls).toBeGreaterThanOrEqual(2)
+  } finally {
+    setSystemTime()
+  }
 })

@@ -10,8 +10,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatTRY } from "@/lib/format"
 import type { GetirbakimExactProduct, GetirbakimOffer } from "@/lib/parts/getirbakim/types"
+import { formatDiscountPercent, GETIRBAKIM_SOURCE_LABEL } from "@/lib/parts/getirbakim/labels"
 import {
-  readOfferResponse, readPurchaseResponse, readQuoteResponse, RELEASED_PURCHASE_CODES, SupplierResponseError,
+  isQuoteExpired, readOfferResponse, readPurchaseResponse, readQuoteResponse, RELEASED_PURCHASE_CODES, SupplierResponseError,
   type OfferResponse, type Quote,
 } from "@/lib/parts/supplier-price-responses"
 import { transactionalAvailability } from "./supplier-offer-availability"
@@ -71,6 +72,15 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
 
   async function confirmPurchase() {
     if (!selected || !quote || !orderId || !orderItemId) return
+    // An expired quote would only bounce with QUOTE_EXPIRED: fetch the live price
+    // (a partner discount may have changed in GetirBakım) and ask again (#760).
+    if (isQuoteExpired(quote)) {
+      idempotencyKey.current = null
+      setQuote(null)
+      await chooseOffer(selected.product, selected.offer)
+      setConfirmationChanged(true)
+      return
+    }
     idempotencyKey.current ??= crypto.randomUUID()
     setPending(true)
     try {
@@ -147,14 +157,15 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
               <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">{product.brandName || "Marka belirtilmemiş"}</span>
                 <span>· {product.manufacturerPartNumber.value}</span>
+                {product.discountBps > 0 ? <span className="text-success-strong">· {formatDiscountPercent(product.discountBps)} {GETIRBAKIM_SOURCE_LABEL} iskontosu</span> : null}
               </div>
               {product.offers.map((offer, index) => (
-                <OfferCard key={`${product.sourceProductId}:${offer.selectedOfferId}:${index}`} offer={offer} quantity={purchaseQuantity} selected={selected?.offer.selectedOfferId === offer.selectedOfferId} disabled={pending} onSelect={() => void chooseOffer(product, offer)} />
+                <OfferCard key={`${product.sourceProductId}:${offer.selectedOfferId}:${index}`} offer={offer} quantity={purchaseQuantity} selected={selected?.offer.selectedOfferId === offer.selectedOfferId} quoted={quote != null} disabled={pending} onSelect={() => void chooseOffer(product, offer)} />
               ))}
             </section>
           ))}
         </div>
-        {confirmationChanged ? <Alert className="mx-3 mb-3" variant="destructive"><AlertTitle>Teklif yenilendi</AlertTitle><AlertDescription>Fiyat, kargo ücreti veya teklif geçerliliği değişti. Güncel teklifi ve bağlayıcı fiyatı kontrol edip yeniden açıkça onaylayın. Önceki onayınız kullanılmadı.</AlertDescription></Alert> : null}
+        {confirmationChanged ? <Alert className="mx-3 mb-3" variant="destructive"><AlertTitle>Teklif yenilendi</AlertTitle><AlertDescription>Fiyat (GetirBakım iş ortağı iskontosu dahil), kargo ücreti veya teklif geçerliliği değişti. Güncel teklifi ve bağlayıcı fiyatı kontrol edip yeniden açıkça onaylayın. Önceki onayınız kullanılmadı. Güncel teklif gelmediyse tedarikçiyi yeniden seçerek teklif alın.</AlertDescription></Alert> : null}
         {selected && quote ? <div className="space-y-3 border-t p-4" aria-live="polite">
           <dl className="space-y-1 text-xs text-muted-foreground">
             <div className="flex justify-between gap-4"><dt>Parça (KDV hariç)</dt><dd className="tabular-nums">{formatTRY(quote.totals.netKurus)}</dd></div>
@@ -162,12 +173,13 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
             <div className="flex justify-between gap-4"><dt>Kargo (KDV dahil)</dt><dd className="tabular-nums">{quote.totals.shippingKurus === 0 ? "Ücretsiz" : formatTRY(quote.totals.shippingKurus)}</dd></div>
           </dl>
           <div className="flex items-center justify-between gap-4"><div><p className="text-sm font-medium">Bağlayıcı toplam</p><p className="text-xs text-muted-foreground">KDV ve kargo dahil · {new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" }).format(new Date(quote.expiresAt))} tarihine kadar · Cari hesaba yazılır</p></div><p className="text-lg font-semibold tabular-nums">{formatTRY(quote.totals.grossKurus)}</p></div>
+          {selected.product.discountBps > 0 ? <p className="text-xs text-success-strong">{formatDiscountPercent(selected.product.discountBps)} {GETIRBAKIM_SOURCE_LABEL} iskontosu bu fiyata dahildir.</p> : null}
           <p className="text-xs text-muted-foreground">Parçalar atölyenin Ayarlar › Genel sayfasındaki adresine gönderilir.</p>
           {orderId && orderItemId ? <Button variant="foreground" className="w-full" disabled={pending || procurementExists} onClick={() => void confirmPurchase()}>{pending ? "İşleniyor…" : "Bu fiyatla satın almayı onayla"}</Button> : <p className="text-xs text-muted-foreground">Satın alma yalnız iş emri kaleminden başlatılabilir.</p>}
           {procurementExists ? <p className="text-xs text-muted-foreground">Bu iş emri kaleminin bir satın alma talebi zaten var.</p> : null}
         </div> : null}
         <div className="border-t bg-muted/40 px-4 py-2.5">
-          <p className="text-[11px] leading-tight text-muted-foreground-strong">Listedeki fiyatlar KDV hariç, bilgilendirme amaçlıdır ve bağlayıcı teklif değildir. Sipariş için yukarıdaki bağlayıcı toplam geçerlidir.</p>
+          <p className="text-[11px] leading-tight text-muted-foreground-strong">Listedeki fiyatlar KDV hariç, bilgilendirme amaçlıdır ve bağlayıcı teklif değildir. Sipariş için yukarıdaki bağlayıcı toplam geçerlidir; iş ortağı iskontonuz bağlayıcı fiyatta uygulanır.</p>
         </div>
       </DialogContent>
     </Dialog>
@@ -178,7 +190,7 @@ function StateMessage({ children, error = false }: { children: ReactNode; error?
   return <div role={error ? "alert" : undefined} aria-live={error ? "assertive" : undefined} className={`flex min-h-28 items-center justify-center gap-2 rounded-lg border p-4 text-center text-sm ${error ? "text-destructive-strong" : "text-muted-foreground"}`}>{error ? <AlertCircle className="size-4 shrink-0" aria-hidden="true" /> : null}{children}</div>
 }
 
-function OfferCard({ offer, quantity, selected, disabled, onSelect }: { offer: GetirbakimOffer; quantity: number; selected: boolean; disabled: boolean; onSelect: () => void }) {
+function OfferCard({ offer, quantity, selected, quoted, disabled, onSelect }: { offer: GetirbakimOffer; quantity: number; selected: boolean; quoted: boolean; disabled: boolean; onSelect: () => void }) {
   const transactional = transactionalAvailability(offer, quantity)
   const date = offer.lastSyncedAt ? new Date(offer.lastSyncedAt) : null
   const synced = date && Number.isFinite(date.getTime())
@@ -199,7 +211,7 @@ function OfferCard({ offer, quantity, selected, disabled, onSelect }: { offer: G
           <Badge variant="outline">Bilgilendirme</Badge>
         </div>
       </div>
-      <Button type="button" variant={selected ? "secondary" : "outline"} size="sm" className="mt-3 w-full" disabled={disabled || offer.informationalPriceKurus == null || !transactional.canRequestQuote} onClick={onSelect}>{selected ? "Seçildi" : transactional.selectionLabel}</Button>
+      <Button type="button" variant={selected ? "secondary" : "outline"} size="sm" className="mt-3 w-full" disabled={disabled || offer.informationalPriceKurus == null || !transactional.canRequestQuote} onClick={onSelect}>{selected ? (quoted || disabled ? "Seçildi" : "Teklifi yeniden al") : transactional.selectionLabel}</Button>
     </div>
   )
 }

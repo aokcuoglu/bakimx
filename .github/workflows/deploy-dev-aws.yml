@@ -184,6 +184,11 @@ jobs:
           #   SESSION_COOKIE_*   — isolate app-dev's session cookie from prod's .bakimx.com
           #                        cookie (the Node routes read these at runtime; the Edge
           #                        middleware gets them at build time via build-args above)
+          #   GETIRBAKIM_ORDER_API_KEY — secret (not env): opens BakımX → GetirBakım ordering
+          #                        (src/lib/external-procurement/provider.ts). Same Secrets
+          #                        Manager ARN as the CDK's GETIRBAKIM_API_KEY entry, which the
+          #                        execution role already reads; the step fails if that entry
+          #                        is missing (#760).
           # Idempotent across re-runs. TODO(cdk-backfill): move these into the CDK task def.
           aws ecs describe-task-definition --task-definition "$TASK_FAMILY" \
             --query taskDefinition --output json \
@@ -197,6 +202,15 @@ jobs:
                    + [{name: "DB_SSL_NO_VERIFY",     value: "true"},
                       {name: "SESSION_COOKIE_NAME",   value: "bakimx_session_dev"},
                       {name: "SESSION_COOKIE_DOMAIN", value: "app-dev.bakimx.com"}])
+              | ((.containerDefinitions[] | select(.name==$CN)).secrets // []
+                 | map(select(.name == "GETIRBAKIM_API_KEY")) | first | .valueFrom // null) as $GB_KEY
+              | if $GB_KEY == null
+                then error("GETIRBAKIM_API_KEY secret entry is missing on container \($CN); cannot derive GETIRBAKIM_ORDER_API_KEY")
+                else . end
+              | (.containerDefinitions[] | select(.name==$CN)).secrets |=
+                  ((. // [])
+                   | map(select(.name != "GETIRBAKIM_ORDER_API_KEY"))
+                   + [{name: "GETIRBAKIM_ORDER_API_KEY", valueFrom: $GB_KEY}])
               | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
                     .compatibilities, .registeredAt, .registeredBy)
             ' > new-taskdef.json

@@ -153,7 +153,9 @@ export class GetirBakimClient implements ProcurementProviderClient {
     let response: Response
     try {
       response = await this.fetcher(new URL(path, this.baseUrl), {
-        ...init, signal: AbortSignal.timeout(10_000),
+        // Quotes and orders are always live (#760): a partner discount changed in
+        // GetirBakım must reach the binding price at once, never through a cache.
+        ...init, cache: "no-store", signal: AbortSignal.timeout(10_000),
         headers: { authorization: `Bearer ${this.apiKey}`, "content-type": "application/json", ...init.headers },
       })
     } catch {
