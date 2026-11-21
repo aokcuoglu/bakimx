@@ -123,6 +123,13 @@ describe("GetirBakimClient (contract v2.0)", () => {
     }
   })
 
+  test("does not retry a paused order intake", async () => {
+    const paused = () => Response.json({ error: { code: "ORDER_INTAKE_PAUSED", message: "Order intake is paused" } }, { status: 503 })
+    const { client } = capture(paused)
+    await expect(client.createOrder(createInput)).rejects.toMatchObject({ code: "ORDER_INTAKE_PAUSED", retryable: false, status: 503 })
+    await expect(client.quoteOrder([{ selectedOfferId: OFFER_ID, quantity: 1 }])).rejects.toMatchObject({ code: "ORDER_INTAKE_PAUSED", retryable: false, status: 503 })
+  })
+
   test("reconciles a timed-out create by the same key and treats only ORDER_NOT_FOUND as absent", async () => {
     const found = capture(() => Response.json({ order: contractOrder }))
     await expect(found.client.getOrderByIdempotencyKey("attempt/1")).resolves.toMatchObject({ id: contractOrder.id })
