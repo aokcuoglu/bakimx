@@ -5,8 +5,8 @@ import { requireFeatureWorkshop, requireWritableFeatureWorkshop } from "@/lib/au
 import type { Permission } from "@/lib/roles"
 import { revalidatePath } from "next/cache"
 import { COMMUNICATION_TEMPLATES, getDefaultTemplate, sanitizeTemplate } from "@/lib/communications/templates"
-import { sendSMSDirect, sendWhatsAppDirect, sendEmailDirect, checkRateLimit, recordAttempt } from "@/lib/communications"
-import type { CommunicationTemplateKey, CommunicationType } from "@/lib/communications/types"
+import { sendSMSDirect, sendEmailDirect, checkRateLimit, recordAttempt } from "@/lib/communications"
+import type { CommunicationTemplateKey, SendableChannel } from "@/lib/communications/types"
 import type { TemplateChannel } from "@/lib/communications/templates"
 
 async function requireAuth() {
@@ -14,6 +14,11 @@ async function requireAuth() {
 }
 function requireWritableWorkshop(permission: Permission) {
   return requireWritableFeatureWorkshop(permission, "automatedReminders")
+}
+
+/** Yalnız gönderebilen kanallar (#746). Eski WhatsApp şablon satırları DB'de durur ama okunmaz/yazılmaz. */
+function isSendableChannel(value: string | null): value is SendableChannel {
+  return value === "sms" || value === "email"
 }
 
 export async function getNotificationTemplates() {
@@ -29,7 +34,7 @@ export async function getNotificationTemplates() {
     description: t.description,
     channels: t.channels,
     savedTemplates: saved
-      .filter((s) => s.templateKey === t.key)
+      .filter((s) => s.templateKey === t.key && isSendableChannel(s.channel))
       .reduce(
         (acc, s) => {
           acc[s.channel as TemplateChannel] = {
@@ -59,6 +64,9 @@ export async function saveNotificationTemplateAction(formData: FormData) {
   if (!templateKey || !channel || !content) {
     return { error: "Eksik parametre" }
   }
+  if (!isSendableChannel(channel)) {
+    return { error: "Geçersiz kanal" }
+  }
 
   const sanitized = sanitizeTemplate(content)
 
@@ -67,14 +75,14 @@ export async function saveNotificationTemplateAction(formData: FormData) {
       workshopId_templateKey_channel: {
         workshopId: user.workshopId,
         templateKey,
-        channel: channel as CommunicationType,
+        channel,
       },
     },
     update: { content: sanitized },
     create: {
       workshopId: user.workshopId,
       templateKey,
-      channel: channel as CommunicationType,
+      channel,
       content: sanitized,
     },
   })
@@ -91,12 +99,15 @@ export async function resetNotificationTemplateAction(formData: FormData) {
   if (!templateKey || !channel) {
     return { error: "Eksik parametre" }
   }
+  if (!isSendableChannel(channel)) {
+    return { error: "Geçersiz kanal" }
+  }
 
   await prisma.communicationTemplate.deleteMany({
     where: {
       workshopId: user.workshopId,
       templateKey,
-      channel: channel as CommunicationType,
+      channel,
     },
   })
 
@@ -107,18 +118,12 @@ export async function resetNotificationTemplateAction(formData: FormData) {
 export async function getCommunicationProviders() {
   return {
     sms: process.env.SMS_PROVIDER || "mock",
-    whatsapp: process.env.WHATSAPP_PROVIDER || "mock",
     email: process.env.EMAIL_PROVIDER || "mock",
   }
 }
 
-function activeProviderName(channel: CommunicationType): string {
-  switch (channel) {
-    case "sms": return process.env.SMS_PROVIDER || "mock"
-    case "whatsapp": return process.env.WHATSAPP_PROVIDER || "mock"
-    case "email": return process.env.EMAIL_PROVIDER || "mock"
-    default: return "mock"
-  }
+function activeProviderName(channel: SendableChannel): string {
+  return channel === "sms" ? process.env.SMS_PROVIDER || "mock" : process.env.EMAIL_PROVIDER || "mock"
 }
 
 export async function sendProviderTestAction(formData: FormData): Promise<{
@@ -130,10 +135,10 @@ export async function sendProviderTestAction(formData: FormData): Promise<{
   const { user } = await requireWritableWorkshop("settings.manage")
   const workshopId = user.workshopId
 
-  const channel = formData.get("channel") as CommunicationType
+  const channel = formData.get("channel") as string | null
   const rawRecipient = (formData.get("recipient") as string | null)?.trim() ?? ""
 
-  if (channel !== "sms" && channel !== "whatsapp" && channel !== "email") {
+  if (!isSendableChannel(channel)) {
     return { error: "Geçersiz kanal" }
   }
   if (!rawRecipient) {
@@ -164,8 +169,6 @@ export async function sendProviderTestAction(formData: FormData): Promise<{
   try {
     if (channel === "sms") {
       result = await sendSMSDirect(recipient, testMessage)
-    } else if (channel === "whatsapp") {
-      result = await sendWhatsAppDirect(recipient, testMessage)
     } else {
       result = await sendEmailDirect(
         recipient,

@@ -18,7 +18,11 @@ import { parseTRYToKurus } from "@/lib/money"
  * kalem anında oluşur ve tutarı iş emri toplamına işlenir. Sunucu kapısı,
  * işçilik composer'ıyla AYNI `/api/orders/items` POST'u — tip
  * `external_labor`, miktar 1, kaynak `manual`, satır KDV'si kapalı (grid'in
- * boş taslağıyla aynı varsayımlar). Firma ("nerede yaptırıldı") opsiyoneldir
+ * boş taslağıyla aynı varsayımlar).
+ *
+ * Girilen tutar dışarıya ÖDENEN paradır → `purchasePriceKurus` (#749). Satış
+ * fiyatı sunucuda ondan ön-dolar; üstüne kârı ofis koyar. Usta satış fiyatını
+ * belirlemez (dış alımdaki parça formuyla aynı sözleşme). Firma ("nerede yaptırıldı") opsiyoneldir
  * ve `supplierName` kolonuna yazılır; parça/işçilik satırlarında bu alan boş
  * kalır (bkz. addOrderItemAction).
  */
@@ -39,7 +43,8 @@ export type ExternalLaborFormItem = {
   id: string
   name: string
   supplierName: string | null
-  unitPrice: number | null
+  /** Dışarıya ödenen tutar (kuruş, KDV hariç). #749 öncesi kayıtlarda boş. */
+  purchasePriceKurus: number | null
   note: string | null
   purchasedAt: string | null
   createdAt: string
@@ -92,7 +97,9 @@ function ExternalLaborSheet({
   const editing = item != null
   const [name, setName] = useState(item?.name ?? "")
   const [supplierName, setSupplierName] = useState(item?.supplierName ?? "")
-  const [price, setPrice] = useState(item?.unitPrice != null ? String(item.unitPrice / 100) : "")
+  const [price, setPrice] = useState(
+    item?.purchasePriceKurus != null ? String(item.purchasePriceKurus / 100) : "",
+  )
   const [note, setNote] = useState(item?.note ?? "")
   const [purchasedAt, setPurchasedAt] = useState(item ? isoToTr(item.purchasedAt ?? item.createdAt) : todayTrString())
   const [error, setError] = useState<string | null>(null)
@@ -114,11 +121,12 @@ function ExternalLaborSheet({
     }
 
     // Grid'in boş dış-işçilik taslağıyla aynı sözleşme: miktar 1, KDV'siz,
-    // manuel kaynak. Tutar NET yazılır (kuruş); boşsa sunucu null bırakır.
+    // manuel kaynak. Tutar alış fiyatıdır, NET yazılır (kuruş); boşsa
+    // gönderilmez (düzenlemede mevcut değer korunur).
     const fd = new FormData()
     fd.set("name", name.trim())
     const priceKurus = price.trim() ? parseTRYToKurus(price) : null
-    if (priceKurus != null) fd.set("unitPrice", String(priceKurus))
+    if (priceKurus != null) fd.set("purchasePriceKurus", String(priceKurus))
     fd.set("supplierName", supplierName.trim())
     fd.set("note", note.trim())
     fd.set("purchasedAt", purchasedAt)
@@ -158,8 +166,8 @@ function ExternalLaborSheet({
           <DialogTitle>{editing ? "Dış İşçiliği Düzenle" : "Dış İşçilik Ekle"}</DialogTitle>
           <DialogDescription>
             {editing
-              ? "Dışarıda yaptırılan işin bilgilerini güncelle. Tutar iş emri toplamına işlenir."
-              : "Araca dışarıda yaptırdığın işi iş emrine kalem olarak ekle; tutarı toplama işlenir."}
+              ? "Dışarıda yaptırılan işin bilgilerini güncelle."
+              : "Araca dışarıda yaptırdığın işi iş emrine kalem olarak ekle. Müşteri fiyatını ofis belirler."}
           </DialogDescription>
         </DialogHeader>
 
@@ -200,7 +208,7 @@ function ExternalLaborSheet({
 
           <div className="space-y-1">
             <label htmlFor="external-labor-price" className="text-xs font-medium text-muted-foreground">
-              Tutar (₺)
+              Alış fiyatı (₺, KDV hariç)
             </label>
             {/* inputMode="decimal": mobil klavyede virgül/nokta çıkar. Türkçe
                 "1.250,50" biçimi parseTRYToKurus ile çevrilir. */}

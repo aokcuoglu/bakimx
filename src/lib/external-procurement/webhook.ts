@@ -4,8 +4,14 @@ import { z } from "zod"
 import { prisma } from "@/lib/db"
 import { isUniqueConstraintError } from "@/lib/prisma-errors"
 import { procurementOrderSchema } from "./getirbakim-client"
-import { applyExternalProcurementProjection } from "./service"
+import { applyExternalProcurementProjection, procurementOrderRevision } from "./service"
 
+/**
+ * Contract v2.0 has no webhooks (status is polled with GET /orders/:id, see
+ * service.ts). The receiver stays in place, closed unless
+ * GETIRBAKIM_WEBHOOK_SECRET is set, and applies an event through the same
+ * monotonic projector as polling, so a future webhook cannot regress state.
+ */
 export const PROCUREMENT_WEBHOOK_VERSION = "1.0"
 export const DEFAULT_WEBHOOK_TOLERANCE_SECONDS = 300
 export const MAX_WEBHOOK_BODY_BYTES = 64 * 1024
@@ -107,7 +113,7 @@ export async function processProcurementWebhook(input: {
         data: {
           provider: input.provider, eventId: input.eventId, contractVersion: input.contractVersion,
           eventType: input.event.eventType, externalOrderId: input.event.order.id,
-          partnerVersion: input.event.order.version,
+          partnerVersion: procurementOrderRevision(input.event.order),
         },
       })
       const local = await tx.externalProcurementOrder.findFirst({

@@ -2,12 +2,13 @@ import { createHash } from "node:crypto"
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { requireWritableWorkshop } from "@/lib/auth"
+import { requireWorkshopShippingAddress } from "./shipping-address"
 import {
-  PROCUREMENT_STATUSES, ProcurementProviderError, requiresProcurementReconfirmation,
-  type ProcurementOrder, type ProcurementProviderClient,
+  MAX_PROCUREMENT_LINE_QUANTITY, PROCUREMENT_STATUSES, ProcurementProviderError, TERMINAL_PROCUREMENT_STATUSES,
+  releasesProcurementAttempt, requiresProcurementReconfirmation,
+  type ProcurementOrder, type ProcurementProviderClient, type ProcurementShippingAddress, type ProcurementStatus,
 } from "./types"
 
-const TERMINAL_STATUSES = new Set<string>(["REJECTED", "RESERVATION_EXPIRED", "CANCELLED", "COMPLETED"])
 const RECONCILE_INTERVAL_MS = 5 * 60 * 1000
 const RECONCILE_LEASE_MS = 2 * 60 * 1000
 const INITIATING_MAX_AGE_MS = 60 * 60 * 1000
@@ -24,11 +25,14 @@ export interface StartProcurementInput {
   quantity: number
   expectedUnitNetKurus: number
   confirmationToken: string
+  /** Built server-side from the workshop profile (requireWorkshopShippingAddress), never from a request body. */
+  shippingAddress: ProcurementShippingAddress
+  note?: string
   productPresentation: { name: string; brand?: string; partNumber?: string; imageUrl?: string }
   informationalSnapshot?: { unitPriceKurus?: number; currency?: string; availability?: string; capturedAt: string }
 }
 
-export type UntrustedProcurementInput = Omit<StartProcurementInput, "workshopId" | "requestedByUserId">
+export type UntrustedProcurementInput = Omit<StartProcurementInput, "workshopId" | "requestedByUserId" | "shippingAddress">
 
 /** Session-derived identity wrapper for route/actions accepting request data. */
 export async function startAuthorizedExternalProcurement(
@@ -37,6 +41,7 @@ export async function startAuthorizedExternalProcurement(
   const { user, workshop } = await requireWritableWorkshop("parts.purchase")
   return startExternalProcurement(client, {
     ...input, workshopId: workshop.id, requestedByUserId: user.id,
+    shippingAddress: requireWorkshopShippingAddress(workshop),
   })
 }
 
@@ -46,61 +51,101 @@ export function procurementRequestHash(input: StartProcurementInput): string {
     externalProductId: input.externalProductId, externalOfferId: input.externalOfferId,
     quantity: input.quantity, expectedUnitNetKurus: input.expectedUnitNetKurus,
     confirmationToken: input.confirmationToken,
+    shippingAddress: input.shippingAddress, note: input.note ?? "",
   })).digest("hex")
 }
 
-function projection(order: ProcurementOrder, cancellationRequestedAt: Date | null) {
+/**
+ * Local summary of the contract's cancellation fields, kept in
+ * `ExternalProcurementOrder.cancellationCode` (no schema change needed).
+ */
+export const PROCUREMENT_CANCELLATION_CODES = [
+  "REQUEST_PENDING", "REQUEST_REJECTED", "CANCELLED_BY_PARTNER", "CANCELLED_BY_GETIRBAKIM",
+] as const
+export type ProcurementCancellationCode = (typeof PROCUREMENT_CANCELLATION_CODES)[number]
+
+export function procurementCancellationCode(order: Pick<ProcurementOrder, "status" | "cancelledBy" | "cancellationRequest">): ProcurementCancellationCode | null {
+  if (order.status === "CANCELLED") return order.cancelledBy === "GETIRBAKIM" ? "CANCELLED_BY_GETIRBAKIM" : "CANCELLED_BY_PARTNER"
+  if (order.cancellationRequest?.status === "PENDING") return "REQUEST_PENDING"
+  if (order.cancellationRequest?.status === "REJECTED") return "REQUEST_REJECTED"
+  return null
+}
+
+const STATUS_RANK: Record<ProcurementStatus, number> = { REQUESTED: 1, CONFIRMED: 2, SHIPPED: 3, COMPLETED: 4, CANCELLED: 5 }
+
+/**
+ * Contract v2.0 has no order version, so `partnerVersion` stores a revision
+ * derived from the order's lifecycle. Every transition the contract allows —
+ * REQUESTED→CONFIRMED→SHIPPED→COMPLETED, REQUESTED|CONFIRMED→CANCELLED, a cancel
+ * request PENDING→APPROVED|REJECTED, a shipment appearing — strictly raises it,
+ * so the projector still ignores a stale or repeated answer. (1.0 rows had
+ * versions < 100 and are always superseded.)
+ */
+export function procurementOrderRevision(order: Pick<ProcurementOrder, "status" | "cancellationRequest" | "shipment">): number {
+  const request = order.cancellationRequest ? (order.cancellationRequest.status === "PENDING" ? 1 : 2) : 0
+  return STATUS_RANK[order.status] * 100 + request * 10 + (order.shipment ? 1 : 0)
+}
+
+function projection(order: ProcurementOrder) {
   const now = new Date()
   return {
-    externalOrderId: order.id, partnerStatus: order.status, partnerVersion: order.version,
-    bindingNetKurus: order.bindingPrice.netKurus, bindingVatKurus: order.bindingPrice.vatKurus,
-    bindingGrossKurus: order.bindingPrice.grossKurus, currency: order.bindingPrice.currency,
-    pricingPolicyVersion: order.bindingPrice.policyVersion,
-    reservationExpiresAt: new Date(order.bindingPrice.expiresAt), failureCode: null,
-    cancellationRequestedAt: order.cancellationRequested ? cancellationRequestedAt ?? now : null,
+    externalOrderId: order.id, partnerStatus: order.status, partnerVersion: procurementOrderRevision(order),
+    // Gross includes the VAT-inclusive shipping fee (see procurementShippingKurus in presentation.ts).
+    bindingNetKurus: order.totals.netKurus, bindingVatKurus: order.totals.vatKurus,
+    bindingGrossKurus: order.totals.grossKurus, currency: order.currency,
+    pricingPolicyVersion: order.contractVersion,
+    // v2.0 reserves nothing; the column only carried the 1.0 reservation TTL.
+    reservationExpiresAt: null, failureCode: null,
+    cancellationRequestedAt: order.cancellationRequest ? new Date(order.cancellationRequest.requestedAt) : null,
+    cancellationCode: procurementCancellationCode(order),
     failedAt: null, lastReconciledAt: now,
-    nextReconcileAt: TERMINAL_STATUSES.has(order.status) ? null : new Date(now.getTime() + RECONCILE_INTERVAL_MS),
+    nextReconcileAt: TERMINAL_PROCUREMENT_STATUSES.has(order.status) ? null : new Date(now.getTime() + RECONCILE_INTERVAL_MS),
     reconcileFailureCount: 0, lastReconcileError: null, manualReconcileRequiredAt: null,
   } satisfies Prisma.ExternalProcurementOrderUpdateManyMutationInput
 }
 
-function itemProjection(order: ProcurementOrder) {
-  const item = order.items[0]
-  if (!item) return null
-  return {
-    externalProductId: item.sourceProductId, externalOfferId: item.selectedOfferId,
-    quantity: item.quantity, unitNetKurus: item.unitNetKurus,
-    unitVatKurus: item.unitVatKurus, unitGrossKurus: item.unitGrossKurus,
-  }
+/** Per-line binding prices, matched to the local items by offer id. */
+export function itemProjections(order: ProcurementOrder) {
+  return order.lines.map((line) => ({
+    externalOfferId: line.selectedOfferId,
+    data: {
+      quantity: line.quantity, unitNetKurus: line.unitNetKurus,
+      // Per-unit columns; the contract computes VAT per line, so these are rounded shares of it.
+      unitVatKurus: Math.round(line.lineVatKurus / line.quantity),
+      unitGrossKurus: Math.round(line.lineGrossKurus / line.quantity),
+    },
+  }))
 }
 
-/** Apply a provider projection once, atomically with its item, iff its version is newer. */
+/** Apply a provider projection once, atomically with its items, iff its revision is newer. */
 export async function applyExternalProcurementProjection(
   tx: Prisma.TransactionClient,
   localId: string,
   order: ProcurementOrder,
 ) {
   const local = await tx.externalProcurementOrder.findUnique({
-    where: { id: localId }, select: { externalOrderId: true, partnerVersion: true, cancellationRequestedAt: true },
+    where: { id: localId }, select: { externalOrderId: true, partnerVersion: true },
   })
   if (!local) return false
   if (local.externalOrderId && local.externalOrderId !== order.id) throw new Error("Provider order identity mismatch")
-  if (local.externalOrderId && local.partnerVersion >= order.version) return false
+  const revision = procurementOrderRevision(order)
+  if (local.externalOrderId && local.partnerVersion >= revision) return false
 
   const result = await tx.externalProcurementOrder.updateMany({
     where: {
       id: localId,
       ...(local.externalOrderId
-        ? { externalOrderId: order.id, partnerVersion: { lt: order.version } }
-        : { externalOrderId: null, partnerVersion: { lte: order.version } }),
+        ? { externalOrderId: order.id, partnerVersion: { lt: revision } }
+        : { externalOrderId: null, partnerVersion: { lte: revision } }),
     },
-    data: projection(order, local.cancellationRequestedAt),
+    data: projection(order),
   })
   if (result.count !== 1) return false
-  const item = itemProjection(order)
-  if (item) await tx.externalProcurementOrderItem.updateMany({
-    where: { externalProcurementOrderId: localId }, data: item,
-  })
+  for (const item of itemProjections(order)) {
+    await tx.externalProcurementOrderItem.updateMany({
+      where: { externalProcurementOrderId: localId, externalOfferId: item.externalOfferId }, data: item.data,
+    })
+  }
   return true
 }
 
@@ -109,7 +154,9 @@ export async function applyExternalProcurementProjection(
  * requireWritableWorkshop("parts.purchase"), never from a request body.
  */
 export async function startExternalProcurement(client: ProcurementProviderClient, input: StartProcurementInput) {
-  if (input.quantity <= 0 || !Number.isInteger(input.quantity)) throw new Error("Invalid procurement quantity")
+  if (input.quantity <= 0 || input.quantity > MAX_PROCUREMENT_LINE_QUANTITY || !Number.isInteger(input.quantity)) {
+    throw new Error("Invalid procurement quantity")
+  }
   const requestHash = procurementRequestHash(input)
   const existing = await prisma.externalProcurementOrder.findUnique({
     where: { provider_workshopId_idempotencyKey: {
@@ -168,29 +215,30 @@ export async function startExternalProcurement(client: ProcurementProviderClient
     if (local.externalOrderId) return local
   }
 
+  // One service order item = one line. v2.0 takes up to 20 lines per order;
+  // the purchase dialog still buys one part at a time.
+  const order = {
+    idempotencyKey: input.idempotencyKey, confirmationToken: input.confirmationToken,
+    lines: [{ selectedOfferId: input.externalOfferId, quantity: input.quantity, expectedUnitNetKurus: input.expectedUnitNetKurus }],
+    shippingAddress: input.shippingAddress, note: input.note,
+  }
   try {
     let result
     try {
-      result = await client.createOrder({
-        idempotencyKey: input.idempotencyKey, selectedOfferId: input.externalOfferId,
-        quantity: input.quantity, expectedUnitNetKurus: input.expectedUnitNetKurus,
-        confirmationToken: input.confirmationToken,
-      })
+      result = await client.createOrder(order)
     } catch (error) {
       if (!(error instanceof ProcurementProviderError) || !error.retryable) throw error
       // The same provider idempotency key safely reconciles an ambiguous first attempt.
-      result = await client.createOrder({
-        idempotencyKey: input.idempotencyKey, selectedOfferId: input.externalOfferId,
-        quantity: input.quantity, expectedUnitNetKurus: input.expectedUnitNetKurus,
-        confirmationToken: input.confirmationToken,
-      })
+      result = await client.createOrder(order)
     }
     return await prisma.$transaction(async (tx) => {
       await applyExternalProcurementProjection(tx, local.id, result.order)
       return tx.externalProcurementOrder.findUniqueOrThrow({ where: { id: local.id }, include: { items: true } })
     })
   } catch (error) {
-    if (error instanceof ProcurementProviderError && requiresProcurementReconfirmation(error.code)) {
+    // A definite rejection created nothing: release the item for a new quote and
+    // a new Idempotency-Key, as the contract asks after an order-creation 409.
+    if (error instanceof ProcurementProviderError && (requiresProcurementReconfirmation(error.code) || releasesProcurementAttempt(error))) {
       await prisma.externalProcurementOrder.delete({ where: { id: local.id } })
       throw error
     }
@@ -224,9 +272,20 @@ export async function cancelExternalProcurement(
     where: { id: localId, workshopId, provider: client.provider },
   })
   if (!local?.externalOrderId) throw new Error("Procurement order not found")
-  const remote = await client.cancelOrder(local.externalOrderId)
-  await prisma.$transaction((tx) => applyExternalProcurementProjection(tx, local.id, remote))
-  return remote
+  const externalOrderId = local.externalOrderId
+  try {
+    const result = await client.cancelOrder(externalOrderId)
+    await prisma.$transaction((tx) => applyExternalProcurementProjection(tx, local.id, result.order))
+    return result
+  } catch (error) {
+    // Final answers for this order (request rejected, already shipped): pull the
+    // current state so the work order stops offering a cancel that cannot work.
+    if (error instanceof ProcurementProviderError && (error.code === "CANCELLATION_REJECTED" || error.code === "ORDER_ALREADY_SHIPPED")) {
+      const remote = await client.getOrder(externalOrderId).catch(() => null)
+      if (remote) await prisma.$transaction((tx) => applyExternalProcurementProjection(tx, local.id, remote))
+    }
+    throw error
+  }
 }
 
 export function reconcileBackoffMs(failureCount: number): number {
@@ -249,7 +308,7 @@ export async function sweepExternalProcurements(
       provider: client.provider,
       OR: [
         { externalOrderId: null, partnerStatus: "INITIATING" },
-        { externalOrderId: { not: null }, partnerStatus: { in: PROCUREMENT_STATUSES.filter((status) => !TERMINAL_STATUSES.has(status)) } },
+        { externalOrderId: { not: null }, partnerStatus: { in: PROCUREMENT_STATUSES.filter((status) => !TERMINAL_PROCUREMENT_STATUSES.has(status)) } },
       ],
       AND: [{ OR: [{ nextReconcileAt: null }, { nextReconcileAt: { lte: now } }] }],
     },
@@ -292,7 +351,7 @@ export async function sweepExternalProcurements(
       if (await database.$transaction((tx) => applyExternalProcurementProjection(tx, row.id, remote))) applied += 1
       else await database.externalProcurementOrder.updateMany({
         where: pollCompletionGuard(row, leaseUntil),
-        data: { lastReconciledAt: now, nextReconcileAt: TERMINAL_STATUSES.has(remote.status) ? null : new Date(now.getTime() + RECONCILE_INTERVAL_MS), reconcileFailureCount: 0, lastReconcileError: null, manualReconcileRequiredAt: null },
+        data: { lastReconciledAt: now, nextReconcileAt: TERMINAL_PROCUREMENT_STATUSES.has(remote.status) ? null : new Date(now.getTime() + RECONCILE_INTERVAL_MS), reconcileFailureCount: 0, lastReconcileError: null, manualReconcileRequiredAt: null },
       })
     } catch (error) {
       failed += 1

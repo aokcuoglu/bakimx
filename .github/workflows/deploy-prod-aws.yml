@@ -177,6 +177,11 @@ jobs:
           #                        them at build time via build-args above. Explicit for parity.
           #   GETIRBAKIM_TIMEOUT_MS — GetirBakım partner searches take 2–6 s in prod; the 4 s
           #                        default emptied the workshop's part list (#741).
+          #   GETIRBAKIM_ORDER_API_KEY — secret (not env): opens BakımX → GetirBakım ordering
+          #                        (src/lib/external-procurement/provider.ts). Same Secrets
+          #                        Manager ARN as the CDK's GETIRBAKIM_API_KEY entry, which the
+          #                        execution role already reads; the step fails if that entry
+          #                        is missing (#760).
           # Idempotent across re-runs. TODO(cdk-backfill): move these into the CDK task def.
           aws ecs describe-task-definition --task-definition "$TASK_FAMILY" \
             --query taskDefinition --output json \
@@ -194,6 +199,15 @@ jobs:
                       {name: "SESSION_COOKIE_DOMAIN", value: ".bakimx.com"},
                       {name: "GETIRBAKIM_PROVIDER",  value: "http"},
                       {name: "GETIRBAKIM_TIMEOUT_MS", value: "10000"}])
+              | ((.containerDefinitions[] | select(.name==$CN)).secrets // []
+                 | map(select(.name == "GETIRBAKIM_API_KEY")) | first | .valueFrom // null) as $GB_KEY
+              | if $GB_KEY == null
+                then error("GETIRBAKIM_API_KEY secret entry is missing on container \($CN); cannot derive GETIRBAKIM_ORDER_API_KEY")
+                else . end
+              | (.containerDefinitions[] | select(.name==$CN)).secrets |=
+                  ((. // [])
+                   | map(select(.name != "GETIRBAKIM_ORDER_API_KEY"))
+                   + [{name: "GETIRBAKIM_ORDER_API_KEY", valueFrom: $GB_KEY}])
               | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
                     .compatibilities, .registeredAt, .registeredBy)
             ' > new-taskdef.json

@@ -14,6 +14,7 @@ const product = (over: Partial<GetirbakimProduct> = {}): GetirbakimProduct => ({
   oemNumbers: ["10210"],
   references: [{ type: "OEM", value: "10-02-210", normalized: "1002210", brand: "ASHIKA" }],
   exactFitment: { requestedVehicleTypeId: null, status: "NOT_REQUESTED", matchedVehicleTypeIds: [] },
+  fitmentLevel: "unknown",
   imageUrl: null,
   listPriceKurus: 79605,
   b2bPriceKurus: 79605,

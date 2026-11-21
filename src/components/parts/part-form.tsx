@@ -33,6 +33,14 @@ import { typedResolver } from "@/lib/validations/resolver"
 import { partSchema, type PartFormValues } from "@/lib/validations/part"
 import { PartSupplierPricesField, type SupplierPriceFormRow } from "@/components/parts/part-supplier-prices-field"
 import { mergePartAttributeOptions } from "@/lib/parts/attributes"
+import { PartSearchInput } from "@/components/parts/part-search-input"
+import {
+  applyCatalogPrefill,
+  bakimxStockPrefill,
+  getirbakimStockPrefill,
+  type CatalogStockPrefill,
+} from "@/lib/parts/catalog-prefill"
+import { formatTRY } from "@/lib/format"
 
 
 type PartData = {
@@ -179,6 +187,18 @@ export function PartForm({
     return createPartAction(formData) as unknown as Promise<ActionState | null>
   }
 
+  // #598 — katalogdan seçim: arama metni form alanı değil, yalnız arama girdisi.
+  const [catalogQuery, setCatalogQuery] = useState("")
+  const [catalogPick, setCatalogPick] = useState<CatalogStockPrefill | null>(null)
+
+  function pickFromCatalog(prefill: CatalogStockPrefill) {
+    applyCatalogPrefill(prefill, (name, value) =>
+      form.setValue(name, value, { shouldDirty: true, shouldValidate: true })
+    )
+    setCatalogPick(prefill)
+    setCatalogQuery("")
+  }
+
   const [state, formAction, pending] = useActionState(action, null as ActionState | null)
 
   useEffect(() => {
@@ -227,6 +247,38 @@ export function PartForm({
         </div>
 
         <div className="space-y-5">
+          {!isEdit && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-semibold">Katalogdan Seç</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <PartSearchInput
+                  value={catalogQuery}
+                  vehicleTypeId={null}
+                  placeholder="Parça adı, kodu veya OEM ile katalogda ara..."
+                  onNameChange={setCatalogQuery}
+                  onSelectArticle={() => {}}
+                  onSelectBakimxProduct={(product) => pickFromCatalog(bakimxStockPrefill(product))}
+                  onSelectGetirbakimProduct={(product) => pickFromCatalog(getirbakimStockPrefill(product))}
+                />
+                {catalogPick ? (
+                  <p className="text-xs text-muted-foreground" role="status">
+                    <span className="font-medium text-foreground">{catalogPick.fields.name}</span>{" "}
+                    {catalogPick.sourceLabel} üzerinden dolduruldu; alanları aşağıda düzenleyebilirsiniz.
+                    {catalogPick.purchasePriceKurus != null && (
+                      <> Katalog alış fiyatı: {formatTRY(catalogPick.purchasePriceKurus)} (KDV hariç) — kendi alış ve satış fiyatlarınızı aşağıya girin.</>
+                    )}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Uyumlu parçayı seçin; ad, kod, OEM, marka ve kategori otomatik dolar. Fiyat, stok ve raf bilgisi size özel kalır. Katalogda yoksa aşağıyı elle doldurun.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold">Parça Bilgileri</CardTitle>

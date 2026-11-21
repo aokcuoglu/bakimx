@@ -4,6 +4,7 @@ import {
   suggestionFitsVehicle,
   suggestionKey,
   suggestionLabel,
+  suggestionMatchesVehicle,
   type StockPartLite,
 } from "./suggestions"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
@@ -57,19 +58,58 @@ const stock = (id: string, over: Partial<StockPartLite> = {}): StockPartLite => 
   ...over,
 })
 
-const getirbakim = (id: string): GetirbakimProduct => ({
+const getirbakim = (id: string, level: "guaranteed" | "likely" | "unknown" = "unknown"): GetirbakimProduct => ({
   contractVersion: "1.2", sourceProductId: id, id, partNo: `GB-${id}`,
   manufacturerPartNumber: null, name: `GetirBakım ${id}`, brandName: "GB",
   categoryName: null, oemNumbers: [], references: [],
-  exactFitment: { requestedVehicleTypeId: null, status: "NOT_REQUESTED", matchedVehicleTypeIds: [] },
+  exactFitment: level === "unknown"
+    ? { requestedVehicleTypeId: null, status: "NOT_REQUESTED", matchedVehicleTypeIds: [] }
+    : level === "guaranteed"
+      ? { requestedVehicleTypeId: 7, status: "CONFIRMED", matchedVehicleTypeIds: [7] }
+      : { requestedVehicleTypeId: 7, status: "NOT_CONFIRMED", matchedVehicleTypeIds: [] },
+  fitmentLevel: level,
   imageUrl: null, listPriceKurus: 10000, b2bPriceKurus: 9000, discountBps: 1000,
   vatRateBps: 2000, currency: "TRY", stockQty: 1, availability: "IN_STOCK",
   lastSyncedAt: null,
 })
 
-test("sıra TecDoc → BakımX → GetirBakım → atölye stoğu", () => {
+test("uyumu bilinmeyen GetirBakım: TecDoc → BakımX → GetirBakım → atölye stoğu", () => {
   const out = buildPartSuggestions([article("A1")], [bakimx("b1")], [stock("s1")], [getirbakim("g1")])
   expect(out.map((s) => s.kind)).toEqual(["catalog", "bakimx", "getirbakim", "stock"])
+})
+
+/** #755: vitrin kutusu gibi — araca uyan GetirBakım en önde, uymayanlar yine listede. */
+test("araca uyan GetirBakım satırları en önde, uymayanlar BakımX'ten sonra", () => {
+  const out = buildPartSuggestions(
+    [article("A1")],
+    [bakimx("b1")],
+    [stock("s1")],
+    [getirbakim("u1"), getirbakim("l1", "likely"), getirbakim("g1", "guaranteed"), getirbakim("u2")],
+  )
+  expect(out.map(suggestionKey)).toEqual([
+    "g-g1", "g-l1", "c-2", "b-b1", "g-u1", "g-u2", "s-s1",
+  ])
+})
+
+test("GetirBakım tam uyumu doğrulanmış uyum sayılır; muhtemel uyum yalnız süzgeçte kalır", () => {
+  const [guaranteed, likely, , unknown] = buildPartSuggestions(
+    [], [bakimx("b1")], [],
+    [getirbakim("g1", "guaranteed"), getirbakim("l1", "likely"), getirbakim("u1")],
+  )
+  expect(suggestionFitsVehicle(guaranteed)).toBe(true)
+  expect(suggestionFitsVehicle(likely)).toBe(false)
+  expect(suggestionFitsVehicle(unknown)).toBe(false)
+  expect(suggestionMatchesVehicle(guaranteed)).toBe(true)
+  expect(suggestionMatchesVehicle(likely)).toBe(true)
+  expect(suggestionMatchesVehicle(unknown)).toBe(false)
+})
+
+test("'Yalnız bu araca uyanlar' süzgeci TecDoc + uyan GetirBakım bırakır", () => {
+  const out = buildPartSuggestions(
+    [article("A1")], [bakimx("b1")], [stock("s1")],
+    [getirbakim("u1"), getirbakim("g1", "guaranteed"), getirbakim("l1", "likely")],
+  ).filter(suggestionMatchesVehicle)
+  expect(out.map(suggestionKey)).toEqual(["g-g1", "g-l1", "c-2"])
 })
 
 /** #181'in çekirdeği: yalnız TecDoc satırı "araca uygun" sayılır, uyarı bu bayrağa bağlı. */

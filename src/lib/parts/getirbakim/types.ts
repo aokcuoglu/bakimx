@@ -10,8 +10,19 @@
 /** Ürünün tedarik durumu — GetirBakım `CatalogAvailability` ile aynı. */
 export type GetirbakimAvailability = "IN_STOCK" | "SUPPLYABLE" | "UNAVAILABLE"
 
+/**
+ * Araca uyum seviyesi (sözleşme 1.3, getirbakim#1093).
+ *   - `guaranteed`: tam araç tipi (`exactFitment.status === "CONFIRMED"`) doğrulanmış.
+ *   - `likely`    : model düzeyinde uyum (tedarikçi açıklamasından); tip doğrulanmamış.
+ *   - `unknown`   : araç istenmedi ya da uyum bilgisi yok.
+ * 1.3 öncesi yanıtlarda alan yoktur; `exactFitment`'tan türetilir.
+ */
+export type GetirbakimFitmentLevel = "guaranteed" | "likely" | "unknown"
+
+export type GetirbakimContractVersion = "1.1" | "1.2" | "1.3"
+
 export interface GetirbakimProduct {
-  contractVersion: "1.1" | "1.2" | null
+  contractVersion: GetirbakimContractVersion | null
   sourceProductId: string
   id: string
   partNo: string
@@ -26,6 +37,8 @@ export interface GetirbakimProduct {
     status: "CONFIRMED" | "NOT_CONFIRMED" | "NOT_REQUESTED"
     matchedVehicleTypeIds: number[]
   }
+  /** Ayrıştırıcı her zaman doldurur; `exactFitment` ile çelişemez (bkz. parseFitmentLevel). */
+  fitmentLevel: GetirbakimFitmentLevel
   imageUrl: string | null
   /** GetirBakım vitrin fiyatı — KDV hariç, kuruş. Fiyatsız üründe null. */
   listPriceKurus: number | null
@@ -75,6 +88,12 @@ export interface GetirbakimExactProduct {
   sourceProductId: string
   brandName: string
   manufacturerPartNumber: { value: string; normalized: string }
+  /**
+   * Partner iskontosu (bps), GetirBakım'ın ürün düzeyinde verdiği gibi (#760). Yalnız
+   * GÖSTERİLİR: bağlayıcı fiyat (`order-quotes` → `unitNetKurus`) iskontoyu GetirBakım
+   * tarafında zaten içerir; BakımX bu oranla hiçbir fiyat hesaplamaz.
+   */
+  discountBps: number
   offers: GetirbakimOffer[]
 }
 
@@ -118,6 +137,12 @@ export interface GetirbakimProvider {
 /** Sunucuda kırpılan sonuç sayısı — istemci daha büyüğünü isteyemez. */
 export const GETIRBAKIM_DEFAULT_LIMIT = 10
 export const GETIRBAKIM_MAX_LIMIT = 25
+/**
+ * İş emri satır içi aramasında istenen GetirBakım satırı (#755) — vitrin arama
+ * kutusu hissi için BakımX'in 8'inden geniş, üst sınırın altında. Sözleşme 1.3
+ * araç verilince uyanları önce döndürür; kırpma uyanları kesmez.
+ */
+export const GETIRBAKIM_SUGGESTION_LIMIT = 20
 
 /** Satır içi aramayla aynı eşik: 2 karakterden kısa sorgu dışarı çıkmaz. */
 export const GETIRBAKIM_MIN_SEARCH_LEN = 2
@@ -184,8 +209,30 @@ export function parseGetirbakimExactProduct(raw: unknown): GetirbakimExactProduc
     sourceProductId,
     brandName: asString(row.brandName) ?? "",
     manufacturerPartNumber: { value, normalized },
+    discountBps: Math.max(0, asInt(row.discountBps) ?? 0),
     offers,
   }
+}
+
+/**
+ * `fitmentLevel` ayrıştırması — dış değere `exactFitment`'tan fazla güvenilmez:
+ *   - `guaranteed` YALNIZ doğrulanmış `CONFIRMED` ile (istenen kimlik eşleşen
+ *     kimlikler içinde). `CONFIRMED` ise alan yok/başka olsa da `guaranteed`.
+ *   - `likely` yalnız bir araç istendiyse ve tam uyum doğrulanmadıysa.
+ *   - Geri kalan her şey `unknown` (alan yok = 1.2 yanıtı dahil).
+ */
+export function parseFitmentLevel(
+  raw: unknown,
+  status: GetirbakimProduct["exactFitment"]["status"],
+  requestedVehicleTypeId: number | null,
+): GetirbakimFitmentLevel {
+  if (status === "CONFIRMED") return "guaranteed"
+  if (raw === "likely" && requestedVehicleTypeId != null) return "likely"
+  return "unknown"
+}
+
+function asContractVersion(value: unknown): GetirbakimContractVersion | null {
+  return value === "1.1" || value === "1.2" || value === "1.3" ? value : null
 }
 
 function asAvailability(value: unknown): GetirbakimAvailability {
@@ -245,7 +292,7 @@ export function parseGetirbakimProduct(raw: unknown): GetirbakimProduct | null {
       : "NOT_REQUESTED"
 
   return {
-    contractVersion: row.contractVersion === "1.1" || row.contractVersion === "1.2" ? row.contractVersion : null,
+    contractVersion: asContractVersion(row.contractVersion),
     sourceProductId,
     id,
     partNo: asString(row.partNo) ?? "",
@@ -256,6 +303,7 @@ export function parseGetirbakimProduct(raw: unknown): GetirbakimProduct | null {
     oemNumbers,
     references,
     exactFitment: { requestedVehicleTypeId, status, matchedVehicleTypeIds },
+    fitmentLevel: parseFitmentLevel(row.fitmentLevel, status, requestedVehicleTypeId),
     imageUrl: asString(row.imageUrl),
     listPriceKurus: asInt(row.listPriceKurus),
     b2bPriceKurus: asInt(row.b2bPriceKurus),

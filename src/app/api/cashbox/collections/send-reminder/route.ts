@@ -4,6 +4,7 @@ import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { assertWritableOr403 } from "@/lib/plan-guard"
 import { prisma } from "@/lib/db"
 import { notifyCollectionReminder } from "@/lib/communications/triggers"
+import type { SendableChannel } from "@/lib/communications/types"
 import { hasWorkshopFeature } from "@/lib/plan"
 
 export async function POST(request: Request) {
@@ -61,9 +62,11 @@ export async function POST(request: Request) {
       }
     }
 
-    const sendChannels = (channels || ["sms", "whatsapp"]).filter(
-      (c): c is "sms" | "whatsapp" | "email" => ["sms", "whatsapp", "email"].includes(c)
-    ) as Array<"sms" | "whatsapp" | "email">
+    // WhatsApp Business API gönderimi kaldırıldı (#746): eski istemciden gelen
+    // "whatsapp" sessizce elenir, gönderilebilir kanallar SMS ve e-postadır.
+    const sendChannels = (channels || ["sms"]).filter(
+      (c): c is SendableChannel => c === "sms" || c === "email"
+    )
 
     const result = await notifyCollectionReminder(
       user.workshopId,

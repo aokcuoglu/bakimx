@@ -49,12 +49,20 @@ describe("exact offer contract", () => {
     expect(product).not.toHaveProperty("offers.0.costTry")
     expect(product).not.toHaveProperty("offers.0.supplierId")
     expect(product?.brandName).toBe("TRW")
+    expect(product?.discountBps).toBe(0)
+  })
+
+  test("ürün düzeyindeki partner iskontosunu GetirBakım'ın verdiği gibi taşır (#760)", () => {
+    const base = { sourceProductId: "1", brandName: "TRW", manufacturerPartNumber: { value: "X1", normalized: "X1" }, offers: [] }
+    expect(parseGetirbakimExactProduct({ ...base, discountBps: 1000 })?.discountBps).toBe(1000)
+    expect(parseGetirbakimExactProduct({ ...base, discountBps: -5 })?.discountBps).toBe(0)
+    expect(parseGetirbakimExactProduct({ ...base, discountBps: "1000" })?.discountBps).toBe(0)
   })
 
   test("0..N ürünün route durumunu tüm offerlar üzerinden sınıflandırır", () => {
     const product = (offers: GetirbakimExactProduct["offers"]): GetirbakimExactProduct => ({
       sourceProductId: "1", brandName: "TRW",
-      manufacturerPartNumber: { value: "103803", normalized: "103803" }, offers,
+      manufacturerPartNumber: { value: "103803", normalized: "103803" }, discountBps: 0, offers,
     })
     expect(classifyExactProducts([])).toBe("no_match")
     expect(classifyExactProducts([product([]), { ...product([]), sourceProductId: "2" }])).toBe("no_offers")
@@ -133,6 +141,47 @@ describe("parseGetirbakimProduct — dayanıklılık", () => {
     })
     expect(dishonest?.exactFitment.status).toBe("NOT_REQUESTED")
     expect(parseGetirbakimProduct({ id: "42", name: "X" })?.exactFitment.status).toBe("NOT_REQUESTED")
+  })
+
+  test("sözleşme 1.3 fitmentLevel'ı okunur, 1.2'de exactFitment'tan türetilir (#755)", () => {
+    const fit = (requestedVehicleTypeId: number, status: string, matched: number[]) => ({
+      requestedVehicleTypeId, status, matchedVehicleTypeIds: matched,
+    })
+    const v13 = (fitmentLevel: unknown, exactFitment: unknown) =>
+      parseGetirbakimProduct({ id: "1", name: "X", contractVersion: "1.3", fitmentLevel, exactFitment })
+
+    expect(v13("guaranteed", fit(7, "CONFIRMED", [7]))?.contractVersion).toBe("1.3")
+    expect(v13("guaranteed", fit(7, "CONFIRMED", [7]))?.fitmentLevel).toBe("guaranteed")
+    expect(v13("likely", fit(7, "NOT_CONFIRMED", []))?.fitmentLevel).toBe("likely")
+    expect(v13("unknown", fit(7, "NOT_CONFIRMED", []))?.fitmentLevel).toBe("unknown")
+    // Alan yok (1.2 yanıtı): CONFIRMED tam uyum, diğerleri bilinmiyor.
+    const v12 = (exactFitment: unknown) =>
+      parseGetirbakimProduct({ id: "1", name: "X", contractVersion: "1.2", exactFitment })
+    expect(v12(fit(7, "CONFIRMED", [7]))?.fitmentLevel).toBe("guaranteed")
+    expect(v12(fit(7, "NOT_CONFIRMED", []))?.fitmentLevel).toBe("unknown")
+    expect(parseGetirbakimProduct({ id: "1", name: "X" })?.fitmentLevel).toBe("unknown")
+  })
+
+  test("fitmentLevel exactFitment'tan güçlü bir iddia taşıyamaz", () => {
+    // Doğrulanmamış "guaranteed" → bilinmiyor; araç istenmeden "likely" → bilinmiyor.
+    const dishonest = parseGetirbakimProduct({
+      id: "1", name: "X", fitmentLevel: "guaranteed",
+      exactFitment: { requestedVehicleTypeId: 7, status: "CONFIRMED", matchedVehicleTypeIds: [8] },
+    })
+    expect(dishonest?.fitmentLevel).toBe("unknown")
+    expect(parseGetirbakimProduct({ id: "1", name: "X", fitmentLevel: "likely" })?.fitmentLevel).toBe("unknown")
+    expect(parseGetirbakimProduct({ id: "1", name: "X", fitmentLevel: "ŞEY" })?.fitmentLevel).toBe("unknown")
+    // CONFIRMED doğrulandıysa alan ne derse desin tam uyumlu.
+    expect(parseGetirbakimProduct({
+      id: "1", name: "X", fitmentLevel: "unknown",
+      exactFitment: { requestedVehicleTypeId: 7, status: "CONFIRMED", matchedVehicleTypeIds: [7] },
+    })?.fitmentLevel).toBe("guaranteed")
+  })
+
+  test("tanınmayan sözleşme sürümü null olur ama satır atılmaz", () => {
+    const p = parseGetirbakimProduct({ id: "1", name: "X", contractVersion: "9.9" })
+    expect(p?.contractVersion).toBeNull()
+    expect(p?.name).toBe("X")
   })
 
   test("zorunlu alanı eksik satır null döner", () => {

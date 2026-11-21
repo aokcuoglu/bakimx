@@ -212,7 +212,7 @@ variables `DEV_NEXT_PUBLIC_SUPPORT_WHATSAPP` ve `PROD_NEXT_PUBLIC_SUPPORT_WHATSA
 ile değiştirilebilir. İkisi de belirtilmezse `905423681438` kullanılır.
 ECS runtime env değişikliği tek başına yeterli değildir; yeni image gerekir.
 Production ayarı/yayını insan onayına tabidir.
-Profil, ekip ve telefon kabul adımları: [WhatsApp Business kurulum rehberi](operations/whatsapp-business-setup.md).
+Destek hattının WhatsApp Business uygulaması (profil, ekip ve telefon kabul adımları): [kurulum rehberi](operations/whatsapp-business-setup.md).
 
 ```env
 # SMS Sağlayıcı — mock (varsayılan) veya netgsm
@@ -223,14 +223,6 @@ SMS_PROVIDER=mock
 # NETGSM_PASSWORD=your-netgsm-password
 # NETGSM_SENDER=BAKIMX
 # NETGSM_API_URL=https://api.netgsm.com.tr/sms/send/get
-
-# WhatsApp Sağlayıcı — mock (varsayılan) veya business
-WHATSAPP_PROVIDER=mock
-
-# WhatsApp Business API (WHATSAPP_PROVIDER=business iken gerekli)
-# WHATSAPP_PHONE_NUMBER_ID=your-phone-number-id
-# WHATSAPP_ACCESS_TOKEN=your-access-token
-# WHATSAPP_API_URL=https://graph.facebook.com/v18.0
 
 # E-posta Sağlayıcı — mock (varsayılan) veya resend
 EMAIL_PROVIDER=mock
@@ -245,7 +237,7 @@ EMAIL_PROVIDER=mock
 **İletişim davranışı:**
 - Tüm sağlayıcılar `mock` olarak varsayılan — API anahtarı gerekmez, konsola log yazar
 - `SMS_PROVIDER=netgsm`: Netgsm SMS API ile gerçek SMS gönderimi
-- `WHATSAPP_PROVIDER=business`: WhatsApp Business API ile mesaj gönderimi (template message API henüz yok)
+- WhatsApp Business API gönderimi yoktur (#746); WhatsApp yalnız `wa.me` paylaşım bağlantılarıyla kullanılır. Teslim onay kodu SMS ile gider.
 - `EMAIL_PROVIDER=resend`: Resend API ile gerçek e-posta gönderimi
 - Her sağlayıcı soyut arayüz ile değiştirilebilir, yeni sağlayıcılar eklenebilir
 

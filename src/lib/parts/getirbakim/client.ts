@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   GETIRBAKIM_MIN_SEARCH_LEN,
   type GetirbakimProduct,
   type GetirbakimSearchInput,
 } from "./types"
+import { dropForeignFitment, sortGetirbakimByFit } from "./fitment"
 
 /**
  * `/api/catalog/getirbakim/*` ucunun İSTEMCİ tarafı (BAK-183).
@@ -122,11 +123,11 @@ export function useGetirbakimSearch(input: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey])
 
-  const safeProducts = products.map((product) =>
-    product.exactFitment.status === "CONFIRMED" &&
-    product.exactFitment.requestedVehicleTypeId !== vehicleTypeId
-      ? { ...product, exactFitment: { requestedVehicleTypeId: null, status: "NOT_REQUESTED" as const, matchedVehicleTypeIds: [] } }
-      : product,
+  // Başka aracın uyum iddiası bu araca taşınmaz; uyanlar önce (#755) — sunucu
+  // 1.3 öncesi sıralamasa da yüzey aynı sırayı görür.
+  const safeProducts = useMemo(
+    () => sortGetirbakimByFit(products.map((product) => dropForeignFitment(product, vehicleTypeId))),
+    [products, vehicleTypeId],
   )
   return { products: safeProducts, locked, searching }
 }

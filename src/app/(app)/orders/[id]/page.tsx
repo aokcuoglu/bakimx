@@ -15,6 +15,7 @@ import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ACTIVE_CHECKLIST_ITEM } from "@/lib/technician/checklist-visibility"
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 import { quantityToNumber } from "@/lib/orders/quantity"
+import { procurementShippingKurus } from "@/lib/external-procurement/presentation"
 import { GATED_FEATURES, getPlanState, hasFeature } from "@/lib/plan"
 
 export const metadata = { title: "İş Emri Detayı" }
@@ -76,7 +77,7 @@ export default async function OrderDetailPage({
           // Dış alım (source=purchase) kalemine bağlı parça-kutusu fotoğrafı + alan teknisyen.
           photos: { where: VISIBLE_PHOTO, select: { id: true } },
           purchasedBy: { select: { fullName: true } },
-          externalProcurementItem: { include: { externalProcurementOrder: { select: { id: true, partnerStatus: true, cancellationRequestedAt: true } } } },
+          externalProcurementItem: { include: { externalProcurementOrder: { select: { id: true, partnerStatus: true, cancellationRequestedAt: true, cancellationCode: true, bindingNetKurus: true, bindingVatKurus: true, bindingGrossKurus: true } } } },
         },
       },
       assignedTechnician: { select: { id: true, fullName: true, role: true } },
@@ -187,6 +188,9 @@ export default async function OrderDetailPage({
         id: i.externalProcurementItem.externalProcurementOrder.id,
         status: i.externalProcurementItem.externalProcurementOrder.partnerStatus,
         cancellationRequestedAt: i.externalProcurementItem.externalProcurementOrder.cancellationRequestedAt?.toISOString() ?? null,
+        cancellationCode: i.externalProcurementItem.externalProcurementOrder.cancellationCode,
+        grossKurus: i.externalProcurementItem.externalProcurementOrder.bindingGrossKurus,
+        shippingKurus: procurementShippingKurus(i.externalProcurementItem.externalProcurementOrder),
       } : null,
     })),
     partsRequests: order.partsRequests.map((p) => ({

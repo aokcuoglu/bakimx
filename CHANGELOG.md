@@ -3,7 +3,15 @@
 BakımX sürüm geçmişi. Her sürümün ayrıntılı notu [`docs/releases/`](./docs/releases/) altındadır. Sürümler [SemVer](https://semver.org/lang/tr/) ve dev→staging→main akışını izler (bkz. [docs/releasing.md](./docs/releasing.md)).
 
 ## Yayınlanmamış (Unreleased)
-Henüz yok — v0.16.1 tag'lendi.
+Henüz yok — v0.17.0 hazırlandı.
+
+## 0.17.x
+
+| Sürüm | Başlık | Not |
+|---|---|---|
+| 0.17.0 | GetirBakım siparişi açık + sözleşme v2.0, parça aramasında araca uyanlar önce, katalogdan stok kartı, WhatsApp kaldırıldı | [v0.17.0](./docs/releases/v0.17.0.md) |
+
+0.17.0 öne çıkanlar: GetirBakım satın alma istemcisi **partner sipariş sözleşmesi v2.0**'a taşındı (teslimat adresi atölye profilinden, webhook yerine durum çekme, kesin retlerde yerel denemenin bırakılması; #752) ve GetirBakım'ın **sipariş alımını durdurma** kodu (`503 ORDER_INTAKE_PAUSED`) tanınıyor (#758). İş emri parça aramasında **araca uyan GetirBakım ürünleri önde ve rozetli**, "Yalnız bu araca uyanlar" anahtarı eklendi, arama sınırı 120/dk (#756). **GetirBakım siparişi prod'da açılıyor**; B2B iskontosu GetirBakım panelinden yönetiliyor ve deploy'suz yansıyor (#762). Stok kartı **katalogdan açılabiliyor** (#745), dış işçilikte **alış/satış ve kâr marjı** ayrıldı (#750). **WhatsApp Business API kaldırıldı**, teslim kodu SMS ile gidiyor (#747). **Migration YOK.** Elle eklenecek env yok (`GETIRBAKIM_ORDER_API_KEY` deploy workflow'u ekler).
 
 ## 0.16.x
 

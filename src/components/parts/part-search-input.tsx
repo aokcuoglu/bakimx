@@ -18,12 +18,14 @@ import {
 import { Info, PackageSearch, Search, XIcon, Plus, PencilLine, TriangleAlert, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { VehicleFitToggle } from "@/components/parts/vehicle-fit-toggle"
 import { formatTRY } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import { BAKIMX_SUGGESTION_LIMIT, useBakimxProductSearch } from "@/lib/parts/bakimx-client"
 import { useGetirbakimSearch } from "@/lib/parts/getirbakim/client"
+import { GETIRBAKIM_SUGGESTION_LIMIT } from "@/lib/parts/getirbakim/types"
 import { GetirbakimProductRow } from "@/components/parts/getirbakim-product-row"
 import { isGetirbakimSelectable } from "@/lib/parts/getirbakim-item"
 import type { GetirbakimProduct } from "@/lib/parts/getirbakim/types"
@@ -33,6 +35,7 @@ import {
   buildPartSuggestions,
   suggestionKey,
   suggestionLabel,
+  suggestionMatchesVehicle,
   type PartSuggestion,
   type StockPartLite,
 } from "@/lib/parts/suggestions"
@@ -300,16 +303,26 @@ export function PartSearchInput({
     limit: BAKIMX_SUGGESTION_LIMIT,
     vehicleTypeId,
   })
-  // GetirBakım modal aramasıyla aynı mevcut sözleşme. Satır salt-okunurdur:
-  // kaleme bağlamak kaynak/migration kararı gerektirir (GetirbakimProductRow).
+  // GetirBakım: vitrin arama kutusu gibi (#755) — daha geniş grup, araca
+  // uyanlar önce ve rozetli (sıralama buildPartSuggestions'ta), uymayanlar da
+  // listede kalır.
   const { products: getirbakimResults } = useGetirbakimSearch({
     enabled: !!onSelectBakimxProduct || !!onSelectGetirbakimProduct,
     q: query,
-    limit: BAKIMX_SUGGESTION_LIMIT,
+    limit: GETIRBAKIM_SUGGESTION_LIMIT,
     vehicleTypeId,
   })
 
-  const suggestions = buildPartSuggestions(results, bakimxResults, stockResults, getirbakimResults)
+  // "Yalnız bu araca uyanlar" (#755): istemci tarafı süzgeç, yeni sorgu atmaz.
+  // Varsayılan kapalı — her parça aranabilir kalır. Araç kataloğa bağlı
+  // değilken süzgeç anlamsız; gizli bir süzgeç listeyi boşaltmasın.
+  const [onlyFits, setOnlyFits] = useState(false)
+  const allSuggestions = buildPartSuggestions(results, bakimxResults, stockResults, getirbakimResults)
+  const fittingCount = allSuggestions.filter(suggestionMatchesVehicle).length
+  const fitFilterActive = onlyFits && vehicleTypeId != null
+  const suggestions = fitFilterActive ? allSuggestions.filter(suggestionMatchesVehicle) : allSuggestions
+  const showFitToggle =
+    vehicleTypeId != null && (onlyFits || (fittingCount > 0 && fittingCount < allSuggestions.length))
 
   const plainActions = (inputValue: string) => (
     <div className="absolute inset-y-0 right-1 flex items-center gap-1">
@@ -457,8 +470,19 @@ export function PartSearchInput({
         supplierId != null ||
         categoryId != null) && (
         <AutocompleteContent>
+          {showFitToggle && (
+            <VehicleFitToggle
+              pressed={onlyFits}
+              onPressedChange={setOnlyFits}
+              fitting={fittingCount}
+              total={allSuggestions.length}
+              // Odak input'ta kalsın: blur popup'ı kapatırdı.
+              onMouseDown={(e) => e.preventDefault()}
+              className="px-2 py-1.5"
+            />
+          )}
           <AutocompleteEmpty className="flex-col gap-1.5">
-            <span>Eşleşen parça yok</span>
+            <span>{fitFilterActive ? "Bu araca uyan parça yok" : "Eşleşen parça yok"}</span>
             {onSearchClick && !searchDisabled && (
               <InputGroupButton
                 size="sm"

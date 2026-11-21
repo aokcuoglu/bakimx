@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
+import { contractQuote } from "@/lib/external-procurement/contract-v2.fixtures"
 import {
-  readOfferResponse, readPurchaseResponse, readQuoteResponse, SupplierResponseError,
+  isQuoteExpired, readCancellationResponse, readOfferResponse, readPurchaseResponse, readQuoteResponse, SupplierResponseError,
 } from "./supplier-price-responses"
 
 const offer = {
@@ -9,12 +10,9 @@ const offer = {
 }
 const product = {
   sourceProductId: "product-1", brandName: "Marka",
-  manufacturerPartNumber: { value: "103803", normalized: "103803" }, offers: [offer],
+  manufacturerPartNumber: { value: "103803", normalized: "103803" }, discountBps: 1000, offers: [offer],
 }
-const quote = {
-  bindingNetKurus: 100, bindingVatKurus: 20, bindingGrossKurus: 120, unitNetKurus: 100,
-  currency: "TRY", policyVersion: "v1", expiresAt: "2026-08-22T20:00:00Z", confirmationToken: "opaque",
-}
+const { contractVersion: _contractVersion, ...quote } = contractQuote
 
 describe("supplier price endpoint responses", () => {
   test("distinguishes an unconfigured catalog from a real no-match response", async () => {
@@ -30,6 +28,40 @@ describe("supplier price endpoint responses", () => {
     await expect(readQuoteResponse(Response.json({ quote }))).resolves.toEqual(quote)
     await expect(readPurchaseResponse(Response.json({ procurement: { id: "local-1", externalOrderId: "remote-1", partnerStatus: "REQUESTED" } }, { status: 201 })))
       .resolves.toBeUndefined()
+  })
+
+  test("relays GetirBakım's partner discount as given and defaults it to 0 when absent (#760)", async () => {
+    const { discountBps: _discountBps, ...withoutDiscount } = product
+    const result = await readOfferResponse(Response.json({ status: "matched", normalizedPartNo: "103803", products: [withoutDiscount] }))
+    expect(result.status === "matched" && result.products[0].discountBps).toBe(0)
+    const discounted = await readOfferResponse(Response.json({ status: "matched", normalizedPartNo: "103803", products: [product] }))
+    expect(discounted.status === "matched" && discounted.products[0].discountBps).toBe(1000)
+    // Informational offer prices are not touched: the discount lives in the binding quote.
+    expect(discounted.status === "matched" && discounted.products[0].offers[0].informationalPriceKurus).toBe(100)
+  })
+
+  test("treats a quote at or past its expiry (or with an unreadable expiry) as expired (#760)", () => {
+    const now = Date.parse("2026-11-21T10:00:00.000Z")
+    expect(isQuoteExpired({ expiresAt: "2026-11-21T10:14:59.000Z" }, now)).toBe(false)
+    expect(isQuoteExpired({ expiresAt: "2026-11-21T10:00:00.000Z" }, now)).toBe(true)
+    expect(isQuoteExpired({ expiresAt: "2026-11-21T09:59:00.000Z" }, now)).toBe(true)
+    expect(isQuoteExpired({ expiresAt: "not-a-date" }, now)).toBe(true)
+  })
+
+  test("keeps the v2.0 shipping total and rejects the 1.0 quote shape", async () => {
+    await expect(readQuoteResponse(Response.json({ quote: contractQuote }))).resolves.toMatchObject({ totals: { shippingKurus: 5000, grossKurus: 36200 } })
+    await expect(readQuoteResponse(Response.json({ quote: {
+      bindingNetKurus: 100, bindingVatKurus: 20, bindingGrossKurus: 120, unitNetKurus: 100,
+      currency: "TRY", policyVersion: "v1", expiresAt: "2026-08-22T20:00:00Z", confirmationToken: "opaque",
+    } }))).rejects.toThrow("Sunucudan geçersiz yanıt alındı")
+  })
+
+  test("reads cancel answers and surfaces final DELETE conflicts", async () => {
+    await expect(readCancellationResponse(Response.json({ cancellation: "REQUESTED", procurement: { status: "CONFIRMED" } })))
+      .resolves.toEqual({ cancellation: "REQUESTED", procurement: { status: "CONFIRMED" } })
+    const error = await readCancellationResponse(Response.json({ error: "Sipariş kargoya verildi; iptal edilemez.", code: "ORDER_ALREADY_SHIPPED" }, { status: 409 })).catch((caught) => caught)
+    expect(error).toBeInstanceOf(SupplierResponseError)
+    expect(error).toMatchObject({ code: "ORDER_ALREADY_SHIPPED" })
   })
 
   test("accepts an idempotent purchase replay after operator confirmation or shipment", async () => {
