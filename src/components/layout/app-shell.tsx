@@ -177,6 +177,11 @@ const MOBILE_CONTENT_HEADING_PATHS = new Set([
   "/reports",
 ])
 
+// Başlığı içerikte (h1) taşıyan sayfalar: masaüstünde sidebar açıkken üst bar
+// boş bir tekrar olur ve gizlenir. Sidebar kapalıyken açma düğmesi için, mobilde
+// (<1024px) menü düğmesi ve logo için bar yerinde kalır.
+const DESKTOP_HEADERLESS_PATHS = new Set(["/dashboard"])
+
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
@@ -321,17 +326,31 @@ function AppHeader({
   const showMobileTitle = headerTitle && !isSettingsPath(pathname) && !MOBILE_CONTENT_HEADING_PATHS.has(pathname)
   const sidebarless = isSidebarlessRoute(pathname, searchParams)
   const homeHref = isTechRole ? "/technician" : "/dashboard"
+  const contentOwnsTitle = DESKTOP_HEADERLESS_PATHS.has(pathname)
 
   return (
-    <header className={cn("sticky top-0 z-30 flex h-12 items-center border-b border-border bg-background", shellStyles.header, topBannerVisible && "lg:top-8")}>
-      <div className="relative flex h-12 w-full flex-nowrap items-center gap-2 px-4">
+    <header
+      className={cn(
+        // Mobil/tablet (<lg) 58px bar + 44px düğme: e-santral "sticky üst bar"
+        // ölçüsü (docs/design-pattern-esantral.md §Sticky üst bar). Masaüstünde
+        // sidebar'ın yanında kompakt 48px kalır.
+        "sticky top-0 z-30 flex h-[58px] items-center border-b border-border bg-background lg:h-12",
+        shellStyles.header,
+        topBannerVisible && "lg:top-8",
+        contentOwnsTitle && "lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden",
+      )}
+    >
+      <div className="relative flex h-full w-full flex-nowrap items-center gap-2 px-4">
         {/* Sidebar açıkken kontrol menü başlığındadır; kapalıyken burada görünür. */}
         {sidebarless ? (
           <Link href={homeHref} aria-label="BakimX" className="hidden items-center md:flex">
             <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
           </Link>
         ) : (
-          <SidebarTrigger data-tour="sidebar-trigger" className="-ml-2 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden" />
+          <SidebarTrigger
+            data-tour="sidebar-trigger"
+            className="-ml-2 size-11 lg:size-8 [&_svg:not([class*='size-'])]:size-[22px] lg:[&_svg:not([class*='size-'])]:size-4 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden"
+          />
         )}
 
         {showMobileTitle ? (
@@ -339,14 +358,16 @@ function AppHeader({
             {headerTitle}
           </h1>
         ) : (
-          <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
+          // Başlığı içerikte olan sayfada barda başlık hiç yazmaz; logo tablette de
+          // (md–lg) kalır, yoksa bar tek bir menü düğmesiyle boş görünür.
+          <div className={cn("absolute left-1/2 -translate-x-1/2", contentOwnsTitle ? "lg:hidden" : "md:hidden")}>
             <Link href={homeHref} aria-label="BakimX" className="flex items-center">
-              <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
+              <BrandLogo variant="icon-light" size="lg" priority alt="BakimX" />
             </Link>
           </div>
         )}
 
-        {headerTitle && (
+        {headerTitle && !contentOwnsTitle && (
           <h1 className={cn("hidden min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:flex", shellStyles.headerTitle)}>
             {HeaderIcon ? <HeaderIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
             <span className="truncate">{headerTitle}</span>
@@ -370,9 +391,9 @@ function SidebarlessAccountActions() {
     <>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-8" asChild>
+          <Button variant="ghost" size="icon" className="size-11 lg:size-8" asChild>
             <Link href="/settings/account" aria-label="Hesap ayarları">
-              <UserCircle className="size-4" aria-hidden="true" />
+              <UserCircle className="size-[22px] lg:size-4" aria-hidden="true" />
             </Link>
           </Button>
         </TooltipTrigger>
@@ -381,8 +402,8 @@ function SidebarlessAccountActions() {
       <form action="/api/auth/logout" method="POST">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button type="submit" variant="ghost" size="icon" className="size-8" aria-label="Çıkış Yap">
-              <LogOut className="size-4" aria-hidden="true" />
+            <Button type="submit" variant="ghost" size="icon" className="size-11 lg:size-8" aria-label="Çıkış Yap">
+              <LogOut className="size-[22px] lg:size-4" aria-hidden="true" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">Çıkış Yap</TooltipContent>
