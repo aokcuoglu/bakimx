@@ -317,6 +317,13 @@ a.row:focus-visible {
   flex: none;
 }
 
+/* Büyük plakalı listede ad sütunu aynı hizadan başlasın: plaka doğal
+   genişliğinde kalır, başlangıç kolonu en uzun TR plaka boyuna sabitlenir
+   ("34 ABC 123", "34 AB 1234", "34 A 12345" — hepsi 10 karakter). */
+.rowStart:has(> .plate[data-size="lg"]) {
+  min-width: 140px;
+}
+
 .rowMain {
   flex: 1;
   min-width: 0;
