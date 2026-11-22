@@ -10,7 +10,7 @@
 DATABASE_URL="postgresql://bakimx:bakimx@localhost:5432/bakimx"
 DIRECT_URL="postgresql://bakimx:bakimx@localhost:5432/bakimx"
 SESSION_SECRET="rastgele-32-karakter"
-APP_URL="http://localhost:3000"
+APP_URL="http://localhost:3001"
 
 STORAGE_PROVIDER=s3
 S3_ENDPOINT=http://localhost:9000

@@ -1,6 +1,6 @@
 # Yerel-first `dev` + gün sonu batch Actions
 
-Actions dakikasını korumak için gündüz GitHub CI koşmaz; `localhost:3000` yine
+Actions dakikasını korumak için gündüz GitHub CI koşmaz; `localhost:3001` yine
 her zaman güncel yerel `dev` üzerinden doğrulanır. Gün sonunda açık PR'lara `ci`
 label'ı eklenir, `quality` bir tur koşar, merge sonrası yerel `dev` `origin/dev`
 ile eşitlenir.
@@ -43,7 +43,7 @@ local/dev  ──●──●──●─────── (her feature merge'i
    # bun.lock değiştiyse: bun install && dev server restart
    ```
 
-4. QA: `http://localhost:3000` = birikmiş yerel `dev`.
+4. QA: `http://localhost:3001` = birikmiş yerel `dev`.
 5. Feature branch'i push + `dev`'e **draft PR**. Body'de tracker satırları
    (`Closes #…`, gerekirse `Closes BAK-…`) PR **açılışında**.
 6. PR'a **`ci` label koyma**. Actions bu PR için koşmaz.

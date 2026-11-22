@@ -13,7 +13,7 @@ fix, develop, or deliver it. Unless the user limits the scope, completion means:
 2. Implement the smallest complete solution in an isolated worktree.
 3. Validate and review the change in proportion to its risk.
 4. Promote the branch into **local `dev`** (primary checkout stays on `dev`) so
-   localhost:3000 shows the integrated result — see
+   localhost:3001 shows the integrated result — see
    [local-dev-batch-ci.md](./local-dev-batch-ci.md).
 5. Wait for user confirmation, then push and open a PR that closes every tracker:
    `Closes #<github-number>`, plus `Closes <MULTICA-KEY>` when a Multica issue
@@ -117,7 +117,7 @@ bun run build
 
 After quality gates pass in the worktree, merge the issue branch into **local
 `dev`** on the primary checkout. Do **not** switch primary off `dev` onto the
-issue branch — localhost:3000 should keep reflecting integrated local `dev`
+issue branch — localhost:3001 should keep reflecting integrated local `dev`
 ([local-dev-batch-ci.md](./local-dev-batch-ci.md)).
 
 ```sh
@@ -135,7 +135,7 @@ bun install   # if bun.lock changed; restart bun run dev when needed
 ```
 
 - If `bun run dev` is already running on `dev`, it hot-reloads after the merge.
-- Inform the user that changes are ready on localhost:3000 (local `dev`) and what
+- Inform the user that changes are ready on localhost:3001 (local `dev`) and what
   flows/pages to check.
 - **Wait for user confirmation** before proceeding to §6. If the user reports a
   bug, fix it on the issue branch (checkout that branch in a worktree or

@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Development
 - **Install:** `bun install` (or `npm install`)
-- **Dev server:** `bun run dev` (or `npm run dev`)
+- **Dev server:** `bun run dev` (or `npm run dev`) — http://localhost:3001 (port is pinned in `package.json`; 3000 belongs to another project on the same machine)
 - **Build:** `bun run build` (or `npm run build`)
 - **Lint:** `bun run lint` (or `npm run lint`)
 - **Typecheck:** `bun run typecheck` (or `npm run typecheck`)
@@ -173,7 +173,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## GitHub Issue Delivery
 - When the user asks to implement a GitHub issue by number, follow `docs/agent-workflows/issue-delivery.md` end to end — that document owns the full lifecycle (intake, isolated `issue/<number>-<slug>` worktree off the latest `origin/dev`, validation, PR, merge, project verification, cleanup). Do not restate it here.
-- **Yerel-first + batch CI:** promote into local `dev` for localhost:3000; open draft `dev` PRs **without** the `ci` label by default; add `ci` only when shipping or running the evening Actions batch. See `docs/agent-workflows/local-dev-batch-ci.md`.
+- **Yerel-first + batch CI:** promote into local `dev` for localhost:3001; open draft `dev` PRs **without** the `ci` label by default; add `ci` only when shipping or running the evening Actions batch. See `docs/agent-workflows/local-dev-batch-ci.md`.
 - Never stash, reset, overwrite, commit, or clean unrelated user changes.
 - **Two closing lines, one per tracker:** `Closes #<number>` for GitHub, plus `Closes <MULTICA-KEY>` (e.g. `Closes BAK-7`) when Multica tracks the same work. Neither implies the other; a bare key mention without a closing keyword is filed as `reference_only` and never becomes a visible link. Never invent a key.
 - **Link at PR-open time only.** Never link a PR from a closed issue's Development panel — project automation reacts to the link and overwrites `Done`.

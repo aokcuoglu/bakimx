@@ -24,7 +24,7 @@ Read and follow `AGENTS.md`, `docs/agent-workflows/issue-delivery.md`,
    migrations, secrets, and scope. Check `git diff origin/dev --stat` for files you
    never touched being deleted — that is the stale-branch signature (PR #341).
 7. Promote into **local `dev`** on the primary checkout (primary stays on `dev`);
-   QA on localhost:3000 there. Do not switch primary onto the issue branch.
+   QA on localhost:3001 there. Do not switch primary onto the issue branch.
 8. Push and open a **draft** PR to `dev` **without** the `ci` label, with the
    closing lines its trackers need: `Closes #<number>` for GitHub, plus
    `Closes <MULTICA-KEY>` when Multica also tracks the work. Those keywords are
