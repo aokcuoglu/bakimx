@@ -4,6 +4,7 @@ import {
   leadStatusForActivityResult,
   normalizeSalesEmail,
   normalizeSalesPhone,
+  salesLeadDisplayName,
   salesTaskBucket,
   taskDurationForActivityResult,
   taskTypeForActivityResult,
@@ -45,4 +46,10 @@ describe("sales CRM workflow", () => {
     expect(salesTaskBucket(new Date("2026-08-27T12:00:00.000Z"), now, tomorrow)).toBe("today")
     expect(salesTaskBucket(new Date("2026-08-28T12:00:00.000Z"), now, tomorrow)).toBe("upcoming")
   })
+})
+
+it("satış adayının görünen adı işletme adı boşsa yetkiliye düşer (#781 ana sayfa araması)", () => {
+  expect(salesLeadDisplayName({ businessName: "Yıldız Oto", contactName: "Ali Veli" })).toBe("Yıldız Oto")
+  expect(salesLeadDisplayName({ businessName: "", contactName: "Ali Veli" })).toBe("Ali Veli")
+  expect(salesLeadDisplayName({ businessName: "  ", contactName: " " })).toBe("İsimsiz talep")
 })

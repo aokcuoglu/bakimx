@@ -51,3 +51,12 @@ export function salesTaskBucket(startsAt: Date, now: Date, tomorrow: Date): Sale
   if (startsAt < tomorrow) return "today"
   return "upcoming"
 }
+
+/**
+ * Satış adayı / demo talebinin listelerdeki görünen adı. Ana sayfadaki
+ * "Sizi arayalım" talepleri (#781) yalnız ad + telefonla gelir ve işletme adı
+ * boştur; boş bağlantı metni adayı listeden açılamaz hâle getiriyordu.
+ */
+export function salesLeadDisplayName(lead: { businessName: string; contactName: string }): string {
+  return lead.businessName.trim() || lead.contactName.trim() || "İsimsiz talep"
+}

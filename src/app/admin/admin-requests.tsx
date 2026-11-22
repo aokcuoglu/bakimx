@@ -15,6 +15,7 @@ import {
   User,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { salesLeadDisplayName } from "@/lib/sales/crm"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -176,7 +177,7 @@ function DemoRequestRow({ r, canManage }: { r: AdminDemoRequestRow; canManage: b
 
           <div className="flex items-center gap-1.5 text-sm">
             <Building2 className="size-3.5 shrink-0 text-muted-foreground" />
-            <span className="font-medium text-foreground">{r.businessName}</span>
+            <span className="font-medium text-foreground">{salesLeadDisplayName({ businessName: r.businessName, contactName: r.name })}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">

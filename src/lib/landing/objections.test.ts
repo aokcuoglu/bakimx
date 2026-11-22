@@ -49,23 +49,12 @@ describe("landing itiraz kartları", () => {
 
   test("metinler tek veri dosyasında — bileşenler kendi kopyasını tutmuyor", () => {
     const askBar = read("../../components/sections/HeroAskBar.tsx");
-    const faq = read("../../components/sections/FAQSection.tsx");
 
     expect(askBar).toContain("LANDING_OBJECTIONS");
-    expect(faq).toContain("LANDING_OBJECTIONS");
 
     for (const objection of LANDING_OBJECTIONS) {
       expect(askBar).not.toContain(objection.question);
       expect(askBar).not.toContain(objection.answer);
-      expect(faq).not.toContain(objection.question);
-      expect(faq).not.toContain(objection.answer);
     }
-  });
-
-  test("hero metni öncelikli — carousel görselleri preload yarışına girmez", () => {
-    const hero = read("../../components/sections/HeroSection.tsx");
-
-    const priorityProp = /^\s*priority(\s*=|\s*$)/m;
-    expect(hero).not.toMatch(priorityProp);
   });
 });

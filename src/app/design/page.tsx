@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { PRIVATE_ROBOTS, brandedTitle } from "@/lib/seo"
+import { MarketingKitShowcase } from "./marketing-kit"
 import { RecordPatterns } from "./record-patterns"
 import { ColorCard } from "./copyable-swatch"
 import { cn } from "@/lib/utils"
@@ -723,6 +724,15 @@ export default function DesignSystemPage() {
             Dokunma hedefleri ≥38–44px. Mobil ana CTA{" "}
             <code className="font-mono text-[12px]">size=&quot;xl&quot;</code>.
           </p>
+        </Section>
+
+        <Section id="marketing" index="09" title="Pazarlama kiti (e-santral)" eyebrow="Marketing">
+          <p className="text-sm text-muted-foreground">
+            Ana sayfa (#781) bileşenleri: <code className="font-mono text-[12px]">src/components/marketing/kit</code>,
+            token&apos;lar <code className="font-mono text-[12px]">--mk-*</code> (yalnız açık tema). Belge:
+            docs/design-pattern-esantral.md §7.
+          </p>
+          <MarketingKitShowcase />
         </Section>
 
         <footer className="border-t border-border pt-8 text-sm text-muted-foreground">
