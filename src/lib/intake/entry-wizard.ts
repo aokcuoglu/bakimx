@@ -7,7 +7,7 @@
  * asla ayrışmasın ve testlenebilsin.
  */
 
-import { normalizePlate } from "@/lib/format"
+import { normalizePhone, normalizePlate } from "@/lib/format"
 import { normalizeVin } from "@/lib/vin/types"
 
 export type EntryMethod = "registration" | "vin" | "plate" | "customer"
@@ -96,6 +96,87 @@ export function vehicleFieldError(fields: { plate: string; brand: string; model:
   if (!fields.model.trim()) missing.push("Model")
   if (!missing.length) return null
   return `${missing.join(", ")} zorunludur.`
+}
+
+/**
+ * Odaklı plaka akışında araç bilgileri ekranının müşteri kartı. Plaka kayıtlı
+ * değilse boş gelir ve yeni müşteri açılır; kayıtlıysa aracın sahibiyle dolu
+ * gelir ve düzenlenirse o müşteri kaydı güncellenir (sahip değişmez).
+ *
+ * Bireyselde ad ve soyad TEK alandır (`name`, "Ad Soyad"); kaydederken
+ * `splitPersonName` ile ayrılır. `type` kayıtlı müşteriden gelir: kurumsal
+ * sahipte firma adı düzenlenir. Yeni müşteri bu kısa formda bireyseldir
+ * (ruhsattan kurumsal sahip okunmadıkça).
+ */
+export type OwnerFields = {
+  type: "individual" | "corporate"
+  /** Bireysel: "Ad Soyad" tek alanda. */
+  name: string
+  companyName: string
+  phone: string
+}
+
+export const EMPTY_OWNER_FIELDS: OwnerFields = {
+  type: "individual",
+  name: "",
+  companyName: "",
+  phone: "",
+}
+
+/**
+ * "Ad Soyad" alanını yapısal ada böler: son kelime soyad, öncesi ad
+ * ("AYŞE NUR KAYA" → ad "AYŞE NUR", soyad "KAYA"). Tek kelimede soyad boştur.
+ */
+export function splitPersonName(name: string): { firstName: string; lastName: string } {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) return { firstName: parts[0] ?? "", lastName: "" }
+  return { firstName: parts.slice(0, -1).join(" "), lastName: parts[parts.length - 1] }
+}
+
+/** Kayıtlı müşteriden kart alanları. Tam ad yoksa ad + soyad birleştirilir. */
+export function ownerFieldsFromCustomer(c: {
+  type: string
+  firstName: string | null
+  lastName: string | null
+  fullName: string | null
+  companyName: string | null
+  phone: string
+}): OwnerFields {
+  if (c.type === "corporate") {
+    return { type: "corporate", name: "", companyName: (c.companyName || "").trim(), phone: c.phone || "" }
+  }
+  const name = (c.fullName || "").trim() || [c.firstName, c.lastName].map((x) => (x || "").trim()).filter(Boolean).join(" ")
+  return { type: "individual", name, companyName: "", phone: c.phone || "" }
+}
+
+/** Zorunlu müşteri alanları eksikse Türkçe hata metni, tamamsa `null`. */
+export function ownerFieldError(o: OwnerFields): string | null {
+  const missing: string[] = []
+  if (o.type === "corporate") {
+    if (!o.companyName.trim()) missing.push("Firma adı")
+  } else if (!o.name.trim()) {
+    missing.push("Ad Soyad")
+  }
+  const phone = normalizePhone(o.phone)
+  if (!phone) missing.push("Telefon")
+  if (missing.length) return `${missing.join(", ")} zorunludur.`
+  if (phone.length < 10) return "Geçerli bir telefon numarası girin (en az 10 hane)."
+  return null
+}
+
+/**
+ * Kart düzenlendi mi? Boşluk ve telefon biçimi (0 / +90 / boşluk) fark sayılmaz —
+ * yalnız gerçek değişiklik müşteri kaydını günceller.
+ */
+export function ownerFieldsChanged(original: OwnerFields, current: OwnerFields): boolean {
+  const text = (v: string) => v.trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR")
+  const norm = (o: OwnerFields) => [text(o.name), text(o.companyName), normalizePhone(o.phone)].join("\u0000")
+  return norm(original) !== norm(current)
+}
+
+/** Kartta gösterilen / sahip satırına yazılan ad. */
+export function ownerLabel(o: OwnerFields): string {
+  return (o.type === "corporate" ? o.companyName : o.name).trim().replace(/\s+/g, " ")
 }
 
 /**

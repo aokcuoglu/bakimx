@@ -1,12 +1,17 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useRef } from "react"
 import { TriangleAlert } from "lucide-react"
 import { CameraScanner } from "@/components/shared/camera-scanner"
 import { postImageScan, ScanError, type ScanImagePayload } from "@/lib/ocr/scan-client"
 
 type Props = {
-  onDetected: (plate: string) => void
+  /**
+   * Okunan plaka ve plakanın okunduğu kare. Kare aracın önünün fotoğrafıdır;
+   * Araç Kabul bunu kabul fotoğrafı ("Ön") olarak saklar ki aynı kare ikinci
+   * kez çekilmesin.
+   */
+  onDetected: (plate: string, image: ScanImagePayload | null) => void
   onClose: () => void
 }
 
@@ -18,7 +23,10 @@ type Props = {
  * yazılır ve kullanıcı orada görüp düzeltebilir.
  */
 export function PlateScanner({ onDetected, onClose }: Props) {
+  // Okumayı başaran kare: CameraScanner yalnız okunan değeri geri verir.
+  const lastFrame = useRef<ScanImagePayload | null>(null)
   const scan = useCallback(async (payload: ScanImagePayload) => {
+    lastFrame.current = payload
     const data = await postImageScan<{ plate?: string }>("/api/plate/scan", payload)
     if (!data.plate) throw new ScanError("Plaka okunamadı.")
     return data.plate
@@ -30,7 +38,7 @@ export function PlateScanner({ onDetected, onClose }: Props) {
       guide={<PlateCaptureGuide />}
       scanningLabel="Plaka okunuyor…"
       onScan={scan}
-      onDetected={onDetected}
+      onDetected={(plate) => onDetected(plate, lastFrame.current)}
       onClose={onClose}
     />
   )

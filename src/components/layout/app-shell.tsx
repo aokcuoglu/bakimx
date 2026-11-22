@@ -178,6 +178,12 @@ const MOBILE_CONTENT_HEADING_PATHS = new Set([
   "/reports",
 ])
 
+// Teknisyen paneli odaklı bir çalışma ekranıdır: sidebar yok; dönüş logodan,
+// hesap/çıkış üst çubuktan yapılır.
+function isSidebarlessPath(pathname: string): boolean {
+  return pathname === "/technician" || pathname.startsWith("/technician/")
+}
+
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
@@ -249,7 +255,9 @@ export function AppShellChrome({
 }) {
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
   const [searchOpen, setSearchOpen] = useState(false)
-  const inSettings = isSettingsPath(usePathname())
+  const pathname = usePathname()
+  const inSettings = isSettingsPath(pathname)
+  const hideSidebar = isSidebarlessPath(pathname)
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
   const primaryNavigation = (isTechRole ? TECHNICIAN_NAV_GROUPS : NAV_GROUPS)
     .flatMap((group) => group.items.flatMap((item) => [
@@ -266,15 +274,17 @@ export function AppShellChrome({
   return (
     <SetPageHeaderContext.Provider value={setPageHeader}>
       <SidebarProvider defaultOpen={!initialSidebarCollapsed}>
-        <AppSidebar
-          enabledFeatures={enabledFeatures}
-          userIdentity={userIdentity}
-          planStatus={planStatus}
-          workspace={workspace}
-          showGlobalSearch={pageHeader.showGlobalSearch ?? true}
-          topBannerVisible={topBannerVisible}
-          onOpenSearch={() => setSearchOpen(true)}
-        />
+        {hideSidebar ? null : (
+          <AppSidebar
+            enabledFeatures={enabledFeatures}
+            userIdentity={userIdentity}
+            planStatus={planStatus}
+            workspace={workspace}
+            showGlobalSearch={pageHeader.showGlobalSearch ?? true}
+            topBannerVisible={topBannerVisible}
+            onOpenSearch={() => setSearchOpen(true)}
+          />
+        )}
         <SidebarInset className="min-h-screen bg-background">
           <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} topBannerVisible={topBannerVisible} />
           <main className={cn("flex-1 px-4 py-4 pb-24 sm:px-6 sm:py-6 lg:pb-8", inSettings && "bg-card")}>{children}</main>
@@ -314,12 +324,20 @@ function AppHeader({
   const HeaderIcon = settingsNavItem?.icon ?? navItem?.icon
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
   const showMobileTitle = headerTitle && !isSettingsPath(pathname) && !MOBILE_CONTENT_HEADING_PATHS.has(pathname)
+  const sidebarless = isSidebarlessPath(pathname)
+  const homeHref = isTechRole ? "/technician" : "/dashboard"
 
   return (
     <header className={cn("sticky top-0 z-30 flex h-12 items-center border-b border-border bg-background", shellStyles.header, topBannerVisible && "lg:top-8")}>
       <div className="relative flex h-12 w-full flex-nowrap items-center gap-2 px-4">
         {/* Sidebar açıkken kontrol menü başlığındadır; kapalıyken burada görünür. */}
-        <SidebarTrigger data-tour="sidebar-trigger" className="-ml-2 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden" />
+        {sidebarless ? (
+          <Link href={homeHref} aria-label="BakimX" className="hidden items-center md:flex">
+            <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
+          </Link>
+        ) : (
+          <SidebarTrigger data-tour="sidebar-trigger" className="-ml-2 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden" />
+        )}
 
         {showMobileTitle ? (
           <h1 className={cn("min-w-0 flex-1 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:hidden", shellStyles.headerTitle)}>
@@ -327,7 +345,7 @@ function AppHeader({
           </h1>
         ) : (
           <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
-            <Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX" className="flex items-center">
+            <Link href={homeHref} aria-label="BakimX" className="flex items-center">
               <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
             </Link>
           </div>
@@ -341,11 +359,41 @@ function AppHeader({
         )}
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          {isTechRole ? <div className="lg:hidden"><TechnicianNotificationsBell /></div> : null}
+          {isTechRole ? <div className={sidebarless ? undefined : "lg:hidden"}><TechnicianNotificationsBell /></div> : null}
           <div className="md:hidden">{pageActions}</div>
+          {sidebarless && isTechRole ? <SidebarlessAccountActions /> : null}
         </div>
       </div>
     </header>
+  )
+}
+
+// Sidebar'sız ekranda teknisyenin hesap ve çıkış yolu. Telefonda "Profil" alt
+// gezintide durduğu için yalnız geniş ekranda gösterilir; çıkış her genişlikte.
+function SidebarlessAccountActions() {
+  return (
+    <>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="hidden size-8 lg:inline-flex" asChild>
+            <Link href="/settings/account" aria-label="Hesap ayarları">
+              <UserCircle className="size-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Hesap ayarları</TooltipContent>
+      </Tooltip>
+      <form action="/api/auth/logout" method="POST">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button type="submit" variant="ghost" size="icon" className="size-8" aria-label="Çıkış Yap">
+              <LogOut className="size-4" aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Çıkış Yap</TooltipContent>
+        </Tooltip>
+      </form>
+    </>
   )
 }
 

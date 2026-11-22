@@ -53,8 +53,10 @@ type Props = {
    * `hero`: sihirbazın ruhsat adımı için tam genişlikte, sürükle-bırak kabul eden
    * büyük yükleme alanı (#309 — dar şerit yüzünden ruhsat yükleme yeri bulunamıyordu).
    * `inline` (varsayılan): form içine sıkışan ince şerit.
+   * `link`: tek küçük düğme — ekranın asıl işi başka bir şeyken ruhsat okumayı
+   * yalnız iliştirmek için (Araç Kabul odaklı plaka akışı).
    */
-  variant?: "inline" | "hero"
+  variant?: "inline" | "hero" | "link"
 }
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
@@ -167,6 +169,21 @@ export function RuhsattanOku({
       onChange={(e) => { const f = e.target.files?.[0]; if (f) runOcr(f); e.target.value = "" }}
     />
   )
+
+  if (variant === "link") {
+    return (
+      // Telefonun kendi seçicisi (Kamera / Fotoğraf Arşivi / Dosya) açılır;
+      // masaüstünde kamerasız da çalışır.
+      <div className={`flex flex-col items-end gap-1 ${className}`.trim()}>
+        {fileInput}
+        <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-primary" disabled={busy} onClick={() => fileInputRef.current?.click()}>
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <ScanLine className="size-4" />}
+          {busy ? "Ruhsat okunuyor…" : title}
+        </Button>
+        {error && <p className="text-xs text-destructive-strong">{error}</p>}
+      </div>
+    )
+  }
 
   if (variant === "hero") {
     return (

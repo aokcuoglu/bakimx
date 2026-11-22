@@ -1,7 +1,8 @@
 /* eslint-disable react-hooks/incompatible-library */
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { toast } from "sonner"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -22,13 +23,14 @@ import { useForm } from "react-hook-form"
 import { intakeSchema, type IntakeFormValues } from "@/lib/validations/intake"
 import { typedResolver } from "@/lib/validations/resolver"
 import { VehicleEntryWizard } from "@/components/intake/vehicle-entry-wizard"
+import type { PendingVehiclePhoto } from "@/components/intake/vehicle-photo-capture"
 import type { EntryMethod } from "@/lib/intake/entry-wizard"
 import { WizardStepper } from "@/components/intake/wizard-ui"
 import { FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
 import { DamageCapture } from "@/components/intake/damage-capture"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS } from "@/lib/constants"
+import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS, PHOTO_TYPES } from "@/lib/constants"
 import { hasFeature, type PlanTier } from "@/lib/plan"
 
 type Customer = {
@@ -89,6 +91,10 @@ export function IntakeWizard({
   const searchParams = useSearchParams()
 
   const [intakeId, setIntakeId] = useState("")
+  // Araç girişinde (plaka taraması ya da araç bilgileri kartı) çekilen araç
+  // karesi. Fotoğraf kabul kaydına bağlandığı için kabul oluşana kadar burada
+  // bekler; kabul oluşunca "Ön" fotoğrafı olarak yüklenir.
+  const pendingVehiclePhoto = useRef<PendingVehiclePhoto | null>(null)
   const [orderId, setOrderId] = useState("")
   const [vehicleInfo, setVehicleInfo] = useState<VehicleInfo | null>(null)
 
@@ -196,6 +202,32 @@ export function IntakeWizard({
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
+  /**
+   * Bekleyen araç karesini kabulün "Ön" fotoğrafı olarak yükler. Kabul zaten
+   * oluştuğu için hata akışı DURDURMAZ: kullanıcı uyarılır, fotoğrafı sonraki
+   * adımdan ekleyebilir. `requestId` aynı karenin iki kez kaydedilmesini önler.
+   */
+  async function uploadPendingVehiclePhoto(intakeFormId: string) {
+    const photo = pendingVehiclePhoto.current
+    if (!photo) return
+    try {
+      const fd = new FormData()
+      fd.set("intakeFormId", intakeFormId)
+      fd.set("type", "front")
+      fd.set("phase", "intake")
+      fd.set("label", PHOTO_TYPES.front.label)
+      fd.set("requestId", photo.requestId)
+      fd.set("file", photo.file, photo.file.name || "arac-on.jpg")
+      const res = await fetch("/api/intakes/photos", { method: "POST", body: fd })
+      const data = (await res.json().catch(() => null)) as { success?: boolean; error?: string } | null
+      if (!res.ok || !data?.success) throw new Error(data?.error || "")
+      pendingVehiclePhoto.current = null
+    } catch (err) {
+      const reason = err instanceof Error && err.message ? ` (${err.message})` : ""
+      toast.error(`Araç fotoğrafı kaydedilemedi${reason}. Fotoğraflar adımından ekleyebilirsiniz.`)
+    }
+  }
+
   async function handleCreateIntake() {
     const valid = await form.trigger(["customerComplaint"])
     if (!valid) return
@@ -225,6 +257,7 @@ export function IntakeWizard({
       const res = await fetch("/api/intakes", { method: "POST", body: formData })
       const data = await res.json()
       if (data.success && data.id) {
+        await uploadPendingVehiclePhoto(data.id)
         setIntakeId(data.id)
         if (data.orderId) setOrderId(data.orderId)
         setStep(4)
@@ -286,6 +319,7 @@ export function IntakeWizard({
                 onComplete={() => setStep(3)}
                 planTier={planTier}
                 initialMethod={initialEntryMethod}
+                onVehiclePhotoChange={(photo) => { pendingVehiclePhoto.current = photo }}
               />
             </CardContent>
           </Card>

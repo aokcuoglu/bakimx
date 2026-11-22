@@ -86,3 +86,16 @@ export const customerCreateSchema = z
       }
     }
   })
+/**
+ * Araç Kabul'deki müşteri kartından yapılan dar güncelleme: yalnız ad, soyad /
+ * firma adı ve telefon. Tam müşteri formunun (`customerCreateSchema`) aksine
+ * diğer alanlara (e-posta, adres, vergi, izinler…) dokunulmaz — kart onları
+ * göstermediği için tam güncelleme onları sessizce silerdi.
+ */
+export const customerContactUpdateSchema = z.object({
+  firstName: z.string().trim().max(100, "Ad en fazla 100 karakter olabilir").default(""),
+  lastName: z.string().trim().max(100, "Soyad en fazla 100 karakter olabilir").default(""),
+  fullName: z.string().trim().max(200, "Ad soyad en fazla 200 karakter olabilir").default(""),
+  companyName: z.string().trim().max(200, "Firma adı en fazla 200 karakter olabilir").default(""),
+  phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
+})

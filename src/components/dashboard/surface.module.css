@@ -441,6 +441,35 @@ a.row:focus-visible {
   color: var(--foreground);
 }
 
+/* Büyük plaka (DashPlate size="lg") — teknisyen kartlarında birincil kimlik. */
+.plate[data-size="lg"] {
+  height: 34px;
+  padding: 0 10px;
+  border-width: 2px;
+  border-radius: 7px;
+  font-size: 17px;
+}
+
+/* İsteğe bağlı mavi ülke şeridi (DashPlate country). Yazısız bant; çerçevenin
+   içinde sol kenara yapışık durur, plaka metni yine iç boşlukla başlar. */
+.plate[data-country] {
+  padding-left: 0;
+  overflow: hidden;
+}
+
+.plateCountry {
+  align-self: stretch;
+  flex: none;
+  width: 8px;
+  margin-right: 7px;
+  background: var(--primary);
+}
+
+.plate[data-size="lg"] .plateCountry {
+  width: 10px;
+  margin-right: 10px;
+}
+
 /* ── Hap ve ikon kutusu tonları ─────────────────────────── */
 .pill {
   display: inline-flex;

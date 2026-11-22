@@ -379,7 +379,8 @@ export function CameraScanner({
           yalnız kamerasız/izinsiz durumda sunulursa webcam'li bir PC'de kullanıcı
           elindeki fotoğrafı hiç yükleyemez — o yüzden kamera açıkken de durur. */}
       <div className="relative flex items-center justify-center gap-6 p-6 shrink-0">
-        {status === "ready" && (
+        {/* "starting" da dahil: kamera izni beklenirken de dosya seçilebilsin. */}
+        {(status === "ready" || status === "starting") && (
           <Button
             type="button"
             variant="ghost"

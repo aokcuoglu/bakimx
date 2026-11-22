@@ -5,7 +5,7 @@ import { join } from "node:path"
 const source = readFileSync(join(import.meta.dir, "technician-dashboard.tsx"), "utf8")
 
 describe("teknisyen paneli KPI filtreleri", () => {
-  test("beş KPI kartını klavye erişilebilir seçim kontrolü olarak sunar", () => {
+  test("dört KPI kartını klavye erişilebilir seçim kontrolü olarak sunar", () => {
     expect(source).toContain('type="button"')
     expect(source).toContain('aria-pressed={activeFilter === card.filter}')
     expect(source).toContain('onClick={() => handleFilterChange(card.filter)}')
@@ -19,20 +19,48 @@ describe("teknisyen paneli KPI filtreleri", () => {
 
   test("seçilen KPI için tek ilgili listeyi ve boş durumu gösterir", () => {
     expect(source).toContain('const visibleSections = activeFilter === "all"')
-    expect(source).toContain('Bana Atanan İşler')
     expect(source).toContain('Bugün teslim edilecek iş bulunmuyor')
-    expect(source).toContain('{visibleSections.map((section) => (')
+    expect(source).toContain('{visibleSections.map((section) => {')
+  })
+
+  test("\"Bana Atanan\" kart değil anahtardır; varsayılan kapsam atölyenin tamamıdır", () => {
+    expect(source).not.toContain('filter: "assigned"')
+    expect(source).not.toContain('Bana Atanan İşler')
+    expect(source).toContain('const ONLY_MINE_PARAM = "mine"')
+    expect(source).toContain('Bana atananlar')
+    expect(source).toContain('onCheckedChange={handleOnlyMineChange}')
+  })
+
+  test("varsayılan listeler KPI kartlarıyla aynı durum tanımını kullanır", () => {
+    expect(source).toContain('const activeOrders = orders.filter((o) => o.status === "in_progress")')
+    expect(source).toContain('const waitingOrders = orders.filter((o) => ["approved", "waiting_parts"].includes(o.status))')
+    expect(source).toContain('const draftOrders = orders.filter((o) => ["draft", "waiting_approval"].includes(o.status))')
+  })
+
+  test("Taslak İşler varsayılan olarak kapalı gelir ve kartların altı çizilmez", () => {
+    expect(source).toContain('title: "Taslak İşler", orders: draftOrders, empty: "Taslak iş bulunmuyor", collapsible: true')
+    expect(source).toContain('<Accordion key={section.title} type="single" collapsible>')
+    expect(source).not.toMatch(/<Accordion[^>]*defaultValue/)
+    expect(source).toContain('[&_a]:no-underline')
   })
 
   test("iş listelerinde adet, tıklanabilirlik ve aktif iş vurgusu gösterir", () => {
-    expect(source).toContain('({section.orders.length})')
+    expect(source).toContain('const count = section.total !== undefined ? section.total : section.orders.length')
+    expect(source).toContain('({count})')
     expect(source).toContain('h-auto min-w-0 cursor-pointer')
     expect(source).toContain('cursor-pointer bg-card/80 shadow-xs transition-all hover:bg-muted/60 hover:bg-primary/10 hover:ring-2 hover:ring-primary/20')
   })
 
-  test("son tamamlananları iki günlük veriyle onarlı sayfalara böler ve tamamlanma tarihini gösterir", () => {
+  test("son tamamlananları iki günlük veriyle onarlı sayfalara böler", () => {
     expect(source).toContain('useDashboardPage(recentCompletedOrders, 10)')
     expect(source).toContain('title: "Son Tamamlananlar"')
-    expect(source).toContain('Tamamlandı: {formatDate(order.completedAt)}')
+  })
+
+  test("iş kartı yalnız durum, plaka, araç ve müşteriyi gösterir", () => {
+    expect(source).toContain('<DashPlate plate={order.plate} country size="lg" />')
+    expect(source).toContain('<ItemDescription className="flex items-center gap-2">')
+    expect(source).not.toContain('order.workOrderNo}')
+    expect(source).not.toContain('Kontrol listesi')
+    expect(source).not.toContain('Tamamlandı: {formatDate(order.completedAt)}')
   })
 })
