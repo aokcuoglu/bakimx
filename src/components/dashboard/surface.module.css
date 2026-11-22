@@ -1,0 +1,536 @@
+/*
+ * Dashboard yüzeyi — e-santral.com/bakimx kalıbı (docs/design-pattern-esantral.md).
+ * iOS gruplu liste dili: açık gri zemin, çerçevesiz/gölgesiz beyaz kartlar,
+ * kart dışındaki gri bölüm başlıkları, pastel durum hapları.
+ *
+ * Kapsam bilinçli olarak Dashboard ile sınırlı: global token'lara dokunulmaz.
+ * Kullanıcı onayından sonra değerler globals.css'e taşınacak.
+ * Renkler mevcut token'lardan türetilir; tek yeni değer gruplu zemindir.
+ */
+
+/* İçerik alanının zemini — yalnız bu yüzeyi taşıyan sayfada. */
+:global(main):has(.root) {
+  background: #f2f2f7;
+}
+
+:global(.dark) :global(main):has(.root) {
+  background: var(--background);
+}
+
+.root {
+  --dash-sep: color-mix(in oklab, var(--foreground) 7%, transparent);
+  --dash-hover: color-mix(in oklab, var(--foreground) 3%, var(--card));
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Başlık ─────────────────────────────────────────────── */
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.heroTitle {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: var(--foreground);
+}
+
+.heroSub {
+  margin-top: 8px;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--muted-foreground);
+}
+
+.heroCta {
+  height: 50px;
+  padding-inline: 28px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+@media (min-width: 640px) {
+  .hero {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .root {
+    gap: 44px;
+  }
+
+  .heroTitle {
+    font-size: 48px;
+  }
+
+  .heroSub {
+    font-size: 19px;
+  }
+
+  .heroCta {
+    height: 44px;
+    padding-inline: 22px;
+  }
+}
+
+/* ── İstatistik kutuları ────────────────────────────────── */
+.stats {
+  container-type: inline-size;
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@container (min-width: 340px) {
+  .statGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 900px) {
+  .statGrid[data-count="6"],
+  .statGrid[data-count="5"] {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .statGrid {
+    gap: 16px;
+  }
+}
+
+.stat {
+  display: block;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--card);
+  outline: none;
+  transition: background-color 0.15s;
+}
+
+.stat:hover {
+  background: var(--dash-hover);
+}
+
+.stat:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
+.statValue {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 34px;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.statValue {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@container (max-width: 559px) {
+  .statGrid[data-count="3"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat[data-span] {
+    grid-column: 1 / -1;
+  }
+}
+
+.statValue[data-tone="warning"] {
+  color: var(--warning-strong);
+}
+
+.statValue[data-tone="destructive"] {
+  color: var(--destructive-strong);
+}
+
+.statLabel {
+  display: block;
+  margin-top: 2px;
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--muted-foreground);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 640px) {
+  .stat {
+    padding: 20px 22px;
+    border-radius: 24px;
+  }
+
+  .statValue {
+    font-size: 36px;
+    line-height: 42px;
+    letter-spacing: -0.04em;
+  }
+
+  .statLabel {
+    margin-top: 4px;
+    font-size: 17px;
+    line-height: 22px;
+  }
+}
+
+/* ── Panel: kart dışında gri bölüm başlığı + beyaz kart ─── */
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.panelHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 26px;
+  margin: 0 4px 12px;
+}
+
+.panelTitle {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 26px;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+}
+
+.panelMeta {
+  margin-left: 8px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+.panelAction {
+  flex: none;
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--primary-strong);
+  border-radius: 4px;
+  outline: none;
+}
+
+.panelAction:hover {
+  text-decoration: underline;
+}
+
+.panelAction:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.card {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--card);
+}
+
+.cardBody {
+  padding: 20px 22px;
+}
+
+.empty {
+  padding: 20px 22px;
+  font-size: 17px;
+  line-height: 24px;
+  color: var(--muted-foreground);
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--dash-sep);
+}
+
+/* ── Satır ──────────────────────────────────────────────── */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 68px;
+  padding: 12px 18px;
+  color: inherit;
+  outline: none;
+  transition: background-color 0.15s;
+}
+
+.row + .row {
+  border-top: 1px solid var(--dash-sep);
+}
+
+a.row:hover {
+  background: var(--dash-hover);
+}
+
+a.row:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--ring);
+}
+
+.rowStart {
+  display: inline-flex;
+  flex: none;
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Telefonda plakalı satır: üstte plaka + durum, altta tam genişlik ad/araç. */
+@media (max-width: 559px) {
+  .row[data-stack] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "start end chevron"
+      "main main main";
+    row-gap: 8px;
+    column-gap: 10px;
+  }
+
+  .row[data-stack] > .rowStart {
+    grid-area: start;
+  }
+
+  .row[data-stack] > .rowMain {
+    grid-area: main;
+  }
+
+  .row[data-stack] > .rowEnd {
+    grid-area: end;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .row[data-stack] > .chevron {
+    grid-area: chevron;
+  }
+}
+
+.rowTitle {
+  display: block;
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--foreground);
+}
+
+.rowTitle[data-wrap] {
+  font-weight: 500;
+  white-space: normal;
+}
+
+.rowTitle[data-plain] {
+  font-weight: 400;
+}
+
+.rowSub {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--muted-foreground);
+}
+
+.rowEnd {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+}
+
+.rowEndText {
+  font-size: 15px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+}
+
+.rowValue {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.chevron {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+}
+
+/* Geniş ekranda satıra eklenen kolonlar */
+.rowWide {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .rowWide {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    min-width: 128px;
+    text-align: right;
+  }
+}
+
+.mdOnly {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mdOnly {
+    display: inline-flex;
+  }
+}
+
+/* ── Plaka ──────────────────────────────────────────────── */
+.plate {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 28px;
+  padding: 0 7px;
+  border: 1.5px solid var(--foreground);
+  border-radius: 6px;
+  background: var(--card);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--foreground);
+}
+
+/* ── Hap ve ikon kutusu tonları ─────────────────────────── */
+.pill {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile svg {
+  width: 20px;
+  height: 20px;
+}
+
+.tile[data-shape="circle"] {
+  border-radius: 50%;
+}
+
+.tone-info {
+  background: color-mix(in oklab, var(--primary) 10%, var(--card));
+  color: var(--primary-strong);
+}
+
+.tone-warning {
+  background: color-mix(in oklab, var(--warning) 16%, var(--card));
+  color: var(--warning-strong);
+}
+
+.tone-success {
+  background: color-mix(in oklab, var(--success) 14%, var(--card));
+  color: var(--success-strong);
+}
+
+.tone-destructive {
+  background: color-mix(in oklab, var(--destructive) 10%, var(--card));
+  color: var(--destructive-strong);
+}
+
+.tone-neutral {
+  background: color-mix(in oklab, var(--foreground) 6%, var(--card));
+  color: var(--muted-foreground);
+}
+
+/* ── Aktivite kartı (dikkat gerektiren işler) ───────────── */
+.notes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 22px;
+  background: var(--card);
+  color: inherit;
+  outline: none;
+  transition: background-color 0.15s;
+}
+
+a.note:hover {
+  background: var(--dash-hover);
+}
+
+a.note:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
+/* ── Grafik ─────────────────────────────────────────────── */
+.bar {
+  width: 100%;
+  border-radius: 6px 6px 2px 2px;
+  background: var(--primary);
+}

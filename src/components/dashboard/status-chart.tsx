@@ -1,53 +1,36 @@
 import type { StatusDistribution } from "@/lib/dashboard/queries"
+import { DashEmpty, DashPanel } from "@/components/dashboard/surface"
 
 export function StatusChart({ data }: { data: StatusDistribution[] }) {
   const total = data.reduce((sum, s) => sum + s.count, 0)
 
-  if (total === 0) {
-    return (
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <h3 className="border-b border-border px-4 py-3 text-sm font-semibold text-foreground">Bu Ay İş Durumları</h3>
-        <div className="flex min-h-16 items-center px-4 py-4 text-sm text-muted-foreground">
-          Bu ay araç kabulü bulunmuyor.
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <h3 className="border-b border-border px-4 py-3 text-sm font-semibold text-foreground">Bu Ay İş Durumları</h3>
-
-      <div className="space-y-3 px-4 py-3">
-        {data.map((s) => {
-          const pct = Math.round((s.count / total) * 100)
-          return (
-            <div key={s.status}>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="size-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: s.color }}
-                  />
-                  <span className="text-xs font-medium text-foreground">{s.label}</span>
+    <DashPanel title="Bu ay iş durumları">
+      {total === 0 ? (
+        <DashEmpty>Bu ay araç kabulü yok.</DashEmpty>
+      ) : (
+        <div className="space-y-4 px-5 py-5">
+          {data.map((s) => {
+            const pct = Math.round((s.count / total) * 100)
+            return (
+              <div key={s.status}>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
+                    <span className="text-[17px] font-medium text-foreground">{s.label}</span>
+                  </div>
+                  <span className="text-[15px] tabular-nums text-muted-foreground">
+                    {s.count} · %{pct}
+                  </span>
                 </div>
-                <span className="text-xs font-semibold text-foreground">
-                  {s.count} ({pct}%)
-                </span>
+                <div className="h-2 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: s.color }} />
+                </div>
               </div>
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${pct}%`,
-                    backgroundColor: s.color,
-                  }}
-                />
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
+            )
+          })}
+        </div>
+      )}
+    </DashPanel>
   )
 }

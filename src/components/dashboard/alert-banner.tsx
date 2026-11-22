@@ -1,14 +1,14 @@
 import Link from "next/link"
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import type { DashboardStats } from "@/lib/dashboard/queries"
-import { AlertTriangle, Camera, MessageCircle, CheckCircle2 } from "lucide-react"
+import { AlertTriangle, Camera, MessageCircle, Check, ChevronRight } from "lucide-react"
+import { DashPanel, DashTile, surface, type Tone } from "@/components/dashboard/surface"
 
 interface AlertItem {
-  count: number
-  message: string
+  title: string
+  sub: string
   href: string
   icon: React.ComponentType<{ className?: string }>
-  color: string
+  tone: Tone
 }
 
 export function AlertBanner({
@@ -24,54 +24,59 @@ export function AlertBanner({
 
   if (stats.overdueDeliveries > 0) {
     alerts.push({
-      count: stats.overdueDeliveries,
-      message: `${stats.overdueDeliveries} araç kabul tahmini teslim tarihini geçti.`,
+      title: `${stats.overdueDeliveries} araç kabulünün teslimi gecikti`,
+      sub: "Tahmini teslim tarihi geçti",
       href: "/orders?status=active",
       icon: AlertTriangle,
-      color: "red",
+      tone: "destructive",
     })
   }
 
   if (showPhotoChecklist && stats.missingPhotoIntakes > 0) {
     alerts.push({
-      count: stats.missingPhotoIntakes,
-      message: `${stats.missingPhotoIntakes} araç kabulünde zorunlu fotoğraflar eksik.`,
+      title: `${stats.missingPhotoIntakes} kabulde fotoğraf eksik`,
+      sub: "Zorunlu kabul fotoğrafları tamamlanmadı",
       href: "/orders",
       icon: Camera,
-      color: "rose",
+      tone: "destructive",
     })
   }
 
   if (showQuotes && stats.waitingApprovals > 0) {
     alerts.push({
-      count: stats.waitingApprovals,
-      message: `${stats.waitingApprovals} müşteri onayı bekleyen araç kabulü var.`,
+      title: `${stats.waitingApprovals} araç kabulü müşteri onayı bekliyor`,
+      sub: "Onay gelince işe başlanabilir",
       href: "/orders?status=waiting_approval",
       icon: MessageCircle,
-      color: "amber",
+      tone: "warning",
     })
   }
 
   return (
-    <section aria-label="Dikkat gerektiren işler" className="space-y-2">
-      <h3 className="text-sm font-semibold text-foreground">Dikkat Gerektiren İşler</h3>
-      {alerts.length === 0 ? (
-        <Alert variant="success">
-          <CheckCircle2 aria-hidden className="size-4" />
-          <AlertTitle>Bugün kritik operasyon uyarısı bulunmuyor.</AlertTitle>
-        </Alert>
-      ) : alerts.map((alert) => {
-        const Icon = alert.icon
-        return (
-          <Alert key={alert.href} variant={alert.color === "amber" ? "warning" : "destructive"}>
-            <Icon aria-hidden className="size-4" />
-            <AlertTitle>{alert.message}</AlertTitle>
-            <AlertDescription>
-              <Link href={alert.href} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Araç kabullerini incele →</Link>
-            </AlertDescription>
-          </Alert>
-        )
-      })}
-    </section>
+    <DashPanel title="Dikkat gerektiren işler" bare>
+      <div className={surface.notes}>
+        {alerts.length === 0 ? (
+          <div className={surface.note}>
+            <DashTile tone="success" circle><Check /></DashTile>
+            <span className={surface.rowMain}>
+              <span className={surface.rowTitle}>Her şey yolunda</span>
+              <span className={surface.rowSub}>Bugün kritik operasyon uyarısı yok</span>
+            </span>
+          </div>
+        ) : alerts.map((alert) => {
+          const Icon = alert.icon
+          return (
+            <Link key={alert.title} href={alert.href} prefetch={false} className={surface.note}>
+              <DashTile tone={alert.tone}><Icon /></DashTile>
+              <span className={surface.rowMain}>
+                <span className={surface.rowTitle}>{alert.title}</span>
+                <span className={surface.rowSub}>{alert.sub}</span>
+              </span>
+              <ChevronRight aria-hidden className={surface.chevron} />
+            </Link>
+          )
+        })}
+      </div>
+    </DashPanel>
   )
 }

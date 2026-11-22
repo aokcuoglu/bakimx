@@ -60,6 +60,10 @@ test("Button çağrıları eylem rengini açıkça seçiyor ve mavi default'u be
         const attioPrimary = [
           "components/settings/referral-share.tsx",
           "components/orders/detail-header.tsx",
+          // e-santral kalıbı Dashboard prototipi (docs/design-pattern-esantral.md):
+          // birincil eylem mavi hap. Kalıp onaylanınca kural DESIGN.md ile birlikte güncellenecek.
+          "app/(app)/dashboard/page.tsx",
+          "components/dashboard/cash-widget.tsx",
         ].includes(relative(SRC, file)) && variant?.initializer?.getText(parsed) === '"default"'
         if (!variant || (/["']default["']/.test(variant.initializer?.getText(parsed) ?? "") && !attioPrimary)) {
           const line = parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { computeDashboardPage } from "@/lib/dashboard/pagination"
+import styles from "./surface.module.css"
 
 export const DASHBOARD_PAGE_SIZE = 5
 
@@ -24,26 +25,26 @@ export function DashboardPagination({
 }) {
   if (pageCount <= 1) return null
   return (
-    <div className="flex items-center justify-between border-t border-border px-4 py-2">
+    <div className={styles.cardFoot}>
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="size-8"
+        className="size-9 rounded-full"
         disabled={page === 0}
         onClick={() => onPageChange(page - 1)}
         aria-label="Önceki sayfa"
       >
         <ChevronLeft className="size-4" />
       </Button>
-      <span className="text-xs text-muted-foreground">
-        Sayfa {page + 1} / {pageCount}
+      <span className="text-xs text-muted-foreground tabular-nums">
+        {page + 1} / {pageCount}
       </span>
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="size-8"
+        className="size-9 rounded-full"
         disabled={page >= pageCount - 1}
         onClick={() => onPageChange(page + 1)}
         aria-label="Sonraki sayfa"

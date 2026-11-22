@@ -1,0 +1,201 @@
+/*
+ * Uygulama kabuğu — e-santral.com/bakimx kalıbı (docs/design-pattern-esantral.md).
+ * Buzlu yarı saydam çubuklar (üst bar, mobil sekme çubuğu), ince çizgi
+ * ayırıcılar, gri grup başlıkları, seçili öğe mavi ton, dolgulu arama alanı.
+ *
+ * ui/sidebar.tsx'e dokunulmaz: kurallar yalnız AppShell'in verdiği sınıflarla
+ * bağlanır. CSS modülleri Tailwind katmanlarının dışında kaldığı için
+ * utility sınıflarını özgüllük yarışı olmadan ezer.
+ */
+
+/* ── Sidebar ────────────────────────────────────────────── */
+.sidebar {
+  --sidebar: var(--card);
+  --sidebar-border: color-mix(in oklab, var(--foreground) 8%, transparent);
+  --sidebar-accent: color-mix(in oklab, var(--foreground) 4%, transparent);
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sidebar :global([data-sidebar="header"]) {
+  border-bottom-color: transparent;
+}
+
+.sidebar :global([data-sidebar="group"]) {
+  padding-block: 6px;
+}
+
+.sidebar :global([data-sidebar="group-label"]) {
+  height: 26px;
+  padding-inline: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--muted-foreground);
+}
+
+.sidebar :global([data-sidebar="menu"]) {
+  gap: 2px;
+}
+
+.sidebar :global([data-sidebar="menu-button"]) {
+  height: 38px;
+  gap: 11px;
+  padding-inline: 11px;
+  border-radius: 11px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+
+.sidebar :global([data-sidebar="menu-button"]) > svg:first-child {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.8;
+  color: var(--muted-foreground);
+}
+
+.sidebar :global([data-sidebar="menu-button"]:hover) {
+  background: var(--sidebar-accent);
+}
+
+.sidebar :global([data-sidebar="menu-button"][data-active]),
+.sidebar :global([data-sidebar="menu-sub-button"][data-active]) {
+  background: color-mix(in oklab, var(--primary) 10%, var(--card));
+  color: var(--primary-strong);
+  font-weight: 600;
+}
+
+.sidebar :global([data-sidebar="menu-button"][data-active]) > svg:first-child {
+  color: var(--primary-strong);
+}
+
+.sidebar :global([data-sidebar="menu-sub"]) {
+  border-left-color: var(--sidebar-border);
+}
+
+.sidebar :global([data-sidebar="menu-sub-button"]) {
+  height: 34px;
+  border-radius: 9px;
+  font-size: 14px;
+}
+
+.sidebar :global([data-sidebar="footer"]) {
+  border-top-color: var(--sidebar-border);
+}
+
+/* Arama: çerçevesiz, dolgulu alan (Apple arama kutusu). */
+.search {
+  height: 38px;
+  gap: 8px;
+  padding-inline: 11px;
+  border: 0;
+  font-size: 15px;
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--foreground) 6%, transparent);
+  box-shadow: none;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.search:hover {
+  background: color-mix(in oklab, var(--foreground) 9%, transparent);
+}
+
+.searchKey {
+  border: 0;
+  border-radius: 6px;
+  background: var(--card);
+  padding-inline: 5px;
+}
+
+/* Paket durumu: alt köşede küçük gri kart. */
+.plan {
+  height: auto;
+  padding: 12px;
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+.planAction {
+  border: 0;
+  border-radius: 999px;
+  background: var(--card);
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary-strong);
+}
+
+/* ── Üst bar ────────────────────────────────────────────── */
+.header {
+  border-bottom: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
+  background: color-mix(in oklab, var(--background) 82%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+.headerTitle {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* ── Mobil sekme çubuğu ─────────────────────────────────── */
+.tabbar {
+  border-top: 1px solid color-mix(in oklab, var(--foreground) 9%, transparent);
+  background: color-mix(in oklab, var(--card) 92%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 48px;
+  padding-top: 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--muted-foreground);
+  touch-action: manipulation;
+  outline: none;
+  transition: color 0.15s;
+}
+
+.tab svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.8;
+}
+
+.tab[data-active] {
+  color: var(--primary);
+}
+
+.tab:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--ring);
+}
+
+/* Mobil açılır menü: başparmak için 44px dokunma alanı (kalıp: .d-blue 44px). */
+@media (max-width: 1023px) {
+  .sidebar :global([data-sidebar="menu-button"]) {
+    height: 46px;
+    font-size: 17px;
+  }
+
+  .sidebar :global([data-sidebar="menu-sub-button"]) {
+    height: 42px;
+    font-size: 16px;
+  }
+
+  .search {
+    height: 42px;
+    font-size: 17px;
+  }
+}
