@@ -273,7 +273,7 @@ export function SmartCaptureRegistration() {
                 {saveResult.catalogLinked && (
                   <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary-strong">
                     <CheckCircle2 className="size-3 shrink-0" />
-                    Şase eşleşti — araca uygun parçalar iş emrinde hazır
+                    Şase eşleşti — araca uygun parçalar araç kabulünde hazır
                   </p>
                 )}
                 <Link href={`/vehicles/${saveResult.vehicleId}`} className="mt-3 flex text-sm font-medium text-primary hover:underline">
@@ -292,7 +292,7 @@ export function SmartCaptureRegistration() {
                   <ClipboardList className="size-5" />
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground">Sıradaki adım: İş emri</p>
+                  <p className="font-semibold text-foreground">Sıradaki adım: Araç kabulü</p>
                   <p className="mt-0.5 text-sm text-muted-foreground">
                     Kilometre, müşteri şikayeti, fotoğraflar, hasar ve onay bilgilerini tamamlayın.
                   </p>
@@ -300,7 +300,7 @@ export function SmartCaptureRegistration() {
               </div>
               <Button variant="foreground" size="lg" asChild className="shrink-0 gap-2">
                 <Link href={saveResult.intakeUrl}>
-                  İş Emrine Devam Et
+                  Araç Kabulüne Devam Et
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>

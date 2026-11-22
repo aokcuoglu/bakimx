@@ -159,7 +159,7 @@ export function TechnicianAssign({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Usta Ata</DialogTitle>
-          <DialogDescription>İş emrini üstlenecek ustayı seçin</DialogDescription>
+          <DialogDescription>Araç kabulünü üstlenecek ustayı seçin</DialogDescription>
         </DialogHeader>
         {technicians.length === 0 ? (
           <div className="py-8 text-center">

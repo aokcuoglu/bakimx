@@ -41,7 +41,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     results: orders.map((order) => ({
       id: order.id,
-      label: order.workOrderNo ? `İş emri ${order.workOrderNo}` : "İş emri",
+      label: order.workOrderNo ? `Araç kabul ${order.workOrderNo}` : "Araç kabulü",
       sublabel: `${order.intakeForm.vehicle.plate} · ${displayCustomerName(order.intakeForm.customer)}`,
     })),
   })

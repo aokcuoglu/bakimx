@@ -15,7 +15,7 @@ import { resolveTechnicianFilter, UNASSIGNED_TECHNICIAN } from "@/lib/orders/tec
 import { INVOICE_WITH, INVOICE_WITHOUT, isInvoiceMissing, resolveInvoiceFilter } from "@/lib/orders/invoice-filter"
 import { ACTIVE_ORDER_FILTER, ACTIVE_ORDER_STATUSES, resolveOrderStatusFilter } from "@/lib/orders/status-filter"
 
-export const metadata = { title: "İş Emirleri" }
+export const metadata = { title: "Araç Kabulleri" }
 
 export default async function OrdersPage({
   searchParams,
@@ -132,9 +132,9 @@ export default async function OrdersPage({
   return (
     <AppShell
       workshopName={workshop?.name}
-      pageTitle="İş Emirleri"
+      pageTitle="Araç Kabulleri"
       pageActions={
-        <Button variant="foreground" size="icon" asChild aria-label="Yeni iş emri">
+        <Button variant="foreground" size="icon" asChild aria-label="Yeni araç kabulü">
           <Link href="/orders/new">
             <Plus className="size-5" />
           </Link>
@@ -159,13 +159,13 @@ export default async function OrdersPage({
                 <Input
                   name="q"
                   defaultValue={q}
-                  placeholder="İş emri, plaka veya müşteri ara…"
-                  aria-label="İş emri ara"
+                  placeholder="Araç kabulü, plaka veya müşteri ara…"
+                  aria-label="Araç kabulü ara"
                   className="pl-8"
                 />
               </div>
               <Button variant="foreground" size="sm" className="ml-auto" asChild>
-                <Link href="/orders/new"><Plus className="size-3.5" /><span className="hidden sm:inline">Yeni İş Emri</span><span className="sm:hidden">Yeni</span></Link>
+                <Link href="/orders/new"><Plus className="size-3.5" /><span className="hidden sm:inline">Yeni Araç Kabul</span><span className="sm:hidden">Yeni</span></Link>
               </Button>
               </div>
               {/* Dört filtre dar ekranda 2'li ızgaraya düşüp geniş ekranda satıra
@@ -258,18 +258,18 @@ export default async function OrdersPage({
               <ClipboardList className="size-8 mx-auto mb-3 text-muted-foreground" />
               <p className="text-base font-medium">
                 {hasAnyFilter
-                  ? "Filtrelere uyan iş emri bulunamadı"
-                  : "Henüz iş emri yok"}
+                  ? "Filtrelere uyan araç kabulü bulunamadı"
+                  : "Henüz araç kabulü yok"}
               </p>
               <p className="text-sm mt-1">
                 {hasAnyFilter
                   ? "Farklı bir filtre deneyin"
-                  : "Yeni bir iş emri oluşturarak başlayabilirsiniz"}
+                  : "Yeni bir araç kabulü oluşturarak başlayabilirsiniz"}
               </p>
               <Button variant={hasAnyFilter ? "outline" : "foreground"} size="sm" className="mt-4" asChild>
                 <Link href={hasAnyFilter ? "/orders" : "/orders/new"}>
                   {hasAnyFilter ? <X className="size-3.5" /> : <Plus className="size-3.5" />}
-                  {hasAnyFilter ? "Filtreleri temizle" : "Yeni İş Emri"}
+                  {hasAnyFilter ? "Filtreleri temizle" : "Yeni Araç Kabul"}
                 </Link>
               </Button>
             </div>

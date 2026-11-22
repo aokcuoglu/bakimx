@@ -64,7 +64,7 @@ export function CrossWorkshopHistoryCard({
       <CardContent className="space-y-4 pt-0">
         <div className="grid grid-cols-3 gap-3 text-sm">
           <Stat label="Servis" value={String(history.workshopCount)} />
-          <Stat label="İş Emri" value={String(history.orderCount)} />
+          <Stat label="Araç Kabul" value={String(history.orderCount)} />
           <Stat
             label="Son İşlem"
             value={history.lastServicedAt ? formatDate(history.lastServicedAt) : "—"}
@@ -128,7 +128,7 @@ export function CrossWorkshopHistoryCard({
           <div>
             <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
               <Wrench className="size-3" />
-              İş Emri Geçmişi
+              Araç Kabul Geçmişi
             </p>
             <div className="divide-y divide-border rounded-lg border border-border">
               {history.orders.map((o) => (

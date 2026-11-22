@@ -22,11 +22,11 @@ export function WaitingApprovals({ approvals }: { approvals: WaitingApprovalItem
       {approvals.length === 0 ? (
         <p className="px-4 py-4 text-sm text-muted-foreground">Onay bekleyen kayıt yok.</p>
       ) : (
-        <Table className="table-fixed" aria-label="Onay bekleyen iş emirleri">
+        <Table className="table-fixed" aria-label="Onay bekleyen araç kabulleri">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="h-9 px-4 text-xs">Araç / Müşteri</TableHead>
-              <TableHead className="h-9 w-28 px-4 text-right text-xs">İş emri / Tarih</TableHead>
+              <TableHead className="h-9 w-28 px-4 text-right text-xs">Araç kabulü / Tarih</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

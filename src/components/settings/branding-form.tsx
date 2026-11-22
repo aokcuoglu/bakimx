@@ -99,7 +99,7 @@ export function BrandingForm({ settings }: { settings: SettingsData }) {
                     <FormControl>
                       <Input {...field} type="url" placeholder="https://..." />
                     </FormControl>
-                    <FormDescription>İş emri, pasaport ve tahsilat makbuzu PDF&apos;lerinde gösterilir</FormDescription>
+                    <FormDescription>Araç kabulü, pasaport ve tahsilat makbuzu PDF&apos;lerinde gösterilir</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

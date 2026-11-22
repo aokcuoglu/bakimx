@@ -149,7 +149,7 @@ export async function updateQuoteStatusAction(formData: FormData) {
   const quote = await prisma.quote.findFirst({ where: { id: quoteId, workshopId } })
   if (!quote) return { error: "Teklif bulunamadı" }
 
-  if (quote.status === "converted") return { error: "İş emrine çevrilmiş teklifin durumu değiştirilemez" }
+  if (quote.status === "converted") return { error: "Araç kabulüne çevrilmiş teklifin durumu değiştirilemez" }
   if (quote.status === "cancelled") return { error: "İptal edilmiş teklifin durumu değiştirilemez" }
 
   await prisma.quote.update({
@@ -198,8 +198,8 @@ export async function convertQuoteToWorkOrderAction(formData: FormData) {
     include: { items: true },
   })
   if (!quote) return { error: "Teklif bulunamadı" }
-  if (quote.status === "converted") return { error: "Bu teklif zaten iş emrine çevrilmiş" }
-  if (quote.status === "cancelled") return { error: "İptal edilmiş teklif iş emrine çevrilemez" }
+  if (quote.status === "converted") return { error: "Bu teklif zaten araç kabulüne çevrilmiş" }
+  if (quote.status === "cancelled") return { error: "İptal edilmiş teklif araç kabulüne çevrilemez" }
 
   const customer = await prisma.customer.findFirst({ where: { id: quote.customerId, workshopId } })
   if (!customer) return { error: "Müşteri bulunamadı" }

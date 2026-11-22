@@ -119,7 +119,7 @@ export default async function PurchasesPage({
 
 
         <div>
-          <p className="text-sm text-muted-foreground mt-0.5">Teknisyenlerin iş emrine dışarıdan aldığı parçalar</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Teknisyenlerin araç kabulüne dışarıdan aldığı parçalar</p>
         </div>
 
         {!canCreate && (
@@ -132,7 +132,7 @@ export default async function PurchasesPage({
             <Input
               name="q"
               defaultValue={q}
-              placeholder="İş emri no, plaka, şase veya tedarikçi ile ara..."
+              placeholder="Araç kabul no, plaka, şase veya tedarikçi ile ara..."
               className="pl-10"
             />
           </div>

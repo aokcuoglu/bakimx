@@ -735,14 +735,14 @@ export async function getRecommendations(workshopId: string): Promise<Recommenda
         id: `rec-${++id}`,
         type: "warning",
         category: "delayed",
-        message: `${longDelayed.length} iş emri 3 günden fazla gecikmiş durumda.`,
+        message: `${longDelayed.length} araç kabulü 3 günden fazla gecikmiş durumda.`,
       })
     }
     recommendations.push({
       id: `rec-${++id}`,
       type: delayedOrders.length > 3 ? "warning" : "info",
       category: "delayed",
-      message: `${delayedOrders.length} iş emri tahmini teslim tarihini geçti.`,
+      message: `${delayedOrders.length} araç kabul tahmini teslim tarihini geçti.`,
     })
   }
 
@@ -760,7 +760,7 @@ export async function getRecommendations(workshopId: string): Promise<Recommenda
       id: `rec-${++id}`,
       type: "info",
       category: "revenue",
-      message: `${health.unpaidWorkOrders} iş emrinin ödemesi henüz alınmamış.`,
+      message: `${health.unpaidWorkOrders} araç kabulünün ödemesi henüz alınmamış.`,
     })
   }
 
@@ -769,7 +769,7 @@ export async function getRecommendations(workshopId: string): Promise<Recommenda
       id: `rec-${++id}`,
       type: "info",
       category: "approvals",
-      message: `${health.waitingApprovals} iş emri müşteri onayı bekliyor.`,
+      message: `${health.waitingApprovals} araç kabulü müşteri onayı bekliyor.`,
     })
   }
 

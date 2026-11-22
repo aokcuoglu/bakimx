@@ -110,7 +110,7 @@ export function LaborList({
           <Wrench className="size-10 mx-auto mb-3 text-muted-foreground/50" />
           <p className="text-sm font-medium text-foreground">Henüz işçilik tanımlanmadı</p>
           <p className="text-xs text-muted-foreground mt-1 mb-4 px-4">
-            Tanımladığınız işçilikler iş emri ve teklif ekranlarında öneri olarak çıkar.
+            Tanımladığınız işçilikler araç kabulü ve teklif ekranlarında öneri olarak çıkar.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 px-4">
             <Button variant="foreground" size="sm" onClick={openCreate}>
@@ -290,7 +290,7 @@ export function LaborList({
           <AlertDialogHeader>
             <AlertDialogTitle>İşçilik silinsin mi?</AlertDialogTitle>
             <AlertDialogDescription>
-              &quot;{pendingDelete?.name}&quot; tanımı listenizden kaldırılacak. Geçmiş iş emirleri
+              &quot;{pendingDelete?.name}&quot; tanımı listenizden kaldırılacak. Geçmiş araç kabulleri
               ve teklifler bundan etkilenmez.
             </AlertDialogDescription>
           </AlertDialogHeader>

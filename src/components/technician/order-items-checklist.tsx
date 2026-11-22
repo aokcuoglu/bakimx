@@ -198,7 +198,7 @@ export function OrderItemsChecklist({
       </div>
 
       {total === 0 ? (
-        <p className="text-sm text-muted-foreground">Bu iş emrinde henüz parça veya işçilik kalemi yok.</p>
+        <p className="text-sm text-muted-foreground">Bu araç kabulünde henüz parça veya işçilik kalemi yok.</p>
       ) : (
         <div className="space-y-3">
           <ItemGroup title="Parçalar" items={parts} locked={locked} busyIds={busyIds} flashIds={flashIds} onToggle={toggle} />

@@ -157,7 +157,7 @@ export function TechnicianPhotoUpload({
           if (!next) resetForm()
         }}
         title="Fotoğraf Ekle"
-        description="Çektiğiniz fotoğrafı bu iş emrinin kanıtlarına ekleyin."
+        description="Çektiğiniz fotoğrafı bu araç kabulünün kanıtlarına ekleyin."
         footer={
           <div className="flex gap-2">
             <Button variant="foreground"

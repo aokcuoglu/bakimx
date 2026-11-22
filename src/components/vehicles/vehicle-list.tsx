@@ -265,7 +265,7 @@ function DesktopTable({
               <th className="px-4 py-3 text-left font-semibold">Araç</th>
               <th className="px-4 py-3 text-left font-semibold">Müşteri</th>
               <th className="px-4 py-3 text-right font-semibold">Kilometre</th>
-              <th className="px-4 py-3 text-right font-semibold">İş Emri</th>
+              <th className="px-4 py-3 text-right font-semibold">Araç Kabul</th>
               <th className="px-4 py-3 text-left font-semibold">Son İşlem</th>
               <th className="px-4 py-3 text-left font-semibold">Kayıt Tarihi</th>
               <th className="px-4 py-3 text-right font-semibold sticky right-0 bg-muted">İşlem</th>
@@ -392,7 +392,7 @@ function MobileCards({
               </p>
             </div>
             <div className="rounded-lg bg-muted px-2 py-1.5">
-              <p className="text-muted-foreground">İş Emri</p>
+              <p className="text-muted-foreground">Araç Kabul</p>
               <p className="text-sm font-semibold text-foreground tabular-nums">
                 {row.workOrdersCount}
               </p>

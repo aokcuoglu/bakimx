@@ -53,7 +53,7 @@ function photoBadge(completion: { present: number; required: number }) {
 export function ActiveOrdersDesktop({ orders }: { orders: ActiveWorkOrderRow[] }) {
   return (
     <div className="bg-card">
-      <Table containerClassName="max-h-96" aria-label="Aktif iş emirleri">
+      <Table containerClassName="max-h-96" aria-label="Aktif araç kabulleri">
         <TableHeader className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
           <TableRow className="hover:bg-transparent">
             <TableHead className="text-left font-medium text-muted-foreground h-9 bg-card px-3 py-1 text-xs">İş No</TableHead>
@@ -71,7 +71,7 @@ export function ActiveOrdersDesktop({ orders }: { orders: ActiveWorkOrderRow[] }
           {orders.length === 0 ? (
             <TableRow>
               <TableCell colSpan={9} className="h-24 text-center text-sm text-muted-foreground">
-                Aktif iş emri bulunmuyor.
+                Aktif araç kabulü bulunmuyor.
               </TableCell>
             </TableRow>
           ) : (
@@ -150,7 +150,7 @@ export function ActiveOrdersMobile({ orders }: { orders: ActiveWorkOrderRow[] })
     <div className="max-h-96 space-y-2 overflow-y-auto sm:hidden">
       {orders.length === 0 ? (
         <div className="text-center py-10 bg-card border border-dashed border-border rounded-lg">
-          <p className="text-sm font-medium text-muted-foreground">Aktif iş emri bulunmuyor.</p>
+          <p className="text-sm font-medium text-muted-foreground">Aktif araç kabulü bulunmuyor.</p>
         </div>
       ) : (
         orders.map((o) => (
@@ -200,9 +200,9 @@ export function ActiveOrdersSection({ orders }: { orders: ActiveWorkOrderRow[] }
   const { page, pageCount, pageItems, setPage } = useDashboardPage(orders)
 
   return (
-    <section aria-label="Aktif iş emirleri">
+    <section aria-label="Aktif araç kabulleri">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-foreground">Aktif İş Emirleri</h3>
+        <h3 className="text-sm font-semibold text-foreground">Aktif Araç Kabulleri</h3>
         <Link
           href="/orders"
           className="text-sm text-primary hover:underline font-medium transition-colors"

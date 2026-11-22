@@ -207,7 +207,7 @@ export function CustomerDetail({
              <Button variant="outline" size="sm" asChild>
                <Link href={`/orders/new?customerId=${customer.id}`}>
                  <Wrench className="size-4" />
-                 Yeni İş Emri
+                 Yeni Araç Kabul
                </Link>
              </Button>
             <Button
@@ -292,20 +292,20 @@ export function CustomerDetail({
           </SectionCard>
 
           <SectionCard
-            title="İş Emirleri"
+            title="Araç Kabulleri"
             icon={Wrench}
             count={orderIntakes.length}
           >
             {orderIntakes.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Wrench className="size-10 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-sm">Henüz iş emri yok</p>
+                <p className="text-sm">Henüz araç kabulü yok</p>
                 <Link
                   href={`/orders/new?customerId=${customer.id}`}
                   className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary font-medium"
                 >
                   <Plus className="size-3.5" />
-                  Yeni İş Emri
+                  Yeni Araç Kabul
                 </Link>
               </div>
             ) : (
@@ -412,7 +412,7 @@ export function CustomerDetail({
           </SectionCard>
 
           {otherIntakes.length > 0 ? (
-            <SectionCard title="İş Emri Oluşmamış Kayıtlar" icon={ClipboardList} count={otherIntakes.length}>
+            <SectionCard title="Araç Kabul Oluşmamış Kayıtlar" icon={ClipboardList} count={otherIntakes.length}>
               <ul className="divide-y divide-border -mx-4 sm:-mx-5">
                 {otherIntakes.map((i) => {
                   const intakeStatus = INTAKE_STATUS[i.status as keyof typeof INTAKE_STATUS]
@@ -528,7 +528,7 @@ export function CustomerDetail({
           <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 space-y-2">
             <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Tehlikeli Bölge</p>
             <p className="text-xs text-muted-foreground">
-              Müşteriyi silmek ilişkili araç ve kabul/iş emri kayıtlarını otomatik silmez. Önce ilişkili kayıtları silmeniz gerekir.
+              Müşteriyi silmek ilişkili araç ve kabul/araç kabul kayıtlarını otomatik silmez. Önce ilişkili kayıtları silmeniz gerekir.
             </p>
             <DeleteCustomerButton
               customerId={customer.id}
@@ -601,7 +601,7 @@ function BalanceCard({ balance, totalPaid, customerId }: { balance: ReturnType<t
       </CardHeader>
       <CardContent className="pt-0 space-y-3">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <Stat label="İş Emri" value={balance.ordersCount.toString()} accent="bg-muted text-foreground" />
+          <Stat label="Araç Kabul" value={balance.ordersCount.toString()} accent="bg-muted text-foreground" />
           <Stat label="Genel Toplam" value={balance.grandTotal > 0 ? formatTRY(balance.grandTotal) : "—"} accent="bg-primary/10 text-foreground" />
           <Stat label="Tahsil Edilen" value={totalPaid > 0 ? formatTRY(totalPaid) : "—"} accent="bg-success/10 text-foreground" />
           <Stat

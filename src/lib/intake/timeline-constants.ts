@@ -4,8 +4,8 @@ export const TIMELINE_EVENT_LABELS: Record<string, string> = {
   damage_marks_added: "Hasar kayıtları eklendi",
   approval_requested: "Müşteri onayı istendi",
   approval_verified: "Müşteri onayı doğrulandı",
-  work_order_created: "İş emri oluşturuldu",
-  intake_details_edited: "İş emri bilgileri düzenlendi",
+  work_order_created: "Araç kabulü oluşturuldu",
+  intake_details_edited: "Araç kabul bilgileri düzenlendi",
   delivery_output_generated: "Teslim çıktısı oluşturuldu",
 }
 

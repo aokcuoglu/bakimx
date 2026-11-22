@@ -13,7 +13,7 @@ import {
 } from "@/lib/reports/queries"
 import { prisma } from "@/lib/db"
 
-export const metadata = { title: "İş Emri Raporu" }
+export const metadata = { title: "Araç Kabul Raporu" }
 
 export default async function OrdersReportPage({
   searchParams,
@@ -49,7 +49,7 @@ export default async function OrdersReportPage({
   }))
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="İş Emri Raporu">
+    <AppShell workshopName={workshop?.name} pageTitle="Araç Kabul Raporu">
       <ReportsLayout>
         <OrdersReport
           stats={stats}

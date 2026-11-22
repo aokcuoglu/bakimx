@@ -64,7 +64,7 @@ export function ActionsMenu({
           <DropdownMenuItem>
             <Link href={workOrderHref} className="flex items-center gap-2 w-full">
               <Wrench className="size-4" />
-              İş Emri Oluştur
+              Araç Kabul Oluştur
             </Link>
           </DropdownMenuItem>
         )}
@@ -144,7 +144,7 @@ export function MobileActionsMenu({
           <DropdownMenuItem>
             <Link href={workOrderHref} className="flex items-center gap-2 w-full">
               <Wrench className="size-4" />
-              İş Emri Oluştur
+              Araç Kabul Oluştur
             </Link>
           </DropdownMenuItem>
         )}

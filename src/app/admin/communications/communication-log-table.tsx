@@ -15,7 +15,7 @@ const statusClass = (status: string) => status === "sent" ? "bg-success/10 text-
 
 const channelLabel = (type: string) => ({ sms: "SMS", whatsapp: "WhatsApp", email: "E-posta" }[type] ?? "İletişim")
 const providerLabel = (provider: string) => ({ mock: "Demo sağlayıcı", none: "Sağlayıcı kullanılmadı" }[provider] ?? provider)
-const entityLabel = (entityType: string) => ({ appointment: "Randevu", intake: "Araç kabulü", quote: "Teklif", order: "İş emri", reminder: "Bakım hatırlatması", vehicle: "Araç", test: "Test gönderimi", CollectionReminder: "Tahsilat hatırlatması" }[entityType] ?? "İlişkili kayıt")
+const entityLabel = (entityType: string) => ({ appointment: "Randevu", intake: "Araç kabul formu", quote: "Teklif", order: "Araç kabulü", reminder: "Bakım hatırlatması", vehicle: "Araç", test: "Test gönderimi", CollectionReminder: "Tahsilat hatırlatması" }[entityType] ?? "İlişkili kayıt")
 
 export function CommunicationLogTable({ rows }: { rows: CommunicationRow[] }) {
   const [selected, setSelected] = useState<CommunicationRow | null>(null)

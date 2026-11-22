@@ -108,7 +108,7 @@ export async function updateAppointmentStatusAction(formData: FormData) {
   const appointment = await prisma.appointment.findFirst({ where: { id: appointmentId, workshopId } })
   if (!appointment) return { error: "Randevu bulunamadı" }
 
-  if (appointment.status === "converted") return { error: "İş emrine çevrilmiş randevunun durumu değiştirilemez" }
+  if (appointment.status === "converted") return { error: "Araç kabulüne çevrilmiş randevunun durumu değiştirilemez" }
   if (appointment.status === "cancelled") return { error: "İptal edilmiş randevunun durumu değiştirilemez" }
 
   await prisma.appointment.update({
@@ -132,8 +132,8 @@ export async function convertAppointmentToWorkOrderAction(formData: FormData) {
     where: { id: appointmentId, workshopId },
   })
   if (!appointment) return { error: "Randevu bulunamadı" }
-  if (appointment.status === "converted") return { error: "Bu randevu zaten iş emrine çevrilmiş" }
-  if (appointment.status === "cancelled") return { error: "İptal edilmiş randevu iş emrine çevrilemez" }
+  if (appointment.status === "converted") return { error: "Bu randevu zaten araç kabulüne çevrilmiş" }
+  if (appointment.status === "cancelled") return { error: "İptal edilmiş randevu araç kabulüne çevrilemez" }
 
   const customer = await prisma.customer.findFirst({ where: { id: appointment.customerId, workshopId } })
   if (!customer) return { error: "Müşteri bulunamadı" }

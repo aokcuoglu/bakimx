@@ -84,7 +84,7 @@ export function TechnicianNotificationsBell() {
             description: notification.description,
             duration: 10000,
             action: {
-              label: "İş emrine git",
+              label: "Araç kabulüne git",
               onClick: () => router.push(`/technician/orders/${notification.orderId}`),
             },
           })

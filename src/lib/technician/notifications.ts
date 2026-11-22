@@ -57,7 +57,7 @@ export function buildNotificationDescription(
   plate: string | null | undefined,
   workOrderNo: string | null | undefined,
 ): string | undefined {
-  const orderLabel = workOrderNo ? `İş Emri #${workOrderNo}` : null
+  const orderLabel = workOrderNo ? `Araç Kabul #${workOrderNo}` : null
   return [plate, orderLabel].filter(Boolean).join(" · ") || undefined
 }
 

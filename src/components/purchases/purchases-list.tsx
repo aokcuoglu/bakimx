@@ -63,7 +63,7 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
         <EmptyState
           icon={PackageSearch}
           title="Henüz satın alma kaydı yok"
-          description="İş emrine dışarıdan alınan bir parça eklendiğinde burada görünür."
+          description="Araç kabulüne dışarıdan alınan bir parça eklendiğinde burada görünür."
         />
       )}
 

@@ -19,10 +19,10 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 
 /** Rol seçiminde gösterilen tek cümlelik özet. */
 export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
-  owner: "Her şeyi yapabilir; kapalı iş emrini yeniden açabilir.",
+  owner: "Her şeyi yapabilir; kapalı araç kabulünü yeniden açabilir.",
   manager: "Tüm operasyonlar ve ekip yönetimi.",
-  usta: "İş emrini düzenler ve ilerletir.",
-  cirak: "İş emri, teklif, randevu ve hatırlatma oluşturur; parça alır, maliyet girer.",
+  usta: "Araç kabulünü düzenler ve ilerletir.",
+  cirak: "Araç kabulü, teklif, randevu ve hatırlatma oluşturur; parça alır, maliyet girer.",
   staff: "Eski kayıt — Usta ile aynı yetkilere sahiptir.",
 }
 
@@ -76,10 +76,10 @@ export const PERMISSION_LABELS: Record<Permission, { label: string; hint: string
   "billing.manage": { label: "Faturalandırma", hint: "Paket ve ödeme ayarlarını görür." },
   "settings.manage": { label: "Atölye ayarları", hint: "Profil, bildirim ve takvim ayarları." },
   "records.manage": { label: "Kayıt düzenleme", hint: "Müşteri, araç, randevu, teklif ve hatırlatma." },
-  "records.create": { label: "Kayıt oluşturma", hint: "İş emri, kabul, teklif, randevu ve hatırlatma açar." },
-  "order.edit": { label: "İş emri düzenleme", hint: "İş emri metni ve kalemleri." },
-  "order.status": { label: "İş emri ilerletme", hint: "Tamire başlama, tamamlama, teslim." },
-  "order.reopen": { label: "Kapalı iş emrini açma", hint: "Teslim edilmiş iş emrini yeniden açar." },
+  "records.create": { label: "Kayıt oluşturma", hint: "Araç kabulü, kabul, teklif, randevu ve hatırlatma açar." },
+  "order.edit": { label: "Araç kabulü düzenleme", hint: "Araç kabul metni ve kalemleri." },
+  "order.status": { label: "Araç kabulü ilerletme", hint: "Tamire başlama, tamamlama, teslim." },
+  "order.reopen": { label: "Kapalı araç kabulünü açma", hint: "Teslim edilmiş araç kabulünü yeniden açar." },
   "parts.purchase": { label: "Dış parça alma", hint: "Parça talebi, dış alım ve maliyet girişi." },
   "catalog.manage": { label: "Katalog ve tedarikçi", hint: "Stok, işçilik kataloğu, tedarikçiler." },
   "cashbox.manage": { label: "Kasa", hint: "Tahsilat ve kasa hareketleri." },
@@ -88,7 +88,7 @@ export const PERMISSION_LABELS: Record<Permission, { label: string; hint: string
 export const PERMISSION_GROUPS: { title: string; permissions: readonly Permission[] }[] = [
   { title: "Ekip ve ayarlar", permissions: ["team.manage", "settings.manage", "billing.manage"] },
   { title: "Kayıtlar", permissions: ["records.manage", "records.create"] },
-  { title: "İş emri", permissions: ["order.edit", "order.status", "order.reopen"] },
+  { title: "Araç kabulü", permissions: ["order.edit", "order.status", "order.reopen"] },
   { title: "Parça ve stok", permissions: ["parts.purchase", "catalog.manage"] },
   { title: "Kasa", permissions: ["cashbox.manage"] },
 ]

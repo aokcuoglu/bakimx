@@ -186,7 +186,7 @@ export function LaborItemDialog({
           <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
             <div>
               <p className="text-sm font-medium text-foreground">Aktif</p>
-              <p className="text-xs text-muted-foreground">Pasif kalemler iş emri önerilerinde çıkmaz</p>
+              <p className="text-xs text-muted-foreground">Pasif kalemler araç kabul önerilerinde çıkmaz</p>
             </div>
             <Switch checked={isActive} onCheckedChange={setIsActive} />
           </div>

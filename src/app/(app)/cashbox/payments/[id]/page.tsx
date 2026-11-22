@@ -140,7 +140,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
             <div className="rounded-lg border border-border bg-card p-4 space-y-3">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <FileText className="size-4 text-muted-foreground" />
-                İş Emri
+                Araç Kabul
               </h3>
               <Link href={`/orders/${collection.serviceOrder!.id}`} className="block rounded-lg border border-border bg-muted p-3 hover:bg-muted transition-colors">
                 <div className="flex items-center justify-between">
@@ -154,7 +154,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
 
               <div className="border-t border-border pt-3 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">İş Emri Toplamı</span>
+                  <span className="text-muted-foreground">Araç Kabul Toplamı</span>
                   <span className="font-medium text-foreground">{formatTRY(orderTotals.grandTotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -179,7 +179,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
                 href={`/orders/${collection.serviceOrder.id}`}
                 className="block text-center text-sm text-primary hover:underline font-medium mt-2"
               >
-                İş Emri Detayına Git →
+                Araç Kabul Detayına Git →
               </Link>
             </div>
           )}
@@ -188,7 +188,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
         {!collection.serviceOrder && (
           <div className="rounded-lg border border-border bg-muted px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
             <Info className="size-3.5 mt-0.5 shrink-0" />
-            <span>Bu tahsilat herhangi bir iş emrine bağlı değil.</span>
+            <span>Bu tahsilat herhangi bir araç kabulüne bağlı değil.</span>
           </div>
         )}
       </div>

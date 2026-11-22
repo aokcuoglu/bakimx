@@ -9,7 +9,7 @@ export function WeeklyChart({ data }: { data: WeeklyOperation[] }) {
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <h3 className="border-b border-border px-4 py-3 text-sm font-semibold text-foreground">Son 7 Gün Operasyon</h3>
         <div className="flex min-h-16 items-center px-4 py-4 text-sm text-muted-foreground">
-          Son 7 günde iş emri bulunmuyor.
+          Son 7 günde araç kabulü bulunmuyor.
         </div>
       </div>
     )

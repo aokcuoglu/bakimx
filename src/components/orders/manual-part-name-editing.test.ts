@@ -24,7 +24,7 @@ test("katalog kimliği (sku/marka/kategori) kilitli kalır; satır adı (display
 
   expect(partField).toContain("<PartNameField row={row} onCell={onCell}")
   expect(GRID).toContain("row.tecdocArticleId != null || row.bakimxProductId != null || row.getirbakimProductId != null")
-  expect(GRID).toContain("Yalnız bu iş emri ve çıktılarda görünür; katalog / stok tanımı değişmez")
+  expect(GRID).toContain("Yalnız bu araç kabulü ve çıktılarda görünür; katalog / stok tanımı değişmez")
 
   // TecDoc identity guard no longer blocks name — only sku/brand/category.
   expect(ACTIONS).not.toContain("parsed.data.name !== undefined && parsed.data.name !== item.name")

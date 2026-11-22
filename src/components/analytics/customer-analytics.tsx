@@ -59,7 +59,7 @@ export function CustomerAnalyticsSection({ analytics }: { analytics: CustomerAna
                   <TableHead className="px-4 text-xs text-muted-foreground">#</TableHead>
                   <TableHead className="px-4 text-xs text-muted-foreground">Müşteri</TableHead>
                   <TableHead className="px-4 text-xs text-muted-foreground">Telefon</TableHead>
-                  <TableHead className="px-4 text-right text-xs text-muted-foreground">İş Emri</TableHead>
+                  <TableHead className="px-4 text-right text-xs text-muted-foreground">Araç Kabul</TableHead>
                   <TableHead className="px-4 text-right text-xs text-muted-foreground">Toplam Harcama</TableHead>
                 </TableRow>
               </TableHeader>

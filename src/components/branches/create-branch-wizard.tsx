@@ -65,7 +65,7 @@ const TEAM_LABELS: Record<TeamSizeId, string> = {
 
 const MODULE_LABELS: Record<RegisterModuleId, string> = {
   customers_vehicles: "Müşteri & araç",
-  work_orders: "İş emirleri",
+  work_orders: "Araç kabulleri",
   appointments: "Randevular",
   reports: "Raporlar",
   stock_parts: "Stok / parça",

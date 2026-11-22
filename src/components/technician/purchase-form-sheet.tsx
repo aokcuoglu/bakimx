@@ -352,8 +352,8 @@ export function PurchaseFormSheet({
           <DialogTitle>{editing ? "Dış Alım Kaydını Düzenle" : "Dışarıdan Parça Alımı"}</DialogTitle>
           <DialogDescription>
             {editing
-              ? "Parça bilgilerini güncelleyin; kalem iş emrinde aynı anda değişir."
-              : "Aldığınız parçayı bu iş emrine kalem olarak ekleyin."}
+              ? "Parça bilgilerini güncelleyin; kalem araç kabulünde aynı anda değişir."
+              : "Aldığınız parçayı bu araç kabulüne kalem olarak ekleyin."}
           </DialogDescription>
         </DialogHeader>
 

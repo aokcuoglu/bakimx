@@ -57,10 +57,10 @@ export function BillingUsagePanel({ plan, seatUsage, extraSeats, quota, canPurch
           <div className="mt-auto pt-5"><Button type="button" variant="outline" size="sm" onClick={onManageSeats}>Üyeleri yönet</Button></div>
         </div>
         <div className="flex min-w-0 flex-col">
-          <UsageHeading title="Kullanımlar" icon={Camera} description="Fotoğraf hakkı her iş emri için ayrıdır. Silinmiş fotoğraflar aktif kullanıma dahil edilmez." />
+          <UsageHeading title="Kullanımlar" icon={Camera} description="Fotoğraf hakkı her araç kabulü için ayrıdır. Silinmiş fotoğraflar aktif kullanıma dahil edilmez." />
           <div className="mt-4">
-            <p className="text-sm font-semibold">{plan.accessTier === "lite" ? "Fotoğraf hakkı yok" : <>{PHOTO_UPLOAD_POLICY.maxActivePerWorkOrder} <span className="font-normal text-muted-foreground">fotoğraf / iş emri</span></>}</p>
-            <p className="mt-1.5 text-xs text-muted-foreground">İş emri bazında kullanımı görün</p>
+            <p className="text-sm font-semibold">{plan.accessTier === "lite" ? "Fotoğraf hakkı yok" : <>{PHOTO_UPLOAD_POLICY.maxActivePerWorkOrder} <span className="font-normal text-muted-foreground">fotoğraf / araç kabulü</span></>}</p>
+            <p className="mt-1.5 text-xs text-muted-foreground">Araç kabul bazında kullanımı görün</p>
           </div>
           <div className="mt-auto pt-5"><Button asChild variant="outline" size="sm"><Link href="/settings/billing/record-usage">Kullanım <ChevronRight className="size-3.5" /></Link></Button></div>
         </div>

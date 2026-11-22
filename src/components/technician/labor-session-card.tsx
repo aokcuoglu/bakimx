@@ -234,7 +234,7 @@ function EditLaborSessionDialog({
         <DialogHeader>
           <DialogTitle>İşçilik kaydını düzenle</DialogTitle>
           <DialogDescription>
-            Saatleri düzeltirsen süre otomatik yeniden hesaplanır. Düzeltme, iş emri işlem geçmişine
+            Saatleri düzeltirsen süre otomatik yeniden hesaplanır. Düzeltme, araç kabulü işlem geçmişine
             kimin ne zaman yaptığıyla birlikte yazılır.
           </DialogDescription>
         </DialogHeader>

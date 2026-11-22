@@ -22,7 +22,7 @@ const INTRO_STEP: TourStepDef = {
   id: "intro",
   title: "Panele hoş geldiniz",
   description:
-    "Kısa bir turla iş emirlerini ve aramayı tanıyalım. İstediğiniz zaman Atla diyebilirsiniz.",
+    "Kısa bir turla araç kabullerini ve aramayı tanıyalım. İstediğiniz zaman Atla diyebilirsiniz.",
   targets: [],
   side: "bottom",
 }
@@ -31,7 +31,7 @@ const DESKTOP_STEPS: TourStepDef[] = [
   INTRO_STEP,
   {
     id: "orders",
-    title: "İş Emirleri",
+    title: "Araç Kabulleri",
     description:
       "Servisin omurgası burası. Açık işleri takip eder, durum günceller ve teslimata kadar ilerlersiniz.",
     targets: ["nav-orders"],
@@ -46,9 +46,9 @@ const DESKTOP_STEPS: TourStepDef[] = [
   },
   {
     id: "first-order",
-    title: "İlk iş emriniz",
+    title: "İlk araç kabulünüz",
     description:
-      "İlk müşteriyi ve aracı kaydedip iş emri açarak başlayın. Hazırsanız buradan devam edin.",
+      "İlk müşteriyi ve aracı kaydedip araç kabulü açarak başlayın. Hazırsanız buradan devam edin.",
     targets: ["first-order", "welcome-cta", "welcome-banner"],
     side: "bottom",
   },
@@ -58,9 +58,9 @@ const MOBILE_STEPS: TourStepDef[] = [
   INTRO_STEP,
   {
     id: "orders",
-    title: "İş Emirleri",
+    title: "Araç Kabulleri",
     description:
-      "Alt menüden iş emirlerine geçin. Açık işleri takip eder ve teslimata kadar ilerlersiniz.",
+      "Alt menüden araç kabullerine geçin. Açık işleri takip eder ve teslimata kadar ilerlersiniz.",
     targets: ["mobile-nav-orders"],
     side: "top",
   },
@@ -68,7 +68,7 @@ const MOBILE_STEPS: TourStepDef[] = [
     id: "create",
     title: "Yeni kayıt",
     description:
-      "Alttaki oluştur düğmesiyle müşteri, araç veya iş emrini hızlıca ekleyin.",
+      "Alttaki oluştur düğmesiyle müşteri, araç veya araç kabulünü hızlıca ekleyin.",
     targets: ["create-center"],
     side: "top",
   },
@@ -81,9 +81,9 @@ const MOBILE_STEPS: TourStepDef[] = [
   },
   {
     id: "first-order",
-    title: "İlk iş emriniz",
+    title: "İlk araç kabulünüz",
     description:
-      "İlk müşteriyi ve aracı kaydedip iş emri açarak başlayın. Hazırsanız buradan devam edin.",
+      "İlk müşteriyi ve aracı kaydedip araç kabulü açarak başlayın. Hazırsanız buradan devam edin.",
     targets: ["first-order", "welcome-cta", "welcome-banner"],
     side: "top",
   },

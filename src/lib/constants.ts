@@ -283,7 +283,7 @@ export const QUOTE_STATUS = {
   accepted: { label: "Kabul Edildi", color: "bg-success/10 text-foreground border-success/20" },
   rejected: { label: "Reddedildi", color: "bg-destructive/10 text-foreground border-destructive/20" },
   expired: { label: "Süresi Doldu", color: "bg-warning/10 text-foreground border-warning/20" },
-  converted: { label: "İş Emrine Çevrildi", color: "bg-primary/10 text-foreground border-primary/20" },
+  converted: { label: "Araç Kabulüne Çevrildi", color: "bg-primary/10 text-foreground border-primary/20" },
   cancelled: { label: "İptal", color: "bg-muted text-foreground border-border" },
 } as const
 
@@ -293,7 +293,7 @@ export const APPOINTMENT_STATUS = {
   scheduled: { label: "Planlandı", color: "bg-primary/10 text-foreground border-primary/20" },
   confirmed: { label: "Onaylandı", color: "bg-success/10 text-foreground border-success/20" },
   arrived: { label: "Geldi", color: "bg-primary/10 text-foreground border-primary/20" },
-  converted: { label: "İş Emrine Çevrildi", color: "bg-primary/10 text-foreground border-primary/20" },
+  converted: { label: "Araç Kabulüne Çevrildi", color: "bg-primary/10 text-foreground border-primary/20" },
   completed: { label: "Tamamlandı", color: "bg-success/10 text-foreground border-success/20" },
   cancelled: { label: "İptal", color: "bg-muted text-foreground border-border" },
   no_show: { label: "Gelmedi", color: "bg-destructive/10 text-foreground border-destructive/20" },
@@ -411,7 +411,7 @@ export const COMMUNICATION_TEMPLATE_LABELS = {
   appointment_reminder: "Randevu Hatırlatması",
   intake_approval: "Araç Kabul Onayı",
   quote_ready: "Teklif Hazır",
-  work_order_completed: "İş Emri Tamamlandı",
+  work_order_completed: "Araç Kabul Tamamlandı",
   maintenance_reminder: "Bakım Hatırlatması",
   payment_reminder: "Ödeme Hatırlatması",
   vehicle_passport_share: "Araç Pasaportu Paylaşım",

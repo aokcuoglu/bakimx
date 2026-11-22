@@ -21,7 +21,7 @@ export function TodayDeliveries({ deliveries }: { deliveries: TodayDelivery[] })
         <span className="text-xs text-muted-foreground">{deliveries.length} kayıt</span>
       </div>
       {deliveries.length === 0 ? (
-        <p className="px-4 py-4 text-sm text-muted-foreground">Bugün teslim edilecek iş emri yok.</p>
+        <p className="px-4 py-4 text-sm text-muted-foreground">Bugün teslim edilecek araç kabulü yok.</p>
       ) : (
         <Table className="table-fixed" aria-label="Bugünkü teslimatlar">
           <TableHeader>

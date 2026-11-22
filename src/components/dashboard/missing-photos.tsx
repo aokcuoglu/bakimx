@@ -19,11 +19,11 @@ export function MissingPhotos({ items }: { items: MissingPhotoItem[] }) {
       {items.length === 0 ? (
         <p className="px-4 py-4 text-sm text-muted-foreground">Eksik fotoğraf bulunmuyor.</p>
       ) : (
-        <Table className="table-fixed" aria-label="Fotoğrafı eksik iş emirleri">
+        <Table className="table-fixed" aria-label="Fotoğrafı eksik araç kabulleri">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="h-9 px-4 text-xs">Araç / Müşteri</TableHead>
-              <TableHead className="h-9 w-28 px-4 text-right text-xs">İş emri / Eksik</TableHead>
+              <TableHead className="h-9 w-28 px-4 text-right text-xs">Araç kabulü / Eksik</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
