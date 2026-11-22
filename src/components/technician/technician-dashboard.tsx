@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 import {
   Item,
   ItemActions,
@@ -25,6 +26,9 @@ import {
   ItemTitle,
 } from "@/components/ui/item"
 import { StatusBadge } from "@/components/shared/status-badge"
+import { TechnicianQuickActions } from "@/components/technician/technician-quick-actions"
+// e-santral yazı ölçeği: /dashboard ile aynı başlık/KPI/bölüm sınıfları.
+import { surface } from "@/components/dashboard/surface"
 import { DashboardPagination, useDashboardPage } from "@/components/dashboard/dashboard-pagination"
 import { formatDate } from "@/lib/utils-client"
 
@@ -173,8 +177,8 @@ export function TechnicianDashboard({
     <div className="space-y-5 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Teknisyen Paneli</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <h2 className={surface.heroTitle}>Teknisyen Paneli</h2>
+          <p className={surface.heroSub}>
             {canSelectTechnician
               ? "Seçili teknisyenin iş atamalarını yönetin"
               : "Atölyedeki araç kabullerini görüntüleyin, kendi görevlerinizi yönetin"}
@@ -199,6 +203,11 @@ export function TechnicianDashboard({
         )}
       </div>
 
+      <TechnicianQuickActions />
+
+      {/* Hızlı işlemler (yeni kayıt / sorgu) ile araç kabul filtrelerini ayırır. */}
+      <Separator />
+
       <div
         aria-busy={isPending}
         className={cn(
@@ -221,13 +230,13 @@ export function TechnicianDashboard({
                   activeFilter === card.filter && "bg-primary/5 ring-2 ring-primary/20 ring-primary"
                 )}
               >
-                <span className="flex w-full items-center gap-3 sm:block">
-                  <span className={cn("inline-flex size-8 shrink-0 items-center justify-center rounded-lg sm:mb-2 sm:size-9", card.color)}>
-                    <Icon className="size-4" />
+                <span className="flex w-full min-w-0 items-center gap-3 sm:block">
+                  <span className={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-xl sm:mb-3 sm:size-11", card.color)}>
+                    <Icon className="size-5" />
                   </span>
-                  <span>
-                    <span className="block text-xl font-bold text-foreground sm:text-2xl">{card.value}</span>
-                    <span className="block text-xs text-muted-foreground sm:mt-0.5">{card.label}</span>
+                  <span className="min-w-0">
+                    <span className={surface.statValue}>{card.value}</span>
+                    <span className={surface.statLabel}>{card.label}</span>
                   </span>
                 </span>
               </Button>
@@ -237,15 +246,15 @@ export function TechnicianDashboard({
 
         {visibleSections.map((section) => (
           <section key={section.title} className="space-y-3">
-            <h3 className="font-heading text-base font-medium text-foreground">
-              {section.title}{" "}
-              <span className="text-muted-foreground">
+            <h3 className={surface.panelTitle}>
+              {section.title}
+              <span className={surface.panelMeta}>
                 {section.total !== undefined ? <>({section.total})</> : <>({section.orders.length})</>}
               </span>
             </h3>
             {section.orders.length === 0 ? (
               <Card>
-                <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                <CardContent className="py-8 text-center text-base text-muted-foreground">
                   {section.empty}
                 </CardContent>
               </Card>
@@ -286,7 +295,7 @@ function OrderCard({ order }: { order: OrderRow }) {
       <Link href={`/technician/orders/${order.id}`}>
         <ItemContent>
           <ItemHeader>
-            <span className="font-mono text-sm font-semibold text-foreground">{order.workOrderNo}</span>
+            <span className="font-mono text-sm font-semibold text-muted-foreground">{order.workOrderNo}</span>
             <span className="flex flex-wrap items-center gap-1.5">
               <StatusBadge status={order.status} />
               {order.hasActiveLabor && (
@@ -296,7 +305,7 @@ function OrderCard({ order }: { order: OrderRow }) {
               )}
             </span>
           </ItemHeader>
-          <ItemTitle className="line-clamp-2">
+          <ItemTitle className="line-clamp-2 text-base font-semibold">
             {order.plate} — {order.brand} {order.model}
           </ItemTitle>
           <ItemDescription>
