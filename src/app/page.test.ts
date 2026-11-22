@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { HeroSection } from "@/components/sections/HeroSection";
 
 const sectionsDir = join(import.meta.dir, "..", "components", "sections");
 const heroSource = readFileSync(join(sectionsDir, "HeroSection.tsx"), "utf8");
@@ -24,6 +27,17 @@ describe("landing performance and conversion contracts", () => {
     expect(heroSource).toContain("Her kayıt yerinde");
     expect(heroSource).not.toMatch(/^\s*(priority|preload)(\s*=|\s*$)/m);
     expect(heroSource).not.toContain("setInterval");
+  });
+
+  // #780: the collage lines are stacked spans, so without a separator their
+  // text read as "saniyedeŞaseden" to crawlers and to the section's
+  // aria-labelledby name. The flex column drops whitespace-only text nodes, so
+  // the separator is invisible.
+  test("hero heading text keeps a space between collage lines", () => {
+    const html = renderToStaticMarkup(createElement(HeroSection));
+    const heading = html.match(/<h1[\s\S]*?<\/h1>/)?.[0] ?? "";
+    const text = heading.replace(/<[^>]+>/g, "");
+    expect(text).toBe("İş emri 10 saniyede Şaseden parça listesi Her kayıt yerinde");
   });
 
   test("Lite acquisition preserves hero placement attribution and the demo CTA", () => {

@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SiteAssistant } from "@/components/site-assistant/site-assistant"
 import { announcementDismissScript } from "@/lib/landing/announcement"
-import { SITE_URL, BRAND_NAME, HOME_TITLE, TITLE_TEMPLATE } from "@/lib/seo"
+import { SITE_URL, BRAND_NAME, DEFAULT_OG_IMAGE, HOME_TITLE, TITLE_TEMPLATE, TWITTER_HANDLE } from "@/lib/seo"
 import { MarketingAnalytics } from "@/components/analytics/marketing-analytics"
 import { CookieConsent } from "@/components/cookie-consent/cookie-consent"
 
@@ -50,10 +50,11 @@ export const metadata: Metadata = {
     type: "website",
     locale: "tr_TR",
     siteName: BRAND_NAME,
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "BakımX — Oto Servis Yönetim Platformu" }],
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
+    site: TWITTER_HANDLE,
     title: HOME_TITLE,
     description:
       "Oto tamirciler için mobil araç kabul, hasar kaydı, müşteri onayı ve WhatsApp işlem çıktısı platformu.",
