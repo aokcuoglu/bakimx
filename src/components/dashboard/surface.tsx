@@ -207,11 +207,12 @@ export function formatShortDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })
 }
 
-const accentClass: Record<Exclude<Tone, "neutral">, string> = {
+const accentClass: Record<Tone, string> = {
   info: styles["accent-info"],
   warning: styles["accent-warning"],
   success: styles["accent-success"],
   destructive: styles["accent-destructive"],
+  neutral: styles["accent-neutral"],
 }
 
 /**
@@ -227,16 +228,31 @@ export function DashStat({
   icon,
   accent,
   tone,
+  active = false,
+  size = "default",
 }: {
   label: string
   value: ReactNode
   href: string
   icon: ReactNode
-  accent: Exclude<Tone, "neutral">
+  accent: Tone
   tone?: "warning" | "destructive"
+  /** Kart bir filtre sekmesiyse ve o filtre açıksa (ör. Araç Kabulleri durum kartları). */
+  active?: boolean
+  /** compact → tek satır [ikon] etiket … rakam; liste sayfalarının filtre kartları. */
+  size?: "default" | "compact"
 }) {
   return (
-    <Link href={href} prefetch={false} className={styles.stat}>
+    <Link
+      href={href}
+      prefetch={false}
+      className={styles.stat}
+      data-size={size === "compact" ? "compact" : undefined}
+      data-active={active || undefined}
+      aria-current={active ? "page" : undefined}
+      // Görsel sıra "rakam, etiket"; ekran okuyucu "Aktif: 23" duysun.
+      aria-label={typeof value === "number" || typeof value === "string" ? `${label}: ${value}` : undefined}
+    >
       <span aria-hidden className={cn(styles.statIcon, accentClass[accent])}>{icon}</span>
       <span className={styles.statValue} data-tone={tone}>{value}</span>
       <span className={styles.statLabel}>{label}</span>
@@ -244,10 +260,21 @@ export function DashStat({
   )
 }
 
-export function DashStatGrid({ label, children, count }: { label: string; children: ReactNode; count: number }) {
+export function DashStatGrid({
+  label,
+  children,
+  count,
+  size = "default",
+}: {
+  label: string
+  children: ReactNode
+  count: number
+  /** compact → kompakt kartlar tek sırada; sığmazsa yana kayar (alt alta yığılmaz). */
+  size?: "default" | "compact"
+}) {
   return (
     <div className={styles.stats} aria-label={label}>
-      <div className={styles.statGrid} data-count={count}>{children}</div>
+      <div className={styles.statGrid} data-count={count} data-size={size === "compact" ? "compact" : undefined}>{children}</div>
     </div>
   )
 }
