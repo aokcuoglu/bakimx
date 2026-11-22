@@ -10,7 +10,7 @@ export function WaitingApprovals({ approvals }: { approvals: WaitingApprovalItem
   return (
     <DashPanel title="Onay bekleyenler" meta={approvals.length > 0 ? approvals.length : undefined}>
       {approvals.length === 0 ? (
-        <DashEmpty>Onay bekleyen iş emri yok.</DashEmpty>
+        <DashEmpty>Onay bekleyen araç kabulü yok.</DashEmpty>
       ) : (
         pageItems.map((a) => (
           <DashRow

@@ -359,7 +359,7 @@ export function WorkOrderDetail({
         toast.error(res.error)
         return
       }
-      toast.success("İş emri yeniden açıldı")
+      toast.success("Araç kabulü yeniden açıldı")
       setReopenOpen(false)
       setReopenReason("")
       router.refresh()
@@ -513,7 +513,7 @@ export function WorkOrderDetail({
       const data = await res.json()
       if (data.success) {
         setMetaDraft((draft) => ({ ...draft, taxRate: String(bpsToPercent(STANDARD_TAX_BPS)) }))
-        toast.success(`İş emrine %${bpsToPercent(STANDARD_TAX_BPS)} KDV uygulandı`)
+        toast.success(`Araç kabulüne %${bpsToPercent(STANDARD_TAX_BPS)} KDV uygulandı`)
         router.refresh()
       } else setError(data.error || "KDV oranı uygulanamadı")
     } catch {
@@ -887,7 +887,7 @@ export function WorkOrderDetail({
               {undecidedRequests.length > 2 && `, +${undecidedRequests.length - 2}`}
             </p>
             <p className="text-xs">
-              Her talebi ya kaleme ekleyin ya da iptal edin; karar verilmeden iş emri teslime
+              Her talebi ya kaleme ekleyin ya da iptal edin; karar verilmeden araç kabulü teslime
               hazırlanamaz ve teslim edilemez.
             </p>
             <Button variant="outline" onClick={() => handleTabChange("parca")} className="mt-1">
@@ -901,7 +901,7 @@ export function WorkOrderDetail({
         <div className="rounded-lg border border-border bg-card p-3 space-y-2">
           <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> SMS Teslim Onayı</p>
           {order.paymentStatus !== "paid" && (
-            <p className="text-xs text-warning-strong">Uyarı: Bu iş emrinde ödeme tamamlanmadı ({order.paymentStatus}).</p>
+            <p className="text-xs text-warning-strong">Uyarı: Bu araç kabulünde ödeme tamamlanmadı ({order.paymentStatus}).</p>
           )}
           <p className="text-xs text-muted-foreground">Müşterinin telefonuna SMS ile gönderilen kodu girin. Kod 10 dakika geçerlidir.</p>
           {deliverySentCode && (
@@ -977,9 +977,9 @@ export function WorkOrderDetail({
             <Card>
               <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">İş emri teslim edildi</p>
+                  <p className="text-sm font-medium text-foreground">Araç kabulü teslim edildi</p>
                   <p className="text-xs text-muted-foreground">
-                    Araç geri geldiyse iş emrini yeniden açabilirsiniz. Tahsilat ve müşteri
+                    Araç geri geldiyse araç kabulünü yeniden açabilirsiniz. Tahsilat ve müşteri
                     onayı kayıtları korunur.
                   </p>
                 </div>
@@ -1123,7 +1123,7 @@ export function WorkOrderDetail({
             <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden sm:max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Şikayet ve notları düzenle</DialogTitle>
-                <DialogDescription>İş emri kabul bilgilerini güncelleyin.</DialogDescription>
+                <DialogDescription>Araç kabulü kabul bilgilerini güncelleyin.</DialogDescription>
               </DialogHeader>
               <div className="min-h-0 space-y-4 overflow-y-auto py-4 text-sm">
                 {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
@@ -1618,7 +1618,7 @@ export function WorkOrderDetail({
       <AlertDialog open={reopenOpen} onOpenChange={(o) => { if (!reopening) setReopenOpen(o) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>İş emri yeniden açılsın mı?</AlertDialogTitle>
+            <AlertDialogTitle>Araç kabulü yeniden açılsın mı?</AlertDialogTitle>
             <AlertDialogDescription>
               Durum &quot;Teslime Hazır&quot;a döner. Tahsilat, paylaşım linki ve müşteri onayı
               kayıtlarına dokunulmaz. Gerekçe denetim kaydına yazılır.

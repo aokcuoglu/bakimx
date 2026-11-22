@@ -15,7 +15,7 @@ const EXACT_LABELS: Record<string, string> = {
   appointment_reminder: "Randevu Hatırlatması",
   intake_approval: "Araç Kabul Onayı",
   quote_ready: "Teklif Hazır",
-  work_order_completed: "İş Emri Tamamlandı",
+  work_order_completed: "Araç Kabul Tamamlandı",
   maintenance_reminder: "Bakım Hatırlatması",
   payment_reminder: "Ödeme Hatırlatması",
   vehicle_passport_share: "Araç Pasaportu Paylaşımı",

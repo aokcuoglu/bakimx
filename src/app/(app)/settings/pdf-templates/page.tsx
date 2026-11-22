@@ -22,7 +22,7 @@ export default async function SettingsPdfTemplatesPage() {
     <AppShell wide workshopName={workshop.name} pageTitle="PDF">
       <SettingsPageHeader
         title="PDF"
-        description="İş emri, servis pasaportu ve makbuz şablonlarını yönetin."
+        description="Araç kabulü, servis pasaportu ve makbuz şablonlarını yönetin."
       />
       <PdfTemplatesForm settings={serializedSettings} />
     </AppShell>

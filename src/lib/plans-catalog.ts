@@ -70,7 +70,7 @@ export const PLAN_PACKAGES: PlanPackage[] = [
     tagline: "Temel kayıtlarını dijitale taşıyan servisler için",
     seats: PLAN_SEATS.lite,
     highlights: [
-      "Sınırsız müşteri, araç ve iş emri",
+      "Sınırsız müşteri, araç ve araç kabulü",
       "Manuel araç kabul",
       "Müşteri paylaşım bağlantısı ve WhatsApp",
     ],
@@ -209,17 +209,17 @@ export const PLAN_COMPARISON: readonly PlanComparisonCategory[] = [
       },
       {
         key: "records",
-        label: "Müşteri, araç ve iş emri",
+        label: "Müşteri, araç ve araç kabulü",
         values: { lite: text("Sınırsız"), pro: text("Sınırsız"), premium: text("Sınırsız") },
       },
       {
         key: "work-order-photos",
-        label: "İş emri fotoğrafı",
-        description: "Aktif, silinmemiş fotoğraflar için iş emri başına limit.",
+        label: "Araç kabul fotoğrafı",
+        description: "Aktif, silinmemiş fotoğraflar için araç kabul başına limit.",
         values: Object.fromEntries(
           SALE_PLAN_TIERS.map((tier) => {
             const policy = PLAN_PHOTO_POLICY[tier]
-            return [tier, policy.enabled ? text(`${policy.maxActivePerWorkOrder} aktif/iş emri`) : unavailable()]
+            return [tier, policy.enabled ? text(`${policy.maxActivePerWorkOrder} aktif/araç kabulü`) : unavailable()]
           }),
         ) as Record<SalePlanTier, PlanComparisonValue>,
       },
@@ -230,7 +230,7 @@ export const PLAN_COMPARISON: readonly PlanComparisonCategory[] = [
     label: "Temel kayıtlar",
     rows: [
       coreRow("manual-intake", "Manuel araç kabul"),
-      coreRow("work-orders", "İş emri"),
+      coreRow("work-orders", "Araç kabulü"),
       coreRow("customer-share", "Müşteri paylaşım bağlantısı"),
       coreRow("whatsapp", "WhatsApp paylaşımı"),
     ],

@@ -24,7 +24,7 @@ export function AlertBanner({
 
   if (stats.overdueDeliveries > 0) {
     alerts.push({
-      title: `${stats.overdueDeliveries} iş emrinin teslimi gecikti`,
+      title: `${stats.overdueDeliveries} araç kabulünün teslimi gecikti`,
       sub: "Tahmini teslim tarihi geçti",
       href: "/orders?status=active",
       icon: AlertTriangle,
@@ -44,7 +44,7 @@ export function AlertBanner({
 
   if (showQuotes && stats.waitingApprovals > 0) {
     alerts.push({
-      title: `${stats.waitingApprovals} iş emri müşteri onayı bekliyor`,
+      title: `${stats.waitingApprovals} araç kabulü müşteri onayı bekliyor`,
       sub: "Onay gelince işe başlanabilir",
       href: "/orders?status=waiting_approval",
       icon: MessageCircle,

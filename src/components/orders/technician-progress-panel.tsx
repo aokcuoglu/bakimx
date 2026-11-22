@@ -131,7 +131,7 @@ export function TechnicianProgressPanel({
     <div className="space-y-5">
       {!technicianName && (
         <p className="text-sm text-muted-foreground">
-          Bu iş emrine henüz teknisyen atanmadı. Atama yapıldığında kontrol listesi otomatik oluşur.
+          Bu araç kabulüne henüz teknisyen atanmadı. Atama yapıldığında kontrol listesi otomatik oluşur.
         </p>
       )}
 

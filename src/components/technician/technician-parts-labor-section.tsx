@@ -70,7 +70,7 @@ export function TechnicianPartsLaborSection({
             <Wrench className="size-4 text-muted-foreground" />
             Kullanılan Parçalar &amp; İşçilikler
           </h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">İş emrine eklenen kalemleri buradan düzenleyin.</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Araç kabulüne eklenen kalemleri buradan düzenleyin.</p>
         </div>
         <span className="shrink-0 text-sm font-medium tabular-nums text-muted-foreground">{items.length} kalem</span>
       </div>

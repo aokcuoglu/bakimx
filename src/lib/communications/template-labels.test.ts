@@ -3,7 +3,7 @@ import { communicationTemplateLabel } from "./template-labels"
 
 test("müşteri şablonları Türkçe etikete çevrilir", () => {
   expect(communicationTemplateLabel("appointment_reminder")).toBe("Randevu Hatırlatması")
-  expect(communicationTemplateLabel("work_order_completed")).toBe("İş Emri Tamamlandı")
+  expect(communicationTemplateLabel("work_order_completed")).toBe("Araç Kabul Tamamlandı")
 })
 
 test("hesap e-postaları ham anahtar yerine Türkçe görünür (issue #194)", () => {

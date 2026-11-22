@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       include: { intakeForm: { select: { id: true, status: true, order: { select: { id: true, status: true } } } } },
     })
     if (!photo?.storageKey) return failure("Kaynak fotoğraf bulunamadı.", 404)
-    if (isIntakeWriteLocked(photo.intakeForm.status, photo.intakeForm.order?.status)) return failure("Kapalı iş emrindeki fotoğraf düzenlenemez.", 409)
+    if (isIntakeWriteLocked(photo.intakeForm.status, photo.intakeForm.order?.status)) return failure("Kapalı araç kabulündeki fotoğraf düzenlenemez.", 409)
     const previous = await prisma.photoAnnotationVersion.findUnique({ where: { photoId_requestId: { photoId, requestId } }, select: { version: true } })
     if (previous) return NextResponse.json({ success: true, version: previous.version })
 

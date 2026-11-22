@@ -133,7 +133,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
   const [billingCount, paymentCount, supportCount] = await Promise.all([
     prisma.billingOrder.count({ where: { workshopId: id } }), prisma.paymentTransaction.count({ where: { workshopId: id } }), prisma.supportRequest.count({ where: { workshopId: id } }),
   ])
-  const deleteBlockers = [[customerTotal, "müşteri"], [vehicleTotal, "araç"], [serviceOrderTotal, "iş emri"], [appointmentTotal, "randevu"], [billingCount, "fatura/sipariş"], [paymentCount, "ödeme"], [supportCount, "destek kaydı"]].filter(([count]) => Number(count) > 0).map(([, label]) => label as string)
+  const deleteBlockers = [[customerTotal, "müşteri"], [vehicleTotal, "araç"], [serviceOrderTotal, "araç kabulü"], [appointmentTotal, "randevu"], [billingCount, "fatura/sipariş"], [paymentCount, "ödeme"], [supportCount, "destek kaydı"]].filter(([count]) => Number(count) > 0).map(([, label]) => label as string)
 
   const APPROVAL_BADGE: Record<string, string> = {
     pending: "bg-warning/10 text-warning-strong",
@@ -307,7 +307,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
           <UsageDateFilter key={`usage-${usageRange.from}-${usageRange.to}`} from={usageRange.from} to={usageRange.to} />
           <Field label="Müşteri" value={String(customerCount)} />
           <Field label="Araç" value={String(vehicleCount)} />
-          <Field label="İş emri" value={String(orderCount)} />
+          <Field label="Araç kabulü" value={String(orderCount)} />
           <Field label="Randevu" value={String(appointmentCount)} />
         </Section>
 

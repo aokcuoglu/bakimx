@@ -46,7 +46,7 @@ export function HealthScoreCard({ health }: { health: OperationsHealth }) {
         <div className="min-w-0 flex-1 text-center sm:text-left">
           <h3 className="text-sm font-medium text-foreground">Operasyon Sağlık Skoru</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Geciken iş emirleri, kritik stok ve ödenmemiş iş emirleri baz alınarak hesaplanır.
+            Geciken araç kabulleri, kritik stok ve ödenmemiş araç kabulleri baz alınarak hesaplanır.
           </p>
           <div className={`mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
             health.healthScore >= 80
@@ -86,13 +86,13 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
   return (
     <div className="grid grid-cols-1 min-[390px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
       <MetricCard
-        label="Aktif İş Emri"
+        label="Aktif Araç Kabul"
         value={health.activeJobs}
         icon={Wrench}
         href="/orders"
       />
       <MetricCard
-        label="Geciken İş Emri"
+        label="Geciken Araç Kabul"
         value={health.delayedJobs}
         icon={Clock}
         href="/analytics"
@@ -115,7 +115,7 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         value={health.unpaidWorkOrders}
         icon={Wallet}
         href="/reports/collections"
-        subtitle={health.openReceivables > 0 ? "Ödenmemiş iş emri" : undefined}
+        subtitle={health.openReceivables > 0 ? "Ödenmemiş araç kabulü" : undefined}
       />
     </div>
   )

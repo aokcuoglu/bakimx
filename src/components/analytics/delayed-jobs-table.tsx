@@ -24,8 +24,8 @@ export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
         <div className="inline-flex size-12 items-center justify-center rounded-full bg-success/10 text-success-strong mb-3">
           <Clock className="size-6" />
         </div>
-        <h3 className="text-sm font-medium text-foreground">Geciken İş Emri Yok</h3>
-        <p className="text-sm text-muted-foreground mt-1">Tüm iş emirleri planlanan sürede.</p>
+        <h3 className="text-sm font-medium text-foreground">Geciken Araç Kabul Yok</h3>
+        <p className="text-sm text-muted-foreground mt-1">Tüm araç kabulleri planlanan sürede.</p>
       </div>
     )
   }
@@ -34,15 +34,15 @@ export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
     <div className="min-w-0 rounded-xl border border-border bg-card overflow-hidden">
       <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-foreground">Geciken İş Emirleri</h3>
+          <h3 className="text-sm font-medium text-foreground">Geciken Araç Kabulleri</h3>
           <span className="text-sm text-destructive-strong font-medium">{jobs.length} geciken</span>
         </div>
       </div>
       <div className="min-w-0">
-        <Table aria-label="Geciken İş Emirleri">
+        <Table aria-label="Geciken Araç Kabulleri">
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="px-4 text-xs text-muted-foreground">İş Emri</TableHead>
+              <TableHead className="px-4 text-xs text-muted-foreground">Araç Kabul</TableHead>
               <TableHead className="px-4 text-xs text-muted-foreground">Gecikme</TableHead>
               <TableHead className="px-4 text-xs text-muted-foreground hidden sm:table-cell">Müşteri</TableHead>
               <TableHead className="px-4 text-xs text-muted-foreground hidden md:table-cell">Araç</TableHead>

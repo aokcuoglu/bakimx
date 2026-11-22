@@ -5,7 +5,7 @@ export const KILAVUZ_TITLE = "Kullanım Kılavuzu"
 export const KILAVUZ_H1 = "BakımX kullanım kılavuzu"
 
 export const KILAVUZ_DESCRIPTION =
-  "BakımX’te kurulumdan iş emri teslimine kadar günlük servis akışını adım adım anlatan ürün kullanım kılavuzu: müşteri, araç, fotoğraf, teklif ve teslim."
+  "BakımX’te kurulumdan araç kabulü teslimine kadar günlük servis akışını adım adım anlatan ürün kullanım kılavuzu: müşteri, araç, fotoğraf, teklif ve teslim."
 
 export const KILAVUZ_INTRO =
   "Bu kılavuz, atölyenizde BakımX’i ilk günden verimli kullanmanız için yazıldı. Soldaki içindekilerden istediğiniz bölüme atlayabilir, üstteki arama ile konu bulabilir veya yazdırıp ekibinize dağıtabilirsiniz."
@@ -39,13 +39,13 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
     blocks: [
       {
         type: "p",
-        text: "BakımX, oto servisler için mobil öncelikli bir iş yönetimi platformudur. Araç kabulü, iş emri, fotoğraf ve hasar kaydı, teklif/onay ve teslim çıktısını tek yerde tutar; müşteriye WhatsApp veya link ile özet gönderebilirsiniz.",
+        text: "BakımX, oto servisler için mobil öncelikli bir iş yönetimi platformudur. Araç kabulü, fotoğraf ve hasar kaydı, teklif/onay ve teslim çıktısını tek yerde tutar; müşteriye WhatsApp veya link ile özet gönderebilirsiniz.",
       },
       {
         type: "ul",
         items: [
           "Müşteri ve araç künyesini bir kez kaydedip sonraki işlerde yeniden kullanın",
-          "İş emrini dakikalar içinde açın; parça ve işçilik kalemlerini ekleyin",
+          "Araç kabulünü dakikalar içinde açın; parça ve işçilik kalemlerini ekleyin",
           "Kabul fotoğrafları ve hasar işaretleriyle kanıt bırakın",
           "Teklif ve kamu özet linkiyle müşteri onayını hızlandırın",
         ],
@@ -89,8 +89,8 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
       },
       {
         type: "tip",
-        title: "İlk iş emrine giden yol",
-        text: "Kurulumdan sonra Genel Bakış’ta ürün turu ve “ilk iş emri” kartı sizi yönlendirir. Müşteri ve aracı iş emri ekranından da ekleyebilirsiniz.",
+        title: "İlk araç kabulüne giden yol",
+        text: "Kurulumdan sonra Genel Bakış’ta ürün turu ve “ilk araç kabulü” kartı sizi yönlendirir. Müşteri ve aracı araç kabul ekranından da ekleyebilirsiniz.",
       },
       {
         type: "warning",
@@ -111,11 +111,11 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
         type: "table",
         headers: ["Alan", "Ne işe yarar"],
         rows: [
-          ["Genel Bakış", "Özet KPI’lar, uyarılar, hızlı “Yeni İş Emri”"],
-          ["İş Emirleri", "Açık/kapalı iş listesi ve detay"],
+          ["Genel Bakış", "Özet KPI’lar, uyarılar, hızlı “Yeni Araç Kabul”"],
+          ["Araç Kabulleri", "Açık/kapalı iş listesi ve detay"],
           ["Müşteriler / Araçlar", "Künye ve geçmiş"],
-          ["Oluştur (+)", "İş emri, teklif, randevu vb. hızlı oluşturma"],
-          ["Arama", "Plaka, müşteri veya iş emri numarası"],
+          ["Oluştur (+)", "Araç kabulü, teklif, randevu vb. hızlı oluşturma"],
+          ["Arama", "Plaka, müşteri veya araç kabul numarası"],
         ],
       },
       {
@@ -125,7 +125,7 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
       },
       {
         type: "tip",
-        text: "Mobilde alt menüde Panel, İş Emirleri, Teknisyen ve Müşteriler kısayolları vardır. Oluştur düğmesi üst çubuktadır.",
+        text: "Mobilde alt menüde Panel, Araç Kabulleri, Teknisyen ve Müşteriler kısayolları vardır. Oluştur düğmesi üst çubuktadır.",
       },
     ],
   },
@@ -135,15 +135,15 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
     blocks: [
       {
         type: "p",
-        text: "İş emrinden önce veya iş emri sırasında müşteri ve araç oluşturabilirsiniz. Aynı plaka sonraki işlerde yeniden bulunur; geçmiş kaybolmaz.",
+        text: "Araç kabulünden önce veya araç kabul sırasında müşteri ve araç oluşturabilirsiniz. Aynı plaka sonraki işlerde yeniden bulunur; geçmiş kaybolmaz.",
       },
       {
         type: "ol",
         items: [
-          "Müşteriler › Yeni veya iş emri içinden müşteri ekleyin (ad, telefon)",
+          "Müşteriler › Yeni veya araç kabul içinden müşteri ekleyin (ad, telefon)",
           "Araç eklerken plaka, marka/model ve mümkünse şase bilgisini girin",
           "Varsa ruhsat okuma (paketinize açıksa) ile alanları hızlandırın",
-          "Kaydı kaydedip iş emrine bağlayın",
+          "Kaydı kaydedip araç kabulüne bağlayın",
         ],
       },
       {
@@ -163,16 +163,16 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
   },
   {
     id: "is-emri",
-    title: "İş emri oluşturma",
+    title: "Araç kabulü oluşturma",
     blocks: [
       {
         type: "p",
-        text: "İş emri, servisteki işin omurgasıdır. Müşteri şikâyeti, araç, parça/işçilik kalemleri ve durum buradan yönetilir.",
+        text: "Araç kabulü, servisteki işin omurgasıdır. Müşteri şikâyeti, araç, parça/işçilik kalemleri ve durum buradan yönetilir.",
       },
       {
         type: "ol",
         items: [
-          "Oluştur › İş emri veya İş Emirleri › Yeni",
+          "Oluştur › Araç kabulü veya Araç Kabulleri › Yeni",
           "Müşteri ve aracı seçin veya yerinde oluşturun",
           "Şikâyet / iş açıklamasını yazın",
           "Gerekirse parça ve işçilik satırları ekleyin",
@@ -181,16 +181,16 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
       },
       {
         type: "shot",
-        alt: "Yeni iş emri ekranı",
-        caption: "Yeni iş emri — müşteri, araç ve kalemler tek akışta.",
+        alt: "Yeni araç kabul ekranı",
+        caption: "Yeni araç kabulü — müşteri, araç ve kalemler tek akışta.",
       },
       {
         type: "tip",
-        text: "Lite planda ilk iş emrine giden kısa yol Genel Bakış’taki karttan da açılır.",
+        text: "Lite planda ilk araç kabulüne giden kısa yol Genel Bakış’taki karttan da açılır.",
       },
       {
         type: "links",
-        items: [{ label: "İş emri nasıl hazırlanır? (rehber)", href: "/rehber/oto-servis-is-emri-nasil-hazirlanir" }],
+        items: [{ label: "Araç kabulü nasıl hazırlanır? (rehber)", href: "/rehber/oto-servis-is-emri-nasil-hazirlanir" }],
       },
     ],
   },
@@ -200,14 +200,14 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
     blocks: [
       {
         type: "p",
-        text: "Kabul anındaki görseller ve hasar işaretleri teslimde tartışmayı azaltır. Paketinizde fotoğraf kontrol listesi açıksa iş emri veya kabul akışından kareleri tamamlayın.",
+        text: "Kabul anındaki görseller ve hasar işaretleri teslimde tartışmayı azaltır. Paketinizde fotoğraf kontrol listesi açıksa araç kabulü veya kabul akışından kareleri tamamlayın.",
       },
       {
         type: "ul",
         items: [
           "Zorunlu açılar: ön, arka, yanlar, gösterge (işletme kuralınıza göre)",
           "Hasar haritasında bölge ve tür işaretleyin",
-          "Eksik fotoğraf uyarılarını Genel Bakış veya iş emri detayından takip edin",
+          "Eksik fotoğraf uyarılarını Genel Bakış veya araç kabul detayından takip edin",
         ],
       },
       {
@@ -232,10 +232,10 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
       {
         type: "ol",
         items: [
-          "İş emrinden veya Teklifler › Yeni ile teklif oluşturun",
+          "Araç kabulünden veya Teklifler › Yeni ile teklif oluşturun",
           "Kalemleri ve tutarları gözden geçirin",
           "Müşteriye gönderin / public özeti paylaşın",
-          "Onay veya revizyon durumunu iş emrine yansıtın",
+          "Onay veya revizyon durumunu araç kabulüne yansıtın",
         ],
       },
       {
@@ -251,7 +251,7 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
     blocks: [
       {
         type: "p",
-        text: "İş emri durumunu güncelleyin; teknisyen paneli (ekip özelliği açıksa) sahadaki ustaya sade bir görev listesi sunar. Teslimde kilometre, ödeme ve müşteri bilgilendirmesini tamamlayın.",
+        text: "Araç kabul durumunu güncelleyin; teknisyen paneli (ekip özelliği açıksa) sahadaki ustaya sade bir görev listesi sunar. Teslimde kilometre, ödeme ve müşteri bilgilendirmesini tamamlayın.",
       },
       {
         type: "ul",
@@ -263,8 +263,8 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
       },
       {
         type: "shot",
-        alt: "İş emri detay ve durum",
-        caption: "İş emri detayı — durum, kalemler ve aktivite tek ekranda.",
+        alt: "Araç kabul detay ve durum",
+        caption: "Araç kabul detayı — durum, kalemler ve aktivite tek ekranda.",
       },
       {
         type: "tip",
@@ -309,7 +309,7 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
           ["Menü satırı kilitli / PRO", "Paketler & Kullanım’dan özelliğin planınızda olup olmadığına bakın"],
           ["Kurulum penceresi kapanmıyor", "Tüm adımları tamamlayıp “Kurulumu Tamamla”ya basın"],
           ["Şifre değiştirmeye zorlanıyorum", "Geçici parola politikasıdır; yeni şifreyi kaydedin"],
-          ["İş emri / müşteri bulunamıyor", "Üst aramayı plaka veya telefon ile deneyin"],
+          ["Araç kabulü / müşteri bulunamıyor", "Üst aramayı plaka veya telefon ile deneyin"],
           ["E-posta gelmedi", "Spam klasörü; gerekirse doğrulamayı yeniden gönderin"],
         ],
       },

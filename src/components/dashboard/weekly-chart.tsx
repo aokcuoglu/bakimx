@@ -8,7 +8,7 @@ export function WeeklyChart({ data }: { data: WeeklyOperation[] }) {
   return (
     <DashPanel title="Son 7 gün">
       {!hasData ? (
-        <DashEmpty>Son 7 günde iş emri yok.</DashEmpty>
+        <DashEmpty>Son 7 günde araç kabulü yok.</DashEmpty>
       ) : (
         <div className="flex h-40 items-end gap-2 px-4 pt-4 pb-3 sm:h-48 sm:gap-3">
           {data.map((d) => {

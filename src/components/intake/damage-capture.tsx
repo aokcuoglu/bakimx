@@ -193,7 +193,7 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Hasar kontrolü kaydedilsin mi?</AlertDialogTitle>
-            <AlertDialogDescription>Araçta görünür hasar gözlenmediği iş emrine kaydedilir.</AlertDialogDescription>
+            <AlertDialogDescription>Araçta görünür hasar gözlenmediği araç kabulüne kaydedilir.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={metadataBusy}>Vazgeç</AlertDialogCancel>

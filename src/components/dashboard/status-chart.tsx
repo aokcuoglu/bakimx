@@ -7,7 +7,7 @@ export function StatusChart({ data }: { data: StatusDistribution[] }) {
   return (
     <DashPanel title="Bu ay iş durumları">
       {total === 0 ? (
-        <DashEmpty>Bu ay iş emri yok.</DashEmpty>
+        <DashEmpty>Bu ay araç kabulü yok.</DashEmpty>
       ) : (
         <div className="space-y-3.5 px-4 py-4">
           {data.map((s) => {

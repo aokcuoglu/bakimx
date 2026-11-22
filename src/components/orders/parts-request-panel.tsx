@@ -131,7 +131,7 @@ export function PartsRequestPanel({
           <div className="min-w-0">
             <p className="font-medium">Karar bekleyen parça/işçilik talebi var.</p>
             <p className="text-xs text-muted-foreground">
-              Her talebi ya iş emrine kalem olarak ekleyin ya da iptal edin. Karar verilmeden iş emri
+              Her talebi ya araç kabulüne kalem olarak ekleyin ya da iptal edin. Karar verilmeden araç kabulü
               teslime hazırlanamaz ve teslim edilemez. Dış işçilik talebi kaleme eklendiğinde
               &quot;Dış İşçilik&quot; kalemi olarak açılır; satış fiyatını siz girersiniz.
             </p>
@@ -363,7 +363,7 @@ function EditPartsRequestDialog({
           <DialogTitle>{externalLabor ? "Dış işçilik talebini düzenle" : "Parça talebini düzenle"}</DialogTitle>
           <DialogDescription>
             Talep henüz kaleme eklenmedi; bilgileri düzeltebilirsiniz. Kaleme eklendikten sonra
-            düzeltme iş emri kalemi üzerinden yapılır.
+            düzeltme araç kabul kalemi üzerinden yapılır.
             {externalLabor && " Tedarikçi ve tutar kaleme eklendikten sonra kalem satırında düzenlenir."}
           </DialogDescription>
         </DialogHeader>

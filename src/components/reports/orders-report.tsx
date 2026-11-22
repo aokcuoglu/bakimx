@@ -83,7 +83,7 @@ export function OrdersReport({
     router.push("/reports/orders")
   }
 
-  const csvHeaders = ["İş Emri No", "Müşteri", "Plaka", "Tutar", "Durum", "Tarih"]
+  const csvHeaders = ["Araç Kabul No", "Müşteri", "Plaka", "Tutar", "Durum", "Tarih"]
   const csvRows = expensiveOrders.map((o) => [
     o.workOrderNo || "",
     o.customerName,
@@ -96,14 +96,14 @@ export function OrdersReport({
   return (
     <div className="space-y-5">
       <ReportHeader
-        title="İş Emri Raporu"
-        description="İş emirlerinin durumu, süresi ve tutarına göre analiz"
+        title="Araç Kabul Raporu"
+        description="Araç kabullerinin durumu, süresi ve tutarına göre analiz"
         exportData={{ headers: csvHeaders, rows: csvRows, filename: "is-emri-raporu.csv" }}
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Toplam İş Emri" value={stats.total} accent="blue" />
-        <StatCard label="Açık İş Emri" value={stats.open} accent="amber" />
+        <StatCard label="Toplam Araç Kabul" value={stats.total} accent="blue" />
+        <StatCard label="Açık Araç Kabul" value={stats.open} accent="amber" />
         <StatCard label="Tamamlanan" value={stats.completed} accent="green" />
         <StatCard label="İptal" value={stats.cancelled} accent="red" />
       </div>
@@ -173,15 +173,15 @@ export function OrdersReport({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-        <BarChart data={dailyOrders} label="Günlük İş Emirleri (Son 14 Gün)" valueKey="count" />
-        <BarChart data={monthlyOrders} label="Aylık İş Emirleri" valueKey="count" />
+        <BarChart data={dailyOrders} label="Günlük Araç Kabulleri (Son 14 Gün)" valueKey="count" />
+        <BarChart data={monthlyOrders} label="Aylık Araç Kabulleri" valueKey="count" />
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-foreground mb-3">En Yüksek Tutarlı İş Emirleri</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-3">En Yüksek Tutarlı Araç Kabulleri</h4>
         <ReportTable
           headers={[
-            { key: "workOrderNo", label: "İş Emri No" },
+            { key: "workOrderNo", label: "Araç Kabul No" },
             { key: "customerName", label: "Müşteri" },
             { key: "plate", label: "Plaka" },
             { key: "grandTotal", label: "Tutar" },
@@ -203,10 +203,10 @@ export function OrdersReport({
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-foreground mb-3">En Uzun Süren İş Emirleri</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-3">En Uzun Süren Araç Kabulleri</h4>
         <ReportTable
           headers={[
-            { key: "workOrderNo", label: "İş Emri No" },
+            { key: "workOrderNo", label: "Araç Kabul No" },
             { key: "customerName", label: "Müşteri" },
             { key: "plate", label: "Plaka" },
             { key: "durationDays", label: "Süre (Gün)" },

@@ -102,7 +102,7 @@ test("teknisyen ataması: entityId üzerinden orderId çözülür (orderId sütu
       orderId: "order-1",
       createdAt: "2026-01-02T10:00:00.000Z",
       title: "Usta atandı",
-      description: "34 ABC 123 · İş Emri #42",
+      description: "34 ABC 123 · Araç Kabul #42",
     },
   ])
 })
@@ -209,7 +209,7 @@ test("BAK-140: parça eklenmesi bildirim üretir, işçilik eklenmesi üretmez",
       orderId: "order-1",
       createdAt: "2026-01-02T10:00:00.000Z",
       title: "Fren balatası eklendi",
-      description: "34 ABC 123 · İş Emri #42",
+      description: "34 ABC 123 · Araç Kabul #42",
     },
   ])
 })
@@ -279,7 +279,7 @@ test("buildNotificationDescription plaka ve iş emri numarasını birleştirir",
   mockDb({ orders: [], auditRows: [] })
   const { buildNotificationDescription } = await import("./notifications")
 
-  expect(buildNotificationDescription("34 ABC 123", "42")).toBe("34 ABC 123 · İş Emri #42")
+  expect(buildNotificationDescription("34 ABC 123", "42")).toBe("34 ABC 123 · Araç Kabul #42")
   expect(buildNotificationDescription("34 ABC 123", null)).toBe("34 ABC 123")
   expect(buildNotificationDescription(null, null)).toBeUndefined()
 })

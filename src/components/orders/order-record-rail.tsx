@@ -37,7 +37,7 @@ export function OrderRecordRail({
     <aside className="border-b border-border pb-4 lg:border-b-0 lg:pb-0">
       <p className="mb-1 text-sm font-medium text-foreground">Kayıt detayı</p>
       <div className="divide-y divide-border/70">
-        <Row label="İş emri">
+        <Row label="Araç kabulü">
           <span className="font-medium">{order.workOrderNo}</span>
         </Row>
         <Row label="Durum">

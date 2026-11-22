@@ -337,7 +337,7 @@ function DesktopTable({
               <th className="px-4 py-3 text-left font-semibold">Tip</th>
               <th className="px-4 py-3 text-left font-semibold">Etiket</th>
               <th className="px-4 py-3 text-right font-semibold">Araç</th>
-              <th className="px-4 py-3 text-right font-semibold">İş Emri</th>
+              <th className="px-4 py-3 text-right font-semibold">Araç Kabul</th>
               <th className="px-4 py-3 text-right font-semibold">Toplam İşlem</th>
               <th className="px-4 py-3 text-left font-semibold">Kayıt Tarihi</th>
               <th className="px-4 py-3 text-right font-semibold sticky right-0 border-l border-border bg-muted">İşlem</th>
@@ -476,7 +476,7 @@ function MobileCards({ rows }: { rows: CustomerRow[]; onDelete?: (id: string, la
               </p>
             </div>
             <div className="rounded-lg bg-muted px-2 py-1.5">
-              <p className="text-muted-foreground">İş Emri</p>
+              <p className="text-muted-foreground">Araç Kabul</p>
               <p className="text-sm font-semibold text-foreground tabular-nums">
                 {row.workOrdersCount}
               </p>

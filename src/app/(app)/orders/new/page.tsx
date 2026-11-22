@@ -5,7 +5,7 @@ import { IntakeWizard } from "@/components/intake/intake-wizard"
 import Link from "next/link"
 import { getPlanState } from "@/lib/plan"
 
-export const metadata = { title: "Yeni İş Emri" }
+export const metadata = { title: "Yeni Araç Kabul" }
 
 export default async function NewOrderPage({
   searchParams,
@@ -21,15 +21,15 @@ export default async function NewOrderPage({
   })
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Yeni İş Emri">
+    <AppShell workshopName={workshop?.name} pageTitle="Yeni Araç Kabul">
       <div className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
         <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/orders" className="hover:text-foreground">İş Emirleri</Link>
+          <Link href="/orders" className="hover:text-foreground">Araç Kabulleri</Link>
           <span className="mx-2">/</span>
           <span className="text-foreground font-medium">Yeni</span>
         </div>
         <div>
-          <h2 className="text-page-title text-foreground">Yeni İş Emri</h2>
+          <h2 className="text-page-title text-foreground">Yeni Araç Kabul</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Adım adım araç kabul formu oluşturun</p>
         </div>
         <IntakeWizard

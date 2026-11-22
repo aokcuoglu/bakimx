@@ -17,7 +17,7 @@ import { ORDER_ITEM_PERMISSION } from "@/lib/technician/item-editing"
 import { technicianOrderDetailWhere } from "@/lib/technician/order-visibility"
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 
-export const metadata = { title: "Teknisyen İş Emri" }
+export const metadata = { title: "Teknisyen Araç Kabul" }
 
 export const dynamic = "force-dynamic"
 

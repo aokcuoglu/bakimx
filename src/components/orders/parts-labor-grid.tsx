@@ -329,7 +329,7 @@ export function PartsLaborEditor({
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{addingType === "iscilik" ? "İşçilik ekle" : "Parça ekle"}</DialogTitle>
-            <DialogDescription>Yeni kalem iş emrine Ekle seçilince kaydedilir.</DialogDescription>
+            <DialogDescription>Yeni kalem araç kabulüne Ekle seçilince kaydedilir.</DialogDescription>
           </DialogHeader>
           {addingType === "parca" && <UnifiedPartComposer vehicle={vehicle} onAdd={async (draft) => {
             const added = await onAdd(draft)
@@ -449,7 +449,7 @@ export function PartsLaborEditor({
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Kalemi düzenle</DialogTitle>
-            <DialogDescription>Değişiklikler Kaydet seçilince iş emrine uygulanır.</DialogDescription>
+            <DialogDescription>Değişiklikler Kaydet seçilince araç kabulüne uygulanır.</DialogDescription>
           </DialogHeader>
           {editingRow && (
             <VatContext.Provider value={{ ...vat, ensureDocumentTax: () => {} }}>
@@ -1468,7 +1468,7 @@ type RowEditor = ReturnType<typeof useRowEditor>
  * miktar/fiyat/toplam hücrelerini dikeyde kaydırıyor, tablo tırtıklı okunuyordu.
  * Tam ad `title`'da (hover ipucu) ve mobil kartta sarılı hâliyle görünür.
  */
-function PartIdentity({ row, oneLine, hint = "İş emri kilitli — parça tanımı değiştirilemez" }: { row: Row; oneLine?: boolean; hint?: string }) {
+function PartIdentity({ row, oneLine, hint = "Araç kabulü kilitli — parça tanımı değiştirilemez" }: { row: Row; oneLine?: boolean; hint?: string }) {
   // Kırpılan adda `title` ÖNCE tam adı vermeli: kullanıcı hover'da okumak
   // istediği şey kilit gerekçesi değil, görünmeyen ad.
   const title = oneLine ? `${row.name} — ${hint}` : hint
@@ -1516,7 +1516,7 @@ function PartNameField({ row, onCell, oneLine }: { row: Row; onCell: OnCell; one
   }
 
   const hint =
-    "Yalnız bu iş emri ve çıktılarda görünür; katalog / stok tanımı değişmez"
+    "Yalnız bu araç kabulü ve çıktılarda görünür; katalog / stok tanımı değişmez"
 
   return (
     <div
@@ -2192,7 +2192,7 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail, onEdit,
             <AlertDialogTitle>Kalem silinsin mi?</AlertDialogTitle>
             <AlertDialogDescription>
               <span className="font-medium text-foreground">{row.name || "Adsız kalem"}</span>
-              {" "}iş emrinden kaldırılacak ve toplamlardan düşecek. Bu işlem geri alınamaz.
+              {" "}araç kabulünden kaldırılacak ve toplamlardan düşecek. Bu işlem geri alınamaz.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

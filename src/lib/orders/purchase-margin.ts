@@ -103,5 +103,5 @@ export function purchaseMarginNoticeMessage(items: readonly PurchaseCostItem[]):
   if (flagged.length === 0) return null
   const below = flagged.filter((i) => purchaseMarginState(i) === "below-cost").length
   const suffix = below > 0 ? ` (${below} kalem alış fiyatının ALTINDA)` : ""
-  return `${flagged.length} kalemin satış fiyatı alış fiyatını geçmiyor${suffix} — iş emrini kapatmadan önce kâr marjını girin.`
+  return `${flagged.length} kalemin satış fiyatı alış fiyatını geçmiyor${suffix} — araç kabulünü kapatmadan önce kâr marjını girin.`
 }

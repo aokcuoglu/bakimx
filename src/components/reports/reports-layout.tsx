@@ -14,7 +14,7 @@ import {
 } from "lucide-react"
 
 const REPORT_NAV = [
-  { href: "/reports/orders", label: "İş Emirleri", icon: Wrench },
+  { href: "/reports/orders", label: "Araç Kabulleri", icon: Wrench },
   { href: "/reports/customers", label: "Müşteriler", icon: Users },
   { href: "/reports/collections", label: "Tahsilatlar", icon: Wallet },
   { href: "/reports/parts", label: "Parçalar", icon: Boxes },

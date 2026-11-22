@@ -216,7 +216,7 @@ export function GlobalSearch({
             aria-expanded={open}
             aria-controls="global-search-results"
             aria-activedescendant={selectedIndex >= 0 ? `global-search-option-${selectedIndex}` : undefined}
-            placeholder={scope === "records" ? "Müşteri, araç veya iş emri ara..." : "Sayfaları, işlemleri ve kayıtları ara..."}
+            placeholder={scope === "records" ? "Müşteri, araç veya araç kabulü ara..." : "Sayfaları, işlemleri ve kayıtları ara..."}
             value={query}
             onChange={(event) => changeQuery(event.target.value)}
             onKeyDown={handleInputKeyDown}
@@ -263,7 +263,7 @@ export function GlobalSearch({
             </div>
           ))}
           {q.length >= 2 && loading ? <p className="px-2 py-3 text-sm text-muted-foreground">Kayıtlar aranıyor…</p> : null}
-          {scope === "records" && !q ? <p className="px-2 py-8 text-center text-sm text-muted-foreground">Müşteri, araç veya iş emri arayın.</p> : null}
+          {scope === "records" && !q ? <p className="px-2 py-8 text-center text-sm text-muted-foreground">Müşteri, araç veya araç kabulü arayın.</p> : null}
           {q && !loading && allItems.length === 0 ? <p className="px-2 py-8 text-center text-sm text-muted-foreground">Sonuç bulunamadı.</p> : null}
         </div>
 

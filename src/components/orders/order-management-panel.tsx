@@ -328,7 +328,7 @@ export function PricingSummaryCard({
         <div className="pt-3 border-t">
           {locked ? (
             <p className="text-xs text-muted-foreground text-center">
-              Teslim edilmiş veya iptal edilmiş iş emrinde fiyatlandırma düzenlenemez
+              Teslim edilmiş veya iptal edilmiş araç kabulünde fiyatlandırma düzenlenemez
             </p>
           ) : totals.discountAmount === 0 && totals.taxAmount === 0 ? (
             <Button
@@ -356,7 +356,7 @@ export function PricingSummaryCard({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>İndirim ve KDV düzenle</DialogTitle>
-          <DialogDescription>İş emrinin toplamına uygulanacak indirim ve KDV oranını girin.</DialogDescription>
+          <DialogDescription>Araç kabulünün toplamına uygulanacak indirim ve KDV oranını girin.</DialogDescription>
         </DialogHeader>
         {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
         <div className="space-y-3">

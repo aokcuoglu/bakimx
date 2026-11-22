@@ -1,7 +1,7 @@
 export const CREATE_OPTIONS = [
   {
     id: "order",
-    title: "İş Emri",
+    title: "Araç Kabul",
     description: "Araç kabulünü başlat ve yapılacak işleri kaydet.",
     href: "/orders/new",
   },

@@ -30,13 +30,13 @@ export function RevenueAnalyticsSection({ analytics }: { analytics: RevenueAnaly
           subtitle={`${analytics.completedOrders} tamamlanan sipariş`}
         />
         <StatCard
-          label="Ort. İş Emri Tutarı"
+          label="Ort. Araç Kabul Tutarı"
           value={analytics.averageTicketSize > 0 ? formatTRY(analytics.averageTicketSize) : "—"}
           icon={BarChart3}
           subtitle="Tamamlanan siparişler"
         />
         <StatCard
-          label="İş Emri Başı Gelir"
+          label="Araç Kabul Başı Gelir"
           value={analytics.revenuePerWorkOrder > 0 ? formatTRY(analytics.revenuePerWorkOrder) : "—"}
           icon={TrendingUp}
           subtitle={`${analytics.totalOrders} toplam sipariş`}

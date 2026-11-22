@@ -18,7 +18,7 @@ import { quantityToNumber } from "@/lib/orders/quantity"
 import { procurementShippingKurus } from "@/lib/external-procurement/presentation"
 import { GATED_FEATURES, getPlanState, hasFeature } from "@/lib/plan"
 
-export const metadata = { title: "İş Emri Detayı" }
+export const metadata = { title: "Araç Kabul Detayı" }
 
 export default async function OrderDetailPage({
   params,
@@ -372,7 +372,7 @@ export default async function OrderDetailPage({
   return (
     <AppShell
       workshopName={workshop?.name}
-      pageTitle={`İş Emri ${safeOrder.workOrderNo}`}
+      pageTitle={`Araç Kabul ${safeOrder.workOrderNo}`}
     >
       <WorkOrderDetail
         intake={intakeProp}

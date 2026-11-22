@@ -254,7 +254,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             <Button variant="secondary" size="compact" asChild>
               <Link href={`/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}>
                 <Wrench className="size-3.5" />
-                İş Emri Oluştur
+                Araç Kabul Oluştur
               </Link>
             </Button>
           </div>
@@ -463,7 +463,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               <Link href={`/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}>
                 <Button variant="outline" className="w-full gap-2">
                   <Wrench className="size-4" />
-                  İş Emri Oluştur
+                  Araç Kabul Oluştur
                 </Button>
               </Link>
             ) : null}

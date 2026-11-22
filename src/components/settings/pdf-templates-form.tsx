@@ -25,7 +25,7 @@ type SettingsData = {
   collectionReceiptTemplate: string | null
 }
 
-const DEFAULT_WORK_ORDER = `İş Emri #{{workOrderNo}}
+const DEFAULT_WORK_ORDER = `Araç Kabul #{{workOrderNo}}
 İş Yeri: {{workshopName}}
 Müşteri: {{customerName}}
 Araç: {{vehiclePlate}} - {{vehicleBrand}} {{vehicleModel}}
@@ -59,7 +59,7 @@ Tarih: {{date}}
 ---
 Tutar: {{amount}} TL
 Ödeme Yöntemi: {{paymentMethod}}
-İş Emri: {{workOrderNo}}
+Araç Kabul: {{workOrderNo}}
 ---
 {{workshopName}} - {{workshopPhone}}`
 
@@ -118,8 +118,8 @@ export function PdfTemplatesForm({ settings }: { settings: SettingsData }) {
 
         <Card>
           <CardHeader>
-            <CardTitle>İş Emri Şablonu</CardTitle>
-            <CardDescription>İş emri PDF çıktısında kullanılacak şablonu özelleştirin</CardDescription>
+            <CardTitle>Araç Kabul Şablonu</CardTitle>
+            <CardDescription>Araç kabul PDF çıktısında kullanılacak şablonu özelleştirin</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -128,7 +128,7 @@ export function PdfTemplatesForm({ settings }: { settings: SettingsData }) {
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center justify-between">
-                    <FormLabel>İş Emri Şablon İçeriği</FormLabel>
+                    <FormLabel>Araç Kabul Şablon İçeriği</FormLabel>
                     <Button
                       type="button"
                       variant="ghost"
@@ -144,7 +144,7 @@ export function PdfTemplatesForm({ settings }: { settings: SettingsData }) {
                       {...field}
                       rows={10}
                       className="font-mono text-xs"
-                      placeholder="İş emri PDF şablonunu buraya yazın..."
+                      placeholder="Araç kabul PDF şablonunu buraya yazın..."
                     />
                   </FormControl>
                   <FormMessage />

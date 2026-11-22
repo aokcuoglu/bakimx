@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       const methodLabels: Record<string, string> = { cash: "Nakit", credit_card: "Kredi Kartı", bank_transfer: "Havale/EFT", other: "Diğer" }
       const statusLabels: Record<string, string> = { completed: "Tamamlandı", cancelled: "İptal", refunded: "İade" }
 
-      const headers = ["Tarih", "Müşteri", "Telefon", "İş Emri", "Tutar", "Yöntem", "Durum", "Referans No", "Not"]
+      const headers = ["Tarih", "Müşteri", "Telefon", "Araç Kabul", "Tutar", "Yöntem", "Durum", "Referans No", "Not"]
       const csvRows = rows.map((r) => [
         r.paymentDate.slice(0, 10),
         nameFor(r.customer),
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
 
       const statusLabels: Record<string, string> = { unpaid: "Ödenmedi", partial: "Kısmi ödeme", paid: "Ödendi", overpaid: "Fazla Ödeme", cancelled: "İptal" }
 
-      const headers = ["İş Emri No", "Müşteri", "Telefon", "Araç", "Toplam", "Ödenen", "Kalan", "Ödeme Durumu", "Oluşturma Tarihi"]
+      const headers = ["Araç Kabul No", "Müşteri", "Telefon", "Araç", "Toplam", "Ödenen", "Kalan", "Ödeme Durumu", "Oluşturma Tarihi"]
       const csvRows = receivables.map((r) => [
         r.workOrderNo || "",
         nameFor(r.customer),

@@ -37,7 +37,7 @@ export function TechnicianStatusWidget({
               href="/orders?technician=none"
               start={<DashTile tone="warning"><AlertTriangle /></DashTile>}
               title="Atanmamış iş"
-              sub="Usta bekleyen aktif iş emirleri"
+              sub="Usta bekleyen aktif araç kabulleri"
               end={<DashPill tone="warning">{unassignedCount}</DashPill>}
             />
           )}

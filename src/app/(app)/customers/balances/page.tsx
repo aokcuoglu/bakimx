@@ -251,7 +251,7 @@ function DesktopBalanceTable({ rows }: { rows: Array<{ id: string; type: string;
             <tr>
               <th className="px-4 py-3 text-left font-semibold">Müşteri</th>
               <th className="px-4 py-3 text-left font-semibold">Telefon</th>
-              <th className="px-4 py-3 text-right font-semibold">İş Emri</th>
+              <th className="px-4 py-3 text-right font-semibold">Araç Kabul</th>
               <th className="px-4 py-3 text-right font-semibold">Toplam</th>
               <th className="px-4 py-3 text-right font-semibold">Tahsil Edilen</th>
               <th className="px-4 py-3 text-right font-semibold">Kalan Bakiye</th>
@@ -327,7 +327,7 @@ function MobileBalanceCards({ rows }: { rows: Array<{ id: string; type: string; 
             <ChevronRight className="size-4 text-muted-foreground shrink-0 mt-1" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-            <MiniStat label="İş Emri" value={row.ordersCount.toString()} />
+            <MiniStat label="Araç Kabul" value={row.ordersCount.toString()} />
             <MiniStat label="Toplam" value={row.grandTotal > 0 ? formatTRY(row.grandTotal) : "—"} />
             <MiniStat label="Tahsilat" value={row.paidAmount > 0 ? formatTRY(row.paidAmount) : "—"} tone="emerald" />
             <MiniStat

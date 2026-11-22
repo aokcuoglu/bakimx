@@ -48,8 +48,8 @@ test("karşılaştırma limitleri merkezi koltuk, sorgu ve fotoğraf sözleşmel
   ])
   expect(PLAN_PHOTO_POLICY.lite).toEqual({ enabled: false, maxActivePerWorkOrder: 0 })
   expect(photos.values.lite.label).toBe("Yok")
-  expect(photos.values.pro.label).toBe("30 aktif/iş emri")
-  expect(photos.values.premium.label).toBe("30 aktif/iş emri")
+  expect(photos.values.pro.label).toBe("30 aktif/araç kabulü")
+  expect(photos.values.premium.label).toBe("30 aktif/araç kabulü")
 })
 
 test("fotoğraf açıklama değerleri gerçek yükleme sözleşmesinden türetilir", () => {

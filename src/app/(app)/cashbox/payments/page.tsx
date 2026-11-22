@@ -129,7 +129,7 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
               <Input
                 name="q"
                 defaultValue={q}
-                placeholder="Müşteri, telefon, iş emri no, referans ara…"
+                placeholder="Müşteri, telefon, araç kabul no, referans ara…"
                 className="pl-10"
               />
             </div>
@@ -199,7 +199,7 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
                     <tr>
                       <th className="px-4 py-3 text-left font-semibold">Tarih</th>
                       <th className="px-4 py-3 text-left font-semibold">Müşteri</th>
-                      <th className="px-4 py-3 text-left font-semibold">İş Emri</th>
+                      <th className="px-4 py-3 text-left font-semibold">Araç Kabul</th>
                       <th className="px-4 py-3 text-right font-semibold">Tutar</th>
                       <th className="px-4 py-3 text-left font-semibold">Yöntem</th>
                       <th className="px-4 py-3 text-left font-semibold">Referans</th>

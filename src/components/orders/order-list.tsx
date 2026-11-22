@@ -399,7 +399,7 @@ export function OrderList({
 
   return (
     <div ref={rootRef} className="space-y-4" onChange={onChange} onSubmit={onSubmit} onClickCapture={onClick}>
-      <div aria-label="İş emri durum özeti" className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-card p-1 sm:grid-cols-5">
+      <div aria-label="Araç kabul durum özeti" className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-card p-1 sm:grid-cols-5">
         {kpiConfigs.map((cfg) => {
           const isActive = activeStatus === cfg.filterValue
           const parts = isActive ? keptFilters : [`status=${cfg.filterValue}`, ...keptFilters]
@@ -423,14 +423,14 @@ export function OrderList({
             {toolbar}
           </div>
         )}
-        <div className="relative" aria-label="İş emri sonuçları" aria-busy={isPending}>
+        <div className="relative" aria-label="Araç kabul sonuçları" aria-busy={isPending}>
         {isPending && (
           <div className="absolute inset-0 z-30 flex min-h-32 items-start justify-center bg-card/90">
-            <BrandSpinner size={32} label="İş emirleri yükleniyor…" className="sticky top-0 py-8" />
+            <BrandSpinner size={32} label="Araç kabulleri yükleniyor…" className="sticky top-0 py-8" />
           </div>
         )}
         <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2 sm:px-4">
-          <p className="text-xs text-muted-foreground" aria-live="polite">{visibleOrders.length} iş emri</p>
+          <p className="text-xs text-muted-foreground" aria-live="polite">{visibleOrders.length} araç kabulü</p>
           <div className="flex items-center gap-2">
             {view && (
               <Button type="button" variant="ghost" size="sm" onClick={() => {
@@ -514,7 +514,7 @@ export function OrderList({
               ) : (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                    Bu filtrelere uyan iş emri yok
+                    Bu filtrelere uyan araç kabulü yok
                   </TableCell>
                 </TableRow>
               )}

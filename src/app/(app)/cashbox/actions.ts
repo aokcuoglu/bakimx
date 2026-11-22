@@ -60,10 +60,10 @@ export async function createCollectionAction(formData: FormData) {
     const order = await prisma.serviceOrder.findFirst({
       where: { id: data.serviceOrderId, workshopId: user.workshopId },
     })
-    if (!order) return { error: "İş emri bulunamadı" }
-    if (order.status === "cancelled") return { error: "İptal edilmiş iş emrine tahsilat eklenemez" }
+    if (!order) return { error: "Araç kabulü bulunamadı" }
+    if (order.status === "cancelled") return { error: "İptal edilmiş araç kabulüne tahsilat eklenemez" }
     if (isCollectionLockedForOrder(order.status, order.paymentStatus)) {
-      return { error: "Bu iş emri teslim edildi ve tamamen ödendi; yeni tahsilat eklenemez" }
+      return { error: "Bu araç kabulü teslim edildi ve tamamen ödendi; yeni tahsilat eklenemez" }
     }
   }
 

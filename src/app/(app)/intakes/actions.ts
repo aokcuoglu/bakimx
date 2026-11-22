@@ -104,7 +104,7 @@ export async function createIntakeAction(formData: FormData) {
     workshopId: user.workshopId,
     intakeFormId: intake.id,
     eventType: "work_order_created",
-    description: "İş emri oluşturuldu",
+    description: "Araç kabulü oluşturuldu",
   })
 
   revalidatePath("/orders")
@@ -182,7 +182,7 @@ export async function updateIntakeDetailsAction(
   })
   if (!intake) return { error: "Kabul formu bulunamadı" }
   if (isIntakeWriteLocked(intake.status, intake.order?.status)) {
-    return { error: "Teslim edilmiş veya iptal edilmiş iş emrinde bilgiler düzenlenemez" }
+    return { error: "Teslim edilmiş veya iptal edilmiş araç kabulünde bilgiler düzenlenemez" }
   }
 
   const newComplaint = parsed.data.customerComplaint
@@ -278,7 +278,7 @@ export async function updateIntakeDetailsAction(
     workshopId: user.workshopId,
     intakeFormId,
     eventType: "intake_details_edited",
-    description: `İş emri bilgileri düzenlendi (${changes.join(", ")})`,
+    description: `Araç kabul bilgileri düzenlendi (${changes.join(", ")})`,
   })
 
   // Not: sunucu tarafı revalidate gerekmiyor — çağıran (work-order-detail.tsx)
@@ -305,7 +305,7 @@ export async function addDamageMarkAction(input: unknown) {
       await lockDamageIntake(tx, parsed.data.intakeFormId, user.workshopId)
       const intake = await tx.vehicleIntakeForm.findFirst({ where: { id: parsed.data.intakeFormId, workshopId: user.workshopId }, include: { order: { select: { id: true, status: true } } } })
       if (!intake) return { error: "Kabul formu bulunamadı" }
-      if (isIntakeWriteLocked(intake.status, intake.order?.status)) return { error: "Kapalı iş emrine hasar eklenemez" }
+      if (isIntakeWriteLocked(intake.status, intake.order?.status)) return { error: "Kapalı araç kabulüne hasar eklenemez" }
       if (parsed.data.requestId) {
         const existing = await tx.damageMark.findFirst({ where: { intakeFormId: intake.id, requestId: parsed.data.requestId }, include: DAMAGE_PHOTOS })
         if (existing) return existing.deletedAt ? { error: "Bu istek ile oluşturulan kayıt kaldırılmış" } : { success: true, mark: damageDto(existing) }
@@ -328,7 +328,7 @@ export async function updateDamageMarkAction(input: unknown) {
       await lockDamageIntake(tx, parsed.data.intakeFormId, user.workshopId)
       const mark = await tx.damageMark.findFirst({ where: { id: parsed.data.id, intakeFormId: parsed.data.intakeFormId, workshopId: user.workshopId, deletedAt: null }, include: { intakeForm: { include: { order: { select: { id: true, status: true } } } } } })
       if (!mark) return { error: "Hasar kaydı bulunamadı" }
-      if (isIntakeWriteLocked(mark.intakeForm.status, mark.intakeForm.order?.status)) return { error: "Kapalı iş emri düzenlenemez" }
+      if (isIntakeWriteLocked(mark.intakeForm.status, mark.intakeForm.order?.status)) return { error: "Kapalı araç kabulü düzenlenemez" }
       const photoIds = parsed.data.photoIds === undefined ? undefined : await validateDamagePhotos(tx, parsed.data.photoIds, mark.intakeFormId, user.workshopId)
       const updated = await tx.damageMark.update({ where: { id: mark.id }, data: { zone: parsed.data.zone, damageType: parsed.data.damageType, severity: parsed.data.severity, note: parsed.data.note || null, ...(photoIds ? { photos: { deleteMany: {}, create: photoIds.map(photoId => ({ photoId })) } } : {}) }, include: DAMAGE_PHOTOS })
       await tx.auditLog.create({ data: { workshopId: user.workshopId, actorUserId: user.id, entityType: "DamageMark", entityId: mark.id, action: "damage_mark_edited", metadataJson: JSON.stringify(parsed.data), orderId: mark.intakeForm.order?.id } })
@@ -345,7 +345,7 @@ export async function updateDamageInspectionAction(input: unknown) {
     await lockDamageIntake(tx, parsed.data.intakeFormId, user.workshopId)
     const intake = await tx.vehicleIntakeForm.findFirst({ where: { id: parsed.data.intakeFormId, workshopId: user.workshopId }, include: { order: { select: { id: true, status: true } } } })
     if (!intake) return { error: "Kabul formu bulunamadı" }
-    if (isIntakeWriteLocked(intake.status, intake.order?.status)) return { error: "Kapalı iş emri düzenlenemez" }
+    if (isIntakeWriteLocked(intake.status, intake.order?.status)) return { error: "Kapalı araç kabulü düzenlenemez" }
     if (parsed.data.inspectionStatus === "no_visible_damage" && await tx.damageMark.count({ where: { intakeFormId: intake.id, deletedAt: null } })) return { error: "Hasar kaydı varken hasarsızlık kaydedilemez" }
     await tx.vehicleIntakeForm.update({ where: { id: intake.id }, data: { bodyType: parsed.data.bodyType, ...(parsed.data.inspectionStatus ? { inspectionStatus: parsed.data.inspectionStatus, inspectedAt: parsed.data.inspectionStatus === "no_visible_damage" ? new Date() : null, inspectedById: parsed.data.inspectionStatus === "no_visible_damage" ? user.id : null } : {}) } })
     await tx.auditLog.create({ data: { workshopId: user.workshopId, actorUserId: user.id, entityType: "VehicleIntakeForm", entityId: intake.id, action: "damage_inspection_edited", metadataJson: JSON.stringify(parsed.data), orderId: intake.order?.id } })
@@ -361,7 +361,7 @@ export async function removeDamageMarkAction(id: string) {
     await lockDamageIntake(tx, found.intakeFormId, user.workshopId)
     const mark = await tx.damageMark.findFirst({ where: { id, workshopId: user.workshopId }, include: { intakeForm: { include: { order: { select: { id: true, status: true } } } } } })
     if (!mark) return { error: "Hasar kaydı bulunamadı" }
-    if (isIntakeWriteLocked(mark.intakeForm.status, mark.intakeForm.order?.status)) return { error: "Kapalı iş emrindeki hasar kaldırılamaz" }
+    if (isIntakeWriteLocked(mark.intakeForm.status, mark.intakeForm.order?.status)) return { error: "Kapalı araç kabulündeki hasar kaldırılamaz" }
     if (mark.deletedAt) return { success: true }
     await tx.damageMark.update({ where: { id: mark.id }, data: { deletedAt: new Date(), deletedById: user.id } })
     await tx.auditLog.create({ data: { workshopId: user.workshopId, actorUserId: user.id, entityType: "DamageMark", entityId: mark.id, action: "damage_mark_removed", orderId: mark.intakeForm.order?.id } })
@@ -396,7 +396,7 @@ export async function addPhotoAction(formData: FormData) {
   })
   if (!intake) return { error: "Kabul formu bulunamadı" }
   if (isIntakeWriteLocked(intake.status, intake.order?.status)) {
-    return { error: "Teslim edilmiş veya iptal edilmiş iş emrine fotoğraf eklenemez" }
+    return { error: "Teslim edilmiş veya iptal edilmiş araç kabulüne fotoğraf eklenemez" }
   }
 
   if (requestId) {
@@ -442,7 +442,7 @@ export async function addPhotoAction(formData: FormData) {
   const photo = await prisma.$transaction(async tx => {
     await lockDamageIntake(tx, intakeFormId, user.workshopId)
     const current = await tx.vehicleIntakeForm.findFirst({ where: { id: intakeFormId, workshopId: user.workshopId }, include: { order: { select: { status: true } } } })
-    if (!current || isIntakeWriteLocked(current.status, current.order?.status)) throw new Error("Kapalı iş emrine fotoğraf eklenemez")
+    if (!current || isIntakeWriteLocked(current.status, current.order?.status)) throw new Error("Kapalı araç kabulüne fotoğraf eklenemez")
     if (requestId) {
       const existing = await tx.vehiclePhoto.findFirst({ where: { intakeFormId, requestId } })
       if (existing) { if (existing.deletedAt) throw new Error("Fotoğraf kaldırılmış"); return existing }
@@ -529,7 +529,7 @@ export async function removePhotoAction(photoId: string) {
   }
 
   if (isIntakeWriteLocked(photo.intakeForm.status, photo.intakeForm.order?.status)) {
-    return { error: "Teslim edilmiş veya iptal edilmiş iş emrinin fotoğrafı silinemez" }
+    return { error: "Teslim edilmiş veya iptal edilmiş araç kabulünün fotoğrafı silinemez" }
   }
 
   await prisma.vehiclePhoto.update({

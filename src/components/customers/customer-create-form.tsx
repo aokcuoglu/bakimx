@@ -624,7 +624,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                           className="max-w-[10rem]"
                         />
                       </FormControl>
-                      <p className="text-[11px] text-muted-foreground mt-1">0–100 arası. İş emri kalemlerine uygulanır.</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">0–100 arası. Araç kabul kalemlerine uygulanır.</p>
                       <FormMessage />
                     </FormItem>
                   )}

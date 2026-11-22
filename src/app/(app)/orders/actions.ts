@@ -62,7 +62,7 @@ export async function createServiceOrderAction(intakeFormId: string) {
     workshopId: user.workshopId,
     intakeFormId,
     eventType: "work_order_created",
-    description: "İş emri oluşturuldu",
+    description: "Araç kabulü oluşturuldu",
   })
 
   revalidatePath(`/orders/${order.id}`)
@@ -71,7 +71,7 @@ export async function createServiceOrderAction(intakeFormId: string) {
 }
 
 /** İş emri iptalinde açık parça taleplerine yazılan gerekçe. */
-const ORDER_CANCELLED_REQUEST_REASON = "İş emri iptal edildi"
+const ORDER_CANCELLED_REQUEST_REASON = "Araç kabulü iptal edildi"
 
 const orderItemCreateSchema = serviceOrderItemSchema.extend({
   sku: z.string().optional(),
@@ -161,7 +161,7 @@ export async function addOrderItemAction(formData: FormData) {
     where: { id: raw.serviceOrderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
-  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrine kalem eklenemez" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş araç kabulüne kalem eklenemez" }
 
   // Item prices are integer kuruş. Adding an item changes the order's
   // grandTotal, so re-derive paidAmount/remainingAmount/paymentStatus in the
@@ -279,7 +279,7 @@ export async function addOrderItemAction(formData: FormData) {
           "work_order",
           created.id,
           user.id,
-          `İş emri ${order.workOrderNo || ""}: ${parsed.data.name}`,
+          `Araç kabul ${order.workOrderNo || ""}: ${parsed.data.name}`,
         )
       }
       await recalcOrderPayment(tx, raw.serviceOrderId, user.workshopId)
@@ -350,7 +350,7 @@ export async function addPurchaseItemAction(formData: FormData) {
     select: { id: true, intakeFormId: true, status: true, workOrderNo: true },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
-  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrine kalem eklenemez" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş araç kabulüne kalem eklenemez" }
 
   // İsteğe bağlı FK'ler kullanılmadan önce workshop-scope doğrulanır.
   const supplierId = parsed.data.supplierId || null
@@ -506,7 +506,7 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
   })
   if (!item) return { error: "Kalem bulunamadı" }
   if (item.source !== "purchase") return { error: "Bu kalem bir dış alım değil" }
-  if (item.serviceOrderId !== orderId) return { error: "Kalem bu iş emrine ait değil" }
+  if (item.serviceOrderId !== orderId) return { error: "Kalem bu araç kabulüne ait değil" }
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
@@ -718,7 +718,7 @@ async function deleteOrderItemRecord(
           "work_order",
           itemId,
           user.id,
-          `İş emrinden silindi: ${item.name}`,
+          `Araç kabulünden silindi: ${item.name}`,
         )
       }
       await recalcOrderPayment(tx, orderId, user.workshopId)
@@ -781,7 +781,7 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
-  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrinden kalem silinemez" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş araç kabulünden kalem silinemez" }
 
   return deleteOrderItemRecord(user, item, orderId, "order_item_removed")
 }
@@ -805,7 +805,7 @@ export async function removePurchaseItemAction(itemId: string, orderId: string) 
   })
   if (!item) return { error: "Kalem bulunamadı" }
   if (item.source !== "purchase") return { error: "Bu kalem bir dış alım değil" }
-  if (item.serviceOrderId !== orderId) return { error: "Kalem bu iş emrine ait değil" }
+  if (item.serviceOrderId !== orderId) return { error: "Kalem bu araç kabulüne ait değil" }
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
@@ -833,8 +833,8 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
-  if (item.serviceOrderId !== orderId) return { error: "Kalem bu iş emrine ait değil" }
-  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez" }
+  if (item.serviceOrderId !== orderId) return { error: "Kalem bu araç kabulüne ait değil" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş araç kabulü düzenlenemez" }
 
   // Yalnızca formData'da gerçekten bulunan alanlar patch'lenir (kısmi güncelleme).
   const has = (k: string) => formData.get(k) !== null
@@ -990,12 +990,12 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
         if (delta.direction === "reserve") {
           await reserveStockInTx(
             tx, user.workshopId, item.partId, delta.amount, "work_order", itemId, user.id,
-            `İş emri ${order.workOrderNo || ""}: miktar güncellendi (${item.name})`,
+            `Araç kabul ${order.workOrderNo || ""}: miktar güncellendi (${item.name})`,
           )
         } else if (delta.direction === "return") {
           await returnStockInTx(
             tx, user.workshopId, item.partId, delta.amount, "work_order", itemId, user.id,
-            `İş emri ${order.workOrderNo || ""}: miktar düşürüldü (${item.name})`,
+            `Araç kabul ${order.workOrderNo || ""}: miktar düşürüldü (${item.name})`,
           )
         }
       }
@@ -1138,7 +1138,7 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
         )
       }
     } catch (e) {
-      console.error("[notifyWorkOrderCompleted] İş emri tamamlama bildirimi gönderilemedi:", e)
+      console.error("[notifyWorkOrderCompleted] Araç kabulü tamamlama bildirimi gönderilemedi:", e)
     }
   }
 
@@ -1209,7 +1209,7 @@ export async function updateOrderMetaAction(orderId: string, formData: FormData)
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
-  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş araç kabulü düzenlenemez" }
 
   const estimatedDeliveryAt = parsed.data.estimatedDeliveryAt
     ? new Date(parsed.data.estimatedDeliveryAt)
@@ -1269,7 +1269,7 @@ export async function updateOrderInvoiceAction(orderId: string, formData: FormDa
   })
   if (!order) return { error: "Servis emri bulunamadı" }
   if (order.status === "cancelled") {
-    return { error: "İptal edilmiş iş emrine fatura bilgisi girilemez" }
+    return { error: "İptal edilmiş araç kabulüne fatura bilgisi girilemez" }
   }
 
   // `trDateToDate` takvim geçerliliğini KONTROL ETMEZ: "31.02.2026" Invalid Date
@@ -1337,7 +1337,7 @@ export async function updateOrderArrivalReasonAction(orderId: string, reason: st
   })
   if (!order) return { error: "Servis emri bulunamadı" }
   if (isOrderLocked(order.status)) {
-    return { error: "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez" }
+    return { error: "Teslim edilmiş veya iptal edilmiş araç kabulü düzenlenemez" }
   }
 
   await prisma.serviceOrder.updateMany({
@@ -1411,9 +1411,9 @@ export async function reopenDeliveredOrderAction(orderId: string, reason: string
     where: { id: orderId, workshopId: user.workshopId },
     select: { id: true, status: true, intakeFormId: true },
   })
-  if (!order) return { error: "İş emri bulunamadı" }
+  if (!order) return { error: "Araç kabulü bulunamadı" }
   if (order.status !== "delivered") {
-    return { error: "Yalnız teslim edilmiş iş emri yeniden açılabilir" }
+    return { error: "Yalnız teslim edilmiş araç kabulü yeniden açılabilir" }
   }
 
   await prisma.$transaction(async (tx) => {
@@ -1441,7 +1441,7 @@ export async function reopenDeliveredOrderAction(orderId: string, reason: string
     workshopId: user.workshopId,
     intakeFormId: order.intakeFormId,
     eventType: "order_reopened",
-    description: "İş emri yeniden açıldı",
+    description: "Araç kabulü yeniden açıldı",
   })
 
   revalidatePath(`/orders/${orderId}`)

@@ -177,7 +177,7 @@ export function TechnicianDashboard({
           <p className="text-sm text-muted-foreground mt-0.5">
             {canSelectTechnician
               ? "Seçili teknisyenin iş atamalarını yönetin"
-              : "Atölyedeki iş emirlerini görüntüleyin, kendi görevlerinizi yönetin"}
+              : "Atölyedeki araç kabullerini görüntüleyin, kendi görevlerinizi yönetin"}
           </p>
         </div>
         {canSelectTechnician && (
