@@ -29,11 +29,27 @@ test("hero başlığı sunucu HTML'inde görünür ve gizli başlamaz", () => {
 })
 
 test("çapalar, CTA hedefleri ve yasal bağlantılar", () => {
-  const html = render(createElement(LandingHeader), createElement(Price), createElement(LandingFooter))
+  const html = render(createElement(LandingHeader, { onHome: true }), createElement(Price), createElement(LandingFooter))
   for (const href of ['href="#nasil"', 'href="#ozellikler"', 'href="#fiyat"', 'href="#sorular"', 'href="/login"', 'href="/register"', 'href="/kvkk"', 'href="/privacy"', 'href="/terms"']) {
     expect(html).toContain(href)
   }
   expect(html).toContain("₺1.499")
+})
+
+test("ana sayfa dışında üst bant ana sayfanın bölümlerine ve başına bağlanır (#798)", () => {
+  // Bant (site) layout'unda her public sayfada durur; "#nasil" orada hiçbir yere gitmez.
+  const html = render(createElement(LandingHeader, { onHome: false }))
+  for (const href of ['href="/#nasil"', 'href="/#ozellikler"', 'href="/#fiyat"', 'href="/#sorular"', 'href="/login"', 'href="/register"']) {
+    expect(html).toContain(href)
+  }
+  expect(html).not.toMatch(/href="#/)
+  expect(html).toMatch(/<a[^>]*href="\/"[^>]*aria-label="BakımX ana sayfa"|<a[^>]*aria-label="BakımX ana sayfa"[^>]*href="\/"/)
+})
+
+test("ana sayfada üst bant sayfa içi çapalara kayar", () => {
+  const html = render(createElement(LandingHeader, { onHome: true }))
+  expect(html).toContain('href="#hero"')
+  expect(html).not.toContain('href="/#')
 })
 
 test("bölüm kimlikleri e-santral çapalarıyla aynı", () => {

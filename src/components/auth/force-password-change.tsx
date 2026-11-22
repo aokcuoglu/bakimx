@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { changeOwnPasswordAction } from "@/app/(app)/account/actions"
-import { logoutAction } from "@/app/(auth)/login/actions"
+import { logoutAction } from "@/app/(site)/(auth)/login/actions"
 
 /**
  * Geçici şifre kapısı — tam ekran (BAK-37).

@@ -3,7 +3,8 @@
 .landingSite {
   background: var(--card);
   color: var(--foreground);
-  min-height: 100vh;
+  /* Üst bant (site) layout'unda, bu kabuğun üstünde (#798). */
+  min-height: calc(100vh - var(--site-header-h, 0px));
   --public-width: 1124px;
 }
 .landingSite {
@@ -21,14 +22,9 @@
   border-inline: 1px solid var(--border);
   opacity: 0.72;
 }
-.landingSite > :not(.landingFrame):not(header) {
+.landingSite > :not(.landingFrame) {
   position: relative;
   z-index: 1;
-}
-.landingSite > header {
-  position: sticky;
-  top: 0;
-  z-index: 3;
 }
 .landingSite > .progress {
   z-index: 60;
@@ -182,7 +178,6 @@
   }
 }
 @media print {
-  .site > header,
   .site > footer {
     display: none;
   }

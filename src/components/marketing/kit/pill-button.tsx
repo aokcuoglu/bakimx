@@ -17,6 +17,11 @@ const SIZE_CLASS: Record<PillSize, string> = {
 
 export type PillButtonProps = {
   href?: string
+  /**
+   * `href` ile: `true` dinamik hedefi de tam önceden yükler (Next `Link`
+   * `prefetch`). Varsayılan Next davranışıdır (statik hedef tam, dinamik yok).
+   */
+  prefetch?: boolean
   size?: PillSize
   track?: CtaTrack
   onClick?: (event: MouseEvent<HTMLElement>) => void
@@ -30,6 +35,7 @@ export type PillButtonProps = {
 /** Mavi hap düğme (e-santral `.d-blue`): md 44px, lg 50px, nav üst bant ölçüsü. */
 export function PillButton({
   href,
+  prefetch,
   size = "md",
   track,
   onClick,
@@ -48,7 +54,7 @@ export function PillButton({
   if (href) {
     return (
       <Button asChild variant="default" className={classes}>
-        <Link href={href} onClick={handleClick}>
+        <Link href={href} prefetch={prefetch} onClick={handleClick}>
           {children}
         </Link>
       </Button>

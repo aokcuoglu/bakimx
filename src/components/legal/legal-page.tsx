@@ -1,5 +1,4 @@
 import { PublicSite } from "@/components/public/PublicSite";
-import { Header } from "@/components/sections/Header";
 import Link from "next/link";
 import { Footer } from "@/components/sections/Footer";
 
@@ -71,8 +70,6 @@ export function LegalPage({
 
   return (
     <PublicSite>
-      <Header />
-
       <main className="flex-1 bg-background">
         <article className="mx-auto max-w-2xl px-5 pb-20 pt-14 sm:px-6 sm:pb-24 sm:pt-20 lg:px-8">
           <header className="space-y-3">
