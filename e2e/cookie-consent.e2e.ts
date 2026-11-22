@@ -63,7 +63,7 @@ test("bar blocks the page until a choice; Escape does not dismiss it", async ({
   // CSS locator: role locators match nothing while the page is aria-hidden,
   // so only a pointer-blocked click can make this fail.
   await expect(
-    page.locator('a[href="/login"]').first().click({ timeout: 1500 }),
+    page.locator("main a[href]:visible").first().click({ timeout: 1500 }),
   ).rejects.toThrow(/intercepts pointer events/);
   await banner.getByRole("button", { name: "Reddet", exact: true }).click();
   await expect(banner).toHaveCount(0);
