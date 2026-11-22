@@ -1,34 +1,11 @@
-import styles from "./summary-cards.module.css"
-import { HighlightCard } from "@/components/shared/highlight-card"
 import type { DashboardStats } from "@/lib/dashboard/queries"
-import { Wrench, Clock, MessageCircle, Camera, AlertTriangle, Calendar } from "lucide-react"
+import { DashStat, DashStatGrid } from "@/components/dashboard/surface"
 
-interface KpiCardProps {
+type KpiItem = {
   label: string
   value: number
-  icon: React.ComponentType<{ className?: string }>
   href: string
   tone?: "warning" | "destructive"
-  subtitle?: string
-}
-
-function KpiCard({ label, value, icon: Icon, href, tone, subtitle }: KpiCardProps) {
-  const iconTone = value > 0 && tone === "warning"
-    ? "text-warning-strong"
-    : value > 0 && tone === "destructive"
-      ? "text-destructive-strong"
-      : "text-muted-foreground"
-
-  return (
-    <HighlightCard
-      className={styles.card}
-      label={label}
-      value={value}
-      href={href}
-      accessory={<Icon className={iconTone} aria-hidden />}
-      description={subtitle}
-    />
-  )
 }
 
 export function KpiCards({
@@ -40,53 +17,30 @@ export function KpiCards({
   showQuotes: boolean
   showPhotoChecklist: boolean
 }) {
+  const items: KpiItem[] = [
+    { label: "Serviste", value: stats.activeOrders, href: "/orders" },
+    { label: "Bugün teslim", value: stats.todayDeliveries, href: "/orders" },
+    ...(showQuotes
+      ? [{ label: "Onay bekleyen", value: stats.waitingApprovals, href: "/orders?status=waiting_approval", tone: "warning" as const }]
+      : []),
+    ...(showPhotoChecklist
+      ? [{ label: "Eksik fotoğraf", value: stats.missingPhotoIntakes, href: "/orders", tone: "destructive" as const }]
+      : []),
+    { label: "Geciken teslim", value: stats.overdueDeliveries, href: "/orders", tone: "destructive" },
+    { label: "Son 7 gün", value: stats.lastWeekOrders, href: "/orders" },
+  ]
+
   return (
-    <div className={styles.summary} aria-label="Operasyon özeti">
-      <div className={styles.kpis}>
-        <KpiCard
-          label="Aktif İş Emri"
-          value={stats.activeOrders}
-          icon={Wrench}
-          href="/orders"
+    <DashStatGrid label="Operasyon özeti" count={items.length}>
+      {items.map((item) => (
+        <DashStat
+          key={item.label}
+          label={item.label}
+          value={item.value}
+          href={item.href}
+          tone={item.value > 0 ? item.tone : undefined}
         />
-        <KpiCard
-          label="Bugün Teslim"
-          value={stats.todayDeliveries}
-          icon={Clock}
-          href="/orders"
-        />
-        {showQuotes && (
-          <KpiCard
-            label="Onay Bekleyen"
-            value={stats.waitingApprovals}
-            icon={MessageCircle}
-            href="/orders?status=waiting_approval"
-            tone="warning"
-          />
-        )}
-        {showPhotoChecklist && (
-          <KpiCard
-            label="Eksik Fotoğraf"
-            value={stats.missingPhotoIntakes}
-            icon={Camera}
-            href="/orders"
-            tone="destructive"
-          />
-        )}
-        <KpiCard
-          label="Geciken Teslim"
-          value={stats.overdueDeliveries}
-          icon={AlertTriangle}
-          href="/orders"
-          tone="destructive"
-        />
-        <KpiCard
-          label="Son 7 Gün"
-          value={stats.lastWeekOrders}
-          icon={Calendar}
-          href="/orders"
-        />
-      </div>
-    </div>
+      ))}
+    </DashStatGrid>
   )
 }

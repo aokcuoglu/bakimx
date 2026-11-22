@@ -1,50 +1,24 @@
-import Link from "next/link"
-import { AppointmentStatusBadge } from "@/components/appointments/appointment-status-badge"
-import { PlateBadge } from "@/components/shared/status-badge"
 import type { TodayAppointmentRow } from "@/lib/dashboard/queries"
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
-}
+import { DashAppointmentStatus, DashEmpty, DashPanel, DashRow, DashTile, formatTime } from "@/components/dashboard/surface"
 
 export function TodayAppointments({ appointments }: { appointments: TodayAppointmentRow[] }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold text-foreground">Bugünkü Randevular</h3>
-      </div>
-      <div className="divide-y divide-border">
-        {appointments.length === 0 ? (
-          <div className="px-4 py-4 text-muted-foreground">
-            <p className="text-sm">Bugün için planlanmış randevu bulunmuyor</p>
-          </div>
-        ) : (
-          appointments.map((a) => (
-            <Link
-              key={a.id}
-              href={`/appointments/${a.id}`}
-              className="flex flex-wrap items-center gap-2 px-4 py-2 hover:bg-muted transition-colors"
-            >
-              <div className="shrink-0 w-12 text-center">
-                <span className="text-sm font-semibold text-foreground">{formatTime(a.appointmentAt)}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{a.customerName}</p>
-                <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                  {a.plate && <PlateBadge plate={a.plate} size="sm" />}
-                  <span className="text-xs font-mono text-muted-foreground">{a.appointmentNo}</span>
-                </div>
-              </div>
-              <AppointmentStatusBadge status={a.status} />
-            </Link>
-          ))
-        )}
-      </div>
-      <div className="px-4 py-2.5 border-t border-border">
-        <Link href="/appointments" className="text-xs font-medium text-primary hover:underline transition-colors">
-          Tüm Randevular &rarr;
-        </Link>
-      </div>
-    </div>
+    <DashPanel title="Bugünkü randevular" action={{ href: "/appointments", label: "Tümünü gör" }}>
+      {appointments.length === 0 ? (
+        <DashEmpty>Bugün için planlanmış randevu yok.</DashEmpty>
+      ) : (
+        appointments.map((a) => (
+          <DashRow
+            key={a.id}
+            href={`/appointments/${a.id}`}
+            start={<DashTile tone="info">{formatTime(a.appointmentAt)}</DashTile>}
+            title={a.customerName}
+            sub={[a.plate, a.appointmentNo].filter(Boolean).join(" · ")}
+            end={<DashAppointmentStatus status={a.status} />}
+            chevron={false}
+          />
+        ))
+      )}
+    </DashPanel>
   )
 }

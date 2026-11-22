@@ -1,0 +1,213 @@
+import type { ReactNode } from "react"
+import Link from "next/link"
+import { ChevronRight } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { formatTurkishPlate } from "@/components/shared/plate-badge"
+import { APPOINTMENT_STATUS, ORDER_STATUS, type AppointmentStatusKey, type OrderStatusKey } from "@/lib/constants"
+import styles from "./surface.module.css"
+
+/**
+ * Dashboard yüzeyi — e-santral.com/bakimx kalıbının (docs/design-pattern-esantral.md)
+ * ilk uygulaması. Yalnız Dashboard'da kullanılır; onaydan sonra paylaşılan
+ * bileşenlere taşınacak.
+ */
+
+export { styles as surface }
+
+export type Tone = "info" | "warning" | "success" | "destructive" | "neutral"
+
+const toneClass: Record<Tone, string> = {
+  info: styles["tone-info"],
+  warning: styles["tone-warning"],
+  success: styles["tone-success"],
+  destructive: styles["tone-destructive"],
+  neutral: styles["tone-neutral"],
+}
+
+/** Kart dışında gri bölüm başlığı + çerçevesiz beyaz kart. */
+export function DashPanel({
+  title,
+  meta,
+  action,
+  children,
+  bare = false,
+  className,
+  ...rest
+}: {
+  title: string
+  meta?: ReactNode
+  action?: { href: string; label: string }
+  children: ReactNode
+  /** true → içerik kendi kartlarını çizer (ör. aktivite kartları). */
+  bare?: boolean
+  className?: string
+  "data-tour"?: string
+}) {
+  return (
+    <section aria-label={title} className={cn(styles.panel, className)} {...rest}>
+      <div className={styles.panelHead}>
+        <h3 className={styles.panelTitle}>
+          {title}
+          {meta != null && <span className={styles.panelMeta}>{meta}</span>}
+        </h3>
+        {action && (
+          <Link href={action.href} className={styles.panelAction}>
+            {action.label}
+          </Link>
+        )}
+      </div>
+      {bare ? children : <div className={styles.card}>{children}</div>}
+    </section>
+  )
+}
+
+export function DashEmpty({ children }: { children: ReactNode }) {
+  return <p className={styles.empty}>{children}</p>
+}
+
+/** Satır: [başlangıç] [başlık + alt satır] [son] [›]. href verilirse bağlantıdır. */
+export function DashRow({
+  href,
+  start,
+  title,
+  sub,
+  wide,
+  end,
+  chevron = Boolean(href),
+  wrap = false,
+  plain = false,
+}: {
+  href?: string
+  start?: ReactNode
+  title: ReactNode
+  sub?: ReactNode
+  /** Yalnız md+ genişlikte görünen ek kolon. */
+  wide?: ReactNode
+  end?: ReactNode
+  chevron?: boolean
+  /** true → başlık tek satıra kırpılmaz, alt satıra kayar. */
+  wrap?: boolean
+  /** true → başlık normal ağırlıkta (etiket/değer satırları). */
+  plain?: boolean
+}) {
+  const content = (
+    <>
+      {start}
+      <span className={styles.rowMain}>
+        <span className={styles.rowTitle} data-wrap={wrap || undefined} data-plain={plain || undefined}>{title}</span>
+        {sub != null && <span className={styles.rowSub}>{sub}</span>}
+      </span>
+      {wide != null && <span className={styles.rowWide}>{wide}</span>}
+      {end != null && <span className={styles.rowEnd}>{end}</span>}
+      {chevron && <ChevronRight aria-hidden className={styles.chevron} />}
+    </>
+  )
+  return href ? (
+    <Link href={href} prefetch={false} className={styles.row}>
+      {content}
+    </Link>
+  ) : (
+    <div className={styles.row}>{content}</div>
+  )
+}
+
+/** Çerçeveli TR plaka rozeti. */
+export function DashPlate({ plate }: { plate: string }) {
+  return <span className={styles.plate}>{formatTurkishPlate(plate)}</span>
+}
+
+export function DashPill({ tone, children }: { tone: Tone; children: ReactNode }) {
+  return <span className={cn(styles.pill, toneClass[tone])}>{children}</span>
+}
+
+export function DashTile({
+  tone,
+  circle = false,
+  children,
+}: {
+  tone: Tone
+  circle?: boolean
+  children: ReactNode
+}) {
+  return (
+    <span aria-hidden className={cn(styles.tile, toneClass[tone])} data-shape={circle ? "circle" : undefined}>
+      {children}
+    </span>
+  )
+}
+
+const ORDER_TONE: Record<OrderStatusKey, Tone> = {
+  draft: "neutral",
+  waiting_approval: "warning",
+  approved: "info",
+  in_progress: "info",
+  waiting_parts: "warning",
+  ready_for_delivery: "success",
+  delivered: "success",
+  cancelled: "destructive",
+}
+
+export function DashOrderStatus({ status }: { status: string }) {
+  const key = status as OrderStatusKey
+  return <DashPill tone={ORDER_TONE[key] ?? "neutral"}>{ORDER_STATUS[key]?.label ?? status}</DashPill>
+}
+
+const APPOINTMENT_TONE: Record<AppointmentStatusKey, Tone> = {
+  scheduled: "info",
+  confirmed: "success",
+  arrived: "info",
+  converted: "info",
+  completed: "success",
+  cancelled: "neutral",
+  no_show: "destructive",
+}
+
+export function DashAppointmentStatus({ status }: { status: string }) {
+  const key = status as AppointmentStatusKey
+  return <DashPill tone={APPOINTMENT_TONE[key] ?? "neutral"}>{APPOINTMENT_STATUS[key]?.label ?? status}</DashPill>
+}
+
+/** Baş harfler (avatar). */
+export function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  const letters = parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0] ?? "?").slice(0, 2)
+  return letters.toLocaleUpperCase("tr-TR")
+}
+
+export function formatTime(iso: string | null): string {
+  if (!iso) return ""
+  return new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
+}
+
+export function formatShortDate(iso: string | null): string {
+  if (!iso) return ""
+  return new Date(iso).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })
+}
+
+/** İstatistik kutusu: kalın rakam üstte, gri etiket altta. */
+export function DashStat({
+  label,
+  value,
+  href,
+  tone,
+}: {
+  label: string
+  value: ReactNode
+  href: string
+  tone?: "warning" | "destructive"
+}) {
+  return (
+    <Link href={href} prefetch={false} className={styles.stat}>
+      <span className={styles.statValue} data-tone={tone}>{value}</span>
+      <span className={styles.statLabel}>{label}</span>
+    </Link>
+  )
+}
+
+export function DashStatGrid({ label, children, count }: { label: string; children: ReactNode; count: number }) {
+  return (
+    <div className={styles.stats} aria-label={label}>
+      <div className={styles.statGrid} data-count={count}>{children}</div>
+    </div>
+  )
+}

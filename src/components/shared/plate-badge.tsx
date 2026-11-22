@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 
-function formatTurkishPlate(plate: string): string {
+export function formatTurkishPlate(plate: string): string {
   const stripped = plate.replace(/\s+/g, "").toUpperCase()
   const cityCode = stripped.match(/^(\d{1,2})/)
   if (!cityCode) return plate.toUpperCase()

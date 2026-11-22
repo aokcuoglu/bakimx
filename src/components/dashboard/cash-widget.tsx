@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ArrowRight, AlertTriangle } from "lucide-react"
+import { Plus } from "lucide-react"
 import { formatTRY } from "@/lib/format"
+import { DashPanel, DashRow, surface } from "@/components/dashboard/surface"
 
 export type CashWidgetData = {
   todayCollected: number
@@ -11,39 +12,30 @@ export type CashWidgetData = {
 
 export function CashWidget({ data }: { data: CashWidgetData }) {
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col">
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-          Kasa Özeti
-        </h3>
-        <Link href="/cashbox" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">
-          Tümünü Gör <ArrowRight className="size-3" />
-        </Link>
-      </div>
-      <div className="p-4 space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm text-muted-foreground">Bugünkü Tahsilat</span>
-          <span className="text-sm font-semibold tabular-nums text-success-strong">{formatTRY(data.todayCollected)}</span>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm text-muted-foreground">Açık Alacak</span>
-          <span className="text-sm font-semibold tabular-nums text-destructive-strong">{formatTRY(data.openReceivable)}</span>
-        </div>
-        {data.partialPayments > 0 && (
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-sm text-muted-foreground flex items-center gap-1.5">
-              Kısmi Ödeme
-              <AlertTriangle className="size-3.5 text-warning-strong" />
-            </span>
-            <span className="text-sm font-semibold tabular-nums text-warning-strong">{data.partialPayments}</span>
-          </div>
-        )}
-      </div>
-      <div className="mt-auto flex justify-end border-t border-border px-4 py-2">
-        <Button variant="secondary" size="sm" asChild>
-          <Link href="/cashbox/payments/new">+ Yeni Tahsilat</Link>
+    <DashPanel title="Kasa" action={{ href: "/cashbox", label: "Tümünü gör" }}>
+      <DashRow
+        title="Bugünkü tahsilat"
+        plain
+        end={<span className={`${surface.rowValue} text-success-strong`}>{formatTRY(data.todayCollected)}</span>}
+      />
+      <DashRow
+        title="Açık alacak"
+        plain
+        end={<span className={`${surface.rowValue} text-destructive-strong`}>{formatTRY(data.openReceivable)}</span>}
+      />
+      {data.partialPayments > 0 && (
+        <DashRow
+          title="Kısmi ödeme"
+        plain
+          end={<span className={`${surface.rowValue} text-warning-strong`}>{data.partialPayments}</span>}
+        />
+      )}
+      <div className={surface.cardFoot}>
+        <span />
+        <Button variant="default" size="sm" className="rounded-full" asChild>
+          <Link href="/cashbox/payments/new"><Plus className="size-4" />Yeni tahsilat</Link>
         </Button>
       </div>
-    </div>
+    </DashPanel>
   )
 }

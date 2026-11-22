@@ -1,44 +1,23 @@
-import Link from "next/link"
 import type { RecentCustomer } from "@/lib/dashboard/queries"
-import { User, ChevronRight } from "lucide-react"
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })
-}
+import { DashEmpty, DashPanel, DashRow, DashTile, formatShortDate, initials, surface } from "@/components/dashboard/surface"
 
 export function RecentCustomers({ customers }: { customers: RecentCustomer[] }) {
   return (
-    <section aria-label="Son müşteriler" className="min-w-0 overflow-hidden rounded-xl border border-border bg-card">
-      <div className="px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold text-foreground">Son Müşteriler</h3>
-      </div>
-      <div className="divide-y divide-border">
-        {customers.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-muted-foreground text-center">
-            Henüz müşteri kaydı yok.
-          </p>
-        ) : (
-          customers.map((c) => (
-            <Link
-              key={c.id}
-              href={`/customers/${c.id}`}
-              className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-            >
-              <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                <User className="size-4 text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
-                <p className="text-xs text-muted-foreground">{c.phone}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs text-muted-foreground">{formatDate(c.createdAt)}</p>
-                <ChevronRight className="size-3.5 text-muted-foreground ml-auto mt-0.5" />
-              </div>
-            </Link>
-          ))
-        )}
-      </div>
-    </section>
+    <DashPanel title="Son müşteriler" action={{ href: "/customers", label: "Tümünü gör" }}>
+      {customers.length === 0 ? (
+        <DashEmpty>Henüz müşteri kaydı yok.</DashEmpty>
+      ) : (
+        customers.map((c) => (
+          <DashRow
+            key={c.id}
+            href={`/customers/${c.id}`}
+            start={<DashTile tone="info" circle>{initials(c.name)}</DashTile>}
+            title={c.name}
+            sub={c.phone}
+            end={<span className={surface.rowEndText}>{formatShortDate(c.createdAt)}</span>}
+          />
+        ))
+      )}
+    </DashPanel>
   )
 }

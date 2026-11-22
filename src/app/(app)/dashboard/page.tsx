@@ -41,6 +41,7 @@ import { ReminderWidget } from "@/components/dashboard/reminder-widget"
 import { TechnicianStatusWidget } from "@/components/dashboard/technician-status"
 import { DashboardReportWidgets } from "@/components/dashboard/report-widgets"
 import { OperationalAlertsWidget } from "@/components/analytics/operational-alerts-widget"
+import { DashPanel, surface } from "@/components/dashboard/surface"
 
 export const metadata = { title: "Genel Bakış" }
 
@@ -105,27 +106,25 @@ export default async function DashboardPage() {
     ? await getRecommendations(user.workshopId)
     : null
 
+  const greetingName = user.firstName || null
+
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Genel Bakış">
-      <div className="mx-auto max-w-[1440px] space-y-6">
-        <section
-          data-tour="welcome-banner"
-          className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between"
-        >
+      <div className={surface.root}>
+        <section data-tour="welcome-banner" className={surface.hero}>
           <div className="min-w-0">
-            <h2 className="text-page-title text-foreground">
-              Hoş Geldiniz, {user.firstName || user.email || user.username || "Kullanıcı"}
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {workshop?.name} &bull;{" "}
+            <h2 className={surface.heroTitle}>{workshop?.name || "Genel Bakış"}</h2>
+            <p className={surface.heroSub}>
+              Bugün ·{" "}
               {new Date().toLocaleDateString("tr-TR", {
                 weekday: "long",
                 day: "numeric",
                 month: "long",
               })}
+              {greetingName ? ` · Hoş geldiniz, ${greetingName}` : ""}
             </p>
           </div>
-          <Button variant="foreground" size="sm" asChild>
+          <Button variant="default" className={surface.heroCta} asChild>
             <Link href="/orders/new" data-tour="welcome-cta">
               <Plus className="size-4" />
               Yeni İş Emri
@@ -134,18 +133,16 @@ export default async function DashboardPage() {
         </section>
 
         {needsFirstOrder && (
-          <section
-            data-tour="first-order"
-            aria-labelledby="first-order-heading"
-            className="rounded-xl border bg-card p-4 space-y-3"
-          >
-            <h2 id="first-order-heading" className="text-lg font-semibold">Lite ile ilk işinize başlayın</h2>
-            <p className="text-sm text-muted-foreground">Kurulum tercihleriniz kaydedildi. İlk müşterinizi ve aracınızı kaydedin, ardından iş emrinizi açın. İş emri ekranında da müşteri ve araç ekleyebilirsiniz.</p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button asChild variant="outline"><Link href="/customers/new">İlk müşteriyi ekle</Link></Button>
-              <Button variant="foreground" asChild><Link href="/orders/new">İlk iş emrini oluştur</Link></Button>
+          <DashPanel title="İlk adım" data-tour="first-order">
+            <div className={surface.cardBody}>
+              <h2 className="text-lg font-semibold tracking-tight">Lite ile ilk işinize başlayın</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Kurulum tercihleriniz kaydedildi. İlk müşterinizi ve aracınızı kaydedin, ardından iş emrinizi açın. İş emri ekranında da müşteri ve araç ekleyebilirsiniz.</p>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Button asChild variant="outline" className="rounded-full"><Link href="/customers/new">İlk müşteriyi ekle</Link></Button>
+                <Button variant="default" asChild className="rounded-full"><Link href="/orders/new">İlk iş emrini oluştur</Link></Button>
+              </div>
             </div>
-          </section>
+          </DashPanel>
         )}
 
         <KpiCards stats={stats} showQuotes={canQuotes} showPhotoChecklist={canPhotos} />
@@ -160,7 +157,7 @@ export default async function DashboardPage() {
         <ActiveOrdersSection orders={activeOrders} />
 
         <section className={styles.panels} aria-label="Günlük iş takibi">
-          <div className="min-w-0 space-y-4">
+          <div className="flex min-w-0 flex-col gap-7">
             <TodayDeliveries deliveries={todayDeliveries} />
             {canQuotes && <WaitingApprovals approvals={waitingApprovals} />}
             {canAppointments && <TodayAppointments appointments={todayAppointments} />}

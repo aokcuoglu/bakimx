@@ -12,6 +12,7 @@ import {
 } from "@/components/layout/workspace-switcher"
 import { SettingsNav } from "@/components/settings/settings-nav"
 import settingsSidebarStyles from "@/components/settings/settings-sidebar.module.css"
+import shellStyles from "@/components/layout/app-shell.module.css"
 import { DashboardProductTour } from "@/components/dashboard/dashboard-product-tour"
 import { ACCOUNT_SETTINGS_ITEMS, SETTINGS_NAV_GROUPS, isSettingsPath, matchesSettingsNavItem } from "@/lib/settings-nav"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
@@ -315,13 +316,13 @@ function AppHeader({
   const showMobileTitle = headerTitle && !isSettingsPath(pathname) && !MOBILE_CONTENT_HEADING_PATHS.has(pathname)
 
   return (
-    <header className={cn("sticky top-0 z-30 flex h-12 items-center border-b border-border bg-background", topBannerVisible && "lg:top-8")}>
+    <header className={cn("sticky top-0 z-30 flex h-12 items-center border-b border-border bg-background", shellStyles.header, topBannerVisible && "lg:top-8")}>
       <div className="relative flex h-12 w-full flex-nowrap items-center gap-2 px-4">
         {/* Sidebar açıkken kontrol menü başlığındadır; kapalıyken burada görünür. */}
         <SidebarTrigger data-tour="sidebar-trigger" className="-ml-2 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden" />
 
         {showMobileTitle ? (
-          <h1 className="min-w-0 flex-1 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:hidden">
+          <h1 className={cn("min-w-0 flex-1 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:hidden", shellStyles.headerTitle)}>
             {headerTitle}
           </h1>
         ) : (
@@ -333,7 +334,7 @@ function AppHeader({
         )}
 
         {headerTitle && (
-          <h1 className="hidden min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:flex">
+          <h1 className={cn("hidden min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:flex", shellStyles.headerTitle)}>
             {HeaderIcon ? <HeaderIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
             <span className="truncate">{headerTitle}</span>
           </h1>
@@ -376,7 +377,7 @@ function AppSidebar({
   })).filter((group) => group.items.length > 0)
 
   return (
-    <Sidebar collapsible="offcanvas" className={cn(inSettings && settingsSidebarStyles.sidebar, topBannerVisible && "lg:top-8! lg:h-[calc(100svh-2rem)]!")}>
+    <Sidebar collapsible="offcanvas" className={cn(inSettings ? settingsSidebarStyles.sidebar : shellStyles.sidebar, topBannerVisible && "lg:top-8! lg:h-[calc(100svh-2rem)]!")}>
       <SidebarHeader className={cn("flex-row items-center border-b border-sidebar-border", inSettings ? "h-[49px] gap-3 px-3 py-0 pr-10" : "gap-1 p-2")}>
         {inSettings ? (
           <>
@@ -425,12 +426,12 @@ function AppSidebar({
                   if (isMobile) setOpenMobile(false)
                   onOpenSearch()
                 }}
-                className="h-7 w-full justify-start gap-2 truncate px-2 text-sm font-medium leading-5 tracking-[-0.005em]"
+                className={cn("h-7 w-full justify-start gap-2 truncate px-2 text-sm font-medium leading-5 tracking-[-0.005em]", shellStyles.search)}
                 aria-label="Genel arama"
               >
                 <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-left">Ara</span>
-                <span className="hidden shrink-0 rounded-sm border border-border px-1 text-[11px] leading-4 text-muted-foreground xl:inline">⌘ K</span>
+                <span className={cn("hidden shrink-0 rounded-sm border border-border px-1 text-[11px] leading-4 text-muted-foreground xl:inline", shellStyles.searchKey)}>⌘ K</span>
               </Button>
             </div>
           ) : null}
@@ -455,7 +456,7 @@ function AppSidebar({
         ) : (
           visibleGroups.map((group) => (
             <SidebarGroup key={group.label}>
-              <SidebarGroupLabel className="text-xs leading-4 tracking-normal">{group.label}</SidebarGroupLabel>
+              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {group.items.map((item) => (
@@ -509,14 +510,14 @@ function AppSidebar({
         {planStatus && !inSettings ? (
           <SidebarMenu className="border-t border-sidebar-border pt-2">
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={`${planStatus.title} · ${planStatus.detail}`} className="h-auto py-1.5 group-data-[collapsible=icon]:size-7!">
+              <SidebarMenuButton asChild tooltip={`${planStatus.title} · ${planStatus.detail}`} className={cn("h-auto py-1.5 group-data-[collapsible=icon]:size-7!", shellStyles.plan)}>
                 <Link href="/settings/plans">
                   <CalendarClock className="size-4" aria-hidden="true" />
                   <span className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
                     <span className="block truncate text-sm font-medium leading-5 tracking-[-0.005em]">{planStatus.title}</span>
                     <span className="block truncate text-xs leading-4 text-muted-foreground">{planStatus.detail}</span>
                   </span>
-                  <span className="rounded-md border border-sidebar-border px-1.5 py-1 text-[10px] group-data-[collapsible=icon]:hidden">{planStatus.action}</span>
+                  <span className={cn("rounded-md border border-sidebar-border px-1.5 py-1 text-[10px] group-data-[collapsible=icon]:hidden", shellStyles.planAction)}>{planStatus.action}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -643,7 +644,7 @@ function MobileBottomNav({
   if (!isMobile) return null
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-background border-t border-border safe-area-bottom">
+    <nav className={cn("fixed bottom-0 left-0 right-0 z-30 safe-area-bottom", shellStyles.tabbar)}>
       {isTechnicianRestrictedRole(userIdentity?.role) ? (
         <>
           <div className="grid grid-cols-3 gap-1 px-2 py-1.5">
@@ -722,13 +723,12 @@ function MobileNavLink({
     <Link
       href={href}
       {...(tourId ? { "data-tour": tourId } : {})}
-      className={cn(
-        "flex flex-col items-center gap-0.5 text-[10px] py-1.5 rounded-lg transition-colors touch-manipulation",
-        active ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"
-      )}
+      data-active={active || undefined}
+      aria-current={active ? "page" : undefined}
+      className={shellStyles.tab}
     >
       <span className="relative">
-        <Icon className="size-5" />
+        <Icon />
         {locked && <LockKeyhole className="absolute -right-2 -top-1 size-3 rounded-full bg-background" />}
       </span>
       <span className="truncate">{label}{locked ? " · Pro" : ""}</span>

@@ -1,6 +1,6 @@
 import type { Recommendation } from "@/lib/analytics/queries"
 import { AlertTriangle, Info, CheckCircle2 } from "lucide-react"
-import Link from "next/link"
+import { DashPanel, DashRow, DashTile, type Tone } from "@/components/dashboard/surface"
 
 function recIcon(type: Recommendation["type"]) {
   switch (type) {
@@ -13,55 +13,44 @@ function recIcon(type: Recommendation["type"]) {
   }
 }
 
-function iconColor(type: Recommendation["type"]): string {
+function recTone(type: Recommendation["type"]): Tone {
   switch (type) {
     case "warning":
-      return "text-warning-strong"
+      return "warning"
     case "success":
-      return "text-success-strong"
+      return "success"
     default:
-      return "text-primary"
+      return "info"
   }
 }
 
 export function OperationalAlertsWidget({ recommendations }: { recommendations: Recommendation[] }) {
-  if (recommendations.length === 0) {
-    return (
-      <Link
-        href="/analytics"
-        className="block rounded-xl border border-border bg-card transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-          <h3 className="text-sm font-semibold text-foreground">Operasyon Uyarıları</h3>
-        </div>
-        <p className="px-4 py-3 text-sm text-muted-foreground">Tüm işlemler yolunda.</p>
-      </Link>
-    )
-  }
-
   return (
-    <Link
-      href="/analytics"
-      className="block rounded-xl border border-border bg-card transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    <DashPanel
+      title="Operasyon önerileri"
+      meta={recommendations.length > 0 ? recommendations.length : undefined}
+      action={{ href: "/analytics", label: "Analiz" }}
     >
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold text-foreground">Operasyon Uyarıları</h3>
-        <span className="ml-auto text-xs text-muted-foreground">{recommendations.length} öneri</span>
-      </div>
-      <div className="space-y-2 px-4 py-3">
-        {recommendations.slice(0, 3).map((rec) => {
+      {recommendations.length === 0 ? (
+        <DashRow
+          href="/analytics"
+          start={<DashTile tone="success" circle><CheckCircle2 /></DashTile>}
+          title="Tüm işlemler yolunda"
+        />
+      ) : (
+        recommendations.slice(0, 3).map((rec) => {
           const Icon = recIcon(rec.type)
           return (
-            <div key={rec.id} className="flex items-start gap-2">
-              <Icon className={`size-3.5 mt-0.5 shrink-0 ${iconColor(rec.type)}`} />
-              <p className="text-sm text-foreground">{rec.message}</p>
-            </div>
+            <DashRow
+              key={rec.id}
+              href="/analytics"
+              start={<DashTile tone={recTone(rec.type)}><Icon /></DashTile>}
+              title={rec.message}
+              wrap
+            />
           )
-        })}
-        {recommendations.length > 3 && (
-          <p className="text-xs text-foreground font-medium">+{recommendations.length - 3} daha</p>
-        )}
-      </div>
-    </Link>
+        })
+      )}
+    </DashPanel>
   )
 }
