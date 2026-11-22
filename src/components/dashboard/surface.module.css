@@ -122,6 +122,43 @@
   }
 }
 
+/* Beş kart: orta genişlikte 3+2, geniş alanda tek sıra. */
+@container (min-width: 480px) {
+  .statGrid[data-count="5"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 880px) {
+  .statGrid[data-count="5"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* Kayan şerit (DashStatGrid scroll): telefonda kartlar listeden önce üç sıra
+   yığılmasın diye yana kayar; şerit ekran kenarına kadar taşar. */
+@container (max-width: 559px) {
+  .statGrid[data-scroll] {
+    display: flex;
+    margin-inline: -16px;
+    padding-inline: 16px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-padding-inline: 16px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .statGrid[data-scroll]::-webkit-scrollbar {
+    display: none;
+  }
+
+  .statGrid[data-scroll] > * {
+    flex: 0 0 150px;
+    scroll-snap-align: start;
+  }
+}
+
 /* KPI kartı: [ikon dairesi] ........ [rakam]
               [etiket — koyu, kalın, tam genişlik] */
 .stat {
@@ -146,6 +183,17 @@
 
 .stat:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
+/* Filtre sekmesi olarak seçili kart: mavi iç çerçeve (aria-current="page"). */
+.stat[data-active] {
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.stat[data-active]:focus-visible {
+  box-shadow:
+    inset 0 0 0 2px var(--primary),
+    0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent);
 }
 
 /* Yerleşim ve okunur etiket yalnız KPI kartının içinde: teknisyen kartları
@@ -194,6 +242,12 @@
 .accent-destructive {
   background: var(--destructive);
   color: var(--destructive-foreground);
+}
+
+/* Arşiv anlamındaki kart (ör. Teslim Edildi): gri dolu daire. */
+.accent-neutral {
+  background: var(--muted-foreground);
+  color: var(--card);
 }
 
 .statLabel {

@@ -164,32 +164,37 @@ export default async function OrdersPage({
           technicians={technicians}
           searchQuery={q}
           toolbar={
-            <form id="order-list-filters" action="/orders" method="get" className="space-y-3">
+            // Sabit anahtar: anahtarsız hâliyle OrderList'te React "unique key"
+            // uyarısı veriyordu (#717; e2e/order-list-keys.e2e.ts). `key={q}`
+            // kullanılamaz — her aramada formu yeniden kurup yazarken odağı
+            // düşürür (#724).
+            <form key="order-list-filters" id="order-list-filters" action="/orders" method="get" className="space-y-3">
               <div className="flex items-center gap-2">
-              <div className="relative min-w-0 flex-1 sm:max-w-md">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input
-                  name="q"
-                  defaultValue={q}
-                  placeholder="Araç kabulü, plaka veya müşteri ara…"
-                  aria-label="Araç kabulü ara"
-                  className="pl-8"
-                />
-              </div>
-              <Button variant="foreground" size="sm" className="ml-auto" asChild>
-                <Link href="/orders/new"><Plus className="size-3.5" /><span className="hidden sm:inline">Yeni Araç Kabul</span><span className="sm:hidden">Yeni</span></Link>
-              </Button>
+                {/* Dolgulu arama alanı — sidebar arama kutusuyla aynı (e-santral). */}
+                <div className="relative min-w-0 flex-1 sm:max-w-md">
+                  <Search className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    name="q"
+                    defaultValue={q}
+                    placeholder="Araç kabulü, plaka veya müşteri ara…"
+                    aria-label="Araç kabulü ara"
+                    className="h-11 rounded-xl border-0 bg-foreground/[0.06] pl-10 text-[17px] shadow-none md:h-10 md:text-[15px]"
+                  />
+                </div>
+                <Button variant="default" className="ml-auto hidden rounded-full sm:inline-flex" asChild>
+                  <Link href="/orders/new"><Plus className="size-4" />Yeni Araç Kabul</Link>
+                </Button>
               </div>
               {/* Dört filtre dar ekranda 2'li ızgaraya düşüp geniş ekranda satıra
                   dönüyor; seçimler anında uygulandığı için görünür buton yok. */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="hidden items-center gap-1.5 text-xs font-medium text-muted-foreground sm:inline-flex"><Filter className="size-3.5" />Filtreler</span>
+                <span className="hidden items-center gap-1.5 text-[13px] font-medium text-muted-foreground sm:inline-flex"><Filter className="size-3.5" />Filtreler</span>
                 <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
                 <FilterSelect
                   name="status"
                   autoSubmit
                   singleLine
-                  className="w-full sm:w-auto"
+                  className="h-11 w-full rounded-full border-0 bg-foreground/[0.06] px-4 text-[15px] shadow-none hover:bg-foreground/[0.09] sm:w-auto md:h-9"
                   defaultValue={status}
                   placeholder="Tüm Durumlar"
                   options={[
@@ -210,7 +215,7 @@ export default async function OrdersPage({
                   name="payment"
                   autoSubmit
                   singleLine
-                  className="w-full sm:w-auto"
+                  className="h-11 w-full rounded-full border-0 bg-foreground/[0.06] px-4 text-[15px] shadow-none hover:bg-foreground/[0.09] sm:w-auto md:h-9"
                   defaultValue={payment}
                   placeholder="Tüm Ödemeler"
                   options={[
@@ -224,7 +229,7 @@ export default async function OrdersPage({
                   name="technician"
                   autoSubmit
                   singleLine
-                  className="w-full sm:w-auto"
+                  className="h-11 w-full rounded-full border-0 bg-foreground/[0.06] px-4 text-[15px] shadow-none hover:bg-foreground/[0.09] sm:w-auto md:h-9"
                   defaultValue={technicianFilter.value}
                   placeholder="Tüm Ustalar"
                   options={[
@@ -237,7 +242,7 @@ export default async function OrdersPage({
                   name="invoice"
                   autoSubmit
                   singleLine
-                  className="w-full sm:w-auto"
+                  className="h-11 w-full rounded-full border-0 bg-foreground/[0.06] px-4 text-[15px] shadow-none hover:bg-foreground/[0.09] sm:w-auto md:h-9"
                   defaultValue={invoiceFilter.value}
                   placeholder="Tüm Faturalar"
                   options={[
@@ -250,7 +255,7 @@ export default async function OrdersPage({
                   name="delivery"
                   autoSubmit
                   singleLine
-                  className="col-span-2 w-full sm:col-span-1 sm:w-auto"
+                  className="col-span-2 sm:col-span-1 h-11 w-full rounded-full border-0 bg-foreground/[0.06] px-4 text-[15px] shadow-none hover:bg-foreground/[0.09] sm:w-auto md:h-9"
                   defaultValue={deliveryFilter.value}
                   placeholder="Tüm Teslimler"
                   options={[
@@ -261,7 +266,7 @@ export default async function OrdersPage({
                 />
                 </div>
                 {hasAnyFilter && (
-                  <Button variant="ghost" size="sm" asChild>
+                  <Button variant="ghost" size="sm" className="rounded-full" asChild>
                     <Link href="/orders"><X className="size-3.5" />Temizle</Link>
                   </Button>
                 )}
@@ -280,7 +285,7 @@ export default async function OrdersPage({
             </form>
           }
           emptyState={
-            <div className="px-4 py-12 text-center text-muted-foreground">
+            <div key="order-list-empty" className="px-4 py-12 text-center text-muted-foreground">
               <ClipboardList className="size-8 mx-auto mb-3 text-muted-foreground" />
               <p className="text-base font-medium">
                 {hasAnyFilter
