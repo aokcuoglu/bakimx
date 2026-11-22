@@ -234,3 +234,24 @@ test("kaynak belirtilmeyen istek hâlâ işletme, il ve araç adedi ister", asyn
   const result = await response.json()
   expect(Object.keys(result.errors).sort()).toEqual(["businessName", "city", "monthlyVehicles"])
 })
+
+test("ana sayfa araması reklam onayıyla kampanya bilgisini satış kaydına taşır (#781)", async () => {
+  const previous = process.env.NEXT_PUBLIC_ANALYTICS_ENABLED
+  process.env.NEXT_PUBLIC_ANALYTICS_ENABLED = "true"
+  try {
+    const response = await POST(new Request("https://www.bakimx.com/api/demo-request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-forwarded-for": "203.0.113.42" },
+      body: JSON.stringify({
+        source: "landing_callback", name: "Ali Veli", phone: "0532 123 45 67",
+        targetingConsent: true, attribution: { gclid: "home-click", landingPage: "/" },
+      }),
+    }))
+    expect(response.status).toBe(200)
+    expect((await response.json()).eventId).toMatch(/^[a-f0-9-]{36}$/)
+    expect(leadWrites.at(-1)).toMatchObject({ gclid: "home-click", contactName: "Ali Veli" })
+  } finally {
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_ANALYTICS_ENABLED
+    else process.env.NEXT_PUBLIC_ANALYTICS_ENABLED = previous
+  }
+})

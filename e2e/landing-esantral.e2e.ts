@@ -81,7 +81,10 @@ test("Sizi arayalım: klavye, doğrulama ve başarılı gönderim", async ({ pag
   await dialog.getByRole("checkbox").click()
   await dialog.getByRole("button", { name: "Beni arayın", exact: true }).click()
   await expect(dialog.getByRole("heading", { name: "Teşekkürler." })).toBeVisible()
-  expect(requests).toEqual([{ source: "landing_callback", name: "Deneme Kullanıcı", phone: "0532 123 45 67" }])
+  expect(requests).toHaveLength(1)
+  expect(requests[0]).toMatchObject({ source: "landing_callback", name: "Deneme Kullanıcı", phone: "0532 123 45 67" })
+  // Reklam onayı verilmeden kampanya bilgisi sunucuda saklanmaz (route sözleşmesi).
+  expect(requests[0]).toHaveProperty("targetingConsent", false)
   await dialog.getByRole("button", { name: "Tamam", exact: true }).click()
   await expect(dialog).toHaveCount(0)
 })

@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
+import { captureDemoAttribution, getDemoAttribution, hasDemoAdvertisingConsent, trackDemoAdvertisingConversion } from "@/lib/demo-attribution"
 import { formatPhoneTR } from "@/lib/format"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import { callbackRequestSchema, type CallbackRequest } from "@/lib/validations/callback-request"
@@ -112,23 +113,40 @@ function CallbackForm({ onDone }: { onDone: () => void }) {
   const message = errors.name?.message ?? errors.phone?.message ?? errors.consent?.message ?? serverError
   const describedBy = message ? ERROR_ID : undefined
 
+  // Eşzamanlı kilit: isSubmitting bir render geç gelir; çift dokunuş iki talep açmasın.
+  const submitRef = useRef(false)
+
   const onSubmit = async (values: CallbackRequest) => {
+    if (submitRef.current) return
+    submitRef.current = true
     setServerError(null)
     try {
+      // /demo formu (HeroLeadForm) ile aynı: kampanya bilgisi yalnız reklam onayı varsa sunucuda saklanır.
+      captureDemoAttribution()
       const response = await fetch("/api/demo-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source: "landing_callback", name: values.name, phone: values.phone }),
+        body: JSON.stringify({
+          source: "landing_callback",
+          name: values.name,
+          phone: values.phone,
+          attribution: getDemoAttribution(),
+          targetingConsent: hasDemoAdvertisingConsent(),
+        }),
       })
       if (!response.ok) {
         const result = (await response.json().catch(() => null)) as { errors?: Record<string, string> } | null
         setServerError(result?.errors?._general ?? GENERIC_ERROR)
         return
       }
-      trackMarketingEvent("demo_submitted", { form_location: "home" })
+      const result = (await response.json().catch(() => ({}))) as { eventId?: string }
+      trackMarketingEvent("demo_submitted", { form_location: "home", event_id: result.eventId })
+      if (result.eventId) trackDemoAdvertisingConversion(result.eventId)
       setDone(true)
     } catch {
       setServerError(GENERIC_ERROR)
+    } finally {
+      submitRef.current = false
     }
   }
 
@@ -145,7 +163,13 @@ function CallbackForm({ onDone }: { onDone: () => void }) {
 
   return (
     <Form {...form}>
-      <form noValidate onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        noValidate
+        onSubmit={(event) => {
+          // handleSubmit olay anında kurulur: render sırasında ref okuyan bir fonksiyon geçmeyelim (react-hooks/refs).
+          void form.handleSubmit(onSubmit)(event)
+        }}
+      >
         <Image className={styles.logo} src="/landing/esantral/bakimx-icon.svg" alt="" width={44} height={40} unoptimized />
         <DialogHeading id="call-t">Sizi arayalım</DialogHeading>
         <DialogLead>
