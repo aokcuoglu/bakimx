@@ -177,6 +177,36 @@ const MOBILE_CONTENT_HEADING_PATHS = new Set([
   "/reports",
 ])
 
+// Masaüstünde (lg+) üst bar yoktur: sayfa başlığı içerikte durur. Bar yalnız
+// sidebar kapalıyken açma düğmesi için, mobil/tablette (<lg) menü düğmesi ve
+// logo için, sidebar'sız teknisyen ekranlarında da hesap/çıkış için kalır.
+
+// Sayfanın h1'ini her genişlikte içerik taşır (hero); barda başlık yazmaz.
+const CONTENT_H1_PATHS = new Set(["/dashboard"])
+
+// Masaüstünde görünür başlığı kendi içeriğinde zaten olan menü sayfaları
+// (hero, ikonlu liste başlığı, rapor menüsü). Bunlara ayrıca başlık basılmaz.
+const OWN_TITLE_MENU_PATHS = new Set(["/dashboard", "/technician", "/parts", "/suppliers", "/reports"])
+
+// Menü sayfası olmadığı hâlde görünür başlığı yalnız bardaydı.
+const BAR_TITLE_ONLY_PATHS = new Set(["/quotes/new", "/cashbox/payments/new", "/customers/balances"])
+
+const MENU_PATHS = new Set(
+  NAV_GROUPS.flatMap((group) => group.items.flatMap((item) => [item.href, ...(item.children ?? []).map((child) => child.href)])),
+)
+
+/**
+ * Masaüstünde sayfa başlığı içerikte nasıl durur: liste/menü sayfalarında
+ * görünür büyük başlık; detay ve form sayfaları başlığı kartında/formunda
+ * zaten taşıdığı için yalnız ekran okuyucuya h1; hero'lu sayfada hiç.
+ */
+function desktopTitleMode(pathname: string): "visible" | "sr-only" | "none" {
+  if (CONTENT_H1_PATHS.has(pathname)) return "none"
+  if (OWN_TITLE_MENU_PATHS.has(pathname)) return "sr-only"
+  if (MENU_PATHS.has(pathname) || BAR_TITLE_ONLY_PATHS.has(pathname)) return "visible"
+  return "sr-only"
+}
+
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
@@ -216,9 +246,18 @@ export function AppShell({
   if (isSettingsPath(pathname)) {
     return <div data-settings-content className="mx-auto w-full min-w-0 max-w-3xl pt-6 sm:pt-12">{children}</div>
   }
-  if (wide) return <div className={WIDE_WIDTH_CLASS}>{children}</div>
-  if (constrained) return <div className={CONSTRAINED_WIDTH_CLASS}>{children}</div>
-  return <>{children}</>
+  const titleMode = pageTitle && !isSidebarlessRoute(pathname) ? desktopTitleMode(pathname) : "none"
+  // Yalnız masaüstünde (lg+) çizilir; altında başlık bardadır.
+  const desktopTitle = titleMode === "none" ? null : (
+    // cn() değil: tailwind-merge özel `text-page-title`ı renk sınıfı sanıp
+    // `text-foreground` lehine siler.
+    <h1 className={titleMode === "visible" ? "hidden text-page-title text-foreground lg:mb-6 lg:block" : "sr-only hidden lg:block"}>
+      {pageTitle}
+    </h1>
+  )
+  if (wide) return <div className={WIDE_WIDTH_CLASS}>{desktopTitle}{children}</div>
+  if (constrained) return <div className={CONSTRAINED_WIDTH_CLASS}>{desktopTitle}{children}</div>
+  return <>{desktopTitle}{children}</>
 }
 
 export type WorkspaceSwitcherProps = {
@@ -321,17 +360,31 @@ function AppHeader({
   const showMobileTitle = headerTitle && !isSettingsPath(pathname) && !MOBILE_CONTENT_HEADING_PATHS.has(pathname)
   const sidebarless = isSidebarlessRoute(pathname, searchParams)
   const homeHref = isTechRole ? "/technician" : "/dashboard"
+  const contentOwnsTitle = CONTENT_H1_PATHS.has(pathname)
 
   return (
-    <header className={cn("sticky top-0 z-30 flex h-12 items-center border-b border-border bg-background", shellStyles.header, topBannerVisible && "lg:top-8")}>
-      <div className="relative flex h-12 w-full flex-nowrap items-center gap-2 px-4">
+    <header
+      className={cn(
+        // Mobil/tablet (<lg) 58px bar + 44px düğme: e-santral "sticky üst bar"
+        // ölçüsü (docs/design-pattern-esantral.md §Sticky üst bar). Masaüstünde
+        // yalnız sidebar kapalıyken açma düğmesi için kompakt 48px görünür.
+        "sticky top-0 z-30 flex h-[58px] items-center border-b border-border bg-background lg:h-12",
+        shellStyles.header,
+        topBannerVisible && "lg:top-8",
+        !sidebarless && "lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden",
+      )}
+    >
+      <div className="relative flex h-full w-full flex-nowrap items-center gap-2 px-4">
         {/* Sidebar açıkken kontrol menü başlığındadır; kapalıyken burada görünür. */}
         {sidebarless ? (
           <Link href={homeHref} aria-label="BakimX" className="hidden items-center md:flex">
             <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
           </Link>
         ) : (
-          <SidebarTrigger data-tour="sidebar-trigger" className="-ml-2 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden" />
+          <SidebarTrigger
+            data-tour="sidebar-trigger"
+            className="-ml-2 size-11 lg:size-8 [&_svg:not([class*='size-'])]:size-[22px] lg:[&_svg:not([class*='size-'])]:size-4 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden"
+          />
         )}
 
         {showMobileTitle ? (
@@ -339,15 +392,18 @@ function AppHeader({
             {headerTitle}
           </h1>
         ) : (
-          <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
+          // Başlığı içerikte olan sayfada barda başlık hiç yazmaz; logo tablette de
+          // (md–lg) kalır, yoksa bar tek bir menü düğmesiyle boş görünür.
+          <div className={cn("absolute left-1/2 -translate-x-1/2", contentOwnsTitle ? "lg:hidden" : "md:hidden")}>
             <Link href={homeHref} aria-label="BakimX" className="flex items-center">
-              <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
+              <BrandLogo variant="icon-light" size="lg" priority alt="BakimX" />
             </Link>
           </div>
         )}
 
-        {headerTitle && (
-          <h1 className={cn("hidden min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:flex", shellStyles.headerTitle)}>
+        {headerTitle && !contentOwnsTitle && (
+          // Masaüstünde başlık içerikte (AppShell); sidebar'sız ekranda bar kalır.
+          <h1 className={cn("hidden min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:flex", !sidebarless && "lg:hidden", shellStyles.headerTitle)}>
             {HeaderIcon ? <HeaderIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
             <span className="truncate">{headerTitle}</span>
           </h1>
@@ -370,9 +426,9 @@ function SidebarlessAccountActions() {
     <>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-8" asChild>
+          <Button variant="ghost" size="icon" className="size-11 lg:size-8" asChild>
             <Link href="/settings/account" aria-label="Hesap ayarları">
-              <UserCircle className="size-4" aria-hidden="true" />
+              <UserCircle className="size-[22px] lg:size-4" aria-hidden="true" />
             </Link>
           </Button>
         </TooltipTrigger>
@@ -381,8 +437,8 @@ function SidebarlessAccountActions() {
       <form action="/api/auth/logout" method="POST">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button type="submit" variant="ghost" size="icon" className="size-8" aria-label="Çıkış Yap">
-              <LogOut className="size-4" aria-hidden="true" />
+            <Button type="submit" variant="ghost" size="icon" className="size-11 lg:size-8" aria-label="Çıkış Yap">
+              <LogOut className="size-[22px] lg:size-4" aria-hidden="true" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">Çıkış Yap</TooltipContent>

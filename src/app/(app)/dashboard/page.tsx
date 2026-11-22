@@ -113,7 +113,7 @@ export default async function DashboardPage() {
       <div className={surface.root}>
         <section data-tour="welcome-banner" className={surface.hero}>
           <div className="min-w-0">
-            <h2 className={surface.heroTitle}>{workshop?.name || "Genel Bakış"}</h2>
+            <h1 className={surface.heroTitle}>{workshop?.name || "Genel Bakış"}</h1>
             <p className={surface.heroSub}>
               Bugün ·{" "}
               {new Date().toLocaleDateString("tr-TR", {
