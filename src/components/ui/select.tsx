@@ -71,7 +71,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-fit items-center justify-between gap-1.5 rounded-[9px] border border-foreground/6 bg-card py-0 pr-2 pl-2.5 text-sm font-medium leading-5 whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground data-[size=default]:h-8 data-[size=sm]:h-7 data-[size=sm]:rounded-[8px] data-[size=compact]:h-5 data-[size=compact]:rounded-[6px] data-[size=compact]:text-xs *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "flex w-fit items-center justify-between gap-1.5 rounded-[12px] border border-input bg-card py-0 pr-3 pl-(--field-px) text-(length:--control-fs) font-normal leading-5 tracking-[-0.01em] whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground data-[size=default]:h-(--control-h) data-[size=sm]:h-(--control-h-sm) data-[size=compact]:h-(--control-h-xs) data-[size=compact]:text-(length:--control-fs-xs) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}
@@ -151,7 +151,7 @@ function SelectItem({
       data-slot="select-item"
       value={value === "" ? EMPTY_VALUE : value}
       className={cn(
-        "relative flex min-h-8 w-full cursor-default items-center gap-1.5 rounded-md py-1.5 pr-8 pl-2 text-sm leading-5 outline-hidden select-none focus:bg-foreground/4 focus:text-foreground data-[state=checked]:bg-foreground/4 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "relative flex min-h-(--control-h) w-full cursor-default items-center gap-1.5 rounded-[10px] py-1.5 pr-8 pl-3 text-(length:--control-fs) leading-5 outline-hidden select-none focus:bg-foreground/4 focus:text-foreground data-[state=checked]:bg-foreground/4 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className
       )}
       {...props}

@@ -1,4 +1,32 @@
-# BakımX — Attio temelli tasarım dili
+# BakımX — tasarım dili
+
+## Güncel kaynak: e-santral kalıbı (22 Kasım 2026)
+
+22 Kasım 2026 kullanıcı kararıyla uygulama içi tasarımın kaynağı
+**https://e-santral.com/bakimx** sayfasıdır (Apple tarzı, iOS gruplu liste dili).
+Ayrıntılı kalıp, ölçüler ve bileşen tarifleri: [`docs/design-pattern-esantral.md`](./docs/design-pattern-esantral.md).
+Bu bölüm aşağıdaki Attio kararlarıyla çeliştiği her yerde **onların yerine geçer**;
+Attio bölümleri karar geçmişi olarak duruyor ve ekranlar taşındıkça budanacak.
+
+- **Renk:** zemin `#f2f2f7` (gruplu), kart beyaz, mürekkep `#1d1d1f`, ikincil gri
+  `#6e6e73`, çizgi `#e5e5ea`, birincil mavi **`#0071e3`** (metin tonu
+  `--primary-strong` `#0058b0`). Durumlar pastel zemin + `-strong` metin.
+- **Yazı:** sistem fontu (e-santral ile birebir yığın), gövde harf aralığı −0.01em.
+  Telefonda iOS ölçeği (gövde 17px), masaüstü veri ekranlarında kompakt (15px).
+  Ekran başlığı kalın, −0.03em.
+- **Kontroller:** düğmeler hap; telefonda 44px, md+ 36px. Girdi 12px köşe.
+  Matris: [`docs/ui-control-sizing.md`](./docs/ui-control-sizing.md).
+- **Yüzey:** kart 16px köşe, çerçeve yok ya da çok hafif; gölge yok. Diyalog 28px.
+- **Birincil eylem:** mavi dolgu hap (`default`); ikincil düz bağlantı ya da
+  `outline`; geri/kapat `ghost`.
+- **Kabuk:** buzlu yarı saydam üst bar ve mobil sekme çubuğu, beyaz sidebar,
+  mavi tonlu seçili öğe (`src/components/layout/app-shell.module.css`).
+- İlk uygulama: Dashboard (`src/components/dashboard/surface.tsx`). Diğer
+  ekranlar sırayla taşınır; her dilim kullanıcı teyidinden sonra.
+
+---
+
+# Karar geçmişi — Attio temelli tasarım dili (22 Kasım 2026 öncesi)
 
 ## Kapsam
 

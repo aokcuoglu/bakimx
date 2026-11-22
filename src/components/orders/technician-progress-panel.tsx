@@ -249,7 +249,7 @@ export function TechnicianProgressPanel({
                   <StickyNote className="size-4 text-warning-strong shrink-0 mt-0.5" aria-hidden />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-foreground whitespace-pre-wrap">{note.content}</p>
-                    <p className="text-[10px] text-foreground/60 mt-1">{formatDateTime(note.createdAt)}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">{formatDateTime(note.createdAt)}</p>
                   </div>
                 </li>
               ))}
