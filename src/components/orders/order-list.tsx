@@ -112,6 +112,16 @@ function technicianSearch(order: OrderRow): string {
   return order.assignedTechnicianName?.trim() || "Atanmamış"
 }
 
+/**
+ * Detay bağlantılarının geri dönüş adresi tablo `meta`sından okunur, kolon
+ * tanımlarına kapatılmaz: liste adresi (`view`) her filtre tuşunda değişir;
+ * kolonlar ona bağlı olsaydı her harfte yeniden kurulur, başlıktaki filtre
+ * paneli de söküldüğü için ilk harften sonra kapanırdı.
+ */
+function listHrefOf(table: { options: { meta?: unknown } }): string {
+  return (table.options.meta as { listHref?: string } | undefined)?.listHref ?? "/orders"
+}
+
 function textFilter<T>(read: (row: T) => string) {
   return (row: { original: T }, _columnId: string, value: unknown) =>
     matchesColumnFilter(read(row.original), value)
@@ -242,9 +252,9 @@ export function OrderList({
         accessorFn: (order) => order.workOrderNo,
         header: ({ column }) => <OrderTableColumnHeader column={column} title="İş No" />,
         filterFn: textFilter((order) => order.workOrderNo),
-        cell: ({ row }) => (
+        cell: ({ row, table }) => (
           <Link
-            href={orderDetailHref(row.original.id, listHref)}
+            href={orderDetailHref(row.original.id, listHrefOf(table))}
             className="font-mono text-xs text-muted-foreground transition-colors hover:text-primary-strong"
           >
             {row.original.workOrderNo}
@@ -321,7 +331,7 @@ export function OrderList({
           const right = b.original.hasPrice ? b.original.grandTotal : Number.NEGATIVE_INFINITY
           return left - right
         },
-        header: ({ column }) => <OrderTableColumnHeader column={column} title="Toplam" align="right" />,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Toplam" align="right" kind="number" />,
         filterFn: textFilter((order) => (order.hasPrice ? formatTRY(order.grandTotal) : "")),
         meta: { align: "right" },
         cell: ({ row }) => (
@@ -333,7 +343,7 @@ export function OrderList({
       dates: {
         id: "dates",
         accessorFn: (order) => order.createdAt,
-        header: ({ column }) => <OrderTableColumnHeader column={column} title="Giriş tarihi" />,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Giriş tarihi" kind="date" />,
         filterFn: textFilter((order) => formatDate(order.createdAt)),
         cell: ({ row }) => <span className="whitespace-nowrap text-[13px] tabular-nums text-muted-foreground">{formatDate(row.original.createdAt)}</span>,
       },
@@ -341,7 +351,7 @@ export function OrderList({
         id: "delivery",
         accessorFn: (order) => order.estimatedDeliveryAt,
         sortUndefined: "last",
-        header: ({ column }) => <OrderTableColumnHeader column={column} title="Tahmini teslim" />,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Tahmini teslim" kind="date" />,
         filterFn: textFilter((order) => order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : ""),
         cell: ({ row }) => <span className="whitespace-nowrap text-[13px] tabular-nums text-muted-foreground">{row.original.estimatedDeliveryAt ? formatDate(row.original.estimatedDeliveryAt) : "—"}</span>,
       },
@@ -373,21 +383,21 @@ export function OrderList({
         enableHiding: false,
         enableColumnFilter: false,
         header: () => <span className="text-xs font-medium text-muted-foreground">İşlem</span>,
-        cell: ({ row }) => (
+        cell: ({ row, table }) => (
           <div className="flex items-center justify-end">
             <ActionsMenu
-              viewHref={orderDetailHref(row.original.id, listHref)}
+              viewHref={orderDetailHref(row.original.id, listHrefOf(table))}
               editHref={
                 isOrderLocked(row.original.status as OrderStatus)
                   ? undefined
-                  : orderDetailHref(row.original.id, listHref, true)
+                  : orderDetailHref(row.original.id, listHrefOf(table), true)
               }
             />
           </div>
         ),
       },
     ]
-  }, [technicians, listHref])
+  }, [technicians])
 
   const table = useReactTable({
     data: orders,
@@ -400,6 +410,7 @@ export function OrderList({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getRowId: (order) => order.id,
+    meta: { listHref },
   })
 
   const visibleOrders = table.getRowModel().rows.map((row) => row.original)
@@ -408,7 +419,7 @@ export function OrderList({
     <div ref={rootRef} className="space-y-5 sm:space-y-6" onChange={onChange} onSubmit={onSubmit} onClickCapture={onClick}>
       {/* Durum kartları — Genel Bakış KPI kartlarıyla aynı kalıp; her kart bir
           durum filtresidir, seçili olan mavi çerçeveyle işaretlenir. */}
-      <DashStatGrid label="Araç kabul durum özeti" count={kpiConfigs.length} scroll>
+      <DashStatGrid label="Araç kabul durum özeti" count={kpiConfigs.length} size="compact">
         {kpiConfigs.map(({ icon: Icon, ...cfg }) => {
           const isActive = activeStatus === cfg.filterValue
           const parts = isActive ? keptFilters : [`status=${cfg.filterValue}`, ...keptFilters]
@@ -423,6 +434,7 @@ export function OrderList({
               accent={cfg.accent}
               tone={cfg.count > 0 ? cfg.tone : undefined}
               active={isActive}
+              size="compact"
             />
           )
         })}

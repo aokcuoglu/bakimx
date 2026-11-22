@@ -229,6 +229,7 @@ export function DashStat({
   accent,
   tone,
   active = false,
+  size = "default",
 }: {
   label: string
   value: ReactNode
@@ -238,12 +239,15 @@ export function DashStat({
   tone?: "warning" | "destructive"
   /** Kart bir filtre sekmesiyse ve o filtre açıksa (ör. Araç Kabulleri durum kartları). */
   active?: boolean
+  /** compact → tek satır [ikon] etiket … rakam; liste sayfalarının filtre kartları. */
+  size?: "default" | "compact"
 }) {
   return (
     <Link
       href={href}
       prefetch={false}
       className={styles.stat}
+      data-size={size === "compact" ? "compact" : undefined}
       data-active={active || undefined}
       aria-current={active ? "page" : undefined}
       // Görsel sıra "rakam, etiket"; ekran okuyucu "Aktif: 23" duysun.
@@ -260,17 +264,17 @@ export function DashStatGrid({
   label,
   children,
   count,
-  scroll = false,
+  size = "default",
 }: {
   label: string
   children: ReactNode
   count: number
-  /** true → dar alanda kartlar alt alta yığılmak yerine yana kayar. */
-  scroll?: boolean
+  /** compact → kompakt kartlar tek sırada; sığmazsa yana kayar (alt alta yığılmaz). */
+  size?: "default" | "compact"
 }) {
   return (
     <div className={styles.stats} aria-label={label}>
-      <div className={styles.statGrid} data-count={count} data-scroll={scroll || undefined}>{children}</div>
+      <div className={styles.statGrid} data-count={count} data-size={size === "compact" ? "compact" : undefined}>{children}</div>
     </div>
   )
 }

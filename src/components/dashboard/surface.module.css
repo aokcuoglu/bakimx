@@ -135,27 +135,38 @@
   }
 }
 
-/* Kayan şerit (DashStatGrid scroll): telefonda kartlar listeden önce üç sıra
-   yığılmasın diye yana kayar; şerit ekran kenarına kadar taşar. */
+/* Kompakt kart şeridi (DashStatGrid size="compact"): liste sayfalarının
+   filtre kartları. Tek sıra; sığmazsa alt alta yığılmak yerine yana kayar.
+   Telefonda şerit ekran kenarına kadar taşar. */
+.statGrid[data-size="compact"] {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.statGrid[data-size="compact"]::-webkit-scrollbar {
+  display: none;
+}
+
+.statGrid[data-size="compact"] > * {
+  flex: 1 0 172px;
+  scroll-snap-align: start;
+}
+
 @container (max-width: 559px) {
-  .statGrid[data-scroll] {
-    display: flex;
+  .statGrid[data-size="compact"] {
     margin-inline: -16px;
     padding-inline: 16px;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
     scroll-padding-inline: 16px;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
   }
 
-  .statGrid[data-scroll]::-webkit-scrollbar {
-    display: none;
-  }
-
-  .statGrid[data-scroll] > * {
-    flex: 0 0 150px;
-    scroll-snap-align: start;
+  /* Kart içeriği kadar genişler: etiket ("Onay Bekliyor") kırpılmasın. */
+  .statGrid[data-size="compact"] > * {
+    flex: 0 0 auto;
+    min-width: 140px;
   }
 }
 
@@ -183,6 +194,38 @@
 
 .stat:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
+/* Kompakt kart: [ikon] etiket ............ rakam — tek satır, ~56px. */
+.stat[data-size="compact"] {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "icon label value";
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+}
+
+.stat[data-size="compact"] > .statIcon {
+  width: 30px;
+  height: 30px;
+}
+
+.stat[data-size="compact"] > .statIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.stat[data-size="compact"] > .statLabel {
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.stat[data-size="compact"] > .statValue {
+  font-size: 20px;
+  line-height: 24px;
 }
 
 /* Filtre sekmesi olarak seçili kart: mavi iç çerçeve (aria-current="page"). */

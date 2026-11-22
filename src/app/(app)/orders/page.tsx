@@ -2,11 +2,13 @@ import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
-import { Plus, ClipboardList, Search, Filter, X } from "lucide-react"
+import { Plus, ClipboardList, Filter, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { OrderList } from "@/components/orders/order-list"
 import { FilterSelect } from "@/components/shared/filter-select"
+import { OrderFiltersDisclosure } from "@/components/orders/order-filters-disclosure"
+import { surface } from "@/components/dashboard/surface"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
@@ -90,6 +92,7 @@ export default async function OrdersPage({
     }),
   ])
 
+  const activeFilterCount = [status, payment, technicianFilter.value, invoiceFilter.value, deliveryFilter.value].filter(Boolean).length
   const hasAnyFilter = Boolean(q || status || payment || technicianFilter.value || invoiceFilter.value || deliveryFilter.value)
 
   const statusCountMap = new Map(statusGroups.map((g) => [g.status, g._count._all]))
@@ -144,15 +147,20 @@ export default async function OrdersPage({
     <AppShell
       workshopName={workshop?.name}
       pageTitle="Araç Kabulleri"
-      pageActions={
-        <Button variant="foreground" size="icon" asChild aria-label="Yeni araç kabulü">
-          <Link href="/orders/new">
-            <Plus className="size-5" />
-          </Link>
-        </Button>
-      }
     >
-      <div className="space-y-4">
+      <div className="space-y-5 sm:space-y-6">
+        {/* Genel Bakış kalıbı: başlık + birincil eylem aynı satırda (dashboard
+            hero'sunun aynı sınıfları). Kabuk bu sayfada başlık çizmez
+            (app-shell CONTENT_H1_PATHS). */}
+        <section className={surface.hero}>
+          <h1 className={surface.heroTitle}>Araç Kabulleri</h1>
+          <Button variant="default" className={surface.heroCta} asChild>
+            <Link href="/orders/new">
+              <Plus className="size-4" />
+              Yeni Araç Kabul
+            </Link>
+          </Button>
+        </section>
         <OrderList
           orders={serializedOrders}
           kpis={kpis}
@@ -169,27 +177,24 @@ export default async function OrdersPage({
             // kullanılamaz — her aramada formu yeniden kurup yazarken odağı
             // düşürür (#724).
             <form key="order-list-filters" id="order-list-filters" action="/orders" method="get" className="space-y-3">
-              <div className="flex items-center gap-2">
-                {/* Dolgulu arama alanı — sidebar arama kutusuyla aynı (e-santral). */}
-                <div className="relative min-w-0 flex-1 sm:max-w-md">
-                  <Search className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-muted-foreground" />
+              {/* Arama boydan boya (sidebar arama kutusu gibi dolgulu); filtreler
+                  varsayılan kapalı, kutudaki "Filtreler" düğmesi açar. */}
+              <OrderFiltersDisclosure
+                activeCount={activeFilterCount}
+                search={
                   <Input
                     name="q"
                     defaultValue={q}
                     placeholder="Araç kabulü, plaka veya müşteri ara…"
                     aria-label="Araç kabulü ara"
-                    className="h-11 rounded-xl border-0 bg-foreground/[0.06] pl-10 text-[17px] shadow-none md:h-10 md:text-[15px]"
+                    className="h-11 rounded-xl border-0 bg-foreground/[0.06] pl-10 pr-36 text-[17px] shadow-none md:h-10 md:text-[15px]"
                   />
-                </div>
-                <Button variant="default" className="ml-auto hidden rounded-full sm:inline-flex" asChild>
-                  <Link href="/orders/new"><Plus className="size-4" />Yeni Araç Kabul</Link>
-                </Button>
-              </div>
-              {/* Dört filtre dar ekranda 2'li ızgaraya düşüp geniş ekranda satıra
+                }
+              >
+              {/* Filtreler dar ekranda 2'li ızgaraya düşüp geniş ekranda satıra
                   dönüyor; seçimler anında uygulandığı için görünür buton yok. */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="hidden items-center gap-1.5 text-[13px] font-medium text-muted-foreground sm:inline-flex"><Filter className="size-3.5" />Filtreler</span>
-                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
                 <FilterSelect
                   name="status"
                   autoSubmit
@@ -282,6 +287,7 @@ export default async function OrdersPage({
                   Filtrele
                 </Button>
               </div>
+              </OrderFiltersDisclosure>
             </form>
           }
           emptyState={

@@ -166,6 +166,7 @@ const APP_NAV_TEXT = "h-7 text-sm leading-5 font-medium tracking-[-0.005em]"
 // keeps the brand mark there; list and utility pages use the bar for context.
 const MOBILE_CONTENT_HEADING_PATHS = new Set([
   "/dashboard",
+  "/orders",
   "/orders/new",
   "/customers/new",
   "/vehicles/new",
@@ -182,7 +183,8 @@ const MOBILE_CONTENT_HEADING_PATHS = new Set([
 // logo için, sidebar'sız teknisyen ekranlarında da hesap/çıkış için kalır.
 
 // Sayfanın h1'ini her genişlikte içerik taşır (hero); barda başlık yazmaz.
-const CONTENT_H1_PATHS = new Set(["/dashboard"])
+// /orders: Genel Bakış kalıbında başlık + "Yeni Araç Kabul" satırını kendisi çizer.
+const CONTENT_H1_PATHS = new Set(["/dashboard", "/orders"])
 
 // Masaüstünde görünür başlığı kendi içeriğinde zaten olan menü sayfaları
 // (hero, ikonlu liste başlığı, rapor menüsü). Bunlara ayrıca başlık basılmaz.
