@@ -11,10 +11,12 @@
   /* clip (hidden değil): kaydırma kabı oluşturmaz, yapışkan üst bant çalışır */
   overflow-x: clip;
 }
-.page :where(h1, h2, h3, p) {
+/* Sıfırlamalar sıfır özgüllükte: kit sınıflarının (.priceSub, .textLink…) kendi
+   margin/renk değerlerini ezmemeli. */
+:where(.page) :where(h1, h2, h3, p) {
   margin: 0;
 }
-.page :where(a) {
+:where(.page) :where(a) {
   color: inherit;
   text-decoration: none;
 }

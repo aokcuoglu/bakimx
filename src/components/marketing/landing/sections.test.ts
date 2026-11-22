@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { createElement, type ReactNode } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { AppMockup } from "./app-mockup"
@@ -50,4 +52,12 @@ test("maket ekran okuyucuya tek görsel olarak sunulur", () => {
   expect(html).toContain('role="img"')
   expect(html).toContain('aria-hidden="true"')
   expect(html).toContain("Yıldız Oto Servis")
+})
+
+test("sayfa sıfırlamaları sıfır özgüllükte; kit sınıflarının margin/rengini ezmez", () => {
+  // Görsel QA (22-11): `.page :where(p)` (0,1,0) `.priceSub`/`.tileTitle` margin'lerini ve
+  // `.textLink` rengini dosya sırasına göre eziyordu — fiyat kutusu ve özellik kutuları çöktü.
+  const css = readFileSync(join(import.meta.dir, "landing.module.css"), "utf8")
+  expect(css).not.toMatch(/^\.page :where\(/m)
+  expect(css).toContain(":where(.page) :where(h1, h2, h3, p)")
 })
