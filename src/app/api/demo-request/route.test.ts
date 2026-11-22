@@ -210,3 +210,27 @@ test("demo attribution requires master flag and explicit targeting consent at AP
     else process.env.NEXT_PUBLIC_ANALYTICS_ENABLED = previous
   }
 })
+
+test("ana sayfa 'Sizi arayalım' talebi yalnız ad ve telefonla kaydedilir (#781)", async () => {
+  const response = await POST(new Request("https://www.bakimx.com/api/demo-request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-forwarded-for": "203.0.113.40" },
+    body: JSON.stringify({ source: "landing_callback", name: "Ali Veli", phone: "0532 123 45 67" }),
+  }))
+  expect(response.status).toBe(200)
+  expect(demoWrites.at(-1)).toMatchObject({
+    name: "Ali Veli", businessName: "", phone: "0532 123 45 67", city: "", monthlyVehicles: "", notes: "Ana sayfa · Sizi arayalım",
+  })
+  expect(leadWrites.at(-1)).toMatchObject({ source: "public_demo_request", contactName: "Ali Veli", city: "" })
+})
+
+test("kaynak belirtilmeyen istek hâlâ işletme, il ve araç adedi ister", async () => {
+  const response = await POST(new Request("https://www.bakimx.com/api/demo-request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-forwarded-for": "203.0.113.41" },
+    body: JSON.stringify({ name: "Ali Veli", phone: "0532 123 45 67" }),
+  }))
+  expect(response.status).toBe(400)
+  const result = await response.json()
+  expect(Object.keys(result.errors).sort()).toEqual(["businessName", "city", "monthlyVehicles"])
+})
