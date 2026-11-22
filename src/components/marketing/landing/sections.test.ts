@@ -82,3 +82,20 @@ test("üst ve alt bant ana sayfa dışında çapaları köke bağlar (#796)", ()
   expect(html).not.toContain('href="#fiyat"')
   expect(html).not.toContain('href="#hero"')
 })
+
+test("telefon bandı: varsayılan 'Giriş yap' hapı + gizlenen deneme tetikleyicisi; /login'de hap yok (#807)", () => {
+  const html = renderToStaticMarkup(createElement(LandingHeader))
+  // Bun'da CSS-module sınıf adları boş döner; yapıyı sayarak doğrula.
+  const loginLinks = (markup: string) => markup.match(/<a [^>]*href="\/login"/g)?.length ?? 0
+  expect(loginLinks(html)).toBe(2) // masaüstü metin bağlantısı + telefon hapı
+  expect(html).toMatch(/<a data-slot="button"[^>]*href="\/login"/)
+  expect(html).toMatch(/<span>(<a [^>]*href="\/register"[^>]*>Ücretsiz deneyin)/)
+  const trial = renderToStaticMarkup(createElement(LandingHeader, { mobileAction: "trial" }))
+  expect(loginLinks(trial)).toBe(1)
+  expect(trial).not.toMatch(/<a data-slot="button"[^>]*href="\/login"/)
+
+  const css = readFileSync(join(import.meta.dir, "landing.module.css"), "utf8")
+  const phone = css.slice(css.indexOf("@media (max-width: 640px)"))
+  expect(phone).toContain(".acts .loginPill {\n    display: inline-flex;")
+  expect(phone).toContain(".acts .trialNav {\n    display: none;")
+})

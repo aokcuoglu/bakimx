@@ -534,6 +534,15 @@
   }
 }
 
+/* Telefon bandındaki "Giriş yap" hapı yalnız ≤640px'te görünür */
+.acts .loginPill {
+  display: none;
+}
+.acts .trialNav,
+.acts .trialNavPlain {
+  display: contents;
+}
+
 /* Telefon */
 @media (max-width: 640px) {
   .page {
@@ -547,6 +556,12 @@
     height: 58px;
   }
   .login {
+    display: none;
+  }
+  .acts .loginPill {
+    display: inline-flex;
+  }
+  .acts .trialNav {
     display: none;
   }
   .heroIn {

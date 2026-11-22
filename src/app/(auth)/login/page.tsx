@@ -25,7 +25,7 @@ export default async function LoginPage({
   return (
     <SignupDialogProvider>
       <div className={cn(landing.page, styles.shell)}>
-        <LandingHeader anchorBase="/" />
+        <LandingHeader anchorBase="/" mobileAction="trial" />
         <main aria-label="Hesaba giriş formu" className={styles.main}>
           <div className={styles.card}>
             <LoginForm

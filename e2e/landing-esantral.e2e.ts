@@ -49,6 +49,28 @@ test("hero ve üst bant CTA'ları e-santral hap ölçüsünde, kayda gider", asy
   await expect(page.getByRole("banner").getByRole("link", { name: "Giriş yap", exact: true })).toHaveAttribute("href", "/login")
 })
 
+for (const [width, height] of [[390, 844], [375, 667]] as const) {
+  test(`telefonda üst bantta mavi hap "Giriş yap"tır, hero'da "Ücretsiz deneyin" kalır ${width}x${height} (#807)`, async ({ page }) => {
+    await openHome(page, width, height)
+    const banner = page.getByRole("banner")
+    const login = banner.getByRole("link", { name: "Giriş yap", exact: true })
+    await expect(login).toBeVisible()
+    await expect(login).toHaveAttribute("href", "/login")
+    await expect(login).toHaveCSS("background-color", "rgb(0, 113, 227)")
+    await expect(banner.getByRole("link", { name: "Ücretsiz deneyin", exact: true })).toBeHidden()
+    await expect(page.locator("#hero").getByRole("link", { name: "Ücretsiz deneyin", exact: true })).toBeVisible()
+    expect(await overflowX(page)).toBeLessThanOrEqual(0)
+  })
+}
+
+test("/login telefon bandı kendine link vermez, Ücretsiz deneyin görünür (#807)", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto("/login")
+  const banner = page.getByRole("banner")
+  await expect(banner.getByRole("link", { name: "Ücretsiz deneyin", exact: true })).toBeVisible()
+  await expect(banner.getByRole("link", { name: "Giriş yap", exact: true })).toBeHidden()
+})
+
 test("Sizi arayalım: klavye, doğrulama ve başarılı gönderim", async ({ page }) => {
   await openHome(page, 1440, 900)
   const requests: unknown[] = []
