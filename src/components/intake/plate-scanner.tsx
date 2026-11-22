@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback } from "react"
+import { TriangleAlert } from "lucide-react"
 import { CameraScanner } from "@/components/shared/camera-scanner"
 import { postImageScan, ScanError, type ScanImagePayload } from "@/lib/ocr/scan-client"
 
@@ -10,11 +11,11 @@ type Props = {
 }
 
 /**
- * Plaka tarayıcı: ortak kamera kabuğu (bkz. CameraScanner) + plaka oranlı rehber.
- * Çekilen kare /api/plate/scan'e gönderilir; okunan plaka onDetected ile döner.
- * Ruhsat tarayıcısının aksine jscanify/OpenCV belge tespiti YOK (plaka kağıt değil).
- * Plaka kısa ve tanıdık bir değer olduğundan onay adımı yoktur — okunan değer
- * doğrudan arama kutusuna yazılır ve kullanıcı orada görüp düzeltebilir.
+ * Plaka tarayıcı: ortak kamera kabuğu (bkz. CameraScanner) + araç önü kadrajı.
+ * Kullanıcı plakayı değil aracın önünü çeker; kare /api/plate/scan'e gönderilir,
+ * plakanın yerini ve metnini sunucu bulur (Claude Vision). Plaka kısa ve tanıdık
+ * bir değer olduğundan onay adımı yoktur — okunan değer doğrudan arama kutusuna
+ * yazılır ve kullanıcı orada görüp düzeltebilir.
  */
 export function PlateScanner({ onDetected, onClose }: Props) {
   const scan = useCallback(async (payload: ScanImagePayload) => {
@@ -25,19 +26,34 @@ export function PlateScanner({ onDetected, onClose }: Props) {
 
   return (
     <CameraScanner
-      title="Plakayı Tara"
-      hint="Plakayı çerçeveye yerleştirip çekin"
-      frameClassName="aspect-[4.6/1] w-[86%] max-w-md"
-      frameOverlay={
-        // TR mavi şeridi — Türkiye plakası göstergesi
-        <div className="absolute inset-y-0 left-0 flex w-[13%] min-w-7 items-center justify-center bg-primary">
-          <span className="text-[0.7rem] font-bold leading-none tracking-wider text-primary-foreground">TR</span>
-        </div>
-      }
+      title="Aracı Çek"
+      guide={<PlateCaptureGuide />}
       scanningLabel="Plaka okunuyor…"
       onScan={scan}
       onDetected={onDetected}
       onClose={onClose}
     />
+  )
+}
+
+/**
+ * Alt yönerge kartı: ünlem ikonu + kısa talimat.
+ * Çerçeve yok — kullanıcı aracı dilediği gibi kadrajlar, plakayı sunucu bulur.
+ */
+function PlateCaptureGuide() {
+  return (
+    <div className="mx-auto max-w-md rounded-xl bg-black/70 p-4 text-white ring-1 ring-white/15 backdrop-blur-md">
+      <div className="flex items-start gap-3">
+        <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-warning text-warning-foreground">
+          <TriangleAlert className="size-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-lg leading-tight font-semibold">Aracın önünü çekin</p>
+          <p className="mt-1 text-sm leading-snug text-white">
+            Plaka net bir şekilde görünsün.
+          </p>
+        </div>
+      </div>
+    </div>
   )
 }

@@ -70,6 +70,19 @@ export interface VinOcrResult {
   provider: OcrProviderName
 }
 
+/**
+ * Araç fotoğrafından (önden/arkadan, tam kare) plaka okuma sonucu. Plakanın
+ * karedeki yerini sağlayıcı bulur; doğrulama/normalizasyon çağıran tarafta
+ * `parsePlateFromText` ile yapılır.
+ */
+export interface PlateOcrResult {
+  /** Sağlayıcının okuduğu ham plaka metni (henüz doğrulanmamış). */
+  rawPlate: string
+  /** Sağlayıcı bu okumadan emin değilse false. */
+  confident: boolean
+  provider: OcrProviderName
+}
+
 export type OcrRequestOptions = { signal?: AbortSignal; timeoutMs?: number; maxRetries?: number }
 
 export interface OcrProvider {
@@ -77,4 +90,5 @@ export interface OcrProvider {
   extractRegistration(imageBuffer: Buffer, mimeType: string, options?: OcrRequestOptions): Promise<RegistrationOcrResult>
   extractPartBox?(imageBuffer: Buffer, mimeType: string): Promise<PartBoxOcrResult>
   extractVin?(imageBuffer: Buffer, mimeType: string): Promise<VinOcrResult>
+  extractPlate?(imageBuffer: Buffer, mimeType: string): Promise<PlateOcrResult>
 }

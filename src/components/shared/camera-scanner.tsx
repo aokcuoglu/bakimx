@@ -19,10 +19,15 @@ type TorchConstraints = MediaTrackConstraints & { advanced?: Array<{ torch?: boo
 export type CameraScannerProps = {
   /** Üst bardaki başlık, ör. "Plakayı Tara". */
   title: string
-  /** Canlı görüntüde çerçevenin üstünde duran yönerge. */
-  hint: string
-  /** Rehber penceresinin oran + genişlik sınıfları, ör. "aspect-[4.6/1] w-[86%] max-w-md". */
-  frameClassName: string
+  /** Canlı görüntüde çerçevenin üstünde duran yönerge (`guide` verilmezse). */
+  hint?: string
+  /**
+   * Rehber penceresinin oran + genişlik sınıfları, ör. "aspect-[4.6/1] w-[86%] max-w-md".
+   * Verilmezse çerçeve ve maske çizilmez, yakalanan kare kırpılmaz (tam görüntü).
+   */
+  frameClassName?: string
+  /** Verilirse canlı görüntünün altında, deklanşörün üstünde gösterilen yönerge kartı. */
+  guide?: ReactNode
   /** Çerçeve içine çizilen ek işaretler (ör. plakadaki TR şeridi). */
   frameOverlay?: ReactNode
   /** Okuma sırasında gösterilen etiket, ör. "Plaka okunuyor…". */
@@ -54,6 +59,7 @@ export function CameraScanner({
   hint,
   frameClassName,
   frameOverlay,
+  guide,
   scanningLabel,
   onScan,
   onDetected,
@@ -305,7 +311,7 @@ export function CameraScanner({
         <canvas ref={canvasRef} className="hidden" />
 
         {/* Rehber çerçevesi + odak dışını bulanıklaştıran maske */}
-        {status === "ready" && (
+        {status === "ready" && frameClassName && (
           <>
             {/* Çerçeve dışını karartıp bulanıklaştır; yalnızca hedef penceresi net kalır */}
             <div className="pointer-events-none absolute inset-0 flex flex-col">
@@ -320,8 +326,20 @@ export function CameraScanner({
               </div>
               <div className="flex-1 bg-black/40 backdrop-blur-md" />
             </div>
-            <p className="absolute inset-x-0 top-4 text-center text-sm font-medium text-white">{hint}</p>
+            {!guide && hint && (
+              <p className="absolute inset-x-0 top-4 text-center text-sm font-medium text-white">{hint}</p>
+            )}
           </>
+        )}
+
+        {/* Çerçevesiz modda yalnız üst yönerge (kart yoksa) */}
+        {status === "ready" && !frameClassName && !guide && hint && (
+          <p className="absolute inset-x-0 top-4 text-center text-sm font-medium text-white">{hint}</p>
+        )}
+
+        {/* Alt yönerge kartı: görüntünün altında, deklanşörün hemen üstünde */}
+        {status === "ready" && guide && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 px-4 pb-4">{guide}</div>
         )}
 
         {status === "starting" && (

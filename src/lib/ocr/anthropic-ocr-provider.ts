@@ -6,6 +6,7 @@ import type {
   OcrFieldConfidence,
   PartBoxOcrResult,
   VinOcrResult,
+  PlateOcrResult,
 } from "./types"
 import { RegistrationFieldsSchema, toRegistrationResult } from "./registration-result"
 import { PartBoxFieldsSchema, toPartBoxResult } from "./part-box-result"
@@ -195,6 +196,40 @@ const VIN_SYSTEM_PROMPT =
   "Barkod, üretim tarihi, ağırlık gibi diğer satırları değil, yalnızca şase numarasını al. " +
   `Sonucu yalnızca ${VIN_TOOL_NAME} aracını çağırarak döndür.`
 
+const PLATE_TOOL_NAME = "kaydet_plaka"
+
+const PLATE_TOOL_INPUT_SCHEMA: Anthropic.Tool.InputSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    plate: {
+      type: "string",
+      description:
+        "Aracın Türkiye plakası, okunabilir boşluklarla (ör. 34 ABC 123). " +
+        "Plaka görünmüyorsa veya okunamıyorsa boş string döndür.",
+    },
+    confident: {
+      type: "boolean",
+      description: "Plakanın tüm karakterlerini net okuduysan true; tek bir karakterden bile şüphen varsa false.",
+    },
+  },
+  required: ["plate", "confident"],
+}
+
+const PLATE_RESULT_SCHEMA = z.object({
+  plate: z.string().default(""),
+  confident: z.boolean().default(false),
+})
+
+const PLATE_SYSTEM_PROMPT =
+  "Sen araç plakası okuma uzmanısın. Görsel, bir aracın genellikle önden (bazen arkadan) çekilmiş " +
+  "tam fotoğrafıdır; plaka karenin küçük bir bölümünde olabilir. Önce aracın kendi plakasını bul, " +
+  "sonra oku. Türkiye plakası: 01–81 arası iki haneli il kodu, 1–3 harf, 2–4 rakam (ör. 34 ABC 123); " +
+  "soldaki mavi TR şeridi plakaya dahil değildir. Arka plandaki başka araçların plakalarını, bayi " +
+  "çerçevesi yazılarını ve reklamları alma. Yalnızca gördüğünü yaz, eksik karakteri TAMAMLAMA ve " +
+  "plaka uydurma; plaka görünmüyorsa veya okunamıyorsa plate alanını boş bırak. " +
+  `Sonucu yalnızca ${PLATE_TOOL_NAME} aracını çağırarak döndür.`
+
 // Anthropic'in kabul ettiği görüntü MIME türleri; diğerleri jpeg'e çekilir (normalize zaten jpeg üretir).
 const SUPPORTED_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"])
 
@@ -356,5 +391,48 @@ export class AnthropicOcrProvider implements OcrProvider {
 
     const fields = VIN_RESULT_SCHEMA.parse(toolUse.input)
     return { rawVin: fields.vin, confident: fields.confident, provider: "anthropic" }
+  }
+
+  async extractPlate(imageBuffer: Buffer, mimeType: string): Promise<PlateOcrResult> {
+    const mediaType = SUPPORTED_MEDIA_TYPES.has(mimeType) ? mimeType : "image/jpeg"
+
+    const response = await this.client.messages.create({
+      model: this.model,
+      max_tokens: 256,
+      system: PLATE_SYSTEM_PROMPT,
+      tools: [
+        {
+          name: PLATE_TOOL_NAME,
+          description: "Araç fotoğrafından okunan plakayı kaydet.",
+          input_schema: PLATE_TOOL_INPUT_SCHEMA,
+        },
+      ],
+      tool_choice: { type: "tool", name: PLATE_TOOL_NAME },
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: mediaType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+                data: imageBuffer.toString("base64"),
+              },
+            },
+            { type: "text", text: "Bu fotoğraftaki aracın plakasını oku." },
+          ],
+        },
+      ],
+    })
+
+    const toolUse = response.content.find(
+      (block): block is Anthropic.ToolUseBlock => block.type === "tool_use" && block.name === PLATE_TOOL_NAME
+    )
+    // Araç çağrılmadıysa okuma başarısızdır; boş sonuç dön, HTTP katmanı 422 üretsin.
+    if (!toolUse) return { rawPlate: "", confident: false, provider: "anthropic" }
+
+    const fields = PLATE_RESULT_SCHEMA.parse(toolUse.input)
+    return { rawPlate: fields.plate, confident: fields.confident, provider: "anthropic" }
   }
 }
