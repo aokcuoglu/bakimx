@@ -1,23 +1,24 @@
-import { PublicSite } from "@/components/public/PublicSite";
 import type { Metadata } from "next";
-import { Header } from "@/components/sections/Header";
-import { HeroSection } from "@/components/sections/HeroSection";
-import {
-  ProductTourSection,
-  OperationsSection,
-  GettingStartedSection,
-} from "@/components/sections/LandingContent";
-import { FAQSection } from "@/components/sections/FAQSection";
-import { Footer } from "@/components/sections/Footer";
 import { JsonLd } from "@/components/seo/json-ld";
-import { LANDING_FAQ_ITEMS } from "@/lib/faq-data";
+import { CallbackDialogProvider } from "@/components/marketing/landing/callback-dialog";
+import { LANDING_DESCRIPTION, LANDING_FAQ, PRICE } from "@/components/marketing/landing/content";
+import { DayStrip } from "@/components/marketing/landing/day-strip";
+import { Faq } from "@/components/marketing/landing/faq";
+import { Features } from "@/components/marketing/landing/features";
+import { FinalCta } from "@/components/marketing/landing/final-cta";
+import { Hero } from "@/components/marketing/landing/hero";
+import { LandingFooter } from "@/components/marketing/landing/landing-footer";
+import { LandingHeader } from "@/components/marketing/landing/landing-header";
+import { Move } from "@/components/marketing/landing/move";
+import { Price } from "@/components/marketing/landing/price";
+import styles from "@/components/marketing/landing/landing.module.css";
 import { SITE_URL, HOME_TITLE, publicPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = {
   ...publicPageMetadata({
     path: "/",
     title: "Oto Servis Yönetim Platformu",
-    description: "Araç kabul, iş emri, stok, müşteri ve tahsilat takibini BakımX ile tek yerde yönetin.",
+    description: LANDING_DESCRIPTION,
   }),
   title: { absolute: HOME_TITLE },
 };
@@ -33,8 +34,23 @@ const homeStructuredData = [
   },
   {
     "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "BakımX",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    url: SITE_URL,
+    description: LANDING_DESCRIPTION,
+    offers: {
+      "@type": "Offer",
+      price: String(PRICE.monthlyPriceTry),
+      priceCurrency: "TRY",
+      url: `${SITE_URL}/register`,
+    },
+  },
+  {
+    "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: LANDING_FAQ_ITEMS.map((item) => ({
+    mainEntity: LANDING_FAQ.map((item) => ({
       "@type": "Question",
       name: item.question,
       acceptedAnswer: { "@type": "Answer", text: item.answer },
@@ -42,19 +58,24 @@ const homeStructuredData = [
   },
 ];
 
+/** Ana sayfa — e-santral.com/bakimx düzeni (#781, docs/superpowers/specs/2026-11-22-esantral-landing-design.md). */
 export default function Home() {
   return (
-    <PublicSite landing>
-      <JsonLd data={homeStructuredData} />
-      <Header />
-      <main>
-        <HeroSection />
-        <ProductTourSection />
-        <OperationsSection />
-        <GettingStartedSection />
-        <FAQSection />
-      </main>
-      <Footer />
-    </PublicSite>
+    <CallbackDialogProvider>
+      <div className={styles.page}>
+        <JsonLd data={homeStructuredData} />
+        <LandingHeader />
+        <main>
+          <Hero />
+          <DayStrip />
+          <Features />
+          <Move />
+          <Price />
+          <Faq />
+          <FinalCta />
+        </main>
+        <LandingFooter />
+      </div>
+    </CallbackDialogProvider>
   );
 }
