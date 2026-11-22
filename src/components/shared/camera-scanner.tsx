@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { ScanError, type ScanImagePayload } from "@/lib/ocr/scan-client"
 import { coverRegionToSource } from "@/lib/ocr/capture-crop"
-import { Camera, X, Zap, ZapOff, RefreshCw, AlertTriangle, Upload, Check } from "lucide-react"
+import { Camera, X, Zap, ZapOff, RefreshCw, AlertTriangle, Upload, Check, Keyboard } from "lucide-react"
 
 const CAPTURE_JPEG_QUALITY = 0.9
 const CAPTURE_LONG_EDGE = 1600
@@ -47,6 +47,11 @@ export type CameraScannerProps = {
    * değerlerde (VIN) zorunlu; plaka gibi kısa değerlerde gereksiz adımdır.
    */
   renderConfirm?: (value: string) => ReactNode
+  /**
+   * Verilirse alt çubuğun solunda "El ile gir" düğmesi çıkar: kullanıcı kamerayı
+   * kapatıp değeri elle yazmayı seçer (tarayıcı kapanır, çağıran yazı alanına döner).
+   */
+  onManualEntry?: () => void
 }
 
 /**
@@ -66,6 +71,7 @@ export function CameraScanner({
   onDetected,
   onClose,
   renderConfirm,
+  onManualEntry,
 }: CameraScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -94,9 +100,20 @@ export function CameraScanner({
     }
   }, [])
 
+  // Kamera izni/başlatma uzun sürerse ("starting"te takılı kalmak) kullanıcıya
+  // ne beklendiğini söyle ve yeniden deneme sun. Tarayıcı izin isteği sayfa
+  // açılışında (dokunuşsuz) geldiğinde adres çubuğunda kolayca gözden kaçıyor;
+  // bazı tarayıcılar da dokunuşla gelmeyen isteği hiç sonuçlandırmıyor. Yeniden
+  // dene düğmesi isteği bir dokunuşla tekrarlar.
+  const [slowStart, setSlowStart] = useState(false)
+  const [attempt, setAttempt] = useState(0)
+
   // Kamerayı başlat.
   useEffect(() => {
     let cancelled = false
+    const slowTimer = window.setTimeout(() => {
+      if (!cancelled) setSlowStart(true)
+    }, 3000)
 
     async function start() {
       if (typeof window === "undefined" || !window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
@@ -116,7 +133,9 @@ export function CameraScanner({
         const video = videoRef.current
         if (video) {
           video.srcObject = stream
-          await video.play().catch(() => {})
+          // Beklenmez: play() sözü bazı tarayıcılarda ilk kare gelene dek askıda
+          // kalabiliyor; "ready"yi ona bağlamak ekranı "hazırlanıyor"da bırakır.
+          void video.play().catch(() => {})
         }
         const track = stream.getVideoTracks()[0]
         const caps = (track?.getCapabilities?.() ?? {}) as TorchCapabilities
@@ -136,11 +155,19 @@ export function CameraScanner({
       }
     }
 
-    start()
+    void start().finally(() => window.clearTimeout(slowTimer))
     return () => {
       cancelled = true
+      window.clearTimeout(slowTimer)
       stopStream()
     }
+  }, [stopStream, attempt])
+
+  const retryStart = useCallback(() => {
+    stopStream()
+    setSlowStart(false)
+    setStatus("starting")
+    setAttempt((n) => n + 1)
   }, [stopStream])
 
   const toggleTorch = useCallback(async () => {
@@ -322,8 +349,18 @@ export function CameraScanner({
         )}
 
         {status === "starting" && (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
             <BrandSpinner size={56} label="Kamera hazırlanıyor…" className="text-white" />
+            {slowStart && (
+              <>
+                <p className="max-w-sm text-sm text-white">
+                  Kamera izni bekleniyor. Tarayıcının gösterdiği izin isteğinde &ldquo;İzin ver&rdquo;i seçin.
+                </p>
+                <Button variant="foreground" onClick={retryStart} className="gap-2">
+                  <RefreshCw className="size-4" /> Kamerayı başlat
+                </Button>
+              </>
+            )}
           </div>
         )}
 
@@ -375,19 +412,19 @@ export function CameraScanner({
         )}
       </div>
 
-      {/* Alt kontroller: ortada deklanşör, solunda dosyadan yükleme. Dosya yolu
-          yalnız kamerasız/izinsiz durumda sunulursa webcam'li bir PC'de kullanıcı
-          elindeki fotoğrafı hiç yükleyemez — o yüzden kamera açıkken de durur. */}
-      <div className="relative flex items-center justify-center gap-6 p-6 shrink-0">
-        {/* "starting" da dahil: kamera izni beklenirken de dosya seçilebilsin. */}
-        {(status === "ready" || status === "starting") && (
+      {/* Alt kontroller: ortada deklanşör, solda "El ile gir" (verildiyse), sağda
+          dosyadan yükleme. Dosya yolu yalnız kamerasız/izinsiz durumda sunulursa
+          webcam'li bir PC'de kullanıcı elindeki fotoğrafı hiç yükleyemez — o yüzden
+          kamera açıkken de durur. */}
+      <div className="relative flex min-h-28 items-center justify-center gap-6 p-6 shrink-0">
+        {onManualEntry && (
           <Button
             type="button"
             variant="ghost"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={onManualEntry}
             className="absolute left-6 top-1/2 h-auto -translate-y-1/2 flex-col gap-1 rounded-xl px-3 py-2 text-xs text-white hover:bg-white/10 hover:text-white"
           >
-            <Upload className="size-5" /> Dosyadan
+            <Keyboard className="size-5" /> El ile gir
           </Button>
         )}
         {status === "ready" && (
@@ -399,6 +436,17 @@ export function CameraScanner({
             aria-label="Çek"
           >
             <Camera className="size-7" />
+          </Button>
+        )}
+        {/* "starting" da dahil: kamera izni beklenirken de dosya seçilebilsin. */}
+        {(status === "ready" || status === "starting") && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute right-6 top-1/2 h-auto -translate-y-1/2 flex-col gap-1 rounded-xl px-3 py-2 text-xs text-white hover:bg-white/10 hover:text-white"
+          >
+            <Upload className="size-5" /> Dosyadan
           </Button>
         )}
       </div>

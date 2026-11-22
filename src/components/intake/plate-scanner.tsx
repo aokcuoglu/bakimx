@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useRef } from "react"
-import { TriangleAlert } from "lucide-react"
+import Image from "next/image"
 import { CameraScanner } from "@/components/shared/camera-scanner"
 import { postImageScan, ScanError, type ScanImagePayload } from "@/lib/ocr/scan-client"
 
@@ -13,6 +13,8 @@ type Props = {
    */
   onDetected: (plate: string, image: ScanImagePayload | null) => void
   onClose: () => void
+  /** Verilirse kameranın solunda "El ile gir" düğmesi çıkar (bkz. CameraScanner). */
+  onManualEntry?: () => void
 }
 
 /**
@@ -22,7 +24,7 @@ type Props = {
  * bir değer olduğundan onay adımı yoktur — okunan değer doğrudan arama kutusuna
  * yazılır ve kullanıcı orada görüp düzeltebilir.
  */
-export function PlateScanner({ onDetected, onClose }: Props) {
+export function PlateScanner({ onDetected, onClose, onManualEntry }: Props) {
   // Okumayı başaran kare: CameraScanner yalnız okunan değeri geri verir.
   const lastFrame = useRef<ScanImagePayload | null>(null)
   const scan = useCallback(async (payload: ScanImagePayload) => {
@@ -40,21 +42,28 @@ export function PlateScanner({ onDetected, onClose }: Props) {
       onScan={scan}
       onDetected={(plate) => onDetected(plate, lastFrame.current)}
       onClose={onClose}
+      onManualEntry={onManualEntry}
     />
   )
 }
 
 /**
- * Alt yönerge kartı: ünlem ikonu + kısa talimat.
+ * Alt yönerge kartı: örnek kare + kısa talimat.
  * Çerçeve yok — kullanıcı aracı dilediği gibi kadrajlar, plakayı sunucu bulur.
+ * Örnek kare "aracın önü" ile neyin kastedildiğini tek bakışta gösterir:
+ * tüm ön yüz kadrajda, plaka net.
  */
 function PlateCaptureGuide() {
   return (
-    <div className="mx-auto max-w-md rounded-xl bg-black/70 p-4 text-white ring-1 ring-white/15 backdrop-blur-md">
-      <div className="flex items-start gap-3">
-        <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-warning text-warning-foreground">
-          <TriangleAlert className="size-5" aria-hidden="true" />
-        </span>
+    <div className="mx-auto max-w-md rounded-xl bg-black/70 p-3 text-white ring-1 ring-white/15 backdrop-blur-md">
+      <div className="flex items-center gap-3">
+        <Image
+          src="/illustrations/plate-capture-example.jpg"
+          alt="Örnek: aracın önü, plaka net görünüyor"
+          width={480}
+          height={270}
+          className="aspect-video w-28 shrink-0 rounded-lg object-cover ring-1 ring-white/20 min-[380px]:w-32"
+        />
         <div className="min-w-0">
           <p className="text-lg leading-tight font-semibold">Aracın önünü çekin</p>
           <p className="mt-1 text-sm leading-snug text-white">

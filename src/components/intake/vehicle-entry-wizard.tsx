@@ -163,7 +163,20 @@ export function VehicleEntryWizard({
   const [pickedCustomer, setPickedCustomer] = useState<{ id: string; label: string } | null>(null)
   // "vehiclePhoto": araç bilgileri ekranındaki fotoğraf kartı, plaka ekranıyla
   // AYNI tarayıcıyı açar; okunan kare kabul fotoğrafı olur.
-  const [scanner, setScanner] = useState<"plate" | "vin" | "vehiclePhoto" | null>(null)
+  // Odaklı plaka akışında (?entry=plate, ör. teknisyenin "Araç Kabul" düğmesi)
+  // tarayıcı açılışta hazır gelir: işin ilk adımı zaten aracın önünü çekmek.
+  // Yazmayı seçen "El ile gir" ile kutuya düşer.
+  const [scanner, setScanner] = useState<"plate" | "vin" | "vehiclePhoto" | null>(
+    initialMethod === "plate" ? "plate" : null,
+  )
+  const plateQueryRef = useRef<HTMLInputElement>(null)
+  // Kamera kapatılınca (X ya da "El ile gir") kullanıcı yazmaya döner: arama
+  // kutusu odak alır. Kutu tarayıcının altında hep DOM'da olduğu için bir
+  // sonraki karede odaklamak yeter.
+  const closePlateScannerToTyping = () => {
+    setScanner(null)
+    requestAnimationFrame(() => plateQueryRef.current?.focus())
+  }
   // Ruhsat okuma sayacı. Servisler arası geçmiş kilidi ruhsat taramasıyla açılır
   // (BAK-77); tarama sunucuda hakkı yazdığı anda paneli yeniden çektirmek için
   // bu sayaç artar.
@@ -905,7 +918,7 @@ export function VehicleEntryWizard({
                 autoCorrect="off"
                 spellCheck={false}
                 enterKeyHint="search"
-                autoFocus={initialMethod === "plate"}
+                ref={plateQueryRef}
                 className="h-full px-3 text-xl font-semibold tracking-wide placeholder:text-[15px] placeholder:font-normal placeholder:tracking-normal min-[380px]:placeholder:text-base md:h-full md:text-xl"
               />
               <InputGroupAddon align="inline-end">
@@ -1256,8 +1269,20 @@ export function VehicleEntryWizard({
 
       {scanner === "plate" && (
         <PlateScanner
-          onDetected={(plate, image) => { setScanner(null); setQuery(normalizePlate(plate)); void keepScannedFrame(image, "scan") }}
-          onClose={() => setScanner(null)}
+          onDetected={(plate, image) => {
+            setScanner(null)
+            const normalized = normalizePlate(plate)
+            setQuery(normalized)
+            void keepScannedFrame(image, "scan")
+            // Odaklı plaka akışında okunan plaka onay beklemeden araç bilgileri
+            // ekranına taşınır: o ekran plaka kayıtlıysa aracı ve sahibini zaten
+            // buluyor (duplicate → sahip kartı dolu, "Devam"), değilse yeni araç
+            // açar. Arama ekranında durup "Bu plakayla yeni araç"a basmak ek bir
+            // dokunuştan ibaretti. Plaka yanlış okunduysa araç ekranında düzeltilir.
+            if (plateFirst && normalized) goToVehicleStep({ plate: normalized })
+          }}
+          onClose={closePlateScannerToTyping}
+          onManualEntry={focused ? closePlateScannerToTyping : undefined}
         />
       )}
       {scanner === "vehiclePhoto" && (
