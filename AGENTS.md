@@ -171,9 +171,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - All providers (OCR, AI, SMS, WhatsApp, Email, Calendar) default to mock — no API keys needed for dev
 - Demo login: demo@bakimx.com / demo123456
 
+## Agent harness (Claude Code)
+Developments go through a fixed multi-agent pipeline: [`docs/harness/README.md`](docs/harness/README.md). With the `/ship <issue>` skill the main session becomes the **orchestrator** (Atlas) and hands work to `bakimx-planner` → `bakimx-developer` → `bakimx-reviewer` + `bakimx-ui-ux` → `bakimx-qa` in `.claude/agents/`. Other skills: `/issue`, `/qa`, `/design-check`, `/backlog`, `/release-check`. Hooks in `.claude/settings.json`: session brief (`scripts/flow/claude-brief.ts` — flow rules, open PRs, every other worktree, local-only commits), Bash guard (`scripts/flow/claude-guard.ts`), post-edit source gates (`scripts/harness/post-edit-check.ts` → `bun run harness:gates`).
+
 ## GitHub Issue Delivery
 - When the user asks to implement a GitHub issue by number, follow `docs/agent-workflows/issue-delivery.md` end to end — that document owns the full lifecycle (intake, isolated `issue/<number>-<slug>` worktree off the latest `origin/dev`, validation, PR, merge, project verification, cleanup). Do not restate it here.
-- **Yerel-first + batch CI:** promote into local `dev` for localhost:3001; open draft `dev` PRs **without** the `ci` label by default; add `ci` only when shipping or running the evening Actions batch. See `docs/agent-workflows/local-dev-batch-ci.md`.
+- **`origin/dev` is the only integration point** (#789): PR into `dev` → green `quality` (runs on every PR) → squash-merge → `git merge --ff-only origin/dev` in the primary checkout, which serves localhost:3001. Never merge feature branches into local `dev`, never commit on it.
 - Never stash, reset, overwrite, commit, or clean unrelated user changes.
 - **Two closing lines, one per tracker:** `Closes #<number>` for GitHub, plus `Closes <MULTICA-KEY>` (e.g. `Closes BAK-7`) when Multica tracks the same work. Neither implies the other; a bare key mention without a closing keyword is filed as `reference_only` and never becomes a visible link. Never invent a key.
 - **Link at PR-open time only.** Never link a PR from a closed issue's Development panel — project automation reacts to the link and overwrites `Done`.
