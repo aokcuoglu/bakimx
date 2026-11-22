@@ -207,23 +207,37 @@ export function formatShortDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })
 }
 
-/** İstatistik kutusu: kalın rakam üstte, gri etiket altta. */
+const accentClass: Record<Exclude<Tone, "neutral">, string> = {
+  info: styles["accent-info"],
+  warning: styles["accent-warning"],
+  success: styles["accent-success"],
+  destructive: styles["accent-destructive"],
+}
+
+/**
+ * İstatistik kutusu (iOS Anımsatıcılar akıllı liste kalıbı): solda kartın
+ * kendi renginde dolu ikon dairesi, sağda büyük rakam, altta koyu etiket.
+ * `accent` kartın kimlik rengidir, her zaman boyanır; `tone` yalnız uyarı
+ * anlamı taşıyan değer sıfırdan büyükken rakamı boyar.
+ */
 export function DashStat({
   label,
   value,
   href,
+  icon,
+  accent,
   tone,
-  span = false,
 }: {
   label: string
   value: ReactNode
   href: string
+  icon: ReactNode
+  accent: Exclude<Tone, "neutral">
   tone?: "warning" | "destructive"
-  /** true → dar ekranda satırın tamamını kaplar (uzun tutarlar için). */
-  span?: boolean
 }) {
   return (
-    <Link href={href} prefetch={false} className={styles.stat} data-span={span || undefined}>
+    <Link href={href} prefetch={false} className={styles.stat}>
+      <span aria-hidden className={cn(styles.statIcon, accentClass[accent])}>{icon}</span>
       <span className={styles.statValue} data-tone={tone}>{value}</span>
       <span className={styles.statLabel}>{label}</span>
     </Link>

@@ -1,0 +1,63 @@
+/* "Sizi arayalım" penceresinin içeriği — e-santral #call (.m-logo/.m-grid/.consent/.m-err/.m-submit). */
+.logo {
+  display: block;
+  width: 44px;
+  height: auto;
+  margin: 0 auto 16px;
+}
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 28px;
+  text-align: left;
+}
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 20px;
+  text-align: left;
+}
+.consent [data-slot="checkbox"] {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+.consentLabel {
+  display: block;
+  color: var(--mk-gray);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+.consentLabel a {
+  color: var(--mk-link);
+}
+.error {
+  display: block;
+  margin-top: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--mk-error-text);
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
+}
+.error * {
+  color: inherit;
+  font-size: inherit;
+}
+.submit {
+  margin-top: 22px;
+}
+
+@media (max-width: 640px) {
+  .leadBreak {
+    display: none;
+  }
+}

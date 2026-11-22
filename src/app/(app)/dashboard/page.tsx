@@ -9,37 +9,21 @@ import { getPlanState, hasFeature } from "@/lib/plan"
 
 import {
   getDashboardStats,
-  getActiveWorkOrders,
+  getInServiceStatusCounts,
+  getLongestInServiceOrders,
   getTodayDeliveries,
   getTodayAppointmentRows,
-  getWaitingApprovals,
-  getMissingPhotoItems,
-  getRecentCustomers,
-  getWeeklyOperations,
-  getWorkStatusDistribution,
 } from "@/lib/dashboard/queries"
-import { getDueSoonReminders, getOverdueReminders } from "@/lib/reminders/queries"
-import { getCriticalStockItems } from "@/lib/parts/queries"
-import { getCriticalStockSuppliers } from "@/lib/suppliers/queries"
-import { getManagerTechnicianOverview, getUnassignedOrderCount } from "@/lib/technician/queries"
-import { getDashboardWidgetData } from "@/lib/reports/queries"
+import { countOverdueReminders } from "@/lib/reminders/queries"
+import { getPartKPIs } from "@/lib/parts/queries"
+import { getUnassignedOrderCount } from "@/lib/technician/queries"
 import { getRecommendations } from "@/lib/analytics/queries"
 import { KpiCards } from "@/components/dashboard/kpi-cards"
 import { CashWidget } from "@/components/dashboard/cash-widget"
-import { CriticalStockWidget } from "@/components/dashboard/critical-stock"
-import { CriticalStockSuppliersWidget } from "@/components/dashboard/critical-stock-suppliers"
 import { AlertBanner } from "@/components/dashboard/alert-banner"
-import { ActiveOrdersSection } from "@/components/dashboard/active-orders"
-import { TodayDeliveries } from "@/components/dashboard/today-deliveries"
-import { WaitingApprovals } from "@/components/dashboard/waiting-approvals"
-import { MissingPhotos } from "@/components/dashboard/missing-photos"
-import { RecentCustomers } from "@/components/dashboard/recent-customers"
-import { WeeklyChart } from "@/components/dashboard/weekly-chart"
-import { StatusChart } from "@/components/dashboard/status-chart"
-import { TodayAppointments } from "@/components/dashboard/today-appointments"
-import { ReminderWidget } from "@/components/dashboard/reminder-widget"
-import { TechnicianStatusWidget } from "@/components/dashboard/technician-status"
-import { DashboardReportWidgets } from "@/components/dashboard/report-widgets"
+import { TodayAgenda } from "@/components/dashboard/today-agenda"
+import { LongestWaiting } from "@/components/dashboard/longest-waiting"
+import { WorkshopStatus } from "@/components/dashboard/workshop-status"
 import { OperationalAlertsWidget } from "@/components/analytics/operational-alerts-widget"
 import { DashPanel, surface } from "@/components/dashboard/surface"
 
@@ -53,53 +37,36 @@ export default async function DashboardPage() {
   const canAppointments = hasFeature(accessTier, "appointments")
   const canReminders = hasFeature(accessTier, "automatedReminders")
   const canInventory = hasFeature(accessTier, "partsInventory")
-  const canProcurement = hasFeature(accessTier, "procurement")
   const canCashbox = hasFeature(accessTier, "cashbox")
   const canTeam = hasFeature(accessTier, "team")
-  const canReports = hasFeature(accessTier, "reports")
   const canAnalytics = hasFeature(accessTier, "analytics")
 
-  const [stats, activeOrders, todayDeliveries, recentCustomers] = await Promise.all([
+  // Yönetici özeti: sayılar ve kısa listeler. Ayrıntı listeleri (eksik
+  // fotoğraflar, onay bekleyenler, son müşteriler…) kendi sayfalarındadır;
+  // burada yalnız "Dikkat gerektiren işler"de sayı olarak görünürler.
+  const [
+    stats,
+    statusCounts,
+    longestWaiting,
+    todayDeliveries,
+    todayAppointments,
+    overdueReminders,
+    partKpis,
+    unassignedOrderCount,
+  ] = await Promise.all([
     getDashboardStats(user.workshopId, {
       quotes: canQuotes,
       photoChecklist: canPhotos,
       cashbox: canCashbox,
     }),
-    getActiveWorkOrders(user.workshopId, 10),
+    getInServiceStatusCounts(user.workshopId),
+    getLongestInServiceOrders(user.workshopId, 5),
     getTodayDeliveries(user.workshopId),
-    getRecentCustomers(user.workshopId, 6),
-  ])
-
-  const [todayAppointments, waitingApprovals, missingPhotos] = await Promise.all([
     canAppointments ? getTodayAppointmentRows(user.workshopId) : Promise.resolve([]),
-    canQuotes ? getWaitingApprovals(user.workshopId) : Promise.resolve([]),
-    canPhotos ? getMissingPhotoItems(user.workshopId) : Promise.resolve([]),
+    canReminders ? countOverdueReminders(user.workshopId) : Promise.resolve(null),
+    canInventory ? getPartKPIs(user.workshopId) : Promise.resolve(null),
+    canTeam ? getUnassignedOrderCount(user.workshopId) : Promise.resolve(null),
   ])
-  const [remindersDueSoon, remindersOverdue] = canReminders
-    ? await Promise.all([
-        getDueSoonReminders(user.workshopId, 10),
-        getOverdueReminders(user.workshopId, 10),
-      ])
-    : [[], []]
-  const [criticalStock, criticalStockSuppliers] = await Promise.all([
-    canInventory ? getCriticalStockItems(user.workshopId, 10) : Promise.resolve([]),
-    canInventory && canProcurement
-      ? getCriticalStockSuppliers(user.workshopId, 5)
-      : Promise.resolve([]),
-  ])
-  const [technicianOverview, unassignedOrderCount] = canTeam
-    ? await Promise.all([
-        getManagerTechnicianOverview(user.workshopId),
-        getUnassignedOrderCount(user.workshopId),
-      ])
-    : [[], 0]
-  const [weeklyOps, statusDist, reportWidgetData] = canReports
-    ? await Promise.all([
-        getWeeklyOperations(user.workshopId),
-        getWorkStatusDistribution(user.workshopId),
-        getDashboardWidgetData(user.workshopId),
-      ])
-    : [null, null, null]
   const needsFirstOrder = accessTier === "lite" && !(await prisma.serviceOrder.findFirst({ where: { workshopId: user.workshopId }, select: { id: true } }))
 
   const operationalAlerts = canAnalytics
@@ -113,7 +80,7 @@ export default async function DashboardPage() {
       <div className={surface.root}>
         <section data-tour="welcome-banner" className={surface.hero}>
           <div className="min-w-0">
-            <h2 className={surface.heroTitle}>{workshop?.name || "Genel Bakış"}</h2>
+            <h1 className={surface.heroTitle}>{workshop?.name || "Genel Bakış"}</h1>
             <p className={surface.heroSub}>
               Bugün ·{" "}
               {new Date().toLocaleDateString("tr-TR", {
@@ -145,50 +112,37 @@ export default async function DashboardPage() {
           </DashPanel>
         )}
 
-        <KpiCards stats={stats} showQuotes={canQuotes} showPhotoChecklist={canPhotos} />
-
-        {reportWidgetData && <DashboardReportWidgets data={reportWidgetData} />}
+        <KpiCards stats={stats} showQuotes={canQuotes} />
 
         <section aria-label="Operasyon takibi" className={styles.panels}>
-          <AlertBanner stats={stats} showQuotes={canQuotes} showPhotoChecklist={canPhotos} />
+          <AlertBanner
+            stats={stats}
+            showQuotes={canQuotes}
+            showPhotoChecklist={canPhotos}
+            unassignedCount={unassignedOrderCount}
+            stock={partKpis ? { outOfStock: partKpis.outOfStock, critical: partKpis.critical } : null}
+            overdueReminders={overdueReminders}
+          />
           {operationalAlerts && <OperationalAlertsWidget recommendations={operationalAlerts} />}
         </section>
 
-        <ActiveOrdersSection orders={activeOrders} />
-
-        <section className={styles.panels} aria-label="Günlük iş takibi">
-          <div className="flex min-w-0 flex-col gap-9">
-            <TodayDeliveries deliveries={todayDeliveries} />
-            {canQuotes && <WaitingApprovals approvals={waitingApprovals} />}
-            {canAppointments && <TodayAppointments appointments={todayAppointments} />}
-          </div>
-          {canPhotos && <MissingPhotos items={missingPhotos} />}
+        <section aria-label="Bugün" className={styles.panels}>
+          <TodayAgenda deliveries={todayDeliveries} appointments={todayAppointments} />
+          {canCashbox && (
+            <CashWidget
+              data={{
+                todayCollected: stats.todayCollected,
+                openReceivable: stats.openReceivable,
+                partialPayments: stats.partialPayments,
+              }}
+            />
+          )}
         </section>
 
-        {(canInventory || canCashbox || canReminders) && (
-          <div className={styles.panels}>
-            {canInventory && <CriticalStockWidget items={criticalStock} />}
-            {canCashbox && <CashWidget data={{
-              todayCollected: stats.todayCollected,
-              openReceivable: stats.openReceivable,
-              partialPayments: stats.partialPayments,
-            }} />}
-            {canInventory && canProcurement && <CriticalStockSuppliersWidget suppliers={criticalStockSuppliers} />}
-            {canReminders && <ReminderWidget dueSoon={remindersDueSoon} overdue={remindersOverdue} />}
-          </div>
-        )}
-
-        {weeklyOps && statusDist && (
-          <section aria-label="Operasyon raporları" className={styles.panels}>
-            <WeeklyChart data={weeklyOps} />
-            <StatusChart data={statusDist} />
-          </section>
-        )}
-
-        <div className={styles.panels}>
-          <RecentCustomers customers={recentCustomers} />
-          {canTeam && <TechnicianStatusWidget technicians={technicianOverview} unassignedCount={unassignedOrderCount} />}
-        </div>
+        <section aria-label="Atölye" className={`${styles.panels} ${styles.panelsTop}`}>
+          <LongestWaiting orders={longestWaiting} />
+          <WorkshopStatus counts={statusCounts} />
+        </section>
       </div>
     </AppShell>
   )

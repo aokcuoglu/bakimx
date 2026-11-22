@@ -12,17 +12,24 @@ fix, develop, or deliver it. Unless the user limits the scope, completion means:
 1. Understand the issue and define testable acceptance criteria.
 2. Implement the smallest complete solution in an isolated worktree.
 3. Validate and review the change in proportion to its risk.
-4. Promote the branch into **local `dev`** (primary checkout stays on `dev`) so
-   localhost:3000 shows the integrated result — see
-   [local-dev-batch-ci.md](./local-dev-batch-ci.md).
-5. Wait for user confirmation, then push and open a PR that closes every tracker:
-   `Closes #<github-number>`, plus `Closes <MULTICA-KEY>` when a Multica issue
-   drives the delivery. Default: draft PR **without** the `ci` label (no Actions
-   minutes). "commit + PR" stops here unless the user asks to ship/merge.
-6. When shipping (or evening batch): add `ci`, wait for `quality`, fix failures,
-   merge only when green — [local-dev-batch-ci.md](./local-dev-batch-ci.md).
-7. Verify the issue is closed and its Factory - BakimX project item is Done.
-8. Sync local `dev` to `origin/dev`, delete the issue branch.
+4. Push and open a PR into `dev` that closes every tracker: `Closes
+   #<github-number>`, plus `Closes <MULTICA-KEY>` when a Multica issue drives the
+   delivery. `quality` runs on every PR.
+5. Wait for a green `quality`, fix failures, and squash-merge — no separate human
+   approval (see "Merge yetkisi" below). "commit + PR" stops after step 4 only when
+   the user says so.
+6. Close the GitHub issue (a `dev` merge does not fire `Closes`, the default
+   branch is `main`) and verify its Factory - BakimX project item is Done.
+7. Fast-forward the primary checkout to `origin/dev` so localhost:3001 shows the
+   result, then remove the issue worktree and branch.
+
+**`origin/dev` is the only integration point** (since #789, 2026-11-22). Feature
+branches are never merged into local `dev`; the primary checkout only
+fast-forwards to `origin/dev`. Parallel sessions see each other's work because
+every new worktree starts from `origin/dev`, and the Claude Code session brief
+lists every other worktree and any local-only commit
+([docs/harness/README.md](../harness/README.md)). The former local-first +
+evening-batch model (`local-dev-batch-ci.md`) is retired.
 
 Respect the active agent's authorization and confirmation policies. Never bypass
 branch protection, required reviews, required checks, or repository permissions.
@@ -62,12 +69,14 @@ yapıldığı raporlanır.
 - If the intended branch already exists, inspect it and stop rather than assuming
   ownership.
 
-Example shape (choose a unique path outside active worktrees):
+Use a sibling directory `../bakimx-<number>` (keeps the worktree's sources out
+of the primary checkout's tsc/eslint/Turbopack scope):
 
 ```sh
 git fetch origin dev
-git worktree add -b issue/123-short-slug <safe-path> origin/dev
-bun run worktree:env -- <safe-path>
+git worktree add -b issue/123-short-slug ../bakimx-123 origin/dev
+bun run worktree:env -- ../bakimx-123
+cd ../bakimx-123 && bun install   # real node_modules; Turbopack rejects a symlink
 ```
 
 The environment setup command links the primary checkout's ignored `.env.local`
@@ -113,36 +122,24 @@ bun run build
 - If a gate is unavailable or fails for a pre-existing reason, collect evidence,
   distinguish it from regressions, and do not claim full success.
 
-## 5. Local preview (promote into local `dev`)
+## 5. Optional preview before merge
 
-After quality gates pass in the worktree, merge the issue branch into **local
-`dev`** on the primary checkout. Do **not** switch primary off `dev` onto the
-issue branch — localhost:3000 should keep reflecting integrated local `dev`
-([local-dev-batch-ci.md](./local-dev-batch-ci.md)).
+The user normally checks the result on localhost:3001 after the merge (§9). When
+a preview before merge is useful (a visible product decision, or the user asks),
+serve the worktree on its own port — never switch or merge into the primary
+checkout:
 
 ```sh
-# From the worktree: push the issue branch (needed for the later PR)
-git push -u origin issue/<number>-<slug>
-
-# Remove the worktree (releases the branch for merge on primary)
-git worktree remove <worktree-path>
-
-# Primary stays on / returns to local dev, then takes the feature
-cd ~/www/bakimx
-git checkout dev
-git merge --ff-only issue/<number>-<slug>   # if that fails, use a normal merge
-bun install   # if bun.lock changed; restart bun run dev when needed
+cd ../bakimx-123
+bunx next dev --port 3223   # 3200 + (issue number mod 100)
 ```
 
-- If `bun run dev` is already running on `dev`, it hot-reloads after the merge.
-- Inform the user that changes are ready on localhost:3000 (local `dev`) and what
-  flows/pages to check.
-- **Wait for user confirmation** before proceeding to §6. If the user reports a
-  bug, fix it on the issue branch (checkout that branch in a worktree or
-  temporarily), merge back into local `dev`, push the issue branch, re-run
-  quality gates, and ask for re-test.
-- Skip this step only when the user explicitly says to proceed without local QA
-  (e.g. "PR aç, test etmeme gerek yok").
+- `.env.local` is a symlink to the primary's file (AWS dev DB through the SSM
+  tunnel on 5433). A branch with a migration needs an isolated database passed as
+  `DATABASE_URL`/`DIRECT_URL` environment overrides — never edit `.env.local`
+  and never `migrate deploy` the branch into the shared dev DB.
+- Log in with `/api/auth/dev-login?email=admin@bakimx.com&redirect=<path>`.
+- Stop the server when done.
 
 ## 6. Commit and pull request
 
@@ -150,11 +147,8 @@ bun install   # if bun.lock changed; restart bun run dev when needed
 - Use a descriptive commit such as `fix(#123): correct intake validation`.
 - Rebase or merge the latest `origin/dev` before the final validation when the
   branch has drifted; never force-push shared work without explicit authorization.
-- The issue branch was already pushed in §5. Push any additional commits from
-  local QA fixes, then open a **draft** PR targeting `dev`.
-- **Do not add the `ci` label** on open. Unlabeled `dev` PRs skip `quality` (0
-  Actions minutes). Add `ci` only when shipping or running the evening batch —
-  [local-dev-batch-ci.md](./local-dev-batch-ci.md).
+- Push the issue branch and open a PR targeting `dev`. No label is needed —
+  `quality` runs on every PR into `dev` and `main`.
 - Complete the PR template. Include summary, risks, tests and manual QA evidence.
 - Link the PR from its body, not only from a commit or comment. Work that is
   tracked in both systems needs **two closing lines**, one per tracker:
@@ -178,27 +172,26 @@ bun install   # if bun.lock changed; restart bun run dev when needed
   Multica issue's Pull requests panel.
 - When a delivery has no Multica issue — the work started straight from a GitHub
   issue — write the GitHub line only. Never invent a Multica key.
-- Start as draft while checks or review work remain; mark ready only when the
-  implementation and evidence are complete.
+- Open as draft only while implementation work remains; a delivery that is
+  ready for CI and merge is opened ready for review.
 
 ## 7. Checks, review, and merge
 
-- If the user only asked for commit/PR (or daytime batch mode), **stop after §6**
-  — do not add `ci`, do not wait on Actions, do not merge.
-- When shipping or running the evening batch: add the `ci` label
-  (`gh pr edit <n> --add-label ci`), mark ready for review if needed, then
-  monitor `quality` to a terminal state. Inspect logs and fix failures
-  attributable to the branch; rerun proportionate local validation after fixes.
+- If the user only asked for commit/PR, **stop after §6** — do not merge.
+- Monitor `quality` to a terminal state (`gh pr checks <n> --watch --fail-fast`,
+  unpiped). Inspect logs and fix failures attributable to the branch; rerun
+  proportionate local validation after fixes.
 - Before CI/merge, merge the latest `origin/dev` into the branch so the gate runs
   on a current base (repo-guardrails §2.1).
 - Resolve actionable review comments and re-check the diff.
 - Merge only when the PR is non-draft, mergeable, approved as required, current
-  with `dev`, and required checks that ran are green (`dev` PRs need `ci` + green
-  `quality`; `main` always requires `quality`).
+  with `dev`, and `quality` is green.
 - Bu koşullar sağlandığında merge için ayrıca insan onayı BEKLENMEZ — bkz.
   yukarıdaki "Merge yetkisi" notu.
-- Prefer squash merge unless repository policy or release history requires a
-  different method. Never use admin bypass.
+- Squash-merge feature PRs into `dev` and pass an explicit `--body`: the
+  repository default pastes every commit message into the squash body. Release
+  PRs (`dev → main`) use a merge commit and never delete `dev`. Never use admin
+  bypass.
 - **Squash mesajını yazarken `[deploy-dev]` gerekip gerekmediğine karar ver.** PR
   yeni bir Prisma migration ekliyorsa işaretçi ZORUNLUDUR — dev veritabanı
   `migrate deploy`'u yalnız o deploy'un içinde alır, unutulursa app-dev'in şeması
@@ -210,7 +203,10 @@ bun install   # if bun.lock changed; restart bun run dev when needed
 
 ## 8. Closure and project automation
 
-- Confirm the merged PR contains the closing keyword and GitHub closed the issue.
+- Confirm the merged PR contains the closing keyword. The default branch is
+  `main`, so a merge into `dev` does **not** close the GitHub issue: close it
+  right after the merge with `gh issue close <n> --comment "dev'e merge edildi:
+  #<pr>"`.
 - Confirm the issue item in `Factory - BakimX` has Status `Done`.
 - When the delivery is tracked in Multica, confirm the Multica issue lists the PR
   in its Pull requests panel and moved to Done on merge. An empty panel means the
@@ -236,30 +232,29 @@ bun run project:sync -- --dry-run # report drift without changing anything
 
 ## 9. Cleanup and local synchronization
 
-- Delete only the remote issue branch when it is merged and no longer needed.
-- The worktree was already removed in §5. If it still exists (e.g. local QA was
-  skipped), remove it now and delete only its local branch. Verify targets exactly
-  before either operation.
-- Never use broad cleanup commands such as `git worktree prune`, wildcard branch
-  deletion, or `git clean` as routine cleanup.
-- Primary should already be on `dev` (§5). After GitHub squash-merge, local merge
-  commits usually diverge from `origin/dev` even when the tree matches. When every
-  local-only promotion for this batch has landed via PR and the working tree is
-  clean, sync explicitly:
+- Fast-forward the primary checkout so localhost:3001 shows the merged result:
 
 ```sh
-git checkout dev
-git fetch origin
-git reset --hard origin/dev    # evening / post-batch sync only — see local-dev-batch-ci.md
-git branch -d issue/<number>-<slug>
+git -C ~/www/bakimx fetch origin
+git -C ~/www/bakimx merge --ff-only origin/dev
 ```
 
-- If the primary is dirty, or local `dev` still has commits that never went up as
-  PRs, leave it untouched and report the exact blocker and the already-merged
-  commit. Do not use `reset --hard` as generic cleanup.
+  If `bun.lock` changed, run `bun install` there and `touch next.config.ts` (the
+  dev server restarts itself); if `prisma/schema.prisma` changed, the post-merge
+  hook regenerates the client and the dev server needs a restart.
+- If the fast-forward fails — local `dev` has commits that never went up as PRs,
+  or an uncommitted file blocks it — leave the primary untouched and report the
+  exact blocker. Never `reset --hard`, stash or merge to force it; realigning a
+  diverged local `dev` needs the user's OK.
+- Delete only this delivery's resources: the remote issue branch, the worktree
+  (`git worktree remove ../bakimx-<number>`) and its local branch. Verify targets
+  exactly before each operation.
+- Never use broad cleanup commands such as `git worktree prune`, wildcard branch
+  deletion, or `git clean` as routine cleanup.
 
 ## Final report
 
 Report the issue, branch, PR, merge commit, checks run, Actions/deployment state,
-issue/project state, cleanup performed, and whether local `dev` was updated. List
-any skipped or failing verification explicitly.
+issue/project state, cleanup performed, and whether the primary checkout was
+fast-forwarded (localhost:3001 shows the change). List any skipped or failing
+verification explicitly.

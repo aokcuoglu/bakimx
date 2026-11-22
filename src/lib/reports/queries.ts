@@ -820,32 +820,3 @@ export async function getTechnicianPerformance(
     }
   })
 }
-
-// ─── Dashboard Widgets ──────────────────────────────────────────
-
-export interface DashboardWidgetData {
-  monthlyRevenue: number
-  workOrdersThisMonth: number
-  collectionsThisMonth: number
-}
-
-export async function getDashboardWidgetData(workshopId: string): Promise<DashboardWidgetData> {
-  const ms = monthStart()
-
-  const [monthCollections, monthOrders] = await Promise.all([
-    prisma.collectionPayment.aggregate({
-      where: { workshopId, status: "completed", paymentDate: { gte: ms } },
-      _sum: { amount: true },
-      _count: true,
-    }),
-    prisma.serviceOrder.count({
-      where: { workshopId, createdAt: { gte: ms } },
-    }),
-  ])
-
-  return {
-    monthlyRevenue: monthCollections._sum.amount || 0,
-    workOrdersThisMonth: monthOrders,
-    collectionsThisMonth: monthCollections._count ?? 0,
-  }
-}
