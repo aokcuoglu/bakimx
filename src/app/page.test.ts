@@ -50,6 +50,14 @@ describe("ana sayfa sözleşmeleri", () => {
     }
   });
 
+  test("tüm Ücretsiz deneyin düğmeleri kayıt penceresini açar (#783)", () => {
+    const sections = landingFiles().filter((file) => !/signup-dialog|content\.ts|callback-dialog/.test(file));
+    const source = sections.map(read).join("\n");
+    expect(source).not.toMatch(/href="\/register"/);
+    expect(source.match(/<SignupTrigger\b/g)?.length).toBe(5);
+    expect(read("src/app/page.tsx")).toContain("<SignupDialogProvider>");
+  });
+
   test("paylaşılan menü artık olmayan ana sayfa çapalarına bağlanmaz", () => {
     for (const file of ["src/components/sections/Header.tsx", "src/components/sections/Footer.tsx"]) {
       expect(read(file)).not.toMatch(/"\/#(neden|sss)"/);

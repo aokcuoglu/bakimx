@@ -169,3 +169,73 @@ test("ana sayfa ve Sizi arayalım penceresi WCAG AA taramasından geçer", async
   await expect(page.getByRole("dialog", { name: "Sizi arayalım" })).toBeVisible()
   expect(await scan('[role="dialog"]')).toEqual([])
 })
+
+test("Ücretsiz deneyin: kayıt penceresi doğrular, hızlı kayıt gönderir, e-posta doğrulamasına yönlendirir (#783)", async ({ page }) => {
+  await openHome(page, 1440, 900)
+  const bodies: Record<string, unknown>[] = []
+  await page.route("**/api/auth/register", async (route) => {
+    bodies.push(route.request().postDataJSON())
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) })
+  })
+
+  const trigger = page.locator("#hero").getByRole("link", { name: "Ücretsiz deneyin", exact: true })
+  await trigger.click()
+  const dialog = page.getByRole("dialog", { name: "BakımX'i ücretsiz deneyin" })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByLabel("Dükkân adı", { exact: true })).toBeFocused()
+
+  await dialog.getByRole("button", { name: "Hesabımı oluştur", exact: true }).click()
+  await expect(dialog.getByRole("alert")).toHaveText("Dükkân adını yazın.")
+  expect(bodies).toHaveLength(0)
+
+  await dialog.getByLabel("Dükkân adı", { exact: true }).fill("Yıldız Oto")
+  await dialog.getByLabel("Ad soyad", { exact: true }).fill("Ayşe Nur Yılmaz")
+  await dialog.getByLabel("Cep telefonu", { exact: true }).fill("05321234567")
+  await dialog.getByLabel("E-posta", { exact: true }).fill("ayse@example.com")
+  const password = dialog.getByLabel("Şifre", { exact: true })
+  await password.fill("gizli-sifre")
+  await expect(password).toHaveAttribute("type", "password")
+  await dialog.getByRole("button", { name: "Göster", exact: true }).click()
+  await expect(password).toHaveAttribute("type", "text")
+  await dialog.getByRole("checkbox").click()
+  await dialog.getByRole("button", { name: "Hesabımı oluştur", exact: true }).click()
+
+  await expect(dialog.getByRole("heading", { name: "E-postanızı kontrol edin." })).toBeVisible()
+  await expect(dialog).toContainText("ayse@example.com")
+  expect(bodies).toHaveLength(1)
+  expect(bodies[0]).toMatchObject({
+    signupFlow: "quick",
+    workshopName: "Yıldız Oto",
+    firstName: "Ayşe Nur",
+    lastName: "Yılmaz",
+    phone: "0532 123 45 67",
+    email: "ayse@example.com",
+    kvkkConsent: true,
+  })
+  expect(bodies[0]).not.toHaveProperty("city")
+
+  await dialog.getByRole("button", { name: "Tamam", exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(trigger).toBeFocused()
+})
+
+test("Ücretsiz deneyin: sunucu hatası pencerede kalır (e-posta kullanımda)", async ({ page }) => {
+  await openHome(page, 390, 844)
+  await page.route("**/api/auth/register", (route) =>
+    route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ ok: false, error: "Bu e-posta adresi zaten kayıtlı." }) }),
+  )
+  await page.getByRole("banner").getByRole("link", { name: "Ücretsiz deneyin", exact: true }).click()
+  const dialog = page.getByRole("dialog", { name: "BakımX'i ücretsiz deneyin" })
+  await dialog.getByLabel("Dükkân adı", { exact: true }).fill("Yıldız Oto")
+  await dialog.getByLabel("Ad soyad", { exact: true }).fill("Ali Veli")
+  await dialog.getByLabel("Cep telefonu", { exact: true }).fill("05321234567")
+  await dialog.getByLabel("E-posta", { exact: true }).fill("ali@example.com")
+  await dialog.getByLabel("Şifre", { exact: true }).fill("gizli-sifre")
+  await dialog.getByRole("checkbox").click()
+  await dialog.getByRole("button", { name: "Hesabımı oluştur", exact: true }).click()
+  await expect(dialog.getByRole("alert")).toHaveText("Bu e-posta adresi zaten kayıtlı.")
+  await expect(dialog.getByLabel("Dükkân adı", { exact: true })).toHaveValue("Yıldız Oto")
+  const box = await dialog.boundingBox()
+  expect(Math.round(box!.x)).toBe(0)
+  expect(Math.round(box!.y + box!.height)).toBe(844)
+})

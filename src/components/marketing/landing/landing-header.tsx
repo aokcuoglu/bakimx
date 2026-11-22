@@ -1,7 +1,7 @@
 import Link from "next/link"
-import { PillButton } from "../kit/pill-button"
 import { Wordmark } from "../kit/wordmark"
 import { CTA, NAV } from "./content"
+import { SignupTrigger } from "./signup-dialog"
 import styles from "./landing.module.css"
 
 /** Yapışkan buzlu üst bant (e-santral `.top`). Mobil menü kaynakta da yok. */
@@ -21,9 +21,9 @@ export function LandingHeader() {
           <Link className={styles.login} href="/login">
             {CTA.login}
           </Link>
-          <PillButton href="/register" size="nav" track={{ name: "trial_cta_click", location: "header" }}>
+          <SignupTrigger variant="nav" location="header">
             {CTA.trial}
-          </PillButton>
+          </SignupTrigger>
         </div>
       </div>
     </header>

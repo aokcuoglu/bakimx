@@ -1,7 +1,7 @@
 import { Reveal } from "@/components/shared/reveal"
-import { PillButton } from "../kit/pill-button"
 import { PriceBlock } from "../kit/price-block"
 import { CTA, PRICE } from "./content"
+import { SignupTrigger } from "./signup-dialog"
 import styles from "./landing.module.css"
 
 /** Tek paket fiyat (e-santral `#fiyat`). Metin İş 2 (#782) ile content.ts'ten güncellenir. */
@@ -19,9 +19,9 @@ export function Price() {
             items={PRICE.items}
             note={PRICE.note}
             cta={
-              <PillButton href="/register" size="lg" track={{ name: "trial_cta_click", location: "price" }}>
+              <SignupTrigger variant="pill-lg" location="price">
                 {CTA.trial}
-              </PillButton>
+              </SignupTrigger>
             }
           />
         </Reveal>
