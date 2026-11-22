@@ -187,7 +187,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
           <div className="lg:col-span-2 space-y-5">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Müşteri & İş Emri</CardTitle>
+                <CardTitle className="text-base">Müşteri & Araç Kabul</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -252,15 +252,15 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                     name="serviceOrderId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-medium text-muted-foreground">İş Emri (opsiyonel)</FormLabel>
+                        <FormLabel className="text-xs font-medium text-muted-foreground">Araç Kabul (opsiyonel)</FormLabel>
                         <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                           <FormControl>
                             <SelectTrigger className="w-full mt-1.5">
-                              <SelectValue placeholder="İş emri seçin (opsiyonel)" />
+                              <SelectValue placeholder="Araç kabulü seçin (opsiyonel)" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">İş emri seçin (opsiyonel)</SelectItem>
+                            <SelectItem value="">Araç kabulü seçin (opsiyonel)</SelectItem>
                             {filteredOrders.map((o) => (
                               <SelectItem key={o.id} value={o.id}>
                                 {o.workOrderNo || "—"} &bull; {o.vehicle.plate} &bull; Kalan: {formatTRY(o.remainingAmount)}
@@ -418,7 +418,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
               <CardContent className="space-y-2.5">
                 {selectedOrder ? (
                   <>
-                    <SummaryRow label="İş Emri Toplamı" value={formatTRY(orderTotal)} />
+                    <SummaryRow label="Araç Kabul Toplamı" value={formatTRY(orderTotal)} />
                     <SummaryRow label="Daha Önce Tahsil Edilen" value={formatTRY(previousPaid)} tone="emerald" />
                     <SummaryRow label="Yeni Tahsilat" value={amountKurus > 0 ? formatTRY(amountKurus) : "—"} bold tone="primary" />
                     <div className="border-t pt-2">
@@ -447,7 +447,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                 ) : (
                   <div className="text-center py-4 text-sm text-muted-foreground">
                     <Calculator className="size-8 mx-auto mb-2 text-muted-foreground/50" />
-                    <p>İş emri seçilirse ödeme özeti görüntülenir</p>
+                    <p>Araç kabulü seçilirse ödeme özeti görüntülenir</p>
                   </div>
                 )}
 

@@ -54,7 +54,7 @@ async function generatePassportPdfHtml(data: {
   let workOrdersHtml = ""
   if (visibility.showWorkOrders && passportData.workOrders.length > 0) {
     workOrdersHtml = `<div style="margin-bottom:12px;">
-      <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">İş Emirleri (${passportData.workOrders.length})</h3>`
+      <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Araç Kabulleri (${passportData.workOrders.length})</h3>`
     for (const wo of passportData.workOrders) {
       const itemsHtml = wo.items.map((item) => {
         const total = item.totalPrice ?? (item.unitPrice ? Math.round(item.unitPrice * quantityToNumber(item.quantity)) : null)
@@ -152,7 +152,7 @@ async function generatePassportPdfHtml(data: {
     <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;display:flex;gap:16px;">
       <div style="text-align:center;flex:1;">
         <div style="font-size:16px;font-weight:700;color:${accentColor};">${passportData.workOrders.length}</div>
-        <div style="font-size:8px;color:#666;">İş Emri</div>
+        <div style="font-size:8px;color:#666;">Araç Kabul</div>
       </div>
       <div style="text-align:center;flex:1;">
         <div style="font-size:16px;font-weight:700;color:#059669;">${passportData.workOrders.filter((wo) => wo.status === "delivered").length}</div>

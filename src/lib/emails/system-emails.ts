@@ -51,7 +51,7 @@ export function welcomeLiteEmail(p: { firstName: string; workshopName: string })
       heading: "Lite hesabınız hazır",
       bodyHtml: `<p>Merhaba ${escapeHtml(p.firstName || "Yetkili")},</p>` +
         `<p>${escapeHtml(p.workshopName)} için Lite paket kapsamını süresiz 0 TL kullanabilirsiniz. Yeni Lite kayıtları kapansa da ücretsiz hakkınız devam eder.</p>` +
-        `<p>Lite süreli deneme değildir; otomatik ücretli pakete dönüşmez. İlk müşteri, araç ve iş emrinizi oluşturarak başlayabilirsiniz.</p>`,
+        `<p>Lite süreli deneme değildir; otomatik ücretli pakete dönüşmez. İlk müşteri, araç ve araç kabulünüzü oluşturarak başlayabilirsiniz.</p>`,
       cta: { label: "Giriş Yap", url: `${appUrl()}/login` },
       footerNote: "Bu e-postayı BakımX hesabınızı doğruladığınız için aldınız.",
     }),
@@ -167,7 +167,7 @@ export function trialExpiryWarningEmail(p: {
   const bodyHtml = isExpired
     ? `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
       `<p style="margin:0 0 12px;"><strong>${ws}</strong> için 7 iş günlük ücretsiz deneme süreniz ${trialEndsFormatted} tarihinde sona erdi.</p>` +
-      `<p style="margin:0 0 12px;">Üyeliğiniz donduruldu; mevcut verileriniz (müşteri, araç ve iş emri kayıtlarınız) güvende. Bir paket seçtiğinizde kaldığınız yerden devam edebilirsiniz.</p>`
+      `<p style="margin:0 0 12px;">Üyeliğiniz donduruldu; mevcut verileriniz (müşteri, araç ve araç kabul kayıtlarınız) güvende. Bir paket seçtiğinizde kaldığınız yerden devam edebilirsiniz.</p>`
     : `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
       `<p style="margin:0 0 12px;"><strong>${ws}</strong> için 7 iş günlük ücretsiz deneme süreniz <strong>${trialEndsFormatted}</strong> tarihinde sona erecek.</p>` +
       `<p style="margin:0 0 12px;">Kesintisiz kullanmaya devam etmek için şimdi bir paket seçebilirsiniz.</p>`

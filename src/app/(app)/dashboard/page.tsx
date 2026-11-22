@@ -128,7 +128,7 @@ export default async function DashboardPage() {
           <Button variant="foreground" size="sm" asChild>
             <Link href="/orders/new" data-tour="welcome-cta">
               <Plus className="size-4" />
-              Yeni İş Emri
+              Yeni Araç Kabul
             </Link>
           </Button>
         </section>
@@ -140,10 +140,10 @@ export default async function DashboardPage() {
             className="rounded-xl border bg-card p-4 space-y-3"
           >
             <h2 id="first-order-heading" className="text-lg font-semibold">Lite ile ilk işinize başlayın</h2>
-            <p className="text-sm text-muted-foreground">Kurulum tercihleriniz kaydedildi. İlk müşterinizi ve aracınızı kaydedin, ardından iş emrinizi açın. İş emri ekranında da müşteri ve araç ekleyebilirsiniz.</p>
+            <p className="text-sm text-muted-foreground">Kurulum tercihleriniz kaydedildi. İlk müşterinizi ve aracınızı kaydedin, ardından araç kabulünüzü açın. Araç kabul ekranında da müşteri ve araç ekleyebilirsiniz.</p>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button asChild variant="outline"><Link href="/customers/new">İlk müşteriyi ekle</Link></Button>
-              <Button variant="foreground" asChild><Link href="/orders/new">İlk iş emrini oluştur</Link></Button>
+              <Button variant="foreground" asChild><Link href="/orders/new">İlk araç kabulünü oluştur</Link></Button>
             </div>
           </section>
         )}

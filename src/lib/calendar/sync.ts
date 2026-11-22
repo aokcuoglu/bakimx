@@ -80,7 +80,7 @@ export async function syncDeliveryToCalendar(orderId: string, workshopId: string
   const event: CalendarEvent = {
     id: order.id,
     title,
-    description: `İş Emri: ${order.workOrderNo || order.id}`,
+    description: `Araç Kabul: ${order.workOrderNo || order.id}`,
     startAt: order.estimatedDeliveryAt,
     type: "delivery",
     entityId: order.id,

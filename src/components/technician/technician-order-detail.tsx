@@ -401,7 +401,7 @@ export function TechnicianOrderDetail({
           <Button variant="outline" size="sm" className="shrink-0" asChild>
             <Link href={workOrderPath(order.id)}>
               <FileText />
-              İş Emri
+              Araç Kabul
             </Link>
           </Button>
         </div>
@@ -409,9 +409,9 @@ export function TechnicianOrderDetail({
 
       {locked && (
         <Alert>
-          <AlertTitle>Bu iş emri salt okunur</AlertTitle>
+          <AlertTitle>Bu araç kabulü salt okunur</AlertTitle>
           <AlertDescription>
-            Bu iş emri {order.status === "cancelled" ? "iptal edildi" : "teslim edildi"}. Bilgiler değiştirilemez; adımları inceleyebilirsiniz.
+            Bu araç kabulü {order.status === "cancelled" ? "iptal edildi" : "teslim edildi"}. Bilgiler değiştirilemez; adımları inceleyebilirsiniz.
           </AlertDescription>
         </Alert>
       )}
@@ -588,7 +588,7 @@ export function TechnicianOrderDetail({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>İş tamamlandı olarak işaretlensin mi?</AlertDialogTitle>
-            <AlertDialogDescription>Bu işlem iş emrini kilitler. Devam etmek istediğinize emin misiniz?</AlertDialogDescription>
+            <AlertDialogDescription>Bu işlem araç kabulünü kilitler. Devam etmek istediğinize emin misiniz?</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Vazgeç</AlertDialogCancel>
@@ -920,7 +920,7 @@ function PurchasesSection({
           <div className="min-w-0">
             <h3 className="text-sm font-semibold text-foreground">Dışarıdan alınanlar</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Aldığın parçalar ve yaptırdığın işçilikler iş emri toplamına eklenir.
+              Aldığın parçalar ve yaptırdığın işçilikler araç kabul toplamına eklenir.
             </p>
           </div>
           {addActions}
@@ -945,7 +945,7 @@ function PurchasesSection({
         </div>
         {locked && (
           <p className="mt-2 text-xs text-muted-foreground">
-            Teslim edilmiş/iptal edilmiş iş emrinde dış alım eklenemez.
+            Teslim edilmiş/iptal edilmiş araç kabulünde dış alım eklenemez.
           </p>
         )}
       </div>
@@ -957,7 +957,7 @@ function PurchasesSection({
           </span>
           <p className="text-sm font-semibold text-foreground">Henüz dış alım yok</p>
           <p className="max-w-sm text-xs text-muted-foreground">
-            Dışarıdan aldığın parçayı veya yaptırdığın işçiliği kaydet; tutarlar iş emri toplamına işlenir.
+            Dışarıdan aldığın parçayı veya yaptırdığın işçiliği kaydet; tutarlar araç kabul toplamına işlenir.
           </p>
         </div>
       ) : (
@@ -1270,7 +1270,7 @@ function ExternalLaborCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Dış işçilik kaydı silinsin mi?</AlertDialogTitle>
             <AlertDialogDescription>
-              &quot;{item.name}&quot; dış işçilik kalemi iş emrinden kaldırılacak: tutarı toplamdan
+              &quot;{item.name}&quot; dış işçilik kalemi araç kabulünden kaldırılacak: tutarı toplamdan
               düşecek. Bu işlem geri alınamaz.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -1312,7 +1312,7 @@ function PurchaseDeleteButton({
         return
       }
       setOpen(false)
-      toast.success("Parça iş emrinden kaldırıldı")
+      toast.success("Parça araç kabulünden kaldırıldı")
       router.refresh()
     } catch {
       toast.error("Bağlantı hatası, lütfen tekrar deneyin")
@@ -1339,7 +1339,7 @@ function PurchaseDeleteButton({
           <AlertDialogHeader>
             <AlertDialogTitle>Parça kaydı silinsin mi?</AlertDialogTitle>
             <AlertDialogDescription>
-              &quot;{item.name}&quot; dışarıdan alınan parça kaydı iş emrinden de kaldırılacak:
+              &quot;{item.name}&quot; dışarıdan alınan parça kaydı araç kabulünden de kaldırılacak:
               tutarı toplamdan düşecek ve varsa parça kutusu fotoğrafı silinecek. Bu işlem geri alınamaz.
             </AlertDialogDescription>
           </AlertDialogHeader>

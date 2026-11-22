@@ -123,7 +123,7 @@ CALENDAR_PROVIDER=mock
         <div className="text-sm text-muted-foreground space-y-2">
           <ul className="list-disc list-inside space-y-1">
             <li>Randevu oluşturulduğunda takvime otomatik senkronize edilir</li>
-            <li>İş emri teslimat tarihi belirlendiğinde takvime eklenir</li>
+            <li>Araç kabulü teslimat tarihi belirlendiğinde takvime eklenir</li>
             <li>Bakım hatırlatmaları due date ile takvime senkronize edilir</li>
             <li>Google Takvim bağlı değilken tüm işlemler uygulama içinde gerçekleşir</li>
             <li>Senkronizasyon logları <Link href="/calendar" className="text-primary hover:text-primary underline">Takvim</Link> sayfasından takip edilebilir</li>

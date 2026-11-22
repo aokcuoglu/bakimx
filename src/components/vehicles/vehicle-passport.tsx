@@ -307,9 +307,9 @@ export function VehiclePassport({ data }: { data: PassportData }) {
           </SectionCard>
 
           {/* Work Order History */}
-          <SectionCard title="İş Emri Geçmişi" icon={Wrench} count={workOrders.length}>
+          <SectionCard title="Araç Kabul Geçmişi" icon={Wrench} count={workOrders.length}>
             {workOrders.length === 0 ? (
-              <EmptyState icon={Wrench} text="İş emri bulunmuyor" />
+              <EmptyState icon={Wrench} text="Araç kabulü bulunmuyor" />
             ) : (
               <div className="divide-y divide-border -mx-4 sm:-mx-5">
                 {workOrders.map((i) =>
@@ -456,7 +456,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
             </CardHeader>
             <CardContent className="pt-0 space-y-2">
               <QuickStat label="Toplam Kabul" value={`${intakes.length}`} />
-              <QuickStat label="İş Emri" value={`${workOrders.length}`} />
+              <QuickStat label="Araç Kabul" value={`${workOrders.length}`} />
               <QuickStat label="Hasar Kaydı" value={`${allDamageMarks.length}`} />
               <QuickStat label="Fotoğraf" value={`${allPhotos.length}`} />
               <QuickStat label="Hatırlatma" value={`${reminders.length}`} />
@@ -519,7 +519,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                       </div>
 
                       <div className="flex flex-wrap gap-1">
-                        {t.showWorkOrders && <VisibilityBadge label="İş Emirleri" />}
+                        {t.showWorkOrders && <VisibilityBadge label="Araç Kabulleri" />}
                         {t.showDamages && <VisibilityBadge label="Hasarlar" />}
                         {t.showPhotos && <VisibilityBadge label="Fotoğraflar" />}
                         {t.showReminders && <VisibilityBadge label="Hatırlatmalar" />}
@@ -596,7 +596,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                     <p className="text-xs font-medium text-muted-foreground mb-2">Görünürlük</p>
                     <div className="space-y-1.5">
                       <VisibilityToggle label="Zaman Çizelgesi" checked={newVisibility.showServiceHistory} onChange={(v) => setNewVisibility((prev) => ({ ...prev, showServiceHistory: v }))} />
-                      <VisibilityToggle label="İş Emirleri" checked={newVisibility.showWorkOrders} onChange={(v) => setNewVisibility((prev) => ({ ...prev, showWorkOrders: v }))} />
+                      <VisibilityToggle label="Araç Kabulleri" checked={newVisibility.showWorkOrders} onChange={(v) => setNewVisibility((prev) => ({ ...prev, showWorkOrders: v }))} />
                       <VisibilityToggle label="Hasarlar" checked={newVisibility.showDamages} onChange={(v) => setNewVisibility((prev) => ({ ...prev, showDamages: v }))} />
                       <VisibilityToggle label="Fotoğraflar" checked={newVisibility.showPhotos} onChange={(v) => setNewVisibility((prev) => ({ ...prev, showPhotos: v }))} />
                       <VisibilityToggle label="Hatırlatmalar" checked={newVisibility.showReminders} onChange={(v) => setNewVisibility((prev) => ({ ...prev, showReminders: v }))} />

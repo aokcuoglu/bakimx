@@ -14,7 +14,7 @@ export function TechnicianAnalyticsSection({ ranking }: { ranking: TechnicianRan
           </div>
           {ranking.fastest.length === 0 ? (
             <div className="p-6 text-center text-sm text-muted-foreground">
-              Tamamlanmış iş emri olan teknisyen bulunmuyor.
+              Tamamlanmış araç kabulü olan teknisyen bulunmuyor.
             </div>
           ) : (
             <div className="divide-y divide-border">
@@ -51,7 +51,7 @@ export function TechnicianAnalyticsSection({ ranking }: { ranking: TechnicianRan
           </div>
           {ranking.busiest.length === 0 ? (
             <div className="p-6 text-center text-sm text-muted-foreground">
-              Aktif iş emri olan teknisyen bulunmuyor.
+              Aktif araç kabulü olan teknisyen bulunmuyor.
             </div>
           ) : (
             <div className="divide-y divide-border">

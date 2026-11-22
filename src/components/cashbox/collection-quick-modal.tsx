@@ -164,7 +164,7 @@ export function CollectionQuickModal({
             </span>
           </DialogTitle>
           <DialogDescription>
-            Kalan bakiye {formatTRY(remainingAmount)}. Kayıt bu iş emrine işlenir.
+            Kalan bakiye {formatTRY(remainingAmount)}. Kayıt bu araç kabulüne işlenir.
           </DialogDescription>
         </DialogHeader>
 

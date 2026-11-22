@@ -350,7 +350,7 @@ export function OrderChecklist({
 
             {active.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                Bu iş emrinde kontrol maddesi kalmadı.
+                Bu araç kabulünde kontrol maddesi kalmadı.
               </p>
             )}
 
@@ -358,7 +358,7 @@ export function OrderChecklist({
 
             {locked ? (
               <p className="mt-2 text-xs text-muted-foreground">
-                Teslim edilmiş/iptal edilmiş iş emrinde kontrol maddesi eklenemez
+                Teslim edilmiş/iptal edilmiş araç kabulünde kontrol maddesi eklenemez
               </p>
             ) : (
               <AddChecklistItemForm orderId={orderId} />
@@ -511,7 +511,7 @@ function ChecklistRow({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={`"${item.description}" maddesini bu iş emrinden sil`}
+          aria-label={`"${item.description}" maddesini bu araç kabulünden sil`}
           onClick={() => state.remove(item)}
           disabled={isBusy}
           className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"

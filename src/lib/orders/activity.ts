@@ -86,7 +86,7 @@ function buildEntry(action: string, meta: Record<string, unknown>): Built {
     case "service_order_created":
     case "service_order_created_from_quote":
     case "service_order_created_from_appointment":
-      return { category: "create", label: "İş emri oluşturuldu" }
+      return { category: "create", label: "Araç kabulü oluşturuldu" }
 
     case "order_item_added": {
       const name = String(meta.name ?? "Kalem")
@@ -106,7 +106,7 @@ function buildEntry(action: string, meta: Record<string, unknown>): Built {
     }
 
     case "order_meta_updated":
-      return { category: "meta", label: "İş emri bilgileri güncellendi" }
+      return { category: "meta", label: "Araç kabul bilgileri güncellendi" }
 
     case "order_invoice_updated": {
       const to = (meta.to ?? {}) as Record<string, unknown>

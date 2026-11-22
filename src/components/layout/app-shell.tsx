@@ -107,7 +107,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Servis",
     items: [
-      { href: "/orders", label: "İş Emirleri", icon: WrenchIcon },
+      { href: "/orders", label: "Araç Kabulleri", icon: WrenchIcon },
       { href: "/technician", label: "Teknisyen Paneli", icon: HardHat, feature: "team" },
       { href: "/customers", label: "Müşteriler", icon: Users },
       { href: "/vehicles", label: "Araçlar", icon: Car },
@@ -679,7 +679,7 @@ function MobileBottomNav({
           <MobileNavLink href="/dashboard" label="Panel" icon={LayoutDashboard} active={pathname === "/dashboard"} />
           <MobileNavLink
             href="/orders"
-            label="İş Emirleri"
+            label="Araç Kabulleri"
             icon={WrenchIcon}
             active={pathname === "/orders" || pathname.startsWith("/orders/")}
             tourId="mobile-nav-orders"

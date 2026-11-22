@@ -38,7 +38,7 @@ describe("GET /api/search/orders", () => {
       take: 8,
     }))
     expect(await response.json()).toEqual({
-      results: [{ id: "order-1", label: "İş emri BX-42", sublabel: "34 ABC 123 · Ayşe Yılmaz" }],
+      results: [{ id: "order-1", label: "Araç kabul BX-42", sublabel: "34 ABC 123 · Ayşe Yılmaz" }],
     })
   })
 })

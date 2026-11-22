@@ -125,7 +125,7 @@ export function AppointmentDetail({
       if (result.success && result.orderId) {
         router.push(`/orders/${result.orderId}`)
       } else {
-        setConvertError(result.error || "İş emrine çevrilemedi")
+        setConvertError(result.error || "Araç kabulüne çevrilemedi")
       }
     } catch {
       setConvertError("Bir hata oluştu")
@@ -363,7 +363,7 @@ export function AppointmentDetail({
                   ) : (
                     <Wrench className="size-4" />
                   )}
-                  Randevuyu İş Emrine Çevir
+                  Randevuyu Araç Kabulüne Çevir
                 </Button>
               )}
 
@@ -371,7 +371,7 @@ export function AppointmentDetail({
                 <Button variant="outline" size="sm" className="w-full" asChild>
                   <Link href={`/orders/${appointment.convertedServiceOrder.id}`}>
                     <Wrench className="size-4" />
-                    İş Emrine Git
+                    Araç Kabulüne Git
                     {appointment.convertedServiceOrder.workOrderNo && (
                       <span className="font-mono text-xs">({appointment.convertedServiceOrder.workOrderNo})</span>
                     )}

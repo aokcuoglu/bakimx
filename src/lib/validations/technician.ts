@@ -2,7 +2,7 @@ import { z } from "zod/v4"
 import { parseTRYToKurus } from "@/lib/money"
 
 export const checklistItemSchema = z.object({
-  serviceOrderId: z.string().min(1, "İş emri zorunludur"),
+  serviceOrderId: z.string().min(1, "Araç kabulü zorunludur"),
   category: z.enum(["inspection", "repair", "delivery"], {
     error: "Geçerli bir kategori seçiniz",
   }),
@@ -11,7 +11,7 @@ export const checklistItemSchema = z.object({
 })
 
 export const internalNoteSchema = z.object({
-  serviceOrderId: z.string().min(1, "İş emri zorunludur"),
+  serviceOrderId: z.string().min(1, "Araç kabulü zorunludur"),
   content: z.string().min(1, "Not içeriği zorunludur").max(2000),
 })
 
@@ -24,7 +24,7 @@ export type PartsRequestTypeKey = (typeof PARTS_REQUEST_TYPES)[number]
 
 export const partsRequestSchema = z
   .object({
-    serviceOrderId: z.string().min(1, "İş emri zorunludur"),
+    serviceOrderId: z.string().min(1, "Araç kabulü zorunludur"),
     type: z.enum(PARTS_REQUEST_TYPES).default("part"),
     // Zorunluluk superRefine'da: hata metni tipe göre değişiyor ("Parça adı" /
     // "İşçilik adı") ve min(1) buradan önce ateşlerse o metin hiç görünmez.

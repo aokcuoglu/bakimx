@@ -37,10 +37,10 @@ export type PurchaseDeleteDecision =
   | { allowed: false; reason: string }
 
 export const PURCHASE_DELETE_LOCKED_REASON =
-  "Teslim edilmiş veya iptal edilmiş iş emrinde dış alım kaydı düzenlenemez veya silinemez"
+  "Teslim edilmiş veya iptal edilmiş araç kabulünde dış alım kaydı düzenlenemez veya silinemez"
 
 export const PURCHASE_DELETE_OFFICE_ONLY_REASON =
-  "Teslime hazır iş emrinde dış alım kaydını yalnız iş emrini düzenleyebilen roller değiştirebilir"
+  "Teslime hazır araç kabulünde dış alım kaydını yalnız araç kabulünü düzenleyebilen roller değiştirebilir"
 
 /**
  * @param orderStatus İş emrinin güncel durumu.

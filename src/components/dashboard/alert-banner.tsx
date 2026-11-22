@@ -25,7 +25,7 @@ export function AlertBanner({
   if (stats.overdueDeliveries > 0) {
     alerts.push({
       count: stats.overdueDeliveries,
-      message: `${stats.overdueDeliveries} iş emri tahmini teslim tarihini geçti.`,
+      message: `${stats.overdueDeliveries} araç kabul tahmini teslim tarihini geçti.`,
       href: "/orders?status=active",
       icon: AlertTriangle,
       color: "red",
@@ -45,7 +45,7 @@ export function AlertBanner({
   if (showQuotes && stats.waitingApprovals > 0) {
     alerts.push({
       count: stats.waitingApprovals,
-      message: `${stats.waitingApprovals} müşteri onayı bekleyen iş emri var.`,
+      message: `${stats.waitingApprovals} müşteri onayı bekleyen araç kabulü var.`,
       href: "/orders?status=waiting_approval",
       icon: MessageCircle,
       color: "amber",
@@ -67,7 +67,7 @@ export function AlertBanner({
             <Icon aria-hidden className="size-4" />
             <AlertTitle>{alert.message}</AlertTitle>
             <AlertDescription>
-              <Link href={alert.href} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">İş emirlerini incele →</Link>
+              <Link href={alert.href} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Araç kabullerini incele →</Link>
             </AlertDescription>
           </Alert>
         )

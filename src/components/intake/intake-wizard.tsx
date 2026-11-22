@@ -522,7 +522,7 @@ export function IntakeWizard({
                   </Button>
                   <Button variant="foreground" size="lg" className="gap-2" asChild>
                     <Link href={orderId ? `/orders/${orderId}` : "/orders"}>
-                      İş Emrine Git
+                      Araç Kabulüne Git
                     </Link>
                   </Button>
                 </div>

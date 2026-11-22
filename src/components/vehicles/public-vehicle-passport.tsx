@@ -265,7 +265,7 @@ export function PublicVehiclePassportPage({
           <div className="grid grid-cols-4 gap-3">
             <div className="text-center">
               <p className="text-xl font-bold text-foreground">{totalOrders}</p>
-              <p className="text-[11px] text-muted-foreground">İş Emri</p>
+              <p className="text-[11px] text-muted-foreground">Araç Kabul</p>
             </div>
             <div className="text-center">
               <p className="text-xl font-bold text-foreground">{completedOrders}</p>
@@ -293,7 +293,7 @@ export function PublicVehiclePassportPage({
           <div className="bg-card border border-border rounded-lg p-4 print:border print:border-border">
             <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2 mb-3">
               <Wrench className="size-4" />
-              İş Emirleri ({workOrders.length})
+              Araç Kabulleri ({workOrders.length})
             </h3>
             <div className="space-y-3">
               {workOrders.map((wo, idx) => (

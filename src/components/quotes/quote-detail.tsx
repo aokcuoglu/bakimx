@@ -342,12 +342,12 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm">
                     <Info className="size-4 text-primary" />
-                    <span className="font-medium text-foreground">Bu teklif iş emrine çevrildi</span>
+                    <span className="font-medium text-foreground">Bu teklif araç kabulüne çevrildi</span>
                     <Link
                       href={`/orders/${quote.convertedServiceOrder.id}`}
                       className="text-primary hover:text-primary font-medium inline-flex items-center gap-1"
                     >
-                      {quote.convertedServiceOrder.workOrderNo || "İş Emri"}
+                      {quote.convertedServiceOrder.workOrderNo || "Araç Kabul"}
                       <ArrowRight className="size-3" />
                     </Link>
                   </div>
@@ -416,7 +416,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
               onClick={handleConvert}
             >
               {convertLoading ? <Loader2 className="size-4 animate-spin" /> : <ArrowRight className="size-4" />}
-              İş Emrine Çevir
+              Araç Kabulüne Çevir
             </Button>
           )}
 

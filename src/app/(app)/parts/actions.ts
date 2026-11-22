@@ -359,7 +359,7 @@ export async function deletePartAction(partId: string) {
     where: { partId, workshopId },
   })
   if (orderUsage > 0 || quoteUsage > 0) {
-    return { error: `Bu parça ${orderUsage} iş emri ve ${quoteUsage} teklifte kullanılmış. Silinemez, pasifleştirin.` }
+    return { error: `Bu parça ${orderUsage} araç kabulü ve ${quoteUsage} teklifte kullanılmış. Silinemez, pasifleştirin.` }
   }
 
   const movementCount = await prisma.stockMovement.count({

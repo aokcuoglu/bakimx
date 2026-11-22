@@ -167,7 +167,7 @@ function ExternalLaborSheet({
           <DialogDescription>
             {editing
               ? "Dışarıda yaptırılan işin bilgilerini güncelle."
-              : "Araca dışarıda yaptırdığın işi iş emrine kalem olarak ekle. Müşteri fiyatını ofis belirler."}
+              : "Araca dışarıda yaptırdığın işi araç kabulüne kalem olarak ekle. Müşteri fiyatını ofis belirler."}
           </DialogDescription>
         </DialogHeader>
 

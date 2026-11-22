@@ -47,7 +47,7 @@ export default async function AgingReportPage() {
 
         <div className="rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
           <Clock className="size-3.5 mt-0.5 shrink-0" />
-          <span>Yaşlandırma, iş emri oluşturma tarihine göre hesaplanır. 0-7 gün arası en yeni alacakları, 60+ gün arası en gecikmiş alacakları gösterir.</span>
+          <span>Yaşlandırma, araç kabulü oluşturma tarihine göre hesaplanır. 0-7 gün arası en yeni alacakları, 60+ gün arası en gecikmiş alacakları gösterir.</span>
         </div>
 
         <div className="space-y-4">

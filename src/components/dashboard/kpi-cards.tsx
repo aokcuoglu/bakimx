@@ -44,7 +44,7 @@ export function KpiCards({
     <div className={styles.summary} aria-label="Operasyon özeti">
       <div className={styles.kpis}>
         <KpiCard
-          label="Aktif İş Emri"
+          label="Aktif Araç Kabul"
           value={stats.activeOrders}
           icon={Wrench}
           href="/orders"

@@ -104,7 +104,7 @@ describe("teknisyen iş emri adım kabuğu", () => {
   })
 
   test("kilitli iş emrini tek uyarıyla salt okunur gösterir", () => {
-    expect(source).toContain("Bu iş emri salt okunur")
+    expect(source).toContain("Bu araç kabulü salt okunur")
     expect(source).toContain("Bilgiler değiştirilemez; adımları inceleyebilirsiniz.")
     expect(source).toContain("!locked && <TechnicianPhotoUpload")
     expect(source).toContain("!locked && <AddInternalNoteForm")
@@ -113,13 +113,13 @@ describe("teknisyen iş emri adım kabuğu", () => {
   test("işi tamamlamadan önce onay ister", () => {
     expect(source).toContain("setCompleteDialogOpen(true)")
     expect(source).toContain("İş tamamlandı olarak işaretlensin mi?")
-    expect(source).toContain("Bu işlem iş emrini kilitler.")
+    expect(source).toContain("Bu işlem araç kabulünü kilitler.")
   })
 
   test("rota BrandSpinner yükleme ve eyleme dönük hata durumları taşır", () => {
     expect(readFileSync(join(routeDir, "loading.tsx"), "utf8")).toContain("PageLoading")
     const errorSource = readFileSync(join(routeDir, "error.tsx"), "utf8")
-    expect(errorSource).toContain("İş emri açılamadı")
+    expect(errorSource).toContain("Araç kabulü açılamadı")
     expect(errorSource).toContain("Tekrar dene")
   })
 })

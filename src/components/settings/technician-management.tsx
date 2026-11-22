@@ -34,7 +34,7 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
             {/* Buradaki unvanlar (Usta/Teknisyen/…) Ekip kartındaki YETKİ rolleriyle
                 aynı adları taşıyor ama yetki vermez. Ayrım metinde açık olmalı (#274). */}
             <p className="text-xs text-muted-foreground">
-              İş emirlerine atadığınız personel. Buradaki unvan yetki vermez, giriş hesabı da gerektirmez.
+              Araç kabullerine atadığınız personel. Buradaki unvan yetki vermez, giriş hesabı da gerektirmez.
             </p>
           </div>
         </div>
@@ -62,7 +62,7 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
         <div className="text-center py-8 text-muted-foreground text-sm">
           <HardHat className="size-10 mx-auto mb-2 text-muted-foreground/50" />
           <p className="font-medium">Henüz teknisyen eklenmemiş</p>
-          <p className="text-xs mt-1">İş emirlerine atama yapmak için teknisyen ekleyin</p>
+          <p className="text-xs mt-1">Araç kabullerine atama yapmak için teknisyen ekleyin</p>
         </div>
       ) : (
         <div className="space-y-2">

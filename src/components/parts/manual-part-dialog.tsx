@@ -248,7 +248,7 @@ export function ManualPartDialog({
               <p className="text-sm font-medium text-foreground">Stok kartı olarak kaydet</p>
               <p className="text-xs text-muted-foreground">
                 {isDivisibleOrderItemUnit(unit)
-                  ? "Ondalıklı ölçü birimleri stok kartına bağlanamaz; kalem yalnız bu iş emrine eklenir."
+                  ? "Ondalıklı ölçü birimleri stok kartına bağlanamaz; kalem yalnız bu araç kabulüne eklenir."
                   : "Parça, kodu ile Stok / Parçalar listesine eklenir. Stok miktarı 0 başlar, bu kalem stoktan düşmez."}
               </p>
             </div>

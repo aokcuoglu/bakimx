@@ -26,7 +26,7 @@ export async function assertIntakePhotoQuota(
   if (active + adding > MAX_ACTIVE_PHOTOS_PER_INTAKE) {
     return {
       ok: false,
-      error: `Bu iş emrine en fazla ${MAX_ACTIVE_PHOTOS_PER_INTAKE} fotoğraf eklenebilir (şu an ${active}). Gereksiz kareleri silip tekrar deneyin.`,
+      error: `Bu araç kabulüne en fazla ${MAX_ACTIVE_PHOTOS_PER_INTAKE} fotoğraf eklenebilir (şu an ${active}). Gereksiz kareleri silip tekrar deneyin.`,
     }
   }
 

@@ -94,7 +94,7 @@ test("bildirilebilir olay atanmış teknisyenin cihazına gider", async () => {
   expect(delivery).not.toBeNull()
   expect(delivery?.targets).toEqual([SUBSCRIPTION])
   expect(delivery?.payload.title).toBe("Usta atandı")
-  expect(delivery?.payload.body).toBe("34 ABC 123 · İş Emri #42")
+  expect(delivery?.payload.body).toBe("34 ABC 123 · Araç Kabul #42")
   expect(delivery?.payload.url).toBe("/technician/orders/order-1")
 })
 

@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     const data = purchase.data
     const shippingAddress = requireWorkshopShippingAddress(workshop)
     const item = await prisma.serviceOrderItem.findFirst({ where: { id: data.orderItemId, serviceOrderId: data.orderId, workshopId: workshop.id, serviceOrder: { workshopId: workshop.id } }, select: { id: true } })
-    if (!item) return NextResponse.json({ error: "İş emri kalemi bulunamadı." }, { status: 404 })
+    if (!item) return NextResponse.json({ error: "Araç kabul kalemi bulunamadı." }, { status: 404 })
     const result = await startExternalProcurement(provider, {
       workshopId: workshop.id, requestedByUserId: user.id, serviceOrderId: data.orderId,
       serviceOrderItemId: data.orderItemId, idempotencyKey: data.idempotencyKey,

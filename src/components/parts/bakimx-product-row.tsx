@@ -158,7 +158,7 @@ export function BakimxProductRow({
           </Button>
           {/* Talep ≠ kalem: aynı satırdaki iki eylemin karıştırılmaması için yazılı. */}
           <span className="basis-full text-[11px] text-muted-foreground">
-            Talep BakımX&apos;e gider; iş emrine kalem eklemez.
+            Talep BakımX&apos;e gider; araç kabulüne kalem eklemez.
           </span>
         </div>
       )}

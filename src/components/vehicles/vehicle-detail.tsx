@@ -190,9 +190,9 @@ export function VehicleDetail({
           <VehicleIdentity plate={v.plate} brand={v.brand} model={v.model} />
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="foreground" asChild>
-              <Link href={`/orders/new?vehicleId=${v.id}`} aria-label="Yeni iş emri oluştur">
+              <Link href={`/orders/new?vehicleId=${v.id}`} aria-label="Yeni araç kabulü oluştur">
                 <Wrench className="size-4" />
-                <span className="hidden sm:inline">Yeni İş Emri</span>
+                <span className="hidden sm:inline">Yeni Araç Kabul</span>
               </Link>
             </Button>
             <Button variant="outline" asChild>
@@ -279,7 +279,7 @@ export function VehicleDetail({
           </SectionCard>
 
           <SectionCard
-            title="İş Emri Geçmişi"
+            title="Araç Kabul Geçmişi"
             icon={Wrench}
             count={workOrders.length + crossWorkshop.orders.length}
             action={
@@ -288,7 +288,7 @@ export function VehicleDetail({
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
-                Yeni İş Emri
+                Yeni Araç Kabul
               </Link>
             }
           >
@@ -298,7 +298,7 @@ export function VehicleDetail({
                 <TabsTrigger value="other">Başkası ({crossWorkshop.orders.length})</TabsTrigger>
               </TabsList>
               <TabsContent value="own" className="pt-3">
-                {workOrders.length === 0 ? <OrderHistoryEmpty message="Bu araç için kendi iş emriniz bulunmuyor" /> : (
+                {workOrders.length === 0 ? <OrderHistoryEmpty message="Bu araç için kendi araç kabulünüz bulunmuyor" /> : (
                   <div className="grid gap-3">
                     {workOrders.map((intake) => (
                       <OwnWorkOrderCard key={intake.order.id} intake={intake} workshopName={workshopName} />
@@ -417,7 +417,7 @@ export function VehicleDetail({
                           href={`/orders/${dm.orderId}`}
                           className="text-[11px] text-primary hover:text-primary"
                         >
-                          İş emri →
+                          Araç kabulü →
                         </Link>
                       </div>
                     </div>
@@ -461,7 +461,7 @@ export function VehicleDetail({
               />
               {workOrders.length > 0 && (
                 <StatusIndicator
-                  label="Açık İş Emri"
+                  label="Açık Araç Kabul"
                   value={workOrders.filter((i) => i.order && !["delivered", "cancelled"].includes(i.order.status)).length > 0 ? "Var" : "Yok"}
                   color={workOrders.filter((i) => i.order && !["delivered", "cancelled"].includes(i.order.status)).length > 0 ? "text-foreground bg-warning/10 border-warning/20" : "text-muted-foreground bg-muted border-border"}
                 />
@@ -496,7 +496,7 @@ export function VehicleDetail({
             <Link href={`/orders/new?vehicleId=${v.id}`}>
               <Button variant="outline" className="w-full gap-2">
                 <ClipboardList className="size-4" />
-                Yeni İş Emri
+                Yeni Araç Kabul
               </Button>
             </Link>
           </div>

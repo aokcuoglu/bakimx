@@ -36,7 +36,7 @@ export const COMMUNICATION_TEMPLATES: CommunicationTemplate[] = [
   },
   {
     key: "work_order_completed",
-    label: "İş Emri Tamamlandı",
+    label: "Araç Kabul Tamamlandı",
     description: "Araç teslimata hazır olduğunda müşteriye bildirim ve portal linki gönderilir",
     channels: ["sms", "email"],
   },
@@ -49,7 +49,7 @@ export const COMMUNICATION_TEMPLATES: CommunicationTemplate[] = [
   {
     key: "payment_reminder",
     label: "Ödeme Hatırlatması",
-    description: "Ödeme bekleyen iş emirleri için hatırlatma gönderilir",
+    description: "Ödeme bekleyen araç kabulleri için hatırlatma gönderilir",
     channels: ["sms", "email"],
   },
   {
@@ -79,7 +79,7 @@ const TEMPLATE_DEFAULTS: Record<CommunicationTemplateKey, Record<TemplateChannel
   },
   work_order_completed: {
     sms: "Sayın {customerName}, {workshopName} - aracınız ({vehiclePlate}) teslimata hazırdır. Detaylar: {portalLink}",
-    email: `<h2>Aracınız Teslimata Hazır</h2><p>Sayın {customerName},</p><p>{workshopName} - aracınız (<strong>{vehiclePlate}</strong>) teslimata hazırdır.</p><p><strong>İş Emri No:</strong> {workOrderNo}</p><p><a href="{portalLink}">Detayları Görüntüle</a></p>`,
+    email: `<h2>Aracınız Teslimata Hazır</h2><p>Sayın {customerName},</p><p>{workshopName} - aracınız (<strong>{vehiclePlate}</strong>) teslimata hazırdır.</p><p><strong>Araç Kabul No:</strong> {workOrderNo}</p><p><a href="{portalLink}">Detayları Görüntüle</a></p>`,
   },
   maintenance_reminder: {
     sms: "Sayın {customerName}, {workshopName} - aracınızın ({vehiclePlate}) {maintenanceType} bakımı yaklaştı. Son tarih: {dueDate}",

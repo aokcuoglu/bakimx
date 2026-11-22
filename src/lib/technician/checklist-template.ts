@@ -27,7 +27,7 @@ export const CHECKLIST_TEMPLATE: ChecklistTemplateItem[] = [
   { key: "inspection.brakes", category: "inspection", description: "Fren balata/disk gözle kontrol edildi" },
 
   // Onarım
-  { key: "repair.items_done", category: "repair", description: "İş emrindeki tüm parça ve işçilik kalemleri tamamlandı" },
+  { key: "repair.items_done", category: "repair", description: "Araç kabulündeki tüm parça ve işçilik kalemleri tamamlandı" },
   { key: "repair.old_parts_kept", category: "repair", description: "Sökülen parçalar müşteriye gösterilmek üzere ayrıldı" },
   { key: "repair.retested", category: "repair", description: "Arıza tekrar test edildi, giderildiği doğrulandı" },
   { key: "repair.fault_codes", category: "repair", description: "Hata kodu / uyarı lambası kontrolü yapıldı" },

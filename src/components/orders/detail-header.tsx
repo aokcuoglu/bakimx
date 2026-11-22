@@ -74,7 +74,7 @@ export function DetailHeader({
             className="-ml-2 text-muted-foreground"
           >
             <ArrowLeft className="size-4" />
-            İş emirleri
+            Araç kabulleri
           </Button>
           <h1 className="mt-1 truncate text-lg font-semibold tracking-tight text-foreground">{plate}</h1>
           <p className="truncate text-sm text-muted-foreground">

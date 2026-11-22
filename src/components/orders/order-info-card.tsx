@@ -172,7 +172,7 @@ export function OrderInfoCard({
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Receipt className="size-4 text-muted-foreground" />
-          İş Emri Bilgileri
+          Araç Kabul Bilgileri
         </CardTitle>
       </CardHeader>
       <CardContent className="text-sm">
@@ -316,9 +316,9 @@ export function OrderInfoCard({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>İş emri iptal edilsin mi?</AlertDialogTitle>
+            <AlertDialogTitle>Araç kabulü iptal edilsin mi?</AlertDialogTitle>
             <AlertDialogDescription>
-              Kalemler, fiyatlar, fotoğraflar ve usta ataması kilitlenir; iş emri
+              Kalemler, fiyatlar, fotoğraflar ve usta ataması kilitlenir; araç kabulü
               daha sonra &quot;Taslak&quot; seçilerek yeniden açılabilir.
             </AlertDialogDescription>
           </AlertDialogHeader>
