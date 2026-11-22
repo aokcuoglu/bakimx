@@ -2,7 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
 import { Cookie, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import {
@@ -22,12 +30,12 @@ import {
   COOKIE_PREFERENCES_EVENT,
   DEFAULT_COOKIE_PREFERENCES,
   type CookieConsentPreferences,
+  isCookieConsentLegalPath,
   isPublicCookieConsentPath,
   parseCookieConsent,
   readCookieConsent,
   writeCookieConsent,
 } from "@/lib/cookie-consent"
-import { cn } from "@/lib/utils"
 
 type DraftPreferences = Omit<CookieConsentPreferences, "necessary"> & { necessary: true }
 
@@ -73,6 +81,8 @@ export function CookieConsent() {
     }
   }, [consentRaw])
 
+  const contentRef = useRef<HTMLDivElement | null>(null)
+  const [barHeight, setBarHeight] = useState(0)
   const [preferencesOpen, setPreferencesOpen] = useState(false)
   const [draft, setDraft] = useState<DraftPreferences>(toDraft(DEFAULT_COOKIE_PREFERENCES))
 
@@ -97,43 +107,70 @@ export function CookieConsent() {
     setPreferencesOpen(true)
   }, [consent])
 
-  if (!hydrated || !isPublicCookieConsentPath(pathname)) return null
+  const showBanner = hydrated && !consent && !preferencesOpen
+  const isLegal = isCookieConsentLegalPath(pathname)
+  const needsSpacer = showBanner && isLegal
 
-  const showBanner = !consent && !preferencesOpen
+  // Non-modal bar on legal pages overlays the page end; reserve its height.
+  useEffect(() => {
+    if (!needsSpacer) return
+    let observer: ResizeObserver | undefined
+    let frame = requestAnimationFrame(function attach() {
+      const node = contentRef.current
+      if (!node) {
+        frame = requestAnimationFrame(attach)
+        return
+      }
+      observer = new ResizeObserver(() => setBarHeight(node.offsetHeight))
+      observer.observe(node)
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+      observer?.disconnect()
+      setBarHeight(0)
+    }
+  }, [needsSpacer])
+
+  if (!hydrated || !isPublicCookieConsentPath(pathname)) return null
 
   return (
     <>
-      {showBanner ? (
-        <div
-          role="dialog"
-          aria-labelledby="cookie-consent-title"
-          aria-describedby="cookie-consent-desc"
+      {needsSpacer ? <div aria-hidden style={{ height: barHeight }} /> : null}
+      <Sheet
+        open={showBanner}
+        // The banner is derived from stored consent; close requests are ignored.
+        onOpenChange={() => {}}
+        modal={!isLegal}
+      >
+        <SheetContent
+          side="bottom"
+          ref={contentRef}
+          showCloseButton={false}
+          overlayClassName="bg-foreground/20 backdrop-blur-none supports-backdrop-filter:backdrop-blur-none"
           data-slot="cookie-consent-banner"
-          className={cn(
-            // Bottom-left, clear of the site-assistant FAB (bottom-right).
-            "fixed bottom-20 left-4 z-50 w-[min(100%-2rem,20rem)] sm:bottom-5 sm:left-5",
-            "rounded-xl border border-border bg-card p-4 text-card-foreground shadow-md",
-          )}
+          className="gap-0 p-0 pb-[env(safe-area-inset-bottom)] outline-none focus:outline-none focus-visible:outline-none"
+          onEscapeKeyDown={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => event.preventDefault()}
+          onInteractOutside={(event) => event.preventDefault()}
+          onOpenAutoFocus={(event) => {
+            // No button gets a ring on open; modal keeps focus inside the bar.
+            event.preventDefault()
+            if (!isLegal) contentRef.current?.focus()
+          }}
         >
-          <div className="flex items-start gap-3">
-            <div
-              className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground"
-              aria-hidden
-            >
-              <Cookie className="size-4" />
-            </div>
-            <div className="min-w-0 flex-1 space-y-3">
-              <div className="space-y-1.5">
-                <h2
-                  id="cookie-consent-title"
-                  className="text-sm font-semibold tracking-tight text-foreground"
-                >
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6">
+            <div className="flex min-w-0 items-start gap-3">
+              <div
+                className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground"
+                aria-hidden
+              >
+                <Cookie className="size-4" />
+              </div>
+              <div className="min-w-0 space-y-1">
+                <SheetTitle className="text-sm font-semibold tracking-tight">
                   Çerez kullanıyoruz
-                </h2>
-                <p
-                  id="cookie-consent-desc"
-                  className="text-xs leading-relaxed text-muted-foreground"
-                >
+                </SheetTitle>
+                <SheetDescription className="text-sm leading-relaxed sm:text-xs">
                   Deneyimi iyileştirmek için çerez kullanırız. Ayrıntılar için{" "}
                   <Link
                     href="/privacy#cerezler"
@@ -142,41 +179,38 @@ export function CookieConsent() {
                     Gizlilik Politikası
                   </Link>
                   .
-                </p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={openPreferences}
-                  className="h-auto p-0 text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                >
-                  Tercihler
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 flex-1"
-                  onClick={() => save(DEFAULT_COOKIE_PREFERENCES)}
-                >
-                  Reddet
-                </Button>
-                <Button
-                  type="button"
-                  variant="navy"
-                  size="sm"
-                  className="h-7 flex-1"
-                  onClick={() => save(ACCEPT_ALL_PREFERENCES)}
-                >
-                  Kabul et
-                </Button>
+                </SheetDescription>
               </div>
             </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-2 sm:flex-nowrap">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 sm:flex-none"
+                onClick={() => save(DEFAULT_COOKIE_PREFERENCES)}
+              >
+                Reddet
+              </Button>
+              <Button
+                type="button"
+                variant="navy"
+                className="flex-1 sm:flex-none"
+                onClick={() => save(ACCEPT_ALL_PREFERENCES)}
+              >
+                Kabul et
+              </Button>
+              <Button
+                type="button"
+                variant="link"
+                onClick={openPreferences}
+                className="w-full text-muted-foreground-strong underline hover:text-foreground sm:w-auto"
+              >
+                Tercihler
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : null}
+        </SheetContent>
+      </Sheet>
 
       <Dialog open={preferencesOpen} onOpenChange={setPreferencesOpen}>
         <DialogContent

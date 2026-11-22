@@ -3,6 +3,15 @@ import { defineConfig, devices } from "@playwright/test"
 const port = process.env.PLAYWRIGHT_PORT || "3001"
 const baseURL = `http://localhost:${port}`
 
+// Public pages lock behind the cookie consent bar until a choice is stored;
+// seed a valid record so specs that are not about consent see the real page.
+// Shape mirrors `parseCookieConsent` in src/lib/cookie-consent.ts.
+const consentRecord = {
+  version: 1,
+  updatedAt: "2026-01-01T00:00:00.000Z",
+  preferences: { necessary: true, performance: false, functional: false, targeting: false },
+}
+
 export default defineConfig({
   testDir: "./e2e",
   // `.e2e.ts` uzantısı bilinçli: Playwright'ın varsayılan `*.spec.ts` deseni
@@ -21,6 +30,17 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL,
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: baseURL,
+          localStorage: [
+            { name: "bakimx.cookie-consent", value: JSON.stringify(consentRecord) },
+          ],
+        },
+      ],
+    },
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

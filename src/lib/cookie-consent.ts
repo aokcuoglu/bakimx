@@ -100,6 +100,18 @@ export function isPublicCookieConsentPath(pathname: string): boolean {
   )
 }
 
+const LEGAL_DOCUMENT_PREFIXES = ["/privacy", "/kvkk", "/terms", "/acik-riza"] as const
+
+/**
+ * Legal document pages keep the consent bar visible but must stay readable —
+ * the bar links to /privacy#cerezler, so locking the page there would defeat it.
+ */
+export function isCookieConsentLegalPath(pathname: string): boolean {
+  return LEGAL_DOCUMENT_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )
+}
+
 export function createConsentRecord(
   preferences: CookieConsentPreferences,
   updatedAt = new Date().toISOString(),

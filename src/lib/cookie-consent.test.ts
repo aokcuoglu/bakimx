@@ -5,6 +5,7 @@ import {
   createConsentRecord,
   DEFAULT_COOKIE_PREFERENCES,
   hasPerformanceConsent,
+  isCookieConsentLegalPath,
   isPublicCookieConsentPath,
   parseCookieConsent,
 } from "./cookie-consent"
@@ -73,4 +74,13 @@ test("parseCookieConsent bozuk veya eski sürümü reddeder", () => {
 test("varsayılan tercihler performans kapalıdır", () => {
   expect(DEFAULT_COOKIE_PREFERENCES.performance).toBe(false)
   expect(hasPerformanceConsent(createConsentRecord(DEFAULT_COOKIE_PREFERENCES))).toBe(false)
+})
+
+test("isCookieConsentLegalPath yalnız hukuki belge sayfalarını eşler", () => {
+  for (const p of ["/privacy", "/kvkk", "/terms", "/acik-riza", "/privacy/x", "/terms/a/b"]) {
+    expect(isCookieConsentLegalPath(p)).toBe(true)
+  }
+  for (const p of ["/", "/login", "/privacyx", "/kvkkx", "/fiyatlar", "/demo/terms"]) {
+    expect(isCookieConsentLegalPath(p)).toBe(false)
+  }
 })
