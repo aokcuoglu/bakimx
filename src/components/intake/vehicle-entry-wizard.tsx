@@ -8,7 +8,7 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Item, ItemContent, ItemDescription, ItemHeader, ItemMedia, ItemTitle } from "@/components/ui/item"
+import { Item, ItemActions, ItemContent, ItemDescription, ItemHeader, ItemTitle } from "@/components/ui/item"
 import {
   AlertTriangle,
   Barcode,
@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Info,
   Loader2,
+  Phone,
   ScanLine,
   Search,
   User,
@@ -42,6 +43,7 @@ import { useVinResolve } from "@/components/vehicles/vin-resolve"
 import { changeVehicleOwnerAction } from "@/app/(app)/vehicles/actions"
 import { displayCustomerName, type CustomerLite, type UnifiedResult } from "@/lib/search/unified-results"
 import { findExactPlateMatch } from "@/lib/search/exact-plate-match"
+import { isPlateOrCustomerQueryReady } from "@/lib/search/plate-search"
 import { formatPhoneTR, normalizePlate, uppercaseIfPlateLike } from "@/lib/format"
 import { isValidVin, normalizeVin, type VinCandidate } from "@/lib/vin/types"
 import { ocrVehicleTypeToSlug, ocrFuelToSlug, tecdocFuelToFormValue } from "@/lib/constants"
@@ -367,19 +369,24 @@ export function VehicleEntryWizard({
     const q = query.trim()
     // Boş/eksik sorguda listeyi temizle. setState doğrudan effect gövdesinde
     // çağrılmıyor (react-hooks/set-state-in-effect) — aynı desen picker'da da var.
-    if (!q || (method === "vin" && !isValidVin(q))) {
-      const clear = setTimeout(() => setResults([]), 0)
+    // Plaka modunda yalnız il kodu ("34") aranmaz; il kodundan sonra harf beklenir.
+    const incomplete = method === "vin" ? !isValidVin(q) : !isPlateOrCustomerQueryReady(q)
+    if (incomplete) {
+      const clear = setTimeout(() => { setResults([]); setSearching(false) }, 0)
       return () => clearTimeout(clear)
     }
+    // Sorgu değişince uçuştaki istek iptal edilir: "34 K" yanıtı, kutu "34"e
+    // döndükten sonra gelip listeyi geri doldurmasın.
+    const controller = new AbortController()
     const t = setTimeout(() => {
       setSearching(true)
-      fetch(`${SEARCH_ENDPOINT}?q=${encodeURIComponent(method === "vin" ? normalizeVin(q) : q)}`)
+      fetch(`${SEARCH_ENDPOINT}?q=${encodeURIComponent(method === "vin" ? normalizeVin(q) : q)}`, { signal: controller.signal })
         .then((r) => r.json())
         .then((d) => setResults(Array.isArray(d?.results) ? d.results : []))
-        .catch(() => setResults([]))
-        .finally(() => setSearching(false))
+        .catch(() => { if (!controller.signal.aborted) setResults([]) })
+        .finally(() => { if (!controller.signal.aborted) setSearching(false) })
     }, 250)
-    return () => clearTimeout(t)
+    return () => { clearTimeout(t); controller.abort() }
   }, [query, step, method])
 
   // ——— Son araçlar (yöntem adımında yazmadan seçim) ———
@@ -879,6 +886,11 @@ export function VehicleEntryWizard({
 
   const vehicleHits = results.filter((r): r is VehicleResult => r.kind === "vehicle")
   const customerHits = results.filter((r): r is Extract<UnifiedResult, { kind: "customer" }> => r.kind === "customer")
+  const plateEmptyText = !query.trim()
+    ? ""
+    : isPlateOrCustomerQueryReady(query)
+      ? `«${query.trim()}» için kayıtlı araç bulunamadı.`
+      : "Aramak için il kodundan sonra en az bir harf yazın (ör. 34 A)."
   const stepIndex = steps.findIndex((s) => s.id === step)
   // Doğrudan giriş (initialMethod): adım rayı ve "Adım N" etiketi gösterilmez —
   // teknisyen tek bir işe (plakayı bulmaya) odaklanır.
@@ -1121,7 +1133,7 @@ export function VehicleEntryWizard({
                 loading={searching}
                 hits={vehicleHits}
                 customers={customerHits}
-                emptyText={query.trim() ? `«${query.trim()}» için kayıtlı araç bulunamadı.` : ""}
+                emptyText={plateEmptyText}
                 onPick={selectExisting}
                 onPickCustomer={(c) => { setMethod("customer"); setQuery(""); setResults([]); pickCustomer(c.customerId, c.label) }}
               />
@@ -1132,7 +1144,7 @@ export function VehicleEntryWizard({
                 loading={searching}
                 hits={vehicleHits}
                 customers={customerHits}
-                emptyText={query.trim() ? `«${query.trim()}» için kayıtlı araç bulunamadı.` : ""}
+                emptyText={plateEmptyText}
                 onPick={selectExisting}
                 onPickCustomer={(c) => { setMethod("customer"); setQuery(""); setResults([]); pickCustomer(c.customerId, c.label) }}
               />
@@ -1171,11 +1183,11 @@ export function VehicleEntryWizard({
               <p className="text-sm font-medium text-foreground">Aracı seçin</p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {custVehicles.map((v) => (
-                  <Button
+                  <VehicleHitCard
                     key={v.id}
-                    type="button"
-                    variant="outline"
-                    className="h-auto md:h-auto w-full justify-start gap-2 whitespace-normal py-2 text-left"
+                    plate={v.plate}
+                    vehicleName={`${v.brand} ${v.model}`.trim()}
+                    large={focused}
                     onClick={() =>
                       selectExisting({
                         kind: "vehicle",
@@ -1186,10 +1198,7 @@ export function VehicleEntryWizard({
                         sublabel: `Sahip: ${pickedCustomer.label}`,
                       })
                     }
-                  >
-                    <Car className="size-4 shrink-0 text-primary" />
-                    <span className="min-w-0 text-sm font-medium text-foreground">{v.plate} — {v.brand} {v.model}</span>
-                  </Button>
+                  />
                 ))}
                 {!custVehicles.length && (
                   <p className="text-sm text-muted-foreground">Bu müşterinin kayıtlı aracı yok.</p>
@@ -1593,10 +1602,6 @@ function SearchHits({
   /** Odaklı ekranda büyük yazı ve dokunma alanı. */
   large?: boolean
 }) {
-  const rowClass = cn("h-auto md:h-auto w-full justify-start gap-2 whitespace-normal text-left", large ? "rounded-xl px-4 py-3" : "py-2")
-  const titleClass = large ? "text-lg font-semibold" : undefined
-  const subClass = large ? "text-base" : undefined
-  const iconClass = large ? "size-5" : "size-4"
   const noteClass = large ? "text-base text-muted-foreground" : "text-sm text-muted-foreground"
   if (loading) {
     return (
@@ -1611,39 +1616,85 @@ function SearchHits({
   return (
     <div className="space-y-2">
       {hits.map((r) => (
-        <Button
+        <VehicleHitCard
           key={r.vehicleId}
-          type="button"
-          variant="outline"
-          className={rowClass}
+          plate={r.plate}
+          vehicleName={r.vehicleName || r.label}
+          ownerName={r.ownerName ?? r.sublabel.replace(/^Sahip:\s*/, "")}
+          large={large}
           onClick={() => onPick(r)}
-        >
-          <Item size="sm" className="w-full p-0">
-            <ItemMedia><Car className={cn(iconClass, "text-primary")} /></ItemMedia>
-            <ItemContent className="gap-0.5">
-              <ItemTitle className={titleClass}>{r.label}</ItemTitle>
-              <ItemDescription className={subClass}>{r.sublabel}</ItemDescription>
-            </ItemContent>
-          </Item>
-        </Button>
+        />
       ))}
       {onPickCustomer && customers.map((c) => (
-        <Button
-          key={c.customerId}
-          type="button"
-          variant="outline"
-          className={rowClass}
-          onClick={() => onPickCustomer(c)}
-        >
-          <Item size="sm" className="w-full p-0">
-            <ItemMedia><User className={cn(iconClass, "text-muted-foreground")} /></ItemMedia>
-            <ItemContent className="gap-0.5">
-              <ItemTitle className={titleClass}>{c.label}</ItemTitle>
-              <ItemDescription className={subClass}>{c.sublabel}</ItemDescription>
+        <Button key={c.customerId} type="button" variant="outline" className={HIT_CARD_CLASS} onClick={() => onPickCustomer(c)}>
+          <Item className="w-full p-0">
+            <ItemContent>
+              <ItemTitle className="flex items-center gap-2 text-base font-semibold">
+                <User className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span className="line-clamp-1">{c.label}</span>
+              </ItemTitle>
+              {c.sublabel && (
+                <ItemDescription className="flex items-center gap-2">
+                  <Phone className="size-4 shrink-0" aria-hidden="true" />
+                  <span className="line-clamp-1">{formatPhoneTR(c.sublabel)}</span>
+                </ItemDescription>
+              )}
             </ItemContent>
+            <ItemActions>
+              <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
+            </ItemActions>
           </Item>
         </Button>
       ))}
     </div>
+  )
+}
+
+/**
+ * Arama sonucu kartı. Teknisyen panosundaki iş emri kartıyla (`OrderCard`,
+ * technician-dashboard.tsx) aynı kalıp: Item outline yüzeyi, hover'da mavi ton.
+ * Kart bir eylem (seçim) olduğu için kabuk `Link` değil `Button`.
+ */
+const HIT_CARD_CLASS =
+  "h-auto w-full justify-start whitespace-normal rounded-lg bg-card/80 px-3 py-2.5 text-left font-normal tracking-normal shadow-xs hover:bg-primary/10 hover:ring-2 hover:ring-primary/20"
+
+/** Araç kartı: üstte mavi bantlı plaka, altında araç ve (varsa) sahip satırı. */
+function VehicleHitCard({
+  plate,
+  vehicleName,
+  ownerName,
+  large = false,
+  onClick,
+}: {
+  plate: string
+  vehicleName: string
+  ownerName?: string
+  /** Odaklı ekranda büyük plaka. */
+  large?: boolean
+  onClick: () => void
+}) {
+  return (
+    <Button type="button" variant="outline" className={HIT_CARD_CLASS} onClick={onClick}>
+      <Item className="w-full p-0">
+        <ItemContent>
+          <ItemHeader>
+            <DashPlate plate={plate} country size={large ? "lg" : "md"} />
+          </ItemHeader>
+          <ItemTitle className="flex items-center gap-2 text-base font-semibold">
+            <Car className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span className="line-clamp-1">{vehicleName || "—"}</span>
+          </ItemTitle>
+          {ownerName && (
+            <ItemDescription className="flex items-center gap-2">
+              <User className="size-4 shrink-0" aria-hidden="true" />
+              <span className="line-clamp-1">{ownerName}</span>
+            </ItemDescription>
+          )}
+        </ItemContent>
+        <ItemActions>
+          <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
+        </ItemActions>
+      </Item>
+    </Button>
   )
 }

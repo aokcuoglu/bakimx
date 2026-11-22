@@ -38,6 +38,7 @@ test("buildRecentVehicleResults: önce son işlem görenler, sonra en yeni eklen
   expect(out[0]).toEqual({
     kind: "vehicle", vehicleId: "v2", customerId: "c1", plate: "06XYZ789",
     label: "06XYZ789 — Renault Clio", sublabel: "Sahip: Ahmet Yılmaz",
+    vehicleName: "Renault Clio", ownerName: "Ahmet Yılmaz",
   })
 })
 

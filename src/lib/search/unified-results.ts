@@ -18,7 +18,18 @@ export type VehicleLite = {
 }
 
 export type UnifiedResult =
-  | { kind: "vehicle"; vehicleId: string; customerId: string; plate: string; label: string; sublabel: string }
+  | {
+      kind: "vehicle"
+      vehicleId: string
+      customerId: string
+      plate: string
+      label: string
+      sublabel: string
+      /** "Marka Model" — kart düzeninde plakadan ayrı satır. */
+      vehicleName?: string
+      /** Sahibin görünen adı ("Sahip:" öneki olmadan). */
+      ownerName?: string
+    }
   | { kind: "customer"; customerId: string; label: string; sublabel: string }
 
 /** Görünen ad: kurumsal → companyName; bireysel → fullName ya da "ad soyad". */
@@ -46,6 +57,8 @@ export function buildUnifiedResults(input: {
     plate: v.plate,
     label: `${v.plate} — ${v.brand} ${v.model}`.trim(),
     sublabel: `Sahip: ${displayCustomerName(v.customer)}`,
+    vehicleName: `${v.brand} ${v.model}`.trim(),
+    ownerName: displayCustomerName(v.customer),
   }))
 
   const customerResults: UnifiedResult[] = input.customers.map((c) => ({
