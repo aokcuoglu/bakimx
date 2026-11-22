@@ -4,13 +4,14 @@ import { prisma } from "@/lib/db"
 import { IntakeWizard } from "@/components/intake/intake-wizard"
 import Link from "next/link"
 import { getPlanState } from "@/lib/plan"
+import { parseEntryMethod } from "@/lib/intake/entry-wizard"
 
 export const metadata = { title: "Yeni Araç Kabul" }
 
 export default async function NewOrderPage({
   searchParams,
 }: {
-  searchParams: Promise<{ customerId?: string; vehicleId?: string; source?: string }>
+  searchParams: Promise<{ customerId?: string; vehicleId?: string; source?: string; entry?: string }>
 }) {
   const { user, workshop } = await getAppData()
   const params = await searchParams
@@ -37,6 +38,7 @@ export default async function NewOrderPage({
           prefillCustomerId={params.customerId}
           prefillVehicleId={params.vehicleId}
           source={params.source}
+          initialEntryMethod={parseEntryMethod(params.entry)}
           planTier={workshop ? getPlanState(workshop).accessTier : "pro"}
         />
       </div>

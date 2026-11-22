@@ -4,6 +4,7 @@ import {
   entryMethodOption,
   entryStepLabels,
   identityConflicts,
+  parseEntryMethod,
   previousEntryStep,
   vehicleFieldError,
 } from "@/lib/intake/entry-wizard"
@@ -98,4 +99,17 @@ test("previousEntryStep: ilk adımdan geri gidilmez", () => {
 test("previousEntryStep: kayıtlı araçta onaydan yakalama adımına döner", () => {
   expect(previousEntryStep("confirm", "plate", { knownVehicle: true })).toBe("capture")
   expect(previousEntryStep("confirm", "plate")).toBe("owner")
+})
+
+test("parseEntryMethod: yalnız bilinen yöntemleri kabul eder", () => {
+  expect(parseEntryMethod("plate")).toBe("plate")
+  expect(parseEntryMethod(["vin", "plate"])).toBe("vin")
+  expect(parseEntryMethod(undefined)).toBeNull()
+  expect(parseEntryMethod("")).toBeNull()
+  expect(parseEntryMethod("PLATE")).toBeNull()
+  expect(parseEntryMethod("__proto__")).toBeNull()
+})
+
+test("previousEntryStep: doğrudan açılan plaka aramasından Geri yöntem seçimine döner", () => {
+  expect(previousEntryStep("capture", "plate", { knownVehicle: false })).toBe("method")
 })

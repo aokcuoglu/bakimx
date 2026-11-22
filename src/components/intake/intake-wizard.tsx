@@ -22,6 +22,7 @@ import { useForm } from "react-hook-form"
 import { intakeSchema, type IntakeFormValues } from "@/lib/validations/intake"
 import { typedResolver } from "@/lib/validations/resolver"
 import { VehicleEntryWizard } from "@/components/intake/vehicle-entry-wizard"
+import type { EntryMethod } from "@/lib/intake/entry-wizard"
 import { WizardStepper } from "@/components/intake/wizard-ui"
 import { FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
@@ -69,12 +70,15 @@ export function IntakeWizard({
   prefillVehicleId,
   source,
   planTier,
+  initialEntryMethod,
 }: {
   customers: Customer[]
   prefillCustomerId?: string
   prefillVehicleId?: string
   source?: string
   planTier?: string
+  /** Araç girişi bu yöntemin adımında açılır (ör. teknisyen panelinden plaka). */
+  initialEntryMethod?: EntryMethod | null
 }) {
   const [step, setStep] = useState(1)
   const [error, setError] = useState("")
@@ -277,6 +281,7 @@ export function IntakeWizard({
                 }}
                 onComplete={() => setStep(3)}
                 planTier={planTier}
+                initialMethod={initialEntryMethod}
               />
             </CardContent>
           </Card>

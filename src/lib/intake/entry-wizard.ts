@@ -48,6 +48,16 @@ export const ENTRY_METHODS: EntryMethodOption[] = [
   },
 ]
 
+/**
+ * URL'den gelen başlangıç yöntemi (`/orders/new?entry=plate`). Bilinmeyen ya da
+ * boş değer `null` döner — sihirbaz o zaman her zamanki gibi yöntem seçimiyle
+ * açılır.
+ */
+export function parseEntryMethod(raw: string | string[] | undefined): EntryMethod | null {
+  const value = Array.isArray(raw) ? raw[0] : raw
+  return ENTRY_METHODS.some((m) => m.value === value) ? (value as EntryMethod) : null
+}
+
 export function entryMethodOption(method: EntryMethod): EntryMethodOption {
   const found = ENTRY_METHODS.find((m) => m.value === method)
   if (!found) throw new Error(`Bilinmeyen yöntem: ${method}`)

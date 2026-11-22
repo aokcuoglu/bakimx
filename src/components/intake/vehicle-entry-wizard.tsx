@@ -77,14 +77,17 @@ export function VehicleEntryWizard({
   onChange,
   onComplete,
   planTier,
+  initialMethod = null,
 }: {
   value: { customerId: string; vehicleId: string }
   onChange: (v: { customerId: string; vehicleId: string }) => void
   onComplete: () => void
   planTier?: string
+  /** Verilirse yöntem seçimi atlanır, sihirbaz bu yöntemin yakalama adımında açılır. */
+  initialMethod?: EntryMethod | null
 }) {
-  const [step, setStep] = useState<EntryStep>("method")
-  const [method, setMethod] = useState<EntryMethod | null>(null)
+  const [step, setStep] = useState<EntryStep>(initialMethod ? "capture" : "method")
+  const [method, setMethod] = useState<EntryMethod | null>(initialMethod)
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
 
@@ -602,6 +605,7 @@ export function VehicleEntryWizard({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Plaka veya müşteri ara…"
               autoComplete="off"
+              autoFocus={initialMethod === "plate"}
               className="flex-1"
             />
             <Button type="button" variant="outline" size="icon" aria-label="Plakayı kamerayla tara" onClick={() => setScanner("plate")}>
