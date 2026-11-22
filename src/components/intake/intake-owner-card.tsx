@@ -90,8 +90,12 @@ export function IntakeOwnerCard({
       )}
 
       {duplicates.length > 0 && (
-        <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
-          <p className="text-sm font-medium text-foreground">Bu telefon başka müşteride kayıtlı:</p>
+        <div role="alert" className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
+          <p className="text-sm font-medium text-foreground">
+            {duplicates.length === 1
+              ? <>Bu telefon numarası zaten <span className="font-semibold">{duplicates[0].label}</span> adlı müşteriye ait.</>
+              : "Bu telefon numarası zaten şu müşterilere ait:"}
+          </p>
           {duplicates.map((c) => (
             <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-card p-2">
               <span className="min-w-0 text-sm text-foreground">{c.label}</span>

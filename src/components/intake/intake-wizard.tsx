@@ -32,6 +32,7 @@ import { DamageCapture } from "@/components/intake/damage-capture"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS, PHOTO_TYPES } from "@/lib/constants"
 import { hasFeature, type PlanTier } from "@/lib/plan"
+import { isTechnicianFlow } from "@/lib/sidebarless-route"
 
 type Customer = {
   id: string
@@ -197,8 +198,14 @@ export function IntakeWizard({
     setVehicleInfo(null)
     setError("")
     setStep(1)
-    // URL'deki önceki müşteri/araç seçimini temizle (rehydrate/prefill tetiklenmesin)
-    router.replace(pathname, { scroll: false })
+    // URL'deki önceki müşteri/araç seçimini temizle (rehydrate/prefill tetiklenmesin).
+    // Giriş yöntemi (`entry`) ve kaynak (`from=technician`) KALIR: yoksa ikinci
+    // araçta odaklı/sidebar'sız görünüm kaybolur.
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("customerId")
+    params.delete("vehicleId")
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
@@ -277,6 +284,12 @@ export function IntakeWizard({
   const railCompleted = [...completedSteps].map(String)
   // Doğrudan giriş (?entry=…): adım rayı yok, tek kolon.
   const focused = initialEntryMethod != null
+  // Teknisyen panelinden açılan kabul, panelin iş emri ekranına döner; ofis
+  // detayı (/orders/[id]) saha rollerine kapalı ve sidebar'lı kabuktadır.
+  const fromTechnician = isTechnicianFlow(searchParams)
+  const completedOrderHref = fromTechnician
+    ? (orderId ? `/technician/orders/${orderId}` : "/technician")
+    : (orderId ? `/orders/${orderId}` : "/orders")
 
   return (
     <Form {...form}>
@@ -564,7 +577,7 @@ export function IntakeWizard({
                     <Plus className="size-4" /> Kaydet & Yeni
                   </Button>
                   <Button variant="foreground" size="lg" className="gap-2" asChild>
-                    <Link href={orderId ? `/orders/${orderId}` : "/orders"}>
+                    <Link href={completedOrderHref}>
                       Araç Kabulüne Git
                     </Link>
                   </Button>

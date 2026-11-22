@@ -692,8 +692,9 @@ export function VehicleEntryWizard({
         const data = (await res.json()) as DuplicatePhoneResponse & { success?: boolean; id?: string }
         const existing = duplicatesFrom(data)
         if (existing.length) {
+          // Mesaj kartın içinde gösterilir; üstte ayrı bir hata kutusu tekrar etmez.
           setOwnerDupes(existing)
-          setError(data.error || "Bu telefon başka müşteride kayıtlı.")
+          setError("")
           return
         }
         if (!data.success || !data.id) { setError(data.error || "Müşteri oluşturulamadı"); return }

@@ -1,11 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
+import { isSidebarlessRoute } from "@/lib/sidebarless-route"
 import { cn } from "@/lib/utils"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { GlobalSearch, type SearchDestination } from "@/components/layout/global-search-box"
-import { CreateCenterDialog } from "@/components/layout/create-center-dialog"
 import {
   WorkspaceSwitcher,
   type WorkspaceSwitcherItem,
@@ -49,7 +49,6 @@ import {
   UserCircle,
   UserRoundPlus,
   Search,
-  QrCode,
   LockKeyhole,
 } from "lucide-react"
 import { createContext, useContext, useEffect, useState } from "react"
@@ -178,12 +177,6 @@ const MOBILE_CONTENT_HEADING_PATHS = new Set([
   "/reports",
 ])
 
-// Teknisyen paneli odaklı bir çalışma ekranıdır: sidebar yok; dönüş logodan,
-// hesap/çıkış üst çubuktan yapılır.
-function isSidebarlessPath(pathname: string): boolean {
-  return pathname === "/technician" || pathname.startsWith("/technician/")
-}
-
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
@@ -256,8 +249,10 @@ export function AppShellChrome({
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
   const [searchOpen, setSearchOpen] = useState(false)
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const inSettings = isSettingsPath(pathname)
-  const hideSidebar = isSidebarlessPath(pathname)
+  // Teknisyen paneli ve oradan açılan akışlar (bkz. lib/sidebarless-route.ts).
+  const hideSidebar = isSidebarlessRoute(pathname, searchParams)
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
   const primaryNavigation = (isTechRole ? TECHNICIAN_NAV_GROUPS : NAV_GROUPS)
     .flatMap((group) => group.items.flatMap((item) => [
@@ -287,9 +282,8 @@ export function AppShellChrome({
         )}
         <SidebarInset className="min-h-screen bg-background">
           <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} topBannerVisible={topBannerVisible} />
-          <main className={cn("flex-1 px-4 py-4 pb-24 sm:px-6 sm:py-6 lg:pb-8", inSettings && "bg-card")}>{children}</main>
+          <main className={cn("flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:pb-8", inSettings && "bg-card")}>{children}</main>
         </SidebarInset>
-        <MobileBottomNav userIdentity={userIdentity} enabledFeatures={enabledFeatures} />
         <GlobalSearch
           open={searchOpen}
           onOpenChange={setSearchOpen}
@@ -314,6 +308,7 @@ function AppHeader({
 }) {
   const { pageTitle, pageActions } = pageHeader
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const navItem = [...NAV_GROUPS, ...TECHNICIAN_NAV_GROUPS]
     .flatMap((group) => group.items.flatMap((item) => [item, ...(item.children ?? [])]))
     .find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
@@ -324,7 +319,7 @@ function AppHeader({
   const HeaderIcon = settingsNavItem?.icon ?? navItem?.icon
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
   const showMobileTitle = headerTitle && !isSettingsPath(pathname) && !MOBILE_CONTENT_HEADING_PATHS.has(pathname)
-  const sidebarless = isSidebarlessPath(pathname)
+  const sidebarless = isSidebarlessRoute(pathname, searchParams)
   const homeHref = isTechRole ? "/technician" : "/dashboard"
 
   return (
@@ -375,7 +370,7 @@ function SidebarlessAccountActions() {
     <>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="hidden size-8 lg:inline-flex" asChild>
+          <Button variant="ghost" size="icon" className="size-8" asChild>
             <Link href="/settings/account" aria-label="Hesap ayarları">
               <UserCircle className="size-4" aria-hidden="true" />
             </Link>
@@ -675,112 +670,6 @@ function NavMenuItem({
         </SidebarMenuSub>
       )}
     </SidebarMenuItem>
-  )
-}
-
-function MobileBottomNav({
-  userIdentity,
-  enabledFeatures,
-}: {
-  userIdentity?: UserIdentity
-  enabledFeatures: GatedFeature[]
-}) {
-  const pathname = usePathname()
-  const { isMobile } = useSidebar()
-  const [createOpen, setCreateOpen] = useState(false)
-
-  if (!isMobile) return null
-
-  return (
-    <nav className={cn("fixed bottom-0 left-0 right-0 z-30 safe-area-bottom", shellStyles.tabbar)}>
-      {isTechnicianRestrictedRole(userIdentity?.role) ? (
-        <>
-          <div className="grid grid-cols-3 gap-1 px-2 py-1.5">
-            <MobileNavLink
-              href="/technician"
-              label="Teknisyen"
-              icon={HardHat}
-              active={pathname === "/technician" || pathname.startsWith("/technician/")}
-            />
-            <div className="flex justify-center">
-              <Button variant="foreground"
-                type="button"
-                size="icon"
-                className="-mt-7 size-14 rounded-full shadow-md ring-4 ring-background"
-                aria-label="Oluşturma merkezi"
-                data-tour="create-center"
-                onClick={() => setCreateOpen(true)}
-              >
-                <QrCode className="size-6" />
-              </Button>
-            </div>
-            <MobileNavLink
-              href="/settings/account"
-              label="Profil"
-              icon={UserCircle}
-              active={pathname === "/settings/account" || pathname.startsWith("/account")}
-            />
-          </div>
-          <CreateCenterDialog open={createOpen} onOpenChange={setCreateOpen} enabledFeatures={enabledFeatures} />
-        </>
-      ) : (
-        <div className="grid grid-cols-4 gap-1 px-2 py-1.5">
-          <MobileNavLink href="/dashboard" label="Panel" icon={LayoutDashboard} active={pathname === "/dashboard"} />
-          <MobileNavLink
-            href="/orders"
-            label="Araç Kabulleri"
-            icon={WrenchIcon}
-            active={pathname === "/orders" || pathname.startsWith("/orders/")}
-            tourId="mobile-nav-orders"
-          />
-          <MobileNavLink
-            href="/technician"
-            label="Teknisyen"
-            icon={HardHat}
-            active={pathname === "/technician" || pathname.startsWith("/technician/")}
-            locked={!enabledFeatures.includes("team")}
-          />
-          <MobileNavLink
-            href="/customers"
-            label="Müşteriler"
-            icon={Users}
-            active={pathname.startsWith("/customers") || pathname.startsWith("/vehicles")}
-          />
-        </div>
-      )}
-    </nav>
-  )
-}
-
-function MobileNavLink({
-  href,
-  label,
-  icon: Icon,
-  active,
-  locked = false,
-  tourId,
-}: {
-  href: string
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-  active: boolean
-  locked?: boolean
-  tourId?: string
-}) {
-  return (
-    <Link
-      href={href}
-      {...(tourId ? { "data-tour": tourId } : {})}
-      data-active={active || undefined}
-      aria-current={active ? "page" : undefined}
-      className={shellStyles.tab}
-    >
-      <span className="relative">
-        <Icon />
-        {locked && <LockKeyhole className="absolute -right-2 -top-1 size-3 rounded-full bg-background" />}
-      </span>
-      <span className="truncate">{label}{locked ? " · Pro" : ""}</span>
-    </Link>
   )
 }
 
