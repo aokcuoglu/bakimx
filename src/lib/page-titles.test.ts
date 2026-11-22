@@ -43,7 +43,7 @@ describe("browser title contract (#642)", () => {
   for (const file of pages(appDir)) {
     const route = path.relative(appDir, file)
     test(`${route} declares its own server title`, () => {
-      const metadataFile = ["blog/page.tsx", "contact-us/page.tsx"].includes(route)
+      const metadataFile = ["(site)/blog/page.tsx", "(site)/contact-us/page.tsx"].includes(route)
         ? path.join(path.dirname(file), "layout.tsx") : file
       const source = readFileSync(metadataFile, "utf8")
       if (redirects.has(route)) {

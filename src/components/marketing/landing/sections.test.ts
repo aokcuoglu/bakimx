@@ -36,6 +36,22 @@ test("çapalar, CTA hedefleri ve yasal bağlantılar", () => {
   expect(html).toContain("₺1.499")
 })
 
+test("ana sayfa dışında üst bant ana sayfanın bölümlerine ve başına bağlanır (#798)", () => {
+  // Bant (site) layout'unda her public sayfada durur; "#nasil" orada hiçbir yere gitmez.
+  const html = render(createElement(LandingHeader, { anchorBase: "/" }))
+  for (const href of ['href="/#nasil"', 'href="/#ozellikler"', 'href="/#fiyat"', 'href="/#sorular"', 'href="/login"', 'href="/register"']) {
+    expect(html).toContain(href)
+  }
+  expect(html).not.toMatch(/href="#/)
+  expect(html).toMatch(/<a[^>]*href="\/"[^>]*aria-label="BakımX ana sayfa"|<a[^>]*aria-label="BakımX ana sayfa"[^>]*href="\/"/)
+})
+
+test("ana sayfada üst bant sayfa içi çapalara kayar", () => {
+  const html = render(createElement(LandingHeader))
+  expect(html).toContain('href="#hero"')
+  expect(html).not.toContain('href="/#')
+})
+
 test("bölüm kimlikleri e-santral çapalarıyla aynı", () => {
   const html = render(createElement(Hero), createElement(DayStrip), createElement(Features), createElement(Move), createElement(Price), createElement(Faq), createElement(FinalCta))
   for (const id of ["hero", "nasil", "ozellikler", "gecis", "fiyat", "sorular"]) expect(html).toContain(`id="${id}"`)

@@ -1,13 +1,11 @@
+/* Üst bant (site) layout'unda, iskeletin üstünde durur (#798): ekranı onun
+   kadar kısa doldurur, sayfa kaymaz; yalnız form alanı kayar. */
 .viewport {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: calc(100dvh - var(--site-header-h, 0px));
   overflow: hidden;
   background: var(--card);
-}
-
-.viewport > header {
-  flex-shrink: 0;
 }
 
 .layout {

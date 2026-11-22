@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { logoutAction } from "@/app/(auth)/login/actions"
+import { logoutAction } from "@/app/(site)/(auth)/login/actions"
 import { sessionOptions } from "@/lib/session"
 import {
   AUTH_BOUNCE_COOKIE,

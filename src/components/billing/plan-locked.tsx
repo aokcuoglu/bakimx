@@ -1,5 +1,5 @@
 import { Clock, Lock, Mail } from "lucide-react"
-import { logoutAction } from "@/app/(auth)/login/actions"
+import { logoutAction } from "@/app/(site)/(auth)/login/actions"
 import { PlanPackages } from "@/components/billing/plan-packages"
 import { ResendVerifyButton } from "@/components/billing/resend-verify-button"
 import { Button } from "@/components/ui/button"

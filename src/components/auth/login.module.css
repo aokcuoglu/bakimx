@@ -2,7 +2,8 @@
 .shell {
   display: flex;
   flex-direction: column;
-  min-height: 100svh;
+  /* Üst bant (site) layout'unda, kabuğun üstünde (#798). */
+  min-height: calc(100svh - var(--site-header-h, 0px));
 }
 .main {
   flex: 1;
