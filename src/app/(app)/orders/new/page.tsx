@@ -5,7 +5,6 @@ import { IntakeWizard } from "@/components/intake/intake-wizard"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { surface } from "@/components/dashboard/surface"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { getPlanState } from "@/lib/plan"
 import { parseEntryMethod } from "@/lib/intake/entry-wizard"
@@ -26,7 +25,7 @@ export default async function NewOrderPage({
   // için geri hedefi panelleridir.
   const focused = initialEntryMethod != null
   const back = isTechnicianRestrictedRole(user.role) || params.from === "technician"
-    ? { href: "/technician", label: "Teknisyen Paneli" }
+    ? { href: "/technician", label: "Servis Yönetimi" }
     : { href: "/orders", label: "Araç Kabulleri" }
 
   const customers = await prisma.customer.findMany({
@@ -38,14 +37,13 @@ export default async function NewOrderPage({
     <AppShell workshopName={workshop?.name} pageTitle={focused ? "Araç Kabul" : "Yeni Araç Kabul"}>
       <div className={focused ? "mx-auto max-w-3xl space-y-5 sm:space-y-6" : "mx-auto max-w-6xl space-y-5 sm:space-y-6"}>
         {focused ? (
-          <div className="space-y-1">
-            <Button variant="ghost" size="sm" asChild className="-ml-2">
+          <div>
+            <Button variant="ghost" asChild className="-ml-3 text-base">
               <Link href={back.href}>
                 <ArrowLeft aria-hidden="true" />
                 {back.label}
               </Link>
             </Button>
-            <h2 className={surface.heroTitle}>Araç Kabul</h2>
           </div>
         ) : (
           <>

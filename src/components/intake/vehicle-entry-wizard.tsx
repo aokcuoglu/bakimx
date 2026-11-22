@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -600,62 +602,94 @@ export function VehicleEntryWizard({
         <div className="space-y-5">
           <WizardHeading
             eyebrow={stepEyebrow}
-            title="Plakayı arayın"
-            description="Kayıtlı aracı plakasıyla bulun. Kayıt yoksa aynı plakayla yeni araç açabilirsiniz."
-          />
-          <div className="flex gap-2">
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={focused ? "Ör. 34 ABC 123" : "Plaka veya müşteri ara…"}
-              aria-label="Plaka veya müşteri"
-              autoComplete="off"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              enterKeyHint="search"
-              autoFocus={initialMethod === "plate"}
-              className="flex-1 font-semibold tracking-wide"
-            />
-            <Button type="button" variant="outline" size="icon" aria-label="Plakayı kamerayla tara" onClick={() => setScanner("plate")}>
-              <ScanLine className="size-4" />
-            </Button>
-          </div>
-          <SearchHits
-            loading={searching}
-            hits={vehicleHits}
-            customers={customerHits}
-            emptyText={query.trim() ? `«${query.trim()}» için kayıtlı araç bulunamadı.` : ""}
-            onPick={selectExisting}
-            onPickCustomer={(c) => { setMethod("customer"); setQuery(""); setResults([]); pickCustomer(c.customerId, c.label) }}
+            title={focused ? "Müşteri adı veya plaka ile arayın" : "Plakayı arayın"}
+            description={focused ? undefined : "Kayıtlı aracı plakasıyla bulun. Kayıt yoksa aynı plakayla yeni araç açabilirsiniz."}
+            large={focused}
           />
           {focused ? (
-            // Telefonda birincil eylem tam genişlik ve başparmak menzilinde;
-            // yöntem değiştirme ikincil bir metin düğmesi olarak altında.
-            <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row-reverse sm:items-center sm:justify-between">
-              <Button variant="foreground"
-                type="button"
-                className="w-full gap-2 sm:w-auto"
-                disabled={!query.trim()}
-                onClick={() => goToVehicleStep({ plate: query.trim() })}
-              >
-                Bu plakayla yeni araç <ChevronRight className="size-4" />
-              </Button>
-              <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={goBack}>
-                Diğer yöntemler
+            // Kamera düğmesi kutunun içinde: dar telefonda yazı alanı daralmasın.
+            <InputGroup className="h-14 rounded-xl">
+              <InputGroupInput
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Müşteri Adı veya Plaka girin"
+                aria-label="Plaka veya müşteri"
+                autoComplete="off"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="search"
+                autoFocus={initialMethod === "plate"}
+                className="h-full px-3 text-xl font-semibold tracking-wide placeholder:text-[15px] placeholder:font-normal placeholder:tracking-normal min-[380px]:placeholder:text-base md:h-full md:text-xl"
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton size="icon-sm" aria-label="Plakayı kamerayla tara" onClick={() => setScanner("plate")} className="size-11">
+                  <ScanLine className="size-6" />
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Plaka veya müşteri ara…"
+                aria-label="Plaka veya müşteri"
+                autoComplete="off"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="search"
+                className="flex-1 font-semibold tracking-wide"
+              />
+              <Button type="button" variant="outline" size="icon" aria-label="Plakayı kamerayla tara" onClick={() => setScanner("plate")}>
+                <ScanLine className="size-4" />
               </Button>
             </div>
-          ) : (
-            <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
+          )}
+          {focused ? (
+            // Tek iş: birincil eylem kutunun hemen altında, sonuçlar onun altında
+            // (yöntem değiştirme bu akışta sunulmaz).
+            <>
               <Button variant="foreground"
                 type="button"
-                className="gap-2"
+                className="h-14 w-full gap-2 text-lg md:h-14"
                 disabled={!query.trim()}
                 onClick={() => goToVehicleStep({ plate: query.trim() })}
               >
-                Bu plakayla yeni araç <ChevronRight className="size-4" />
+                Bu plakayla yeni araç <ChevronRight className="size-5" />
               </Button>
-            </WizardActions>
+              <SearchHits
+                large={focused}
+                loading={searching}
+                hits={vehicleHits}
+                customers={customerHits}
+                emptyText={query.trim() ? `«${query.trim()}» için kayıtlı araç bulunamadı.` : ""}
+                onPick={selectExisting}
+                onPickCustomer={(c) => { setMethod("customer"); setQuery(""); setResults([]); pickCustomer(c.customerId, c.label) }}
+              />
+            </>
+          ) : (
+            <>
+              <SearchHits
+                loading={searching}
+                hits={vehicleHits}
+                customers={customerHits}
+                emptyText={query.trim() ? `«${query.trim()}» için kayıtlı araç bulunamadı.` : ""}
+                onPick={selectExisting}
+                onPickCustomer={(c) => { setMethod("customer"); setQuery(""); setResults([]); pickCustomer(c.customerId, c.label) }}
+              />
+              <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
+                <Button variant="foreground"
+                  type="button"
+                  className="gap-2"
+                  disabled={!query.trim()}
+                  onClick={() => goToVehicleStep({ plate: query.trim() })}
+                >
+                  Bu plakayla yeni araç <ChevronRight className="size-4" />
+                </Button>
+              </WizardActions>
+            </>
           )}
         </div>
       )}
@@ -908,6 +942,7 @@ function SearchHits({
   emptyText,
   onPick,
   onPickCustomer,
+  large = false,
 }: {
   loading: boolean
   hits: Extract<UnifiedResult, { kind: "vehicle" }>[]
@@ -915,16 +950,23 @@ function SearchHits({
   emptyText: string
   onPick: (r: Extract<UnifiedResult, { kind: "vehicle" }>) => void
   onPickCustomer?: (c: Extract<UnifiedResult, { kind: "customer" }>) => void
+  /** Odaklı ekranda büyük yazı ve dokunma alanı. */
+  large?: boolean
 }) {
+  const rowClass = cn("h-auto md:h-auto w-full justify-start gap-2 whitespace-normal text-left", large ? "rounded-xl px-4 py-3" : "py-2")
+  const titleClass = large ? "text-lg font-semibold" : undefined
+  const subClass = large ? "text-base" : undefined
+  const iconClass = large ? "size-5" : "size-4"
+  const noteClass = large ? "text-base text-muted-foreground" : "text-sm text-muted-foreground"
   if (loading) {
     return (
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+      <p className={cn("flex items-center gap-2", noteClass)}>
         <Loader2 className="size-4 animate-spin" /> Aranıyor…
       </p>
     )
   }
   if (!hits.length && !customers.length) {
-    return emptyText ? <p className="text-sm text-muted-foreground">{emptyText}</p> : null
+    return emptyText ? <p className={noteClass}>{emptyText}</p> : null
   }
   return (
     <div className="space-y-2">
@@ -933,14 +975,14 @@ function SearchHits({
           key={r.vehicleId}
           type="button"
           variant="outline"
-          className="h-auto md:h-auto w-full justify-start gap-2 whitespace-normal py-2 text-left"
+          className={rowClass}
           onClick={() => onPick(r)}
         >
           <Item size="sm" className="w-full p-0">
-            <ItemMedia><Car className="size-4 text-primary" /></ItemMedia>
+            <ItemMedia><Car className={cn(iconClass, "text-primary")} /></ItemMedia>
             <ItemContent className="gap-0.5">
-              <ItemTitle>{r.label}</ItemTitle>
-              <ItemDescription>{r.sublabel}</ItemDescription>
+              <ItemTitle className={titleClass}>{r.label}</ItemTitle>
+              <ItemDescription className={subClass}>{r.sublabel}</ItemDescription>
             </ItemContent>
           </Item>
         </Button>
@@ -950,14 +992,14 @@ function SearchHits({
           key={c.customerId}
           type="button"
           variant="outline"
-          className="h-auto md:h-auto w-full justify-start gap-2 whitespace-normal py-2 text-left"
+          className={rowClass}
           onClick={() => onPickCustomer(c)}
         >
           <Item size="sm" className="w-full p-0">
-            <ItemMedia><User className="size-4 text-muted-foreground" /></ItemMedia>
+            <ItemMedia><User className={cn(iconClass, "text-muted-foreground")} /></ItemMedia>
             <ItemContent className="gap-0.5">
-              <ItemTitle>{c.label}</ItemTitle>
-              <ItemDescription>{c.sublabel}</ItemDescription>
+              <ItemTitle className={titleClass}>{c.label}</ItemTitle>
+              <ItemDescription className={subClass}>{c.sublabel}</ItemDescription>
             </ItemContent>
           </Item>
         </Button>
