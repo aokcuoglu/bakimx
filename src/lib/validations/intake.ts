@@ -48,7 +48,11 @@ export const intakeCreateSchema = z.object({
     (v) => (v === "" || v == null ? undefined : v),
     z.coerce.number().refine(isFuelLevel, "Geçersiz yakıt seviyesi").optional(),
   ),
-  customerComplaint: z.string().min(1, "Müşteri şikayeti zorunludur"),
+  // Opsiyonel: teknisyenin plaka akışı ("Onayla") iş emrini kabul detayları
+  // sorulmadan açar; şikayet sonradan iş emrinde girilir. Ofis sihirbazı
+  // (/orders/new) şikayeti istemcide hâlâ zorunlu tutar. Kolon NOT NULL — boş
+  // ya da gönderilmemiş alan "" olarak yazılır.
+  customerComplaint: z.string().nullish().transform((v) => v?.trim() ?? ""),
   internalNote: z.string().optional(),
   // Servise geliş nedeni opsiyoneldir — sahada akışı tıkamasın. Boş string
   // "seçilmedi" demektir; asıl doğrulama server action'da isArrivalReason ile yapılır.
@@ -56,6 +60,30 @@ export const intakeCreateSchema = z.object({
   droppedOffByName: z.string().optional(),
   droppedOffByPhone: z.string().optional(),
 })
+
+/**
+ * `createIntakeAction` girdisini FormData'dan okur. Gönderilmeyen alan için
+ * `FormData.get` `null` döner; `z.string().optional()` null'ı reddeder
+ * ("expected string, received null"). Teknisyenin plaka akışı ("Onayla") yalnız
+ * customerId + vehicleId gönderdiği için eksik alanlar `undefined`'a çevrilir.
+ */
+export function intakeCreateInputFromFormData(formData: FormData) {
+  const field = (key: string) => {
+    const v = formData.get(key)
+    return typeof v === "string" ? v : undefined
+  }
+  return {
+    customerId: field("customerId"),
+    vehicleId: field("vehicleId"),
+    mileageAtIntake: field("mileageAtIntake"),
+    fuelLevelAtIntake: field("fuelLevelAtIntake"),
+    customerComplaint: field("customerComplaint"),
+    internalNote: field("internalNote"),
+    arrivalReason: field("arrivalReason"),
+    droppedOffByName: field("droppedOffByName"),
+    droppedOffByPhone: field("droppedOffByPhone"),
+  }
+}
 
 export const intakeUpdateSchema = z.object({
   customerComplaint: z.string().min(1, "Müşteri şikayeti zorunludur"),

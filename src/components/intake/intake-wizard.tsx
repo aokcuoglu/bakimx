@@ -278,6 +278,25 @@ export function IntakeWizard({
     }
   }
 
+  /**
+   * Odaklı plaka akışının "Onayla"sı: kabul detayları (km, yakıt, şikayet)
+   * sorulmadan iş emri açılır; bunlar sonradan iş emrinde girilir. Bekleyen araç
+   * karesi "Ön" fotoğrafı olarak yüklenir, sonra iş emri ekranına gidilir.
+   * Hata metni döner (sihirbaz kendi ekranında gösterir); başarıda `null`.
+   */
+  async function handleConfirmOrder(v: { customerId: string; vehicleId: string }): Promise<string | null> {
+    const formData = new FormData()
+    formData.set("customerId", v.customerId)
+    formData.set("vehicleId", v.vehicleId)
+    const res = await fetch("/api/intakes", { method: "POST", body: formData })
+    const data = (await res.json().catch(() => null)) as { success?: boolean; id?: string; orderId?: string; error?: string } | null
+    if (!data?.success || !data.id) return data?.error || "İş emri oluşturulamadı"
+    await uploadPendingVehiclePhoto(data.id)
+    const base = fromTechnician ? "/technician/orders" : "/orders"
+    router.push(data.orderId ? `${base}/${data.orderId}` : fromTechnician ? "/technician" : "/orders")
+    return null
+  }
+
   // Sihirbaz rayı: üst seviye üç adım. Araç girişinin kendi alt adımları
   // (yöntem → yakalama → araç → müşteri → onay) 1. adımın içinde yaşar (#309).
   const railSteps = STEPS.map((s) => ({ id: String(s.id), label: s.label }))
@@ -327,12 +346,16 @@ export function IntakeWizard({
                 onChange={(v) => {
                   form.setValue("selectedCustomerId", v.customerId, { shouldValidate: true })
                   form.setValue("selectedVehicleId", v.vehicleId, { shouldValidate: true })
-                  syncSelectionToUrl(v.customerId, v.vehicleId)
+                  // Odaklı akışta seçim URL'e yazılmaz: seçim anında iş emri
+                  // açılıp sayfadan çıkılıyor; geri tuşu id'li bir ara ekrana
+                  // değil, temiz araç kabul aramasına dönsün.
+                  if (!focused) syncSelectionToUrl(v.customerId, v.vehicleId)
                 }}
                 onComplete={() => setStep(3)}
                 planTier={planTier}
                 initialMethod={initialEntryMethod}
                 onVehiclePhotoChange={(photo) => { pendingVehiclePhoto.current = photo }}
+                onConfirmOrder={focused ? handleConfirmOrder : undefined}
               />
             </CardContent>
           </Card>

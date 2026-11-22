@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Camera, Car, Loader2, RotateCcw } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { PhotoLightbox } from "@/components/shared/photo-lightbox"
 
@@ -31,11 +32,14 @@ export function createPendingVehiclePhoto(file: File, source: PendingVehiclePhot
  */
 export function VehiclePhotoCapture({
   photo,
+  brand,
   onCapture,
   busy = false,
   invalid = false,
 }: {
   photo: PendingVehiclePhoto | null
+  /** Fotoğrafın sağ üstünde rozet olarak gösterilen marka. */
+  brand?: string
   /** Tarayıcıyı aç. */
   onCapture: () => void
   /** Kare hazırlanıyor (sıkıştırma). */
@@ -69,6 +73,12 @@ export function VehiclePhotoCapture({
               {/* eslint-disable-next-line @next/next/no-img-element -- bellekteki blob önizlemesi */}
               <img src={photo.previewUrl} alt="Aracın önü" className="aspect-video w-full object-cover" />
             </Button>
+            {/* Fotoğraftan (ya da ruhsattan) okunan marka; tıklama fotoğrafa geçer. */}
+            {brand?.trim() && (
+              <Badge className="pointer-events-none absolute top-2 right-2 h-6 px-2.5 text-sm shadow-sm">
+                {brand}
+              </Badge>
+            )}
             <Button
               type="button"
               variant="outline"

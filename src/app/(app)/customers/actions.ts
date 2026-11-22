@@ -304,13 +304,20 @@ export async function updateCustomerContactAction(customerId: string, formData: 
     lastName: (formData.get("lastName") as string) ?? "",
     fullName: (formData.get("fullName") as string) ?? "",
     companyName: (formData.get("companyName") as string) ?? "",
+    contactName: (formData.get("contactName") as string) ?? "",
     phone: normalizePhone((formData.get("phone") as string) || ""),
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
   }
   const data = parsed.data
-  const customerType: CustomerType = existing.type === "corporate" ? "corporate" : "individual"
+  const previousType: CustomerType = existing.type === "corporate" ? "corporate" : "individual"
+  // Kart "Kurumsal" düğmesiyle tipi değiştirebilir. Yalnız iki bilinen değer
+  // kabul edilir; alan gelmezse ya da tanınmazsa mevcut tip korunur.
+  const requestedType = formData.get("type")
+  const customerType: CustomerType =
+    requestedType === "corporate" || requestedType === "individual" ? requestedType : previousType
+  const typeChanged = customerType !== previousType
   if (customerType === "individual" && !data.firstName) return { error: "Ad zorunludur" }
   if (customerType === "corporate" && !data.companyName) return { error: "Firma adı zorunludur" }
 
@@ -326,8 +333,18 @@ export async function updateCustomerContactAction(customerId: string, formData: 
 
   const update: Prisma.CustomerUpdateInput =
     customerType === "corporate"
-      ? { companyName: data.companyName, fullName: data.companyName, phone: data.phone }
+      ? {
+          ...(typeChanged && { type: "corporate" }),
+          companyName: data.companyName,
+          fullName: data.companyName,
+          // Yetkili kişi: oluşturma yolundaki gibi contactName + firstName.
+          contactName: data.contactName || null,
+          firstName: data.contactName || null,
+          lastName: null,
+          phone: data.phone,
+        }
       : {
+          ...(typeChanged && { type: "individual" }),
           firstName: data.firstName,
           lastName: data.lastName || null,
           fullName: buildCustomerName({ type: "individual", firstName: data.firstName, lastName: data.lastName, fullName: data.fullName }),
@@ -352,8 +369,8 @@ export async function updateCustomerContactAction(customerId: string, formData: 
     "customer_updated",
     JSON.stringify({
       source: "intake_owner_card",
-      before: { name: buildCustomerName({ ...existing, type: customerType }), phone: existing.phone },
-      after: { name: label, phone: data.phone },
+      before: { type: previousType, name: buildCustomerName({ ...existing, type: previousType }), phone: existing.phone },
+      after: { type: customerType, name: label, phone: data.phone },
     }),
   )
 

@@ -5,41 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Camera, Loader2, ScanLine, Upload } from "lucide-react"
 import { RegistrationScanner } from "@/components/intake/registration-scanner"
 import { prepareRegistrationImage } from "@/lib/ocr/prepare-registration-image"
+import {
+  parseRegistrationOcr,
+  type RegistrationOcrFields,
+  type RuhsattanOkuResult,
+} from "@/lib/ocr/registration-form-values"
 
-// Fields the ruhsat OCR can return. Matches /api/smart-capture/ocr → RegistrationOcrResult.
-// Claude Vision OCR now also reads the technical fields (D.3 / P.3 / P.1 / P.2 / Z.2).
-export type RuhsattanOkuValues = {
-  plate: string
-  brand: string
-  model: string
-  vehicleType: string
-  modelYear: string
-  vin: string
-  engineNo: string
-  registrationDate: string
-  commercialName: string
-  fuelType: string
-  engineDisplacement: string
-  enginePower: string
-  inspectionValidUntil: string
-}
-
-export type RuhsattanOkuResult = {
-  values: RuhsattanOkuValues
-  confidence: Record<keyof RuhsattanOkuValues, number | undefined>
-  /**
-   * Ruhsat sahibi. Kurumsal (yalnız C.1.1 Ticari Ünvan dolu, C.1.2 ADI boş) ise
-   * `isCorporate` true olur ve `companyName` dolar; bireysel ise firstName/lastName.
-   * `label` her iki durumda gösterime uygun tam ad. Hepsi ipucu, hazır müşteri değil.
-   */
-  owner: {
-    isCorporate: boolean
-    firstName: string
-    lastName: string
-    companyName: string
-    label: string
-  }
-}
+export type { RuhsattanOkuResult, RuhsattanOkuValues } from "@/lib/ocr/registration-form-values"
 
 type Props = {
   /** Called once OCR succeeds, with the parsed fields, per-field confidence and an owner hint. */
@@ -53,10 +25,10 @@ type Props = {
    * `hero`: sihirbazın ruhsat adımı için tam genişlikte, sürükle-bırak kabul eden
    * büyük yükleme alanı (#309 — dar şerit yüzünden ruhsat yükleme yeri bulunamıyordu).
    * `inline` (varsayılan): form içine sıkışan ince şerit.
-   * `link`: tek küçük düğme — ekranın asıl işi başka bir şeyken ruhsat okumayı
-   * yalnız iliştirmek için (Araç Kabul odaklı plaka akışı).
+   * (Araç Kabul odaklı plaka akışı bunu değil, tam ekran
+   * `RegistrationCameraScanner`'ı kullanır.)
    */
-  variant?: "inline" | "hero" | "link"
+  variant?: "inline" | "hero"
 }
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
@@ -109,50 +81,7 @@ export function RuhsattanOku({
         return
       }
 
-      const r = data.result as Record<string, { value: string; confidence?: number }>
-      const v = (k: string) => (r[k]?.value || "").trim()
-      const values: RuhsattanOkuValues = {
-        plate: v("plate").toUpperCase(),
-        brand: v("brand"),
-        model: v("model"),
-        vehicleType: v("vehicleType"),
-        modelYear: v("modelYear"),
-        vin: v("vin").toUpperCase(),
-        engineNo: v("engineNo").toUpperCase(),
-        registrationDate: v("registrationDate"),
-        commercialName: v("commercialName"),
-        fuelType: v("fuelType"),
-        engineDisplacement: v("engineDisplacement"),
-        enginePower: v("enginePower"),
-        inspectionValidUntil: v("inspectionValidUntil"),
-      }
-      const confidence = {
-        plate: r.plate?.confidence,
-        brand: r.brand?.confidence,
-        model: r.model?.confidence,
-        vehicleType: r.vehicleType?.confidence,
-        modelYear: r.modelYear?.confidence,
-        vin: r.vin?.confidence,
-        engineNo: r.engineNo?.confidence,
-        registrationDate: r.registrationDate?.confidence,
-        commercialName: r.commercialName?.confidence,
-        fuelType: r.fuelType?.confidence,
-        engineDisplacement: r.engineDisplacement?.confidence,
-        enginePower: r.enginePower?.confidence,
-        inspectionValidUntil: r.inspectionValidUntil?.confidence,
-      }
-      // C.1.2 ADI + C.1.1 SOYADI/TİCARİ ÜNVANI. ADI boşsa sahip kurumsaldır → ünvanı şirket adı say.
-      const adi = v("ownerName")
-      const soyadi = v("ownerSurname")
-      const isCorporate = !adi && !!soyadi
-      const owner = {
-        isCorporate,
-        firstName: isCorporate ? "" : adi,
-        lastName: isCorporate ? "" : soyadi,
-        companyName: isCorporate ? soyadi : "",
-        label: isCorporate ? soyadi : [adi, soyadi].filter(Boolean).join(" ").trim(),
-      }
-      onResult({ values, confidence, owner })
+      onResult(parseRegistrationOcr(data.result as RegistrationOcrFields))
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ruhsat okuma sırasında hata oluştu")
     } finally {
@@ -169,21 +98,6 @@ export function RuhsattanOku({
       onChange={(e) => { const f = e.target.files?.[0]; if (f) runOcr(f); e.target.value = "" }}
     />
   )
-
-  if (variant === "link") {
-    return (
-      // Telefonun kendi seçicisi (Kamera / Fotoğraf Arşivi / Dosya) açılır;
-      // masaüstünde kamerasız da çalışır.
-      <div className={`flex flex-col items-end gap-1 ${className}`.trim()}>
-        {fileInput}
-        <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-primary" disabled={busy} onClick={() => fileInputRef.current?.click()}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : <ScanLine className="size-4" />}
-          {busy ? "Ruhsat okunuyor…" : title}
-        </Button>
-        {error && <p className="text-xs text-destructive-strong">{error}</p>}
-      </div>
-    )
-  }
 
   if (variant === "hero") {
     return (

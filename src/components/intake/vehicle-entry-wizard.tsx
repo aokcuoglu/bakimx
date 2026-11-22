@@ -8,10 +8,11 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
+import { Item, ItemContent, ItemDescription, ItemHeader, ItemMedia, ItemTitle } from "@/components/ui/item"
 import {
   AlertTriangle,
   Barcode,
+  Camera,
   Car,
   Check,
   ChevronRight,
@@ -23,12 +24,14 @@ import {
   UserCog,
 } from "lucide-react"
 import { WizardActions, WizardChoiceCard, WizardHeading, WizardStepper } from "@/components/intake/wizard-ui"
+import { DashPlate } from "@/components/dashboard/surface"
 import { EntryVehicleFields, EMPTY_VEHICLE_FIELDS, type VehicleFields } from "@/components/intake/entry-vehicle-fields"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import { PlateScanner } from "@/components/intake/plate-scanner"
 import { VinScanner } from "@/components/intake/vin-scanner"
+import { RegistrationCameraScanner } from "@/components/intake/registration-camera-scanner"
 import { RuhsattanOku, type RuhsattanOkuResult } from "@/components/vehicles/ruhsattan-oku"
-import { IntakeOwnerCard } from "@/components/intake/intake-owner-card"
+import { IntakeDuplicatePhoneNotice, IntakeOwnerCard } from "@/components/intake/intake-owner-card"
 import { VehiclePhotoCapture, createPendingVehiclePhoto, type PendingVehiclePhoto } from "@/components/intake/vehicle-photo-capture"
 import { updateCustomerContactAction } from "@/app/(app)/customers/actions"
 import { ALLOW_DUPLICATE_PHONE_FIELD, type ExistingCustomer } from "@/lib/customers/duplicate-phone"
@@ -46,6 +49,7 @@ import { hasFeature, type PlanTier } from "@/lib/plan"
 import {
   EMPTY_OWNER_FIELDS,
   ENTRY_METHODS,
+  confirmedVehicleParts,
   entryStepLabels,
   identityConflicts,
   ownerFieldError,
@@ -55,7 +59,6 @@ import {
   previousEntryStep,
   splitPersonName,
   vehicleFieldError,
-  hasOwnerInput,
   photoPlateStatus,
   type EntryMethod,
   type EntryStep,
@@ -79,7 +82,9 @@ function ownerFormData(o: OwnerFields, allowDuplicatePhone: boolean): FormData {
   const fd = new FormData()
   fd.set("type", o.type)
   if (o.type === "corporate") {
+    // Kurumsal: firma adı + yetkili ("Ad Soyad" alanı, isteğe bağlı).
     fd.set("companyName", o.companyName.trim())
+    fd.set("contactName", ownerLabel({ ...o, type: "individual" }))
   } else {
     // "Ad Soyad" tek alan: son kelime soyad, öncesi ad. Tam ad da gönderilir
     // (soyadsız bireysel müşteriyi sunucunun superRefine'ı tam adla kabul eder).
@@ -122,6 +127,7 @@ export function VehicleEntryWizard({
   planTier,
   initialMethod = null,
   onVehiclePhotoChange,
+  onConfirmOrder,
 }: {
   value: { customerId: string; vehicleId: string }
   onChange: (v: { customerId: string; vehicleId: string }) => void
@@ -135,6 +141,13 @@ export function VehicleEntryWizard({
    * yükler; `null` bekleyen kareyi düşürür.
    */
   onVehiclePhotoChange?: (photo: PendingVehiclePhoto | null) => void
+  /**
+   * Verilirse odaklı plaka akışında onay ekranı ve kabul detayları atlanır:
+   * "Devam" yeşil "Onayla"ya döner, "Onayla" müşteri/aracı kaydedip iş emrini
+   * bu callback ile açar. Hata metni dönerse ekranda gösterilir; başarıda
+   * yönlendirmeyi çağıran yapar.
+   */
+  onConfirmOrder?: (v: { customerId: string; vehicleId: string }) => Promise<string | null>
 }) {
   const [step, setStep] = useState<EntryStep>(initialMethod ? "capture" : "method")
   const [method, setMethod] = useState<EntryMethod | null>(initialMethod)
@@ -168,7 +181,8 @@ export function VehicleEntryWizard({
   // Odaklı plaka akışında (?entry=plate, ör. teknisyenin "Araç Kabul" düğmesi)
   // tarayıcı açılışta hazır gelir: işin ilk adımı zaten aracın önünü çekmek.
   // Yazmayı seçen "El ile gir" ile kutuya düşer.
-  const [scanner, setScanner] = useState<"plate" | "vin" | "vehiclePhoto" | null>(
+  // "registration": "Ruhsattan doldur" — aynı tam ekran kamera kabuğunda ruhsat.
+  const [scanner, setScanner] = useState<"plate" | "vin" | "vehiclePhoto" | "registration" | null>(
     initialMethod === "plate" ? "plate" : null,
   )
   const plateQueryRef = useRef<HTMLInputElement>(null)
@@ -188,6 +202,9 @@ export function VehicleEntryWizard({
   // kartı → (elle girişte) zorunlu araç fotoğrafı → opsiyonel ruhsat → araç
   // alanları sırasıyla tek ekrandır; ayrı "Müşteri" adımı yaşanmaz.
   const focused = initialMethod != null
+  // Odaklı plaka akışında ruhsat alanları ayrı bir "Ruhsat bilgileri" ekranında
+  // kontrol edilir / elle girilir; araç bilgileri ekranının yerine geçer.
+  const [ruhsatView, setRuhsatView] = useState(false)
   const plateFirst = focused && method === "plate"
   const photoFeature = hasFeature((planTier ?? "pro") as PlanTier, "photoChecklist")
 
@@ -260,30 +277,26 @@ export function VehicleEntryWizard({
   // Plaka fotoğraftakinden farklı mı? (yalnız odaklı plaka akışı)
   const plateStatus = plateFirst ? photoPlateStatus(vehiclePhoto ? photoPlate : null, fields.plate) : "match"
 
-  /** "Aynı araç": plaka düzeltildi, fotoğraf ve müşteri yeni plakaya bağlanır. */
-  function keepPhotoForNewPlate() {
+  // Odaklı plaka akışında doğrudan iş emri: "Devam" doğrulayıp düğmeyi yeşil
+  // "Onayla"ya çevirir, "Onayla" kaydeder ve iş emrini açar. Onay, onaylanan
+  // EKRAN DURUMUNA bağlıdır: plaka, müşteri kartı, fotoğraf ya da marka
+  // değişirse anahtar tutmaz ve düğme "Devam"a geri döner — kullanıcı görmediği
+  // bir değişikliği onaylamış olmaz.
+  const orderDirect = plateFirst && !!onConfirmOrder
+  const armKey = JSON.stringify([fields.plate, fields.brand, ownerForm, vehiclePhoto?.requestId ?? ""])
+  const [armedFor, setArmedFor] = useState<string | null>(null)
+  const armed = orderDirect && armedFor === armKey
+
+  /** "Onaylıyorum": elle girilen plaka doğru; fotoğraf ve müşteri yeni plakaya bağlanır. */
+  function confirmManualPlate() {
     setPhotoPlate(normalizePlate(fields.plate))
     setError("")
   }
 
-  /**
-   * "Farklı araç": önceki aracın fotoğrafı, elle girilen müşteri bilgileri ve
-   * fotoğraftan gelen marka temizlenir. Kayıtlı plakanın sahibi kartı zaten
-   * kendisi doldurur/boşaltır (bkz. dupVehicleId etkisi); ona dokunulmaz.
-   */
-  function clearForDifferentVehicle() {
-    setVehiclePhoto(null)
-    setPhotoMissing(true)
-    if (!ownerPrefillFor.current) {
-      setOwnerForm(EMPTY_OWNER_FIELDS)
-      setOwnerDupes([])
-      createdOwner.current = null
-    }
-    if (photoBrand.current && fields.brand === photoBrand.current) {
-      setFields((prev) => ({ ...prev, brand: "", model: "" }))
-      setCatalogIds({})
-    }
-    photoBrand.current = ""
+  /** "Vazgeç": plaka alanı fotoğraftan (OCR) okunan plakaya geri döner. */
+  function revertToPhotoPlate() {
+    if (!photoPlate) return
+    setField("plate", photoPlate)
     setError("")
   }
 
@@ -301,9 +314,16 @@ export function VehicleEntryWizard({
     }
   }
 
+  // Odaklı akışta (doğrudan iş emri açan teknisyen akışı) "Araç seçildi" onay
+  // ekranı YOK: seçilen ya da yeni açılan kayıtlı araç, plaka yazınca açılan
+  // araç ekranına gider — sahip kartı dolu gelir, fotoğraf + "Devam → Onayla"
+  // ile iş emri açılır. Böylece her yol aynı tek ekrandan geçer.
+  const confirmless = !!onConfirmOrder
+
   // ——— Dış prefill / geri navigasyon ———
   // URL'de araç id'si varken sihirbaz sıfırdan mount olursa (Adım 3'ten geri dönüş,
   // ruhsat okuyucudan yönlendirme) aracı çekip doğrudan onay adımını kur.
+  // Odaklı akışta onay adımı olmadığı için araç ekranı kurulur.
   const hydratedFor = useRef("")
   useEffect(() => {
     const vid = value.vehicleId
@@ -319,6 +339,13 @@ export function VehicleEntryWizard({
         const veh = v as { id?: string; plate?: string; brand?: string; model?: string; customerId?: string; customer?: CustomerLite | null }
         if (!veh.id) return
         hydratedFor.current = veh.id
+        if (confirmless) {
+          setMethod("plate")
+          setFields((prev) => ({ ...prev, plate: (veh.plate ?? "").toUpperCase() }))
+          setRuhsatView(false)
+          setStep("vehicle")
+          return
+        }
         const customerId = veh.customerId || value.customerId
         setConfirmed({
           vehicleId: veh.id,
@@ -332,7 +359,7 @@ export function VehicleEntryWizard({
       })
       .catch(() => {})
     return () => { active = false }
-  }, [value.vehicleId, value.customerId, confirmed?.vehicleId, onChange])
+  }, [value.vehicleId, value.customerId, confirmed?.vehicleId, onChange, confirmless])
 
   // ——— Arama (plaka / şase modları) ———
   useEffect(() => {
@@ -401,6 +428,13 @@ export function VehicleEntryWizard({
   useEffect(() => {
     if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
   }, [error])
+
+  // Telefon çakışması da adımın en üstünde gösterilir; aynı nedenle kaydırılır.
+  const ownerDupesRef = useRef<HTMLDivElement>(null)
+  const hasOwnerDupes = ownerDupes.length > 0
+  useEffect(() => {
+    if (hasOwnerDupes) ownerDupesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [hasOwnerDupes])
 
   // ——— Odaklı plaka akışı: plaka kayıtlıysa müşteri kartını sahiple doldur ———
   const dupVehicleId = duplicate?.vehicleId ?? ""
@@ -497,10 +531,48 @@ export function VehicleEntryWizard({
   }
 
   function selectExisting(r: VehicleResult) {
+    if (confirmless && !finishesOrder()) { openPlateScreen(r.plate); return }
     setFoundExisting(true)
     setConfirmed({ vehicleId: r.vehicleId, customerId: r.customerId, label: r.label, sublabel: r.sublabel })
     onChange({ customerId: r.customerId, vehicleId: r.vehicleId })
+    if (finishesOrder()) { void confirmOrder({ customerId: r.customerId, vehicleId: r.vehicleId }); return }
     setStep("confirm")
+  }
+
+  /**
+   * Araç çözüldüğünde onay ekranı yerine iş emri mi açılacak? Yalnız odaklı
+   * plaka akışının araç bilgileri ekranından ("Onayla"). Odaklı akışın diğer
+   * yolları (arama sonucu, müşterinin aracı) önce o ekrana gider.
+   */
+  function finishesOrder() {
+    return orderDirect && step === "vehicle"
+  }
+
+  /** Odaklı akış: kayıtlı aracı plaka ekranında aç (onay ekranı yok). */
+  function openPlateScreen(plate: string) {
+    setMethod("plate")
+    goToVehicleStep({ plate })
+  }
+
+  /** `true`: iş emri açıldı, çağıran yönlendiriyor. */
+  async function confirmOrder(v: { customerId: string; vehicleId: string }): Promise<boolean> {
+    if (!onConfirmOrder) return false
+    setSaving(true)
+    setError("")
+    let err: string | null
+    try {
+      err = await onConfirmOrder(v)
+    } catch {
+      err = "İş emri oluşturulamadı. Tekrar deneyin."
+    }
+    // Başarıda çağıran yönlendirir: düğme sayfa değişene kadar "Oluşturuluyor…"
+    // kalır, aradaki anda ikinci bir dokunuş ikinci iş emri açmasın.
+    if (err) {
+      setError(err)
+      setSaving(false)
+      return false
+    }
+    return true
   }
 
   /**
@@ -579,6 +651,7 @@ export function VehicleEntryWizard({
       void vinResolve.resolve(normalizeVin(seed.vin), {})
     }
     setError("")
+    setRuhsatView(false)
     setStep("vehicle")
   }
 
@@ -593,10 +666,12 @@ export function VehicleEntryWizard({
   async function createVehicle(ownerArg?: { id: string; label: string }) {
     const target = ownerArg ?? owner
     if (!target) { setError("Önce müşteriyi seçin veya oluşturun."); return }
-    const msg = vehicleFieldError(fields)
+    const msg = vehicleFieldError(fields, { modelOptional: plateFirst })
     if (msg) { setError(msg); setStep("vehicle"); return }
     setSaving(true)
     setError("")
+    // İş emri açıldıysa sayfa değişiyor: düğme "Oluşturuluyor…"da kalır.
+    let opening = false
     try {
       const vf = new FormData()
       vf.set("customerId", target.id)
@@ -620,6 +695,9 @@ export function VehicleEntryWizard({
       const res = await fetch("/api/vehicles", { method: "POST", body: vf })
       const data = (await res.json()) as { success?: boolean; id?: string; error?: string }
       if (!data?.success || !data.id) { setError(data?.error || "Araç oluşturulamadı"); return }
+      // Odaklı akışta müşteriden açılan yeni araç da onay ekranına değil, plaka
+      // ekranına gider (fotoğraf + Onayla orada).
+      if (confirmless && !finishesOrder()) { openPlateScreen(fields.plate); return }
       setFoundExisting(false)
       setConfirmed({
         vehicleId: data.id,
@@ -628,11 +706,15 @@ export function VehicleEntryWizard({
         sublabel: `Sahip: ${target.label}`,
       })
       onChange({ customerId: target.id, vehicleId: data.id })
+      if (finishesOrder()) {
+        opening = await confirmOrder({ customerId: target.id, vehicleId: data.id })
+        return
+      }
       setStep("confirm")
     } catch {
       setError("Bir hata oluştu, lütfen tekrar deneyin.")
     } finally {
-      setSaving(false)
+      if (!opening) setSaving(false)
     }
   }
 
@@ -640,15 +722,29 @@ export function VehicleEntryWizard({
   function plateFirstError(): string | null {
     if (!fields.plate.trim()) return "Plaka zorunludur."
     if (plateStatus === "typing") return "Plakayı eksiksiz girin."
-    if (plateStatus === "mismatch") return "Plaka fotoğraftakiyle uyuşmuyor: aynı araç mı, seçin."
+    if (plateStatus === "mismatch") return "Plakayı el ile değiştirdiniz: onaylayın ya da vazgeçin."
     const ownerErr = ownerFieldError(ownerForm)
     if (ownerErr) return ownerErr
     if (photoFeature && !vehiclePhoto) {
       setPhotoMissing(true)
       return "Aracın fotoğrafını çekin."
     }
-    if (!duplicate) return vehicleFieldError(fields)
+    // Araç alanları bu ekranda sorulmuyor: marka fotoğraftan (ya da ruhsattan)
+    // gelir, model sonra araç kaydından tamamlanır.
+    if (!duplicate && !fields.brand.trim()) {
+      return "Marka fotoğraftan okunamadı. Fotoğrafı tekrar çekin ya da ruhsattan doldurun."
+    }
+    if (!duplicate) return vehicleFieldError(fields, { modelOptional: true })
     return null
+  }
+
+  /** "Devam" (doğrudan iş emri): yalnız doğrular, düğmeyi "Onayla"ya çevirir. */
+  function armOrder() {
+    if (saving || ownerLoading) return
+    const msg = plateFirstError()
+    if (msg) { setError(msg); return }
+    setError("")
+    setArmedFor(armKey)
   }
 
   async function submitPlateFirst(opts: { allowDuplicatePhone?: boolean } = {}) {
@@ -734,6 +830,7 @@ export function VehicleEntryWizard({
 
   function restart() {
     setStep("method")
+    setRuhsatView(false)
     setMethod(null)
     setConfirmed(null)
     setFoundExisting(false)
@@ -786,6 +883,7 @@ export function VehicleEntryWizard({
   // Doğrudan giriş (initialMethod): adım rayı ve "Adım N" etiketi gösterilmez —
   // teknisyen tek bir işe (plakayı bulmaya) odaklanır.
   const stepEyebrow = focused ? undefined : `Adım ${stepIndex + 1}`
+  const confirmedParts = confirmed ? confirmedVehicleParts(confirmed.label, confirmed.sublabel) : null
 
   // Hangi yoldan gelinirse gelinsin (plaka araması, şase, müşteri) ruhsat araç
   // bilgileri ekranında da okutulabilir — alanları elle doldurmak zorunda kalmayın.
@@ -1163,15 +1261,71 @@ export function VehicleEntryWizard({
         </div>
       )}
 
-      {/* ——— Adım: araç bilgileri — odaklı plaka akışı ——— */}
-      {step === "vehicle" && plateFirst && (
+      {/* ——— Odaklı plaka akışı: ruhsat bilgileri ekranı ———
+          "Ruhsattan doldur" kamerasından gelinir: okunan alanlar burada kontrol
+          edilir (düşük güvenli olanlar sarı), "El ile gir" ile boş açılır. */}
+      {step === "vehicle" && plateFirst && ruhsatView && (
         <div className="space-y-5">
-          {/* Ruhsat okuma bu ekranın asıl işi değil: başlığın yanına iliştirilmiş
-              tek bir bağlantı. Kayıtlı araçta araç alanları sorulmadığı için yok. */}
+          <div className="flex items-center justify-between gap-2">
+            <WizardHeading
+              title="Ruhsat bilgileri"
+              description="Ruhsattaki bilgileri kontrol edin ya da elle girin. Sarı işaretli alanları ruhsatla karşılaştırın."
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="shrink-0 gap-1.5 text-primary"
+              onClick={() => setScanner("registration")}
+            >
+              <Camera className="size-4" /> Ruhsatı çek
+            </Button>
+          </div>
+          {conflictsBox}
+          <EntryVehicleFields
+            hidePlate
+            fields={fields}
+            onFieldChange={setField}
+            confidence={confidence}
+            showDetails={showDetails}
+            onToggleDetails={() => setShowDetails((s) => !s)}
+            vinResolve={vinResolve}
+            onBrandChange={(v) => { setField("brand", v); setCatalogIds({}) }}
+            onModelChange={(v) => { setField("model", v); setCatalogIds((p) => ({ brandId: p.brandId })) }}
+          />
+          <WizardActions back={<Button type="button" variant="outline" onClick={() => setRuhsatView(false)}>Geri</Button>}>
+            <Button variant="foreground" type="button" className="gap-2" onClick={() => setRuhsatView(false)}>
+              Tamam <Check className="size-4" />
+            </Button>
+          </WizardActions>
+        </div>
+      )}
+
+      {/* ——— Adım: araç bilgileri — odaklı plaka akışı ——— */}
+      {step === "vehicle" && plateFirst && !ruhsatView && (
+        <div className="space-y-5">
+          <IntakeDuplicatePhoneNotice
+            ref={ownerDupesRef}
+            duplicates={ownerDupes}
+            onUseExisting={duplicate ? undefined : (c) => void pickExistingOwner(c)}
+            onConfirm={() => void submitPlateFirst({ allowDuplicatePhone: true })}
+          />
+          {/* Ruhsat okuma bu ekranın asıl işi değil: başlığın yanında tek düğme.
+              Dokununca "Aracı Çek" ile aynı tam ekran kamera açılır (ruhsatı
+              çek ya da "El ile gir"), ardından "Ruhsat bilgileri" ekranı gelir.
+              Kayıtlı araçta araç alanları sorulmadığı için yok. */}
           <div className="flex items-center justify-between gap-2">
             <WizardHeading title="Araç bilgileri" />
             {!duplicate && hasFeature((planTier ?? "pro") as PlanTier, "ocrIntake") && (
-              <RuhsattanOku variant="link" title="Ruhsattan doldur" onResult={applyOcr} />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-primary"
+                onClick={() => setScanner("registration")}
+              >
+                <ScanLine className="size-4" /> Ruhsattan doldur
+              </Button>
             )}
           </div>
           <div className="space-y-1.5">
@@ -1194,6 +1348,7 @@ export function VehicleEntryWizard({
           {photoFeature && (
             <VehiclePhotoCapture
               photo={vehiclePhoto}
+              brand={fields.brand}
               busy={photoPreparing}
               invalid={photoMissing}
               onCapture={() => setScanner("vehiclePhoto")}
@@ -1204,20 +1359,19 @@ export function VehicleEntryWizard({
               <div className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning-strong" />
                 <div className="min-w-0 space-y-1 text-sm">
-                  <p className="font-semibold text-foreground">Plaka fotoğraftakiyle uyuşmuyor</p>
+                  <p className="font-semibold text-foreground">Plakayı el ile değiştirdiniz</p>
                   <p className="text-muted-foreground-strong">
                     Fotoğrafta <span className="font-medium text-foreground">{photoPlate}</span> okundu, plaka
                     alanında <span className="font-medium text-foreground">{normalizePlate(fields.plate)}</span> yazıyor.
-                    {" "}Farklı araçsa fotoğraf{!ownerOriginal && hasOwnerInput(ownerForm) ? " ve müşteri bilgileri" : ""} temizlenir.
                   </p>
                 </div>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
-                <Button type="button" variant="outline" className="sm:flex-1" onClick={keepPhotoForNewPlate}>
-                  Aynı araç, plakayı düzelttim
+                <Button type="button" className="sm:flex-1" onClick={confirmManualPlate}>
+                  Onaylıyorum
                 </Button>
-                <Button type="button" variant="outline" className="sm:flex-1" onClick={clearForDifferentVehicle}>
-                  Farklı araç — temizle
+                <Button type="button" variant="outline" className="sm:flex-1" onClick={revertToPhotoPlate}>
+                  Vazgeç
                 </Button>
               </div>
             </div>
@@ -1227,40 +1381,47 @@ export function VehicleEntryWizard({
             onChange={(next) => { setOwnerForm(next); setOwnerDupes([]) }}
             registeredVehicleLabel={duplicate?.label}
             loading={ownerLoading || (!!duplicate && !ownerOriginal)}
-            duplicates={ownerDupes}
-            onUseExisting={(c) => void pickExistingOwner(c)}
-            onConfirmDuplicate={() => void submitPlateFirst({ allowDuplicatePhone: true })}
           />
-          {/* Kayıtlı araçta araç alanları zaten dolu; yalnız yeni plakada sorulur. */}
-          {!duplicate && (
-            <>
-              {conflictsBox}
-              <EntryVehicleFields
-                hidePlate
-                sectionTitle="Araç bilgileri"
-                fields={fields}
-                onFieldChange={setField}
-                confidence={confidence}
-                showDetails={showDetails}
-                onToggleDetails={() => setShowDetails((s) => !s)}
-                vinResolve={vinResolve}
-                onBrandChange={(v) => { setField("brand", v); setCatalogIds({}) }}
-                onModelChange={(v) => { setField("model", v); setCatalogIds((p) => ({ brandId: p.brandId })) }}
-              />
-            </>
-          )}
-          <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
-            <Button
-              variant="foreground"
-              type="button"
-              className="gap-2"
-              disabled={saving || ownerLoading || photoPreparing}
-              onClick={() => void submitPlateFirst()}
-            >
-              {saving
-                ? <><Loader2 className="size-4 animate-spin" /> Kaydediliyor…</>
-                : <>{duplicate ? "Devam" : "Aracı kaydet"} <ChevronRight className="size-4" /></>}
-            </Button>
+          {/* Araç alanları bu ekranda sorulmaz: marka fotoğrafta rozet olarak
+              görünür, ruhsattan okunanlar arka planda kayda gider. Ruhsat
+              okumasının çakışma uyarısı (plaka/şase) yine burada çıkar. */}
+          {!duplicate && conflictsBox}
+          <WizardActions back={<Button type="button" variant="outline" onClick={goBack} disabled={saving}>Geri</Button>}>
+            {armed ? (
+              <Button
+                variant="success"
+                type="button"
+                className="gap-2"
+                disabled={saving || ownerLoading || photoPreparing}
+                onClick={() => void submitPlateFirst()}
+              >
+                {saving
+                  ? <><Loader2 className="size-4 animate-spin" /> Oluşturuluyor…</>
+                  : <><Check className="size-4" /> Onayla</>}
+              </Button>
+            ) : orderDirect ? (
+              <Button
+                variant="foreground"
+                type="button"
+                className="gap-2"
+                disabled={saving || ownerLoading || photoPreparing}
+                onClick={armOrder}
+              >
+                Devam <ChevronRight className="size-4" />
+              </Button>
+            ) : (
+              <Button
+                variant="foreground"
+                type="button"
+                className="gap-2"
+                disabled={saving || ownerLoading || photoPreparing}
+                onClick={() => void submitPlateFirst()}
+              >
+                {saving
+                  ? <><Loader2 className="size-4 animate-spin" /> Kaydediliyor…</>
+                  : <>{duplicate ? "Devam" : "Aracı kaydet"} <ChevronRight className="size-4" /></>}
+              </Button>
+            )}
           </WizardActions>
         </div>
       )}
@@ -1300,51 +1461,57 @@ export function VehicleEntryWizard({
       )}
 
       {/* ——— Adım: onay ——— */}
-      {step === "confirm" && confirmed && (
+      {step === "confirm" && confirmed && confirmedParts && (
         <div className="space-y-5">
           <WizardHeading
             eyebrow={stepEyebrow}
             title="Araç seçildi"
             description="Bilgiler doğruysa kabul detaylarına geçebilirsiniz."
           />
-          <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
-            <div className="flex items-start gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Check className="size-5" />
-              </span>
-              <div className="min-w-0">
-                <p className="font-semibold text-foreground">{confirmed.label}</p>
-                <p className="text-sm text-muted-foreground">{confirmed.sublabel}</p>
-              </div>
+          {/* Teknisyen panelindeki iş emri kartıyla aynı yapı (technician-dashboard
+              OrderCard): büyük plaka, araç ve sahip satırları. */}
+          <Item variant="outline" className="bg-card/80 shadow-xs">
+            <ItemContent>
+              <ItemHeader>
+                <DashPlate plate={confirmedParts.plate} country size="lg" />
+              </ItemHeader>
+              {confirmedParts.vehicleName && (
+                <ItemTitle className="flex items-center gap-2 text-base font-semibold">
+                  <Car className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span className="line-clamp-1">{confirmedParts.vehicleName}</span>
+                </ItemTitle>
+              )}
+              <ItemDescription className="flex items-center gap-2">
+                <User className="size-4 shrink-0" aria-hidden="true" />
+                <span className="line-clamp-1">{confirmedParts.ownerName}</span>
+              </ItemDescription>
+            </ItemContent>
+          </Item>
+          {/* Bu ekran yalnız ofis akışında yaşar (odaklı akışta yok, bkz.
+              `confirmless`). Randevu/teklif linkleri aracı önceden seçtiği için
+              oradan çıkmanın tek yolu bu düğmeler. */}
+          {ownerMode ? (
+            <div className="space-y-2">
+              <CustomerSearchOrCreate autoFocus onSelected={applyNewOwner} />
+              <Button type="button" variant="ghost" size="sm" onClick={() => setOwnerMode(false)}>Vazgeç</Button>
             </div>
-            {ownerMode ? (
-              <div className="mt-3 space-y-2">
-                <CustomerSearchOrCreate autoFocus onSelected={applyNewOwner} />
-                <Button type="button" variant="ghost" size="sm" onClick={() => setOwnerMode(false)}>Vazgeç</Button>
-              </div>
-            ) : (
-              <div className="mt-3 flex flex-wrap items-center gap-1">
-                <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setOwnerMode(true)}>
-                  <UserCog className="mr-1 size-4" /> Sahip değiştir
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground"
-                  asChild
-                >
-                  <Link href={`/vehicles/${confirmed.vehicleId}`}>
-                    <Info className="mr-1 size-4" /> Araç detayı
-                  </Link>
-                </Button>
-              </div>
-            )}
-          </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-1">
+              <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setOwnerMode(true)}>
+                <UserCog className="mr-1 size-4" /> Sahip değiştir
+              </Button>
+              <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
+                <Link href={`/vehicles/${confirmed.vehicleId}`}>
+                  <Info className="mr-1 size-4" /> Araç detayı
+                </Link>
+              </Button>
+            </div>
+          )}
           {/* Seçilen aracın diğer servislerdeki geçmişi (BAK-77). */}
           <CrossWorkshopHistoryLoader vehicleId={confirmed.vehicleId} refreshKey={ocrUnlockKey} />
           <WizardActions back={<Button type="button" variant="outline" onClick={restart}>Başka araç seç</Button>}>
             <Button variant="foreground" type="button" className="gap-2" onClick={onComplete}>
-              Kabul detaylarına geç <ChevronRight className="size-4" />
+              Devam <ChevronRight className="size-4" />
             </Button>
           </WizardActions>
         </div>
@@ -1379,6 +1546,21 @@ export function VehicleEntryWizard({
             applyPhotoBrand(brand)
           }}
           onClose={() => setScanner(null)}
+        />
+      )}
+      {scanner === "registration" && (
+        <RegistrationCameraScanner
+          onResult={(r) => {
+            setScanner(null)
+            applyOcr(r)
+            setRuhsatView(true)
+          }}
+          onClose={() => setScanner(null)}
+          onManualEntry={() => {
+            setScanner(null)
+            setShowDetails(true)
+            setRuhsatView(true)
+          }}
         />
       )}
       {scanner === "vin" && (

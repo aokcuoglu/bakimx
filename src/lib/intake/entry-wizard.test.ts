@@ -2,6 +2,7 @@ import { expect, test } from "bun:test"
 import {
   EMPTY_OWNER_FIELDS,
   ENTRY_METHODS,
+  confirmedVehicleParts,
   entryMethodOption,
   entryStepLabels,
   hasOwnerInput,
@@ -52,6 +53,12 @@ test("vehicleFieldError: eksik alanları sırayla listeler", () => {
 
 test("vehicleFieldError: boşluk dolu değer boş sayılır", () => {
   expect(vehicleFieldError({ plate: "  ", brand: "Renault", model: "Clio" })).toBe("Plaka zorunludur.")
+})
+
+test("vehicleFieldError: odaklı plaka akışında model zorunlu değil, marka zorunlu", () => {
+  expect(vehicleFieldError({ plate: "34ABC12", brand: "Renault", model: "" }, { modelOptional: true })).toBeNull()
+  expect(vehicleFieldError({ plate: "34ABC12", brand: "", model: "" }, { modelOptional: true })).toBe("Marka zorunludur.")
+  expect(vehicleFieldError({ plate: "34ABC12", brand: "Renault", model: "" })).toBe("Model zorunludur.")
 })
 
 test("vehicleFieldError: tüm alanlar doluysa null", () => {
@@ -136,9 +143,9 @@ test("ownerFieldsFromCustomer: bireyselde tam ad, yoksa ad + soyad", () => {
     .toMatchObject({ name: "AYŞE NUR KAYA" })
 })
 
-test("ownerFieldsFromCustomer: kurumsalda firma adı", () => {
+test("ownerFieldsFromCustomer: kurumsalda firma adı + yetkili Ad Soyad", () => {
   expect(ownerFieldsFromCustomer({ type: "corporate", firstName: "X", lastName: null, fullName: null, companyName: "ACME LTD", phone: "5" }))
-    .toEqual({ type: "corporate", name: "", companyName: "ACME LTD", phone: "5" })
+    .toEqual({ type: "corporate", name: "X", companyName: "ACME LTD", phone: "5" })
 })
 
 test("ownerFieldError: bireyselde ad soyad ve telefon zorunlu", () => {
@@ -157,6 +164,11 @@ test("ownerFieldsChanged: boşluk ve telefon biçimi farkı değişiklik sayılm
   expect(ownerFieldsChanged(a, { ...a, phone: "+90 544 515 74 08" })).toBe(false)
   expect(ownerFieldsChanged(a, { ...a, name: "ALİ YILMAZ" })).toBe(true)
   expect(ownerFieldsChanged(a, { ...a, phone: "5445157409" })).toBe(true)
+})
+
+test("ownerFieldsChanged: bireysel ↔ kurumsal geçiş değişiklik sayılır", () => {
+  const a = { ...EMPTY_OWNER_FIELDS, name: "ALİ VELİ", companyName: "ACME", phone: "5445157408" }
+  expect(ownerFieldsChanged(a, { ...a, type: "corporate" })).toBe(true)
 })
 
 test("ownerLabel: bireyselde ad soyad, kurumsalda firma", () => {
@@ -183,4 +195,38 @@ test("hasOwnerInput: herhangi bir alan doluysa true", () => {
   expect(hasOwnerInput({ ...EMPTY_OWNER_FIELDS, name: "  " })).toBe(false)
   expect(hasOwnerInput({ ...EMPTY_OWNER_FIELDS, phone: "0544" })).toBe(true)
   expect(hasOwnerInput({ ...EMPTY_OWNER_FIELDS, type: "corporate", companyName: "ACME" })).toBe(true)
+})
+
+test("confirmedVehicleParts: etiketi plaka / araç / sahip satırlarına ayırır", () => {
+  expect(confirmedVehicleParts("34KCK628 — BMW 5 (F10)", "Sahip: MERVE ZİREK")).toEqual({
+    plate: "34KCK628",
+    vehicleName: "BMW 5 (F10)",
+    ownerName: "MERVE ZİREK",
+  })
+})
+
+test("confirmedVehicleParts: marka/model boşsa araç satırı boş, plaka korunur", () => {
+  // Etiket `${plate} — ${brand} ${model}`.trim() ile kurulur → "34ABC123 —".
+  expect(confirmedVehicleParts("34ABC123 —", "Sahip: —")).toEqual({
+    plate: "34ABC123",
+    vehicleName: "",
+    ownerName: "—",
+  })
+})
+
+test("confirmedVehicleParts: ayraçsız etiket tümüyle plakadır", () => {
+  expect(confirmedVehicleParts("06XYZ789", "")).toEqual({ plate: "06XYZ789", vehicleName: "", ownerName: "" })
+})
+
+test("ownerFieldsFromCustomer: kurumsalda Ad Soyad yetkili kişiden dolar", () => {
+  const base = { type: "corporate", firstName: null, lastName: null, fullName: "ACME", companyName: "ACME", phone: "5445157408" }
+  expect(ownerFieldsFromCustomer({ ...base, contactName: "AYŞE KAYA" })).toMatchObject({ name: "AYŞE KAYA", companyName: "ACME" })
+  expect(ownerFieldsFromCustomer({ ...base, firstName: "ALİ", lastName: "VELİ" }).name).toBe("ALİ VELİ")
+  expect(ownerFieldsFromCustomer(base).name).toBe("")
+})
+
+test("ownerFieldError: kurumsalda Firma adı zorunlu, Ad Soyad isteğe bağlı", () => {
+  const corp = { ...EMPTY_OWNER_FIELDS, type: "corporate" as const, phone: "5445157408" }
+  expect(ownerFieldError({ ...corp, companyName: "ACME" })).toBeNull()
+  expect(ownerFieldError({ ...corp, name: "ALİ VELİ" })).toContain("Firma adı")
 })

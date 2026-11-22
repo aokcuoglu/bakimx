@@ -97,5 +97,6 @@ export const customerContactUpdateSchema = z.object({
   lastName: z.string().trim().max(100, "Soyad en fazla 100 karakter olabilir").default(""),
   fullName: z.string().trim().max(200, "Ad soyad en fazla 200 karakter olabilir").default(""),
   companyName: z.string().trim().max(200, "Firma adı en fazla 200 karakter olabilir").default(""),
+  contactName: z.string().trim().max(200, "Yetkili adı en fazla 200 karakter olabilir").default(""),
   phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
 })

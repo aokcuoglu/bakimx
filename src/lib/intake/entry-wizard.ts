@@ -89,12 +89,19 @@ export function entryStepLabels(
   return steps
 }
 
-/** Zorunlu araç alanları eksikse Türkçe hata metni, tamamsa `null`. */
-export function vehicleFieldError(fields: { plate: string; brand: string; model: string }): string | null {
+/**
+ * Zorunlu araç alanları eksikse Türkçe hata metni, tamamsa `null`.
+ * `modelOptional`: odaklı plaka akışında araç alanları sorulmaz — marka araç
+ * fotoğrafından okunur, model sonradan araç kaydından tamamlanır.
+ */
+export function vehicleFieldError(
+  fields: { plate: string; brand: string; model: string },
+  opts: { modelOptional?: boolean } = {},
+): string | null {
   const missing: string[] = []
   if (!fields.plate.trim()) missing.push("Plaka")
   if (!fields.brand.trim()) missing.push("Marka")
-  if (!fields.model.trim()) missing.push("Model")
+  if (!opts.modelOptional && !fields.model.trim()) missing.push("Model")
   if (!missing.length) return null
   return `${missing.join(", ")} zorunludur.`
 }
@@ -111,7 +118,7 @@ export function vehicleFieldError(fields: { plate: string; brand: string; model:
  */
 export type OwnerFields = {
   type: "individual" | "corporate"
-  /** Bireysel: "Ad Soyad" tek alanda. */
+  /** "Ad Soyad" tek alanda. Kurumsalda firmanın yetkilisidir (`contactName`). */
   name: string
   companyName: string
   phone: string
@@ -141,10 +148,13 @@ export function ownerFieldsFromCustomer(c: {
   lastName: string | null
   fullName: string | null
   companyName: string | null
+  contactName?: string | null
   phone: string
 }): OwnerFields {
   if (c.type === "corporate") {
-    return { type: "corporate", name: "", companyName: (c.companyName || "").trim(), phone: c.phone || "" }
+    // Kurumsalda "Ad Soyad" yetkili kişidir; eski kayıtlarda yalnız ad/soyad dolu olabilir.
+    const contact = (c.contactName || "").trim() || [c.firstName, c.lastName].map((x) => (x || "").trim()).filter(Boolean).join(" ")
+    return { type: "corporate", name: contact, companyName: (c.companyName || "").trim(), phone: c.phone || "" }
   }
   const name = (c.fullName || "").trim() || [c.firstName, c.lastName].map((x) => (x || "").trim()).filter(Boolean).join(" ")
   return { type: "individual", name, companyName: "", phone: c.phone || "" }
@@ -171,7 +181,9 @@ export function ownerFieldError(o: OwnerFields): string | null {
  */
 export function ownerFieldsChanged(original: OwnerFields, current: OwnerFields): boolean {
   const text = (v: string) => v.trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR")
-  const norm = (o: OwnerFields) => [text(o.name), text(o.companyName), normalizePhone(o.phone)].join("\u0000")
+  // Tip de karşılaştırılır: "Kurumsal" düğmesiyle bireysel ↔ kurumsal geçiş
+  // müşteri kaydını günceller.
+  const norm = (o: OwnerFields) => [o.type, text(o.name), text(o.companyName), normalizePhone(o.phone)].join("\u0000")
   return norm(original) !== norm(current)
 }
 
@@ -253,4 +265,22 @@ export function previousEntryStep(
   const index = steps.findIndex((s) => s.id === current)
   if (index <= 0) return "method"
   return steps[index - 1].id
+}
+
+/**
+ * Onay kartının satırları: plaka, araç ve sahip. Sihirbazdaki her kaynak (arama
+ * sonucu, müşterinin aracı, URL'den yüklenen ya da yeni kaydedilen araç) etiketi
+ * `${plate} — ${brand} ${model}`, alt etiketi `Sahip: ${ad}` biçiminde kurar
+ * (`buildUnifiedResults` ile aynı biçim). Marka/model boşsa araç satırı boş döner.
+ */
+export function confirmedVehicleParts(
+  label: string,
+  sublabel: string
+): { plate: string; vehicleName: string; ownerName: string } {
+  const sep = label.indexOf("—")
+  return {
+    plate: (sep === -1 ? label : label.slice(0, sep)).trim(),
+    vehicleName: sep === -1 ? "" : label.slice(sep + 1).trim(),
+    ownerName: sublabel.replace(/^Sahip:\s*/, "").trim(),
+  }
 }

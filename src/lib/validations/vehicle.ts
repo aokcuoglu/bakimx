@@ -46,7 +46,10 @@ export const vehicleCreateSchema = z.object({
   customerId: z.string().min(1, "Müşteri seçimi zorunludur"),
   plate: z.string().min(1, "Plaka zorunludur").max(20, "Plaka çok uzun"),
   brand: z.string().min(1, "Marka zorunludur"),
-  model: z.string().min(1, "Model zorunludur"),
+  // Oluştururken model boş olabilir: araç kabulün odaklı plaka akışı yalnız
+  // fotoğraftan okunan markayı gönderir, model araç kaydından sonra tamamlanır
+  // (kolon NOT NULL kalır, boş dize yazılır). Düzenleme şeması modeli yine ister.
+  model: z.string().optional().default(""),
   vehicleType: z.string().optional(),
   modelYear: z.coerce.number().int("Geçerli bir yıl giriniz").min(1900, "Yıl en az 1900 olmalıdır").max(2030, "Yıl en fazla 2030 olmalıdır").optional(),
   mileage: z.coerce.number().int("Geçerli bir kilometre değeri giriniz").min(0, "Kilometre negatif olamaz").optional(),
