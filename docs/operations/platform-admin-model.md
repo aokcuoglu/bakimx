@@ -335,7 +335,7 @@ logunda kalır. Platform seviyesinde denetim tablosu ayrı bir iştir.
 1. Google Cloud → **APIs & Services → OAuth consent screen**: User type **Internal**.
 2. **Credentials → Create credentials → OAuth client ID → Web application**.
    Kayıtlı redirect URI'lar birebir şunlar olmalı:
-   - `http://localhost:3000/api/auth/admin/google/callback`
+   - `http://localhost:3001/api/auth/admin/google/callback` (yerel `bun run dev`)
    - `https://app-dev.bakimx.com/api/auth/admin/google/callback`
    - `https://app.bakimx.com/api/auth/admin/google/callback`
 
