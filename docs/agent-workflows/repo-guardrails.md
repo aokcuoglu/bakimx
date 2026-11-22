@@ -18,10 +18,11 @@ bun run typecheck
 bun run build      # SESSION_SECRET gerektirir
 ```
 
-**`dev` PR'larında Actions varsayılan kapalıdır.** `quality` job'u `dev`'e
-giden PR'da yalnız `ci` label'ı varken koşar; `main` PR'larında her zaman
-koşar. Gündüz draft PR + labelsız; akşam `gh pr edit <n> --add-label ci`.
-Ayrıntı: [local-dev-batch-ci.md](./local-dev-batch-ci.md).
+**`quality` her PR'da koşar** (`dev` ve `main`). 22-11'den beri tek
+entegrasyon noktası `origin/dev`: PR yalnız yeşil `quality` ile merge edilir,
+ardından birincil checkout `origin/dev`'e fast-forward edilir (#789). Repo public
+olduğu için GitHub-hosted dakikalar ücretsiz; eski `ci` label kapısı ve akşam
+batch'i emekliye ayrıldı. Ajan altyapısı: [docs/harness/README.md](../harness/README.md).
 
 `bun run lint` **uyarıyla değil, hatayla** düşer; mevcut uyarı sayısını
 artırmamak yeterli değil, sıfır hata gerekir. Lint hatası yüzünden bloke olmuş
