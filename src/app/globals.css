@@ -694,11 +694,13 @@
   --border: #e5e5ea;
   --input: #d2d2d7;
   --ring: #0071e3;
-  --success: oklch(0.60 0.18 145);
-  /* Yeşil zeminde beyaza yakın metin yalnız 3.47:1 veriyordu (AA altı). Yeşili
-     değiştirmek yerine metni koyulaştırdık: 4.94:1. warning ile aynı değer ve
-     aynı mantık (açık renkli çip → koyu metin); koyu tema zaten böyleydi. */
-  --success-foreground: oklch(0.20 0.04 260);
+  /* Apple'ın yüksek kontrastlı systemGreen ailesi (22-11, e-santral). Birebir
+     iOS yeşili #34C759 beyaz metinle yalnız 2.22:1 veriyor; yeşil zeminde
+     BEYAZ metin istendiği için ton AA'yı geçecek kadar koyulaştırıldı:
+     #238636 + beyaz = 4.63:1. (Önceki yeşil oklch(0.60 0.18 145) beyazla 3.47:1
+     kaldığı için metni koyu lacivertti.) */
+  --success: #238636;
+  --success-foreground: #ffffff;
   --success-strong: oklch(0.47 0.18 145);
   --warning: oklch(0.70 0.18 85);
   --warning-foreground: oklch(0.20 0.04 260);
