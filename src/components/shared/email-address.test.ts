@@ -18,10 +18,10 @@ const RAW_EMAIL_RENDER = /mailto:|\{COMPANY\.(email|kep)\}|[\w.+-]+@[\w-]+\.[a-z
 const PUBLIC_EMAIL_SURFACES = [
   "src/components/sections/Footer.tsx",
   "src/components/sections/ContactPage.tsx",
-  "src/app/privacy/page.tsx",
-  "src/app/kvkk/page.tsx",
-  "src/app/terms/page.tsx",
-  "src/app/acik-riza/page.tsx",
+  "src/app/(site)/privacy/page.tsx",
+  "src/app/(site)/kvkk/page.tsx",
+  "src/app/(site)/terms/page.tsx",
+  "src/app/(site)/acik-riza/page.tsx",
 ]
 
 describe("EmailAddress (#735 Cloudflare email obfuscation)", () => {

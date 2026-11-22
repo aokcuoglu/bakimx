@@ -4,7 +4,7 @@ const MIGRATION = await Bun.file(
   new URL("../../../prisma/migrations/20260827233000_sales_registration_links/migration.sql", import.meta.url),
 ).text()
 const PUBLIC_REGISTER_PAGE = await Bun.file(
-  new URL("../../app/(auth)/register/page.tsx", import.meta.url),
+  new URL("../../app/(site)/(auth)/register/page.tsx", import.meta.url),
 ).text()
 const REGISTER_FORM = await Bun.file(
   new URL("../../components/auth/register-form.tsx", import.meta.url),

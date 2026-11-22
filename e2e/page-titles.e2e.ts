@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test"
 import { existsSync } from "node:fs"
 
 // Blog/contact content is delivered separately; these checks also run in that working tree.
-const hasBlog = existsSync("src/app/blog/page.tsx")
-const hasContact = existsSync("src/app/contact-us/page.tsx")
+const hasBlog = existsSync("src/app/(site)/blog/page.tsx")
+const hasContact = existsSync("src/app/(site)/contact-us/page.tsx")
 
 const publicPages: [string, string][] = [
   ["/", "BakımX: Oto Servis Yönetim Platformu"],
