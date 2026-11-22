@@ -2,7 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
 import { Cookie, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -74,6 +81,8 @@ export function CookieConsent() {
     }
   }, [consentRaw])
 
+  const contentRef = useRef<HTMLDivElement | null>(null)
+  const [barHeight, setBarHeight] = useState(0)
   const [preferencesOpen, setPreferencesOpen] = useState(false)
   const [draft, setDraft] = useState<DraftPreferences>(toDraft(DEFAULT_COOKIE_PREFERENCES))
 
@@ -98,13 +107,35 @@ export function CookieConsent() {
     setPreferencesOpen(true)
   }, [consent])
 
-  if (!hydrated || !isPublicCookieConsentPath(pathname)) return null
-
-  const showBanner = !consent && !preferencesOpen
+  const showBanner = hydrated && !consent && !preferencesOpen
   const isLegal = isCookieConsentLegalPath(pathname)
+  const needsSpacer = showBanner && isLegal
+
+  // Non-modal bar on legal pages overlays the page end; reserve its height.
+  useEffect(() => {
+    if (!needsSpacer) return
+    let observer: ResizeObserver | undefined
+    let frame = requestAnimationFrame(function attach() {
+      const node = contentRef.current
+      if (!node) {
+        frame = requestAnimationFrame(attach)
+        return
+      }
+      observer = new ResizeObserver(() => setBarHeight(node.offsetHeight))
+      observer.observe(node)
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+      observer?.disconnect()
+      setBarHeight(0)
+    }
+  }, [needsSpacer])
+
+  if (!hydrated || !isPublicCookieConsentPath(pathname)) return null
 
   return (
     <>
+      {needsSpacer ? <div aria-hidden style={{ height: barHeight }} /> : null}
       <Sheet
         open={showBanner}
         // The banner is derived from stored consent; close requests are ignored.
@@ -113,13 +144,19 @@ export function CookieConsent() {
       >
         <SheetContent
           side="bottom"
+          ref={contentRef}
           showCloseButton={false}
+          overlayClassName="bg-foreground/20 backdrop-blur-none supports-backdrop-filter:backdrop-blur-none"
           data-slot="cookie-consent-banner"
           className="gap-0 p-0 pb-[env(safe-area-inset-bottom)]"
           onEscapeKeyDown={(event) => event.preventDefault()}
           onPointerDownOutside={(event) => event.preventDefault()}
           onInteractOutside={(event) => event.preventDefault()}
-          onOpenAutoFocus={isLegal ? (event) => event.preventDefault() : undefined}
+          onOpenAutoFocus={(event) => {
+            // No button gets a ring on open; modal keeps focus inside the bar.
+            event.preventDefault()
+            if (!isLegal) contentRef.current?.focus()
+          }}
         >
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6">
             <div className="flex min-w-0 items-start gap-3">
@@ -133,7 +170,7 @@ export function CookieConsent() {
                 <SheetTitle className="text-sm font-semibold tracking-tight">
                   Çerez kullanıyoruz
                 </SheetTitle>
-                <SheetDescription className="text-xs leading-relaxed">
+                <SheetDescription className="text-sm leading-relaxed sm:text-xs">
                   Deneyimi iyileştirmek için çerez kullanırız. Ayrıntılar için{" "}
                   <Link
                     href="/privacy#cerezler"
@@ -146,14 +183,6 @@ export function CookieConsent() {
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2 sm:flex-nowrap">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={openPreferences}
-                className="order-last w-full text-muted-foreground underline-offset-2 hover:text-foreground hover:underline sm:order-first sm:w-auto"
-              >
-                Tercihler
-              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -169,6 +198,14 @@ export function CookieConsent() {
                 onClick={() => save(ACCEPT_ALL_PREFERENCES)}
               >
                 Kabul et
+              </Button>
+              <Button
+                type="button"
+                variant="link"
+                onClick={openPreferences}
+                className="order-last w-full text-muted-foreground-strong underline hover:text-foreground sm:order-first sm:w-auto"
+              >
+                Tercihler
               </Button>
             </div>
           </div>

@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test("cookie choices persist and cancelling preferences keeps the initial choice available", async ({
   page,
 }) => {
@@ -47,4 +49,34 @@ test("cookie choices persist and cancelling preferences keeps the initial choice
     page.getByRole("heading", { level: 1, name: "Gizlilik Politikası" }),
   ).toBeVisible();
   await expect(page.locator("#cerezler")).toBeVisible();
+});
+
+test("bar blocks the page until a choice; Escape does not dismiss it", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const banner = page.locator('[data-slot="cookie-consent-banner"]');
+  await expect(banner).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(banner).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Giriş yap" }).first().click({ timeout: 1500 }),
+  ).rejects.toThrow();
+  await banner.getByRole("button", { name: "Reddet", exact: true }).click();
+  await expect(banner).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+});
+
+test("legal pages keep the bar but stay readable and scrollable", async ({
+  page,
+}) => {
+  await page.goto("/privacy");
+  const banner = page.locator('[data-slot="cookie-consent-banner"]');
+  await expect(banner).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(banner).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Gizlilik Politikası" }),
+  ).toBeVisible();
 });
