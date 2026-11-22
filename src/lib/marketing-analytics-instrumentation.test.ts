@@ -12,6 +12,7 @@ describe("marketing conversion instrumentation", () => {
       ["components/auth/register-form.tsx", "if (res.ok)", "demo_submitted"],
       ["components/sections/HeroLeadForm.tsx", "if (!response.ok)", "demo_submitted"],
       ["components/site-assistant/views/demo-form-view.tsx", "if (res.ok)", "demo_submitted"],
+      ["components/marketing/landing/callback-dialog.tsx", "if (!response.ok)", "demo_submitted"],
       ["components/billing/purchase-wizard.tsx", "if (data.success)", "purchase_submitted"],
     ] as const) {
       const text = source(file)
@@ -25,10 +26,23 @@ describe("marketing conversion instrumentation", () => {
       "components/auth/register-form.tsx", "components/sections/HeroLeadForm.tsx",
       "components/site-assistant/views/demo-form-view.tsx",
       "components/billing/purchase-wizard.tsx",
+      "components/marketing/landing/callback-dialog.tsx",
     ]) {
       const text = source(file)
       expect(text).toContain("if (submitRef.current) return")
       expect(text).toContain("submitRef.current = true")
+    }
+  })
+
+  // #781: ana sayfanın talep yolu artık "Sizi arayalım" penceresi. /demo formu gibi
+  // reklam ilişkilendirmesini (onaya bağlı) gönderip başarılı kayıtta dönüşümü işlemeli.
+  test("demo talebi formları reklam ilişkilendirmesini ve dönüşümü taşır", () => {
+    for (const file of ["components/sections/HeroLeadForm.tsx", "components/marketing/landing/callback-dialog.tsx"]) {
+      const text = source(file)
+      expect(text).toContain("captureDemoAttribution()")
+      expect(text).toContain("attribution: getDemoAttribution()")
+      expect(text).toContain("targetingConsent: hasDemoAdvertisingConsent()")
+      expect(text).toContain("trackDemoAdvertisingConversion(result.eventId)")
     }
   })
 })

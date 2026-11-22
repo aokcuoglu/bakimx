@@ -9,3 +9,9 @@
 .panels > * {
   min-width: 0;
 }
+
+/* Sütunlar farklı uzunlukta olduğunda (ör. tek panel ↔ alt alta iki panel)
+   kısa olan karşı sütunun boyuna uzayıp altında boş kart bırakmasın. */
+.panelsTop {
+  align-items: start;
+}
