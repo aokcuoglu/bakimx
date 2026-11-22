@@ -3,7 +3,15 @@
 BakımX sürüm geçmişi. Her sürümün ayrıntılı notu [`docs/releases/`](./docs/releases/) altındadır. Sürümler [SemVer](https://semver.org/lang/tr/) ve dev→staging→main akışını izler (bkz. [docs/releasing.md](./docs/releasing.md)).
 
 ## Yayınlanmamış (Unreleased)
-Henüz yok — v0.17.0 hazırlandı.
+Henüz yok — v0.18.0 hazırlandı.
+
+## 0.18.x
+
+| Sürüm | Başlık | Not |
+|---|---|---|
+| 0.18.0 | GetirBakım webhook alıcısı (sözleşme v2.3) | [v0.18.0](./docs/releases/v0.18.0.md) |
+
+0.18.0 öne çıkanlar: GetirBakım'ın sipariş/iade webhook'ları **sözleşme v2.3** başlıkları ve `v1=` HMAC imzasıyla karşılanıyor; sipariş durumu yoklamayla aynı yoldan uygulanıyor, eski durum yenisini ezmiyor, tekrar gelen olay yok sayılıyor; yoklama yedek olarak duruyor (#767). **Migration YOK.** Elle eklenecek env yok (`GETIRBAKIM_WEBHOOK_SECRET` prod'da tanımlı, deploy workflow'u `GETIRBAKIM_WEBHOOK_SECRET_ARN`'den yazar).
 
 ## 0.17.x
 
