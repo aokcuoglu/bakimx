@@ -148,7 +148,7 @@ export function CookieConsent() {
           showCloseButton={false}
           overlayClassName="bg-foreground/20 backdrop-blur-none supports-backdrop-filter:backdrop-blur-none"
           data-slot="cookie-consent-banner"
-          className="gap-0 p-0 pb-[env(safe-area-inset-bottom)]"
+          className="gap-0 p-0 pb-[env(safe-area-inset-bottom)] outline-none focus:outline-none focus-visible:outline-none"
           onEscapeKeyDown={(event) => event.preventDefault()}
           onPointerDownOutside={(event) => event.preventDefault()}
           onInteractOutside={(event) => event.preventDefault()}
@@ -203,7 +203,7 @@ export function CookieConsent() {
                 type="button"
                 variant="link"
                 onClick={openPreferences}
-                className="order-last w-full text-muted-foreground-strong underline hover:text-foreground sm:order-first sm:w-auto"
+                className="w-full text-muted-foreground-strong underline hover:text-foreground sm:w-auto"
               >
                 Tercihler
               </Button>

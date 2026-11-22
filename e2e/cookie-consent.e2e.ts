@@ -60,9 +60,11 @@ test("bar blocks the page until a choice; Escape does not dismiss it", async ({
   await page.keyboard.press("Escape");
   await expect(banner).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(0);
+  // CSS locator: role locators match nothing while the page is aria-hidden,
+  // so only a pointer-blocked click can make this fail.
   await expect(
-    page.getByRole("link", { name: "Giriş yap" }).first().click({ timeout: 1500 }),
-  ).rejects.toThrow();
+    page.locator('a[href="/login"]').first().click({ timeout: 1500 }),
+  ).rejects.toThrow(/intercepts pointer events/);
   await banner.getByRole("button", { name: "Reddet", exact: true }).click();
   await expect(banner).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -79,4 +81,7 @@ test("legal pages keep the bar but stay readable and scrollable", async ({
   await expect(
     page.getByRole("heading", { level: 1, name: "Gizlilik Politikası" }),
   ).toBeVisible();
+  await page.mouse.move(180, 300);
+  await page.mouse.wheel(0, 600);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 });
