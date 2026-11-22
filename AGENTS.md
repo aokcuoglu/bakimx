@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Development
 - **Install:** `bun install` (or `npm install`)
-- **Dev server:** `bun run dev` (or `npm run dev`)
+- **Dev server:** `bun run dev` (or `npm run dev`) — http://localhost:3001 (port is pinned in `package.json`; 3000 belongs to another project on the same machine)
 - **Build:** `bun run build` (or `npm run build`)
 - **Lint:** `bun run lint` (or `npm run lint`)
 - **Typecheck:** `bun run typecheck` (or `npm run typecheck`)

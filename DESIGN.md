@@ -137,7 +137,7 @@ Inter uygulama ve genel public yüzeylerde kullanılır. Kod ve sabit genişlikl
 
 ## Design Palette — 17 Eylül 2026
 
-Canlı önizleme: [`/design`](/design) (yerel `http://localhost:3000/design`; ileride `ui.bakimx.com` adayı). Galeri düzeni [getdesign.md / Linear preview](https://getdesign.md/linear.app/design-md) yapısını izler (01 Palette → 08 Responsive); token değerleri BakımX’e aittir. Yeni UI işi buradaki sözleşmeye uyar.
+Canlı önizleme: [`/design`](/design) (yerel `http://localhost:3001/design`; ileride `ui.bakimx.com` adayı). Galeri düzeni [getdesign.md / Linear preview](https://getdesign.md/linear.app/design-md) yapısını izler (01 Palette → 08 Responsive); token değerleri BakımX’e aittir. Yeni UI işi buradaki sözleşmeye uyar.
 
 ### Colors
 
@@ -286,7 +286,7 @@ Test: masaüstünde hareket azaltma kapalıyken ana sayfayı yenileyip yavaş ka
 
 ## Yerel teslim
 
-Önizleme http://localhost:3000. Karşılaştırmalar `artifacts/issue-635/public-site/` altında. Önceki denemeler korunur. Bu çalışma kayıt dönüşümüne ilişkin ölçüm veya iddia içermez.
+Önizleme http://localhost:3001. Karşılaştırmalar `artifacts/issue-635/public-site/` altında. Önceki denemeler korunur. Bu çalışma kayıt dönüşümüne ilişkin ölçüm veya iddia içermez.
 
 ## Kurulum ekranı — 16 Eylül 2026 (#661)
 
@@ -296,7 +296,7 @@ Attio'nun sayfa oranları ve adım akışı yapısal referanstır; yüzeyler bu 
 
 ## 13 Eylül geliştirme uzlaştırması
 
-Ana sayfadaki bağımsız “Canlı Demo / Ruhsat Okuma” bölümü kaldırılmıştır; tekrar eklenmez. Hero altındaki etkileşimli ProductStage ve “Birlikte inceleyelim” modalı korunur. Güncel yerel önizleme http://localhost:3000 adresindedir.
+Ana sayfadaki bağımsız “Canlı Demo / Ruhsat Okuma” bölümü kaldırılmıştır; tekrar eklenmez. Hero altındaki etkileşimli ProductStage ve “Birlikte inceleyelim” modalı korunur. Güncel yerel önizleme http://localhost:3001 adresindedir.
 
 Footer sırası kolonlar → copyright → dekoratif BakımX watermark’tır; çözüm kolonlarında kategori başlıkları ve sayfa bağlantıları bulunur. Çerez tercihleri mobilde sağ alttaki asistan ve yukarı çık düğmelerinin üstünde yer alır. Eski reklam/click-ID entegrasyonu taslağı bu teslimata dahil değildir.
 
