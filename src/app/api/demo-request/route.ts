@@ -5,6 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { normalizeSalesPhone } from "@/lib/sales/crm";
 import { rateLimit } from "@/lib/rate-limit";
+import { normalizeDemoRequestBody, validateDemoRequestBody, type DemoRequestBody } from "@/lib/demo-request/validate";
 
 /**
  * Eşik ve pencere BAK-195 öncesiyle birebir aynı; değişen yalnız sayacın nerede
@@ -21,43 +22,6 @@ function getClientIp(request: Request): string {
   return request.headers.get("x-real-ip") || "unknown"
 }
 
-interface DemoRequestBody {
-  name: string;
-  businessName: string;
-  phone: string;
-  city: string;
-  monthlyVehicles: string;
-  notes?: string;
-  attribution?: unknown;
-  targetingConsent?: boolean;
-}
-
-function validateBody(body: DemoRequestBody): Record<string, string> {
-  const errors: Record<string, string> = {};
-
-  if (!body.name || body.name.trim().length < 2) {
-    errors.name = "Ad Soyad en az 2 karakter olmalıdır";
-  }
-
-  if (!body.businessName || body.businessName.trim().length < 2) {
-    errors.businessName = "İşletme adı en az 2 karakter olmalıdır";
-  }
-
-  if (!body.phone || !/^[0-9+\-\s()]{7,15}$/.test(body.phone.trim())) {
-    errors.phone = "Geçerli bir telefon numarası girin";
-  }
-
-  if (!body.city || body.city.trim().length === 0) {
-    errors.city = "Şehir seçimi yapın";
-  }
-
-  if (!body.monthlyVehicles || body.monthlyVehicles.trim().length === 0) {
-    errors.monthlyVehicles = "Aylık araç adedi seçin";
-  }
-
-  return errors;
-}
-
 export async function POST(request: Request) {
   const ip = getClientIp(request)
   if (!(await rateLimit(`demo-request:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW)).allowed) {
@@ -72,7 +36,7 @@ export async function POST(request: Request) {
 
     const attribution = process.env.NEXT_PUBLIC_ANALYTICS_ENABLED === "true" && body.targetingConsent === true
       ? sanitizeDemoAttribution(body.attribution) : {};
-    const validationErrors = validateBody(body);
+    const validationErrors = validateDemoRequestBody(body);
 
     if (Object.keys(validationErrors).length > 0) {
       return NextResponse.json(
@@ -81,21 +45,15 @@ export async function POST(request: Request) {
       );
     }
 
+    const fields = normalizeDemoRequestBody(body);
+
     // Persist to database for admin console follow-up.
     try {
       // Public form kayıtları satış hunisinin de kaynağıdır. İki kayıt tek
       // transaction'da açılır; biri yokken diğeri kalamaz.
       const persist = async (tx: Prisma.TransactionClient) => {
         const request = await tx.demoRequest.create({
-          data: {
-            name: body.name.trim(),
-            businessName: body.businessName.trim(),
-            phone: body.phone.trim(),
-            city: body.city.trim(),
-            monthlyVehicles: body.monthlyVehicles.trim(),
-            notes: body.notes?.trim() || null,
-            clientIp: ip,
-          },
+          data: { ...fields, clientIp: ip },
         })
         await tx.salesLead.create({
           data: {
@@ -118,7 +76,7 @@ export async function POST(request: Request) {
       if (typeof prisma.$transaction === "function") await prisma.$transaction(persist)
       else {
         const request = await prisma.demoRequest.create({
-          data: { name: body.name.trim(), businessName: body.businessName.trim(), phone: body.phone.trim(), city: body.city.trim(), monthlyVehicles: body.monthlyVehicles.trim(), notes: body.notes?.trim() || null, clientIp: ip },
+          data: { ...fields, clientIp: ip },
         })
         // The test double predates the sales table; public request persistence
         // remains successful there while production always creates both rows.

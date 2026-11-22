@@ -13,14 +13,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 360, height: 800 
   test(`Lite acquisition navigation ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport)
     await page.emulateMedia({ reducedMotion: "reduce" })
-    await page.goto("/?utm_source=facebook&utm_medium=paid_social&utm_campaign=lite_launch")
-    const hero = page.locator('#hero')
-    const offer = hero.getByText("Lite 0 TL/ay")
-    await expect(offer).toBeVisible()
-    const box = await offer.boundingBox()
-    expect(box!.y + box!.height).toBeLessThan(viewport.height)
-    await hero.locator('a[href="/fiyatlar#lite"]').click()
-    await expect(page).toHaveURL(/\/fiyatlar#lite$/)
+    // #781: ana sayfa hero'su artık Lite teklifi göstermiyor (tek paket, #782); akış fiyat sayfasından başlar.
+    await page.goto("/fiyatlar?utm_source=facebook&utm_medium=paid_social&utm_campaign=lite_launch#lite")
+    await expect(page).toHaveURL(/\/fiyatlar/)
     const signup = page.getByRole("link", { name: "Ücretsiz hesap oluştur", exact: true }).filter({ visible: true })
     await expect(signup).toBeVisible()
     await expect(page.getByText("0 TL/ay", { exact: true }).filter({ visible: true })).toBeVisible()

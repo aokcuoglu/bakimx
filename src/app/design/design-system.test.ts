@@ -86,3 +86,20 @@ describe("design system radius contract", () => {
     expect(offenders).toEqual([])
   })
 })
+
+describe("pazarlama kiti vitrini (#781)", () => {
+  test("/design pazarlama kiti bölümünü ve tüm kit bileşenlerini gösterir", () => {
+    expect(read("src/app/design/page.tsx")).toContain('id="marketing"')
+    const showcase = read("src/app/design/marketing-kit.tsx")
+    for (const name of ["PillButton", "TextLink", "RoundIconButton", "Wordmark", "FeatureTile", "PhotoCard", "NumberedSteps", "CheckList", "PriceBlock", "FaqAccordion", "FloatingField", "SuccessState"]) {
+      expect(showcase).toContain(name)
+    }
+  })
+
+  test("tasarım belgesi pazarlama ölçeğini ve token'ları belgeler", () => {
+    const doc = read("docs/design-pattern-esantral.md")
+    expect(doc).toContain("## 7. Pazarlama ölçeği")
+    const css = read("src/app/globals.css")
+    for (const token of css.match(/--mk-[a-z0-9-]+(?=:)/g) ?? []) expect(doc).toContain(token)
+  })
+})

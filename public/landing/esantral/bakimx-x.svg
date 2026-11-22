@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="190" height="168"
+     viewBox="96 117 190 168"
+     role="img" aria-labelledby="title">
+  <title id="title">BakimX X (yazı içi, gölgesiz, sıkı kırpım)</title>
+  <defs>
+    <linearGradient id="blueGrad" x1="100" y1="283" x2="286" y2="117" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2B72EE"/>
+      <stop offset="0.52" stop-color="#4F86FF"/>
+      <stop offset="1" stop-color="#4A87FF"/>
+    </linearGradient>
+    <linearGradient id="navyArmGrad" x1="95" y1="128" x2="222" y2="239" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#16334F"/>
+      <stop offset="1" stop-color="#071A2D"/>
+    </linearGradient>
+  </defs>
+  <g>
+  <path d="M 96 130 L 97 134 L 144 184 L 144 185 L 153 194 L 153 195 L 168 210 L 176 205 L 182 204 L 183 203 L 187 203 L 188 202 L 199 202 L 200 203 L 205 203 L 206 204 L 214 206 L 220 210 L 193 181 L 193 180 L 179 166 L 179 165 L 170 156 L 170 155 L 154 139 L 154 138 L 146 132 L 138 129 L 97 129 Z" fill="url(#navyArmGrad)"/>
+  <path d="M 102 284 L 110 284 L 111 285 L 140 285 L 141 284 L 148 283 L 158 277 L 187 246 L 187 245 L 192 241 L 197 242 L 230 278 L 239 283 L 241 283 L 242 284 L 284 284 L 286 282 L 285 280 L 275 270 L 275 269 L 265 259 L 265 258 L 244 236 L 244 235 L 221 211 L 207 205 L 199 204 L 198 203 L 189 203 L 188 204 L 180 205 L 177 207 L 175 207 L 171 209 L 169 211 L 167 211 L 167 212 L 155 223 L 155 224 L 146 233 L 146 234 L 110 272 L 110 273 L 102 281 Z" fill="url(#blueGrad)"/>
+  <path d="M 284 117 L 246 117 L 245 118 L 241 118 L 240 119 L 235 120 L 230 123 L 222 131 L 222 132 L 208 146 L 208 147 L 199 157 L 222 182 L 222 183 L 224 185 L 226 185 L 269 139 L 269 138 L 282 125 L 282 124 L 286 120 Z" fill="url(#blueGrad)"/>
+  </g>
+</svg>

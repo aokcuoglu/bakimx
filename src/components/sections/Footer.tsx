@@ -94,8 +94,8 @@ const companyLinks: readonly FooterLink[] = [
 
 const resourceLinks: readonly FooterLink[] = [
   { label: "Blog", href: "/blog" },
-  { label: "Neden BakımX", href: "/#neden" },
-  { label: "SSS", href: "/#sss" },
+  { label: "Neden BakımX", href: "/#nasil" },
+  { label: "SSS", href: "/#sorular" },
   { label: "Kullanım Kılavuzu", href: "/kilavuz" },
   { label: "Araç Kabul Formu Rehberi", href: "/rehber/arac-kabul-formu" },
   {
