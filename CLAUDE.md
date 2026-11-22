@@ -33,10 +33,14 @@ BakimX is a Next.js auto repair workshop SaaS project.
 
 ## Issue delivery
 - When a user asks to implement or deliver a GitHub issue by number, use the
-  `bakimx-issue-delivery` project skill and follow
-  `docs/agent-workflows/issue-delivery.md` end to end unless the user narrows the
-  scope. That document is the single source for branching, PR closing keywords,
-  merge, and cleanup — do not restate its rules elsewhere.
+  `/ship` project skill (orchestrates the `bakimx-*` agents — see
+  `docs/harness/README.md`) and follow `docs/agent-workflows/issue-delivery.md`
+  end to end unless the user narrows the scope. That document is the single
+  source for branching, PR closing keywords, merge, and cleanup — do not restate
+  its rules elsewhere.
+- `origin/dev` is the only integration point: never merge a feature branch into
+  local `dev` or commit on it; after a merge, fast-forward the primary checkout so
+  localhost:3001 shows the result.
 - Never disturb unrelated local changes.
 
 ## After editing
