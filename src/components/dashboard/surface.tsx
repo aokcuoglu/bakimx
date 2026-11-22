@@ -207,25 +207,34 @@ export function formatShortDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })
 }
 
-/** İstatistik kutusu: kalın rakam üstte, gri etiket altta. */
+/**
+ * İstatistik kutusu: üstte etiket + ikon kutusu, altta rakam. `tone` verilirse
+ * (değer sıfırdan büyükken) rakam ve ikon kutusu o tona boyanır.
+ */
 export function DashStat({
   label,
   value,
   href,
+  icon,
   tone,
-  span = false,
 }: {
   label: string
   value: ReactNode
   href: string
+  icon?: ReactNode
   tone?: "warning" | "destructive"
-  /** true → dar ekranda satırın tamamını kaplar (uzun tutarlar için). */
-  span?: boolean
 }) {
   return (
-    <Link href={href} prefetch={false} className={styles.stat} data-span={span || undefined}>
+    <Link href={href} prefetch={false} className={styles.stat}>
+      <span className={styles.statHead}>
+        <span className={styles.statLabel}>{label}</span>
+        {icon != null && (
+          <span aria-hidden className={cn(styles.statIcon, toneClass[tone ?? "neutral"])}>
+            {icon}
+          </span>
+        )}
+      </span>
       <span className={styles.statValue} data-tone={tone}>{value}</span>
-      <span className={styles.statLabel}>{label}</span>
     </Link>
   )
 }

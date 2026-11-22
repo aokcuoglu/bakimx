@@ -22,7 +22,6 @@ import { getDueSoonReminders, getOverdueReminders } from "@/lib/reminders/querie
 import { getCriticalStockItems } from "@/lib/parts/queries"
 import { getCriticalStockSuppliers } from "@/lib/suppliers/queries"
 import { getManagerTechnicianOverview, getUnassignedOrderCount } from "@/lib/technician/queries"
-import { getDashboardWidgetData } from "@/lib/reports/queries"
 import { getRecommendations } from "@/lib/analytics/queries"
 import { KpiCards } from "@/components/dashboard/kpi-cards"
 import { CashWidget } from "@/components/dashboard/cash-widget"
@@ -39,7 +38,6 @@ import { StatusChart } from "@/components/dashboard/status-chart"
 import { TodayAppointments } from "@/components/dashboard/today-appointments"
 import { ReminderWidget } from "@/components/dashboard/reminder-widget"
 import { TechnicianStatusWidget } from "@/components/dashboard/technician-status"
-import { DashboardReportWidgets } from "@/components/dashboard/report-widgets"
 import { OperationalAlertsWidget } from "@/components/analytics/operational-alerts-widget"
 import { DashPanel, surface } from "@/components/dashboard/surface"
 
@@ -93,13 +91,12 @@ export default async function DashboardPage() {
         getUnassignedOrderCount(user.workshopId),
       ])
     : [[], 0]
-  const [weeklyOps, statusDist, reportWidgetData] = canReports
+  const [weeklyOps, statusDist] = canReports
     ? await Promise.all([
         getWeeklyOperations(user.workshopId),
         getWorkStatusDistribution(user.workshopId),
-        getDashboardWidgetData(user.workshopId),
       ])
-    : [null, null, null]
+    : [null, null]
   const needsFirstOrder = accessTier === "lite" && !(await prisma.serviceOrder.findFirst({ where: { workshopId: user.workshopId }, select: { id: true } }))
 
   const operationalAlerts = canAnalytics
@@ -145,9 +142,7 @@ export default async function DashboardPage() {
           </DashPanel>
         )}
 
-        <KpiCards stats={stats} showQuotes={canQuotes} showPhotoChecklist={canPhotos} />
-
-        {reportWidgetData && <DashboardReportWidgets data={reportWidgetData} />}
+        <KpiCards stats={stats} showQuotes={canQuotes} />
 
         <section aria-label="Operasyon takibi" className={styles.panels}>
           <AlertBanner stats={stats} showQuotes={canQuotes} showPhotoChecklist={canPhotos} />

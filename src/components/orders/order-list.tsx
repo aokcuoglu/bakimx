@@ -178,6 +178,7 @@ export function OrderList({
   activePayment,
   activeTechnician = "",
   activeInvoice = "",
+  activeDelivery = "",
   technicians = [],
   searchQuery = "",
   toolbar,
@@ -189,6 +190,7 @@ export function OrderList({
   activePayment: string
   activeTechnician?: string
   activeInvoice?: string
+  activeDelivery?: string
   technicians?: AssignableTechnician[]
   searchQuery?: string
   toolbar?: ReactNode
@@ -209,6 +211,7 @@ export function OrderList({
     activePayment ? `payment=${activePayment}` : "",
     activeTechnician ? `technician=${encodeURIComponent(activeTechnician)}` : "",
     activeInvoice ? `invoice=${encodeURIComponent(activeInvoice)}` : "",
+    activeDelivery ? `delivery=${encodeURIComponent(activeDelivery)}` : "",
   ].filter(Boolean)
 
   const searchParams = useSearchParams()

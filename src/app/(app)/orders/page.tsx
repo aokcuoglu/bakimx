@@ -13,7 +13,8 @@ import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { resolveTechnicianFilter, UNASSIGNED_TECHNICIAN } from "@/lib/orders/technician-filter"
 import { INVOICE_WITH, INVOICE_WITHOUT, isInvoiceMissing, resolveInvoiceFilter } from "@/lib/orders/invoice-filter"
-import { ACTIVE_ORDER_FILTER, ACTIVE_ORDER_STATUSES, resolveOrderStatusFilter } from "@/lib/orders/status-filter"
+import { ACTIVE_ORDER_FILTER, ACTIVE_ORDER_STATUSES, IN_SERVICE_ORDER_FILTER, resolveOrderStatusFilter } from "@/lib/orders/status-filter"
+import { DELIVERY_OVERDUE, DELIVERY_TODAY, resolveDeliveryFilter } from "@/lib/orders/delivery-filter"
 
 export const metadata = { title: "Araç Kabulleri" }
 
@@ -26,6 +27,7 @@ export default async function OrdersPage({
     payment?: string
     technician?: string
     invoice?: string
+    delivery?: string
   }>
 }) {
   const params = await searchParams
@@ -35,6 +37,9 @@ export default async function OrdersPage({
   const payment = (params.payment || "").trim()
   // Fatura filtresi statüden bağımsız, saf veri filtresi: "?invoice=with|without".
   const invoiceFilter = resolveInvoiceFilter(params.invoice)
+  // Teslim tarihi filtresi: "?delivery=today|overdue" — Genel Bakış'taki
+  // "Bugün teslim" / "Geciken teslim" kartları buraya gelir.
+  const deliveryFilter = resolveDeliveryFilter(params.delivery)
 
   const { user, workshop } = await getAppData()
   // Usta filtresi, atölyenin kendi usta listesine karşı doğrulanır; client'tan
@@ -47,13 +52,18 @@ export default async function OrdersPage({
 
   const [orders, statusGroups] = await Promise.all([
     prisma.serviceOrder.findMany({
+      // Filtre parçaları yayılmak yerine AND'le birleşir: birden çoğu aynı
+      // anahtarı kullanıyor (durum + teslim → `status`, fatura yok + arama →
+      // `OR`) ve yayınca sonraki öncekini sessizce ezerdi.
       where: {
         workshopId: user.workshopId,
-        ...statusFilter.where,
-        ...(payment ? { paymentStatus: payment as import("@prisma/client").PaymentStatus } : {}),
-        ...technicianFilter.where,
-        ...invoiceFilter.where,
-        ...(q
+        AND: [
+          statusFilter.where,
+          payment ? { paymentStatus: payment as import("@prisma/client").PaymentStatus } : {},
+          technicianFilter.where,
+          invoiceFilter.where,
+          deliveryFilter.where,
+          q
           ? {
               OR: [
                 { workOrderNo: { contains: q, mode: "insensitive" as const } },
@@ -63,7 +73,8 @@ export default async function OrdersPage({
                 { intakeForm: { vehicle: { customer: { phone: { contains: q } } } } },
               ],
             }
-          : {}),
+          : {},
+        ],
       },
       include: {
         intakeForm: { include: { customer: true, vehicle: { include: { customer: true } } } },
@@ -79,7 +90,7 @@ export default async function OrdersPage({
     }),
   ])
 
-  const hasAnyFilter = Boolean(q || status || payment || technicianFilter.value || invoiceFilter.value)
+  const hasAnyFilter = Boolean(q || status || payment || technicianFilter.value || invoiceFilter.value || deliveryFilter.value)
 
   const statusCountMap = new Map(statusGroups.map((g) => [g.status, g._count._all]))
   const kpis = {
@@ -149,6 +160,7 @@ export default async function OrdersPage({
           activePayment={payment}
           activeTechnician={technicianFilter.value}
           activeInvoice={invoiceFilter.value}
+          activeDelivery={deliveryFilter.value}
           technicians={technicians}
           searchQuery={q}
           toolbar={
@@ -182,6 +194,7 @@ export default async function OrdersPage({
                   placeholder="Tüm Durumlar"
                   options={[
                     { value: "", label: "Tüm Durumlar" },
+                    { value: IN_SERVICE_ORDER_FILTER, label: "Serviste" },
                     { value: ACTIVE_ORDER_FILTER, label: "Aktif" },
                     { value: "draft", label: "Taslak" },
                     { value: "waiting_approval", label: "Onay Bekliyor" },
@@ -231,6 +244,19 @@ export default async function OrdersPage({
                     { value: "", label: "Tüm Faturalar" },
                     { value: INVOICE_WITH, label: "Fatura kesildi" },
                     { value: INVOICE_WITHOUT, label: "Fatura kesilmedi" },
+                  ]}
+                />
+                <FilterSelect
+                  name="delivery"
+                  autoSubmit
+                  singleLine
+                  className="col-span-2 w-full sm:col-span-1 sm:w-auto"
+                  defaultValue={deliveryFilter.value}
+                  placeholder="Tüm Teslimler"
+                  options={[
+                    { value: "", label: "Tüm Teslimler" },
+                    { value: DELIVERY_TODAY, label: "Bugün teslim" },
+                    { value: DELIVERY_OVERDUE, label: "Geciken teslim" },
                   ]}
                 />
                 </div>
