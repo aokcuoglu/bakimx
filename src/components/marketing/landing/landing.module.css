@@ -1,0 +1,630 @@
+/* Ana sayfa bölümleri — e-santral.com/bakimx (docs/design/esantral-reference/style.css).
+   Kural adları yorumlarda kaynaktaki sınıflarla eşlenir; renkler yalnız --mk-*. */
+
+/* body */
+.page {
+  background: var(--mk-surface);
+  color: var(--mk-ink);
+  font: 400 17px/1.5 var(--font-sans);
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  /* clip (hidden değil): kaydırma kabı oluşturmaz, yapışkan üst bant çalışır */
+  overflow-x: clip;
+}
+/* Sıfırlamalar sıfır özgüllükte: kit sınıflarının (.priceSub, .textLink…) kendi
+   margin/renk değerlerini ezmemeli. */
+:where(.page) :where(h1, h2, h3, p) {
+  margin: 0;
+}
+:where(.page) :where(a) {
+  color: inherit;
+  text-decoration: none;
+}
+:global(html):has(.page) {
+  scroll-behavior: smooth;
+}
+.wrap {
+  width: min(1080px, 100% - 48px);
+  margin: 0 auto;
+}
+
+/* Menü: .top */
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 68px;
+  background: color-mix(in srgb, var(--mk-surface) 85%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgb(0 0 0 / 0.08);
+}
+.topIn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  width: min(1240px, 100% - 48px);
+  margin: 0 auto;
+  font-size: 15px;
+  font-weight: 500;
+}
+.nav {
+  display: flex;
+  gap: 34px;
+}
+.nav a:hover,
+.login:hover {
+  color: var(--mk-link);
+}
+.acts {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+/* İlk ekran: .d-hero
+   Kaynaktan tek sapma: --box en az 560px — kısa/yatay ekranda --h negatif olup
+   telefon görseli kayboluyordu. */
+.hero {
+  --box: max(560px, calc(100svh - 68px));
+  --text: 380px;
+  --h: calc((var(--box) - var(--text)) / 0.67);
+  position: relative;
+  width: 100%;
+  height: var(--box);
+  margin: 0;
+  background: var(--mk-hero);
+  overflow: hidden;
+  text-align: center;
+}
+.heroIn {
+  position: relative;
+  z-index: 3;
+  padding: clamp(24px, 5.8svh, 64px) 20px 0;
+}
+.heroTitle {
+  font-size: var(--mk-h1);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.04;
+}
+.heroSub {
+  margin-top: clamp(8px, 1.5svh, 16px);
+  font-size: clamp(16px, min(1.7vw, 2.2svh), 23px);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--mk-gray-hero);
+}
+.cta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 26px;
+  margin-top: clamp(14px, 2.2svh, 24px);
+  font-size: 17px;
+}
+.hand {
+  --s: 0.7;
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--h) * -0.18);
+  height: var(--h);
+  aspect-ratio: 1672 / 941;
+  transform: translateX(-50%);
+}
+.handImg {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.handScreen {
+  position: absolute;
+  z-index: 1;
+  left: 42.7%;
+  top: 14.6%;
+  width: 14.6%;
+  height: 54.9%;
+  overflow: hidden;
+  border-radius: 14% / 6.5%;
+  background: var(--mk-app-bg);
+}
+
+/* Telefon ekranı maketi: .d-screen ve altı (350×760, --s ile ölçeklenir) */
+.mScreen {
+  position: relative;
+  width: 350px;
+  height: 760px;
+  padding: 46px 18px 0;
+  background: var(--mk-app-bg);
+  text-align: left;
+  overflow: hidden;
+  transform: scale(var(--s));
+  transform-origin: 0 0;
+}
+.mScreen::before {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 96px;
+  height: 28px;
+  border-radius: 99px;
+  background: var(--mk-ink);
+}
+.mAppbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.mLogo {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.mLogo img {
+  width: auto;
+  height: 0.71em;
+  margin-left: 0.02em;
+  vertical-align: baseline;
+}
+.mAvatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--mk-avatar-bg);
+  color: var(--mk-link);
+  font-size: 11px;
+  font-weight: 700;
+}
+.mHead span {
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--mk-gray-3);
+}
+.mTitle {
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.mStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+.mStats div {
+  padding: 10px;
+  border-radius: 14px;
+  background: var(--mk-surface);
+}
+.mStats b {
+  display: block;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+.mStats span {
+  font-size: 11px;
+  color: var(--mk-gray-3);
+}
+.mList {
+  margin-top: 14px;
+  border-radius: 16px;
+  background: var(--mk-surface);
+}
+.mRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--mk-row-line);
+  font-size: 13px;
+}
+.mRow:first-child {
+  border-top: 0;
+}
+.mPlate {
+  flex: none;
+  padding: 3px 5px;
+  border: 1.5px solid var(--mk-ink);
+  border-radius: 5px;
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.mRow p {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+.mRow small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--mk-gray-3);
+  font-size: 11.5px;
+  font-weight: 400;
+}
+.mPill {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--mk-info-bg);
+  color: var(--mk-link);
+}
+.mPillWarn {
+  background: var(--mk-warn-bg);
+  color: var(--mk-warn);
+}
+.mPillOk {
+  background: var(--mk-success-bg);
+  color: var(--mk-success);
+}
+.mSec {
+  margin: 14px 0 6px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mk-gray-3);
+}
+.mNote {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--mk-surface);
+}
+.mNote p {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.mNote b {
+  font-weight: 600;
+}
+.mNote small {
+  display: block;
+  color: var(--mk-gray-3);
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mWa,
+.mCal,
+.mStock {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+}
+.mWa {
+  border-radius: 50%;
+  background: var(--mk-whatsapp);
+}
+.mWa svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--mk-surface);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mStock {
+  border-radius: 10px;
+  background: var(--mk-warn-bg);
+  color: var(--mk-warn);
+  font-size: 16px;
+  font-weight: 800;
+}
+.mCal {
+  border-radius: 10px;
+  background: var(--mk-info-bg);
+  color: var(--mk-link);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.mTabs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 10px 6px 50px;
+  background: color-mix(in srgb, var(--mk-surface) 92%, transparent);
+  border-top: 1px solid var(--mk-tab-line);
+}
+.mTabs::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--mk-ink);
+}
+.mTabs span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--mk-tab-idle);
+}
+.mTabs span.mTabOn {
+  color: var(--mk-blue);
+}
+.mTabs svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Dükkanda bir gün: .d-strip */
+.strip {
+  width: min(1240px, 100% - 32px);
+  margin: 110px auto 0;
+}
+
+/* Bölümler: .sec / .title */
+.sec {
+  padding: 110px 0 0;
+}
+.title {
+  margin-bottom: 36px;
+  font-size: var(--mk-h2);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+
+/* Diğer özellikler: .tiles */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* Geçiş: .move */
+.move {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 56px;
+  align-items: center;
+  padding: 64px 56px;
+  border-radius: var(--mk-r-box);
+  background: var(--mk-soft);
+}
+.moveTitle {
+  font-size: clamp(32px, 3.6vw, 50px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+}
+.dim {
+  display: block;
+  margin-top: 0.12em;
+  font-size: 0.72em;
+  letter-spacing: -0.03em;
+  color: var(--mk-gray);
+}
+.moveText {
+  margin-top: 18px;
+  font-size: 19px;
+  color: var(--mk-gray);
+  max-width: 38ch;
+}
+.moveCta {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  margin-top: 28px;
+  font-size: 17px;
+}
+
+/* Sorular */
+.faqWrap {
+  max-width: 780px;
+}
+
+/* Son çağrı: .final */
+.final {
+  margin: 110px auto 0;
+  padding: 0 20px 110px;
+  text-align: center;
+}
+.finalTitle {
+  font-size: clamp(36px, 4.4vw, 60px);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+
+/* Alt bilgi: .foot */
+.foot {
+  padding: 22px 0 34px;
+  background: var(--mk-soft);
+  font-size: 13px;
+  color: var(--mk-gray);
+}
+.footIn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-top: 14px;
+}
+.footNav {
+  display: flex;
+  gap: 22px;
+}
+.footLegal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  padding-top: 12px;
+}
+/* Çerez tercihleri düğmesi alt banttaki bağlantılarla aynı görünür. */
+.cookieButton {
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+.cookieButton:hover {
+  background: none;
+}
+.footNav a:hover,
+.footLegal a:hover,
+.cookieButton:hover {
+  color: var(--mk-ink);
+}
+
+.page a:focus-visible {
+  outline: none;
+  border-radius: 4px;
+  box-shadow: var(--mk-focus-ring);
+}
+
+/* Tablet */
+@media (max-width: 960px) {
+  .nav {
+    display: none;
+  }
+  .tiles {
+    grid-template-columns: 1fr 1fr;
+  }
+  .move {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+/* Telefon */
+@media (max-width: 640px) {
+  .page {
+    font-size: 16px;
+  }
+  .wrap,
+  .topIn {
+    width: calc(100% - 32px);
+  }
+  .top {
+    height: 58px;
+  }
+  .login {
+    display: none;
+  }
+  .heroIn {
+    padding-top: 40px;
+  }
+  .heroTitle {
+    font-size: min(34px, 8.4vw);
+  }
+  .heroSub {
+    font-size: 17px;
+  }
+  .cta {
+    gap: 18px;
+    font-size: 16px;
+  }
+  .hero {
+    --box: max(560px, calc(100svh - 58px));
+    --text: 360px;
+  }
+  .strip {
+    width: 100%;
+    margin-top: 72px;
+  }
+  .sec {
+    padding-top: 72px;
+  }
+  .title {
+    font-size: 28px;
+    margin-bottom: 24px;
+  }
+  .tiles {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .move {
+    gap: 28px;
+    padding: 40px 22px;
+    border-radius: 24px;
+  }
+  .moveTitle {
+    font-size: 30px;
+  }
+  .moveText {
+    font-size: 17px;
+  }
+  .moveCta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    text-align: center;
+  }
+  .final {
+    margin-top: 72px;
+    padding-bottom: 72px;
+  }
+  .finalTitle {
+    font-size: 32px;
+  }
+  .finalCta {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .finalCta > :first-child {
+    width: 100%;
+    max-width: 320px;
+  }
+  .footIn {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .footNav {
+    flex-wrap: wrap;
+    gap: 10px 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(html):has(.page) {
+    scroll-behavior: auto;
+  }
+}

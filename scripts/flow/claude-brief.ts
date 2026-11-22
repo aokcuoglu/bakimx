@@ -7,8 +7,9 @@ import { resolve } from "node:path"
 
 const root = process.env.CLAUDE_PROJECT_DIR ?? process.cwd()
 
+// trimEnd, not trim: `git status --porcelain` lines start with a significant space (" M path").
 function run(args: string[], cwd = root, timeout = 8000, cmd = "git"): string {
-  return execFileSync(cmd, args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout }).trim()
+  return execFileSync(cmd, args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout }).trimEnd()
 }
 function attempt<T>(fn: () => T): T | null {
   try {

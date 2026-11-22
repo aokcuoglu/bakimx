@@ -10,9 +10,9 @@ import { scrollToPageTop } from "@/lib/scroll-to-page-top";
 
 const navItems = [
   { label: "Özellikler", href: "/#ozellikler" },
-  { label: "Neden BakımX?", href: "/#neden" },
+  { label: "Neden BakımX?", href: "/#nasil" },
   { label: "Fiyatlar", href: "/fiyatlar" },
-  { label: "Sorularınız", href: "/#sss" },
+  { label: "Sorularınız", href: "/#sorular" },
 ];
 
 export function Header() {

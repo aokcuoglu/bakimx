@@ -24,6 +24,7 @@ import type { SalesPlaceSelection } from "@/lib/sales/google-place"
 import { canonicalizeTurkishCity } from "@/lib/tr-cities"
 import { canonicalizeTurkishDistrict } from "@/lib/tr-districts"
 import { salesLeadAdminHref, salesLeadAnchorId, workshopAdminHref } from "@/lib/sales/links"
+import { salesLeadDisplayName } from "@/lib/sales/crm"
 import { SALES_DISCOUNT_FUNDING_LABELS, type SalesDiscountFunding } from "@/lib/sales/discount-policy"
 import { formatMinor } from "@/lib/billing/pricing"
 import type { SalesAdvisorPerformance } from "@/lib/sales/performance"
@@ -434,7 +435,7 @@ export function SalesConsole({
                     {String(index + 1).padStart(2, "0")}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium text-foreground">{lead.businessName}</span>
+                    <span className="block truncate font-medium text-foreground">{salesLeadDisplayName(lead)}</span>
                     <span className="mt-0.5 block truncate text-xs font-normal text-muted-foreground">
                       {lead.nextActionAt ? formatDateTime(lead.nextActionAt) : statusLabel}
                     </span>
@@ -788,7 +789,7 @@ function LeadCard({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-foreground">{lead.businessName}</h3>
+            <h3 className="font-semibold text-foreground">{salesLeadDisplayName(lead)}</h3>
             <Badge variant="outline" className={`text-[11px] ${statusColor}`}>{statusLabel}</Badge>
             <Badge
               variant="outline"
@@ -1109,7 +1110,7 @@ function DiscountCodeSection({
                     <SelectContent>
                       <SelectItem value="">Portföy geneli</SelectItem>
                       {eligibleLeads.map((lead) => (
-                        <SelectItem key={lead.id} value={lead.id}>{lead.businessName}</SelectItem>
+                        <SelectItem key={lead.id} value={lead.id}>{salesLeadDisplayName(lead)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

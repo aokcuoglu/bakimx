@@ -10,6 +10,9 @@ type KpiItem = {
   value: number
   href: string
   icon: ComponentType
+  /** Kartın kimlik rengi — ikon dairesi her zaman bu renktedir. */
+  accent: "info" | "success" | "warning" | "destructive"
+  /** Uyarı anlamı: değer sıfırdan büyükken rakam da bu tona boyanır. */
   tone?: "warning" | "destructive"
 }
 
@@ -29,18 +32,19 @@ export function KpiCards({
   showQuotes: boolean
 }) {
   const items: KpiItem[] = [
-    { label: "Serviste", value: stats.activeOrders, href: `/orders?status=${IN_SERVICE_ORDER_FILTER}`, icon: Wrench },
-    { label: "Bugün teslim", value: stats.todayDeliveries, href: `/orders?delivery=${DELIVERY_TODAY}`, icon: CalendarCheck },
+    { label: "Serviste", value: stats.activeOrders, href: `/orders?status=${IN_SERVICE_ORDER_FILTER}`, icon: Wrench, accent: "info" },
+    { label: "Bugün teslim", value: stats.todayDeliveries, href: `/orders?delivery=${DELIVERY_TODAY}`, icon: CalendarCheck, accent: "success" },
     ...(showQuotes
       ? [{
           label: "Onay bekleyen",
           value: stats.waitingApprovals,
           href: "/orders?status=waiting_approval",
           icon: MessageCircle,
+          accent: "warning" as const,
           tone: "warning" as const,
         }]
       : []),
-    { label: "Geciken teslim", value: stats.overdueDeliveries, href: `/orders?delivery=${DELIVERY_OVERDUE}`, icon: AlertTriangle, tone: "destructive" },
+    { label: "Geciken teslim", value: stats.overdueDeliveries, href: `/orders?delivery=${DELIVERY_OVERDUE}`, icon: AlertTriangle, accent: "destructive", tone: "destructive" },
   ]
 
   return (
@@ -52,6 +56,7 @@ export function KpiCards({
           value={item.value}
           href={item.href}
           icon={<Icon />}
+          accent={item.accent}
           tone={item.value > 0 ? item.tone : undefined}
         />
       ))}

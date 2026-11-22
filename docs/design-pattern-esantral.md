@@ -193,3 +193,57 @@ varyantı, hap varyantları, `PlateBadge`) orada kurup diğer ekranlara yaymak.
   kartı. Üst bar ve mobil sekme çubuğu buzlu yarı saydam (`blur(20px)`), seçili
   sekme mavi. Ayarlar sidebar'ı kapsam dışında (kendi modülünü korur).
 - Global token'lar değişmedi; onaydan sonra taşınacak.
+
+## 7. Pazarlama ölçeği (#781, ana sayfa)
+
+Ana sayfa (`/`) e-santral.com/bakimx'in birebir kopyasıdır; kaynak kopyası
+`docs/design/esantral-reference/`, tasarım `docs/superpowers/specs/2026-11-22-esantral-landing-design.md`.
+Pazarlama yüzeyi **yalnız açık temadır** — token'lar `.dark` bloğunda tanımlanmaz
+(`src/components/marketing/kit/tokens.test.ts` bekçiler ve metin/zemin çiftlerini
+AA'ya göre ölçer). Uygulama içi ölçek (§2) ile karıştırma: pazarlama 76px H1,
+110px bölüm boşluğu kullanır.
+
+### Token'lar (`globals.css` `:root`, `--mk-*`)
+
+| Token | Değer | Rol |
+|---|---|---|
+| `--mk-ink` | `#1d1d1f` | birincil metin |
+| `--mk-gray` | `#6e6e73` | ikincil metin (beyaz 5.07, `--mk-soft` 4.66) |
+| `--mk-gray-hero` | `#646469` | hero alt metni — kaynaktaki `#6e6e73` `#e7e9ed` üzerinde 4.17:1 idi, bu 4.84:1 |
+| `--mk-gray-3` | `#86868b` | yalnız maket metni ve alan çerçevesi (metin olarak AA altı) |
+| `--mk-surface` | `#ffffff` | sayfa, kart |
+| `--mk-soft` | `#f5f5f7` | gri kutular, alt bant |
+| `--mk-hero` | `#e7e9ed` | hero zemini |
+| `--mk-line` | `#d2d2d7` | ayırıcı çizgi |
+| `--mk-link` | `#0066cc` | metin bağlantısı |
+| `--mk-blue` | `#0071e3` | birincil eylem dolgusu |
+| `--mk-blue-hover` | `#0066cc` | birincil hover — kaynaktaki `#0077ed` beyaz metinle 4.32:1 idi |
+| `--mk-neutral` / `--mk-neutral-hover` | `#e8e8ed` / `#dcdce1` | nötr yuvarlak düğme |
+| `--mk-focus-ring` | `0 0 0 4px rgb(0 113 227 / .18)` | odak halkası |
+| `--mk-error` / `--mk-error-text` / `--mk-error-ring` | `#e30000` / `#d70015` / `0 0 0 4px rgb(227 0 0 / .1)` | hatalı alan |
+| `--mk-success-bg` / `--mk-success` | `#e6f5ea` / `#1b7a3d` | başarı durumu |
+| `--mk-info-bg` / `--mk-warn-bg` / `--mk-warn` | `#e8f0fe` / `#fff4e0` / `#a05a00` | maket durum hapları |
+| `--mk-app-bg` / `--mk-row-line` / `--mk-tab-line` / `--mk-tab-idle` / `--mk-avatar-bg` / `--mk-whatsapp` | `#f2f2f7` / `#f0f0f3` / `#e5e5ea` / `#8e8e93` / `#dfe7ff` / `#25d366` | telefon maketi |
+| `--mk-r-input` / `--mk-r-card` / `--mk-r-tile` / `--mk-r-box` / `--mk-r-modal` | 12 / 24 / 28 / 32 / 30px | köşeler (telefonda kutu 22, büyük kutu 24) |
+| `--mk-h1` / `--mk-h2` | `clamp(32px, min(5.4vw, 7svh), 76px)` / `clamp(32px, 3.4vw, 48px)` | başlık ölçeği (telefonda H1 `min(34px, 8.4vw)`, H2 28px) |
+
+### Ölçüler
+
+- **Hap düğme:** md 44px / `0 22px` / 17px-500; lg 50px / `0 28px`; üst bant `10px 18px` 15px-600
+  (telefonda `8px 14px` 14px). Gölge yok, hover koyulaşır, odakta `--mk-focus-ring`.
+- **Metin bağlantısı:** `--mk-link`, sonunda "›", hover'da alt çizgi.
+- **Yuvarlak düğme:** 44px (kart okları), 32px (pencere kapat), `--mk-neutral`.
+- **Gövde:** 17px / 1.5 / −0.01em (telefonda 16px), sistem yazı yığını.
+- **Bölüm boşluğu:** 110px (telefonda 72px); içerik genişliği `min(1080px, 100% - 48px)`.
+- **Yüzen etiketli alan:** 58px, 12px köşe, `--mk-gray-3` çerçeve; etiket 17px → odakta/doluyken 12px.
+- **Pencere:** 500 / 460px, 30px köşe; telefonda alttan sheet (`26px 26px 0 0`).
+
+### Bileşenler (`src/components/marketing/kit/`)
+
+`PillButton`, `TextLink`, `RoundIconButton`, `Wordmark`, `FeatureTile`, `PhotoCard`,
+`PhotoRail`, `NumberedSteps`, `CheckList`, `PriceBlock`, `FaqAccordion`, `FloatingField`,
+`MarketingDialog` (+ `DialogHeading`, `DialogLead`), `SuccessState`; ölçüm için `CtaTrack` /
+`trackCta`. Canlı vitrin: `/design#marketing`. Hepsi shadcn/Radix üstüne kurulu; CSS
+modülleri katmansız olduğu için bileşenlerin Tailwind sınıflarını ezer. Sayfa düzeyi
+sıfırlamalar **sıfır özgüllükte** yazılır (`:where(.page) :where(p)`), yoksa kit
+sınıflarının margin/rengini dosya sırasına göre ezer (görsel QA'da yakalandı).

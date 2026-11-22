@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db"
 import { getSalesAccess, salesLeadScope } from "@/lib/sales/access"
 import { istanbulDayBounds } from "@/lib/sales/time"
 import { salesLeadAdminHref, salesAdvisorDisplayName } from "@/lib/sales/links"
+import { salesLeadDisplayName } from "@/lib/sales/crm"
 import { salesLeadFilterSchema } from "@/lib/validations/sales"
 import { SalesLeadFilters, type SalesLeadFilterValues } from "@/components/sales/sales-lead-filters"
 import { Badge } from "@/components/ui/badge"
@@ -148,7 +149,7 @@ export default async function SalesLeadsPage({
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <Button asChild variant="link" className="h-auto justify-start p-0 text-base font-semibold">
-                    <Link href={salesLeadAdminHref(lead.id)}>{lead.businessName}</Link>
+                    <Link href={salesLeadAdminHref(lead.id)}>{salesLeadDisplayName(lead)}</Link>
                   </Button>
                   <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><UserRound className="size-3.5" />{lead.contactName}</p>
                 </div>

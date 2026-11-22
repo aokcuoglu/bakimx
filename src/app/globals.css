@@ -731,6 +731,49 @@
   --sidebar-accent-foreground: #1d1d1f;
   --sidebar-border: #e5e5ea;
   --sidebar-ring: oklch(0.54 0.20 258);
+
+  /* Pazarlama kiti (#781) — e-santral.com/bakimx style.css?v=12 değerleri
+     (docs/design/esantral-reference/style.css). Pazarlama yüzeyi kaynaktaki gibi
+     YALNIZ AÇIK temadır: bu değişkenler .dark bloğunda bilinçli olarak yeniden
+     tanımlanmaz (src/components/marketing/kit/tokens.test.ts bekçiler).
+     Kaynaktan iki sapma, ikisi de WCAG AA için:
+     - --mk-gray-hero: hero alt metni kaynakta #6e6e73/#e7e9ed = 4.17:1 → 4.84:1.
+     - --mk-blue-hover: kaynakta #0077ed, beyaz metinle 4.32:1 → #0066cc 5.57:1. */
+  --mk-ink: #1d1d1f;
+  --mk-gray: #6e6e73;
+  --mk-gray-hero: #646469;
+  --mk-gray-3: #86868b;
+  --mk-surface: #ffffff;
+  --mk-soft: #f5f5f7;
+  --mk-hero: #e7e9ed;
+  --mk-line: #d2d2d7;
+  --mk-link: #0066cc;
+  --mk-blue: #0071e3;
+  --mk-blue-hover: #0066cc;
+  --mk-neutral: #e8e8ed;
+  --mk-neutral-hover: #dcdce1;
+  --mk-focus-ring: 0 0 0 4px rgb(0 113 227 / 0.18);
+  --mk-error: #e30000;
+  --mk-error-text: #d70015;
+  --mk-error-ring: 0 0 0 4px rgb(227 0 0 / 0.1);
+  --mk-success-bg: #e6f5ea;
+  --mk-success: #1b7a3d;
+  --mk-info-bg: #e8f0fe;
+  --mk-warn-bg: #fff4e0;
+  --mk-warn: #a05a00;
+  --mk-app-bg: #f2f2f7;
+  --mk-row-line: #f0f0f3;
+  --mk-tab-line: #e5e5ea;
+  --mk-tab-idle: #8e8e93;
+  --mk-avatar-bg: #dfe7ff;
+  --mk-whatsapp: #25d366;
+  --mk-r-input: 12px;
+  --mk-r-card: 24px;
+  --mk-r-tile: 28px;
+  --mk-r-box: 32px;
+  --mk-r-modal: 30px;
+  --mk-h1: clamp(32px, min(5.4vw, 7svh), 76px);
+  --mk-h2: clamp(32px, 3.4vw, 48px);
 }
 
 /* Masaüstü veri ekranları kompakt (kullanıcı kararı 22-11). */

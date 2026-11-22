@@ -345,3 +345,8 @@ export async function countVehiclesWithServiceDue(
     },
   })
 }
+
+/** Gecikmiş bakım hatırlatması sayısı (Genel Bakış → Dikkat gerektiren işler). */
+export async function countOverdueReminders(workshopId: string): Promise<number> {
+  return prisma.maintenanceReminder.count({ where: { workshopId, status: "overdue" } })
+}
