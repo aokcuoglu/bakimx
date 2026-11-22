@@ -38,7 +38,7 @@
 }
 
 .heroTitle {
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 700;
   line-height: 1.08;
   letter-spacing: -0.035em;
@@ -73,7 +73,7 @@
   }
 
   .heroTitle {
-    font-size: 48px;
+    font-size: 36px;
   }
 
   .heroSub {
@@ -87,6 +87,9 @@
 }
 
 /* ── İstatistik kutuları ────────────────────────────────── */
+/* Etiket + ikon üstte, rakam altta. Telefonda 2×2; kutu sayısı kadar kolon
+   konteyner 640px'i geçince açılır. Üçlü dizide telefonda son kutu satırı
+   kaplar, 480px'ten sonra üçü yan yana durur. */
 .stats {
   container-type: inline-size;
 }
@@ -97,27 +100,34 @@
   gap: 10px;
 }
 
-@container (min-width: 340px) {
-  .statGrid {
+@container (max-width: 479px) {
+  .statGrid[data-count="3"] > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@container (min-width: 480px) {
+  .statGrid[data-count="3"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@container (min-width: 900px) {
-  .statGrid[data-count="6"],
-  .statGrid[data-count="5"] {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+@container (min-width: 640px) {
+  .statGrid {
+    gap: 14px;
   }
 
-  .statGrid {
-    gap: 16px;
+  .statGrid[data-count="4"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 .stat {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   min-width: 0;
-  padding: 14px 16px;
+  padding: 14px 16px 16px;
   border-radius: 18px;
   background: var(--card);
   outline: none;
@@ -132,30 +142,49 @@
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent);
 }
 
+.statHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.statLabel {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: -0.01em;
+  color: var(--muted-foreground);
+  overflow-wrap: anywhere;
+}
+
+.statIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+
+.statIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
 .statValue {
   display: block;
+  overflow: hidden;
   font-size: 28px;
   font-weight: 700;
-  line-height: 34px;
+  line-height: 32px;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
-  color: var(--foreground);
-}
-
-.statValue {
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
-}
-
-@container (max-width: 559px) {
-  .statGrid[data-count="3"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .stat[data-span] {
-    grid-column: 1 / -1;
-  }
+  color: var(--foreground);
 }
 
 .statValue[data-tone="warning"] {
@@ -166,31 +195,21 @@
   color: var(--destructive-strong);
 }
 
-.statLabel {
-  display: block;
-  margin-top: 2px;
-  font-size: 14px;
-  line-height: 18px;
-  color: var(--muted-foreground);
-  overflow-wrap: anywhere;
-}
-
 @media (min-width: 640px) {
   .stat {
-    padding: 20px 22px;
-    border-radius: 24px;
-  }
-
-  .statValue {
-    font-size: 36px;
-    line-height: 42px;
-    letter-spacing: -0.04em;
+    gap: 16px;
+    padding: 18px 20px 20px;
+    border-radius: 20px;
   }
 
   .statLabel {
-    margin-top: 4px;
-    font-size: 17px;
-    line-height: 22px;
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  .statValue {
+    font-size: 32px;
+    line-height: 36px;
   }
 }
 

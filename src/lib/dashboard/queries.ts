@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db"
 import { quantityToNumber } from "@/lib/orders/quantity"
 import { applyTaxBps, addKurus } from "@/lib/money"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { IN_SERVICE_ORDER_STATUSES } from "@/lib/orders/status-filter"
+import { DELIVERY_OVERDUE, DELIVERY_TODAY, resolveDeliveryFilter } from "@/lib/orders/delivery-filter"
 
 type OStat = import("@prisma/client").OrderStatus
 type IStat = import("@prisma/client").IntakeStatus
@@ -34,7 +36,6 @@ export interface DashboardStats {
   waitingApprovals: number
   missingPhotoIntakes: number
   overdueDeliveries: number
-  lastWeekOrders: number
   todayCollected: number
   openReceivable: number
   partialPayments: number
@@ -49,41 +50,31 @@ export async function getDashboardStats(
   }
 ): Promise<DashboardStats> {
   const today = todayStart()
-  const tomorrow = new Date(today.getTime() + 86400000)
-  const sevenDaysAgo = daysAgo(7)
+  // KPI kartları tıklanınca /orders'ı aynı filtreyle açar; sayım ile liste
+  // aynı tanımdan beslensin diye where parçaları liste filtresinden alınır.
+  const todayDeliveryWhere = resolveDeliveryFilter(DELIVERY_TODAY).where
+  const overdueDeliveryWhere = resolveDeliveryFilter(DELIVERY_OVERDUE).where
 
   const [
     activeOrders,
     todayDeliveries,
     waitingApprovals,
     overdueDeliveries,
-    lastWeekOrders,
     allActiveIntakes,
     todayCollections,
     activeReceivableOrders,
   ] = await Promise.all([
     prisma.serviceOrder.count({
-      where: { workshopId, status: { notIn: NOT_DELIVERED_CANCELLED } },
+      where: { workshopId, status: { in: IN_SERVICE_ORDER_STATUSES } },
     }),
     prisma.serviceOrder.count({
-      where: {
-        workshopId,
-        estimatedDeliveryAt: { gte: today, lt: tomorrow },
-        status: { notIn: NOT_DELIVERED_CANCELLED },
-      },
+      where: { workshopId, ...todayDeliveryWhere },
     }),
     access.quotes
       ? prisma.serviceOrder.count({ where: { workshopId, status: "waiting_approval" } })
       : Promise.resolve(0),
     prisma.serviceOrder.count({
-      where: {
-        workshopId,
-        estimatedDeliveryAt: { lt: today },
-        status: { notIn: NOT_DELIVERED_CANCELLED },
-      },
-    }),
-    prisma.serviceOrder.count({
-      where: { workshopId, createdAt: { gte: sevenDaysAgo } },
+      where: { workshopId, ...overdueDeliveryWhere },
     }),
     access.photoChecklist
       ? prisma.vehicleIntakeForm.findMany({
@@ -166,7 +157,6 @@ export async function getDashboardStats(
     waitingApprovals,
     missingPhotoIntakes,
     overdueDeliveries,
-    lastWeekOrders,
     todayCollected,
     openReceivable,
     partialPayments,

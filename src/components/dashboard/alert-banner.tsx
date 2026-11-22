@@ -2,6 +2,7 @@ import Link from "next/link"
 import type { DashboardStats } from "@/lib/dashboard/queries"
 import { AlertTriangle, Camera, MessageCircle, Check, ChevronRight } from "lucide-react"
 import { DashPanel, DashTile, surface, type Tone } from "@/components/dashboard/surface"
+import { DELIVERY_OVERDUE } from "@/lib/orders/delivery-filter"
 
 interface AlertItem {
   title: string
@@ -26,7 +27,7 @@ export function AlertBanner({
     alerts.push({
       title: `${stats.overdueDeliveries} araç kabulünün teslimi gecikti`,
       sub: "Tahmini teslim tarihi geçti",
-      href: "/orders?status=active",
+      href: `/orders?delivery=${DELIVERY_OVERDUE}`,
       icon: AlertTriangle,
       tone: "destructive",
     })
