@@ -666,6 +666,15 @@ a.row:focus-visible {
   font-size: 17px;
 }
 
+/* Küçük plaka (DashPlate size="sm") — tablo satırlarında metinle aynı ölçekte. */
+.plate[data-size="sm"] {
+  height: 22px;
+  padding: 0 6px;
+  border-width: 1.25px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+
 /* İsteğe bağlı mavi ülke şeridi (DashPlate country). Yazısız bant; çerçevenin
    içinde sol kenara yapışık durur, plaka metni yine iç boşlukla başlar. */
 .plate[data-country] {
@@ -679,6 +688,11 @@ a.row:focus-visible {
   width: 8px;
   margin-right: 7px;
   background: var(--primary);
+}
+
+.plate[data-size="sm"] .plateCountry {
+  width: 6px;
+  margin-right: 6px;
 }
 
 .plate[data-size="lg"] .plateCountry {

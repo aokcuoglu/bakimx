@@ -1,8 +1,8 @@
 "use client"
 
-import { useMemo, type ReactNode } from "react"
+import { useMemo, type MouseEvent, type ReactNode } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { orderDetailHref, readOrderListState, type OrderListState } from "@/lib/orders/list-state"
 import type { Updater } from "@tanstack/react-table"
 import { CarFront, ChevronDown, CircleCheck, CircleX, FileWarning, MessageCircle, Wrench } from "lucide-react"
@@ -122,6 +122,33 @@ function listHrefOf(table: { options: { meta?: unknown } }): string {
   return (table.options.meta as { listHref?: string } | undefined)?.listHref ?? "/orders"
 }
 
+/**
+ * Satır tıklaması bu öğelerin içinden gelirse gezinmez: iş no bağlantısı
+ * kendi (yerel) davranışını yapar, teknisyen ataması ve ⋯ menüsü kendi işini.
+ */
+const ROW_OWN_CONTROLS = "a[href], button, input, select, textarea, [role='button'], [role='combobox'], [role='menuitem']"
+
+/**
+ * Masaüstü tablosunda satırın tamamı iş emrine gider. Erişilebilir hedef
+ * iş no bağlantısıdır (klavye, ekran okuyucu); satır tıklaması onun fare
+ * kısayoludur. Cmd/Ctrl/orta tık yeni sekme açar, sürükleyerek metin seçmek
+ * gezinmez.
+ */
+function openRowTarget(event: MouseEvent<HTMLTableRowElement>, href: string, push: (href: string) => void) {
+  if (event.defaultPrevented) return
+  const target = event.target as Element
+  // Portallanan içerik (teknisyen paneli, ⋯ menüsü) React ağacında satırın
+  // altındadır ama DOM'da değildir; oradaki tıklamalar satıra ait değil.
+  if (!event.currentTarget.contains(target) || target.closest(ROW_OWN_CONTROLS)) return
+  if (window.getSelection()?.toString()) return
+  if (event.button === 1 || (event.button === 0 && (event.metaKey || event.ctrlKey))) {
+    window.open(href, "_blank", "noopener")
+    return
+  }
+  if (event.button !== 0 || event.shiftKey || event.altKey) return
+  push(href)
+}
+
 function textFilter<T>(read: (row: T) => string) {
   return (row: { original: T }, _columnId: string, value: unknown) =>
     matchesColumnFilter(read(row.original), value)
@@ -212,6 +239,7 @@ export function OrderList({
   emptyState?: ReactNode
 }) {
   const { rootRef, isPending, onChange, onSubmit, onClick } = useOrderListNavigation(searchQuery)
+  const router = useRouter()
   const kpiConfigs: KpiConfig[] = [
     { key: "active", label: "Aktif", count: kpis.active, filterValue: ACTIVE_ORDER_FILTER, icon: Wrench, accent: "info" },
     { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval", icon: MessageCircle, accent: "warning", tone: "warning" },
@@ -255,7 +283,7 @@ export function OrderList({
         cell: ({ row, table }) => (
           <Link
             href={orderDetailHref(row.original.id, listHrefOf(table))}
-            className="font-mono text-xs text-muted-foreground transition-colors hover:text-primary-strong"
+            className="rounded-xs font-mono text-xs text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {row.original.workOrderNo}
           </Link>
@@ -270,13 +298,7 @@ export function OrderList({
           const order = row.original
           return (
             <DetailHint detail={`${order.vehicle.plate} · ${order.vehicle.brand} ${order.vehicle.model}`}>
-              {order.vehicle.id ? (
-                <Link href={`/vehicles/${order.vehicle.id}`} className="inline-flex">
-                  <DashPlate plate={order.vehicle.plate} country />
-                </Link>
-              ) : (
-                <DashPlate plate={order.vehicle.plate} country />
-              )}
+              <DashPlate plate={order.vehicle.plate} country size="sm" />
             </DetailHint>
           )
         },
@@ -291,13 +313,7 @@ export function OrderList({
           const name = customerName(order.customer)
           return (
             <DetailHint detail={`${name} · ${order.customer.phone}`}>
-              {order.customer.id ? (
-                <Link href={`/customers/${order.customer.id}`} className="block max-w-[9.5rem] truncate text-[15px] font-semibold text-foreground transition-colors hover:text-primary-strong">
-                  {name}
-                </Link>
-              ) : (
-                <span className="block max-w-[9.5rem] truncate text-[15px] font-semibold text-foreground">{name}</span>
-              )}
+              <span className="block max-w-[9.5rem] truncate text-[15px] font-semibold text-foreground">{name}</span>
             </DetailHint>
           )
         },
@@ -518,25 +534,33 @@ export function OrderList({
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} className="group hover:bg-muted/60">
-                    {row.getVisibleCells().map((cell) => {
-                      const sticky = cell.column.id === "actions"
-                      return (
-                        <TableCell
-                          key={cell.id}
-                          className={
-                            sticky
-                              ? "sticky right-0 h-14 bg-card px-2.5 py-2 pr-3 align-middle whitespace-nowrap group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]"
-                              : "h-14 px-2.5 py-2 align-middle whitespace-nowrap first:pl-4"
-                          }
-                        >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      )
-                    })}
-                  </TableRow>
-                ))
+                table.getRowModel().rows.map((row) => {
+                  const detailHref = orderDetailHref(row.original.id, listHref)
+                  return (
+                    <TableRow
+                      key={row.id}
+                      className="group cursor-pointer hover:bg-muted/60"
+                      onClick={(event) => openRowTarget(event, detailHref, (href) => router.push(href))}
+                      onAuxClick={(event) => openRowTarget(event, detailHref, (href) => router.push(href))}
+                    >
+                      {row.getVisibleCells().map((cell) => {
+                        const sticky = cell.column.id === "actions"
+                        return (
+                          <TableCell
+                            key={cell.id}
+                            className={
+                              sticky
+                                ? "sticky right-0 h-14 bg-card px-2.5 py-2 pr-3 align-middle whitespace-nowrap group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]"
+                                : "h-14 px-2.5 py-2 align-middle whitespace-nowrap first:pl-4"
+                            }
+                          >
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        )
+                      })}
+                    </TableRow>
+                  )
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
@@ -549,8 +573,8 @@ export function OrderList({
         </div>}
 
         {/* Telefon/tablet: Genel Bakış satır kalıbı — tek kartta çizgiyle ayrılan
-            satırlar. Satırın tamamı detaya gider (gerilmiş bağlantı); plaka,
-            usta ataması ve ⋯ menüsü onun üstünde kendi işini yapar. */}
+            satırlar. Satırın tamamı (plaka dahil) detaya gider (gerilmiş
+            bağlantı); usta ataması ve ⋯ menüsü onun üstünde kendi işini yapar. */}
         {orders.length > 0 && <ul className="divide-y divide-border lg:hidden">
           {visibleOrders.map((order) => {
             const detailHref = orderDetailHref(order.id, listHref)
@@ -562,13 +586,7 @@ export function OrderList({
             return (
               <li key={order.id} className="relative px-4 py-3.5 transition-colors hover:bg-muted/60">
                 <div className="flex items-center gap-2">
-                  {order.vehicle.id ? (
-                    <Link href={`/vehicles/${order.vehicle.id}`} className="relative z-10 inline-flex" aria-label={`Araç: ${order.vehicle.plate}`}>
-                      <DashPlate plate={order.vehicle.plate} country size="lg" />
-                    </Link>
-                  ) : (
-                    <DashPlate plate={order.vehicle.plate} country size="lg" />
-                  )}
+                  <DashPlate plate={order.vehicle.plate} country size="lg" />
                   <span className="ml-auto"><DashOrderStatus status={order.status} /></span>
                   <span className="relative z-10">
                     <MobileActionsMenu
