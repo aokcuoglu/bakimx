@@ -35,6 +35,17 @@ export const DEFAULT_CONNECT_TIMEOUT_MS = 10_000
  */
 export const DEFAULT_QUERY_TIMEOUT_MS = 30_000
 
+/**
+ * Boştaki bir bağlantının uygulama havuzunda tutulma süresi. `pg` varsayılanı
+ * 10 sn'dir: kullanıcı bir sayfayı 10 sn'den uzun okuyup tıkladığında havuz
+ * boşalmış olur ve istek, paralel sorgu sayısı kadar bağlantıyı SIFIRDAN kurar
+ * (TCP + TLS + SCRAM). Yerel dev'de (SSM tüneli → AWS dev DB) tek bağlantı
+ * ~550 ms ölçüldü; boşta kalmış bir /orders gezinmesi 0,85 sn yerine 2,6 sn
+ * sürüyordu. Prod'da (VPC içi RDS) bedel küçük ama sıfır değil. Karşılığı:
+ * ECS görevi başına en çok `max` (10) boşta oturum — RDS için önemsiz.
+ */
+export const DEFAULT_POOL_IDLE_TIMEOUT_MS = 5 * 60_000
+
 /** Pozitif tam sayı olmayan override sessizce yok sayılır (yanlış env prod'u kilitlemesin). */
 function timeoutFromEnv(name: string, fallback: number): number {
   const raw = process.env[name]
@@ -72,5 +83,10 @@ export function buildAppPoolConfig(url: string): PoolConfig {
     ...buildPoolConfig(url),
     query_timeout: queryTimeout,
     statement_timeout: queryTimeout,
+    idleTimeoutMillis: timeoutFromEnv("DB_POOL_IDLE_TIMEOUT_MS", DEFAULT_POOL_IDLE_TIMEOUT_MS),
+    // Boşta tutulan bağlantılar süreci tek başına ayakta tutmasın: Next sunucusunu
+    // HTTP dinleyicisi zaten canlı tutar; uygulama istemcisini içe aktaran bir
+    // script ise `$disconnect`i unutsa bile bekleme penceresi boyunca asılı kalmaz.
+    allowExitOnIdle: true,
   }
 }
