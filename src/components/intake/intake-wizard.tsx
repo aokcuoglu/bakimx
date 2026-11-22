@@ -242,17 +242,21 @@ export function IntakeWizard({
   // (yöntem → yakalama → araç → müşteri → onay) 1. adımın içinde yaşar (#309).
   const railSteps = STEPS.map((s) => ({ id: String(s.id), label: s.label }))
   const railCompleted = [...completedSteps].map(String)
+  // Doğrudan giriş (?entry=…): adım rayı yok, tek kolon.
+  const focused = initialEntryMethod != null
 
   return (
     <Form {...form}>
-      <div className="grid items-start gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
-        <WizardStepper
-          className="lg:sticky lg:top-20"
-          steps={railSteps}
-          currentId={String(step)}
-          completedIds={railCompleted}
-          onStepClick={(id) => setStep(Number(id))}
-        />
+      <div className={focused ? "grid items-start gap-6" : "grid items-start gap-6 lg:grid-cols-[200px_minmax(0,1fr)]"}>
+        {!focused && (
+          <WizardStepper
+            className="lg:sticky lg:top-20"
+            steps={railSteps}
+            currentId={String(step)}
+            completedIds={railCompleted}
+            onStepClick={(id) => setStep(Number(id))}
+          />
+        )}
 
         <div className="min-w-0 space-y-6">
           {source === "registration" && selectedCustomerId && selectedVehicleId && (
@@ -271,7 +275,7 @@ export function IntakeWizard({
         {/* Step 1: Customer & Vehicle */}
         {step === 1 && (
           <Card>
-            <CardContent className="space-y-4 pt-6">
+            <CardContent className={focused ? "space-y-4" : "space-y-4 pt-6"}>
               <VehicleEntryWizard
                 value={{ customerId: selectedCustomerId, vehicleId: selectedVehicleId }}
                 onChange={(v) => {

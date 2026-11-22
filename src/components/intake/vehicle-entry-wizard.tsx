@@ -452,10 +452,14 @@ export function VehicleEntryWizard({
   const vehicleHits = results.filter((r): r is VehicleResult => r.kind === "vehicle")
   const customerHits = results.filter((r): r is Extract<UnifiedResult, { kind: "customer" }> => r.kind === "customer")
   const stepIndex = steps.findIndex((s) => s.id === step)
+  // Doğrudan giriş (initialMethod): adım rayı ve "Adım N" etiketi gösterilmez —
+  // teknisyen tek bir işe (plakayı bulmaya) odaklanır.
+  const focused = initialMethod != null
+  const stepEyebrow = focused ? undefined : `Adım ${stepIndex + 1}`
 
   return (
     <div className="space-y-5">
-      <WizardStepper compact steps={steps} currentId={step} completedIds={completed} />
+      {!focused && <WizardStepper compact steps={steps} currentId={step} completedIds={completed} />}
 
       {error && (
         <Alert variant="destructive">
@@ -467,7 +471,7 @@ export function VehicleEntryWizard({
       {step === "method" && (
         <div className="space-y-5">
           <WizardHeading
-            eyebrow={`Adım ${stepIndex + 1}`}
+            eyebrow={stepEyebrow}
             title="Aracı nasıl kaydedelim?"
             description="Ruhsatı okutabilir, camdaki şaseyi taratabilir ya da sistemde kayıtlı aracı arayabilirsiniz."
           />
@@ -514,7 +518,7 @@ export function VehicleEntryWizard({
       {step === "capture" && method === "registration" && (
         <div className="space-y-5">
           <WizardHeading
-            eyebrow={`Adım ${stepIndex + 1}`}
+            eyebrow={stepEyebrow}
             title="Ruhsatı yükleyin"
             description="Fotoğrafı çekin ya da dosyadan seçin; plaka, marka, model ve teknik alanlar otomatik dolar."
           />
@@ -543,7 +547,7 @@ export function VehicleEntryWizard({
       {step === "capture" && method === "vin" && (
         <div className="space-y-5">
           <WizardHeading
-            eyebrow={`Adım ${stepIndex + 1}`}
+            eyebrow={stepEyebrow}
             title="Şase numarasını okutun"
             description="Ön camın altındaki 17 haneli şase numarasını kamerayla okutun veya elle yazın."
           />
@@ -595,7 +599,7 @@ export function VehicleEntryWizard({
       {step === "capture" && method === "plate" && (
         <div className="space-y-5">
           <WizardHeading
-            eyebrow={`Adım ${stepIndex + 1}`}
+            eyebrow={stepEyebrow}
             title="Plakayı arayın"
             description="Kayıtlı aracı plakasıyla bulun. Kayıt yoksa aynı plakayla yeni araç açabilirsiniz."
           />
@@ -603,10 +607,15 @@ export function VehicleEntryWizard({
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Plaka veya müşteri ara…"
+              placeholder={focused ? "Ör. 34 ABC 123" : "Plaka veya müşteri ara…"}
+              aria-label="Plaka veya müşteri"
               autoComplete="off"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="search"
               autoFocus={initialMethod === "plate"}
-              className="flex-1"
+              className="flex-1 font-semibold tracking-wide"
             />
             <Button type="button" variant="outline" size="icon" aria-label="Plakayı kamerayla tara" onClick={() => setScanner("plate")}>
               <ScanLine className="size-4" />
@@ -620,23 +629,41 @@ export function VehicleEntryWizard({
             onPick={selectExisting}
             onPickCustomer={(c) => { setMethod("customer"); setQuery(""); setResults([]); pickCustomer(c.customerId, c.label) }}
           />
-          <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
-            <Button variant="foreground"
-              type="button"
-              className="gap-2"
-              disabled={!query.trim()}
-              onClick={() => goToVehicleStep({ plate: query.trim() })}
-            >
-              Bu plakayla yeni araç <ChevronRight className="size-4" />
-            </Button>
-          </WizardActions>
+          {focused ? (
+            // Telefonda birincil eylem tam genişlik ve başparmak menzilinde;
+            // yöntem değiştirme ikincil bir metin düğmesi olarak altında.
+            <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row-reverse sm:items-center sm:justify-between">
+              <Button variant="foreground"
+                type="button"
+                className="w-full gap-2 sm:w-auto"
+                disabled={!query.trim()}
+                onClick={() => goToVehicleStep({ plate: query.trim() })}
+              >
+                Bu plakayla yeni araç <ChevronRight className="size-4" />
+              </Button>
+              <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={goBack}>
+                Diğer yöntemler
+              </Button>
+            </div>
+          ) : (
+            <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
+              <Button variant="foreground"
+                type="button"
+                className="gap-2"
+                disabled={!query.trim()}
+                onClick={() => goToVehicleStep({ plate: query.trim() })}
+              >
+                Bu plakayla yeni araç <ChevronRight className="size-4" />
+              </Button>
+            </WizardActions>
+          )}
         </div>
       )}
 
       {step === "capture" && method === "customer" && (
         <div className="space-y-5">
           <WizardHeading
-            eyebrow={`Adım ${stepIndex + 1}`}
+            eyebrow={stepEyebrow}
             title="Müşteriyi bulun"
             description="Kayıtlı müşteriyi arayın ya da yeni müşteri oluşturun; sonra aracını seçin."
           />
@@ -699,7 +726,7 @@ export function VehicleEntryWizard({
       {step === "vehicle" && (
         <div className="space-y-5">
           <WizardHeading
-            eyebrow={`Adım ${stepIndex + 1}`}
+            eyebrow={stepEyebrow}
             title="Araç bilgileri"
             description="Zorunlu alanlar plaka, marka ve model. Ruhsattan okunan alanlar sarı işaretliyse kontrol edin."
           />
@@ -775,7 +802,7 @@ export function VehicleEntryWizard({
       {step === "owner" && (
         <div className="space-y-5">
           <WizardHeading
-            eyebrow={`Adım ${stepIndex + 1}`}
+            eyebrow={stepEyebrow}
             title="Aracın sahibi kim?"
             description="Kayıtlı müşteriyi arayın ya da yeni müşteri oluşturun."
           />
@@ -809,7 +836,7 @@ export function VehicleEntryWizard({
       {step === "confirm" && confirmed && (
         <div className="space-y-5">
           <WizardHeading
-            eyebrow={`Adım ${stepIndex + 1}`}
+            eyebrow={stepEyebrow}
             title="Araç seçildi"
             description="Bilgiler doğruysa kabul detaylarına geçebilirsiniz."
           />

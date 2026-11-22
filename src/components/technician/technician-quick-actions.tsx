@@ -19,7 +19,7 @@ type QuickAction = {
 export const TECHNICIAN_QUICK_ACTIONS: readonly QuickAction[] = [
   {
     // Doğrudan plaka aramasıyla açılır (bkz. parseEntryMethod).
-    href: "/orders/new?entry=plate",
+    href: "/orders/new?entry=plate&from=technician",
     title: "Araç Kabul",
     icon: ClipboardPlus,
     tone: "bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/85 [&_[data-slot=icon-box]]:bg-primary-foreground/15",
