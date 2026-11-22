@@ -47,7 +47,7 @@ export function PillButton({
 
   if (href) {
     return (
-      <Button asChild className={classes}>
+      <Button asChild variant="default" className={classes}>
         <Link href={href} onClick={handleClick}>
           {children}
         </Link>
@@ -56,7 +56,7 @@ export function PillButton({
   }
 
   return (
-    <Button type={type} disabled={disabled} className={classes} onClick={handleClick}>
+    <Button type={type} variant="default" disabled={disabled} className={classes} onClick={handleClick}>
       {children}
     </Button>
   )
