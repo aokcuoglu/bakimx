@@ -116,7 +116,8 @@ export function DashRow({
 
 /**
  * Çerçeveli TR plaka rozeti. `country` başına yazısız mavi bant ekler,
- * `size="lg"` büyük plaka çizer. İkisi de varsayılanda kapalı.
+ * `size="lg"` büyük, `size="sm"` tablo satırına uygun küçük plaka çizer.
+ * Varsayılan `md`, bant kapalı.
  */
 export function DashPlate({
   plate,
@@ -125,13 +126,13 @@ export function DashPlate({
 }: {
   plate: string
   country?: boolean
-  size?: "md" | "lg"
+  size?: "sm" | "md" | "lg"
 }) {
   return (
     <span
       className={styles.plate}
       data-country={country || undefined}
-      data-size={size === "lg" ? "lg" : undefined}
+      data-size={size === "md" ? undefined : size}
     >
       {country && <span className={styles.plateCountry} aria-hidden="true" />}
       {formatTurkishPlate(plate)}
