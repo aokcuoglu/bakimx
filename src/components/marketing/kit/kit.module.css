@@ -503,3 +503,187 @@
     transition: none;
   }
 }
+
+/* ── Form ve pencere ─────────────────────────────────────────── */
+
+/* Yüzen etiketli alan: .fl */
+.field {
+  position: relative;
+  display: block;
+}
+.fieldInput {
+  width: 100%;
+  height: 58px;
+  padding: 24px 16px 6px;
+  border: 1px solid var(--mk-gray-3);
+  border-radius: var(--mk-r-input);
+  background: var(--mk-surface);
+  color: var(--mk-ink);
+  font-family: inherit;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  outline: none;
+  box-shadow: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.fieldWithTrailing .fieldInput {
+  padding-right: 80px;
+}
+.fieldInput::placeholder {
+  color: transparent;
+}
+.fieldLabel {
+  position: absolute;
+  left: 17px;
+  top: 18px;
+  color: var(--mk-gray);
+  font-size: 17px;
+  line-height: 1.3;
+  pointer-events: none;
+  transition: top 0.15s, font-size 0.15s, color 0.15s;
+}
+.fieldInput:focus + .fieldLabel,
+.fieldInput:not(:placeholder-shown) + .fieldLabel {
+  top: 9px;
+  font-size: 12px;
+}
+.fieldInput:focus {
+  border-color: var(--mk-blue);
+  box-shadow: var(--mk-focus-ring);
+}
+.fieldInput:focus + .fieldLabel {
+  color: var(--mk-blue);
+}
+.fieldInput[aria-invalid="true"] {
+  border-color: var(--mk-error);
+  box-shadow: var(--mk-error-ring);
+}
+.fieldTrailing {
+  position: absolute;
+  right: 10px;
+  top: 13px;
+}
+
+/* Pencere: .modal */
+.overlay {
+  background: rgb(0 0 0 / 0.32);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+}
+.dialog {
+  display: block;
+  width: min(500px, 100% - 32px);
+  max-width: none;
+  max-height: calc(100svh - 32px);
+  padding: 0;
+  border: 0;
+  border-radius: var(--mk-r-modal);
+  background: var(--mk-surface);
+  color: var(--mk-ink);
+  font-size: 17px;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  box-shadow: 0 40px 100px -30px rgb(0 0 0 / 0.45);
+  outline: none;
+}
+.dialog[data-state="open"] {
+  animation: mk-dialog-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.dialog[data-state="closed"] {
+  animation: none;
+}
+@keyframes mk-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+}
+.dialogSm {
+  width: min(460px, 100% - 32px);
+}
+.dialogBody {
+  position: relative;
+  padding: 44px 44px 36px;
+  text-align: center;
+}
+.dialogClose {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+}
+.closeIcon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.dialogHeading {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+.dialogLead {
+  margin: 10px 0 0;
+  color: var(--mk-gray);
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+/* Başarı durumu: .m-done / .m-ok */
+.done {
+  padding: 8px 0 4px;
+}
+.doneIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  background: var(--mk-success-bg);
+}
+.doneIcon svg {
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: var(--mk-success);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.doneButton {
+  margin-top: 26px;
+}
+
+@media (max-width: 640px) {
+  .dialog,
+  .dialogSm {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    translate: none;
+    width: 100%;
+    max-height: 94svh;
+    margin: 0;
+    border-radius: 26px 26px 0 0;
+  }
+  .dialogBody {
+    padding: 36px 20px 28px;
+  }
+  .dialogHeading {
+    font-size: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[data-state="open"] {
+    animation: none;
+  }
+  .fieldInput,
+  .fieldLabel {
+    transition: none;
+  }
+}
