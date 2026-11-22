@@ -2,89 +2,108 @@ import { NextResponse } from "next/server"
 import { PSM } from "tesseract.js"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { apiErrorResponse } from "@/lib/api-errors"
+import { AuditLogAction } from "@/lib/audit"
+import { prisma } from "@/lib/db"
 import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-image"
-import { extractRegistrationText } from "@/lib/ocr/tesseract-text-extractor"
+import { parseOcrImageRequest } from "@/lib/ocr/parse-image-request"
 import { parsePlateFromText } from "@/lib/ocr/plate"
-import { MAX_IMAGE_SIZE_BYTES, MAX_BODY_SIZE_BYTES, SUPPORTED_IMAGE_MIME_TYPES } from "@/lib/ocr/types"
+import { matchCatalogBrand } from "@/lib/ocr/vehicle-brand"
+import { getOcrProvider } from "@/lib/ocr/provider"
+import { extractRegistrationText } from "@/lib/ocr/tesseract-text-extractor"
 import { assertFeature } from "@/lib/plan"
 import { assertWritableOr403 } from "@/lib/plan-guard"
 
-// OCR yavaş paylaşımlı VPS CPU'sunda birkaç saniye sürebilir; Next'in varsayılan
-// fonksiyon süresini gevşet (proxy timeout ~60s'in altında kalır).
+// Vision çağrısı / yerel OCR birkaç saniye sürebilir; Next'in varsayılan süresini
+// gevşet (proxy timeout ~60s'in altında kalır).
 export const maxDuration = 60
 
+const UNREADABLE_MESSAGE =
+  "Plaka okunamadı. Aracın önünü, plaka net görünecek şekilde biraz daha yakından çekin."
+
 /**
- * Plaka fotoğrafından plaka metnini okur (sadece plaka — ruhsat değil).
- * OCR_PROVIDER'dan bağımsız olarak her zaman yerel Tesseract + plaka regex
- * kullanır; prod'da OCR_PROVIDER=mock olsa bile gerçek okuma yapar.
+ * Araç fotoğrafından plakayı okur. Kare artık aracın önünün tamamıdır (plaka
+ * çerçevesine kırpılmış değil), yani önce plakanın yeri bulunmalı:
+ *
+ * - Aktif OCR sağlayıcısı `extractPlate` destekliyorsa (prod/dev: Claude Vision)
+ *   plakayı o bulur ve okur.
+ * - Desteklemiyorsa yerel Tesseract + plaka regex'ine düşülür; bu yol tam araç
+ *   fotoğrafında zayıftır ama plakaya yakın çekilmiş karede çalışır.
+ *
+ * Okunan ham metin her durumda `parsePlateFromText` ile doğrulanır: istemciye
+ * yalnız geçerli bir TR plakası gider.
+ *
+ * Aynı Vision çağrısı aracın markasını da tanır (ek çağrı/maliyet yok). Marka
+ * katalogdaki yazımına çevrilir ki seçici modelleri yükleyebilsin; yalnız plaka
+ * da okunduysa döner (422'de marka yok — Tesseract yedeğinde hiç yok).
  */
 export async function POST(request: Request) {
   try {
-    const { workshop } = await getCurrentUserWithWorkshop()
+    const { user, workshop } = await getCurrentUserWithWorkshop()
     const locked = assertWritableOr403(workshop)
     if (locked) return locked
     assertFeature(workshop, "ocrIntake")
 
-    const contentLength = request.headers.get("content-length")
-    if (contentLength && Number(contentLength) > MAX_BODY_SIZE_BYTES) {
-      return NextResponse.json(
-        { error: `İstek gövdesi çok büyük. Görsel ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024} MB'dan küçük olmalıdır.` },
-        { status: 413 }
-      )
-    }
+    const parsed = await parseOcrImageRequest(request)
+    if (parsed instanceof NextResponse) return parsed
+    const normalized = await normalizeRegistrationImage(parsed.imageBuffer, parsed.mimeType)
 
-    const body = await request.json()
-    const { imageDataUrl, mimeType } = body
-
-    if (!imageDataUrl || !mimeType) {
-      return NextResponse.json({ error: "Görsel verisi ve MIME tipi zorunludur" }, { status: 400 })
-    }
-    if (!SUPPORTED_IMAGE_MIME_TYPES.has(mimeType)) {
-      return NextResponse.json(
-        { error: "Desteklenmeyen görsel biçimi. JPEG, PNG, WebP veya HEIC yükleyin." },
-        { status: 400 }
-      )
-    }
-
-    const base64Match = imageDataUrl.match(/^data:[^;]+;base64,(.+)$/)
-    if (!base64Match) {
-      return NextResponse.json({ error: "Geçersiz görsel formatı. Geçerli bir data URL gönderin." }, { status: 400 })
-    }
-
-    const imageBuffer = Buffer.from(base64Match[1], "base64")
-    if (imageBuffer.byteLength > MAX_IMAGE_SIZE_BYTES) {
-      return NextResponse.json(
-        { error: `Görsel ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024} MB'dan küçük olmalıdır.` },
-        { status: 413 }
-      )
-    }
-
-    const normalized = await normalizeRegistrationImage(imageBuffer, mimeType)
-
-    // Plaka tek satır → önce SINGLE_LINE; bulamazsak SINGLE_BLOCK ile yeniden dene.
-    // rotateAuto KAPALI: plaka sabit yatay rehberde hizalanır, döndürme geçişi
-    // gereksiz ve OCR'ı ~2 kat yavaşlatıp zaman aşımına sokuyordu.
+    const provider = await getOcrProvider()
     let plate: string | null = null
-    for (const psm of [PSM.SINGLE_LINE, PSM.SINGLE_BLOCK]) {
+    let brand: string | null = null
+
+    if (typeof provider.extractPlate === "function") {
       const t0 = Date.now()
-      try {
-        const text = await extractRegistrationText(normalized.buffer, psm, false)
-        plate = parsePlateFromText(text)
-        console.log(`[PLATE SCAN] psm=${psm} ${Date.now() - t0}ms plate=${plate ?? "—"}`)
-        if (plate) break
-      } catch (e) {
-        console.log(`[PLATE SCAN] psm=${psm} ${Date.now() - t0}ms err=${e instanceof Error ? e.message : e}`)
+      const result = await provider.extractPlate(normalized.buffer, normalized.mimeType)
+      plate = parsePlateFromText(result.rawPlate)
+      if (plate && result.rawBrand.trim()) {
+        // Marka kataloğu atölyeye ait değil, ortak referans tablosu.
+        const catalog = await prisma.vehicleBrand.findMany({ select: { name: true } })
+        brand = matchCatalogBrand(result.rawBrand, catalog.map((b) => b.name))
+      }
+      console.log(
+        `[PLATE SCAN] provider=${provider.name} ${Date.now() - t0}ms plate=${plate ?? "—"} brand=${brand ?? "—"}`
+      )
+
+      if (plate) {
+        // Sağlayıcı çağrısı ücretli: ruhsat/şase okumalarıyla aynı kayıt + denetim izi.
+        const ocrLog = await prisma.ocrLog.create({
+          data: {
+            workshopId: user.workshopId,
+            ocrProvider: provider.name,
+            extractedJson: JSON.stringify({ plate, confident: result.confident, brand }),
+            userId: user.id,
+          },
+        })
+        await AuditLogAction(
+          user.workshopId,
+          user.id,
+          "OcrLog",
+          ocrLog.id,
+          "ocr_capture",
+          JSON.stringify({ provider: provider.name, kind: "plate" })
+        )
+      }
+    } else {
+      // Yerel yedek: önce SINGLE_LINE, bulamazsak SINGLE_BLOCK. rotateAuto kapalı
+      // (OCR'ı ~2 kat yavaşlatıp zaman aşımına sokuyordu).
+      for (const psm of [PSM.SINGLE_LINE, PSM.SINGLE_BLOCK]) {
+        const t0 = Date.now()
+        try {
+          const text = await extractRegistrationText(normalized.buffer, psm, false)
+          plate = parsePlateFromText(text)
+          console.log(`[PLATE SCAN] tesseract psm=${psm} ${Date.now() - t0}ms plate=${plate ?? "—"}`)
+          if (plate) break
+        } catch (e) {
+          console.log(`[PLATE SCAN] tesseract psm=${psm} ${Date.now() - t0}ms err=${e instanceof Error ? e.message : e}`)
+        }
       }
     }
 
     if (!plate) {
-      return NextResponse.json(
-        { error: "Plaka okunamadı. Plakaya daha yakın, düz bir açıyla net bir kare çekin." },
-        { status: 422 }
-      )
+      return NextResponse.json({ error: UNREADABLE_MESSAGE }, { status: 422 })
     }
 
-    return NextResponse.json({ plate })
+    return NextResponse.json(brand ? { plate, brand } : { plate })
   } catch (err) {
     const response = apiErrorResponse(err)
     if (response.status >= 500) console.error("[PLATE SCAN ERROR]", err)

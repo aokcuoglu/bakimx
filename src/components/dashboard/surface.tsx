@@ -114,9 +114,29 @@ export function DashRow({
   )
 }
 
-/** Çerçeveli TR plaka rozeti. */
-export function DashPlate({ plate }: { plate: string }) {
-  return <span className={styles.plate}>{formatTurkishPlate(plate)}</span>
+/**
+ * Çerçeveli TR plaka rozeti. `country` başına yazısız mavi bant ekler,
+ * `size="lg"` büyük plaka çizer. İkisi de varsayılanda kapalı.
+ */
+export function DashPlate({
+  plate,
+  country = false,
+  size = "md",
+}: {
+  plate: string
+  country?: boolean
+  size?: "md" | "lg"
+}) {
+  return (
+    <span
+      className={styles.plate}
+      data-country={country || undefined}
+      data-size={size === "lg" ? "lg" : undefined}
+    >
+      {country && <span className={styles.plateCountry} aria-hidden="true" />}
+      {formatTurkishPlate(plate)}
+    </span>
+  )
 }
 
 export function DashPill({ tone, children }: { tone: Tone; children: ReactNode }) {

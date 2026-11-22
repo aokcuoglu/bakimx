@@ -18,10 +18,17 @@ export interface TechnicianDashboardStats {
   todayDelivery: number
 }
 
+/**
+ * `assignedToMe` her zaman verilen teknisyenin sayısıdır. Diğer KPI'lar
+ * `scopeToTechnician` kapalıyken atölyenin tüm araç kabullerini sayar —
+ * teknisyen panelindeki "Bana atananlar" anahtarı kapalı olduğunda.
+ */
 export async function getTechnicianDashboardStats(
   workshopId: string,
-  technicianId: string
+  technicianId: string,
+  scopeToTechnician = true
 ): Promise<TechnicianDashboardStats> {
+  const scope = scopeToTechnician ? { assignedTechnicianId: technicianId } : {}
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const tomorrow = new Date(today.getTime() + 86400000)
@@ -43,21 +50,21 @@ export async function getTechnicianDashboardStats(
     prisma.serviceOrder.count({
       where: {
         workshopId,
-        assignedTechnicianId: technicianId,
+        ...scope,
         status: "in_progress",
       },
     }),
     prisma.serviceOrder.count({
       where: {
         workshopId,
-        assignedTechnicianId: technicianId,
+        ...scope,
         status: { in: ["approved", "waiting_parts"] },
       },
     }),
     prisma.serviceOrder.count({
       where: {
         workshopId,
-        assignedTechnicianId: technicianId,
+        ...scope,
         status: "delivered",
         completedAt: { gte: today },
       },
@@ -65,7 +72,7 @@ export async function getTechnicianDashboardStats(
     prisma.serviceOrder.count({
       where: {
         workshopId,
-        assignedTechnicianId: technicianId,
+        ...scope,
         estimatedDeliveryAt: { gte: today, lt: tomorrow },
         status: { notIn: NOT_DELIVERED_CANCELLED },
       },

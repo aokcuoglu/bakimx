@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { requireAuth, requireWritableWorkshop, requireFeatureWorkshop, requireWritableFeatureWorkshop } from "@/lib/auth"
-import { damageMarkSchema, damageMarkUpdateSchema, damageInspectionSchema, photoUploadMetadataSchema, intakeCreateSchema, intakeUpdateSchema } from "@/lib/validations/intake"
+import { damageMarkSchema, damageMarkUpdateSchema, damageInspectionSchema, photoUploadMetadataSchema, intakeCreateSchema, intakeCreateInputFromFormData, intakeUpdateSchema } from "@/lib/validations/intake"
 import { resolveHandoverField } from "@/lib/intake/handover"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
@@ -20,17 +20,7 @@ import { assertIntakePhotoQuota } from "@/lib/photos/quota"
 export async function createIntakeAction(formData: FormData) {
   const { user } = await requireWritableWorkshop("records.create")
 
-  const raw = {
-    customerId: formData.get("customerId") as string,
-    vehicleId: formData.get("vehicleId") as string,
-    mileageAtIntake: formData.get("mileageAtIntake") as string,
-    fuelLevelAtIntake: formData.get("fuelLevelAtIntake") as string,
-    customerComplaint: formData.get("customerComplaint") as string,
-    internalNote: formData.get("internalNote") as string,
-    arrivalReason: formData.get("arrivalReason") as string,
-    droppedOffByName: formData.get("droppedOffByName") as string,
-    droppedOffByPhone: formData.get("droppedOffByPhone") as string,
-  }
+  const raw = intakeCreateInputFromFormData(formData)
 
   const parsed = intakeCreateSchema.safeParse(raw)
   if (!parsed.success) {

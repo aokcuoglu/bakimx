@@ -20,3 +20,25 @@ export function plateSearchTerm(input: string): string {
   const normalized = normalizePlate(input)
   return normalized.length >= 3 ? normalized : ""
 }
+
+/** Yalnız rakamdan oluşan giriş bu uzunluktan itibaren telefon sayılıp aranır. */
+export const PHONE_QUERY_MIN_DIGITS = 7
+
+/**
+ * "Müşteri adı veya plaka" kutusunda aramanın başlayıp başlamayacağı.
+ *
+ * Rakamla başlayan giriş plakadır (il kodu) ya da telefondur. Yalnız il kodu
+ * ("34") yazıldığında arama o ildeki bütün araçları döker — kullanıcı aradığı
+ * aracı henüz tarif etmemiştir. Bu yüzden il kodundan sonra en az bir harf
+ * ("34 K") beklenir. Yalnız rakamdan oluşan giriş telefon uzunluğuna
+ * (`PHONE_QUERY_MIN_DIGITS`) gelince aranır; müşteri telefonuyla da bulunabilsin.
+ * Harfle başlayan giriş (müşteri adı) olduğu gibi aranır.
+ */
+export function isPlateOrCustomerQueryReady(input: string): boolean {
+  const q = input.trim()
+  if (!q) return false
+  if (!/^\d/.test(q)) return true
+  const compact = normalizePlate(q)
+  if (/^\d+$/.test(compact)) return compact.length >= PHONE_QUERY_MIN_DIGITS
+  return /^\d{1,2}[A-ZÇĞİÖŞÜ]/.test(compact)
+}

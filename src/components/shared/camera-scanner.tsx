@@ -5,7 +5,8 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { ScanError, type ScanImagePayload } from "@/lib/ocr/scan-client"
-import { Camera, X, Zap, ZapOff, RefreshCw, AlertTriangle, Upload, Check } from "lucide-react"
+import { coverRegionToSource } from "@/lib/ocr/capture-crop"
+import { Camera, X, Zap, ZapOff, RefreshCw, AlertTriangle, Upload, Check, Keyboard } from "lucide-react"
 
 const CAPTURE_JPEG_QUALITY = 0.9
 const CAPTURE_LONG_EDGE = 1600
@@ -19,10 +20,15 @@ type TorchConstraints = MediaTrackConstraints & { advanced?: Array<{ torch?: boo
 export type CameraScannerProps = {
   /** Üst bardaki başlık, ör. "Plakayı Tara". */
   title: string
-  /** Canlı görüntüde çerçevenin üstünde duran yönerge. */
-  hint: string
-  /** Rehber penceresinin oran + genişlik sınıfları, ör. "aspect-[4.6/1] w-[86%] max-w-md". */
-  frameClassName: string
+  /** Canlı görüntüde çerçevenin üstünde duran yönerge (`guide` verilmezse). */
+  hint?: string
+  /**
+   * Rehber penceresinin oran + genişlik sınıfları, ör. "aspect-[4.6/1] w-[86%] max-w-md".
+   * Verilmezse çerçeve ve maske çizilmez, yakalanan kare kırpılmaz (tam görüntü).
+   */
+  frameClassName?: string
+  /** Verilirse canlı görüntünün altında, deklanşörün üstünde gösterilen yönerge kartı. */
+  guide?: ReactNode
   /** Çerçeve içine çizilen ek işaretler (ör. plakadaki TR şeridi). */
   frameOverlay?: ReactNode
   /** Okuma sırasında gösterilen etiket, ör. "Plaka okunuyor…". */
@@ -41,6 +47,11 @@ export type CameraScannerProps = {
    * değerlerde (VIN) zorunlu; plaka gibi kısa değerlerde gereksiz adımdır.
    */
   renderConfirm?: (value: string) => ReactNode
+  /**
+   * Verilirse alt çubuğun solunda "El ile gir" düğmesi çıkar: kullanıcı kamerayı
+   * kapatıp değeri elle yazmayı seçer (tarayıcı kapanır, çağıran yazı alanına döner).
+   */
+  onManualEntry?: () => void
 }
 
 /**
@@ -54,11 +65,13 @@ export function CameraScanner({
   hint,
   frameClassName,
   frameOverlay,
+  guide,
   scanningLabel,
   onScan,
   onDetected,
   onClose,
   renderConfirm,
+  onManualEntry,
 }: CameraScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -87,9 +100,20 @@ export function CameraScanner({
     }
   }, [])
 
+  // Kamera izni/başlatma uzun sürerse ("starting"te takılı kalmak) kullanıcıya
+  // ne beklendiğini söyle ve yeniden deneme sun. Tarayıcı izin isteği sayfa
+  // açılışında (dokunuşsuz) geldiğinde adres çubuğunda kolayca gözden kaçıyor;
+  // bazı tarayıcılar da dokunuşla gelmeyen isteği hiç sonuçlandırmıyor. Yeniden
+  // dene düğmesi isteği bir dokunuşla tekrarlar.
+  const [slowStart, setSlowStart] = useState(false)
+  const [attempt, setAttempt] = useState(0)
+
   // Kamerayı başlat.
   useEffect(() => {
     let cancelled = false
+    const slowTimer = window.setTimeout(() => {
+      if (!cancelled) setSlowStart(true)
+    }, 3000)
 
     async function start() {
       if (typeof window === "undefined" || !window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
@@ -109,7 +133,9 @@ export function CameraScanner({
         const video = videoRef.current
         if (video) {
           video.srcObject = stream
-          await video.play().catch(() => {})
+          // Beklenmez: play() sözü bazı tarayıcılarda ilk kare gelene dek askıda
+          // kalabiliyor; "ready"yi ona bağlamak ekranı "hazırlanıyor"da bırakır.
+          void video.play().catch(() => {})
         }
         const track = stream.getVideoTracks()[0]
         const caps = (track?.getCapabilities?.() ?? {}) as TorchCapabilities
@@ -129,11 +155,19 @@ export function CameraScanner({
       }
     }
 
-    start()
+    void start().finally(() => window.clearTimeout(slowTimer))
     return () => {
       cancelled = true
+      window.clearTimeout(slowTimer)
       stopStream()
     }
+  }, [stopStream, attempt])
+
+  const retryStart = useCallback(() => {
+    stopStream()
+    setSlowStart(false)
+    setStatus("starting")
+    setAttempt((n) => n + 1)
   }, [stopStream])
 
   const toggleTorch = useCallback(async () => {
@@ -190,38 +224,16 @@ export function CameraScanner({
     const srcW = video.videoWidth
     const srcH = video.videoHeight
 
-    // Varsayılan: tüm kare (kırpma hesaplanamazsa güvenli yedek).
-    let sx = 0
-    let sy = 0
-    let sWidth = srcW
-    let sHeight = srcH
-
+    // Ekranda ne görünüyorsa o çekilir. Video `object-cover` olduğundan kaynağın
+    // taşan kenarları önizlemede gizlidir (dikey telefonda yatay kameranın yalnız
+    // ortası görünür); tüm kare gönderilirse kullanıcının hiç görmediği kişi/nesne
+    // fotoğrafa girer. Rehber çerçevesi varsa yalnız çerçeve içi (+ hizalama payı),
+    // yoksa görünen kare kırpılır.
     const frame = frameRef.current
     const vrect = video.getBoundingClientRect()
-    if (frame && vrect.width > 0 && vrect.height > 0) {
-      const frect = frame.getBoundingClientRect()
-      // Video object-cover: kaynağı kutuyu kaplayacak şekilde ölçekle, ortala,
-      // taşan kenarları kırp. Ekran (CSS) koordinatını kaynak piksele çevir.
-      const coverScale = Math.max(vrect.width / srcW, vrect.height / srcH)
-      const offX = (vrect.width - srcW * coverScale) / 2
-      const offY = (vrect.height - srcH * coverScale) / 2
-      sx = (frect.left - vrect.left - offX) / coverScale
-      sy = (frect.top - vrect.top - offY) / coverScale
-      sWidth = frect.width / coverScale
-      sHeight = frect.height / coverScale
-      // Küçük hizalama payı: hedef çerçeveyi tam doldurmazsa kenarları kırpma.
-      const padX = sWidth * 0.06
-      const padY = sHeight * 0.12
-      sx -= padX
-      sy -= padY
-      sWidth += padX * 2
-      sHeight += padY * 2
-      // Kaynak sınırlarına kıstır.
-      sx = Math.max(0, Math.min(sx, srcW))
-      sy = Math.max(0, Math.min(sy, srcH))
-      sWidth = Math.max(1, Math.min(sWidth, srcW - sx))
-      sHeight = Math.max(1, Math.min(sHeight, srcH - sy))
-    }
+    const { sx, sy, sWidth, sHeight } = frame
+      ? coverRegionToSource({ width: srcW, height: srcH }, vrect, frame.getBoundingClientRect(), { x: 0.06, y: 0.12 })
+      : coverRegionToSource({ width: srcW, height: srcH }, vrect, vrect)
 
     // Çıkış boyutu: okuma için uzun kenarı normalize et (küçük kırpıları büyüt,
     // çok büyükleri küçült). Net glyph'ler OCR'a yardımcı olur.
@@ -305,7 +317,7 @@ export function CameraScanner({
         <canvas ref={canvasRef} className="hidden" />
 
         {/* Rehber çerçevesi + odak dışını bulanıklaştıran maske */}
-        {status === "ready" && (
+        {status === "ready" && frameClassName && (
           <>
             {/* Çerçeve dışını karartıp bulanıklaştır; yalnızca hedef penceresi net kalır */}
             <div className="pointer-events-none absolute inset-0 flex flex-col">
@@ -320,13 +332,35 @@ export function CameraScanner({
               </div>
               <div className="flex-1 bg-black/40 backdrop-blur-md" />
             </div>
-            <p className="absolute inset-x-0 top-4 text-center text-sm font-medium text-white">{hint}</p>
+            {!guide && hint && (
+              <p className="absolute inset-x-0 top-4 text-center text-sm font-medium text-white">{hint}</p>
+            )}
           </>
         )}
 
+        {/* Çerçevesiz modda yalnız üst yönerge (kart yoksa) */}
+        {status === "ready" && !frameClassName && !guide && hint && (
+          <p className="absolute inset-x-0 top-4 text-center text-sm font-medium text-white">{hint}</p>
+        )}
+
+        {/* Alt yönerge kartı: görüntünün altında, deklanşörün hemen üstünde */}
+        {status === "ready" && guide && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 px-4 pb-4">{guide}</div>
+        )}
+
         {status === "starting" && (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
             <BrandSpinner size={56} label="Kamera hazırlanıyor…" className="text-white" />
+            {slowStart && (
+              <>
+                <p className="max-w-sm text-sm text-white">
+                  Kamera izni bekleniyor. Tarayıcının gösterdiği izin isteğinde &ldquo;İzin ver&rdquo;i seçin.
+                </p>
+                <Button variant="foreground" onClick={retryStart} className="gap-2">
+                  <RefreshCw className="size-4" /> Kamerayı başlat
+                </Button>
+              </>
+            )}
           </div>
         )}
 
@@ -334,7 +368,7 @@ export function CameraScanner({
         {showsPreview && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-y-auto bg-black p-4">
             {capturedUrl && (
-              <Image src={capturedUrl} alt="Çekilen kare" width={1200} height={400} unoptimized className="max-h-48 max-w-full rounded-lg object-contain" />
+              <Image src={capturedUrl} alt="Çekilen kare" width={1200} height={400} unoptimized className={`${frameClassName ? "max-h-48" : "max-h-[55vh]"} w-auto max-w-full rounded-lg object-contain`} />
             )}
             {status === "scanning" && <BrandSpinner size={48} label={scanningLabel} className="text-white" />}
             {status === "confirm" && scannedValue && (
@@ -378,8 +412,21 @@ export function CameraScanner({
         )}
       </div>
 
-      {/* Alt kontroller */}
-      <div className="flex items-center justify-center gap-6 p-6 shrink-0">
+      {/* Alt kontroller: ortada deklanşör, solda "El ile gir" (verildiyse), sağda
+          dosyadan yükleme. Dosya yolu yalnız kamerasız/izinsiz durumda sunulursa
+          webcam'li bir PC'de kullanıcı elindeki fotoğrafı hiç yükleyemez — o yüzden
+          kamera açıkken de durur. */}
+      <div className="relative flex min-h-28 items-center justify-center gap-6 p-6 shrink-0">
+        {onManualEntry && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onManualEntry}
+            className="absolute left-6 top-1/2 h-auto -translate-y-1/2 flex-col gap-1 rounded-xl px-3 py-2 text-xs text-white hover:bg-white/10 hover:text-white"
+          >
+            <Keyboard className="size-5" /> El ile gir
+          </Button>
+        )}
         {status === "ready" && (
           <Button
             type="button"
@@ -391,6 +438,17 @@ export function CameraScanner({
             <Camera className="size-7" />
           </Button>
         )}
+        {/* "starting" da dahil: kamera izni beklenirken de dosya seçilebilsin. */}
+        {(status === "ready" || status === "starting") && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute right-6 top-1/2 h-auto -translate-y-1/2 flex-col gap-1 rounded-xl px-3 py-2 text-xs text-white hover:bg-white/10 hover:text-white"
+          >
+            <Upload className="size-5" /> Dosyadan
+          </Button>
+        )}
       </div>
 
       <input
@@ -400,6 +458,8 @@ export function CameraScanner({
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0]
+          // Aynı dosya tekrar seçilebilsin (hata sonrası yeniden deneme).
+          e.target.value = ""
           if (file) onFileSelected(file)
         }}
       />

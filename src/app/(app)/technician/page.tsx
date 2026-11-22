@@ -17,14 +17,14 @@ import {
   TECHNICIAN_PARAM,
 } from "@/lib/technician/selected-technician"
 
-export const metadata = { title: "Teknisyen Paneli" }
+export const metadata = { title: "Servis Yönetimi" }
 
 export const dynamic = "force-dynamic"
 
 export default async function TechnicianPage({
   searchParams,
 }: {
-  searchParams: Promise<{ technician?: string }>
+  searchParams: Promise<{ technician?: string; mine?: string }>
 }) {
   const paywall = await getFeaturePaywall("team")
   if (paywall) return paywall
@@ -50,10 +50,10 @@ export default async function TechnicianPage({
 
   if (!selectedTechnicianId) {
     return (
-      <AppShell workshopName={workshop?.name} pageTitle="Teknisyen Paneli">
+      <AppShell workshopName={workshop?.name} pageTitle="Servis Yönetimi">
         <div className="space-y-5 sm:space-y-6">
           <div>
-            <h2 className="text-page-title text-foreground">Teknisyen Paneli</h2>
+            <h2 className="text-page-title text-foreground">Servis Yönetimi</h2>
             <p className="text-sm text-muted-foreground mt-0.5">İş atamalarınızı ve görevlerinizi yönetin</p>
           </div>
           <Card>
@@ -74,15 +74,20 @@ export default async function TechnicianPage({
     )
   }
 
-  const technicianFilter = canSelectTechnician ? selectedTechnicianId : undefined
+  // Saha rolleri varsayılan olarak atölyenin tüm araç kabullerini görür;
+  // "Bana atananlar" anahtarı (`?mine=1`) KPI'ları ve listeleri kendi
+  // atamalarına daraltır. Yönetici görünümü seçili teknisyene bağlı kalır.
+  const onlyAssignedToMe = !canSelectTechnician && params.mine === "1"
+  const scopeToTechnician = canSelectTechnician || onlyAssignedToMe
+  const technicianFilter = scopeToTechnician ? selectedTechnicianId : undefined
   const [stats, orders, recentCompletedOrders] = await Promise.all([
-    getTechnicianDashboardStats(user.workshopId, selectedTechnicianId),
+    getTechnicianDashboardStats(user.workshopId, selectedTechnicianId, scopeToTechnician),
     getTechnicianOrders(user.workshopId, technicianFilter),
     getRecentCompletedTechnicianOrders(user.workshopId, technicianFilter),
   ])
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Teknisyen Paneli">
+    <AppShell workshopName={workshop?.name} pageTitle="Servis Yönetimi">
       <TechnicianDashboard
         technicians={technicians.map((t) => ({
           id: t.id,
@@ -93,6 +98,7 @@ export default async function TechnicianPage({
         }))}
         selectedTechnicianId={selectedTechnicianId}
         canSelectTechnician={canSelectTechnician}
+        onlyAssignedToMe={onlyAssignedToMe}
         stats={stats}
         orders={orders}
         recentCompletedOrders={recentCompletedOrders}

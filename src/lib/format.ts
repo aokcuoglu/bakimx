@@ -101,6 +101,15 @@ export function normalizePlate(input: string): string {
 }
 
 /**
+ * Plaka-veya-müşteri arama kutusunda yazılanı büyük harfe çevirir — ama yalnız
+ * plaka biçimindeyse (TR plakası il koduyla, yani rakamla başlar). Müşteri adı
+ * olduğu gibi kalır: "ali" → "ALI" Türkçe "Ali"/"İ" eşleşmesini bozabilir.
+ */
+export function uppercaseIfPlateLike(input: string): string {
+  return /^\s*\d/.test(input) ? input.toUpperCase() : input
+}
+
+/**
  * Ruhsat tarih alanları (ilk tescil, muayene geçerlilik) DB'de GG.AA.YYYY
  * (dd.MM.yyyy) string olarak tutulur; native <input type="date"> ise yyyy-MM-dd
  * ister. Bu iki yardımcı, depolama formatını bozmadan tarih seçici gösterebilmek

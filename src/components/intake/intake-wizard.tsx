@@ -1,7 +1,8 @@
 /* eslint-disable react-hooks/incompatible-library */
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { toast } from "sonner"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -22,13 +23,16 @@ import { useForm } from "react-hook-form"
 import { intakeSchema, type IntakeFormValues } from "@/lib/validations/intake"
 import { typedResolver } from "@/lib/validations/resolver"
 import { VehicleEntryWizard } from "@/components/intake/vehicle-entry-wizard"
+import type { PendingVehiclePhoto } from "@/components/intake/vehicle-photo-capture"
+import type { EntryMethod } from "@/lib/intake/entry-wizard"
 import { WizardStepper } from "@/components/intake/wizard-ui"
 import { FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
 import { DamageCapture } from "@/components/intake/damage-capture"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS } from "@/lib/constants"
+import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS, PHOTO_TYPES } from "@/lib/constants"
 import { hasFeature, type PlanTier } from "@/lib/plan"
+import { isTechnicianFlow } from "@/lib/sidebarless-route"
 
 type Customer = {
   id: string
@@ -69,12 +73,15 @@ export function IntakeWizard({
   prefillVehicleId,
   source,
   planTier,
+  initialEntryMethod,
 }: {
   customers: Customer[]
   prefillCustomerId?: string
   prefillVehicleId?: string
   source?: string
   planTier?: string
+  /** Araç girişi bu yöntemin adımında açılır (ör. teknisyen panelinden plaka). */
+  initialEntryMethod?: EntryMethod | null
 }) {
   const [step, setStep] = useState(1)
   const [error, setError] = useState("")
@@ -85,6 +92,10 @@ export function IntakeWizard({
   const searchParams = useSearchParams()
 
   const [intakeId, setIntakeId] = useState("")
+  // Araç girişinde (plaka taraması ya da araç bilgileri kartı) çekilen araç
+  // karesi. Fotoğraf kabul kaydına bağlandığı için kabul oluşana kadar burada
+  // bekler; kabul oluşunca "Ön" fotoğrafı olarak yüklenir.
+  const pendingVehiclePhoto = useRef<PendingVehiclePhoto | null>(null)
   const [orderId, setOrderId] = useState("")
   const [vehicleInfo, setVehicleInfo] = useState<VehicleInfo | null>(null)
 
@@ -187,9 +198,41 @@ export function IntakeWizard({
     setVehicleInfo(null)
     setError("")
     setStep(1)
-    // URL'deki önceki müşteri/araç seçimini temizle (rehydrate/prefill tetiklenmesin)
-    router.replace(pathname, { scroll: false })
+    // URL'deki önceki müşteri/araç seçimini temizle (rehydrate/prefill tetiklenmesin).
+    // Giriş yöntemi (`entry`) ve kaynak (`from=technician`) KALIR: yoksa ikinci
+    // araçta odaklı/sidebar'sız görünüm kaybolur.
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("customerId")
+    params.delete("vehicleId")
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  /**
+   * Bekleyen araç karesini kabulün "Ön" fotoğrafı olarak yükler. Kabul zaten
+   * oluştuğu için hata akışı DURDURMAZ: kullanıcı uyarılır, fotoğrafı sonraki
+   * adımdan ekleyebilir. `requestId` aynı karenin iki kez kaydedilmesini önler.
+   */
+  async function uploadPendingVehiclePhoto(intakeFormId: string) {
+    const photo = pendingVehiclePhoto.current
+    if (!photo) return
+    try {
+      const fd = new FormData()
+      fd.set("intakeFormId", intakeFormId)
+      fd.set("type", "front")
+      fd.set("phase", "intake")
+      fd.set("label", PHOTO_TYPES.front.label)
+      fd.set("requestId", photo.requestId)
+      fd.set("file", photo.file, photo.file.name || "arac-on.jpg")
+      const res = await fetch("/api/intakes/photos", { method: "POST", body: fd })
+      const data = (await res.json().catch(() => null)) as { success?: boolean; error?: string } | null
+      if (!res.ok || !data?.success) throw new Error(data?.error || "")
+      pendingVehiclePhoto.current = null
+    } catch (err) {
+      const reason = err instanceof Error && err.message ? ` (${err.message})` : ""
+      toast.error(`Araç fotoğrafı kaydedilemedi${reason}. Fotoğraflar adımından ekleyebilirsiniz.`)
+    }
   }
 
   async function handleCreateIntake() {
@@ -221,6 +264,7 @@ export function IntakeWizard({
       const res = await fetch("/api/intakes", { method: "POST", body: formData })
       const data = await res.json()
       if (data.success && data.id) {
+        await uploadPendingVehiclePhoto(data.id)
         setIntakeId(data.id)
         if (data.orderId) setOrderId(data.orderId)
         setStep(4)
@@ -234,21 +278,50 @@ export function IntakeWizard({
     }
   }
 
+  /**
+   * Odaklı plaka akışının "Onayla"sı: kabul detayları (km, yakıt, şikayet)
+   * sorulmadan iş emri açılır; bunlar sonradan iş emrinde girilir. Bekleyen araç
+   * karesi "Ön" fotoğrafı olarak yüklenir, sonra iş emri ekranına gidilir.
+   * Hata metni döner (sihirbaz kendi ekranında gösterir); başarıda `null`.
+   */
+  async function handleConfirmOrder(v: { customerId: string; vehicleId: string }): Promise<string | null> {
+    const formData = new FormData()
+    formData.set("customerId", v.customerId)
+    formData.set("vehicleId", v.vehicleId)
+    const res = await fetch("/api/intakes", { method: "POST", body: formData })
+    const data = (await res.json().catch(() => null)) as { success?: boolean; id?: string; orderId?: string; error?: string } | null
+    if (!data?.success || !data.id) return data?.error || "İş emri oluşturulamadı"
+    await uploadPendingVehiclePhoto(data.id)
+    const base = fromTechnician ? "/technician/orders" : "/orders"
+    router.push(data.orderId ? `${base}/${data.orderId}` : fromTechnician ? "/technician" : "/orders")
+    return null
+  }
+
   // Sihirbaz rayı: üst seviye üç adım. Araç girişinin kendi alt adımları
   // (yöntem → yakalama → araç → müşteri → onay) 1. adımın içinde yaşar (#309).
   const railSteps = STEPS.map((s) => ({ id: String(s.id), label: s.label }))
   const railCompleted = [...completedSteps].map(String)
+  // Doğrudan giriş (?entry=…): adım rayı yok, tek kolon.
+  const focused = initialEntryMethod != null
+  // Teknisyen panelinden açılan kabul, panelin iş emri ekranına döner; ofis
+  // detayı (/orders/[id]) saha rollerine kapalı ve sidebar'lı kabuktadır.
+  const fromTechnician = isTechnicianFlow(searchParams)
+  const completedOrderHref = fromTechnician
+    ? (orderId ? `/technician/orders/${orderId}` : "/technician")
+    : (orderId ? `/orders/${orderId}` : "/orders")
 
   return (
     <Form {...form}>
-      <div className="grid items-start gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
-        <WizardStepper
-          className="lg:sticky lg:top-20"
-          steps={railSteps}
-          currentId={String(step)}
-          completedIds={railCompleted}
-          onStepClick={(id) => setStep(Number(id))}
-        />
+      <div className={focused ? "grid items-start gap-6" : "grid items-start gap-6 lg:grid-cols-[200px_minmax(0,1fr)]"}>
+        {!focused && (
+          <WizardStepper
+            className="lg:sticky lg:top-20"
+            steps={railSteps}
+            currentId={String(step)}
+            completedIds={railCompleted}
+            onStepClick={(id) => setStep(Number(id))}
+          />
+        )}
 
         <div className="min-w-0 space-y-6">
           {source === "registration" && selectedCustomerId && selectedVehicleId && (
@@ -267,16 +340,22 @@ export function IntakeWizard({
         {/* Step 1: Customer & Vehicle */}
         {step === 1 && (
           <Card>
-            <CardContent className="space-y-4 pt-6">
+            <CardContent className={focused ? "space-y-4" : "space-y-4 pt-6"}>
               <VehicleEntryWizard
                 value={{ customerId: selectedCustomerId, vehicleId: selectedVehicleId }}
                 onChange={(v) => {
                   form.setValue("selectedCustomerId", v.customerId, { shouldValidate: true })
                   form.setValue("selectedVehicleId", v.vehicleId, { shouldValidate: true })
-                  syncSelectionToUrl(v.customerId, v.vehicleId)
+                  // Odaklı akışta seçim URL'e yazılmaz: seçim anında iş emri
+                  // açılıp sayfadan çıkılıyor; geri tuşu id'li bir ara ekrana
+                  // değil, temiz araç kabul aramasına dönsün.
+                  if (!focused) syncSelectionToUrl(v.customerId, v.vehicleId)
                 }}
                 onComplete={() => setStep(3)}
                 planTier={planTier}
+                initialMethod={initialEntryMethod}
+                onVehiclePhotoChange={(photo) => { pendingVehiclePhoto.current = photo }}
+                onConfirmOrder={focused ? handleConfirmOrder : undefined}
               />
             </CardContent>
           </Card>
@@ -521,7 +600,7 @@ export function IntakeWizard({
                     <Plus className="size-4" /> Kaydet & Yeni
                   </Button>
                   <Button variant="foreground" size="lg" className="gap-2" asChild>
-                    <Link href={orderId ? `/orders/${orderId}` : "/orders"}>
+                    <Link href={completedOrderHref}>
                       Araç Kabulüne Git
                     </Link>
                   </Button>

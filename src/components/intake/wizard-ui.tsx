@@ -135,16 +135,19 @@ export function WizardHeading({
   eyebrow,
   title,
   description,
+  large = false,
 }: {
   eyebrow?: string
   title: string
   description?: string
+  /** Odaklı (tek iş) ekranlar için büyük ölçek. */
+  large?: boolean
 }) {
   return (
-    <div className="space-y-1">
+    <div className={large ? "space-y-2" : "space-y-1"}>
       {eyebrow && <p className="text-sm text-muted-foreground">{eyebrow}</p>}
-      <h2 className="text-xl font-bold text-foreground sm:text-2xl">{title}</h2>
-      {description && <p className="text-sm text-muted-foreground">{description}</p>}
+      <h2 className={large ? "text-2xl font-bold tracking-tight text-foreground sm:text-3xl" : "text-xl font-bold text-foreground sm:text-2xl"}>{title}</h2>
+      {description && <p className={large ? "text-lg leading-snug text-muted-foreground" : "text-sm text-muted-foreground"}>{description}</p>}
     </div>
   )
 }

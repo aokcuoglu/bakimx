@@ -61,6 +61,8 @@ export function EntryVehicleFields({
   vinResolve,
   onBrandChange,
   onModelChange,
+  hidePlate = false,
+  sectionTitle,
 }: {
   fields: VehicleFields
   onFieldChange: (key: keyof VehicleFields, value: string) => void
@@ -71,6 +73,14 @@ export function EntryVehicleFields({
   vinResolve: ReturnType<typeof useVinResolve>
   onBrandChange: (value: string) => void
   onModelChange: (value: string) => void
+  /** Plaka alanı ekranda ayrıca (en üstte) gösteriliyorsa burada çizilmez. */
+  hidePlate?: boolean
+  /**
+   * Verilirse temel alanlar (plaka/model yılı/marka/model) müşteri kartıyla
+   * (`IntakeOwnerCard`) aynı görünümde başlıklı bir kutuya alınır. Adımın
+   * kendi başlığı zaten "Araç bilgileri" olan yerde verilmez.
+   */
+  sectionTitle?: string
 }) {
   const [scannerOpen, setScannerOpen] = useState(false)
 
@@ -93,18 +103,26 @@ export function EntryVehicleFields({
     lowConf(key) ? "border-warning/40 bg-warning/10 focus-visible:border-warning" : ""
   const warn = (key: string) => lowConf(key) && <AlertTriangle className="size-3 text-warning-strong" />
 
-  return (
-    <div className="space-y-4">
+  const coreFields = (
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label className="flex items-center gap-1">Plaka * {warn("plate")}</Label>
-          <Input
-            value={fields.plate}
-            onChange={(e) => onFieldChange("plate", e.target.value.toUpperCase())}
-            className={fieldClass("plate")}
-            placeholder="34 ABC 123"
-          />
-        </div>
+        {!hidePlate && (
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1">Plaka * {warn("plate")}</Label>
+            <Input
+              value={fields.plate}
+              onChange={(e) => onFieldChange("plate", e.target.value.toUpperCase())}
+              className={fieldClass("plate")}
+              placeholder="34 ABC 123"
+            />
+          </div>
+        )}
+        <VehicleBrandModelPicker
+          brand={fields.brand}
+          model={fields.model}
+          onBrandChange={onBrandChange}
+          onModelChange={onModelChange}
+          required
+        />
         <div className="space-y-1.5">
           <Label className="flex items-center gap-1">Model yılı {warn("modelYear")}</Label>
           <Input
@@ -115,14 +133,19 @@ export function EntryVehicleFields({
             placeholder="2023"
           />
         </div>
-        <VehicleBrandModelPicker
-          brand={fields.brand}
-          model={fields.model}
-          onBrandChange={onBrandChange}
-          onModelChange={onModelChange}
-          required
-        />
       </div>
+  )
+
+  return (
+    <div className="space-y-4">
+      {sectionTitle ? (
+        <section aria-labelledby="entry-vehicle-title" className="space-y-3 rounded-xl border border-border bg-card p-4">
+          <h3 id="entry-vehicle-title" className="font-semibold text-foreground">{sectionTitle}</h3>
+          {coreFields}
+        </section>
+      ) : (
+        coreFields
+      )}
 
       <Button
         type="button"

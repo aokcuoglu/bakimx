@@ -7,7 +7,8 @@
  * asla ayrışmasın ve testlenebilsin.
  */
 
-import { normalizePlate } from "@/lib/format"
+import { normalizePhone, normalizePlate } from "@/lib/format"
+import { parsePlateFromText } from "@/lib/ocr/plate"
 import { normalizeVin } from "@/lib/vin/types"
 
 export type EntryMethod = "registration" | "vin" | "plate" | "customer"
@@ -48,6 +49,16 @@ export const ENTRY_METHODS: EntryMethodOption[] = [
   },
 ]
 
+/**
+ * URL'den gelen başlangıç yöntemi (`/orders/new?entry=plate`). Bilinmeyen ya da
+ * boş değer `null` döner — sihirbaz o zaman her zamanki gibi yöntem seçimiyle
+ * açılır.
+ */
+export function parseEntryMethod(raw: string | string[] | undefined): EntryMethod | null {
+  const value = Array.isArray(raw) ? raw[0] : raw
+  return ENTRY_METHODS.some((m) => m.value === value) ? (value as EntryMethod) : null
+}
+
 export function entryMethodOption(method: EntryMethod): EntryMethodOption {
   const found = ENTRY_METHODS.find((m) => m.value === method)
   if (!found) throw new Error(`Bilinmeyen yöntem: ${method}`)
@@ -78,14 +89,132 @@ export function entryStepLabels(
   return steps
 }
 
-/** Zorunlu araç alanları eksikse Türkçe hata metni, tamamsa `null`. */
-export function vehicleFieldError(fields: { plate: string; brand: string; model: string }): string | null {
+/**
+ * Zorunlu araç alanları eksikse Türkçe hata metni, tamamsa `null`.
+ * `modelOptional`: odaklı plaka akışında araç alanları sorulmaz — marka araç
+ * fotoğrafından okunur, model sonradan araç kaydından tamamlanır.
+ */
+export function vehicleFieldError(
+  fields: { plate: string; brand: string; model: string },
+  opts: { modelOptional?: boolean } = {},
+): string | null {
   const missing: string[] = []
   if (!fields.plate.trim()) missing.push("Plaka")
   if (!fields.brand.trim()) missing.push("Marka")
-  if (!fields.model.trim()) missing.push("Model")
+  if (!opts.modelOptional && !fields.model.trim()) missing.push("Model")
   if (!missing.length) return null
   return `${missing.join(", ")} zorunludur.`
+}
+
+/**
+ * Odaklı plaka akışında araç bilgileri ekranının müşteri kartı. Plaka kayıtlı
+ * değilse boş gelir ve yeni müşteri açılır; kayıtlıysa aracın sahibiyle dolu
+ * gelir ve düzenlenirse o müşteri kaydı güncellenir (sahip değişmez).
+ *
+ * Bireyselde ad ve soyad TEK alandır (`name`, "Ad Soyad"); kaydederken
+ * `splitPersonName` ile ayrılır. `type` kayıtlı müşteriden gelir: kurumsal
+ * sahipte firma adı düzenlenir. Yeni müşteri bu kısa formda bireyseldir
+ * (ruhsattan kurumsal sahip okunmadıkça).
+ */
+export type OwnerFields = {
+  type: "individual" | "corporate"
+  /** "Ad Soyad" tek alanda. Kurumsalda firmanın yetkilisidir (`contactName`). */
+  name: string
+  companyName: string
+  phone: string
+}
+
+export const EMPTY_OWNER_FIELDS: OwnerFields = {
+  type: "individual",
+  name: "",
+  companyName: "",
+  phone: "",
+}
+
+/**
+ * "Ad Soyad" alanını yapısal ada böler: son kelime soyad, öncesi ad
+ * ("AYŞE NUR KAYA" → ad "AYŞE NUR", soyad "KAYA"). Tek kelimede soyad boştur.
+ */
+export function splitPersonName(name: string): { firstName: string; lastName: string } {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) return { firstName: parts[0] ?? "", lastName: "" }
+  return { firstName: parts.slice(0, -1).join(" "), lastName: parts[parts.length - 1] }
+}
+
+/** Kayıtlı müşteriden kart alanları. Tam ad yoksa ad + soyad birleştirilir. */
+export function ownerFieldsFromCustomer(c: {
+  type: string
+  firstName: string | null
+  lastName: string | null
+  fullName: string | null
+  companyName: string | null
+  contactName?: string | null
+  phone: string
+}): OwnerFields {
+  if (c.type === "corporate") {
+    // Kurumsalda "Ad Soyad" yetkili kişidir; eski kayıtlarda yalnız ad/soyad dolu olabilir.
+    const contact = (c.contactName || "").trim() || [c.firstName, c.lastName].map((x) => (x || "").trim()).filter(Boolean).join(" ")
+    return { type: "corporate", name: contact, companyName: (c.companyName || "").trim(), phone: c.phone || "" }
+  }
+  const name = (c.fullName || "").trim() || [c.firstName, c.lastName].map((x) => (x || "").trim()).filter(Boolean).join(" ")
+  return { type: "individual", name, companyName: "", phone: c.phone || "" }
+}
+
+/** Zorunlu müşteri alanları eksikse Türkçe hata metni, tamamsa `null`. */
+export function ownerFieldError(o: OwnerFields): string | null {
+  const missing: string[] = []
+  if (o.type === "corporate") {
+    if (!o.companyName.trim()) missing.push("Firma adı")
+  } else if (!o.name.trim()) {
+    missing.push("Ad Soyad")
+  }
+  const phone = normalizePhone(o.phone)
+  if (!phone) missing.push("Telefon")
+  if (missing.length) return `${missing.join(", ")} zorunludur.`
+  if (phone.length < 10) return "Geçerli bir telefon numarası girin (en az 10 hane)."
+  return null
+}
+
+/**
+ * Kart düzenlendi mi? Boşluk ve telefon biçimi (0 / +90 / boşluk) fark sayılmaz —
+ * yalnız gerçek değişiklik müşteri kaydını günceller.
+ */
+export function ownerFieldsChanged(original: OwnerFields, current: OwnerFields): boolean {
+  const text = (v: string) => v.trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR")
+  // Tip de karşılaştırılır: "Kurumsal" düğmesiyle bireysel ↔ kurumsal geçiş
+  // müşteri kaydını günceller.
+  const norm = (o: OwnerFields) => [o.type, text(o.name), text(o.companyName), normalizePhone(o.phone)].join("\u0000")
+  return norm(original) !== norm(current)
+}
+
+/** Kartta kullanıcının yazdığı bir şey var mı (ad, firma ya da telefon)? */
+export function hasOwnerInput(o: OwnerFields): boolean {
+  return !!(o.name.trim() || o.companyName.trim() || o.phone.trim())
+}
+
+/**
+ * Araç fotoğrafı ile girilen plaka aynı araca mı ait? `photoPlate`, fotoğraftan
+ * okunan plakadır (kompakt) — fotoğraf ve o sırada girilen müşteri bilgileri bu
+ * araca aittir. Plaka sonradan değiştirilirse ikisi başka bir araca kalabilir:
+ *
+ * - `"match"`: fotoğraf yok ya da plaka aynı.
+ * - `"typing"`: plaka farklı ama henüz tam bir TR plakası değil — uyarı yazarken
+ *   titremesin diye gösterilmez, yine de kaydetme engellenir.
+ * - `"mismatch"`: plaka farklı ve tam — kullanıcı "aynı araç mı" diye seçmeli.
+ *
+ * Plaka en sık okuma hatasını düzeltmek için değişir (aynı araç); bu yüzden
+ * fotoğraf kendiliğinden silinmez, karar kullanıcıya bırakılır.
+ */
+export function photoPlateStatus(photoPlate: string | null, currentPlate: string): "match" | "typing" | "mismatch" {
+  if (!photoPlate) return "match"
+  const current = normalizePlate(currentPlate)
+  if (current === photoPlate) return "match"
+  return parsePlateFromText(current) === current ? "mismatch" : "typing"
+}
+
+/** Kartta gösterilen / sahip satırına yazılan ad. */
+export function ownerLabel(o: OwnerFields): string {
+  return (o.type === "corporate" ? o.companyName : o.name).trim().replace(/\s+/g, " ")
 }
 
 /**
@@ -136,4 +265,22 @@ export function previousEntryStep(
   const index = steps.findIndex((s) => s.id === current)
   if (index <= 0) return "method"
   return steps[index - 1].id
+}
+
+/**
+ * Onay kartının satırları: plaka, araç ve sahip. Sihirbazdaki her kaynak (arama
+ * sonucu, müşterinin aracı, URL'den yüklenen ya da yeni kaydedilen araç) etiketi
+ * `${plate} — ${brand} ${model}`, alt etiketi `Sahip: ${ad}` biçiminde kurar
+ * (`buildUnifiedResults` ile aynı biçim). Marka/model boşsa araç satırı boş döner.
+ */
+export function confirmedVehicleParts(
+  label: string,
+  sublabel: string
+): { plate: string; vehicleName: string; ownerName: string } {
+  const sep = label.indexOf("—")
+  return {
+    plate: (sep === -1 ? label : label.slice(0, sep)).trim(),
+    vehicleName: sep === -1 ? "" : label.slice(sep + 1).trim(),
+    ownerName: sublabel.replace(/^Sahip:\s*/, "").trim(),
+  }
 }

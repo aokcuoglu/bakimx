@@ -7,9 +7,9 @@ import {
 } from "@/lib/dashboard/product-tour"
 
 describe("dashboard product tour config", () => {
-  test("desktop exposes four steps and mobile exposes five", () => {
+  test("desktop exposes four steps and mobile exposes three", () => {
     expect(getDashboardTourSteps(false)).toHaveLength(4)
-    expect(getDashboardTourSteps(true)).toHaveLength(5)
+    expect(getDashboardTourSteps(true)).toHaveLength(3)
   })
 
   test("first step is a target-free intro", () => {
@@ -18,9 +18,9 @@ describe("dashboard product tour config", () => {
     expect(intro?.targets).toEqual([])
   })
 
-  test("mobile orders step targets the bottom nav", () => {
-    const orders = getDashboardTourSteps(true).find((s) => s.id === "orders")
-    expect(orders?.targets).toEqual(["mobile-nav-orders"])
+  test("mobile tour has no bottom-nav steps (the mobile tab bar was removed)", () => {
+    const ids = getDashboardTourSteps(true).map((s) => s.id)
+    expect(ids).toEqual(["intro", "search", "first-order"])
   })
 
   test("desktop orders step targets the sidebar", () => {

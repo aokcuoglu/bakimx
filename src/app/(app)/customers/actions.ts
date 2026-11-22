@@ -3,7 +3,7 @@
 import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { prisma } from "@/lib/db"
 import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
-import { customerCreateSchema } from "@/lib/validations/customer"
+import { customerContactUpdateSchema, customerCreateSchema } from "@/lib/validations/customer"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { normalizePhone } from "@/lib/format"
@@ -280,6 +280,103 @@ export async function updateCustomerAction(customerId: string, formData: FormDat
   revalidatePath(`/customers/${customerId}`)
   revalidatePath("/customers/balances")
   return { success: true, id: customerId }
+}
+
+/**
+ * Araç Kabul müşteri kartından iletişim bilgisi güncellemesi (ad, soyad / firma
+ * adı, telefon). Müşteri tipi DEĞİŞMEZ ve diğer alanlara dokunulmaz. Telefon
+ * başka müşteride kayıtlıysa tam formdaki gibi uyarı döner; kullanıcı onaylarsa
+ * (`ALLOW_DUPLICATE_PHONE_FIELD`) kaydedilir.
+ */
+export async function updateCustomerContactAction(customerId: string, formData: FormData) {
+  const { user } = await requireWritableWorkshop("records.manage")
+
+  const existing = await prisma.customer.findFirst({
+    where: { id: customerId, workshopId: user.workshopId },
+    select: { id: true, type: true, firstName: true, lastName: true, fullName: true, companyName: true, phone: true },
+  })
+  if (!existing) {
+    return { error: "Müşteri bulunamadı veya bu iş yerine ait değil" }
+  }
+
+  const parsed = customerContactUpdateSchema.safeParse({
+    firstName: (formData.get("firstName") as string) ?? "",
+    lastName: (formData.get("lastName") as string) ?? "",
+    fullName: (formData.get("fullName") as string) ?? "",
+    companyName: (formData.get("companyName") as string) ?? "",
+    contactName: (formData.get("contactName") as string) ?? "",
+    phone: normalizePhone((formData.get("phone") as string) || ""),
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
+  }
+  const data = parsed.data
+  const previousType: CustomerType = existing.type === "corporate" ? "corporate" : "individual"
+  // Kart "Kurumsal" düğmesiyle tipi değiştirebilir. Yalnız iki bilinen değer
+  // kabul edilir; alan gelmezse ya da tanınmazsa mevcut tip korunur.
+  const requestedType = formData.get("type")
+  const customerType: CustomerType =
+    requestedType === "corporate" || requestedType === "individual" ? requestedType : previousType
+  const typeChanged = customerType !== previousType
+  if (customerType === "individual" && !data.firstName) return { error: "Ad zorunludur" }
+  if (customerType === "corporate" && !data.companyName) return { error: "Firma adı zorunludur" }
+
+  const phoneOwners = await findCustomersByPhone(user.workshopId, data.phone, customerId)
+  const duplicate = resolveDuplicatePhone(phoneOwners, isDuplicatePhoneConfirmed(formData))
+  if (!duplicate.ok) {
+    return {
+      error: duplicate.error,
+      existingCustomer: duplicate.existingCustomer,
+      existingCustomers: duplicate.existingCustomers,
+    }
+  }
+
+  const update: Prisma.CustomerUpdateInput =
+    customerType === "corporate"
+      ? {
+          ...(typeChanged && { type: "corporate" }),
+          companyName: data.companyName,
+          fullName: data.companyName,
+          // Yetkili kişi: oluşturma yolundaki gibi contactName + firstName.
+          contactName: data.contactName || null,
+          firstName: data.contactName || null,
+          lastName: null,
+          phone: data.phone,
+        }
+      : {
+          ...(typeChanged && { type: "individual" }),
+          firstName: data.firstName,
+          lastName: data.lastName || null,
+          fullName: buildCustomerName({ type: "individual", firstName: data.firstName, lastName: data.lastName, fullName: data.fullName }),
+          phone: data.phone,
+        }
+
+  try {
+    await prisma.customer.update({ where: { id: customerId, workshopId: user.workshopId }, data: update })
+  } catch (err) {
+    if (isUniqueConstraintError(err, "phone")) {
+      return { error: "Bu telefon numarası henüz ikinci müşteriye açılamadı. Sayfayı yenileyip tekrar deneyin." }
+    }
+    throw err
+  }
+
+  const label = buildCustomerName({ type: customerType, firstName: data.firstName, lastName: data.lastName, fullName: data.fullName, companyName: data.companyName })
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "Customer",
+    customerId,
+    "customer_updated",
+    JSON.stringify({
+      source: "intake_owner_card",
+      before: { type: previousType, name: buildCustomerName({ ...existing, type: previousType }), phone: existing.phone },
+      after: { type: customerType, name: label, phone: data.phone },
+    }),
+  )
+
+  revalidatePath("/customers")
+  revalidatePath(`/customers/${customerId}`)
+  return { success: true as const, id: customerId, label }
 }
 
 export async function deleteCustomerAction(customerId: string) {

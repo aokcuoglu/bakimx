@@ -4,6 +4,7 @@ import type {
   OcrFieldConfidence,
   PartBoxOcrResult,
   VinOcrResult,
+  PlateOcrResult,
 } from "./types"
 
 function field(value: string, confidence?: number): OcrFieldConfidence {
@@ -69,6 +70,17 @@ export class MockOcrProvider implements OcrProvider {
     // Ruhsat mock'uyla AYNI VIN: demo akışta cam taraması ile ruhsat taraması
     // aynı araca düşsün (seed verisiyle de eşleşir).
     return { rawVin: MOCK_REGISTRATION_DATA.vin.value, confident: true, provider: "mock" }
+  }
+
+  async extractPlate(_imageBuffer: Buffer, _mimeType: string): Promise<PlateOcrResult> {
+    await new Promise((resolve) => setTimeout(resolve, 900))
+    // Ruhsat mock'uyla AYNI plaka: demo akışta araç fotoğrafı ile ruhsat aynı araca düşsün.
+    return {
+      rawPlate: MOCK_REGISTRATION_DATA.plate.value,
+      confident: true,
+      rawBrand: MOCK_REGISTRATION_DATA.brand.value,
+      provider: "mock",
+    }
   }
 }
 

@@ -36,6 +36,7 @@ test("buildUnifiedResults: önce araçlar (plaka etiketi + sahip alt-etiketi), s
   expect(out[0]).toEqual({
     kind: "vehicle", vehicleId: "v1", customerId: "c1", plate: "34ABC123",
     label: "34ABC123 — Renault Clio", sublabel: "Sahip: Ahmet Yılmaz",
+    vehicleName: "Renault Clio", ownerName: "Ahmet Yılmaz",
   })
   expect(out[1]).toEqual({ kind: "customer", customerId: "c1", label: "Ahmet Yılmaz", sublabel: "05321112233" })
 })
