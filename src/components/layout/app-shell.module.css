@@ -143,8 +143,10 @@
   letter-spacing: -0.015em;
 }
 
-/* Mobil açılır menü: başparmak için 44px dokunma alanı (kalıp: .d-blue 44px). */
-@media (max-width: 1023px) {
+/* Mobil açılır menü: başparmak için 44px dokunma alanı (kalıp: .d-blue 44px).
+   Sorgu Tailwind `lg`in (64rem) tümleyeni ve `useIsMobile` ile aynı: px yazılırsa
+   varsayılan yazı boyutu 16px olmayan tarayıcıda açılır menü ile ölçü ayrışır. */
+@media not all and (min-width: 64rem) {
   .sidebar :global([data-sidebar="menu-button"]) {
     height: 46px;
     font-size: 17px;
