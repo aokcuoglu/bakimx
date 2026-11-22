@@ -27,6 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     path: `/blog/${post.slug}`,
     title: post.title,
     description: post.description,
+    image: post.cover ? { url: post.cover, alt: post.coverAlt } : undefined,
   })
 
   return {
@@ -37,7 +38,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt ?? post.publishedAt,
       authors: [post.author.name],
-      images: post.cover ? [{ url: post.cover }] : undefined,
     },
   }
 }

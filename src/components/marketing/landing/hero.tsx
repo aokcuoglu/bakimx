@@ -17,8 +17,8 @@ export function Hero() {
       <div className={styles.heroIn} data-hero-text>
         <h1 id="hero-title" className={styles.heroTitle}>
           {HERO.title[0]}
-          <br />
-          {HERO.title[1]}
+          {/* <br> sonrasındaki boşluk görünmez ama metinde satırları ayırır (#780). */}
+          <br /> {HERO.title[1]}
         </h1>
         <p className={styles.heroSub}>{HERO.subtitle}</p>
         <div className={styles.cta}>

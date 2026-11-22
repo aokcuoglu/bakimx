@@ -5,7 +5,7 @@ export const KILAVUZ_TITLE = "Kullanım Kılavuzu"
 export const KILAVUZ_H1 = "BakımX kullanım kılavuzu"
 
 export const KILAVUZ_DESCRIPTION =
-  "BakımX’te kurulumdan araç kabulü teslimine kadar günlük servis akışını adım adım anlatan ürün kullanım kılavuzu: müşteri, araç, fotoğraf, teklif ve teslim."
+  "BakımX’te kurulumdan araç teslimine kadar günlük servis akışını adım adım anlatan ürün kullanım kılavuzu: müşteri, araç, fotoğraf, teklif ve teslim."
 
 export const KILAVUZ_INTRO =
   "Bu kılavuz, atölyenizde BakımX’i ilk günden verimli kullanmanız için yazıldı. Soldaki içindekilerden istediğiniz bölüme atlayabilir, üstteki arama ile konu bulabilir veya yazdırıp ekibinize dağıtabilirsiniz."

@@ -12,7 +12,7 @@ import { LandingHeader } from "@/components/marketing/landing/landing-header";
 import { Move } from "@/components/marketing/landing/move";
 import { Price } from "@/components/marketing/landing/price";
 import styles from "@/components/marketing/landing/landing.module.css";
-import { SITE_URL, HOME_TITLE, publicPageMetadata } from "@/lib/seo";
+import { HOME_TITLE, ORGANIZATION_STRUCTURED_DATA, SITE_URL, publicPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = {
   ...publicPageMetadata({
@@ -24,14 +24,7 @@ export const metadata: Metadata = {
 };
 
 const homeStructuredData = [
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": `${SITE_URL}/#organization`,
-    name: "BakımX",
-    url: SITE_URL,
-    logo: `${SITE_URL}/01-bakimx-primary-light.png`,
-  },
+  ORGANIZATION_STRUCTURED_DATA,
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",

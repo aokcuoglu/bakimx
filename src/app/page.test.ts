@@ -37,6 +37,12 @@ describe("ana sayfa sözleşmeleri", () => {
     expect(page).toContain("LANDING_FAQ");
   });
 
+  test("Organization verisi sameAs taşıyan ortak tanımdan gelir (#780)", () => {
+    const page = read("src/app/page.tsx");
+    expect(page).toContain("ORGANIZATION_STRUCTURED_DATA");
+    expect(page).not.toContain('"@type": "Organization"');
+  });
+
   test("CTA konumları takip edilir", () => {
     const source = landingFiles().map(read).join("\n");
     for (const location of ["header", "hero_primary", "hero_secondary", "move_primary", "move_secondary", "price", "final"]) {

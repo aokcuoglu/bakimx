@@ -67,3 +67,11 @@ test("alt bant çerez tercihlerini yeniden açma düğmesini taşır", () => {
   const html = render(createElement(LandingFooter))
   expect(html).toContain("Çerez tercihleri")
 })
+
+test("hero başlığının metni satırlar arasında boşluk taşır (#780)", () => {
+  // <br> görünümde satır kırar ama metin düğümüne boşluk koymaz; tarayıcı dışı
+  // okuyucular (arama motoru, paylaşım önizlemesi) "servisinizitelefonunuzdan" görür.
+  const html = render(createElement(Hero))
+  const text = (html.match(/<h1[\s\S]*?<\/h1>/)?.[0] ?? "").replace(/<[^>]+>/g, "")
+  expect(text).toBe("Oto servisinizi telefonunuzdan yönetin.")
+})
