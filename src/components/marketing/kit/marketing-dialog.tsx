@@ -13,6 +13,11 @@ export type MarketingDialogProps = {
   title: string
   size?: "md" | "sm"
   onOpenAutoFocus?: (event: Event) => void
+  /**
+   * Kapanışta odağın nereye döneceği. Radix yalnız kendi `Dialog.Trigger`'ına
+   * döndürür; pencereyi dışarıdaki bir tetikleyici açıyorsa onu burada odakla.
+   */
+  onCloseAutoFocus?: (event: Event) => void
   children: ReactNode
 }
 
@@ -20,13 +25,14 @@ export type MarketingDialogProps = {
  * Pazarlama penceresi (e-santral `.modal`): masaüstünde ortada 500/460px, 30px köşe;
  * telefonda alttan açılan sheet. Radix Dialog odak tuzağı, Escape ve odak dönüşünü verir.
  */
-export function MarketingDialog({ open, onOpenChange, title, size = "md", onOpenAutoFocus, children }: MarketingDialogProps) {
+export function MarketingDialog({ open, onOpenChange, title, size = "md", onOpenAutoFocus, onCloseAutoFocus, children }: MarketingDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
         onOpenAutoFocus={onOpenAutoFocus}
+        onCloseAutoFocus={onCloseAutoFocus}
         overlayClassName={styles.overlay}
         className={cn(styles.dialog, size === "sm" && styles.dialogSm)}
       >

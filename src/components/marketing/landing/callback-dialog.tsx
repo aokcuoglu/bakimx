@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import Image from "next/image"
 import Link from "next/link"
-import { createContext, useCallback, useContext, useMemo, useState, type MouseEvent, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react"
 import { useForm } from "react-hook-form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -22,7 +22,7 @@ import styles from "./callback-dialog.module.css"
 const GENERIC_ERROR = "Talebiniz gönderilemedi. Lütfen tekrar deneyin."
 const ERROR_ID = "call-err"
 
-type CallbackContextValue = { open: () => void }
+type CallbackContextValue = { open: (opener: HTMLElement | null) => void }
 
 const CallbackContext = createContext<CallbackContextValue | null>(null)
 
@@ -31,7 +31,10 @@ export function CallbackDialogProvider({ children }: { children: ReactNode }) {
   const [isOpen, setOpen] = useState(false)
   // Her açılışta form yeniden kurulur: değerler, hatalar ve başarı görünümü sıfırlanır.
   const [session, setSession] = useState(0)
-  const open = useCallback(() => {
+  // Pencereyi açan tetikleyici: kapanınca odak ona döner.
+  const opener = useRef<HTMLElement | null>(null)
+  const open = useCallback((element: HTMLElement | null) => {
+    opener.current = element
     setSession((value) => value + 1)
     setOpen(true)
   }, [])
@@ -51,6 +54,11 @@ export function CallbackDialogProvider({ children }: { children: ReactNode }) {
           if (!first) return
           event.preventDefault()
           first.focus()
+        }}
+        onCloseAutoFocus={(event) => {
+          if (!opener.current?.isConnected) return
+          event.preventDefault()
+          opener.current.focus()
         }}
       >
         <CallbackForm key={session} onDone={() => setOpen(false)} />
@@ -76,7 +84,7 @@ export function CallbackTrigger({ variant, location, children }: CallbackTrigger
   const onClick = (event: MouseEvent<HTMLElement>) => {
     if (!context || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
-    context.open()
+    context.open(event.currentTarget)
   }
 
   if (variant === "text") {
