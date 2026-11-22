@@ -492,8 +492,25 @@
   gap: 10px 18px;
   padding-top: 12px;
 }
+/* Çerez tercihleri düğmesi alt banttaki bağlantılarla aynı görünür. */
+.cookieButton {
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+.cookieButton:hover {
+  background: none;
+}
 .footNav a:hover,
-.footLegal a:hover {
+.footLegal a:hover,
+.cookieButton:hover {
   color: var(--mk-ink);
 }
 

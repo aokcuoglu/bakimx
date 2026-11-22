@@ -61,3 +61,9 @@ test("sayfa sıfırlamaları sıfır özgüllükte; kit sınıflarının margin/
   expect(css).not.toMatch(/^\.page :where\(/m)
   expect(css).toContain(":where(.page) :where(h1, h2, h3, p)")
 })
+
+test("alt bant çerez tercihlerini yeniden açma düğmesini taşır", () => {
+  // Eski ana sayfa footer'ında vardı; kaldırılırsa ziyaretçi çerez onayını geri alamaz (KVKK).
+  const html = render(createElement(LandingFooter))
+  expect(html).toContain("Çerez tercihleri")
+})

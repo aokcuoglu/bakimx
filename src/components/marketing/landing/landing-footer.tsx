@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { CookiePreferencesButton } from "@/components/cookie-consent/cookie-preferences-button"
 import { cn } from "@/lib/utils"
 import { Wordmark } from "../kit/wordmark"
 import { CTA, FOOTER, NAV } from "./content"
@@ -26,6 +27,7 @@ export function LandingFooter() {
             {item.label}
           </Link>
         ))}
+        <CookiePreferencesButton className={styles.cookieButton} />
       </nav>
     </footer>
   )
