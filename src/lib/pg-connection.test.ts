@@ -3,6 +3,7 @@ import {
   buildAppPoolConfig,
   buildPoolConfig,
   DEFAULT_CONNECT_TIMEOUT_MS,
+  DEFAULT_POOL_IDLE_TIMEOUT_MS,
   DEFAULT_QUERY_TIMEOUT_MS,
 } from "@/lib/pg-connection"
 
@@ -12,6 +13,7 @@ afterEach(() => {
   delete process.env.DB_SSL_NO_VERIFY
   delete process.env.DB_CONNECT_TIMEOUT_MS
   delete process.env.DB_QUERY_TIMEOUT_MS
+  delete process.env.DB_POOL_IDLE_TIMEOUT_MS
 })
 
 // ---------------------------------------------------------------------------
@@ -118,4 +120,34 @@ test("script pools stay unbounded so long backfills are not cut off", () => {
   const cfg = buildPoolConfig(RDS_URL)
   expect(cfg.query_timeout).toBeUndefined()
   expect(cfg.statement_timeout).toBeUndefined()
+})
+
+// ---------------------------------------------------------------------------
+// Idle connections are kept warm in the application pool. pg's default (10 s)
+// emptied the pool whenever a user read a page for longer than that, so the
+// next click re-opened every connection from scratch (TCP + TLS + SCRAM):
+// ~550 ms each through the dev SSM tunnel, /orders 0.85 s → 2.6 s after idle.
+// ---------------------------------------------------------------------------
+
+test("the application pool keeps idle connections for minutes, not pg's 10 s", () => {
+  const cfg = buildAppPoolConfig(RDS_URL)
+  expect(cfg.idleTimeoutMillis).toBe(DEFAULT_POOL_IDLE_TIMEOUT_MS)
+  expect(DEFAULT_POOL_IDLE_TIMEOUT_MS).toBeGreaterThanOrEqual(60_000)
+})
+
+test("idle connections never keep a process alive on their own", () => {
+  // A script that imports the app client and forgets $disconnect must not hang
+  // for the whole idle window; the Next server stays alive via its HTTP listener.
+  expect(buildAppPoolConfig(RDS_URL).allowExitOnIdle).toBe(true)
+})
+
+test("idle timeout is tunable via DB_POOL_IDLE_TIMEOUT_MS", () => {
+  process.env.DB_POOL_IDLE_TIMEOUT_MS = "15000"
+  expect(buildAppPoolConfig(RDS_URL).idleTimeoutMillis).toBe(15000)
+  process.env.DB_POOL_IDLE_TIMEOUT_MS = "hep"
+  expect(buildAppPoolConfig(RDS_URL).idleTimeoutMillis).toBe(DEFAULT_POOL_IDLE_TIMEOUT_MS)
+})
+
+test("script pools keep pg's idle default", () => {
+  expect(buildPoolConfig(RDS_URL).idleTimeoutMillis).toBeUndefined()
 })
