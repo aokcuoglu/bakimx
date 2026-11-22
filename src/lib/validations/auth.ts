@@ -54,8 +54,12 @@ export const registerSchema = z
     lastName: z.string().min(1, "Soyad zorunludur"),
     workshopName: z.string().min(2, "İş yeri adı zorunludur"),
     phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
-    city: z.string().min(1, "Şehir zorunludur"),
-    address: z.string().min(1, "Adres zorunludur"),
+    // #783: ana sayfadaki kayıt penceresi ("quick") il/adres sormaz; sonradan
+    // Ayarlar'da doldurulur. Tam kayıt (/register, satın alma) için zorunluluk
+    // aşağıdaki superRefine'da korunur. Kolonlar `String`: boş dize saklanır.
+    signupFlow: z.enum(["full", "quick"]).default("full"),
+    city: z.string().trim().default(""),
+    address: z.string().trim().default(""),
     district: z.string().optional().default(""),
     workshopEmail: z
       .string()
@@ -92,6 +96,10 @@ export const registerSchema = z
       }),
   })
   .superRefine((data, ctx) => {
+    if (data.signupFlow === "full") {
+      if (!data.city) ctx.addIssue({ code: "custom", path: ["city"], message: "Şehir zorunludur" })
+      if (!data.address) ctx.addIssue({ code: "custom", path: ["address"], message: "Adres zorunludur" })
+    }
     if (data.acquisitionSource === "referral" && !data.referralCode) {
       ctx.addIssue({
         code: "custom",

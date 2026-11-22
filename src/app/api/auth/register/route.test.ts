@@ -502,3 +502,29 @@ test("matching pending Lite resumes after campaign closes", async () => {
   expect(await response.json()).toEqual({ ok: true, resumed: true })
   expect(createdWorkshopCount).toBe(0)
 })
+
+describe("ana sayfa kayıt penceresi (#783)", () => {
+  const quickBody = {
+    signupFlow: "quick",
+    email: "hizli@example.com",
+    password: "password1",
+    firstName: "Ali",
+    lastName: "Veli",
+    workshopName: "Yıldız Oto",
+    phone: "0532 123 45 67",
+    kvkkConsent: true,
+    acquisitionSource: "website",
+  }
+
+  test("yalnız pencere alanlarıyla hesap açar; il ve adres boş, kurulum beklemede", async () => {
+    const response = await POST(request(quickBody, "198.51.100.90"))
+    expect(response.status).toBe(200)
+    expect(createdWorkshopData).toMatchObject({ name: "Yıldız Oto", city: "", address: "", onboardingProfile: { status: "pending" } })
+  })
+
+  test("pencere alanlarıyla gelen tam kayıt il ve adres eksikliğiyle reddedilir", async () => {
+    const { signupFlow: _flow, ...fullWithoutAddress } = quickBody
+    const response = await POST(request(fullWithoutAddress, "198.51.100.91"))
+    expect(response.status).toBe(400)
+  })
+})
