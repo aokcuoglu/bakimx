@@ -9,9 +9,9 @@ test("home does not initialize the retired OCR upload and keeps the demo request
     await route.fulfill({ json: { status: "ready", siteKey: "test-site-key" } });
   });
   await page.goto("/#ruhsat-demo");
-  await expect(page.locator("[data-public-ready=true]")).toBeVisible();
+  await expect(page.locator("#hero")).toHaveAttribute("style", /--text/);
   await expect(page.locator('main input[type="file"]')).toHaveCount(0);
-  await page.getByRole("button", { name: "Birlikte inceleyelim", exact: true }).first().click();
-  await expect(page.getByRole("dialog", { name: "Servisinizi tanıyalım." })).toBeVisible();
+  await page.locator("#hero").getByRole("link", { name: "Sizi arayalım ›", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Sizi arayalım" })).toBeVisible();
   expect(calls).toEqual([]);
 });

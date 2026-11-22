@@ -7,11 +7,13 @@ test("public website shell, modal keyboard lifecycle and responsive routes", asy
   test.setTimeout(180_000);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("/");
+  // Ana sayfa (#781) kendi "Sizi arayalım" penceresini taşır (landing-esantral.e2e.ts);
+  // demo formu penceresi ürün sayfalarında yaşamaya devam ediyor.
+  await page.goto("/oto-servis-programi");
   await expect(page.locator("[data-public-ready=true]")).toBeVisible();
   const trigger = page
-    .locator("#hero")
-    .getByRole("button", { name: "Birlikte inceleyelim" });
+    .getByRole("button", { name: "Birlikte inceleyelim" })
+    .first();
   await trigger.focus();
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog", { name: "Servisinizi tanıyalım." });
