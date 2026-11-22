@@ -2,8 +2,10 @@ import { createHmac } from "node:crypto"
 import { describe, expect, test } from "bun:test"
 import {
   DEFAULT_WEBHOOK_TOLERANCE_SECONDS,
+  parseGetirbakimWebhook,
   processProcurementWebhook,
   procurementWebhookSchema,
+  recordUnsupportedProcurementWebhook,
   validateProcurementWebhookEnvelope,
   verifyProcurementWebhook,
 } from "./webhook"
@@ -32,7 +34,7 @@ function lifecycleEnvelope(eventId: string, status: ProcurementStatus, orderId =
 }
 
 function sign(rawBody: string, at = timestamp) {
-  return createHmac("sha256", secret).update(`${at}.${rawBody}`).digest("hex")
+  return `v1=${createHmac("sha256", secret).update(`${at}.${rawBody}`).digest("hex")}`
 }
 
 describe("procurement webhook verification", () => {
@@ -41,8 +43,8 @@ describe("procurement webhook verification", () => {
     expect(verifyProcurementWebhook({ rawBody: `${body}\n`, timestamp, signature: sign(body), secret, nowMs })).toEqual({ ok: false, code: "invalid_signature" })
   })
 
-  test("accepts the v1 prefix and rejects malformed signatures", () => {
-    expect(verifyProcurementWebhook({ rawBody: body, timestamp, signature: `v1=${sign(body)}`, secret, nowMs })).toEqual({ ok: true })
+  test("requires the v1= scheme and rejects malformed signatures", () => {
+    expect(verifyProcurementWebhook({ rawBody: body, timestamp, signature: sign(body).slice(3), secret, nowMs })).toEqual({ ok: false, code: "invalid_signature" })
     expect(verifyProcurementWebhook({ rawBody: body, timestamp, signature: "v1=nope", secret, nowMs })).toEqual({ ok: false, code: "invalid_signature" })
   })
 
@@ -53,12 +55,60 @@ describe("procurement webhook verification", () => {
     }
   })
 
-  test("accepts only the sender's strict versioned envelope", () => {
-    expect(validateProcurementWebhookEnvelope(envelope, { eventId: "evt-1", version: "1.0", partnerId: "bakimx" })).toBeNull()
-    expect(validateProcurementWebhookEnvelope(envelope, { eventId: "evt-2", version: "1.0", partnerId: "bakimx" })).toBe("event_id_mismatch")
-    expect(validateProcurementWebhookEnvelope(envelope, { eventId: "evt-1", version: "2.0", partnerId: "bakimx" })).toBe("version_mismatch")
-    expect(validateProcurementWebhookEnvelope(envelope, { eventId: "evt-1", version: "1.0", partnerId: "other" })).toBe("partner_mismatch")
-    expect(procurementWebhookSchema.safeParse({ ...envelope, extra: true }).success).toBe(false)
+  test("matches GetirBakim's signPartnerWebhook test vector byte for byte", () => {
+    // getirbakim scripts/test-partner.ts: signPartnerWebhook(secret, "1767225600", '{"eventId":"e1"}').
+    const vector = {
+      rawBody: '{"eventId":"e1"}', timestamp: "1767225600", secret: "test-webhook-secret-0123456789abcdef",
+      signature: "v1=3d23b84b1e6c09b71354f18c44be04f6c4cce3dae971a0304540f9f44315d567",
+    }
+    expect(verifyProcurementWebhook({ ...vector, nowMs: 1767225600_000 })).toEqual({ ok: true })
+    expect(verifyProcurementWebhook({ ...vector, rawBody: '{"eventId":"e2"}', nowMs: 1767225600_000 })).toEqual({ ok: false, code: "invalid_signature" })
+    // A bare hex digest (no v1= scheme) is not the contract's format.
+    expect(verifyProcurementWebhook({ ...vector, signature: vector.signature.slice(3), nowMs: 1767225600_000 })).toEqual({ ok: false, code: "invalid_signature" })
+  })
+
+  test("routes on the body's eventType and checks the envelope against headers and receiver", () => {
+    expect(parseGetirbakimWebhook(JSON.parse(JSON.stringify(envelope)))).toMatchObject({ kind: "order", event: { eventId: "evt-1" } })
+    const expected = { eventId: "evt-1", eventType: "partner.order.updated", partnerId: "bakimx" }
+    expect(validateProcurementWebhookEnvelope(envelope, expected)).toBeNull()
+    expect(validateProcurementWebhookEnvelope(envelope, { ...expected, eventId: "evt-2" })).toBe("event_id_mismatch")
+    expect(validateProcurementWebhookEnvelope(envelope, { ...expected, eventType: "partner.return.updated" })).toBe("event_type_mismatch")
+    expect(validateProcurementWebhookEnvelope(envelope, { ...expected, partnerId: "other" })).toBe("partner_mismatch")
+    // Strict order envelope: an unknown field, another specVersion or a broken Order is not the contract.
+    expect(parseGetirbakimWebhook({ ...envelope, extra: true })).toBeNull()
+    expect(parseGetirbakimWebhook({ ...envelope, specVersion: "2.0" })).toBeNull()
+    expect(parseGetirbakimWebhook({ ...envelope, order: { ...order, status: "RESERVATION_EXPIRED" } })).toBeNull()
+  })
+
+  test("accepts return and unknown event types as unsupported", () => {
+    const returnEvent = {
+      specVersion: "1.0", eventId: "evt-return", eventType: "partner.return.updated", occurredAt: "2026-11-21T11:00:00.000Z", partnerId: "bakimx",
+      return: { contractVersion: "2.1", id: "ret-1", orderId: "remote-1", status: "APPROVED", lines: [], decidedAt: "2026-11-21T11:00:00.000Z" },
+    }
+    expect(parseGetirbakimWebhook(returnEvent)).toEqual({
+      kind: "unsupported", eventId: "evt-return", eventType: "partner.return.updated", specVersion: "1.0", partnerId: "bakimx", externalOrderId: "remote-1",
+    })
+    expect(parseGetirbakimWebhook({ ...returnEvent, return: { id: "ret-1" } })).toBeNull()
+    const future = { specVersion: "1.0", eventId: "evt-x", eventType: "partner.invoice.created", occurredAt: "2026-11-21T11:00:00.000Z", partnerId: "bakimx", invoice: {} }
+    expect(parseGetirbakimWebhook(future)).toMatchObject({ kind: "unsupported", eventType: "partner.invoice.created", externalOrderId: "" })
+  })
+
+  test("records an unsupported event once and dedupes its eventId", async () => {
+    const rows = new Map<string, Record<string, unknown>>()
+    const database = {
+      externalProcurementEvent: {
+        create: async ({ data }: { data: Record<string, unknown> }) => {
+          const key = `${data.provider}:${data.eventId}`
+          if (rows.has(key)) throw { code: "P2002", meta: { target: ["provider", "eventId"] } }
+          rows.set(key, data)
+          return data
+        },
+      },
+    } as unknown as Parameters<typeof recordUnsupportedProcurementWebhook>[1]
+    const input = { provider: "getirbakim", eventId: "evt-return", contractVersion: "1.0", eventType: "partner.return.updated", externalOrderId: "remote-1" }
+    expect(await recordUnsupportedProcurementWebhook(input, database)).toEqual({ status: "ignored_unsupported", applied: false })
+    expect(await recordUnsupportedProcurementWebhook(input, database)).toEqual({ status: "duplicate", applied: false })
+    expect(rows.get("getirbakim:evt-return")).toMatchObject({ status: "ignored_unsupported", partnerVersion: 0, externalOrderId: "remote-1" })
   })
 
   test("dedupes a persisted event unique conflict", async () => {
@@ -142,10 +192,11 @@ describe("procurement webhook verification", () => {
     async function deliver(event: ReturnType<typeof lifecycleEnvelope>) {
       const rawBody = JSON.stringify(event)
       const signature = sign(rawBody)
-      expect(verifyProcurementWebhook({ rawBody, timestamp, signature: `v1=${signature}`, secret, nowMs })).toEqual({ ok: true })
-      const parsed = procurementWebhookSchema.parse(JSON.parse(rawBody))
-      expect(validateProcurementWebhookEnvelope(parsed, { eventId: event.eventId, version: "1.0", partnerId: "bakimx" })).toBeNull()
-      return processProcurementWebhook({ provider: "getirbakim", eventId: event.eventId, contractVersion: "1.0", event: parsed }, database)
+      expect(verifyProcurementWebhook({ rawBody, timestamp, signature, secret, nowMs })).toEqual({ ok: true })
+      const parsed = parseGetirbakimWebhook(JSON.parse(rawBody))
+      if (parsed?.kind !== "order") throw new Error("expected an order event")
+      expect(validateProcurementWebhookEnvelope(parsed.event, { eventId: event.eventId, eventType: "partner.order.updated", partnerId: "bakimx" })).toBeNull()
+      return processProcurementWebhook({ provider: "getirbakim", eventId: event.eventId, contractVersion: "1.0", event: parsed.event }, database)
     }
 
     expect(await deliver(lifecycleEnvelope("evt-confirmed", "CONFIRMED"))).toMatchObject({ status: "processed", applied: true })
