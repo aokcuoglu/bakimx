@@ -29,7 +29,7 @@ export type MarketingEventPayloads = {
   paid_subscription_confirmed: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle }
   seo_landing_view: Common & { landing_type: "home" | "product" | "pricing" | "demo" }
   trial_cta_click: Common & { cta_location: string; plan_tier?: PlanTier }
-  demo_cta_click: Common & { cta_location: string; destination: "form" | "assistant" }
+  demo_cta_click: Common & { cta_location: string; destination: "form" | "assistant" | "callback_modal" }
   register_started: Common & { entry_step: "sector" | "account"; plan_tier?: PlanTier }
   register_submitted: Common & {
     entry_step?: "account"
