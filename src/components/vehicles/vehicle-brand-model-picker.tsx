@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Label } from "@/components/ui/label"
 import {
   Combobox,
@@ -10,7 +10,6 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox"
-import { MobileSearchPicker, usePhoneLayout } from "@/components/vehicles/mobile-search-picker"
 
 type Brand = { id: number; name: string }
 type Model = { id: number; name: string }
@@ -98,67 +97,6 @@ export function VehicleBrandModelPicker({
   }, [brandId, modelQuery])
 
   const modelDisabled = disabled || brand.trim().length === 0
-  const phone = usePhoneLayout()
-  const [brandQuery, setBrandQuery] = useState("")
-  const fieldId = useId()
-
-  /** Markayı değiştirir; marka gerçekten değiştiyse model sıfırlanır. */
-  function commitBrand(name: string, id: number | null) {
-    const changed = name.trim().toLocaleLowerCase("tr") !== brand.trim().toLocaleLowerCase("tr")
-    onBrandChange(name)
-    setBrandId(id)
-    if (changed) {
-      setModels([])
-      setModelQuery("")
-      onModelChange("")
-    }
-  }
-
-  // Telefonda yerinde açılan Combobox listesi klavyenin altında kalıyor; seçim
-  // tam ekran panelde yapılır (bkz. MobileSearchPicker).
-  if (phone) {
-    const q = brandQuery.trim().toLocaleLowerCase("tr")
-    const filteredBrands = q ? brands.filter((b) => b.name.toLocaleLowerCase("tr").includes(q)) : brands
-    return (
-      <>
-        <div className="space-y-1">
-          <Label htmlFor={`${fieldId}-brand`}>Marka {required && "*"}</Label>
-          <MobileSearchPicker
-            id={`${fieldId}-brand`}
-            title="Marka"
-            value={brand}
-            placeholder="Marka seçin veya yazın"
-            disabled={disabled}
-            items={filteredBrands}
-            getKey={(b) => b.id}
-            getLabel={(b) => b.name}
-            query={brandQuery}
-            onQueryChange={setBrandQuery}
-            onSelect={(b) => commitBrand(b.name, b.id)}
-            onUseTyped={(text) => commitBrand(text, selectBrandId(text))}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor={`${fieldId}-model`}>Model {required && "*"}</Label>
-          <MobileSearchPicker
-            id={`${fieldId}-model`}
-            title="Model"
-            value={model}
-            placeholder={brand.trim().length === 0 ? "Önce marka girin" : "Model seçin veya yazın"}
-            disabled={modelDisabled}
-            items={models}
-            getKey={(m) => m.id}
-            getLabel={(m) => m.name}
-            query={modelQuery}
-            onQueryChange={setModelQuery}
-            loading={loadingModels}
-            onSelect={(m) => onModelChange(m.name)}
-            onUseTyped={onModelChange}
-          />
-        </div>
-      </>
-    )
-  }
 
   return (
     <>
