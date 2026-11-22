@@ -132,7 +132,7 @@
 /* ── Üst bar ────────────────────────────────────────────── */
 .header {
   border-bottom: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
-  background: color-mix(in oklab, var(--background) 82%, transparent);
+  background: color-mix(in oklab, var(--card) 85%, transparent);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
 }

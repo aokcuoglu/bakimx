@@ -96,7 +96,7 @@ function AdminSidebar({
           <div className="px-2 py-1.5 group-data-[collapsible=icon]:hidden">
             <p className="truncate text-sm font-medium">{userName}</p>
             {userRoleLabel && (
-              <p className="truncate text-xs text-sidebar-foreground/60">{userRoleLabel}</p>
+              <p className="truncate text-xs text-muted-foreground">{userRoleLabel}</p>
             )}
           </div>
         )}

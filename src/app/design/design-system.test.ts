@@ -19,24 +19,29 @@ function walkSrc(dir = join(root, "src"), out: string[] = []) {
 }
 
 describe("design system radius contract", () => {
-  test("globals.css locks control=6px surface=10px xl=12px", () => {
+  // e-santral kalıbı (docs/design-pattern-esantral.md, kullanıcı kararı 22-11):
+  // düğme hap, girdi 12px, yüzey 16px, diyalog 28px.
+  test("globals.css locks surface=16px dialog=28px", () => {
     const css = read("src/app/globals.css")
     expect(css).toContain("--radius-sm: 0.375rem")
     expect(css).toContain("--radius-md: 0.5rem")
     expect(css).toContain("--radius-xl: 0.75rem")
-    expect(css).toContain("--radius: 0.625rem")
+    expect(css).toContain("--radius: 1rem;")
+    expect(css).toContain("--radius-dialog: 1.75rem;")
   })
 
   test("shared controls and surfaces keep their measured radii", () => {
-    expect(read("src/components/ui/button.tsx")).toContain("rounded-[8px]")
-    expect(read("src/components/ui/input.tsx")).toContain("rounded-[8px]")
-    expect(read("src/components/ui/textarea.tsx")).toContain("rounded-[8px]")
+    // Düğme köşesi = telefon yüksekliğinin yarısı (hap); ikon düğmeleri daire.
+    expect(read("src/components/ui/button.tsx")).toContain("rounded-[22px]")
+    expect(read("src/components/ui/button.tsx")).toContain("rounded-full")
+    expect(read("src/components/ui/input.tsx")).toContain("rounded-[12px]")
+    expect(read("src/components/ui/textarea.tsx")).toContain("rounded-[12px]")
     expect(read("src/components/ui/select.tsx")).toContain(
-      "gap-1.5 rounded-[9px] border border-foreground/6"
+      "gap-1.5 rounded-[12px] border border-input"
     )
 
     const card = read("src/components/ui/card.tsx")
-    expect(card).toContain("rounded-xl")
+    expect(card).toContain("rounded-lg")
     expect(card).not.toContain("ring-foreground/10")
 
     const dialog = read("src/components/ui/dialog.tsx")

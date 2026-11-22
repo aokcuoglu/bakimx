@@ -4,7 +4,9 @@ import { readFileSync } from "node:fs"
 const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8")
 
 /**
- * Attio ölçüleri: standart düğme ve girdi 28px, select 32px, kompakt 20px.
+ * e-santral ölçeği (docs/design-pattern-esantral.md, kullanıcı kararı 22-11):
+ * telefonda iOS dokunma ölçüsü (44px), md+ masaüstü veri ekranlarında kompakt
+ * (36px). Breakpoint yalnız md'dir; çağrı yerinde boyut ezilmez.
  */
 
 /** `size: {` bloğunun gövdesini kaba ama yeterli bir şekilde çıkarır. */
@@ -17,43 +19,47 @@ function buttonSizeBlock() {
   return source.slice(start, end)
 }
 
-describe("kontrol ölçeği — upstream shadcn nova", () => {
-  test("Button Attio ölçülerini korur", () => {
+describe("kontrol ölçeği — e-santral (mobil 44px / masaüstü 36px)", () => {
+  const globals = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8")
+
+  test("--control-* değişkenleri telefonda 44px, md+ 36px", () => {
+    const [mobile, desktop] = globals.split("@media (min-width: 768px)")
+    expect(mobile).toContain("--control-h: 2.75rem;")
+    expect(mobile).toContain("--control-fs: 17px;")
+    expect(desktop).toContain("--control-h: 2.25rem;")
+    expect(desktop).toContain("--control-fs: 15px;")
+  })
+
+  test("Button ölçüsünü değişkenden alır, md: sınıfı kullanmaz", () => {
     const block = buttonSizeBlock()
-    expect(block).toContain('default: "h-7 gap-1 py-1 pr-2 pl-1.5"')
-    expect(block).toContain('sm: "h-7 gap-1 py-1 pr-2 pl-1.5"')
-    expect(block).toContain('lg: "h-7 gap-1 py-1 pr-2 pl-1.5"')
-    expect(block).toContain('xl: "h-7 gap-1 py-1 pr-2 pl-1.5"')
-    expect(block).toContain('xs: "h-5 ')
-    expect(block).toContain('compact: "h-5 ')
-    expect(block).toContain('icon: "size-7"')
-    expect(block).toContain('"icon-xs": "size-5 ')
-    expect(block).toContain('"icon-sm": "size-7"')
-    expect(block).toContain('"icon-lg": "size-7"')
-    expect(block).toContain('"icon-compact": "size-5 ')
-    expect(block).not.toMatch(/md:(?:h|size|min-h)-/)
+    expect(block).toContain('default: "h-(--control-h) gap-1.5 px-(--control-px)"')
+    expect(block).toContain('sm: "h-(--control-h-sm) ')
+    expect(block).toContain('lg: "h-(--control-h-lg) ')
+    expect(block).toContain('xl: "h-(--control-h-xl) ')
+    expect(block).toContain('xs: "h-(--control-h-xs) ')
+    expect(block).toContain('compact: "h-(--control-h-xs) ')
+    expect(block).toContain('icon: "size-(--control-h) rounded-full"')
+    expect(block).toContain('"icon-sm": "size-(--control-h-sm) rounded-full"')
+    expect(block).toContain('"icon-lg": "size-(--control-h-lg) rounded-full"')
+    // Kırılımlı boyut sınıfı çağrı yerindeki h-auto / px- düzeltmesini ezer.
+    expect(read("./button.tsx")).not.toMatch(/(?:sm|md|lg|xl):(?:h|size|min-h|px|pl|pr|text|rounded)-/)
     expect(block).not.toContain("has-data-[icon=")
   })
 
-  test("Input, Select ve InputGroup tek ölçekte", () => {
-    const input = read("./input.tsx")
+  test("Input, Select, Textarea ve InputGroup değişkenden ölçülür", () => {
+    for (const file of ["./input.tsx", "./select.tsx", "./textarea.tsx", "./input-group.tsx"]) {
+      expect(read(file)).not.toMatch(/(?:sm|md|lg|xl):(?:h|min-h|px|pl|pr|text|rounded)-/)
+    }
+    expect(read("./input.tsx")).toContain('"h-(--control-h) w-full min-w-0')
     const select = read("./select.tsx")
-    const inputGroup = read("./input-group.tsx")
-
-    expect(input).toContain('"h-7 w-full min-w-0')
-    expect(input).not.toMatch(/md:(h|min-h)-/)
-
     expect(select).toContain('size?: "sm" | "default" | "compact"')
-    expect(select).toContain("data-[size=default]:h-8")
-    expect(select).toContain("data-[size=sm]:h-7")
-    expect(select).toContain("data-[size=compact]:h-5")
-    expect(select).not.toMatch(/md:(h|min-h)-/)
-
-    expect(inputGroup).toContain("relative flex h-7 w-full min-w-0")
-    expect(inputGroup).not.toMatch(/md:(h|min-h)-/)
+    expect(select).toContain("data-[size=default]:h-(--control-h)")
+    expect(select).toContain("data-[size=sm]:h-(--control-h-sm)")
+    expect(select).toContain("data-[size=compact]:h-(--control-h-xs)")
+    expect(read("./input-group.tsx")).toContain("relative flex h-(--control-h) w-full min-w-0")
   })
 
-  test("kalem düzenleyicisi 32px kontrol ölçeğini yerelde ezmez", () => {
+  test("kalem düzenleyicisi kontrol ölçeğini yerelde ezmez", () => {
     const partsLaborGrid = read("../orders/parts-labor-grid.tsx")
 
     expect(partsLaborGrid).not.toContain("h-9")
@@ -61,11 +67,11 @@ describe("kontrol ölçeği — upstream shadcn nova", () => {
 })
 
 describe("köşe yarıçapı", () => {
-  test("--radius upstream değerinde", () => {
+  test("--radius e-santral yüzey değerinde (16px)", () => {
     const globals = readFileSync(
       new URL("../../app/globals.css", import.meta.url),
       "utf8"
     )
-    expect(globals).toContain("--radius: 0.625rem;")
+    expect(globals).toContain("--radius: 1rem;")
   })
 })

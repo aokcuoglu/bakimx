@@ -13,6 +13,14 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Duyarlı yazı ölçeği (e-santral, 22-11): telefonda iOS ölçeği, masaüstünde
+     kompakt. Değerler :root'taki --fs-* değişkenlerinden gelir. */
+  --text-xs: var(--fs-xs);
+  --text-xs--line-height: 1.35;
+  --text-sm: var(--fs-sm);
+  --text-sm--line-height: 1.4;
+  --text-base: var(--fs-base);
+  --text-base--line-height: 1.47;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
@@ -79,13 +87,13 @@
      kopyalayarak yeni bir marka rengi tanımlama — istisna WhatsApp'a özgü. */
   --color-whatsapp: #25D366;
   --color-whatsapp-foreground: #FFFFFF;
-  /* Radius sözleşmesi (DESIGN.md → Design Palette):
-     kontrol = sm 6px, yüzey = lg 10px (= --radius), üst sınır = xl 12px.
-     2xl+ yalnız legacy / bilinçli istisna (FAB, pill); yeni işte kullanılmaz. */
+  /* Radius sözleşmesi — e-santral (docs/design-pattern-esantral.md):
+     düğme hap (rounded-full), girdi 12px (masaüstü 10px), yüzey lg 16px
+     (= --radius), diyalog 28px (--radius-dialog). */
   --radius-xs: 0.25rem; /* 4px */
   --radius-sm: 0.375rem; /* 6px — Button, Input, Select */
   --radius-md: 0.5rem; /* 8px — menü satırı */
-  --radius-lg: var(--radius); /* 10px — Card, Dialog, Alert */
+  --radius-lg: var(--radius); /* 16px — Card, Alert */
   --radius-xl: 0.75rem; /* 12px — büyük panel üst sınırı */
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
@@ -612,18 +620,39 @@
 }
 
 :root {
+  /* Kontrol ölçüsü (docs/ui-control-sizing.md): telefonda iOS dokunma ölçüsü,
+     md+ kompakt. Bileşenler bu değişkenleri okur; çağrı yerindeki h-/px-/text-
+     düzeltmeleri aynı sınıf grubunda olduğu için temizce kazanır (md: sınıfı
+     olsaydı masaüstünde ezilirdi). */
+  --control-h: 2.75rem; /* 44 */
+  --control-h-sm: 2.25rem; /* 36 */
+  --control-h-lg: 3.125rem; /* 50 */
+  --control-h-xl: 3.25rem; /* 52 */
+  --control-h-xs: 2rem; /* 32 */
+  --control-px: 1.25rem;
+  --control-px-sm: 1rem;
+  --control-px-lg: 1.75rem;
+  --control-px-xs: 0.75rem;
+  --control-fs: 17px;
+  --control-fs-sm: 15px;
+  --control-fs-xs: 14px;
+  --field-px: 0.875rem;
+  --fs-xs: 0.8125rem; /* 13px */
+  --fs-sm: 1rem; /* 16px */
+  --fs-base: 1.0625rem; /* 17px — iOS gövde */
   /* Sistem fontu — e-santral.com/bakimx style.css ile birebir aynı yığın
      (docs/design-pattern-esantral.md). Apple'da SF Pro; diğer platformlarda
      system-ui (Windows Segoe UI, Android Roboto). Web fontu indirilmez. */
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter",
     "Helvetica Neue", system-ui, sans-serif;
-  --background: oklch(0.985 0 0);
-  --foreground: #171717;
-  --card: oklch(1 0 0);
-  --card-foreground: #171717;
-  --popover: oklch(1 0 0);
-  --popover-foreground: #171717;
-  --primary: #266df0;
+  /* e-santral kalıbı (22 Kasım 2026): iOS gruplu zemin, Apple mürekkep/gri/mavi. */
+  --background: #f2f2f7;
+  --foreground: #1d1d1f;
+  --card: #ffffff;
+  --card-foreground: #1d1d1f;
+  --popover: #ffffff;
+  --popover-foreground: #1d1d1f;
+  --primary: #0071e3;
   --primary-foreground: #ffffff;
   /* AÇIK YÜZEY ÜZERİNDEKİ METİN/İKON tonu — success/warning/destructive ile
      aynı desen ve aynı L ölçeği (0.47). Temel --primary dolgu olarak canlı
@@ -631,16 +660,21 @@
      altına düşüyordu: kartta 4.51:1 (kılpayı), sayfa zemininde 4.27:1,
      bg-muted panelde 4.05:1. Yani aynı sınıf çifti yerine göre geçip yerine
      göre kalıyordu (BAK-160). -strong bu dört yüzeyin dördünde de ≥5.5:1. */
-  --primary-strong: #215bc4;
-  --secondary: oklch(0.975 0 0);
-  --secondary-foreground: #171717;
-  --muted: oklch(0.975 0 0);
+  /* #0071e3 için yeniden ölçüldü (22-11): kart 6.95, gruplu zemin 6.23,
+     muted 6.38, primary/10 tonlu zemin 6.07 ve gruplu zeminde tonlu 5.46:1. */
+  --primary-strong: #0058b0;
+  /* Nötr dolgu düğmesi (e-santral #e8e8ed). */
+  --secondary: #e8e8ed;
+  --secondary-foreground: #1d1d1f;
+  --muted: #f5f5f7;
   /* #682: Attio hiyerarşisi, açık yüzeylerde AA kontrastlı nötr gri.
      Tonlu yüzeylerde -strong sözleşmesi korunur (BAK-189). */
-  --muted-foreground: #60646c;
-  --muted-foreground-strong: #171717;
-  --accent: oklch(0.96 0 0);
-  --accent-foreground: #171717;
+  /* e-santral grisi: kart 5.07, gruplu zemin 4.54, muted 4.66:1. Tonlu
+     yüzeylerde (4.43:1) -strong sözleşmesi geçerli (BAK-189). */
+  --muted-foreground: #6e6e73;
+  --muted-foreground-strong: #1d1d1f;
+  --accent: #ededf0;
+  --accent-foreground: #1d1d1f;
   --destructive: oklch(0.577 0.245 27.325);
   /* Dolu destructive zemin üzerindeki metin/ikon. Koyu temadaki karşılığı .dark
      bloğunda lacivert-siyaha döner (kırmızı orada açıldığı için) — success ve
@@ -657,9 +691,9 @@
      3.99:1). Bu yüzden metin için ayrı, koyulaştırılmış ton: L=0.47.
      Koyu temada temel renkler zaten AA geçiyor, orada -strong = temel renk. */
   --destructive-strong: oklch(0.47 0.245 27.325);
-  --border: oklch(0.94 0.002 260);
-  --input: oklch(0.88 0.002 260);
-  --ring: #266df0;
+  --border: #e5e5ea;
+  --input: #d2d2d7;
+  --ring: #0071e3;
   --success: oklch(0.60 0.18 145);
   /* Yeşil zeminde beyaza yakın metin yalnız 3.47:1 veriyordu (AA altı). Yeşili
      değiştirmek yerine metni koyulaştırdık: 4.94:1. warning ile aynı değer ve
@@ -681,19 +715,42 @@
   --chart-3: oklch(0.45 0.15 260);
   --chart-4: oklch(0.35 0.10 260);
   --chart-5: oklch(0.15 0.05 260);
-  --radius: 0.625rem;
-  --radius-dialog: 1rem;
+  /* e-santral: kart 16px (--radius), diyalog 28px, düğme hap (rounded-full). */
+  --radius: 1rem;
+  --radius-dialog: 1.75rem;
   --shadow-dialog: 0 8px 28px -6px rgb(28 40 64 / 12%), 0 18px 88px -4px rgb(28 40 64 / 16%), 0 0 1px rgb(28 40 64 / 16%);
   --shadow-dropdown: 0 0 0 1px rgb(28 40 64 / 4%), 0 4px 8px -4px rgb(28 40 64 / 12%), 0 4px 12px -2px rgb(24 41 75 / 16%);
   /* Uygulama navigasyonu: açık yüzey, nötr seçim ve ince ayraç. */
-  --sidebar: #fafafa;
-  --sidebar-foreground: #171717;
-  --sidebar-primary: #171717;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1d1d1f;
+  --sidebar-primary: #1d1d1f;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #efefef;
-  --sidebar-accent-foreground: #171717;
-  --sidebar-border: #e5e5e5;
+  --sidebar-accent: #f0f0f3;
+  --sidebar-accent-foreground: #1d1d1f;
+  --sidebar-border: #e5e5ea;
   --sidebar-ring: oklch(0.54 0.20 258);
+}
+
+/* Masaüstü veri ekranları kompakt (kullanıcı kararı 22-11). */
+@media (min-width: 768px) {
+  :root {
+    --control-h: 2.25rem; /* 36 */
+    --control-h-sm: 2rem; /* 32 */
+    --control-h-lg: 2.75rem; /* 44 */
+    --control-h-xl: 3rem; /* 48 */
+    --control-h-xs: 1.75rem; /* 28 */
+    --control-px: 1rem;
+    --control-px-sm: 0.75rem;
+    --control-px-lg: 1.5rem;
+    --control-px-xs: 0.625rem;
+    --control-fs: 15px;
+    --control-fs-sm: 14px;
+    --control-fs-xs: 12px;
+    --field-px: 0.75rem;
+    --fs-xs: 0.75rem; /* 12px */
+    --fs-sm: 0.9375rem; /* 15px */
+    --fs-base: 1rem; /* 16px */
+  }
 }
 
 .dark {
@@ -806,7 +863,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-sm leading-5 text-foreground;
+    @apply bg-background text-base text-foreground;
     /* e-santral kalıbı: gövde harf aralığı −0.01em (SF Pro ile ölçüldü). */
     letter-spacing: -0.01em;
   }
@@ -829,9 +886,10 @@
 }
 
 /* Live Attio reference, #682: compact application titles. */
+/* e-santral ekran başlığı (22-11): kalın, sıkı harf aralığı. */
 @utility text-page-title {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-size: 1.75rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }

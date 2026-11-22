@@ -1376,7 +1376,7 @@ function InternalNotesSection({
           <StickyNote className="size-4 text-warning-strong shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-sm text-foreground whitespace-pre-wrap">{note.content}</p>
-            <p className="text-[10px] text-foreground/60 mt-1">
+            <p className="text-[10px] text-muted-foreground mt-1">
               {new Date(note.createdAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
             </p>
           </div>

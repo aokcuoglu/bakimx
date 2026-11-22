@@ -1,46 +1,50 @@
 # UI kontrol boyutları
 
-Input, Select ve InputGroup upstream shadcn `nova` ölçeğini korur (BAK-150).
-#647 ile onaylanan Button istisnası Clutch ölçülerini kullanır; tasarım kararı
-DESIGN.md'nin **Clutch buton ölçüleri** bölümündedir. Boyutlar breakpoint'e göre değişmez.
+Kaynak: e-santral.com/bakimx kalıbı (`docs/design-pattern-esantral.md`),
+kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (768px) ve
+üstü masaüstü veri ekranlarında kompakt ölçü.** Tek kırılım `md`'dir.
 
 ## Matris
 
-| Kontrol | Ölçü | Not |
-| --- | --- | --- |
-| Button `default` / `sm` | 38px | 14px yatay padding, 14px metin |
-| Button `lg` | 44px | 16px yatay padding |
-| Button `xl` | 48px | 24px yatay padding |
-| Button `xs` / `compact` | 32px | 8px yatay padding, 12px metin |
-| Button tüm ikon varyantları | 32px | Mevcut hit alanı korunur |
-| Input / InputGroup | 32px | upstream |
-| Select `default` / `sm` / `compact` | 32px / 28px / 28px | upstream ve yoğun varyant |
-| Textarea | `min-h-16` | upstream |
+| Kontrol | Telefon | Masaüstü (md+) | Not |
+| --- | --- | --- | --- |
+| Button `default` | 44px | 36px | hap (`rounded-full`), 17px / 15px metin |
+| Button `sm` | 36px | 32px | 15px / 14px metin |
+| Button `lg` | 50px | 44px | e-santral `.d-blue.big` |
+| Button `xl` | 52px | 48px | |
+| Button `xs` / `compact` | 32px | 28px | yoğun tablo ve araç çubuğu |
+| Button `icon` / `icon-sm` / `icon-lg` | 44 / 36 / 50px | 36 / 32 / 44px | daire |
+| Button `icon-xs` / `icon-compact` | 32px | 28px | |
+| Input / InputGroup | 44px | 36px | 12px köşe (md+ 10px), 17px / 15px metin |
+| Select `default` / `sm` / `compact` | 44 / 36 / 32px | 36 / 32 / 28px | |
+| Textarea | `min-h-16` | `min-h-16` | 12px köşe |
 
-Button: Inter, ağırlık 500, satır yüksekliği %140, harf aralığı −0.02em,
-6px köşe. Renk variant'ları ve Radix `asChild` sözleşmesi korunur.
+Button: sistem fontu, ağırlık 500, harf aralığı −0.01em, düz dolgu (gölge yok).
+Renk variant'ları ve Radix `asChild` sözleşmesi korunur.
 
-**Mobil alt navigasyon** de korunur ama bu matrisin dışındadır: `MobileNavLink`
-bir `Button` değil, `Link` (`src/components/layout/app-shell.tsx`) — yüksekliği
-ikon + etiket + `py-1.5` ile doğal olarak oluşur.
+**Mobil alt navigasyon** bu matrisin dışındadır: `MobileNavLink` bir `Button`
+değil, `Link` (`src/components/layout/app-shell.tsx`).
+
+## Yazı ölçeği
+
+`text-xs` / `text-sm` / `text-base` duyarlıdır (`globals.css` → `--fs-*`):
+telefonda 13 / 16 / 17px, masaüstünde 12 / 15 / 16px. Gövde `text-base`.
 
 ## Köşe yarıçapı
 
-`--radius: 0.625rem` (`src/app/globals.css`). Türev `--radius-sm … --radius-4xl`
-bundan hesaplanır, elle ayarlanmaz.
+`--radius: 1rem` (16px, kart ve yüzey). Diyalog `--radius-dialog: 1.75rem`.
+Düğmeler hap. `--radius-sm/md/xl` sabit değerlerdir.
 
 ## Kurallar
 
-- Boyut sınıfları **çağrı yerinde ezilmez**. `h-11`, `h-12`, `size-11`,
-  `size-12`, `min-h-[44px]` ve `md:h-9` gibi breakpoint ezmeleri kaldırıldı;
-  yenisi eklenmez. İhtiyacın olan ölçek yoksa varyant ekle, `className` yazma.
+- Boyut sınıfları **çağrı yerinde ezilmez**. İhtiyacın olan ölçek yoksa varyant
+  ekle, `className` yazma. `md` dışındaki kırılımla boyut değiştirme.
 - `compact` yalnız yoğun yönetim tabloları ve araç çubukları içindir.
 - Dekoratif kareler (avatar, ikon rozeti, görsel küçük resmi, tam ekran
   fotoğraf görüntüleyicinin kendi kontrolleri) kontrol değildir; bu matrisin
   kapsamı dışındadır.
 - Ham HTML etkileşimli kontrol kullanılmaz. Form gönderimi için kullanıcıya
-  görünmeyen `input[type="hidden"]` alanları istisnadır. Uygulamanın ürettiği
-  bağımsız ödeme/çıktı HTML belgeleri React bileşen ağacının dışında olduğundan
-  bu kurala dahil değildir.
+  görünmeyen `input[type="hidden"]` alanları istisnadır.
 
-Matrisi `src/components/ui/control-sizing.test.ts` CI'da bekçiliyor.
+Matrisi `src/components/ui/control-sizing.test.ts` ve
+`src/app/design/design-system.test.ts` CI'da bekçiliyor.
