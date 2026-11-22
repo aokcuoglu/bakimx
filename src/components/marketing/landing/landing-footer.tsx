@@ -12,11 +12,17 @@ export function LandingFooter({ anchorBase = "" }: { anchorBase?: "" | "/" }) {
       <div className={cn(styles.wrap, styles.footIn)}>
         <Wordmark variant="footer" href={anchorBase ? "/" : "#hero"} />
         <nav className={styles.footNav} aria-label="Alt menü">
-          {NAV.map((item) => (
-            <a key={item.id} href={`${anchorBase}#${item.id}`}>
-              {item.label}
-            </a>
-          ))}
+          {NAV.map((item) =>
+            anchorBase ? (
+              <Link key={item.id} href={`${anchorBase}#${item.id}`}>
+                {item.label}
+              </Link>
+            ) : (
+              <a key={item.id} href={`#${item.id}`}>
+                {item.label}
+              </a>
+            ),
+          )}
           <Link href="/login">{CTA.login}</Link>
         </nav>
         <p>{FOOTER.copyright}</p>

@@ -3,13 +3,16 @@ import { PillButton } from "../kit/pill-button"
 import { Wordmark } from "../kit/wordmark"
 import { CTA, NAV } from "./content"
 import { SignupTrigger } from "./signup-dialog"
-import styles from "./landing.module.css"
+import styles from "./site-header.module.css"
 
 /**
  * Yapışkan buzlu üst bant (e-santral `.top`). Mobil menü kaynakta da yok.
- * Ana sayfa dışında (`anchorBase="/"`) çapalar ana sayfaya, wordmark köke gider.
+ *
+ * (site) layout'unda `SiteHeader` üzerinden bir kez render edilir (#798).
+ * Ana sayfada çapalar sayfa içinde kayar; ana sayfa dışında (`anchorBase="/"`)
+ * aynı bölümlere `<Link>` ile istemci geçişi yapar, wordmark köke döner.
  * Telefonda (≤640px) bantta tek hap görünür: `mobileAction="login"` (varsayılan)
- * "Giriş yap"ı gösterir; `/login` sayfası kendine link vermesin diye `"trial"` geçer.
+ * "Giriş yap"ı gösterir; `/login` kendine link vermesin diye `"trial"` geçer (#807).
  */
 export function LandingHeader({
   anchorBase = "",
@@ -24,14 +27,30 @@ export function LandingHeader({
       <div className={styles.topIn}>
         <Wordmark variant="header" href={anchorBase ? "/" : "#hero"} />
         <nav className={styles.nav} aria-label="Ana menü">
-          {NAV.map((item) => (
-            <a key={item.id} href={`${anchorBase}#${item.id}`}>
-              {item.label}
-            </a>
-          ))}
+          {NAV.map((item) =>
+            anchorBase ? (
+              <Link key={item.id} href={`${anchorBase}#${item.id}`}>
+                {item.label}
+              </Link>
+            ) : (
+              <a key={item.id} href={`#${item.id}`}>
+                {item.label}
+              </a>
+            ),
+          )}
         </nav>
+        {/*
+          /login istek anında üretilir; varsayılan Link onu önceden yüklemez ve
+          tıklama sunucuyu bekler. Bant her sayfada göründüğü için tam önceden
+          yüklenir (anonim ziyaretçide DB sorgusu yok). Ölçüm (#798, yerel prod):
+          prefetch ~75–90 ms, varsayılan ~140 ms, loading.tsx ~850 ms — React'in
+          Suspense gösterim eşiği geçişi uzatıyor, eklemeyin. Telefonda metin
+          bağlantısı gizlidir, görünen "Giriş yap" hapıdır (PillButton prefetch
+          prop'u taşımaz; varsayılan Link davranışı). "Ücretsiz
+          deneyin" kayıt penceresini açar (#783); sağlayıcısı (site) layout'unda.
+        */}
         <div className={styles.acts}>
-          <Link className={styles.login} href="/login">
+          <Link className={styles.login} href="/login" prefetch>
             {CTA.login}
           </Link>
           {mobileLogin && (

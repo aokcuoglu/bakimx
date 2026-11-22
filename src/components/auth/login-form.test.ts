@@ -39,9 +39,12 @@ test("oturum bildirimleri korunur", () => {
 })
 
 test("giriş sayfası eski kenar çubuğunu bırakıp ana sayfa bantlarını kullanır", () => {
-  const page = readFileSync(join(import.meta.dir, "..", "..", "app", "(auth)", "login", "page.tsx"), "utf8")
+  const site = join(import.meta.dir, "..", "..", "app", "(site)")
+  const page = readFileSync(join(site, "(auth)", "login", "page.tsx"), "utf8")
   expect(page).not.toMatch(/LoginSidebar|sections\/Header|RegisterFooter/)
-  expect(page).toContain("LandingHeader")
   expect(page).toContain("LandingFooter")
-  expect(page).toContain("SignupDialogProvider")
+  // Üst bant ve kayıt penceresi sağlayıcısı (#798'den beri) (site) layout'unda.
+  const layout = readFileSync(join(site, "layout.tsx"), "utf8")
+  expect(layout).toContain("<SiteHeader />")
+  expect(layout).toContain("<SignupDialogProvider>")
 })

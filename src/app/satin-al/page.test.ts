@@ -12,7 +12,7 @@ describe("public signup CTA unification", () => {
   })
 
   test("fiyatlar package CTA uses register, not the old public checkout form", () => {
-    const source = readFileSync(join(root, "src/app/fiyatlar/page.tsx"), "utf8")
+    const source = readFileSync(join(root, "src/app/(site)/fiyatlar/page.tsx"), "utf8")
     expect(source).toContain('checkoutBasePath="/register"')
     expect(source).not.toContain('checkoutBasePath="/satin-al"')
     expect(source).toContain("/register?tier=")

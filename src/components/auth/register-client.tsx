@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from "react"
 import { RegisterFooter } from "./register-footer"
-import { Header } from "@/components/sections/Header"
 import { RegisterForm } from "@/components/auth/register-form"
 import type { SalesRegistrationPrefill } from "@/components/auth/register-form"
 import styles from "./register-design.module.css"
@@ -59,8 +58,6 @@ export function RegisterClient({
 
   return (
     <div className={styles.viewport}>
-      <Header />
-
       <div className={styles.layout}>
         <RegisterSidebar snapshot={snapshot} preferredPlan={preferredPlan} mode={mode} />
         <main aria-label="Hesap kayıt formu" className="no-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-5 py-8 sm:px-10 sm:py-12 lg:px-14 xl:px-20">
