@@ -5,7 +5,7 @@ export const IS_EMRI_REHBER_TITLE = "Oto Servis İş Emri Nasıl Hazırlanır?"
 export const IS_EMRI_REHBER_H1 = "Oto servis iş emri nasıl hazırlanır: eksiksiz bir kayıtta olması gereken 6 unsur"
 
 export const IS_EMRI_REHBER_DESCRIPTION =
-  "Eksiksiz bir oto servis iş emrinde hangi bilgilerin neden yer alması gerektiğini öğrenin: iş tanımı, parça ve işçilik kalemleri, fotoğraf kanıtı, müşteri onayı ve işlem geçmişi. BakımX ekranından örneklerle."
+  "Oto servis iş emrinde neler olmalı? İş tanımı, parça ve işçilik kalemleri, fotoğraf kanıtı, müşteri onayı ve işlem geçmişi; BakımX ekranından örneklerle."
 
 export const IS_EMRI_REHBER_INTRO =
   "Eksiksiz bir oto servis iş emri; aracın servise geliş nedenini ve yapılacak işleri, kullanılan parça ve işçilik kalemlerini, kabul/onarım fotoğraflarını, müşterinin teklife verdiği onayı ve kim-ne-zaman yaptı bilgisini tek kayıtta tutar. Bu altı unsurdan biri eksik kaldığında iş emri; kapsam anlaşmazlığına, kayıp maliyet kalemine veya kanıtsız hasar iddiasına açık kalır. Aşağıda her unsurun neden gerektiği ve BakımX'te nasıl uygulandığı örnek ekranla gösteriliyor."

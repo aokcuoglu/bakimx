@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,14 +44,16 @@ export function HeroSection() {
         </p>
         <h1 id="hero-title" className={styles.headline}>
           <span className={styles.collage}>
+            {/* The space keeps the heading's text (crawlers, aria-labelledby)
+                from reading "saniyedeŞaseden"; .collage is a flex column, so a
+                whitespace-only node between items is never painted. */}
             {HERO_COLLAGE.map((line, index) => (
-              <span
-                key={line}
-                className={styles.collageLine}
-                data-i={index}
-              >
-                {line}
-              </span>
+              <Fragment key={line}>
+                {index > 0 ? " " : null}
+                <span className={styles.collageLine} data-i={index}>
+                  {line}
+                </span>
+              </Fragment>
             ))}
           </span>
         </h1>

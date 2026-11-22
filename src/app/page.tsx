@@ -11,7 +11,7 @@ import { FAQSection } from "@/components/sections/FAQSection";
 import { Footer } from "@/components/sections/Footer";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LANDING_FAQ_ITEMS } from "@/lib/faq-data";
-import { SITE_URL, HOME_TITLE, publicPageMetadata } from "@/lib/seo";
+import { HOME_TITLE, ORGANIZATION_STRUCTURED_DATA, publicPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = {
   ...publicPageMetadata({
@@ -23,14 +23,7 @@ export const metadata: Metadata = {
 };
 
 const homeStructuredData = [
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": `${SITE_URL}/#organization`,
-    name: "BakımX",
-    url: SITE_URL,
-    logo: `${SITE_URL}/01-bakimx-primary-light.png`,
-  },
+  ORGANIZATION_STRUCTURED_DATA,
   {
     "@context": "https://schema.org",
     "@type": "FAQPage",
