@@ -5,7 +5,7 @@ export const ARAC_KABUL_FORMU_TITLE = "Araç Kabul Formu: 8 Adımlık Kontrol Li
 export const ARAC_KABUL_FORMU_H1 = "Araç kabul formu: eksiksiz kabul için 8 adımlık kontrol listesi"
 
 export const ARAC_KABUL_FORMU_DESCRIPTION =
-  "Araç kabul formu kontrol listesi: ruhsat, kilometre, zorunlu fotoğraf açıları ve hasar tespitini kapsayan 8 adımlık sahada uygulanabilir süreç. Yazdırın veya dijital araç kabul akışında tamamlayın."
+  "Araç kabul formu için 8 adımlık kontrol listesi: ruhsat, kilometre, zorunlu fotoğraf açıları ve hasar tespiti. Yazdırın ya da dijital olarak doldurun."
 
 export const ARAC_KABUL_FORMU_INTRO =
   "Araç kabul formu; bir araç servise girerken danışman veya teknisyenin sırayla uyguladığı kontrol listesidir. Müşteri şikâyeti, ruhsat ve araç bilgisi, kilometre/yakıt durumu, zorunlu kabul fotoğrafları, mevcut hasarın tespiti ve müşteri onayını kapsar. Aşağıdaki 8 adım BakımX ürün ekibi tarafından incelenmiş, sahada doğrudan uygulanabilecek sırayla verilmiştir; yazdırıp elle işaretleyebilir ya da dijital araç kabul akışında tek dokunuşla tamamlayabilirsiniz."
