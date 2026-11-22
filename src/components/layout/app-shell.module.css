@@ -39,10 +39,10 @@
 }
 
 .sidebar :global([data-sidebar="menu-button"]) {
-  height: 38px;
-  gap: 11px;
-  padding-inline: 11px;
-  border-radius: 11px;
+  height: 34px;
+  gap: 10px;
+  padding-inline: 10px;
+  border-radius: 10px;
   font-size: 15px;
   font-weight: 500;
   line-height: 20px;
@@ -51,8 +51,8 @@
 }
 
 .sidebar :global([data-sidebar="menu-button"]) > svg:first-child {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   stroke-width: 1.8;
   color: var(--muted-foreground);
 }
@@ -77,8 +77,8 @@
 }
 
 .sidebar :global([data-sidebar="menu-sub-button"]) {
-  height: 34px;
-  border-radius: 9px;
+  height: 30px;
+  border-radius: 8px;
   font-size: 14px;
 }
 
@@ -88,9 +88,9 @@
 
 /* Arama: çerçevesiz, dolgulu alan (Apple arama kutusu). */
 .search {
-  height: 38px;
+  height: 34px;
   gap: 8px;
-  padding-inline: 11px;
+  padding-inline: 10px;
   border: 0;
   font-size: 15px;
   border-radius: 10px;
@@ -117,6 +117,14 @@
   padding: 12px;
   border-radius: 14px;
   background: color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+/* Paket kartı iki satırlık (36px): menü satırının sabit yüksekliğini alırsa
+   metin üstten/alttan kırpılır. `.sidebar [data-sidebar="menu-button"]`
+   (0,2,0) tek sınıflı `.plan`i eziyordu; aynı özgüllükle ve sonra yazılır. */
+.sidebar .plan {
+  height: auto;
+  padding-block: 2px;
 }
 
 .planAction {
@@ -146,12 +154,12 @@
 /* Mobil açılır menü: başparmak için 44px dokunma alanı (kalıp: .d-blue 44px). */
 @media (max-width: 1023px) {
   .sidebar :global([data-sidebar="menu-button"]) {
-    height: 46px;
+    height: 44px;
     font-size: 17px;
   }
 
   .sidebar :global([data-sidebar="menu-sub-button"]) {
-    height: 42px;
+    height: 40px;
     font-size: 16px;
   }
 
