@@ -16,7 +16,7 @@ import {
 } from "@/lib/dashboard/queries"
 import { countOverdueReminders } from "@/lib/reminders/queries"
 import { getPartKPIs } from "@/lib/parts/queries"
-import { getManagerTechnicianOverview, getUnassignedOrderCount } from "@/lib/technician/queries"
+import { getUnassignedOrderCount } from "@/lib/technician/queries"
 import { getRecommendations } from "@/lib/analytics/queries"
 import { KpiCards } from "@/components/dashboard/kpi-cards"
 import { CashWidget } from "@/components/dashboard/cash-widget"
@@ -24,7 +24,6 @@ import { AlertBanner } from "@/components/dashboard/alert-banner"
 import { TodayAgenda } from "@/components/dashboard/today-agenda"
 import { LongestWaiting } from "@/components/dashboard/longest-waiting"
 import { WorkshopStatus } from "@/components/dashboard/workshop-status"
-import { TechnicianStatusWidget } from "@/components/dashboard/technician-status"
 import { OperationalAlertsWidget } from "@/components/analytics/operational-alerts-widget"
 import { DashPanel, surface } from "@/components/dashboard/surface"
 
@@ -53,7 +52,6 @@ export default async function DashboardPage() {
     todayAppointments,
     overdueReminders,
     partKpis,
-    technicianOverview,
     unassignedOrderCount,
   ] = await Promise.all([
     getDashboardStats(user.workshopId, {
@@ -67,7 +65,6 @@ export default async function DashboardPage() {
     canAppointments ? getTodayAppointmentRows(user.workshopId) : Promise.resolve([]),
     canReminders ? countOverdueReminders(user.workshopId) : Promise.resolve(null),
     canInventory ? getPartKPIs(user.workshopId) : Promise.resolve(null),
-    canTeam ? getManagerTechnicianOverview(user.workshopId) : Promise.resolve([]),
     canTeam ? getUnassignedOrderCount(user.workshopId) : Promise.resolve(null),
   ])
   const needsFirstOrder = accessTier === "lite" && !(await prisma.serviceOrder.findFirst({ where: { workshopId: user.workshopId }, select: { id: true } }))
@@ -144,10 +141,7 @@ export default async function DashboardPage() {
 
         <section aria-label="Atölye" className={`${styles.panels} ${styles.panelsTop}`}>
           <LongestWaiting orders={longestWaiting} />
-          <div className="flex min-w-0 flex-col gap-9">
-            <WorkshopStatus counts={statusCounts} />
-            {canTeam && <TechnicianStatusWidget technicians={technicianOverview} />}
-          </div>
+          <WorkshopStatus counts={statusCounts} />
         </section>
       </div>
     </AppShell>

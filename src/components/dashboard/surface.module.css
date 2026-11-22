@@ -477,6 +477,38 @@ a.row:focus-visible {
   color: var(--foreground);
 }
 
+/* Oran çubuğu (meter list — Atölye durumu). İnce, uçları tam yuvarlak; dolgu
+   tek renk (marka mavisi), iz aynı rengin açık tonu. Sıfır parça listeye hiç
+   girmez; çok küçük pay da en az bir nokta kadar görünür. */
+.meter {
+  display: block;
+  height: 8px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--primary) 14%, var(--card));
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  min-width: 8px;
+  border-radius: 999px;
+  background: var(--primary);
+}
+
+/* Sabit genişlikli rakam: sütun satırdan satıra değişirse izler farklı yerde
+   biter ve çubuklar ortak ölçekte okunmaz. */
+.meterFigure {
+  min-width: 3ch;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 22px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
 .chevron {
   flex: none;
   width: 18px;
