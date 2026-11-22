@@ -10,7 +10,7 @@
 DATABASE_URL="postgresql://bakimx:bakimx@localhost:5432/bakimx"
 DIRECT_URL="postgresql://bakimx:bakimx@localhost:5432/bakimx"
 SESSION_SECRET="rastgele-32-karakter"
-APP_URL="http://localhost:3000"
+APP_URL="http://localhost:3001"
 
 STORAGE_PROVIDER=s3
 S3_ENDPOINT=http://localhost:9000
@@ -70,9 +70,10 @@ GOOGLE_MAPS_MAP_ID=map-id
   Bunlar uygulama gözlemidir ve güvenli tarafta kalmak için başarısız Google
   çağrılarını da sayar. Session token tüketim birimi değildir; kesin ve gecikmeli
   faturalama kaynağı Google Cloud Billing'dir.
-- Her ortam ayrı, origin ve API kapsamı kısıtlı anahtar kullanır. DEV anahtarı
-  yalnız `localhost:3000`, `127.0.0.1:3000` ve `app-dev.bakimx.com` için geçerlidir;
-  PROD bu anahtarı kullanmaz.
+- Her ortam ayrı, origin ve API kapsamı kısıtlı anahtar kullanır. DEV anahtarının
+  izinli adresleri yalnız `localhost:3001`, `127.0.0.1:3001` (yerel `bun run dev`)
+  ve `app-dev.bakimx.com` olmalıdır; PROD bu anahtarı kullanmaz. Yerel port
+  değişirse Google Cloud Console'daki anahtar kısıtı da güncellenmelidir.
 
 #### Depolama (Storage) Ortam Değişkenleri
 
