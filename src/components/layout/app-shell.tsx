@@ -177,10 +177,35 @@ const MOBILE_CONTENT_HEADING_PATHS = new Set([
   "/reports",
 ])
 
-// Başlığı içerikte (h1) taşıyan sayfalar: masaüstünde sidebar açıkken üst bar
-// boş bir tekrar olur ve gizlenir. Sidebar kapalıyken açma düğmesi için, mobilde
-// (<1024px) menü düğmesi ve logo için bar yerinde kalır.
-const DESKTOP_HEADERLESS_PATHS = new Set(["/dashboard"])
+// Masaüstünde (lg+) üst bar yoktur: sayfa başlığı içerikte durur. Bar yalnız
+// sidebar kapalıyken açma düğmesi için, mobil/tablette (<lg) menü düğmesi ve
+// logo için, sidebar'sız teknisyen ekranlarında da hesap/çıkış için kalır.
+
+// Sayfanın h1'ini her genişlikte içerik taşır (hero); barda başlık yazmaz.
+const CONTENT_H1_PATHS = new Set(["/dashboard"])
+
+// Masaüstünde görünür başlığı kendi içeriğinde zaten olan menü sayfaları
+// (hero, ikonlu liste başlığı, rapor menüsü). Bunlara ayrıca başlık basılmaz.
+const OWN_TITLE_MENU_PATHS = new Set(["/dashboard", "/technician", "/parts", "/suppliers", "/reports"])
+
+// Menü sayfası olmadığı hâlde görünür başlığı yalnız bardaydı.
+const BAR_TITLE_ONLY_PATHS = new Set(["/quotes/new", "/cashbox/payments/new", "/customers/balances"])
+
+const MENU_PATHS = new Set(
+  NAV_GROUPS.flatMap((group) => group.items.flatMap((item) => [item.href, ...(item.children ?? []).map((child) => child.href)])),
+)
+
+/**
+ * Masaüstünde sayfa başlığı içerikte nasıl durur: liste/menü sayfalarında
+ * görünür büyük başlık; detay ve form sayfaları başlığı kartında/formunda
+ * zaten taşıdığı için yalnız ekran okuyucuya h1; hero'lu sayfada hiç.
+ */
+function desktopTitleMode(pathname: string): "visible" | "sr-only" | "none" {
+  if (CONTENT_H1_PATHS.has(pathname)) return "none"
+  if (OWN_TITLE_MENU_PATHS.has(pathname)) return "sr-only"
+  if (MENU_PATHS.has(pathname) || BAR_TITLE_ONLY_PATHS.has(pathname)) return "visible"
+  return "sr-only"
+}
 
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
@@ -221,9 +246,18 @@ export function AppShell({
   if (isSettingsPath(pathname)) {
     return <div data-settings-content className="mx-auto w-full min-w-0 max-w-3xl pt-6 sm:pt-12">{children}</div>
   }
-  if (wide) return <div className={WIDE_WIDTH_CLASS}>{children}</div>
-  if (constrained) return <div className={CONSTRAINED_WIDTH_CLASS}>{children}</div>
-  return <>{children}</>
+  const titleMode = pageTitle && !isSidebarlessRoute(pathname) ? desktopTitleMode(pathname) : "none"
+  // Yalnız masaüstünde (lg+) çizilir; altında başlık bardadır.
+  const desktopTitle = titleMode === "none" ? null : (
+    // cn() değil: tailwind-merge özel `text-page-title`ı renk sınıfı sanıp
+    // `text-foreground` lehine siler.
+    <h1 className={titleMode === "visible" ? "hidden text-page-title text-foreground lg:mb-6 lg:block" : "sr-only hidden lg:block"}>
+      {pageTitle}
+    </h1>
+  )
+  if (wide) return <div className={WIDE_WIDTH_CLASS}>{desktopTitle}{children}</div>
+  if (constrained) return <div className={CONSTRAINED_WIDTH_CLASS}>{desktopTitle}{children}</div>
+  return <>{desktopTitle}{children}</>
 }
 
 export type WorkspaceSwitcherProps = {
@@ -326,18 +360,18 @@ function AppHeader({
   const showMobileTitle = headerTitle && !isSettingsPath(pathname) && !MOBILE_CONTENT_HEADING_PATHS.has(pathname)
   const sidebarless = isSidebarlessRoute(pathname, searchParams)
   const homeHref = isTechRole ? "/technician" : "/dashboard"
-  const contentOwnsTitle = DESKTOP_HEADERLESS_PATHS.has(pathname)
+  const contentOwnsTitle = CONTENT_H1_PATHS.has(pathname)
 
   return (
     <header
       className={cn(
         // Mobil/tablet (<lg) 58px bar + 44px düğme: e-santral "sticky üst bar"
         // ölçüsü (docs/design-pattern-esantral.md §Sticky üst bar). Masaüstünde
-        // sidebar'ın yanında kompakt 48px kalır.
+        // yalnız sidebar kapalıyken açma düğmesi için kompakt 48px görünür.
         "sticky top-0 z-30 flex h-[58px] items-center border-b border-border bg-background lg:h-12",
         shellStyles.header,
         topBannerVisible && "lg:top-8",
-        contentOwnsTitle && "lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden",
+        !sidebarless && "lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden",
       )}
     >
       <div className="relative flex h-full w-full flex-nowrap items-center gap-2 px-4">
@@ -368,7 +402,8 @@ function AppHeader({
         )}
 
         {headerTitle && !contentOwnsTitle && (
-          <h1 className={cn("hidden min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:flex", shellStyles.headerTitle)}>
+          // Masaüstünde başlık içerikte (AppShell); sidebar'sız ekranda bar kalır.
+          <h1 className={cn("hidden min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:flex", !sidebarless && "lg:hidden", shellStyles.headerTitle)}>
             {HeaderIcon ? <HeaderIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
             <span className="truncate">{headerTitle}</span>
           </h1>
