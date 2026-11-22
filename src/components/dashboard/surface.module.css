@@ -122,10 +122,16 @@
   }
 }
 
+/* KPI kartı: [ikon dairesi] ........ [rakam]
+              [etiket — koyu, kalın, tam genişlik] */
 .stat {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "icon value"
+    "label label";
+  align-items: center;
+  gap: 14px 12px;
   min-width: 0;
   padding: 14px 16px 16px;
   border-radius: 18px;
@@ -142,12 +148,52 @@
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent);
 }
 
-.statHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-width: 0;
+/* Yerleşim ve okunur etiket yalnız KPI kartının içinde: teknisyen kartları
+   da statLabel/statValue kullanıyor ve kendi düzenini !important ile kuruyor. */
+.stat > .statIcon {
+  grid-area: icon;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+}
+
+.stat > .statIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.stat > .statValue {
+  grid-area: value;
+  text-align: right;
+}
+
+.stat > .statLabel {
+  grid-area: label;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--foreground);
+}
+
+/* Kartın kimlik rengi: dolu daire, üstünde zıt renk ikon (iOS akıllı liste). */
+.accent-info {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.accent-success {
+  background: var(--success);
+  color: var(--success-foreground);
+}
+
+.accent-warning {
+  background: var(--warning);
+  color: var(--warning-foreground);
+}
+
+.accent-destructive {
+  background: var(--destructive);
+  color: var(--destructive-foreground);
 }
 
 .statLabel {
@@ -210,6 +256,21 @@
   .statValue {
     font-size: 32px;
     line-height: 36px;
+  }
+
+  .stat > .statIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .stat > .statIcon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .stat > .statLabel {
+    font-size: 16px;
+    line-height: 22px;
   }
 }
 
