@@ -161,3 +161,345 @@
     font-size: 20px;
   }
 }
+
+/* ── İçerik blokları ─────────────────────────────────────────── */
+
+/* Özellik kutusu: .tile */
+.tile {
+  padding: 34px 30px 36px;
+  border-radius: var(--mk-r-tile);
+  background: var(--mk-soft);
+}
+.tile svg {
+  display: block;
+  width: 34px;
+  height: 34px;
+  fill: none;
+  stroke: var(--mk-blue);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tileTitle {
+  margin: 22px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.tileText {
+  margin: 8px 0 0;
+  color: var(--mk-gray);
+  font-size: 17px;
+}
+
+/* Fotoğraf kartı: .d-card */
+.photoCard {
+  position: relative;
+  flex: none;
+  width: 380px;
+  aspect-ratio: 4 / 5;
+  scroll-snap-align: start;
+  border-radius: var(--mk-r-card);
+  overflow: hidden;
+}
+.photoImg {
+  object-fit: cover;
+}
+.photoCard::after {
+  content: "";
+  position: absolute;
+  inset: 45% 0 0;
+  background: linear-gradient(180deg, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.55) 55%, rgb(0 0 0 / 0.78) 100%);
+}
+.photoLabel {
+  position: absolute;
+  z-index: 2;
+  left: 16px;
+  top: 16px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mk-surface) 90%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--mk-ink);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.photoText {
+  position: absolute;
+  z-index: 2;
+  left: 22px;
+  right: 22px;
+  bottom: 22px;
+  margin: 0;
+  color: var(--mk-surface);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+/* Kart rayı: .d-head / .d-arrows / .d-cards */
+.railHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0 0 28px;
+}
+.railTitle {
+  margin: 0;
+  font-size: var(--mk-h2);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+.railArrows {
+  display: flex;
+  flex: none;
+  gap: 12px;
+  padding-bottom: 6px;
+}
+.arrowIcon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.rail {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+.rail:focus-visible {
+  outline: none;
+  border-radius: var(--mk-r-card);
+  box-shadow: var(--mk-focus-ring);
+}
+
+/* Numaralı adımlar: .move-steps */
+.steps {
+  list-style: none;
+  counter-reset: mk-step;
+  margin: 0;
+  padding: 0;
+}
+.step {
+  counter-increment: mk-step;
+  position: relative;
+  padding: 20px 0 20px 56px;
+  border-top: 1px solid var(--mk-line);
+}
+.step:first-child {
+  border-top: 0;
+}
+.step::before {
+  content: counter(mk-step);
+  position: absolute;
+  left: 0;
+  top: 20px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--mk-surface);
+  color: var(--mk-blue);
+  font-weight: 700;
+  font-size: 16px;
+}
+.stepTitle {
+  display: block;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.stepText {
+  color: var(--mk-gray);
+}
+
+/* Dahil listesi: .incl */
+.checks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 280px));
+  justify-content: center;
+  gap: 12px 40px;
+  list-style: none;
+  padding: 0;
+  margin: 40px auto;
+  text-align: left;
+  font-size: 17px;
+}
+.check {
+  position: relative;
+  padding-left: 30px;
+}
+.check::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--mk-blue)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13l4 4L19 7'/%3E%3C/svg%3E")
+    center / 12px no-repeat;
+}
+
+/* Fiyat kutusu: .price */
+.price {
+  padding: 72px 40px 64px;
+  border-radius: var(--mk-r-box);
+  background: var(--mk-soft);
+  text-align: center;
+}
+.priceTitle {
+  margin: 0;
+  font-size: clamp(40px, 5vw, 68px);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.04;
+}
+.priceSub {
+  margin: 14px 0 0;
+  font-size: clamp(18px, 1.6vw, 21px);
+  color: var(--mk-gray);
+}
+.amount {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 10px;
+  margin: 36px 0 0;
+}
+.amountValue {
+  font-size: clamp(56px, 6vw, 80px);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+.amountUnit {
+  color: var(--mk-gray);
+  font-size: 18px;
+}
+.priceNote {
+  margin: 14px 0 0;
+  color: var(--mk-gray);
+  font-size: 15px;
+}
+
+/* SSS: .faq */
+.faq {
+  display: block;
+}
+.faqItem {
+  border-bottom: 1px solid var(--mk-line);
+}
+.faqTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  padding: 22px 0;
+  border: 0;
+  border-radius: 0;
+  color: inherit;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+}
+.faqTrigger:hover {
+  text-decoration: none;
+}
+.faqTrigger:focus-visible {
+  outline: none;
+  border-radius: 6px;
+  box-shadow: var(--mk-focus-ring);
+}
+.faqTrigger [data-slot="accordion-trigger-icon"] {
+  display: none;
+}
+.faqTrigger::after {
+  content: "";
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: solid var(--mk-gray);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translateY(-3px);
+  transition: transform 0.2s;
+}
+.faqTrigger[data-state="open"]::after {
+  transform: rotate(-135deg);
+}
+.faqContent {
+  padding: 0;
+  font-size: inherit;
+}
+.faqAnswer {
+  margin: 0;
+  padding: 0 0 24px;
+  color: var(--mk-gray);
+  max-width: 62ch;
+}
+
+@media (max-width: 640px) {
+  .tile {
+    padding: 26px 24px 28px;
+    border-radius: 22px;
+  }
+  .photoCard {
+    width: 82vw;
+  }
+  .photoText {
+    font-size: 16px;
+  }
+  .railHead {
+    margin-bottom: 20px;
+  }
+  .railArrows {
+    display: none;
+  }
+  .railTitle {
+    padding: 0 16px;
+    font-size: 28px;
+    line-height: 1.15;
+  }
+  .rail {
+    padding: 0 16px 8px;
+    scroll-padding: 0 16px;
+  }
+  .checks {
+    grid-template-columns: 1fr;
+    margin: 30px auto;
+  }
+  .price {
+    padding: 48px 22px 44px;
+    border-radius: 24px;
+  }
+  .priceTitle {
+    font-size: 36px;
+  }
+  .faqTrigger {
+    font-size: 17px;
+    padding: 18px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faqTrigger::after {
+    transition: none;
+  }
+}
