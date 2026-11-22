@@ -1,9 +1,9 @@
 import Image from "next/image"
-import { PillButton } from "../kit/pill-button"
 import { AppMockup } from "./app-mockup"
 import { CallbackTrigger } from "./callback-dialog"
 import { CTA, HERO } from "./content"
 import { HeroFit } from "./hero-fit"
+import { SignupTrigger } from "./signup-dialog"
 import styles from "./landing.module.css"
 
 /**
@@ -22,9 +22,9 @@ export function Hero() {
         </h1>
         <p className={styles.heroSub}>{HERO.subtitle}</p>
         <div className={styles.cta}>
-          <PillButton href="/register" track={{ name: "trial_cta_click", location: "hero_primary" }}>
+          <SignupTrigger variant="pill" location="hero_primary">
             {CTA.trial}
-          </PillButton>
+          </SignupTrigger>
           <CallbackTrigger variant="text" location="hero_secondary">
             {CTA.callback}
           </CallbackTrigger>

@@ -26,3 +26,12 @@ test("SuccessState başlığı ve Tamam düğmesi", () => {
   expect(html).toContain("Teşekkürler.")
   expect(html).toContain("Tamam")
 })
+
+test("FloatingField yan öğesi etiketin dışında kalır; alanın adı yalnız etiket metnidir", () => {
+  // Yan öğe <label> içinde olursa ekran okuyucu alanı "Şifre Göster" diye okur.
+  const html = render(createElement(FloatingField, { label: "Şifre", trailing: createElement("span", null, "Göster") }))
+  const label = html.match(/<label[\s\S]*?<\/label>/)?.[0] ?? ""
+  expect(label).toContain("Şifre")
+  expect(label).not.toContain("Göster")
+  expect(html).toContain("Göster")
+})

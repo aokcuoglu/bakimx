@@ -1,4 +1,4 @@
-/* "Sizi arayalım" penceresinin içeriği — e-santral #call (.m-logo/.m-grid/.consent/.m-err/.m-submit). */
+/* Ana sayfa pencerelerinin form içeriği — e-santral #call ve #signup (.m-logo/.m-grid/.m-sec/.fl-hint/.pw-t/.consent/.m-err/.m-submit). */
 .logo {
   display: block;
   width: 44px;
@@ -60,4 +60,40 @@
   .leadBreak {
     display: none;
   }
+}
+
+/* Kayıt penceresi: bölüm etiketi (.m-sec), alan ipucu (.fl-hint), şifre göster (.pw-t) */
+.section {
+  margin: 14px 0 -2px 4px;
+  color: var(--mk-ink);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.hint {
+  margin: -4px 0 2px 4px;
+  color: var(--mk-gray);
+  font-size: 13px;
+}
+.passwordToggle {
+  height: 32px;
+  min-height: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--mk-link);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  text-decoration: none;
+  cursor: pointer;
+}
+.passwordToggle:hover {
+  background: transparent;
+  text-decoration: underline;
+}
+.passwordToggle:focus-visible {
+  outline: none;
+  box-shadow: var(--mk-focus-ring);
 }

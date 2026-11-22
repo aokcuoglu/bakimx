@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import Image from "next/image"
 import Link from "next/link"
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react"
+import { createContext, useContext, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react"
 import { useForm } from "react-hook-form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -18,7 +18,8 @@ import { FloatingField } from "../kit/floating-field"
 import { PillButton } from "../kit/pill-button"
 import { SuccessState } from "../kit/success-state"
 import { TextLink } from "../kit/text-link"
-import styles from "./callback-dialog.module.css"
+import { focusFieldOnOpen, useDialogOpener } from "../kit/use-dialog-opener"
+import styles from "./dialog-form.module.css"
 
 const GENERIC_ERROR = "Talebiniz gönderilemedi. Lütfen tekrar deneyin."
 const ERROR_ID = "call-err"
@@ -29,16 +30,7 @@ const CallbackContext = createContext<CallbackContextValue | null>(null)
 
 /** Sayfadaki tüm "Sizi arayalım" tetikleyicilerinin açtığı tek pencere. */
 export function CallbackDialogProvider({ children }: { children: ReactNode }) {
-  const [isOpen, setOpen] = useState(false)
-  // Her açılışta form yeniden kurulur: değerler, hatalar ve başarı görünümü sıfırlanır.
-  const [session, setSession] = useState(0)
-  // Pencereyi açan tetikleyici: kapanınca odak ona döner.
-  const opener = useRef<HTMLElement | null>(null)
-  const open = useCallback((element: HTMLElement | null) => {
-    opener.current = element
-    setSession((value) => value + 1)
-    setOpen(true)
-  }, [])
+  const { isOpen, setOpen, session, open, onCloseAutoFocus } = useDialogOpener()
   const value = useMemo(() => ({ open }), [open])
 
   return (
@@ -49,19 +41,10 @@ export function CallbackDialogProvider({ children }: { children: ReactNode }) {
         onOpenChange={setOpen}
         title="Sizi arayalım"
         size="sm"
-        onOpenAutoFocus={(event) => {
-          // Radix varsayılanı ilk odaklanabilir öğeye (Kapat) gider; kaynak gibi ilk alana odaklan.
-          const first = (event.target as HTMLElement | null)?.querySelector<HTMLInputElement>("input[name='name']")
-          if (!first) return
-          event.preventDefault()
-          first.focus()
-        }}
-        onCloseAutoFocus={(event) => {
-          if (!opener.current?.isConnected) return
-          event.preventDefault()
-          opener.current.focus()
-        }}
+        onOpenAutoFocus={focusFieldOnOpen("name")}
+        onCloseAutoFocus={onCloseAutoFocus}
       >
+        {/* Her açılışta form yeniden kurulur: değerler, hatalar ve başarı görünümü sıfırlanır. */}
         <CallbackForm key={session} onDone={() => setOpen(false)} />
       </MarketingDialog>
     </CallbackContext.Provider>

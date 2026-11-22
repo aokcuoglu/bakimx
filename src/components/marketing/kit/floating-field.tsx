@@ -13,13 +13,18 @@ export type FloatingFieldProps = ComponentProps<typeof Input> & {
  * Etiketi alanın içinde, yazınca yukarı kayan form alanı (e-santral `.fl`).
  * `FormControl` (Slot) tarafından verilen `id` / `aria-*` öznitelikleri dahil
  * tüm props `Input`'a geçer; etiket alanı sarmaladığı için ayrıca `htmlFor` gerekmez.
+ * Yan öğe (ör. "Göster") etiketin dışında, alanın sağ içinde konumlanır.
  */
 export function FloatingField({ label, trailing, className, ...props }: FloatingFieldProps) {
+  // Yan öğe <label>'ın DIŞINDA durur: içinde olsaydı alanın erişilebilir adı
+  // "Şifre Göster" olurdu. Konumu sarmalayıcıya göre mutlak.
   return (
-    <label className={cn(styles.field, trailing ? styles.fieldWithTrailing : undefined)}>
-      <Input {...props} placeholder=" " className={cn(styles.fieldInput, className)} />
-      <span className={styles.fieldLabel}>{label}</span>
+    <div className={cn(styles.field, trailing ? styles.fieldWithTrailing : undefined)}>
+      <label className={styles.fieldBox}>
+        <Input {...props} placeholder=" " className={cn(styles.fieldInput, className)} />
+        <span className={styles.fieldLabel}>{label}</span>
+      </label>
       {trailing ? <span className={styles.fieldTrailing}>{trailing}</span> : null}
-    </label>
+    </div>
   )
 }
