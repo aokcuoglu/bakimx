@@ -16,6 +16,7 @@ export function TodayDeliveries({ deliveries }: { deliveries: TodayDelivery[] })
           <DashRow
             key={d.id}
             href={`/orders/${d.id}`}
+            stack
             start={<DashPlate plate={d.plate} />}
             title={d.customerName}
             sub={d.workOrderNo}

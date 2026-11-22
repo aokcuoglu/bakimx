@@ -10,14 +10,14 @@ export function WeeklyChart({ data }: { data: WeeklyOperation[] }) {
       {!hasData ? (
         <DashEmpty>Son 7 günde araç kabulü yok.</DashEmpty>
       ) : (
-        <div className="flex h-40 items-end gap-2 px-4 pt-4 pb-3 sm:h-48 sm:gap-3">
+        <div className="flex h-48 items-end gap-2 px-5 pt-5 pb-4 sm:h-56 sm:gap-3">
           {data.map((d) => {
             const pct = (d.ordersCreated / maxVal) * 100
             return (
               <div key={d.date} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
-                <span className="text-xs font-semibold tabular-nums text-foreground">{d.ordersCreated}</span>
+                <span className="text-[15px] font-semibold tabular-nums text-foreground">{d.ordersCreated}</span>
                 <div className={surface.bar} style={{ height: `${Math.max(4, pct)}%` }} />
-                <span className="text-xs text-muted-foreground">{d.label}</span>
+                <span className="text-[15px] text-muted-foreground">{d.label}</span>
               </div>
             )
           })}

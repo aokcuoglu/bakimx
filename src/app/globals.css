@@ -612,6 +612,11 @@
 }
 
 :root {
+  /* Sistem fontu — e-santral.com/bakimx style.css ile birebir aynı yığın
+     (docs/design-pattern-esantral.md). Apple'da SF Pro; diğer platformlarda
+     system-ui (Windows Segoe UI, Android Roboto). Web fontu indirilmez. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter",
+    "Helvetica Neue", system-ui, sans-serif;
   --background: oklch(0.985 0 0);
   --foreground: #171717;
   --card: oklch(1 0 0);
@@ -802,7 +807,8 @@
   }
   body {
     @apply bg-background text-sm leading-5 text-foreground;
-    letter-spacing: -0.005em;
+    /* e-santral kalıbı: gövde harf aralığı −0.01em (SF Pro ile ölçüldü). */
+    letter-spacing: -0.01em;
   }
   html {
     @apply font-sans scroll-smooth;

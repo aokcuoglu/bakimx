@@ -9,7 +9,7 @@ export function StatusChart({ data }: { data: StatusDistribution[] }) {
       {total === 0 ? (
         <DashEmpty>Bu ay araç kabulü yok.</DashEmpty>
       ) : (
-        <div className="space-y-3.5 px-4 py-4">
+        <div className="space-y-4 px-5 py-5">
           {data.map((s) => {
             const pct = Math.round((s.count / total) * 100)
             return (
@@ -17,9 +17,9 @@ export function StatusChart({ data }: { data: StatusDistribution[] }) {
                 <div className="mb-1.5 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
-                    <span className="text-sm font-medium text-foreground">{s.label}</span>
+                    <span className="text-[17px] font-medium text-foreground">{s.label}</span>
                   </div>
-                  <span className="text-sm tabular-nums text-muted-foreground">
+                  <span className="text-[15px] tabular-nums text-muted-foreground">
                     {s.count} · %{pct}
                   </span>
                 </div>

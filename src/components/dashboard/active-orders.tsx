@@ -39,7 +39,8 @@ export function ActiveOrdersSection({ orders }: { orders: ActiveWorkOrderRow[] }
             <DashRow
               key={o.id}
               href={`/orders/${o.id}`}
-              start={<DashPlate plate={o.plate} />}
+              stack
+            start={<DashPlate plate={o.plate} />}
               title={o.customerName}
               sub={[vehicle, o.workOrderNo].filter(Boolean).join(" · ")}
               wide={

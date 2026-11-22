@@ -135,8 +135,8 @@ export default async function DashboardPage() {
         {needsFirstOrder && (
           <DashPanel title="İlk adım" data-tour="first-order">
             <div className={surface.cardBody}>
-              <h2 className="text-lg font-semibold tracking-tight">Lite ile ilk işinize başlayın</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Kurulum tercihleriniz kaydedildi. İlk müşterinizi ve aracınızı kaydedin, ardından araç kabulünüzü açın. Araç kabul ekranında da müşteri ve araç ekleyebilirsiniz.</p>
+              <h2 className="text-[22px] font-bold leading-7 tracking-[-0.025em]">Lite ile ilk işinize başlayın</h2>
+              <p className="mt-2 text-[17px] leading-6 text-muted-foreground">Kurulum tercihleriniz kaydedildi. İlk müşterinizi ve aracınızı kaydedin, ardından araç kabulünüzü açın. Araç kabul ekranında da müşteri ve araç ekleyebilirsiniz.</p>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <Button asChild variant="outline" className="rounded-full"><Link href="/customers/new">İlk müşteriyi ekle</Link></Button>
                 <Button variant="default" asChild className="rounded-full"><Link href="/orders/new">İlk araç kabulünü oluştur</Link></Button>
@@ -157,7 +157,7 @@ export default async function DashboardPage() {
         <ActiveOrdersSection orders={activeOrders} />
 
         <section className={styles.panels} aria-label="Günlük iş takibi">
-          <div className="flex min-w-0 flex-col gap-7">
+          <div className="flex min-w-0 flex-col gap-9">
             <TodayDeliveries deliveries={todayDeliveries} />
             {canQuotes && <WaitingApprovals approvals={waitingApprovals} />}
             {canAppointments && <TodayAppointments appointments={todayAppointments} />}

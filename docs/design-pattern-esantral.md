@@ -60,8 +60,8 @@ ekranı maketi** (`.d-screen`): sayfa uygulamanın nasıl görünmesi gerektiği
 
 Yazı ailesi: `-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
 "Inter", "Helvetica Neue", system-ui, sans-serif` + `-webkit-font-smoothing:
-antialiased`. (BakımX'te Inter zaten yüklü; Apple cihazlarda SF'ye düşmek için
-yığının başına sistem fontu eklenir.)
+antialiased`. BakımX'te 22 Kasım 2026'dan beri Inter yüklenmiyor; `--font-sans`
+`globals.css` `:root`'ta sistem yığınına bağlı (SF Pro / Segoe UI / Roboto).
 
 Uygulama ölçeği (maketten, 350px genişlik referansı):
 

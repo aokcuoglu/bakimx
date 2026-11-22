@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Geist_Mono } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner"
@@ -9,11 +9,6 @@ import { announcementDismissScript } from "@/lib/landing/announcement"
 import { SITE_URL, BRAND_NAME, HOME_TITLE, TITLE_TEMPLATE } from "@/lib/seo"
 import { MarketingAnalytics } from "@/components/analytics/marketing-analytics"
 import { CookieConsent } from "@/components/cookie-consent/cookie-consent"
-
-const inter = Inter({
-  variable: "--font-sans",
-  subsets: ["latin", "latin-ext"],
-});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -86,7 +81,7 @@ export default function RootLayout({
     <html
       lang="tr"
       data-scroll-behavior="smooth"
-      className={`${inter.variable} ${geistMono.variable} antialiased`}
+      className={`${geistMono.variable} antialiased`}
     >
       <head>
         <Script

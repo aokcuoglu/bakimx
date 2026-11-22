@@ -16,6 +16,7 @@ export function WaitingApprovals({ approvals }: { approvals: WaitingApprovalItem
           <DashRow
             key={a.id}
             href={`/orders/${a.id}`}
+            stack
             start={<DashPlate plate={a.plate} />}
             title={a.customerName}
             sub={a.workOrderNo}

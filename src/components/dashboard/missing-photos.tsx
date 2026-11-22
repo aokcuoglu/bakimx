@@ -16,6 +16,7 @@ export function MissingPhotos({ items }: { items: MissingPhotoItem[] }) {
           <DashRow
             key={item.orderId}
             href={`/orders/${item.orderId}`}
+            stack
             start={<DashPlate plate={item.plate} />}
             title={item.customerName}
             sub={item.workOrderNo}

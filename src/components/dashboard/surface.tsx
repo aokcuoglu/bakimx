@@ -76,6 +76,7 @@ export function DashRow({
   chevron = Boolean(href),
   wrap = false,
   plain = false,
+  stack = false,
 }: {
   href?: string
   start?: ReactNode
@@ -89,10 +90,12 @@ export function DashRow({
   wrap?: boolean
   /** true → başlık normal ağırlıkta (etiket/değer satırları). */
   plain?: boolean
+  /** true → telefonda iki kat: üstte başlangıç (plaka) + son (hap), altta tam genişlik metin. */
+  stack?: boolean
 }) {
   const content = (
     <>
-      {start}
+      {start != null && <span className={styles.rowStart}>{start}</span>}
       <span className={styles.rowMain}>
         <span className={styles.rowTitle} data-wrap={wrap || undefined} data-plain={plain || undefined}>{title}</span>
         {sub != null && <span className={styles.rowSub}>{sub}</span>}
@@ -103,11 +106,11 @@ export function DashRow({
     </>
   )
   return href ? (
-    <Link href={href} prefetch={false} className={styles.row}>
+    <Link href={href} prefetch={false} className={styles.row} data-stack={stack || undefined}>
       {content}
     </Link>
   ) : (
-    <div className={styles.row}>{content}</div>
+    <div className={styles.row} data-stack={stack || undefined}>{content}</div>
   )
 }
 
@@ -190,14 +193,17 @@ export function DashStat({
   value,
   href,
   tone,
+  span = false,
 }: {
   label: string
   value: ReactNode
   href: string
   tone?: "warning" | "destructive"
+  /** true → dar ekranda satırın tamamını kaplar (uzun tutarlar için). */
+  span?: boolean
 }) {
   return (
-    <Link href={href} prefetch={false} className={styles.stat}>
+    <Link href={href} prefetch={false} className={styles.stat} data-span={span || undefined}>
       <span className={styles.statValue} data-tone={tone}>{value}</span>
       <span className={styles.statLabel}>{label}</span>
     </Link>

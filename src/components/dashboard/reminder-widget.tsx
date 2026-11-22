@@ -41,6 +41,7 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
           <DashRow
             key={r.id}
             href={`/reminders/${r.id}`}
+            stack
             start={<DashPlate plate={r.vehicle.plate} />}
             title={`${customerName(r.customer)} · ${r.title}`}
             sub={dueText(r)}
