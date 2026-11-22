@@ -1,7 +1,6 @@
 export type TourTargetId =
   | "welcome-banner"
   | "nav-orders"
-  | "mobile-nav-orders"
   | "create-center"
   | "global-search"
   | "sidebar-trigger"
@@ -57,25 +56,9 @@ const DESKTOP_STEPS: TourStepDef[] = [
 const MOBILE_STEPS: TourStepDef[] = [
   INTRO_STEP,
   {
-    id: "orders",
-    title: "Araç Kabulleri",
-    description:
-      "Alt menüden araç kabullerine geçin. Açık işleri takip eder ve teslimata kadar ilerlersiniz.",
-    targets: ["mobile-nav-orders"],
-    side: "top",
-  },
-  {
-    id: "create",
-    title: "Yeni kayıt",
-    description:
-      "Alttaki oluştur düğmesiyle müşteri, araç veya araç kabulünü hızlıca ekleyin.",
-    targets: ["create-center"],
-    side: "top",
-  },
-  {
     id: "search",
     title: "Arama",
-    description: "Menüyü açarak plaka veya müşteri arayın.",
+    description: "Menüyü açarak araç kabullerine geçin, plaka veya müşteri arayın.",
     targets: ["sidebar-trigger"],
     side: "bottom",
   },
