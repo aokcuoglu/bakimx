@@ -52,7 +52,7 @@ const homeStructuredData = [
 
 /**
  * Ana sayfa — e-santral.com/bakimx düzeni (#781, docs/superpowers/specs/2026-11-22-esantral-landing-design.md).
- * Üst bant (site) layout'unda (#798).
+ * Üst bant ve kayıt penceresi sağlayıcısı (#783) (site) layout'unda (#798).
  */
 export default function Home() {
   return (

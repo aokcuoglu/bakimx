@@ -1,8 +1,8 @@
 import { Reveal } from "@/components/shared/reveal"
 import { NumberedSteps } from "../kit/numbered-steps"
-import { TextLink } from "../kit/text-link"
 import { CallbackTrigger } from "./callback-dialog"
 import { CTA, MOVE } from "./content"
+import { SignupTrigger } from "./signup-dialog"
 import styles from "./landing.module.css"
 
 /** Geçiş ve görüşme (e-santral `#gecis`). */
@@ -20,9 +20,9 @@ export function Move() {
               <CallbackTrigger variant="pill-lg" location="move_primary">
                 {CTA.callback}
               </CallbackTrigger>
-              <TextLink href="/register" track={{ name: "trial_cta_click", location: "move_secondary" }}>
+              <SignupTrigger variant="text" location="move_secondary">
                 {CTA.trial}
-              </TextLink>
+              </SignupTrigger>
             </div>
           </div>
           <NumberedSteps steps={MOVE.steps} />

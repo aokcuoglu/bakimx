@@ -36,6 +36,16 @@ describe("(site) ortak üst bandı", () => {
     expect(offenders).toEqual([])
   })
 
+  test("kayıt penceresi sağlayıcısı yalnız layout'ta (bandın düğmesi de onu açar)", () => {
+    // Sayfa kendi sağlayıcısını kurarsa iki pencere olur; bandın düğmesi dıştakini açar (#783).
+    expect(read(join(SITE, "layout.tsx"))).toContain("<SignupDialogProvider>")
+    const offenders = sourceFiles(SITE)
+      .filter((file) => file !== join(SITE, "layout.tsx"))
+      .filter((file) => read(file).includes("SignupDialogProvider"))
+      .map((file) => relative(ROOT, file))
+    expect(offenders).toEqual([])
+  })
+
   test("public kabuklar bandı kendi içinde render etmez", () => {
     for (const file of [
       "src/components/public/PublicSite.tsx",
@@ -46,11 +56,10 @@ describe("(site) ortak üst bandı", () => {
     }
   })
 
-  test("bandın dinamik hedefleri tam önceden yüklenir, loading.tsx ile yavaşlatılmaz", () => {
-    // Ölçüm (#798): /login'e geçiş prefetch ile ~90 ms, (auth)/loading.tsx ile ~850 ms.
+  test("bandın dinamik hedefi tam önceden yüklenir, loading.tsx ile yavaşlatılmaz", () => {
+    // Ölçüm (#798): /login'e geçiş prefetch ile ~75–90 ms, (auth)/loading.tsx ile ~850 ms.
     const header = read(join(ROOT, "src/components/marketing/landing/landing-header.tsx"))
     expect(header).toMatch(/<Link className=\{styles\.login\} href="\/login" prefetch>/)
-    expect(header).toMatch(/<PillButton href="\/register" prefetch/)
     expect(existsSync(join(SITE, "(auth)", "loading.tsx"))).toBe(false)
     expect(existsSync(join(SITE, "(auth)", "login", "loading.tsx"))).toBe(false)
     expect(existsSync(join(SITE, "(auth)", "register", "loading.tsx"))).toBe(false)

@@ -29,7 +29,7 @@ test("hero başlığı sunucu HTML'inde görünür ve gizli başlamaz", () => {
 })
 
 test("çapalar, CTA hedefleri ve yasal bağlantılar", () => {
-  const html = render(createElement(LandingHeader, { onHome: true }), createElement(Price), createElement(LandingFooter))
+  const html = render(createElement(LandingHeader), createElement(Price), createElement(LandingFooter))
   for (const href of ['href="#nasil"', 'href="#ozellikler"', 'href="#fiyat"', 'href="#sorular"', 'href="/login"', 'href="/register"', 'href="/kvkk"', 'href="/privacy"', 'href="/terms"']) {
     expect(html).toContain(href)
   }
@@ -38,7 +38,7 @@ test("çapalar, CTA hedefleri ve yasal bağlantılar", () => {
 
 test("ana sayfa dışında üst bant ana sayfanın bölümlerine ve başına bağlanır (#798)", () => {
   // Bant (site) layout'unda her public sayfada durur; "#nasil" orada hiçbir yere gitmez.
-  const html = render(createElement(LandingHeader, { onHome: false }))
+  const html = render(createElement(LandingHeader, { anchorBase: "/" }))
   for (const href of ['href="/#nasil"', 'href="/#ozellikler"', 'href="/#fiyat"', 'href="/#sorular"', 'href="/login"', 'href="/register"']) {
     expect(html).toContain(href)
   }
@@ -47,7 +47,7 @@ test("ana sayfa dışında üst bant ana sayfanın bölümlerine ve başına ba�
 })
 
 test("ana sayfada üst bant sayfa içi çapalara kayar", () => {
-  const html = render(createElement(LandingHeader, { onHome: true }))
+  const html = render(createElement(LandingHeader))
   expect(html).toContain('href="#hero"')
   expect(html).not.toContain('href="/#')
 })
@@ -90,4 +90,11 @@ test("hero başlığının metni satırlar arasında boşluk taşır (#780)", ()
   const html = render(createElement(Hero))
   const text = (html.match(/<h1[\s\S]*?<\/h1>/)?.[0] ?? "").replace(/<[^>]+>/g, "")
   expect(text).toBe("Oto servisinizi telefonunuzdan yönetin.")
+})
+
+test("üst ve alt bant ana sayfa dışında çapaları köke bağlar (#796)", () => {
+  const html = renderToStaticMarkup(createElement(LandingHeader, { anchorBase: "/" })) + renderToStaticMarkup(createElement(LandingFooter, { anchorBase: "/" }))
+  expect(html).toContain('href="/#fiyat"')
+  expect(html).not.toContain('href="#fiyat"')
+  expect(html).not.toContain('href="#hero"')
 })

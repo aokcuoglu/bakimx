@@ -9,5 +9,5 @@ import { LandingHeader } from "./landing-header"
  * sayfadan sayfaya sabit kalır. Yol yalnız menü bağlantılarının hedefini seçer.
  */
 export function SiteHeader() {
-  return <LandingHeader onHome={usePathname() === "/"} />
+  return <LandingHeader anchorBase={usePathname() === "/" ? "" : "/"} />
 }

@@ -50,6 +50,15 @@ describe("ana sayfa sözleşmeleri", () => {
     }
   });
 
+  test("tüm Ücretsiz deneyin düğmeleri kayıt penceresini açar (#783)", () => {
+    const sections = landingFiles().filter((file) => !/signup-dialog|content\.ts|callback-dialog/.test(file));
+    const source = sections.map(read).join("\n");
+    expect(source).not.toMatch(/href="\/register"/);
+    expect(source.match(/<SignupTrigger\b/g)?.length).toBe(5);
+    // Sağlayıcı (#798'den beri) üst bandı da kapsayan (site) layout'unda.
+    expect(read("src/app/(site)/layout.tsx")).toContain("<SignupDialogProvider>");
+  });
+
   test("paylaşılan alt bant artık olmayan ana sayfa çapalarına bağlanmaz", () => {
     // Üst bant (#798'den beri) çapalarını content.ts'teki NAV'dan alır; eski
     // sections/Header kaldırıldı.
