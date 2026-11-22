@@ -44,6 +44,11 @@ export default async function DashboardPage() {
   // Yönetici özeti: sayılar ve kısa listeler. Ayrıntı listeleri (eksik
   // fotoğraflar, onay bekleyenler, son müşteriler…) kendi sayfalarındadır;
   // burada yalnız "Dikkat gerektiren işler"de sayı olarak görünürler.
+  //
+  // Hepsi TEK Promise.all'da: birbirine bağımlı değiller. Öneriler eskiden bu
+  // grubun ardından bekleniyordu ve kendi ~5 ardışık veritabanı gidiş-dönüşünü
+  // sayfanın sonuna ekliyordu. Kazancın tavanı havuz boyutu (`pg` max 10):
+  // yerel dev'de (tünel, ~80 ms/RTT) veri fazı 717 → 621 ms ölçüldü.
   const [
     stats,
     statusCounts,
@@ -53,6 +58,8 @@ export default async function DashboardPage() {
     overdueReminders,
     partKpis,
     unassignedOrderCount,
+    firstOrder,
+    operationalAlerts,
   ] = await Promise.all([
     getDashboardStats(user.workshopId, {
       quotes: canQuotes,
@@ -66,12 +73,12 @@ export default async function DashboardPage() {
     canReminders ? countOverdueReminders(user.workshopId) : Promise.resolve(null),
     canInventory ? getPartKPIs(user.workshopId) : Promise.resolve(null),
     canTeam ? getUnassignedOrderCount(user.workshopId) : Promise.resolve(null),
+    accessTier === "lite"
+      ? prisma.serviceOrder.findFirst({ where: { workshopId: user.workshopId }, select: { id: true } })
+      : Promise.resolve(null),
+    canAnalytics ? getRecommendations(user.workshopId) : Promise.resolve(null),
   ])
-  const needsFirstOrder = accessTier === "lite" && !(await prisma.serviceOrder.findFirst({ where: { workshopId: user.workshopId }, select: { id: true } }))
-
-  const operationalAlerts = canAnalytics
-    ? await getRecommendations(user.workshopId)
-    : null
+  const needsFirstOrder = accessTier === "lite" && !firstOrder
 
   const greetingName = user.firstName || null
 

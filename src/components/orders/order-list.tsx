@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { orderDetailHref, readOrderListState, type OrderListState } from "@/lib/orders/list-state"
 import type { Updater } from "@tanstack/react-table"
-import { ChevronDown, FileWarning } from "lucide-react"
+import { CarFront, ChevronDown, CircleCheck, CircleX, FileWarning, MessageCircle, Wrench } from "lucide-react"
 import {
   flexRender,
   getCoreRowModel,
@@ -18,7 +18,7 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table"
 
-import { StatusBadge, PlateBadge } from "@/components/shared/status-badge"
+import { DashOrderStatus, DashPlate, DashStat, DashStatGrid, type Tone } from "@/components/dashboard/surface"
 import { OrderTableColumnHeader } from "@/components/orders/order-table-column-header"
 import { Button } from "@/components/ui/button"
 import {
@@ -81,6 +81,11 @@ type KpiConfig = {
   label: string
   count: number
   filterValue: string
+  icon: React.ComponentType
+  /** Kartın kimlik rengi (Genel Bakış KPI kartlarıyla aynı kalıp). */
+  accent: Tone
+  /** Değer > 0 iken rakamı uyarı tonuna boyar. */
+  tone?: "warning"
 }
 
 function formatDate(iso: string) {
@@ -105,6 +110,16 @@ function invoiceSearch(order: OrderRow): string {
 
 function technicianSearch(order: OrderRow): string {
   return order.assignedTechnicianName?.trim() || "Atanmamış"
+}
+
+/**
+ * Detay bağlantılarının geri dönüş adresi tablo `meta`sından okunur, kolon
+ * tanımlarına kapatılmaz: liste adresi (`view`) her filtre tuşunda değişir;
+ * kolonlar ona bağlı olsaydı her harfte yeniden kurulur, başlıktaki filtre
+ * paneli de söküldüğü için ilk harften sonra kapanırdı.
+ */
+function listHrefOf(table: { options: { meta?: unknown } }): string {
+  return (table.options.meta as { listHref?: string } | undefined)?.listHref ?? "/orders"
 }
 
 function textFilter<T>(read: (row: T) => string) {
@@ -198,11 +213,12 @@ export function OrderList({
 }) {
   const { rootRef, isPending, onChange, onSubmit, onClick } = useOrderListNavigation(searchQuery)
   const kpiConfigs: KpiConfig[] = [
-    { key: "active", label: "Aktif", count: kpis.active, filterValue: ACTIVE_ORDER_FILTER },
-    { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval" },
-    { key: "completed", label: "Tamamlandı", count: kpis.completed, filterValue: "ready_for_delivery" },
-    { key: "delivered", label: "Teslim Edildi", count: kpis.delivered, filterValue: "delivered" },
-    { key: "cancelled", label: "İptal", count: kpis.cancelled, filterValue: "cancelled" },
+    { key: "active", label: "Aktif", count: kpis.active, filterValue: ACTIVE_ORDER_FILTER, icon: Wrench, accent: "info" },
+    { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval", icon: MessageCircle, accent: "warning", tone: "warning" },
+    // Kart `ready_for_delivery`'yi filtreler; adı durumun kendi adıyla aynı (eskiden "Tamamlandı").
+    { key: "completed", label: "Teslime Hazır", count: kpis.completed, filterValue: "ready_for_delivery", icon: CircleCheck, accent: "success" },
+    { key: "delivered", label: "Teslim Edildi", count: kpis.delivered, filterValue: "delivered", icon: CarFront, accent: "neutral" },
+    { key: "cancelled", label: "İptal", count: kpis.cancelled, filterValue: "cancelled", icon: CircleX, accent: "destructive" },
   ]
 
   // KPI kartına tıklamak yalnız durumu değiştirmeli; diğer aktif filtreler korunur.
@@ -236,10 +252,10 @@ export function OrderList({
         accessorFn: (order) => order.workOrderNo,
         header: ({ column }) => <OrderTableColumnHeader column={column} title="İş No" />,
         filterFn: textFilter((order) => order.workOrderNo),
-        cell: ({ row }) => (
+        cell: ({ row, table }) => (
           <Link
-            href={orderDetailHref(row.original.id, listHref)}
-            className="font-mono text-xs font-medium text-foreground hover:text-primary transition-colors"
+            href={orderDetailHref(row.original.id, listHrefOf(table))}
+            className="font-mono text-xs text-muted-foreground transition-colors hover:text-primary-strong"
           >
             {row.original.workOrderNo}
           </Link>
@@ -255,11 +271,11 @@ export function OrderList({
           return (
             <DetailHint detail={`${order.vehicle.plate} · ${order.vehicle.brand} ${order.vehicle.model}`}>
               {order.vehicle.id ? (
-                <Link href={`/vehicles/${order.vehicle.id}`}>
-                  <PlateBadge plate={order.vehicle.plate} size="sm" />
+                <Link href={`/vehicles/${order.vehicle.id}`} className="inline-flex">
+                  <DashPlate plate={order.vehicle.plate} country />
                 </Link>
               ) : (
-                <PlateBadge plate={order.vehicle.plate} size="sm" />
+                <DashPlate plate={order.vehicle.plate} country />
               )}
             </DetailHint>
           )
@@ -276,11 +292,11 @@ export function OrderList({
           return (
             <DetailHint detail={`${name} · ${order.customer.phone}`}>
               {order.customer.id ? (
-                <Link href={`/customers/${order.customer.id}`} className="block max-w-[11rem] truncate font-medium text-foreground transition-colors hover:text-primary">
+                <Link href={`/customers/${order.customer.id}`} className="block max-w-[9.5rem] truncate text-[15px] font-semibold text-foreground transition-colors hover:text-primary-strong">
                   {name}
                 </Link>
               ) : (
-                <span className="block max-w-[11rem] truncate font-medium text-foreground">{name}</span>
+                <span className="block max-w-[9.5rem] truncate text-[15px] font-semibold text-foreground">{name}</span>
               )}
             </DetailHint>
           )
@@ -291,9 +307,7 @@ export function OrderList({
         accessorFn: statusSearch,
         header: ({ column }) => <OrderTableColumnHeader column={column} title="Durum" />,
         filterFn: textFilter(statusSearch),
-        cell: ({ row }) => (
-          <StatusBadge status={row.original.status} />
-        ),
+        cell: ({ row }) => <DashOrderStatus status={row.original.status} />,
       },
       payment: {
         id: "payment",
@@ -317,7 +331,7 @@ export function OrderList({
           const right = b.original.hasPrice ? b.original.grandTotal : Number.NEGATIVE_INFINITY
           return left - right
         },
-        header: ({ column }) => <OrderTableColumnHeader column={column} title="Toplam" align="right" />,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Toplam" align="right" kind="number" />,
         filterFn: textFilter((order) => (order.hasPrice ? formatTRY(order.grandTotal) : "")),
         meta: { align: "right" },
         cell: ({ row }) => (
@@ -329,17 +343,17 @@ export function OrderList({
       dates: {
         id: "dates",
         accessorFn: (order) => order.createdAt,
-        header: ({ column }) => <OrderTableColumnHeader column={column} title="Giriş tarihi" />,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Giriş tarihi" kind="date" />,
         filterFn: textFilter((order) => formatDate(order.createdAt)),
-        cell: ({ row }) => <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">{formatDate(row.original.createdAt)}</span>,
+        cell: ({ row }) => <span className="whitespace-nowrap text-[13px] tabular-nums text-muted-foreground">{formatDate(row.original.createdAt)}</span>,
       },
       delivery: {
         id: "delivery",
         accessorFn: (order) => order.estimatedDeliveryAt,
         sortUndefined: "last",
-        header: ({ column }) => <OrderTableColumnHeader column={column} title="Tahmini teslim" />,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Tahmini teslim" kind="date" />,
         filterFn: textFilter((order) => order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : ""),
-        cell: ({ row }) => <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">{row.original.estimatedDeliveryAt ? formatDate(row.original.estimatedDeliveryAt) : "—"}</span>,
+        cell: ({ row }) => <span className="whitespace-nowrap text-[13px] tabular-nums text-muted-foreground">{row.original.estimatedDeliveryAt ? formatDate(row.original.estimatedDeliveryAt) : "—"}</span>,
       },
       technician: {
         id: "technician",
@@ -355,7 +369,7 @@ export function OrderList({
             locked={isOrderLocked(row.original.status as OrderStatus)}
             size="sm"
             variant="meta"
-            className="px-0"
+            className="max-w-[7rem] px-0"
           />
         ),
       },
@@ -369,21 +383,21 @@ export function OrderList({
         enableHiding: false,
         enableColumnFilter: false,
         header: () => <span className="text-xs font-medium text-muted-foreground">İşlem</span>,
-        cell: ({ row }) => (
+        cell: ({ row, table }) => (
           <div className="flex items-center justify-end">
             <ActionsMenu
-              viewHref={orderDetailHref(row.original.id, listHref)}
+              viewHref={orderDetailHref(row.original.id, listHrefOf(table))}
               editHref={
                 isOrderLocked(row.original.status as OrderStatus)
                   ? undefined
-                  : orderDetailHref(row.original.id, listHref, true)
+                  : orderDetailHref(row.original.id, listHrefOf(table), true)
               }
             />
           </div>
         ),
       },
     ]
-  }, [technicians, listHref])
+  }, [technicians])
 
   const table = useReactTable({
     data: orders,
@@ -396,47 +410,56 @@ export function OrderList({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getRowId: (order) => order.id,
+    meta: { listHref },
   })
 
   const visibleOrders = table.getRowModel().rows.map((row) => row.original)
 
   return (
-    <div ref={rootRef} className="space-y-4" onChange={onChange} onSubmit={onSubmit} onClickCapture={onClick}>
-      <div aria-label="Araç kabul durum özeti" className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-card p-1 sm:grid-cols-5">
-        {kpiConfigs.map((cfg) => {
+    <div ref={rootRef} className="space-y-5 sm:space-y-6" onChange={onChange} onSubmit={onSubmit} onClickCapture={onClick}>
+      {/* Durum kartları — Genel Bakış KPI kartlarıyla aynı kalıp; her kart bir
+          durum filtresidir, seçili olan mavi çerçeveyle işaretlenir. */}
+      <DashStatGrid label="Araç kabul durum özeti" count={kpiConfigs.length} size="compact">
+        {kpiConfigs.map(({ icon: Icon, ...cfg }) => {
           const isActive = activeStatus === cfg.filterValue
           const parts = isActive ? keptFilters : [`status=${cfg.filterValue}`, ...keptFilters]
           const href = parts.length > 0 ? `/orders?${parts.join("&")}` : "/orders"
           return (
-            <Button key={cfg.key} variant="ghost" size="sm" asChild
-              className={`w-full justify-between gap-2 px-2 text-xs last:col-span-2 sm:last:col-span-1 ${isActive ? "bg-muted text-foreground" : "text-muted-foreground"}`}>
-              <Link href={href} aria-current={isActive ? "page" : undefined}>
-                <span>{cfg.label}</span>
-                <span className="text-xs font-medium tabular-nums text-foreground">{cfg.count}</span>
-              </Link>
-            </Button>
+            <DashStat
+              key={cfg.key}
+              label={cfg.label}
+              value={cfg.count}
+              href={href}
+              icon={<Icon />}
+              accent={cfg.accent}
+              tone={cfg.count > 0 ? cfg.tone : undefined}
+              active={isActive}
+              size="compact"
+            />
           )
         })}
-      </div>
+      </DashStatGrid>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        {toolbar && (
-          <div className="border-b border-border p-3 sm:p-4">
-            {view && <input type="hidden" name="view" value={view} form="order-list-filters" />}
-            {toolbar}
-          </div>
-        )}
-        <div className="relative" aria-label="Araç kabul sonuçları" aria-busy={isPending}>
+      {toolbar && (
+        <div className="rounded-[22px] bg-card p-4 sm:p-5">
+          {view && <input type="hidden" name="view" value={view} form="order-list-filters" />}
+          {toolbar}
+        </div>
+      )}
+
+      <div className="relative overflow-hidden rounded-[22px] bg-card" aria-label="Araç kabul sonuçları" aria-busy={isPending}>
         {isPending && (
           <div className="absolute inset-0 z-30 flex min-h-32 items-start justify-center bg-card/90">
             <BrandSpinner size={32} label="Araç kabulleri yükleniyor…" className="sticky top-0 py-8" />
           </div>
         )}
-        <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2 sm:px-4">
-          <p className="text-xs text-muted-foreground" aria-live="polite">{visibleOrders.length} araç kabulü</p>
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
+          <p className="text-[15px] font-semibold text-foreground" aria-live="polite">
+            {visibleOrders.length} <span className="font-normal text-muted-foreground">araç kabulü</span>
+          </p>
           <div className="flex items-center gap-2">
             {view && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => {
+              <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => {
                 const params = new URLSearchParams(window.location.search)
                 params.delete("view")
                 window.history.replaceState(null, "", `/orders${params.size ? `?${params}` : ""}`)
@@ -446,7 +469,7 @@ export function OrderList({
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="outline" size="sm" className="hidden lg:inline-flex">
+                <Button type="button" variant="outline" size="sm" className="hidden rounded-full lg:inline-flex">
                   Kolonlar
                   <ChevronDown />
                 </Button>
@@ -472,7 +495,7 @@ export function OrderList({
         {orders.length === 0 && emptyState}
         {orders.length > 0 && <div className="hidden lg:block">
           <Table containerClassName="max-h-[70vh]" className="text-sm">
-            <TableHeader className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
+            <TableHeader className="sticky top-0 z-10 bg-card text-[13px] text-muted-foreground">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="hover:bg-transparent">
                   {headerGroup.headers.map((header) => {
@@ -482,8 +505,8 @@ export function OrderList({
                         key={header.id}
                         className={
                           sticky
-                            ? "sticky right-0 z-20 h-9 border-l border-border bg-card px-3 py-1 text-right"
-                            : "h-9 bg-card px-3 py-1"
+                            ? "sticky right-0 z-20 h-11 bg-card px-2.5 py-1 pr-3 text-right"
+                            : "h-11 bg-card px-2.5 py-1 first:pl-4"
                         }
                       >
                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
@@ -504,8 +527,8 @@ export function OrderList({
                           key={cell.id}
                           className={
                             sticky
-                              ? "sticky right-0 border-l border-border bg-card h-9 px-3 py-1 align-middle whitespace-nowrap group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]"
-                              : "h-9 px-3 py-1 align-middle whitespace-nowrap"
+                              ? "sticky right-0 h-14 bg-card px-2.5 py-2 pr-3 align-middle whitespace-nowrap group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]"
+                              : "h-14 px-2.5 py-2 align-middle whitespace-nowrap first:pl-4"
                           }
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -525,81 +548,64 @@ export function OrderList({
           </Table>
         </div>}
 
-        {orders.length > 0 && <div className="lg:hidden space-y-2.5 p-3">
-          {visibleOrders.map((order) => (
-            <div
-              key={order.id}
-              className="rounded-lg border border-border bg-card p-3.5 hover:border-border transition-colors"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Link
-                      href={orderDetailHref(order.id, listHref)}
-                      className="font-mono text-xs font-medium text-foreground hover:text-primary transition-colors"
-                    >
-                      {order.workOrderNo}
+        {/* Telefon/tablet: Genel Bakış satır kalıbı — tek kartta çizgiyle ayrılan
+            satırlar. Satırın tamamı detaya gider (gerilmiş bağlantı); plaka,
+            usta ataması ve ⋯ menüsü onun üstünde kendi işini yapar. */}
+        {orders.length > 0 && <ul className="divide-y divide-border lg:hidden">
+          {visibleOrders.map((order) => {
+            const detailHref = orderDetailHref(order.id, listHref)
+            const vehicleText = [order.vehicle.brand, order.vehicle.model].filter(Boolean).join(" ")
+            const dateText = order.estimatedDeliveryAt
+              ? `Teslim ${formatDate(order.estimatedDeliveryAt)}`
+              : `Giriş ${formatDate(order.createdAt)}`
+            const showInvoice = Boolean((order.invoiceNo || "").trim()) || order.invoiceMissing
+            return (
+              <li key={order.id} className="relative px-4 py-3.5 transition-colors hover:bg-muted/60">
+                <div className="flex items-center gap-2">
+                  {order.vehicle.id ? (
+                    <Link href={`/vehicles/${order.vehicle.id}`} className="relative z-10 inline-flex" aria-label={`Araç: ${order.vehicle.plate}`}>
+                      <DashPlate plate={order.vehicle.plate} country size="lg" />
                     </Link>
-                    {order.vehicle.id ? (
-                      <Link href={`/vehicles/${order.vehicle.id}`}>
-                        <PlateBadge plate={order.vehicle.plate} size="sm" />
-                      </Link>
-                    ) : (
-                      <PlateBadge plate={order.vehicle.plate} size="sm" />
-                    )}
-                  </div>
-                  <Link
-                    href={order.customer.id ? `/customers/${order.customer.id}` : "#"}
-                    className="mt-1.5 text-sm font-semibold text-foreground truncate block hover:text-primary transition-colors"
-                  >
-                    {customerName(order.customer)}
-                  </Link>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {order.vehicle.brand} {order.vehicle.model}
-                  </p>
-                </div>
-                <MobileActionsMenu
-                  viewHref={orderDetailHref(order.id, listHref)}
-                  editHref={
-                    isOrderLocked(order.status as OrderStatus)
-                      ? undefined
-                      : orderDetailHref(order.id, listHref, true)
-                  }
-                />
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                <StatusBadge status={order.status} />
-                <PaymentText status={order.paymentStatus} />
-                {/* Mobil kartta usta hiç görünmüyordu; rozet hem bilgi hem atama tetikleyicisi. */}
-                <TechnicianAssign
-                  orderId={order.id}
-                  assignedTechnicianId={order.assignedTechnicianId}
-                  assignedTechnicianName={order.assignedTechnicianName}
-                  technicians={technicians}
-                  locked={isOrderLocked(order.status as OrderStatus)}
-                  size="sm"
-                />
-              </div>
-              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                <span>Fatura</span>
-                <InvoiceCell invoiceNo={order.invoiceNo} missing={order.invoiceMissing} />
-              </div>
-              <div className="mt-3 flex items-center justify-between text-xs">
-                <div className="text-muted-foreground">
-                  {order.estimatedDeliveryAt ? (
-                    <>Tahmini: <span className="text-foreground font-medium">{formatDate(order.estimatedDeliveryAt)}</span></>
                   ) : (
-                    <span>Giriş: {formatDate(order.createdAt)}</span>
+                    <DashPlate plate={order.vehicle.plate} country size="lg" />
                   )}
+                  <span className="ml-auto"><DashOrderStatus status={order.status} /></span>
+                  <span className="relative z-10">
+                    <MobileActionsMenu
+                      viewHref={detailHref}
+                      editHref={
+                        isOrderLocked(order.status as OrderStatus)
+                          ? undefined
+                          : orderDetailHref(order.id, listHref, true)
+                      }
+                    />
+                  </span>
                 </div>
-                <div className="font-semibold text-foreground">
-                  {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
+                <Link href={detailHref} className="mt-2 block min-w-0 outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-ring">
+                  <span className="block truncate text-[17px] font-semibold leading-[22px] text-foreground">{customerName(order.customer)}</span>
+                  <span className="mt-0.5 block truncate text-[15px] leading-5 text-muted-foreground">
+                    {[vehicleText, dateText].filter(Boolean).join(" · ")}
+                  </span>
+                </Link>
+                <div className="pointer-events-none relative z-10 mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 [&>*]:pointer-events-auto">
+                  <TechnicianAssign
+                    orderId={order.id}
+                    assignedTechnicianId={order.assignedTechnicianId}
+                    assignedTechnicianName={order.assignedTechnicianName}
+                    technicians={technicians}
+                    locked={isOrderLocked(order.status as OrderStatus)}
+                    size="sm"
+                  />
+                  <PaymentText status={order.paymentStatus} />
+                  {showInvoice && <InvoiceCell invoiceNo={order.invoiceNo} missing={order.invoiceMissing} />}
+                  <span className="ml-auto text-[15px] font-semibold tabular-nums text-foreground">
+                    {order.hasPrice ? formatTRY(order.grandTotal) : <span className="font-normal text-muted-foreground">—</span>}
+                  </span>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>}
-        </div>
+              </li>
+            )
+          })}
+        </ul>}
       </div>
     </div>
   )
