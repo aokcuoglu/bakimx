@@ -1376,7 +1376,7 @@ export function VehicleEntryWizard({
                 </div>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
-                <Button type="button" className="sm:flex-1" onClick={confirmManualPlate}>
+                <Button type="button" variant="foreground" className="sm:flex-1" onClick={confirmManualPlate}>
                   Onaylıyorum
                 </Button>
                 <Button type="button" variant="outline" className="sm:flex-1" onClick={revertToPhotoPlate}>

@@ -161,7 +161,7 @@ export function IntakeDuplicatePhoneNotice({
       )}
       <div className="flex gap-2">
         {onUseExisting && single && (
-          <Button type="button" size="sm" className="flex-1" onClick={() => onUseExisting(duplicates[0])}>
+          <Button type="button" size="sm" variant="foreground" className="flex-1" onClick={() => onUseExisting(duplicates[0])}>
             Bu müşteriyi kullan
           </Button>
         )}
