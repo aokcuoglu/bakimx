@@ -2,16 +2,17 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Eye, EyeOff, Lock, Store, UserRound } from "lucide-react"
+import Image from "next/image"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { FloatingField } from "@/components/marketing/kit/floating-field"
+import { PillButton } from "@/components/marketing/kit/pill-button"
+import { TextLink } from "@/components/marketing/kit/text-link"
+import { SignupTrigger } from "@/components/marketing/landing/signup-dialog"
+import formStyles from "@/components/marketing/landing/dialog-form.module.css"
 import { isEmailIdentifier } from "@/lib/user-identity"
-import { cn } from "@/lib/utils"
-import styles from "@/components/auth/register-design.module.css"
+import styles from "@/components/auth/login.module.css"
 
 // On success, send the user to the app (app.bakimx.com in prod). The app origin is
 // derived from the current host (no build-time env needed); a validated ?redirect
@@ -132,144 +133,108 @@ export function LoginForm({
     }
   }
 
+  // #796: görünüm ana sayfanın e-santral diliyle (kit alanları, hap düğme); davranış aynı.
   return (
-    <div className={styles.form}>
-      <div className="mb-9 border-b border-border pb-7">
-        <h1 className="text-2xl font-medium tracking-[-0.035em] text-foreground sm:text-[32px]">
-          BakimX hesabınıza giriş yapın
-        </h1>
-        <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-          Servis süreçlerinizi yönetmek için giriş yapın.
-        </p>
-      </div>
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <Image className={styles.logo} src="/landing/esantral/bakimx-icon.svg" alt="" width={44} height={40} unoptimized />
+      <h1 className={styles.title}>Giriş yap</h1>
+      <p className={styles.lead}>BakımX hesabınıza giriş yapın.</p>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {successNotice && !error && (
-          <Alert variant="success">
-            <AlertDescription>{successNotice}</AlertDescription>
-          </Alert>
-        )}
-        {expiredNotice && !error && (
-          <Alert variant="warning">
-            <AlertDescription>{expiredNotice}</AlertDescription>
-          </Alert>
-        )}
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+      {successNotice && !error && (
+        <Alert variant="success" className={styles.notice}>
+          <AlertDescription>{successNotice}</AlertDescription>
+        </Alert>
+      )}
+      {expiredNotice && !error && (
+        <Alert variant="warning" className={styles.notice}>
+          <AlertDescription>{expiredNotice}</AlertDescription>
+        </Alert>
+      )}
 
-        <div className="space-y-2">
-          <Label htmlFor="identifier" className="text-sm font-medium text-foreground">
-            E-posta veya kullanıcı adı
-          </Label>
-          <div className="relative">
-            <UserRound className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-            <Input
-              id="identifier"
-              name="identifier"
-              // `type="email"` DEĞİL: tarayıcı doğrulaması kullanıcı adını reddederdi.
-              type="text"
-              autoComplete="username"
-              autoCapitalize="none"
-              spellCheck={false}
-              placeholder="ornek@email.com veya kullanıcı adınız"
-              required
-              className="h-7 rounded-[8px] bg-card pl-9 shadow-xs"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-            />
-          </div>
-        </div>
+      <div className={formStyles.grid}>
+        <FloatingField
+          id="identifier"
+          name="identifier"
+          label="E-posta veya kullanıcı adı"
+          // `type="email"` DEĞİL: tarayıcı doğrulaması kullanıcı adını reddederdi.
+          type="text"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          required
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          aria-describedby={error ? "login-err" : undefined}
+        />
 
         {/* Kullanıcı adları YALNIZ iş yeri içinde benzersiz — kod olmadan hangi
             hesap olduğu çözülemez. E-posta girenlere hiç gösterilmez. */}
         {usesUsername && (
-          <div className="space-y-2">
-            <Label htmlFor="workshopCode" className="text-sm font-medium text-foreground">
-              İş yeri kodu
-            </Label>
-            <div className="relative">
-              <Store className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-              <Input
-                id="workshopCode"
-                name="workshopCode"
-                type="text"
-                autoComplete="organization"
-                autoCapitalize="none"
-                spellCheck={false}
-                placeholder="ornek-oto-servis"
-                className="h-7 rounded-[8px] bg-card pl-9 shadow-xs"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
+          <>
+            <FloatingField
+              id="workshopCode"
+              name="workshopCode"
+              label="İş yeri kodu"
+              type="text"
+              autoComplete="organization"
+              autoCapitalize="none"
+              spellCheck={false}
+              aria-describedby="workshop-code-hint"
+            />
+            <p id="workshop-code-hint" className={formStyles.hint}>
               İş yerinizin size verdiği kod. Bilmiyorsanız iş yeri yöneticinize sorun.
             </p>
-          </div>
+          </>
         )}
 
-        <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium text-foreground">
-            Şifre
-          </Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-            <Input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              placeholder="••••••"
-              required
-              className="h-7 rounded-[8px] bg-card pl-9 pr-9 shadow-xs"
-            />
+        <FloatingField
+          id="password"
+          name="password"
+          label="Şifre"
+          type={showPassword ? "text" : "password"}
+          autoComplete="current-password"
+          required
+          aria-describedby={error ? "login-err" : undefined}
+          trailing={
             <Button
               type="button"
-              variant="ghost"
-              size="icon"
+              variant="link"
+              className={formStyles.passwordToggle}
+              aria-pressed={showPassword}
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
             >
-              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              {showPassword ? "Gizle" : "Göster"}
             </Button>
-          </div>
-        </div>
+          }
+        />
+      </div>
 
-        <Button
-          type="submit"
-          variant="foreground"
-          size="xl"
-          disabled={loading}
-          className={cn("w-full", styles.submit)}
-        >
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <BrandSpinner size={18} />
-              Giriş yapılıyor...
-            </span>
-          ) : (
-            "Giriş Yap"
-          )}
-        </Button>
+      {error && (
+        <Alert id="login-err" variant="destructive" className={formStyles.error}>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-        <div className="text-center">
-          <Link
-            href="/forgot-password"
-            className="text-sm text-primary hover:underline transition-colors"
-          >
-            Şifremi Unuttum
-          </Link>
-        </div>
+      <PillButton type="submit" size="lg" fullWidth disabled={loading} className={formStyles.submit}>
+        {loading ? (
+          <span className={styles.loading}>
+            <BrandSpinner size={18} />
+            Giriş yapılıyor...
+          </span>
+        ) : (
+          "Giriş yap"
+        )}
+      </PillButton>
 
-        <div className="text-center text-sm text-muted-foreground border-t pt-4">
-          Hesabınız yok mu?{" "}
-          <Link href="/register" className="text-primary hover:underline transition-colors font-medium">
-            Ücretsiz deneyin
-          </Link>
-        </div>
-      </form>
-    </div>
+      <p className={styles.forgot}>
+        <TextLink href="/forgot-password">Şifremi unuttum</TextLink>
+      </p>
+      <p className={styles.signup}>
+        Hesabınız yok mu?{" "}
+        <SignupTrigger variant="text" location="login">
+          Ücretsiz deneyin
+        </SignupTrigger>
+      </p>
+    </form>
   )
 }

@@ -11,6 +11,7 @@ import { LandingFooter } from "@/components/marketing/landing/landing-footer";
 import { LandingHeader } from "@/components/marketing/landing/landing-header";
 import { Move } from "@/components/marketing/landing/move";
 import { Price } from "@/components/marketing/landing/price";
+import { SignupDialogProvider } from "@/components/marketing/landing/signup-dialog";
 import styles from "@/components/marketing/landing/landing.module.css";
 import { HOME_TITLE, ORGANIZATION_STRUCTURED_DATA, SITE_URL, publicPageMetadata } from "@/lib/seo";
 
@@ -54,21 +55,23 @@ const homeStructuredData = [
 /** Ana sayfa — e-santral.com/bakimx düzeni (#781, docs/superpowers/specs/2026-11-22-esantral-landing-design.md). */
 export default function Home() {
   return (
-    <CallbackDialogProvider>
-      <div className={styles.page}>
-        <JsonLd data={homeStructuredData} />
-        <LandingHeader />
-        <main>
-          <Hero />
-          <DayStrip />
-          <Features />
-          <Move />
-          <Price />
-          <Faq />
-          <FinalCta />
-        </main>
-        <LandingFooter />
-      </div>
-    </CallbackDialogProvider>
+    <SignupDialogProvider>
+      <CallbackDialogProvider>
+        <div className={styles.page}>
+          <JsonLd data={homeStructuredData} />
+          <LandingHeader />
+          <main>
+            <Hero />
+            <DayStrip />
+            <Features />
+            <Move />
+            <Price />
+            <Faq />
+            <FinalCta />
+          </main>
+          <LandingFooter />
+        </div>
+      </CallbackDialogProvider>
+    </SignupDialogProvider>
   );
 }

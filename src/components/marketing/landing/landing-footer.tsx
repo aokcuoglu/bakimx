@@ -6,14 +6,14 @@ import { CTA, FOOTER, NAV } from "./content"
 import styles from "./landing.module.css"
 
 /** Alt bant (e-santral `.foot`) + yasal bağlantılar (spec §8.3). */
-export function LandingFooter() {
+export function LandingFooter({ anchorBase = "" }: { anchorBase?: "" | "/" }) {
   return (
     <footer className={styles.foot}>
       <div className={cn(styles.wrap, styles.footIn)}>
-        <Wordmark variant="footer" href="#hero" />
+        <Wordmark variant="footer" href={anchorBase ? "/" : "#hero"} />
         <nav className={styles.footNav} aria-label="Alt menü">
           {NAV.map((item) => (
-            <a key={item.id} href={`#${item.id}`}>
+            <a key={item.id} href={`${anchorBase}#${item.id}`}>
               {item.label}
             </a>
           ))}
