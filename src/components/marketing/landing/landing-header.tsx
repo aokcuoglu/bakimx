@@ -4,15 +4,18 @@ import { CTA, NAV } from "./content"
 import { SignupTrigger } from "./signup-dialog"
 import styles from "./landing.module.css"
 
-/** Yapışkan buzlu üst bant (e-santral `.top`). Mobil menü kaynakta da yok. */
-export function LandingHeader() {
+/**
+ * Yapışkan buzlu üst bant (e-santral `.top`). Mobil menü kaynakta da yok.
+ * Ana sayfa dışında (`anchorBase="/"`) çapalar ana sayfaya, wordmark köke gider.
+ */
+export function LandingHeader({ anchorBase = "" }: { anchorBase?: "" | "/" }) {
   return (
     <header className={styles.top}>
       <div className={styles.topIn}>
-        <Wordmark variant="header" href="#hero" />
+        <Wordmark variant="header" href={anchorBase ? "/" : "#hero"} />
         <nav className={styles.nav} aria-label="Ana menü">
           {NAV.map((item) => (
-            <a key={item.id} href={`#${item.id}`}>
+            <a key={item.id} href={`${anchorBase}#${item.id}`}>
               {item.label}
             </a>
           ))}

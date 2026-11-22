@@ -1,0 +1,77 @@
+/* /login — ana sayfanın e-santral dili (#796). Renkler yalnız --mk-* (globals.css). */
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+.main {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 56px 16px 72px;
+  background: var(--mk-hero);
+}
+.card {
+  width: min(460px, 100%);
+  padding: 44px 44px 36px;
+  border-radius: var(--mk-r-modal);
+  background: var(--mk-surface);
+  box-shadow: 0 30px 80px -40px rgb(0 0 0 / 0.25);
+  text-align: center;
+}
+.form {
+  display: block;
+}
+.logo {
+  display: block;
+  width: 44px;
+  height: auto;
+  margin: 0 auto 16px;
+}
+.title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+.lead {
+  margin: 10px 0 0;
+  color: var(--mk-gray);
+  font-size: 17px;
+  line-height: 1.45;
+}
+.notice {
+  margin-top: 20px;
+  text-align: left;
+}
+.loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.forgot {
+  margin: 18px 0 0;
+  font-size: 15px;
+}
+.signup {
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--mk-line);
+  color: var(--mk-gray);
+  font-size: 15px;
+}
+
+@media (max-width: 640px) {
+  .main {
+    place-items: start center;
+    padding: 24px 16px 48px;
+  }
+  .card {
+    padding: 36px 20px 28px;
+    border-radius: 26px;
+  }
+  .title {
+    font-size: 26px;
+  }
+}

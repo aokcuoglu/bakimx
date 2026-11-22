@@ -75,3 +75,10 @@ test("hero başlığının metni satırlar arasında boşluk taşır (#780)", ()
   const text = (html.match(/<h1[\s\S]*?<\/h1>/)?.[0] ?? "").replace(/<[^>]+>/g, "")
   expect(text).toBe("Oto servisinizi telefonunuzdan yönetin.")
 })
+
+test("üst ve alt bant ana sayfa dışında çapaları köke bağlar (#796)", () => {
+  const html = renderToStaticMarkup(createElement(LandingHeader, { anchorBase: "/" })) + renderToStaticMarkup(createElement(LandingFooter, { anchorBase: "/" }))
+  expect(html).toContain('href="/#fiyat"')
+  expect(html).not.toContain('href="#fiyat"')
+  expect(html).not.toContain('href="#hero"')
+})
