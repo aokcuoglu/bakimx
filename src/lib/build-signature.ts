@@ -10,17 +10,31 @@ import { APP_VERSION } from "./app-version"
  * artmayan bir deploy da yeni (farklı hash'li) `/_next/static/...` chunk'ları üretir,
  * yani asıl uyuşmazlık sinyali Next'in build id'sidir.
  *
- * Build id `.next/BUILD_ID` dosyasından okunur; standalone çıktısında da bulunur ve
- * `next dev`'de sabit ("development") kalır — dev sunucusunda bildirim tetiklenmez.
+ * Build id `.next/BUILD_ID` dosyasından okunur; standalone çıktısında da bulunur.
  * Dosya okunamazsa imza sürüme düşer: bildirim yalnızca sürüm artışında çalışır,
  * hiçbir şey bozulmaz.
+ *
+ * Üretim dışında build id HİÇ okunmaz (#776). `next dev` bu dosyayı yazmaz, ama aynı
+ * klasörde `bun run build` alınırsa dosya oluşur ve her build'de değişir. İmza modül
+ * başına önbelleğe alındığı için layout ile `/api/version` farklı anlarda farklı id
+ * tutuyor, "Yeni sürüm kullanılabilir" bildirimi geri gelip duruyor ve "Şimdi Yenile"
+ * onu geçirmiyordu (iki önbellek de aynı sunucu sürecinde yaşıyor).
  */
 let cached: string | null = null
 
 export function getBuildSignature(): string {
   if (cached) return cached
-  cached = `${APP_VERSION}+${readBuildId()}`
+  cached = computeBuildSignature(process.env.NODE_ENV, readBuildId)
   return cached
+}
+
+/** Saf hesap: ortam ve build id okuyucusu dışarıdan verilir (test edilebilir). */
+export function computeBuildSignature(
+  nodeEnv: string | undefined,
+  readId: () => string,
+): string {
+  if (nodeEnv !== "production") return `${APP_VERSION}+development`
+  return `${APP_VERSION}+${readId()}`
 }
 
 function readBuildId(): string {
