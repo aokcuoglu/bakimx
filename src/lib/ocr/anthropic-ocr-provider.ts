@@ -212,13 +212,21 @@ const PLATE_TOOL_INPUT_SCHEMA: Anthropic.Tool.InputSchema = {
       type: "boolean",
       description: "Plakanın tüm karakterlerini net okuduysan true; tek bir karakterden bile şüphen varsa false.",
     },
+    brand: {
+      type: "string",
+      description:
+        "Aracın markası (ör. Renault, Volkswagen, Mercedes-Benz, Fiat). Yalnızca aracın kendi " +
+        "logosundan/amblemından veya üzerindeki marka yazısından ya da tanınır gövde tasarımından " +
+        "EMİNSEN yaz; emin değilsen boş string döndür. Model adı ekleme.",
+    },
   },
-  required: ["plate", "confident"],
+  required: ["plate", "confident", "brand"],
 }
 
 const PLATE_RESULT_SCHEMA = z.object({
   plate: z.string().default(""),
   confident: z.boolean().default(false),
+  brand: z.string().default(""),
 })
 
 const PLATE_SYSTEM_PROMPT =
@@ -228,6 +236,8 @@ const PLATE_SYSTEM_PROMPT =
   "soldaki mavi TR şeridi plakaya dahil değildir. Arka plandaki başka araçların plakalarını, bayi " +
   "çerçevesi yazılarını ve reklamları alma. Yalnızca gördüğünü yaz, eksik karakteri TAMAMLAMA ve " +
   "plaka uydurma; plaka görünmüyorsa veya okunamıyorsa plate alanını boş bırak. " +
+  "Ayrıca aracın markasını belirle; bayi çerçevesindeki yazı marka kanıtı değildir, emin değilsen " +
+  "brand alanını boş bırak. " +
   `Sonucu yalnızca ${PLATE_TOOL_NAME} aracını çağırarak döndür.`
 
 // Anthropic'in kabul ettiği görüntü MIME türleri; diğerleri jpeg'e çekilir (normalize zaten jpeg üretir).
@@ -420,7 +430,7 @@ export class AnthropicOcrProvider implements OcrProvider {
                 data: imageBuffer.toString("base64"),
               },
             },
-            { type: "text", text: "Bu fotoğraftaki aracın plakasını oku." },
+            { type: "text", text: "Bu fotoğraftaki aracın plakasını oku ve markasını belirle." },
           ],
         },
       ],
@@ -430,9 +440,9 @@ export class AnthropicOcrProvider implements OcrProvider {
       (block): block is Anthropic.ToolUseBlock => block.type === "tool_use" && block.name === PLATE_TOOL_NAME
     )
     // Araç çağrılmadıysa okuma başarısızdır; boş sonuç dön, HTTP katmanı 422 üretsin.
-    if (!toolUse) return { rawPlate: "", confident: false, provider: "anthropic" }
+    if (!toolUse) return { rawPlate: "", confident: false, rawBrand: "", provider: "anthropic" }
 
     const fields = PLATE_RESULT_SCHEMA.parse(toolUse.input)
-    return { rawPlate: fields.plate, confident: fields.confident, provider: "anthropic" }
+    return { rawPlate: fields.plate, confident: fields.confident, rawBrand: fields.brand, provider: "anthropic" }
   }
 }

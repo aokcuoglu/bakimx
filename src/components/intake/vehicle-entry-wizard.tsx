@@ -55,6 +55,8 @@ import {
   previousEntryStep,
   splitPersonName,
   vehicleFieldError,
+  hasOwnerInput,
+  photoPlateStatus,
   type EntryMethod,
   type EntryStep,
   type IdentityConflict,
@@ -193,6 +195,11 @@ export function VehicleEntryWizard({
   const [vehiclePhoto, setVehiclePhotoState] = useState<PendingVehiclePhoto | null>(null)
   const [photoMissing, setPhotoMissing] = useState(false)
   const [photoPreparing, setPhotoPreparing] = useState(false)
+  // Fotoğraftan okunan plaka (kompakt): fotoğraf ve o sırada girilen müşteri
+  // bilgileri bu araca ait. Plaka sonradan değişirse "aynı araç mı" sorulur.
+  const [photoPlate, setPhotoPlate] = useState<string | null>(null)
+  // Fotoğraftan doldurulan marka; "farklı araç" denirse yalnız o geri alınır.
+  const photoBrand = useRef("")
 
   // Müşteri kartı (yalnız odaklı plaka akışı)
   const [ownerForm, setOwnerForm] = useState<OwnerFields>(EMPTY_OWNER_FIELDS)
@@ -237,6 +244,47 @@ export function VehicleEntryWizard({
     setFields((prev) => ({ ...prev, [key]: v }))
     // Alanı elle değiştirmek çakışma sorusunu cevaplar: gösterilen uyarı düşer.
     if (key === "plate" || key === "vin") setConflicts((prev) => prev.filter((c) => c.key !== key))
+  }
+
+  /**
+   * Araç fotoğrafında tanınan markayı yalnız marka alanı BOŞSA yazar: elle
+   * girilen ya da ruhsattan okunan marka ezilmez. Model kullanıcıya kalır;
+   * seçici markayı katalogda bulup o markanın modellerini yükler.
+   */
+  function applyPhotoBrand(brand: string | undefined) {
+    if (!brand || fields.brand.trim()) return
+    photoBrand.current = brand
+    setFields((prev) => (prev.brand.trim() ? prev : { ...prev, brand }))
+  }
+
+  // Plaka fotoğraftakinden farklı mı? (yalnız odaklı plaka akışı)
+  const plateStatus = plateFirst ? photoPlateStatus(vehiclePhoto ? photoPlate : null, fields.plate) : "match"
+
+  /** "Aynı araç": plaka düzeltildi, fotoğraf ve müşteri yeni plakaya bağlanır. */
+  function keepPhotoForNewPlate() {
+    setPhotoPlate(normalizePlate(fields.plate))
+    setError("")
+  }
+
+  /**
+   * "Farklı araç": önceki aracın fotoğrafı, elle girilen müşteri bilgileri ve
+   * fotoğraftan gelen marka temizlenir. Kayıtlı plakanın sahibi kartı zaten
+   * kendisi doldurur/boşaltır (bkz. dupVehicleId etkisi); ona dokunulmaz.
+   */
+  function clearForDifferentVehicle() {
+    setVehiclePhoto(null)
+    setPhotoMissing(true)
+    if (!ownerPrefillFor.current) {
+      setOwnerForm(EMPTY_OWNER_FIELDS)
+      setOwnerDupes([])
+      createdOwner.current = null
+    }
+    if (photoBrand.current && fields.brand === photoBrand.current) {
+      setFields((prev) => ({ ...prev, brand: "", model: "" }))
+      setCatalogIds({})
+    }
+    photoBrand.current = ""
+    setError("")
   }
 
   /** Çakışan alanda ruhsattan okunan değeri kullan. */
@@ -391,8 +439,12 @@ export function VehicleEntryWizard({
     return () => { active = false; clearTimeout(t) }
   }, [plateFirst, dupVehicleId])
 
-  /** Bekleyen araç karesini değiştirir; eski önizleme URL'i bırakılır. */
-  function setVehiclePhoto(next: PendingVehiclePhoto | null) {
+  /**
+   * Bekleyen araç karesini değiştirir; eski önizleme URL'i bırakılır. `plate`:
+   * karede okunan plaka — kare hangi araca aitse onu bağlar.
+   */
+  function setVehiclePhoto(next: PendingVehiclePhoto | null, plate?: string) {
+    setPhotoPlate(next && plate ? normalizePlate(plate) : null)
     setVehiclePhotoState((prev) => {
       if (prev && prev.previewUrl !== next?.previewUrl) URL.revokeObjectURL(prev.previewUrl)
       return next
@@ -405,7 +457,11 @@ export function VehicleEntryWizard({
    * fotoğrafı olarak tutulur. Kare "Dosyadan" seçilmiş ham bir dosya da
    * olabilir; yükleme sınırına takılmasın diye önce küçültülür.
    */
-  async function keepScannedFrame(image: { dataUrl: string } | null, source: PendingVehiclePhoto["source"]) {
+  async function keepScannedFrame(
+    image: { dataUrl: string } | null,
+    source: PendingVehiclePhoto["source"],
+    plate: string,
+  ) {
     if (!image || !photoFeature) return
     const blob = dataUrlToBlob(image.dataUrl)
     if (!blob) return
@@ -414,7 +470,7 @@ export function VehicleEntryWizard({
       const raw = new File([blob], "arac-on.jpg", { type: blob.type || "image/jpeg" })
       const compressed = await compressImageForUpload(raw)
       if (!compressed.ok) { setError(compressed.error); return }
-      setVehiclePhoto(createPendingVehiclePhoto(compressed.file, source))
+      setVehiclePhoto(createPendingVehiclePhoto(compressed.file, source), plate)
       setPhotoMissing(false)
       setError("")
     } finally {
@@ -583,6 +639,8 @@ export function VehicleEntryWizard({
   /** Odaklı plaka akışı: plaka, müşteri, fotoğraf ve (yeni araçta) araç alanları. */
   function plateFirstError(): string | null {
     if (!fields.plate.trim()) return "Plaka zorunludur."
+    if (plateStatus === "typing") return "Plakayı eksiksiz girin."
+    if (plateStatus === "mismatch") return "Plaka fotoğraftakiyle uyuşmuyor: aynı araç mı, seçin."
     const ownerErr = ownerFieldError(ownerForm)
     if (ownerErr) return ownerErr
     if (photoFeature && !vehiclePhoto) {
@@ -693,6 +751,7 @@ export function VehicleEntryWizard({
     setError("")
     setVehiclePhoto(null)
     setPhotoMissing(false)
+    photoBrand.current = ""
     setOwnerForm(EMPTY_OWNER_FIELDS)
     setOwnerOriginal(null)
     setOwnerDupes([])
@@ -1139,6 +1198,29 @@ export function VehicleEntryWizard({
               onCapture={() => setScanner("vehiclePhoto")}
             />
           )}
+          {plateStatus === "mismatch" && photoPlate && (
+            <div role="alert" className="space-y-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning-strong" />
+                <div className="min-w-0 space-y-1 text-sm">
+                  <p className="font-semibold text-foreground">Plaka fotoğraftakiyle uyuşmuyor</p>
+                  <p className="text-muted-foreground-strong">
+                    Fotoğrafta <span className="font-medium text-foreground">{photoPlate}</span> okundu, plaka
+                    alanında <span className="font-medium text-foreground">{normalizePlate(fields.plate)}</span> yazıyor.
+                    {" "}Farklı araçsa fotoğraf{!ownerOriginal && hasOwnerInput(ownerForm) ? " ve müşteri bilgileri" : ""} temizlenir.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="button" variant="outline" className="sm:flex-1" onClick={keepPhotoForNewPlate}>
+                  Aynı araç, plakayı düzelttim
+                </Button>
+                <Button type="button" variant="outline" className="sm:flex-1" onClick={clearForDifferentVehicle}>
+                  Farklı araç — temizle
+                </Button>
+              </div>
+            </div>
+          )}
           <IntakeOwnerCard
             value={ownerForm}
             onChange={(next) => { setOwnerForm(next); setOwnerDupes([]) }}
@@ -1269,11 +1351,12 @@ export function VehicleEntryWizard({
 
       {scanner === "plate" && (
         <PlateScanner
-          onDetected={(plate, image) => {
+          onDetected={(plate, image, brand) => {
             setScanner(null)
             const normalized = normalizePlate(plate)
             setQuery(normalized)
-            void keepScannedFrame(image, "scan")
+            void keepScannedFrame(image, "scan", plate)
+            applyPhotoBrand(brand)
             // Odaklı plaka akışında okunan plaka onay beklemeden araç bilgileri
             // ekranına taşınır: o ekran plaka kayıtlıysa aracı ve sahibini zaten
             // buluyor (duplicate → sahip kartı dolu, "Devam"), değilse yeni araç
@@ -1287,11 +1370,12 @@ export function VehicleEntryWizard({
       )}
       {scanner === "vehiclePhoto" && (
         <PlateScanner
-          onDetected={(plate, image) => {
+          onDetected={(plate, image, brand) => {
             setScanner(null)
             // Plaka elle yazılmamışsa okunanı kullan; yazılmışsa kullanıcınınki korunur.
             if (!fields.plate.trim()) setField("plate", normalizePlate(plate))
-            void keepScannedFrame(image, "manual")
+            void keepScannedFrame(image, "manual", plate)
+            applyPhotoBrand(brand)
           }}
           onClose={() => setScanner(null)}
         />

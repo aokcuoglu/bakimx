@@ -75,7 +75,12 @@ export class MockOcrProvider implements OcrProvider {
   async extractPlate(_imageBuffer: Buffer, _mimeType: string): Promise<PlateOcrResult> {
     await new Promise((resolve) => setTimeout(resolve, 900))
     // Ruhsat mock'uyla AYNI plaka: demo akışta araç fotoğrafı ile ruhsat aynı araca düşsün.
-    return { rawPlate: MOCK_REGISTRATION_DATA.plate.value, confident: true, provider: "mock" }
+    return {
+      rawPlate: MOCK_REGISTRATION_DATA.plate.value,
+      confident: true,
+      rawBrand: MOCK_REGISTRATION_DATA.brand.value,
+      provider: "mock",
+    }
   }
 }
 

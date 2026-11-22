@@ -4,12 +4,14 @@ import {
   ENTRY_METHODS,
   entryMethodOption,
   entryStepLabels,
+  hasOwnerInput,
   identityConflicts,
   ownerFieldError,
   ownerFieldsChanged,
   ownerFieldsFromCustomer,
   ownerLabel,
   parseEntryMethod,
+  photoPlateStatus,
   splitPersonName,
   previousEntryStep,
   vehicleFieldError,
@@ -160,4 +162,25 @@ test("ownerFieldsChanged: boşluk ve telefon biçimi farkı değişiklik sayılm
 test("ownerLabel: bireyselde ad soyad, kurumsalda firma", () => {
   expect(ownerLabel({ ...EMPTY_OWNER_FIELDS, name: " ALİ  VELİ " })).toBe("ALİ VELİ")
   expect(ownerLabel({ ...EMPTY_OWNER_FIELDS, type: "corporate", companyName: "ACME" })).toBe("ACME")
+})
+
+test("photoPlateStatus: fotoğraf yoksa ya da plaka aynıysa uyuşur", () => {
+  expect(photoPlateStatus(null, "34ABC123")).toBe("match")
+  expect(photoPlateStatus("34KCK628", "34 kck 628")).toBe("match")
+})
+
+test("photoPlateStatus: tam ve farklı plaka uyuşmaz, yarım plaka 'typing'", () => {
+  expect(photoPlateStatus("34KCK628", "34KCK629")).toBe("mismatch")
+  expect(photoPlateStatus("34KCK628", "06 AB 1234")).toBe("mismatch")
+  expect(photoPlateStatus("34KCK628", "34KC")).toBe("typing")
+  expect(photoPlateStatus("34KCK628", "")).toBe("typing")
+  // Geçersiz il kodu tam plaka sayılmaz.
+  expect(photoPlateStatus("34KCK628", "99KCK628")).toBe("typing")
+})
+
+test("hasOwnerInput: herhangi bir alan doluysa true", () => {
+  expect(hasOwnerInput(EMPTY_OWNER_FIELDS)).toBe(false)
+  expect(hasOwnerInput({ ...EMPTY_OWNER_FIELDS, name: "  " })).toBe(false)
+  expect(hasOwnerInput({ ...EMPTY_OWNER_FIELDS, phone: "0544" })).toBe(true)
+  expect(hasOwnerInput({ ...EMPTY_OWNER_FIELDS, type: "corporate", companyName: "ACME" })).toBe(true)
 })

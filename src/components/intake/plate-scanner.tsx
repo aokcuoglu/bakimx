@@ -9,9 +9,10 @@ type Props = {
   /**
    * Okunan plaka ve plakanın okunduğu kare. Kare aracın önünün fotoğrafıdır;
    * Araç Kabul bunu kabul fotoğrafı ("Ön") olarak saklar ki aynı kare ikinci
-   * kez çekilmesin.
+   * kez çekilmesin. `brand`: aynı karede tanınan marka (katalog yazımıyla),
+   * tanınmadıysa undefined.
    */
-  onDetected: (plate: string, image: ScanImagePayload | null) => void
+  onDetected: (plate: string, image: ScanImagePayload | null, brand?: string) => void
   onClose: () => void
   /** Verilirse kameranın solunda "El ile gir" düğmesi çıkar (bkz. CameraScanner). */
   onManualEntry?: () => void
@@ -27,10 +28,13 @@ type Props = {
 export function PlateScanner({ onDetected, onClose, onManualEntry }: Props) {
   // Okumayı başaran kare: CameraScanner yalnız okunan değeri geri verir.
   const lastFrame = useRef<ScanImagePayload | null>(null)
+  const lastBrand = useRef<string | undefined>(undefined)
   const scan = useCallback(async (payload: ScanImagePayload) => {
     lastFrame.current = payload
-    const data = await postImageScan<{ plate?: string }>("/api/plate/scan", payload)
+    lastBrand.current = undefined
+    const data = await postImageScan<{ plate?: string; brand?: string }>("/api/plate/scan", payload)
     if (!data.plate) throw new ScanError("Plaka okunamadı.")
+    lastBrand.current = data.brand || undefined
     return data.plate
   }, [])
 
@@ -40,7 +44,7 @@ export function PlateScanner({ onDetected, onClose, onManualEntry }: Props) {
       guide={<PlateCaptureGuide />}
       scanningLabel="Plaka okunuyor…"
       onScan={scan}
-      onDetected={(plate) => onDetected(plate, lastFrame.current)}
+      onDetected={(plate) => onDetected(plate, lastFrame.current, lastBrand.current)}
       onClose={onClose}
       onManualEntry={onManualEntry}
     />

@@ -8,6 +8,7 @@
  */
 
 import { normalizePhone, normalizePlate } from "@/lib/format"
+import { parsePlateFromText } from "@/lib/ocr/plate"
 import { normalizeVin } from "@/lib/vin/types"
 
 export type EntryMethod = "registration" | "vin" | "plate" | "customer"
@@ -172,6 +173,31 @@ export function ownerFieldsChanged(original: OwnerFields, current: OwnerFields):
   const text = (v: string) => v.trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR")
   const norm = (o: OwnerFields) => [text(o.name), text(o.companyName), normalizePhone(o.phone)].join("\u0000")
   return norm(original) !== norm(current)
+}
+
+/** Kartta kullanıcının yazdığı bir şey var mı (ad, firma ya da telefon)? */
+export function hasOwnerInput(o: OwnerFields): boolean {
+  return !!(o.name.trim() || o.companyName.trim() || o.phone.trim())
+}
+
+/**
+ * Araç fotoğrafı ile girilen plaka aynı araca mı ait? `photoPlate`, fotoğraftan
+ * okunan plakadır (kompakt) — fotoğraf ve o sırada girilen müşteri bilgileri bu
+ * araca aittir. Plaka sonradan değiştirilirse ikisi başka bir araca kalabilir:
+ *
+ * - `"match"`: fotoğraf yok ya da plaka aynı.
+ * - `"typing"`: plaka farklı ama henüz tam bir TR plakası değil — uyarı yazarken
+ *   titremesin diye gösterilmez, yine de kaydetme engellenir.
+ * - `"mismatch"`: plaka farklı ve tam — kullanıcı "aynı araç mı" diye seçmeli.
+ *
+ * Plaka en sık okuma hatasını düzeltmek için değişir (aynı araç); bu yüzden
+ * fotoğraf kendiliğinden silinmez, karar kullanıcıya bırakılır.
+ */
+export function photoPlateStatus(photoPlate: string | null, currentPlate: string): "match" | "typing" | "mismatch" {
+  if (!photoPlate) return "match"
+  const current = normalizePlate(currentPlate)
+  if (current === photoPlate) return "match"
+  return parsePlateFromText(current) === current ? "mismatch" : "typing"
 }
 
 /** Kartta gösterilen / sahip satırına yazılan ad. */

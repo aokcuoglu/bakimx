@@ -116,6 +116,13 @@ export function EntryVehicleFields({
             />
           </div>
         )}
+        <VehicleBrandModelPicker
+          brand={fields.brand}
+          model={fields.model}
+          onBrandChange={onBrandChange}
+          onModelChange={onModelChange}
+          required
+        />
         <div className="space-y-1.5">
           <Label className="flex items-center gap-1">Model yılı {warn("modelYear")}</Label>
           <Input
@@ -126,13 +133,6 @@ export function EntryVehicleFields({
             placeholder="2023"
           />
         </div>
-        <VehicleBrandModelPicker
-          brand={fields.brand}
-          model={fields.model}
-          onBrandChange={onBrandChange}
-          onModelChange={onModelChange}
-          required
-        />
       </div>
   )
 

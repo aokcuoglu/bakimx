@@ -80,6 +80,11 @@ export interface PlateOcrResult {
   rawPlate: string
   /** Sağlayıcı bu okumadan emin değilse false. */
   confident: boolean
+  /**
+   * Fotoğraftan tanınan araç markası (logo/amblem/yazı). Emin değilse boş.
+   * Katalog yazımına çevirme çağıran tarafta (`matchCatalogBrand`).
+   */
+  rawBrand: string
   provider: OcrProviderName
 }
 

@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db"
 import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-image"
 import { parseOcrImageRequest } from "@/lib/ocr/parse-image-request"
 import { parsePlateFromText } from "@/lib/ocr/plate"
+import { matchCatalogBrand } from "@/lib/ocr/vehicle-brand"
 import { getOcrProvider } from "@/lib/ocr/provider"
 import { extractRegistrationText } from "@/lib/ocr/tesseract-text-extractor"
 import { assertFeature } from "@/lib/plan"
@@ -30,6 +31,10 @@ const UNREADABLE_MESSAGE =
  *
  * Okunan ham metin her durumda `parsePlateFromText` ile doğrulanır: istemciye
  * yalnız geçerli bir TR plakası gider.
+ *
+ * Aynı Vision çağrısı aracın markasını da tanır (ek çağrı/maliyet yok). Marka
+ * katalogdaki yazımına çevrilir ki seçici modelleri yükleyebilsin; yalnız plaka
+ * da okunduysa döner (422'de marka yok — Tesseract yedeğinde hiç yok).
  */
 export async function POST(request: Request) {
   try {
@@ -44,12 +49,20 @@ export async function POST(request: Request) {
 
     const provider = await getOcrProvider()
     let plate: string | null = null
+    let brand: string | null = null
 
     if (typeof provider.extractPlate === "function") {
       const t0 = Date.now()
       const result = await provider.extractPlate(normalized.buffer, normalized.mimeType)
       plate = parsePlateFromText(result.rawPlate)
-      console.log(`[PLATE SCAN] provider=${provider.name} ${Date.now() - t0}ms plate=${plate ?? "—"}`)
+      if (plate && result.rawBrand.trim()) {
+        // Marka kataloğu atölyeye ait değil, ortak referans tablosu.
+        const catalog = await prisma.vehicleBrand.findMany({ select: { name: true } })
+        brand = matchCatalogBrand(result.rawBrand, catalog.map((b) => b.name))
+      }
+      console.log(
+        `[PLATE SCAN] provider=${provider.name} ${Date.now() - t0}ms plate=${plate ?? "—"} brand=${brand ?? "—"}`
+      )
 
       if (plate) {
         // Sağlayıcı çağrısı ücretli: ruhsat/şase okumalarıyla aynı kayıt + denetim izi.
@@ -57,7 +70,7 @@ export async function POST(request: Request) {
           data: {
             workshopId: user.workshopId,
             ocrProvider: provider.name,
-            extractedJson: JSON.stringify({ plate, confident: result.confident }),
+            extractedJson: JSON.stringify({ plate, confident: result.confident, brand }),
             userId: user.id,
           },
         })
@@ -90,7 +103,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: UNREADABLE_MESSAGE }, { status: 422 })
     }
 
-    return NextResponse.json({ plate })
+    return NextResponse.json(brand ? { plate, brand } : { plate })
   } catch (err) {
     const response = apiErrorResponse(err)
     if (response.status >= 500) console.error("[PLATE SCAN ERROR]", err)
