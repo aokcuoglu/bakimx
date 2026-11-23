@@ -25,6 +25,11 @@ Renk variant'ları ve Radix `asChild` sözleşmesi korunur.
 **Mobil alt navigasyon** bu matrisin dışındadır: `MobileNavLink` bir `Button`
 değil, `Link` (`src/components/layout/app-shell.tsx`).
 
+**Pazarlama üst bandının hapı** (`PillButton size="nav"`, `.pillNav`) görselde
+e-santral kaynağıyla birebirdir: telefonda ~37px (`8px 14px`). Dokunma alanı
+şeffaf bir `::before` katmanıyla 44px'e çıkar (#810). Görünür boyutu 44px'e
+büyütme; ihlal değil, bilinçli istisna.
+
 ## Yazı ölçeği
 
 `text-xs` / `text-sm` / `text-base` duyarlıdır (`globals.css` → `--fs-*`):
