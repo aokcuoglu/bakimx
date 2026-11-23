@@ -46,6 +46,20 @@
   font-size: 15px;
   font-weight: 600;
   line-height: 1.5;
+  position: relative;
+}
+/* Görsel boyut e-santral kaynağıyla birebir (telefonda ~37px); dokunma alanı
+   ise ui-control-sizing.md'nin 44px beklentisine şeffaf bir katmanla çıkar.
+   Boyamaz: odak halkası ve hover arka planı aynı kalır; yatayda taşmaz. */
+.pillNav::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  min-height: 100%;
+  transform: translateY(-50%);
 }
 .full {
   width: 100%;
