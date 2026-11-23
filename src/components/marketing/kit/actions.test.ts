@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { readFileSync } from "node:fs"
 import { createElement, type ReactElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { PillButton } from "./pill-button"
@@ -34,4 +35,15 @@ test("Wordmark başa dönüş etiketi ve X logosu", () => {
   expect(html).toContain('aria-label="BakımX, başa dön"')
   expect(html).toContain("bakimx-x.svg")
   expect(html).toContain("Bakım")
+})
+
+test("pillNav telefonda e-santral boyutunu korur ve 44px dokunma alanı verir", () => {
+  const css = readFileSync(new URL("./kit.module.css", import.meta.url), "utf8")
+  const phone = css.match(/@media \(max-width: 640px\)\s*\{\s*\.pillNav\s*\{([^}]*)\}/)
+  expect(phone?.[1]).toMatch(/padding:\s*8px 14px/)
+  const hit = css.match(/\.pillNav::before\s*\{([^}]*)\}/)
+  expect(hit?.[1]).toMatch(/height:\s*44px/)
+  expect(hit?.[1]).toMatch(/left:\s*0/)
+  expect(hit?.[1]).toMatch(/right:\s*0/)
+  expect(hit?.[1]).not.toMatch(/background|border/)
 })
