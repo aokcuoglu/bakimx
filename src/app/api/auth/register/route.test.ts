@@ -34,8 +34,9 @@ let cancelledTaskCount = 0
 let failLeadConversion = false
 let existingUser: {
   password: string
-  workshop: { id: string; planTier: "lite" | "pro"; approvalStatus: "pending"; trialStartedAt: Date | null }
+  workshop: { id: string; planTier: "lite" | "pro" | "premium"; approvalStatus: "pending"; trialStartedAt: Date | null }
 } | null = null
+let resumedWorkshopUpdate: { where: Record<string, unknown>; data: Record<string, unknown> } | null = null
 
 mock.module("@/lib/db", () => ({
   prisma: {
@@ -49,6 +50,10 @@ mock.module("@/lib/db", () => ({
         if (where.id) return { name: "Ayşe Oto", email: "owner@example.com" }
         const id = where.referralCode ? referralCodes.get(where.referralCode) : null
         return id ? { id } : null
+      },
+      updateMany: async (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
+        resumedWorkshopUpdate = args
+        return { count: 1 }
       },
     },
     communicationLog: { create: async () => ({ id: "communication-log" }) },
@@ -235,6 +240,7 @@ beforeEach(() => {
   cancelledTaskCount = 0
   failLeadConversion = false
   existingUser = null
+  resumedWorkshopUpdate = null
 })
 
 afterAll(() => {
@@ -468,12 +474,19 @@ describe("tek paket kaydı (#782)", () => {
   })
 })
 
-test("yarım kalan eski Lite kaydı Servis Paketi seçimiyle sessizce devralınmaz", async () => {
+// #782: ücretsiz paket yok. Eski Lite (süresiz hak işaretli) ya da Premium ile
+// yarım kalmış kayıt engellenmez; yeniden gönderimde Servis Paketi denemesi
+// şekline çekilir ve süresiz Lite hakkı silinir. Deneme doğrulamada başlar.
+test.each(["lite", "premium"] as const)("yarım kalan eski %s kaydı Servis Paketi denemesine çekilerek devam eder", async (planTier) => {
   const bcrypt = await import("bcryptjs")
-  existingUser = { password: await bcrypt.hash(validBody.password, 4), workshop: { id: "existing-lite", planTier: "lite", approvalStatus: "pending", trialStartedAt: null } }
+  existingUser = { password: await bcrypt.hash(validBody.password, 4), workshop: { id: `existing-${planTier}`, planTier, approvalStatus: "pending", trialStartedAt: null } }
   const response = await POST(request({ ...validBody, planTier: "pro" }, "198.51.100.94"))
-  expect(response.status).toBe(409)
-  expect(await response.json()).toMatchObject({ code: "registration_plan_mismatch" })
+  expect(response.status).toBe(200)
+  expect(await response.json()).toEqual({ ok: true, resumed: true })
+  expect(resumedWorkshopUpdate).toEqual({
+    where: { id: `existing-${planTier}`, approvalStatus: "pending", trialStartedAt: null },
+    data: { planTier: "pro", subscriptionStatus: "trialing", liteFreeGrantedAt: null },
+  })
   expect(createdWorkshopCount).toBe(0)
 })
 test("yarım kalan Servis Paketi kaydı doğrulama e-postasıyla devam eder", async () => {
@@ -482,6 +495,7 @@ test("yarım kalan Servis Paketi kaydı doğrulama e-postasıyla devam eder", as
   const response = await POST(request({ ...validBody, planTier: "pro" }, "198.51.100.95"))
   expect(response.status).toBe(200)
   expect(await response.json()).toEqual({ ok: true, resumed: true })
+  expect(resumedWorkshopUpdate).toBeNull()
   expect(createdWorkshopCount).toBe(0)
 })
 

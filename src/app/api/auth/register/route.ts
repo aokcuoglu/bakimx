@@ -14,6 +14,8 @@ import {
   salesRegistrationLinkState,
 } from "@/lib/sales/registration-link"
 import { isLoginCodeConflict, workshopCodeCandidate } from "@/lib/workshop-code"
+import { isSalePlanTier } from "@/lib/plan"
+import { pendingRegistrationPlanData } from "@/lib/billing/registration-trial"
 
 /**
  * Self-serve workshop registration (email-verification gated trial).
@@ -116,7 +118,15 @@ export async function POST(request: Request) {
         trialStartedAt: existing.workshop.trialStartedAt,
       })
     ) {
-      if (data.planTier !== existing.workshop.planTier) {
+      if (!isSalePlanTier(existing.workshop.planTier)) {
+        // #782: satıştan kalkan bir paketle (eski Lite/Premium) yarım kalmış kayıt
+        // engellenmez; Servis Paketi denemesine çekilir, süresiz Lite hakkı silinir.
+        // Koşullu güncelleme: arada doğrulanmış bir kaydı ezmez.
+        await prisma.workshop.updateMany({
+          where: { id: existing.workshop.id, approvalStatus: "pending", trialStartedAt: null },
+          data: pendingRegistrationPlanData(),
+        })
+      } else if (data.planTier !== existing.workshop.planTier) {
         return NextResponse.json({ code: "registration_plan_mismatch", error: "Bu e-posta ile farklı bir paket için başlatılmış kayıt var. Mevcut kayıt paketiniz değiştirilmedi. Mevcut hesabınıza giriş yaparak devam edin veya destek ile iletişime geçin." }, { status: 409 })
       }
       const sent = await sendVerifyEmail(existing.workshop.id)
