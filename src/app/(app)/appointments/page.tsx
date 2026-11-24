@@ -110,13 +110,6 @@ export default async function AppointmentsPage({
     <AppShell
       workshopName={workshop?.name}
       pageTitle="Randevular"
-      pageActions={
-        <Button variant="foreground" size="icon" asChild aria-label="Yeni randevu">
-          <Link href="/appointments/new">
-            <Plus className="size-5" />
-          </Link>
-        </Button>
-      }
     >
       <div className="space-y-5 sm:space-y-6">
 

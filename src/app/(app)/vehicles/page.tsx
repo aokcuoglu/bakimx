@@ -97,13 +97,6 @@ export default async function VehiclesPage({
     <AppShell
       workshopName={workshop?.name}
       pageTitle="Araçlar"
-      pageActions={
-        <Button variant="foreground" size="icon" asChild aria-label="Yeni araç">
-          <Link href="/vehicles/new">
-            <Plus className="size-5" />
-          </Link>
-        </Button>
-      }
     >
       <div className="space-y-5 sm:space-y-6">
         <div className="hidden sm:flex items-center justify-between">

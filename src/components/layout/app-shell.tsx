@@ -20,6 +20,8 @@ import { actorCan, type Permission } from "@/lib/roles"
 import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
 import type { GatedFeature } from "@/lib/plan"
 import { NAV_GROUPS, type NavGroup, type NavItem } from "@/lib/navigation/app-nav"
+import { hasPageHeader } from "@/lib/navigation/page-headers"
+import { PageFrame, PageHeaderAccessContext } from "@/components/layout/page-header"
 import type { SidebarPlanStatus } from "@/lib/billing/sidebar-plan-status"
 import type { UserRole } from "@prisma/client"
 import {
@@ -35,7 +37,7 @@ import {
   Search,
   LockKeyhole,
 } from "lucide-react"
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
@@ -83,48 +85,27 @@ const APP_NAV_TEXT = "h-7 text-sm leading-5 font-medium tracking-[-0.005em]"
 // These pages already introduce themselves in their content. The mobile bar
 // keeps the brand mark there; list and utility pages use the bar for context.
 const MOBILE_CONTENT_HEADING_PATHS = new Set([
-  "/dashboard",
-  "/orders",
   "/orders/new",
   "/customers/new",
   "/vehicles/new",
   "/technician",
   "/appointments/new",
-  "/parts",
-  "/suppliers",
-  "/analytics",
-  "/reports",
 ])
 
 // Masaüstünde (lg+) üst bar yoktur: sayfa başlığı içerikte durur. Bar yalnız
 // sidebar kapalıyken açma düğmesi için, mobil/tablette (<lg) menü düğmesi ve
 // logo için, sidebar'sız teknisyen ekranlarında da hesap/çıkış için kalır.
 
-// Sayfanın h1'ini her genişlikte içerik taşır (hero); barda başlık yazmaz.
-// /orders: Genel Bakış kalıbında başlık + "Yeni Araç Kabul" satırını kendisi çizer.
-const CONTENT_H1_PATHS = new Set(["/dashboard", "/orders"])
-
-// Masaüstünde görünür başlığı kendi içeriğinde zaten olan menü sayfaları
-// (hero, ikonlu liste başlığı, rapor menüsü). Bunlara ayrıca başlık basılmaz.
-const OWN_TITLE_MENU_PATHS = new Set(["/dashboard", "/technician", "/parts", "/suppliers", "/reports"])
-
 // Menü sayfası olmadığı hâlde görünür başlığı yalnız bardaydı.
 const BAR_TITLE_ONLY_PATHS = new Set(["/quotes/new", "/cashbox/payments/new", "/customers/balances"])
 
-const MENU_PATHS = new Set(
-  NAV_GROUPS.flatMap((group) => group.items.flatMap((item) => [item.href, ...(item.children ?? []).map((child) => child.href)])),
-)
-
 /**
- * Masaüstünde sayfa başlığı içerikte nasıl durur: liste/menü sayfalarında
- * görünür büyük başlık; detay ve form sayfaları başlığı kartında/formunda
- * zaten taşıdığı için yalnız ekran okuyucuya h1; hero'lu sayfada hiç.
+ * Kayıtlı sayfalarda başlığı `PageFrame` çizer; burası yalnız kayıtsız yollar
+ * için: çubuk-başlıklı yollar masaüstünde görünür başlık alır, kalanı yalnız
+ * ekran okuyucuya h1 verir.
  */
-function desktopTitleMode(pathname: string): "visible" | "sr-only" | "none" {
-  if (CONTENT_H1_PATHS.has(pathname)) return "none"
-  if (OWN_TITLE_MENU_PATHS.has(pathname)) return "sr-only"
-  if (MENU_PATHS.has(pathname) || BAR_TITLE_ONLY_PATHS.has(pathname)) return "visible"
-  return "sr-only"
+function desktopTitleMode(pathname: string): "visible" | "sr-only" {
+  return BAR_TITLE_ONLY_PATHS.has(pathname) ? "visible" : "sr-only"
 }
 
 function isComingSoon(pathname: string): boolean {
@@ -133,7 +114,6 @@ function isComingSoon(pathname: string): boolean {
 
 type PageHeaderState = {
   pageTitle?: string
-  pageActions?: React.ReactNode
   showGlobalSearch?: boolean
 }
 
@@ -145,7 +125,7 @@ const WIDE_WIDTH_CLASS = "max-w-5xl"
 export function AppShell({
   children,
   pageTitle,
-  pageActions,
+  subtitle,
   showGlobalSearch = true,
   constrained = false,
   wide = false,
@@ -153,7 +133,7 @@ export function AppShell({
   children: React.ReactNode
   workshopName?: string
   pageTitle?: string
-  pageActions?: React.ReactNode
+  subtitle?: React.ReactNode
   showGlobalSearch?: boolean
   constrained?: boolean
   wide?: boolean
@@ -161,10 +141,18 @@ export function AppShell({
   const setPageHeader = useContext(SetPageHeaderContext)
   const pathname = usePathname()
   useEffect(() => {
-    setPageHeader({ pageTitle, pageActions, showGlobalSearch })
-  }, [setPageHeader, pageTitle, pageActions, showGlobalSearch])
+    setPageHeader({ pageTitle, showGlobalSearch })
+  }, [setPageHeader, pageTitle, showGlobalSearch])
   if (isSettingsPath(pathname)) {
     return <div data-settings-content className="mx-auto w-full min-w-0 max-w-3xl pt-6 sm:pt-12">{children}</div>
+  }
+  const inner = (body: React.ReactNode) => {
+    if (wide) return <div className={WIDE_WIDTH_CLASS}>{body}</div>
+    if (constrained) return <div className={CONSTRAINED_WIDTH_CLASS}>{body}</div>
+    return <>{body}</>
+  }
+  if (hasPageHeader(pathname)) {
+    return <PageFrame subtitle={subtitle}>{inner(children)}</PageFrame>
   }
   const titleMode = pageTitle && !isSidebarlessRoute(pathname) ? desktopTitleMode(pathname) : "none"
   // Yalnız masaüstünde (lg+) çizilir; altında başlık bardadır.
@@ -175,9 +163,7 @@ export function AppShell({
       {pageTitle}
     </h1>
   )
-  if (wide) return <div className={WIDE_WIDTH_CLASS}>{desktopTitle}{children}</div>
-  if (constrained) return <div className={CONSTRAINED_WIDTH_CLASS}>{desktopTitle}{children}</div>
-  return <>{desktopTitle}{children}</>
+  return inner(<>{desktopTitle}{children}</>)
 }
 
 export type WorkspaceSwitcherProps = {
@@ -224,6 +210,10 @@ export function AppShellChrome({
   const visibleSettingsNavigation = settingsNavigation.filter((item) =>
     !item.manageOnly || (userIdentity && actorCan(userIdentity, "settings.manage")))
   const searchNavigation: SearchDestination[] = [...primaryNavigation, ...visibleSettingsNavigation]
+  const headerAccess = useMemo(
+    () => ({ enabledFeatures, actor: userIdentity ?? null }),
+    [enabledFeatures, userIdentity],
+  )
 
   return (
     <SetPageHeaderContext.Provider value={setPageHeader}>
@@ -241,7 +231,9 @@ export function AppShellChrome({
         )}
         <SidebarInset className="min-h-screen bg-background">
           <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} topBannerVisible={topBannerVisible} />
-          <main className={cn("flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:pb-8", inSettings && "bg-card")}>{children}</main>
+          <PageHeaderAccessContext.Provider value={headerAccess}>
+            <main className={cn("flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:pb-8", inSettings && "bg-card")}>{children}</main>
+          </PageHeaderAccessContext.Provider>
         </SidebarInset>
         <GlobalSearch
           open={searchOpen}
@@ -265,7 +257,7 @@ function AppHeader({
   userIdentity?: UserIdentity
   topBannerVisible: boolean
 }) {
-  const { pageTitle, pageActions } = pageHeader
+  const { pageTitle } = pageHeader
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const navItem = [...NAV_GROUPS, ...TECHNICIAN_NAV_GROUPS]
@@ -277,10 +269,11 @@ function AppHeader({
   const headerTitle = pageTitle || navItem?.label || (isSettingsPath(pathname) ? "Ayarlar" : undefined)
   const HeaderIcon = settingsNavItem?.icon ?? navItem?.icon
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
-  const showMobileTitle = headerTitle && !isSettingsPath(pathname) && !MOBILE_CONTENT_HEADING_PATHS.has(pathname)
+  const contentOwnsTitle = hasPageHeader(pathname)
+  const showMobileTitle =
+    headerTitle && !contentOwnsTitle && !isSettingsPath(pathname) && !MOBILE_CONTENT_HEADING_PATHS.has(pathname)
   const sidebarless = isSidebarlessRoute(pathname, searchParams)
   const homeHref = isTechRole ? "/technician" : "/dashboard"
-  const contentOwnsTitle = CONTENT_H1_PATHS.has(pathname)
 
   return (
     <header
@@ -331,7 +324,6 @@ function AppHeader({
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
           {isTechRole ? <div className={sidebarless ? undefined : "lg:hidden"}><TechnicianNotificationsBell /></div> : null}
-          <div className="md:hidden">{pageActions}</div>
           {sidebarless && isTechRole ? <SidebarlessAccountActions /> : null}
         </div>
       </div>
