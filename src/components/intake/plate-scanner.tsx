@@ -16,6 +16,11 @@ type Props = {
   onClose: () => void
   /** Verilirse kameranın solunda "El ile gir" düğmesi çıkar (bkz. CameraScanner). */
   onManualEntry?: () => void
+  /**
+   * Plaka okunamasa da kareyi kabul et (`plate` boş döner). Yalnız yabancı
+   * plakalı araçta araç fotoğrafı için: okuma yalnız TR plakası tanır (#840).
+   */
+  allowNoPlate?: boolean
 }
 
 /**
@@ -25,18 +30,19 @@ type Props = {
  * bir değer olduğundan onay adımı yoktur — okunan değer doğrudan arama kutusuna
  * yazılır ve kullanıcı orada görüp düzeltebilir.
  */
-export function PlateScanner({ onDetected, onClose, onManualEntry }: Props) {
+export function PlateScanner({ onDetected, onClose, onManualEntry, allowNoPlate = false }: Props) {
   // Okumayı başaran kare: CameraScanner yalnız okunan değeri geri verir.
   const lastFrame = useRef<ScanImagePayload | null>(null)
   const lastBrand = useRef<string | undefined>(undefined)
   const scan = useCallback(async (payload: ScanImagePayload) => {
     lastFrame.current = payload
     lastBrand.current = undefined
-    const data = await postImageScan<{ plate?: string; brand?: string }>("/api/plate/scan", payload)
-    if (!data.plate) throw new ScanError("Plaka okunamadı.")
+    const endpoint = allowNoPlate ? "/api/plate/scan?allowNoPlate=1" : "/api/plate/scan"
+    const data = await postImageScan<{ plate?: string; brand?: string }>(endpoint, payload)
+    if (!data.plate && !allowNoPlate) throw new ScanError("Plaka okunamadı.")
     lastBrand.current = data.brand || undefined
-    return data.plate
-  }, [])
+    return data.plate ?? ""
+  }, [allowNoPlate])
 
   return (
     <CameraScanner

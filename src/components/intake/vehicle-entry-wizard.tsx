@@ -57,6 +57,7 @@ import {
   entryBackTarget,
   splitPersonName,
   vehicleFieldError,
+  isForeignPlate,
   photoPlateStatus,
   type EntryMethod,
   type EntryStep,
@@ -1496,6 +1497,8 @@ export function VehicleEntryWizard({
             applyPhotoBrand(brand)
           }}
           onClose={() => setScanner(null)}
+          // Yabancı plaka okunamaz (okuma yalnız TR tanır): kare plakasız kabul edilir (#840).
+          allowNoPlate={isForeignPlate(fields.plate)}
         />
       )}
       {scanner === "registration" && (
