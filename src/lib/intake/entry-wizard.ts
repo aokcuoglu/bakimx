@@ -268,6 +268,26 @@ export function previousEntryStep(
 }
 
 /**
+ * "Geri"nin gideceği adım ve yöntem (#817).
+ *
+ * Odaklı akışta (`?entry=…`, `startMethod` verilir) yöntem seçim ekranı YOKTUR:
+ * ilk ekran başlangıç yönteminin yakalama ekranıdır (plaka için arama + kamera).
+ * Akış içinde yöntem değişse bile (ör. aramadan müşteri seçilince `customer`)
+ * normal geri hedefi `"method"` çıktığında oraya değil, başlangıç ekranına
+ * dönülür. Odaklı olmayan akışta (`startMethod` yok) davranış
+ * `previousEntryStep` ile aynıdır.
+ */
+export function entryBackTarget(
+  current: EntryStep,
+  method: EntryMethod | null,
+  opts: { knownVehicle?: boolean; startMethod?: EntryMethod | null } = {}
+): { step: EntryStep; method: EntryMethod | null } {
+  const step = previousEntryStep(current, method, opts)
+  if (step !== "method" || !opts.startMethod) return { step, method }
+  return { step: "capture", method: opts.startMethod }
+}
+
+/**
  * Onay kartının satırları: plaka, araç ve sahip. Sihirbazdaki her kaynak (arama
  * sonucu, müşterinin aracı, URL'den yüklenen ya da yeni kaydedilen araç) etiketi
  * `${plate} — ${brand} ${model}`, alt etiketi `Sahip: ${ad}` biçiminde kurar

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import {
+  entryBackTarget,
   EMPTY_OWNER_FIELDS,
   ENTRY_METHODS,
   confirmedVehicleParts,
@@ -229,4 +230,19 @@ test("ownerFieldError: kurumsalda Firma adı zorunlu, Ad Soyad isteğe bağlı",
   const corp = { ...EMPTY_OWNER_FIELDS, type: "corporate" as const, phone: "5445157408" }
   expect(ownerFieldError({ ...corp, companyName: "ACME" })).toBeNull()
   expect(ownerFieldError({ ...corp, name: "ALİ VELİ" })).toContain("Firma adı")
+})
+
+test("entryBackTarget: odaklı olmayan akışta previousEntryStep ile aynı (#817)", () => {
+  expect(entryBackTarget("capture", "customer")).toEqual({ step: "method", method: "customer" })
+  expect(entryBackTarget("owner", "registration")).toEqual({ step: "vehicle", method: "registration" })
+})
+
+test("entryBackTarget: odaklı akışta yöntem ekranına hiç dönülmez (#817)", () => {
+  // Aramadan müşteri seçildi (yöntem customer oldu) → Geri: plaka araması.
+  expect(entryBackTarget("capture", "customer", { startMethod: "plate" })).toEqual({ step: "capture", method: "plate" })
+  // Başlangıç ekranında Geri de başlangıçta kalır.
+  expect(entryBackTarget("capture", "plate", { startMethod: "plate" })).toEqual({ step: "capture", method: "plate" })
+  // Ara adımlar ray sırasıyla geri gider, yöntem korunur.
+  expect(entryBackTarget("vehicle", "customer", { startMethod: "plate" })).toEqual({ step: "capture", method: "customer" })
+  expect(entryBackTarget("confirm", "plate", { startMethod: "plate", knownVehicle: true })).toEqual({ step: "capture", method: "plate" })
 })

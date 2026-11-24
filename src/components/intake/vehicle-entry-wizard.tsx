@@ -58,7 +58,7 @@ import {
   ownerFieldsChanged,
   ownerFieldsFromCustomer,
   ownerLabel,
-  previousEntryStep,
+  entryBackTarget,
   splitPersonName,
   vehicleFieldError,
   photoPlateStatus,
@@ -835,10 +835,13 @@ export function VehicleEntryWizard({
     setOwnerMode(false)
   }
 
+  // Odaklı akış (?entry=…) yöntem seçim ekranına hiç dönmez (#817): "Başka araç
+  // seç" akışı açılıştaki gibi baştan başlatır — plaka akışında kamera hazır.
   function restart() {
-    setStep("method")
+    setStep(initialMethod ? "capture" : "method")
     setRuhsatView(false)
-    setMethod(null)
+    setMethod(initialMethod ?? null)
+    if (initialMethod === "plate") setScanner("plate")
     setConfirmed(null)
     setFoundExisting(false)
     setOwner(null)
@@ -869,7 +872,20 @@ export function VehicleEntryWizard({
 
   function goBack() {
     setError("")
-    setStep(previousEntryStep(step, method, { knownVehicle }))
+    const target = entryBackTarget(step, method, { knownVehicle, startMethod: initialMethod })
+    if (target.method !== method) {
+      // Odaklı akışta müşteri seçiminden plaka aramasına dönüş (#817): seçim
+      // ve önceki arama bırakılır, kutu boş açılır.
+      setMethod(target.method)
+      setQuery("")
+      setResults([])
+      setPickedCustomer(null)
+      setCustVehicles([])
+      // pickCustomer sahibi de yazar; plaka aramasında yeni araç bu müşteriye
+      // sessizce bağlanmasın.
+      setOwner(null)
+    }
+    setStep(target.step)
   }
 
   function pickCustomer(customerId: string, label: string) {
