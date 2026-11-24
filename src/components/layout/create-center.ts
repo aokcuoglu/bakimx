@@ -1,9 +1,11 @@
+import { NEW_INTAKE_HREF } from "@/lib/intake/entry-links"
+
 export const CREATE_OPTIONS = [
   {
     id: "order",
     title: "Araç Kabul",
     description: "Araç kabulünü başlat ve yapılacak işleri kaydet.",
-    href: "/orders/new",
+    href: NEW_INTAKE_HREF,
   },
   {
     id: "quote",

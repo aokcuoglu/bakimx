@@ -1,9 +1,10 @@
 import { expect, test } from "bun:test"
 import { CREATE_OPTIONS } from "@/components/layout/create-center"
+import { NEW_INTAKE_HREF } from "@/lib/intake/entry-links"
 
 test("oluşturma merkezi dört mevcut oluşturma rotasını korur", () => {
   expect(CREATE_OPTIONS.map((option) => option.href)).toEqual([
-    "/orders/new",
+    NEW_INTAKE_HREF,
     "/quotes/new",
     "/appointments/new",
     "/reminders/new",
