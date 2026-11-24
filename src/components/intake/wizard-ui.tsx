@@ -152,54 +152,6 @@ export function WizardHeading({
   )
 }
 
-/**
- * Seçenek kartı: büyük dokunma alanı, ikon, başlık, açıklama ve sağ üstte seçim
- * göstergesi. Kartın kendisi düğmedir — mobilde tüm kart tıklanabilir olsun diye.
- */
-export function WizardChoiceCard({
-  icon,
-  title,
-  description,
-  selected = false,
-  onClick,
-}: {
-  icon: ReactNode
-  title: string
-  description: string
-  selected?: boolean
-  onClick: () => void
-}) {
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      aria-pressed={selected}
-      onClick={onClick}
-      className={`relative h-auto md:h-auto w-full flex-col items-start gap-2 whitespace-normal p-4 text-left ${
-        selected ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "hover:border-primary/50 hover:bg-primary/5"
-      }`}
-    >
-      <span
-        aria-hidden
-        className={`absolute top-3 right-3 flex size-5 items-center justify-center rounded-full border ${
-          selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"
-        }`}
-      >
-        {selected && <Check className="size-3" />}
-      </span>
-      <span
-        className={`flex size-10 items-center justify-center rounded-lg ${
-          selected ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary-strong"
-        }`}
-      >
-        {icon}
-      </span>
-      <span className="block pr-6 text-sm font-semibold text-foreground">{title}</span>
-      <span className="block text-xs font-normal text-muted-foreground">{description}</span>
-    </Button>
-  )
-}
-
 /** Adım alt çubuğu: solda Geri, sağda ileri/eylem düğmeleri. */
 export function WizardActions({
   back,

@@ -1,6 +1,7 @@
-import { expect, test } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import {
   entryBackTarget,
+  resolveInitialCustomer,
   EMPTY_OWNER_FIELDS,
   ENTRY_METHODS,
   confirmedVehicleParts,
@@ -19,27 +20,24 @@ import {
   vehicleFieldError,
 } from "@/lib/intake/entry-wizard"
 
-test("ENTRY_METHODS: dört yöntem, tekil değerler", () => {
-  expect(ENTRY_METHODS).toHaveLength(4)
-  expect(new Set(ENTRY_METHODS.map((m) => m.value)).size).toBe(4)
+test("ENTRY_METHODS: yalnız plaka ve müşteri — yöntem seçim ekranı yok (#822)", () => {
+  expect(ENTRY_METHODS.map((m) => m.value)).toEqual(["plate", "customer"])
 })
 
-test("entryStepLabels: yöntem seçilmeden yakalama adımı genel etiketli", () => {
-  expect(entryStepLabels(null).map((s) => s.label)).toEqual([
-    "Yöntem", "Araç", "Araç bilgileri", "Müşteri", "Onay",
+test("entryStepLabels: ray yakalama adımıyla başlar, yöntem adımı yok (#822)", () => {
+  expect(entryStepLabels("plate").map((s) => s.label)).toEqual([
+    "Plaka", "Araç bilgileri", "Müşteri", "Onay",
   ])
 })
 
 test("entryStepLabels: yakalama adımı yöntemin etiketini alır", () => {
-  expect(entryStepLabels("registration")[1].label).toBe("Ruhsat")
-  expect(entryStepLabels("vin")[1].label).toBe("Şase")
-  expect(entryStepLabels("plate")[1].label).toBe("Plaka")
-  expect(entryStepLabels("customer")[1].label).toBe("Müşteri")
+  expect(entryStepLabels("plate")[0].label).toBe("Plaka")
+  expect(entryStepLabels("customer")[0].label).toBe("Müşteri")
 })
 
 test("entryStepLabels: kayıtlı araç bulunduysa araç/sahip adımları düşer", () => {
   expect(entryStepLabels("plate", { knownVehicle: true }).map((s) => s.id)).toEqual([
-    "method", "capture", "confirm",
+    "capture", "confirm",
   ])
 })
 
@@ -103,13 +101,12 @@ test("identityConflicts: iki alan da çakışırsa ikisi de listelenir", () => {
 })
 
 test("previousEntryStep: ray sırasına göre bir geri gider", () => {
-  expect(previousEntryStep("owner", "registration")).toBe("vehicle")
-  expect(previousEntryStep("vehicle", "registration")).toBe("capture")
-  expect(previousEntryStep("capture", "registration")).toBe("method")
+  expect(previousEntryStep("owner", "customer")).toBe("vehicle")
+  expect(previousEntryStep("vehicle", "customer")).toBe("capture")
 })
 
-test("previousEntryStep: ilk adımdan geri gidilmez", () => {
-  expect(previousEntryStep("method", null)).toBe("method")
+test("previousEntryStep: ilk adımdan (yakalama) geri gidilmez", () => {
+  expect(previousEntryStep("capture", "plate")).toBe("capture")
 })
 
 test("previousEntryStep: kayıtlı araçta onaydan yakalama adımına döner", () => {
@@ -119,16 +116,16 @@ test("previousEntryStep: kayıtlı araçta onaydan yakalama adımına döner", (
 
 test("parseEntryMethod: yalnız bilinen yöntemleri kabul eder", () => {
   expect(parseEntryMethod("plate")).toBe("plate")
-  expect(parseEntryMethod(["vin", "plate"])).toBe("vin")
+  expect(parseEntryMethod(["customer", "plate"])).toBe("customer")
+  // Yöntem ekranıyla kalkan eski yöntemler (#822) artık odaklı akış açmaz.
+  expect(parseEntryMethod("vin")).toBeNull()
+  expect(parseEntryMethod("registration")).toBeNull()
   expect(parseEntryMethod(undefined)).toBeNull()
   expect(parseEntryMethod("")).toBeNull()
   expect(parseEntryMethod("PLATE")).toBeNull()
   expect(parseEntryMethod("__proto__")).toBeNull()
 })
 
-test("previousEntryStep: doğrudan açılan plaka aramasından Geri yöntem seçimine döner", () => {
-  expect(previousEntryStep("capture", "plate", { knownVehicle: false })).toBe("method")
-})
 
 test("splitPersonName: son kelime soyad, öncesi ad", () => {
   expect(splitPersonName("AYŞE NUR KAYA")).toEqual({ firstName: "AYŞE NUR", lastName: "KAYA" })
@@ -232,17 +229,40 @@ test("ownerFieldError: kurumsalda Firma adı zorunlu, Ad Soyad isteğe bağlı",
   expect(ownerFieldError({ ...corp, name: "ALİ VELİ" })).toContain("Firma adı")
 })
 
-test("entryBackTarget: odaklı olmayan akışta previousEntryStep ile aynı (#817)", () => {
-  expect(entryBackTarget("capture", "customer")).toEqual({ step: "method", method: "customer" })
-  expect(entryBackTarget("owner", "registration")).toEqual({ step: "vehicle", method: "registration" })
+test("entryBackTarget: müşterinin araç listesinden Geri başlangıç aramasına döner (#817, #822)", () => {
+  expect(entryBackTarget("capture", "customer", { startMethod: "plate" })).toEqual({ step: "capture", method: "plate" })
 })
 
-test("entryBackTarget: odaklı akışta yöntem ekranına hiç dönülmez (#817)", () => {
-  // Aramadan müşteri seçildi (yöntem customer oldu) → Geri: plaka araması.
-  expect(entryBackTarget("capture", "customer", { startMethod: "plate" })).toEqual({ step: "capture", method: "plate" })
-  // Başlangıç ekranında Geri de başlangıçta kalır.
+test("entryBackTarget: başlangıç ekranında Geri yerinde kalır — yöntem ekranı yok (#822)", () => {
   expect(entryBackTarget("capture", "plate", { startMethod: "plate" })).toEqual({ step: "capture", method: "plate" })
-  // Ara adımlar ray sırasıyla geri gider, yöntem korunur.
+})
+
+test("entryBackTarget: ara adımlar ray sırasıyla geri gider, yöntem korunur", () => {
   expect(entryBackTarget("vehicle", "customer", { startMethod: "plate" })).toEqual({ step: "capture", method: "customer" })
+  expect(entryBackTarget("owner", "customer", { startMethod: "plate" })).toEqual({ step: "vehicle", method: "customer" })
   expect(entryBackTarget("confirm", "plate", { startMethod: "plate", knownVehicle: true })).toEqual({ step: "capture", method: "plate" })
+})
+
+describe("resolveInitialCustomer (#822)", () => {
+  const list = [{ id: "c1", name: "MERVE" }, { id: "c2", name: "ALİ" }]
+
+  test("araçsız customerId listede varsa o müşteri", () => {
+    expect(resolveInitialCustomer(list, { customerId: "c2" })).toEqual({ id: "c2", name: "ALİ" })
+  })
+
+  test("listede olmayan (başka atölye / bilinmeyen) id null", () => {
+    expect(resolveInitialCustomer(list, { customerId: "baska-atolye" })).toBeNull()
+  })
+
+  test("araç da verildiyse araç akışı geçerli: null", () => {
+    expect(resolveInitialCustomer(list, { customerId: "c1", vehicleId: "v1" })).toBeNull()
+  })
+
+  test("Kaydet & Yeni sonrası tüketildiyse null", () => {
+    expect(resolveInitialCustomer(list, { customerId: "c1", consumed: true })).toBeNull()
+  })
+
+  test("customerId yoksa null", () => {
+    expect(resolveInitialCustomer(list, {})).toBeNull()
+  })
 })
