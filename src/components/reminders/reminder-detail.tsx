@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ReminderStatusBadge, ReminderTypeBadge } from "@/components/reminders/reminder-status-badge"
-import { PlateBadge } from "@/components/shared/plate-badge"
+import { Plate } from "@/components/shared/plate"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
 import {
   completeReminderAction,
@@ -424,7 +424,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <PlateBadge plate={reminder.vehicle.plate} />
+                    <Plate plate={reminder.vehicle.plate} />
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {reminder.vehicle.brand} {reminder.vehicle.model}

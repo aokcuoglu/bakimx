@@ -29,7 +29,8 @@ import {
 import { StatusBadge } from "@/components/shared/status-badge"
 import { TechnicianQuickActions } from "@/components/technician/technician-quick-actions"
 // e-santral yazı ölçeği: /dashboard ile aynı başlık/KPI/bölüm sınıfları.
-import { DashPlate, surface } from "@/components/dashboard/surface"
+import { surface } from "@/components/dashboard/surface"
+import { Plate } from "@/components/shared/plate"
 import { DashboardPagination, useDashboardPage } from "@/components/dashboard/dashboard-pagination"
 
 type DashboardFilter = "all" | "in_progress" | "waiting" | "completed" | "today_delivery"
@@ -376,7 +377,7 @@ function OrderCard({ order }: { order: OrderRow }) {
           {/* Üst satır: büyük e-santral plaka + mavi bant solda,
               durum rozetleri sağda. Dar ekranda rozetler alt satıra sarar. */}
           <ItemHeader className="flex-wrap">
-            <DashPlate plate={order.plate} country size="lg" />
+            <Plate plate={order.plate} size="lg" />
             <span className="flex flex-wrap items-center justify-end gap-1.5">
               <StatusBadge status={order.status} size="lg" className="text-sm" />
               {order.hasActiveLabor && (

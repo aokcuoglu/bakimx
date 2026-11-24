@@ -2,7 +2,6 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { formatTurkishPlate } from "@/components/shared/plate-badge"
 import { APPOINTMENT_STATUS, ORDER_STATUS, type AppointmentStatusKey, type OrderStatusKey } from "@/lib/constants"
 import { kpiNumeralFont } from "./kpi-font"
 import styles from "./surface.module.css"
@@ -112,32 +111,6 @@ export function DashRow({
     </Link>
   ) : (
     <div className={styles.row} data-stack={stack || undefined}>{content}</div>
-  )
-}
-
-/**
- * Çerçeveli TR plaka rozeti. `country` başına yazısız mavi bant ekler,
- * `size="lg"` büyük, `size="sm"` tablo satırına uygun küçük plaka çizer.
- * Varsayılan `md`, bant kapalı.
- */
-export function DashPlate({
-  plate,
-  country = false,
-  size = "md",
-}: {
-  plate: string
-  country?: boolean
-  size?: "sm" | "md" | "lg"
-}) {
-  return (
-    <span
-      className={styles.plate}
-      data-country={country || undefined}
-      data-size={size === "md" ? undefined : size}
-    >
-      {country && <span className={styles.plateCountry} aria-hidden="true" />}
-      {formatTurkishPlate(plate)}
-    </span>
   )
 }
 
