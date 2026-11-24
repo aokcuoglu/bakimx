@@ -119,10 +119,11 @@ boşluk; kalın rakam üstte, küçük gri etiket altta. ("7 Serviste · 3 Hazı
 
 **Plaka rozeti.** Tek bileşen: `Plate` (`src/components/shared/plate.tsx`,
 `size="sm|md|lg"` → 22/28/34px). 1.5px `--foreground` çerçeve, 6px köşe, 700
-ağırlık, +0.02em, `white-space:nowrap`, sol kenarda yazısız `--primary` bant.
+ağırlık, +0.02em, `white-space:nowrap`, sol kenarda ülke kodunu yazan `--primary`
+bant (TR dahil, #834).
 Plaka DB'de kompakt saklanır; gösterimde `34 ABC 123` biçimlenir. Ülke saklanan
-plakadan tahmin edilir (`src/lib/plate/country.ts`, #818): yabancı plakada bant
-ülke kodunu yazar (D, NL, B, BG, UK), Hollanda sarı zemin, Belçika kırmızı yazı
+plakadan tahmin edilir (`src/lib/plate/country.ts`, #818): yabancı kodlar D, NL,
+B, BG, UK; ekran okuyucu yabancıda ülke adını da okur. Hollanda sarı zemin, Belçika kırmızı yazı
 alır. Yeni bir plaka rozeti yazma — `Plate`'i kullan.
 
 **Bildirim / aktivite kartı.** Ayrı beyaz kartlar (16px, 8px alt boşluk):
