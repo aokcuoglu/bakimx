@@ -6,6 +6,7 @@ import { Plate } from "@/components/shared/plate"
 import { ActionsMenu, MobileActionsMenu } from "@/components/shared/actions-menu"
 import { formatTRY, customerDisplayName } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { newIntakeHref } from "@/lib/intake/entry-links"
 
 type QuoteRow = {
   id: string
@@ -131,8 +132,8 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                       <ActionsMenu
                         viewHref={`/quotes/${quote.id}`}
                         workOrderHref={quote.vehicle
-                          ? `/orders/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
-                          : `/orders/new?customerId=${quote.customer.id}`
+                          ? newIntakeHref({ vehicleId: quote.vehicle.id, customerId: quote.customer.id })
+                          : newIntakeHref({ customerId: quote.customer.id })
                         }
                       />
                     </div>
@@ -180,8 +181,8 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
               <MobileActionsMenu
                 viewHref={`/quotes/${quote.id}`}
                 workOrderHref={quote.vehicle
-                  ? `/orders/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
-                  : `/orders/new?customerId=${quote.customer.id}`
+                  ? newIntakeHref({ vehicleId: quote.vehicle.id, customerId: quote.customer.id })
+                  : newIntakeHref({ customerId: quote.customer.id })
                 }
               />
             </div>

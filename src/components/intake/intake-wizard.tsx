@@ -25,7 +25,6 @@ import { typedResolver } from "@/lib/validations/resolver"
 import { VehicleEntryWizard } from "@/components/intake/vehicle-entry-wizard"
 import type { PendingVehiclePhoto } from "@/components/intake/vehicle-photo-capture"
 import { resolveInitialCustomer, type EntryMethod } from "@/lib/intake/entry-wizard"
-import { displayCustomerName } from "@/lib/search/unified-results"
 import { WizardStepper } from "@/components/intake/wizard-ui"
 import { FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
@@ -145,8 +144,9 @@ export function IntakeWizard({
   if (selectedCustomerId && selectedVehicleId) completedSteps.add(1)
   if (customerComplaint.trim()) completedSteps.add(3)
 
-  // Müşteriden açılan kabul (#822): araçsız `?customerId=` ile gelindiyse araç
-  // girişi o müşteri seçili ve araçları listeli başlar. Müşteri, sunucunun
+  // Müşteriden açılan kabul (#822, #832): araçsız `?customerId=` ile gelindiyse
+  // araç girişi o müşteriyle başlar (odaklı akışta yeni plakanın sahibi olarak,
+  // değilse seçili müşteri + araç listesi). Müşteri, sunucunun
   // atölyeye göre süzdüğü listeden çözülür. "Kaydet & Yeni"de tüketilir: sonraki
   // araç aynı müşteriyle başlamasın (URL temizlenmeden yeniden mount olur).
   const [prefillCustomerConsumed, setPrefillCustomerConsumed] = useState(false)
@@ -155,9 +155,6 @@ export function IntakeWizard({
     vehicleId: prefillVehicleId,
     consumed: prefillCustomerConsumed,
   })
-  const initialCustomer = prefillCustomer
-    ? { id: prefillCustomer.id, label: displayCustomerName(prefillCustomer) }
-    : null
 
   // Prefill from OCR redirect (registration scanner)
   useEffect(() => {
@@ -370,7 +367,8 @@ export function IntakeWizard({
                 onComplete={() => setStep(3)}
                 planTier={planTier}
                 initialMethod={initialEntryMethod}
-                initialCustomer={initialCustomer}
+                initialCustomer={prefillCustomer}
+                hasPrefilledVehicle={!!prefillVehicleId}
                 onVehiclePhotoChange={(photo) => { pendingVehiclePhoto.current = photo }}
                 onConfirmOrder={focused ? handleConfirmOrder : undefined}
               />
