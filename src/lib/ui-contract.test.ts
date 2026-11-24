@@ -466,3 +466,27 @@ test("Escape guard'ı call-site'lara geri sızmadı", () => {
   }
   expect(offenders).toEqual([])
 })
+
+/**
+ * Basılma efekti konum `translate`'ini ezmemeli (#819, tarayıcıda ölçüldü).
+ *
+ * Upstream nova'nın 1px'lik translate basılma efekti Tailwind v4'te
+ * `--tw-translate-y: 1px` yazar. Düğmeyi `absolute top-1/2
+ * -translate-y-1/2` ile ortalayan call-site'lar da AYNI değişkene `-50%`
+ * yazıyor ve `:active` kuralı daha özgül: basılıyken düğme yarı boyu + 1px
+ * aşağı kayıyordu (Araç Kabulleri'ndeki Filtreler, şifre göz düğmeleri…).
+ * Üst yarısına basılınca `mouseup` artık input'a düştüğü için tıklama hiç
+ * işlemiyordu.
+ *
+ * Efekt bu yüzden ayrı bir CSS özelliğinde, `transform`'da durur: `translate`
+ * ile `transform` bağımsızdır ve üst üste biner (-50% + 1px). Button sınıf
+ * dizelerinde `translate` özelliğini yazan hiçbir yardımcı sınıf olmamalı.
+ */
+test("Button basılma efekti konum translate'ini ezmiyor", () => {
+  const source = readFileSync(join(SRC, "components", "ui", "button.tsx"), "utf8")
+  const classTokens = [...source.matchAll(/"([^"\n]*)"/g)].flatMap((m) => m[1].split(/\s+/))
+  const writesTranslate = classTokens.filter((token) => /(?:^|:)-?translate-/.test(token))
+
+  expect(writesTranslate).toEqual([])
+  expect(classTokens).toContain("active:not-aria-[haspopup]:[transform:translateY(1px)]")
+})
