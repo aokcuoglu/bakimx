@@ -41,6 +41,7 @@ import { INTAKE_STATUS, CUSTOMER_SOURCES } from "@/lib/constants"
 import { summarizeCustomerOrders } from "@/lib/customer-totals"
 import { cn } from "@/lib/utils"
 import type { ReminderRow } from "@/lib/reminders/queries"
+import { newIntakeHref } from "@/lib/intake/entry-links"
 
 type Vehicle = {
   id: string
@@ -205,7 +206,7 @@ export function CustomerDetail({
           </div>
           <div className="flex flex-wrap items-center gap-2">
              <Button variant="outline" size="sm" asChild>
-               <Link href={`/orders/new?customerId=${customer.id}`}>
+               <Link href={newIntakeHref({ customerId: customer.id })}>
                  <Wrench className="size-4" />
                  Yeni Araç Kabul
                </Link>
@@ -301,7 +302,7 @@ export function CustomerDetail({
                 <Wrench className="size-10 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Henüz araç kabulü yok</p>
                 <Link
-                  href={`/orders/new?customerId=${customer.id}`}
+                  href={newIntakeHref({ customerId: customer.id })}
                   className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary font-medium"
                 >
                   <Plus className="size-3.5" />

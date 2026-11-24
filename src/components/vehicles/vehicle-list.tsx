@@ -13,6 +13,7 @@ import { VEHICLE_TYPES } from "@/lib/constants"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StatCard } from "@/components/shared/stat-card"
 import { FilterSheet, type FilterField } from "@/components/shared/filter-sheet"
+import { newIntakeHref } from "@/lib/intake/entry-links"
 
 export type VehicleRow = {
   id: string
@@ -331,7 +332,7 @@ function DesktopTable({
                     <ActionsMenu
                       viewHref={`/vehicles/${row.id}`}
                       editHref={`/vehicles/${row.id}/edit`}
-                      workOrderHref={`/orders/new?vehicleId=${row.id}`}
+                      workOrderHref={newIntakeHref({ vehicleId: row.id })}
                       appointmentHref={`/appointments/new?vehicleId=${row.id}`}
                       passportHref={`/vehicles/${row.id}/passport`}
                     />
@@ -379,7 +380,7 @@ function MobileCards({
             <MobileActionsMenu
               viewHref={`/vehicles/${row.id}`}
               editHref={`/vehicles/${row.id}/edit`}
-              workOrderHref={`/orders/new?vehicleId=${row.id}`}
+              workOrderHref={newIntakeHref({ vehicleId: row.id })}
               appointmentHref={`/appointments/new?vehicleId=${row.id}`}
               passportHref={`/vehicles/${row.id}/passport`}
             />

@@ -108,12 +108,30 @@ function fetchCustomerVehicles(customerId: string): Promise<CustVehicle[]> {
     })
 }
 
+type OwnerSeedFromCustomer = { id: string; label: string; fields: OwnerFields }
+
+/** Müşteriden açılan odaklı kabulün sahip kartı (#832); biçim plaka sahibi önceden doldurmasıyla aynı. */
+function ownerSeedFromCustomer(c: CustomerLite): OwnerSeedFromCustomer {
+  const fromCustomer = ownerFieldsFromCustomer(c)
+  return { id: c.id, label: displayCustomerName(c), fields: { ...fromCustomer, phone: formatPhoneTR(fromCustomer.phone) } }
+}
+
+/**
+ * `createdOwner` kaydı: kart bu alanlarla onaylanırsa müşteri yeniden açılmaz.
+ * Anahtar, `submitPlateFirst`in karşılaştırdığı `JSON.stringify(ownerForm)`.
+ */
+function ownerClaim(seed: OwnerSeedFromCustomer | null): { id: string; label: string; key: string } | null {
+  return seed ? { id: seed.id, label: seed.label, key: JSON.stringify(seed.fields) } : null
+}
+
 /**
  * Kabul akışının araç girişi sihirbazı (#309).
  *
  * Her zaman plaka/müşteri aramasıyla başlar (odaklı akışta plaka kamerası
- * açılışta hazır). Aramadan müşteri seçilirse — ya da kabul bir müşteriden
- * açıldıysa (`initialCustomer`) — o müşterinin araçları listelenir. Kayıtlı araç
+ * açılışta hazır). Aramadan müşteri seçilirse o müşterinin araçları listelenir.
+ * Kabul bir müşteriden açıldıysa (`initialCustomer`) odaklı akışta yeni plakanın
+ * sahip kartı o müşteriyle dolu gelir (#832); odaklı olmayan akışta müşterinin
+ * araçları listelenir (#822). Kayıtlı araç
  * bulunursa doğrudan onaya, bulunmazsa "Araç bilgileri" ve "Müşteri" adımlarına
  * geçilir. Ayrı bir yöntem seçim ekranı yoktur (#822): ruhsat okuma ve şase
  * kamerası araç bilgileri ekranındadır.
@@ -128,6 +146,7 @@ export function VehicleEntryWizard({
   planTier,
   initialMethod = null,
   initialCustomer = null,
+  hasPrefilledVehicle = false,
   onVehiclePhotoChange,
   onConfirmOrder,
 }: {
@@ -142,11 +161,18 @@ export function VehicleEntryWizard({
    */
   initialMethod?: EntryMethod | null
   /**
-   * Kabul bir müşteriden açıldıysa (`/orders/new?customerId=…`, araçsız): o
-   * müşteri seçili başlar ve araçları listelenir (#822). Etiket, sunucunun
-   * atölyeye göre süzdüğü müşteri listesinden gelir.
+   * Kabul bir müşteriden açıldıysa (`?customerId=…`, araçsız). Odaklı akışta
+   * (#832) kamera yine açılır; okunan plaka kayıtlı değilse sahip kartı bu
+   * müşteriyle dolu gelir ve yeni müşteri açılmaz. Odaklı olmayan akışta (#822)
+   * müşteri seçili başlar ve araçları listelenir. Müşteri, sunucunun atölyeye
+   * göre süzdüğü listeden gelir.
    */
-  initialCustomer?: { id: string; label: string } | null
+  initialCustomer?: CustomerLite | null
+  /**
+   * URL'de araç var (`?vehicleId=…`): araç ve sahibi yüklenir. Odaklı akışta
+   * kamera plaka aramak için değil, ön fotoğraf için açılır (#832).
+   */
+  hasPrefilledVehicle?: boolean
   /**
    * Kabul fotoğrafı olarak yüklenecek araç karesi (plaka taramasında ya da araç
    * bilgileri ekranındaki kartta çekilen). Kabul kaydı oluşunca kabul sihirbazı
@@ -164,8 +190,17 @@ export function VehicleEntryWizard({
   // Sihirbazın başlangıç ekranı: odaklı akışta URL'deki yöntem, değilse plaka
   // araması. Geri ve "Başka araç seç" buraya döner — yöntem seçim ekranı yok.
   const startMethod: EntryMethod = initialMethod ?? "plate"
+  // Müşteriden açılan kabul iki biçimde başlar: odaklı olmayan akışta o
+  // müşterinin araç listesi (#822), odaklı akışta kamera + yeni plakada bu
+  // müşteriyle dolu sahip kartı (#832).
+  const listCustomer = initialCustomer && !initialMethod
+    ? { id: initialCustomer.id, label: displayCustomerName(initialCustomer) }
+    : null
+  const [initialOwner] = useState(() =>
+    initialCustomer && initialMethod ? ownerSeedFromCustomer(initialCustomer) : null,
+  )
   const [step, setStep] = useState<EntryStep>("capture")
-  const [method, setMethod] = useState<EntryMethod>(initialCustomer ? "customer" : startMethod)
+  const [method, setMethod] = useState<EntryMethod>(listCustomer ? "customer" : startMethod)
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
 
@@ -180,7 +215,7 @@ export function VehicleEntryWizard({
   const [conflicts, setConflicts] = useState<IdentityConflict[]>([])
 
   // Sahip
-  const [owner, setOwner] = useState<{ id: string; label: string } | null>(initialCustomer)
+  const [owner, setOwner] = useState<{ id: string; label: string } | null>(listCustomer)
   const [ownerSeed, setOwnerSeed] = useState<OwnerSeed | null>(null)
   const [ownerMode, setOwnerMode] = useState(false)
 
@@ -189,21 +224,21 @@ export function VehicleEntryWizard({
   const [results, setResults] = useState<UnifiedResult[]>([])
   const [searching, setSearching] = useState(false)
   const [custVehicles, setCustVehicles] = useState<CustVehicle[]>([])
-  const [custVehiclesLoading, setCustVehiclesLoading] = useState(!!initialCustomer)
-  const [pickedCustomer, setPickedCustomer] = useState<{ id: string; label: string } | null>(initialCustomer)
+  const [custVehiclesLoading, setCustVehiclesLoading] = useState(!!listCustomer)
+  const [pickedCustomer, setPickedCustomer] = useState<{ id: string; label: string } | null>(listCustomer)
   // Araç listesi hangi müşteri için isteniyor: geç gelen yanıt, kullanıcı o
   // arada başka müşteriye geçtiyse yeni müşterinin altına eskinin araçlarını
   // yazmasın (yoksa seçim customerId: Y + X'in aracı olurdu).
-  const custVehiclesFor = useRef<string | null>(initialCustomer?.id ?? null)
+  const custVehiclesFor = useRef<string | null>(listCustomer?.id ?? null)
   // "vehiclePhoto": araç bilgileri ekranındaki fotoğraf kartı, plaka ekranıyla
   // AYNI tarayıcıyı açar; okunan kare kabul fotoğrafı olur.
-  // Odaklı plaka akışında (?entry=plate, ör. teknisyenin "Araç Kabul" düğmesi)
-  // tarayıcı açılışta hazır gelir: işin ilk adımı zaten aracın önünü çekmek.
-  // Yazmayı seçen "El ile gir" ile kutuya düşer. Kabul bir müşteriden açıldıysa
-  // ilk ekran o müşterinin araçlarıdır; kamera onun üstünde açılmaz.
+  // Odaklı plaka akışında (?entry=plate) tarayıcı açılışta hazır gelir: işin
+  // ilk adımı zaten aracın önünü çekmek. Yazmayı seçen "El ile gir" ile kutuya
+  // düşer. Araç URL'den geldiyse (#832) plaka zaten bilinir: kamera "vehiclePhoto"
+  // kipinde açılır — kare kabul fotoğrafı olur, plaka alanı değişmez.
   // "registration": "Ruhsattan doldur" — aynı tam ekran kamera kabuğunda ruhsat.
   const [scanner, setScanner] = useState<"plate" | "vehiclePhoto" | "registration" | null>(
-    initialMethod === "plate" && !initialCustomer ? "plate" : null,
+    initialMethod === "plate" ? (hasPrefilledVehicle ? "vehiclePhoto" : "plate") : null,
   )
   const plateQueryRef = useRef<HTMLInputElement>(null)
   // Kamera kapatılınca (X ya da "El ile gir") kullanıcı yazmaya döner: arama
@@ -239,14 +274,16 @@ export function VehicleEntryWizard({
   const photoBrand = useRef("")
 
   // Müşteri kartı (yalnız odaklı plaka akışı)
-  const [ownerForm, setOwnerForm] = useState<OwnerFields>(EMPTY_OWNER_FIELDS)
+  const [ownerForm, setOwnerForm] = useState<OwnerFields>(initialOwner?.fields ?? EMPTY_OWNER_FIELDS)
   // Plaka kayıtlıysa kartı dolduran sahip: düzenleme bununla karşılaştırılır.
   const [ownerOriginal, setOwnerOriginal] = useState<{ vehicleId: string; customerId: string; fields: OwnerFields } | null>(null)
   const [ownerLoading, setOwnerLoading] = useState(false)
   const [ownerDupes, setOwnerDupes] = useState<ExistingCustomer[]>([])
   const ownerPrefillFor = useRef("")
   // Müşteri açıldı ama araç kaydı düştüyse tekrar denemede ikinci müşteri açılmasın.
-  const createdOwner = useRef<{ id: string; label: string; key: string } | null>(null)
+  // Müşteriden açılan odaklı kabulde (#832) bu müşteri "zaten var" sayılır:
+  // kart değişmeden onaylanırsa yeni müşteri açılmaz, onun üstüne araç açılır.
+  const createdOwner = useRef<{ id: string; label: string; key: string } | null>(ownerClaim(initialOwner))
 
   // Onay
   const [confirmed, setConfirmed] = useState<{ vehicleId: string; customerId: string; label: string; sublabel: string } | null>(null)
@@ -405,10 +442,10 @@ export function VehicleEntryWizard({
     return () => { clearTimeout(t); controller.abort() }
   }, [query, step, method])
 
-  // ——— Müşteriden açılan kabul (#822): araç listesini yükle ———
+  // ——— Müşteriden açılan kabul, odaklı olmayan akış (#822): araç listesi ———
   // Müşteri ilk durumda seçili; burada yalnız araçları çekilir (setState
   // yanıt geldiğinde — react-hooks/set-state-in-effect).
-  const initialCustomerId = initialCustomer?.id
+  const initialCustomerId = listCustomer?.id
   useEffect(() => {
     if (!initialCustomerId) return
     let active = true
@@ -463,12 +500,13 @@ export function VehicleEntryWizard({
     if (!plateFirst) return
     if (!dupVehicleId) {
       // Plaka kayıtlı bir araçtan yenisine döndü: sahibin bilgileri yeni
-      // müşteriye taşınmasın, kart boşalsın.
+      // müşteriye taşınmasın, kart boşalsın — müşteriden açılan kabulde (#832)
+      // o müşteriye döner.
       if (!ownerPrefillFor.current) return
       const t = setTimeout(() => {
         ownerPrefillFor.current = ""
         setOwnerOriginal(null)
-        setOwnerForm(EMPTY_OWNER_FIELDS)
+        setOwnerForm(initialOwner?.fields ?? EMPTY_OWNER_FIELDS)
         setOwnerDupes([])
       }, 0)
       return () => clearTimeout(t)
@@ -492,7 +530,7 @@ export function VehicleEntryWizard({
       .catch(() => {})
       .finally(() => { if (active) setOwnerLoading(false) })
     return () => { active = false; clearTimeout(t) }
-  }, [plateFirst, dupVehicleId])
+  }, [plateFirst, dupVehicleId, initialOwner])
 
   /**
    * Bekleyen araç karesini değiştirir; eski önizleme URL'i bırakılır. `plate`:
@@ -863,11 +901,11 @@ export function VehicleEntryWizard({
     setVehiclePhoto(null)
     setPhotoMissing(false)
     photoBrand.current = ""
-    setOwnerForm(EMPTY_OWNER_FIELDS)
+    setOwnerForm(initialOwner?.fields ?? EMPTY_OWNER_FIELDS)
     setOwnerOriginal(null)
     setOwnerDupes([])
     ownerPrefillFor.current = ""
-    createdOwner.current = null
+    createdOwner.current = ownerClaim(initialOwner)
     hydratedFor.current = ""
     vinResolve.reset()
     onChange({ customerId: "", vehicleId: "" })
