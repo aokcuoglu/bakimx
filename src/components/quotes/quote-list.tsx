@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { QuoteStatusBadge } from "@/components/quotes/quote-status-badge"
-import { PlateBadge } from "@/components/shared/status-badge"
+import { Plate } from "@/components/shared/plate"
 import { ActionsMenu, MobileActionsMenu } from "@/components/shared/actions-menu"
 import { formatTRY, customerDisplayName } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -107,7 +107,7 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                     {quote.vehicle ? (
                       <div className="flex flex-col gap-1.5">
                         <Link href={`/vehicles/${quote.vehicle.id}`}>
-                          <PlateBadge plate={quote.vehicle.plate} />
+                          <Plate plate={quote.vehicle.plate} />
                         </Link>
                         <span className="text-xs text-muted-foreground">{quote.vehicle.brand} {quote.vehicle.model}</span>
                       </div>
@@ -162,7 +162,7 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                   </Link>
                   {quote.vehicle && (
                     <Link href={`/vehicles/${quote.vehicle.id}`}>
-                      <PlateBadge plate={quote.vehicle.plate} />
+                      <Plate plate={quote.vehicle.plate} />
                     </Link>
                   )}
                 </div>

@@ -26,7 +26,7 @@ import {
   ExternalLink,
   Share2,
 } from "lucide-react"
-import { PlateBadge } from "@/components/shared/plate-badge"
+import { Plate } from "@/components/shared/plate"
 import { PassportQRCode } from "@/components/vehicles/passport-qr-code"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
@@ -262,7 +262,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <PlateBadge plate={vehicle.plate} className="h-8 min-w-[6rem] text-sm" />
+                <Plate plate={vehicle.plate} size="lg" />
                 <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
                   {vehicle.brand} {vehicle.model}
                 </h2>
