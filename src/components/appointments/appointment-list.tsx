@@ -8,6 +8,7 @@ import { REMINDER_STATUS } from "@/lib/constants"
 import { customerDisplayName } from "@/lib/format"
 import { formatDateTime } from "@/lib/utils-client"
 import { cn } from "@/lib/utils"
+import { newIntakeHref } from "@/lib/intake/entry-links"
 
 type AppointmentRow = {
   id: string
@@ -174,7 +175,7 @@ export function AppointmentList({
                     <div className="flex items-center justify-end">
                       <ActionsMenu
                         viewHref={`/appointments/${a.id}`}
-                        workOrderHref={a.vehicle ? `/orders/new?vehicleId=${a.vehicle.id}&customerId=${a.customer.id}` : `/orders/new?customerId=${a.customer.id}`}
+                        workOrderHref={a.vehicle ? newIntakeHref({ vehicleId: a.vehicle.id, customerId: a.customer.id }) : newIntakeHref({ customerId: a.customer.id })}
                       />
                     </div>
                   </td>
@@ -226,7 +227,7 @@ export function AppointmentList({
               </div>
               <MobileActionsMenu
                 viewHref={`/appointments/${a.id}`}
-                workOrderHref={a.vehicle ? `/orders/new?vehicleId=${a.vehicle.id}&customerId=${a.customer.id}` : `/orders/new?customerId=${a.customer.id}`}
+                workOrderHref={a.vehicle ? newIntakeHref({ vehicleId: a.vehicle.id, customerId: a.customer.id }) : newIntakeHref({ customerId: a.customer.id })}
               />
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">

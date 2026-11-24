@@ -11,9 +11,10 @@ import { Plate, type PlateSize } from "./plate"
  */
 const render = (props: { plate: string; size?: PlateSize }) => renderToStaticMarkup(createElement(Plate, props))
 
-test("TR plakası bugünkü gibi: ülke metni yok", () => {
+test("TR plakasının bandında da TR yazar; ekran okuyucuya ek metin yok (#834)", () => {
   const html = render({ plate: "34MHP923" })
   expect(html).toContain('data-plate-country="TR"')
+  expect(html).toMatch(/aria-hidden="true"[^>]*>TR</)
   expect(html).toContain("34 MHP 923")
   expect(html).not.toContain("plakası")
   expect(html).not.toContain("data-size")

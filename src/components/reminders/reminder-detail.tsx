@@ -33,6 +33,7 @@ import {
   cancelReminderAction,
   createAppointmentFromReminderAction,
 } from "@/app/(app)/reminders/actions"
+import { newIntakeHref } from "@/lib/intake/entry-links"
 
 type SafeReminder = {
   id: string
@@ -252,7 +253,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               </Button>
             ) : null}
             <Button variant="secondary" size="compact" asChild>
-              <Link href={`/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}>
+              <Link href={newIntakeHref({ customerId: reminder.customer.id, vehicleId: reminder.vehicle.id })}>
                 <Wrench className="size-3.5" />
                 Araç Kabul Oluştur
               </Link>
@@ -460,7 +461,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
 
           <div className="flex flex-col gap-2">
             {isActive ? (
-              <Link href={`/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}>
+              <Link href={newIntakeHref({ customerId: reminder.customer.id, vehicleId: reminder.vehicle.id })}>
                 <Button variant="outline" className="w-full gap-2">
                   <Wrench className="size-4" />
                   Araç Kabul Oluştur
