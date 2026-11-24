@@ -6,9 +6,9 @@ for (const width of [390, 1440]) {
   test(`order summary editors open in dialogs at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.goto(`/api/auth/dev-login?redirect=/orders/${orderId}`)
-    await page.locator('[data-slot="card-title"]').filter({ hasText: "İş Emri Bilgileri" })
-      .waitFor({ timeout: 10_000 }).catch(() => {})
-    test.skip(await page.locator('[data-slot="card-title"]').filter({ hasText: "İş Emri Bilgileri" }).count() === 0,
+    const orderInfo = page.getByRole("region", { name: "Araç Kabul Bilgileri" })
+    await orderInfo.waitFor({ timeout: 10_000 }).catch(() => {})
+    test.skip(await orderInfo.count() === 0,
       "The reference order is not present in this database")
 
     await page.getByRole("button", { name: "Fatura bilgilerini düzenle" }).click()
@@ -17,7 +17,6 @@ for (const width of [390, 1440]) {
     await invoice.getByRole("button", { name: "İptal" }).click()
     await expect(invoice).toBeHidden()
 
-    const orderInfo = page.locator('[data-slot="card"]').filter({ has: page.locator('[data-slot="card-title"]', { hasText: "İş Emri Bilgileri" }) })
     await expect(orderInfo.getByRole("combobox", { name: "Durum" })).toBeVisible()
     await expect(orderInfo.getByRole("combobox", { name: "Servise geliş nedeni" })).toBeVisible()
     await orderInfo.getByRole("combobox", { name: "Durum" }).click()
