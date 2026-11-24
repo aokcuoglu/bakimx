@@ -28,10 +28,8 @@ export default async function AgingReportPage() {
   const totalAging = aging.reduce((sum, b) => sum + b.totalAmount, 0)
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Yaşlandırma Raporu">
+    <AppShell workshopName={workshop?.name}>
       <div className="space-y-5 sm:space-y-6 max-w-full">
-        <p className="text-sm text-muted-foreground">Müşteri alacaklarının vade gruplarına göre dağılımı</p>
-
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="rounded-lg border border-border bg-card p-3.5">
             <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Toplam Alacak</p>
