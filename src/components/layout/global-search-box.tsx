@@ -257,7 +257,7 @@ export function GlobalSearch({
                       <span className="block truncate text-sm font-medium leading-5 tracking-[-0.005em] text-foreground">{item.label}</span>
                       {q && item.sublabel ? <span className="block truncate text-xs leading-4 text-muted-foreground">{item.sublabel}</span> : null}
                     </span>
-                    {locked && item.feature ? <span className="text-xs font-medium text-muted-foreground">{lockedFeatureLabels(item.feature).badge}</span> : null}
+                    {locked && item.feature ? <span className="text-xs font-medium text-muted-foreground">{lockedFeatureLabels(item.feature).label}</span> : null}
                   </Button>
                 )
               })}

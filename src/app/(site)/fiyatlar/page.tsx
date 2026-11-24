@@ -42,7 +42,7 @@ export default function FiyatlarPage() {
         <main className="bg-card pb-20">
           <div className="mx-auto max-w-5xl px-5 pb-8 pt-16 text-center sm:pt-24 lg:pt-28">
             <h1 className="text-4xl font-semibold tracking-[-0.015em] text-foreground sm:text-5xl lg:text-[56px] lg:leading-[60px] text-balance">
-              Tek paket, her şey dahil.
+              Tek paket, her zaman.
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-[26px] text-foreground sm:text-xl text-balance">
               Servis yönetimi için gereken her şey Servis Paketi&apos;nde.<br />

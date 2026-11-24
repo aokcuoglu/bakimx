@@ -122,7 +122,7 @@ export function CreateCenterDialog({
                         {option.title}
                         {locked && feature && (
                           <Badge variant="secondary" className="gap-1 text-[10px]">
-                            <LockKeyhole className="size-3" /> {lockedFeatureLabels(feature).badge}
+                            <LockKeyhole className="size-3" /> {lockedFeatureLabels(feature).label}
                           </Badge>
                         )}
                       </span>

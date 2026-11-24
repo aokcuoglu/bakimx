@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { FEATURE_CATALOG } from "@/lib/feature-catalog"
+import { FEATURE_CATALOG, lockedFeatureLabels } from "@/lib/feature-catalog"
 import { GATED_FEATURES, isAddonFeature } from "@/lib/plan"
 
 test("özellik kataloğunun türü plan kapısıyla aynı: ek özellik ↔ ADDON_FEATURES (#782)", () => {
@@ -20,4 +20,16 @@ test("kilit metinleri satıştan kalkan paket adlarını anmaz", () => {
 test("plaka okuma pakete dahil bir özellik olarak tanımlı", () => {
   expect(FEATURE_CATALOG.plateScan).toMatchObject({ name: "Plaka okuma", kind: "package" })
   expect(FEATURE_CATALOG.ocrIntake.kind).toBe("addon")
+})
+
+test("kilit rozetleri: ek özellik ekran okuyucuda tam adıyla, paket özelliği Servis Paketi'ne işaret eder", () => {
+  const addon = lockedFeatureLabels("ocrIntake")
+  expect(addon.badge + addon.badgeSrSuffix).toBe("Ek özellik")
+  expect(addon.label).toBe("Ek özellik")
+  expect(addon.description).toBe("Ek özellik")
+  const pkg = lockedFeatureLabels("appointments")
+  expect(pkg).toEqual({ badge: "Pakette", badgeSrSuffix: "", label: "Pakette", description: "Servis Paketi özelliği" })
+  // rbac ek özellik DEĞİL; açıklaması bugün çalışan rol bazlı yetkileri anlatır.
+  expect(FEATURE_CATALOG.rbac.kind).toBe("package")
+  expect(FEATURE_CATALOG.rbac.description).not.toContain("ürünleştiğinde")
 })

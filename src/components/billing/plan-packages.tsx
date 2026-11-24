@@ -66,7 +66,7 @@ function BillingPeriod({
         >
           {cycle === "monthly" ? "Aylık" : "Yıllık"}
           {cycle === "yearly" && (
-            <span className="rounded-md bg-primary/10 px-1 text-[11px] font-medium leading-4 text-primary-strong">-17%</span>
+            <span className="rounded-md bg-primary/10 px-1 text-[11px] font-medium leading-4 text-primary-strong">%17</span>
           )}
         </ToggleGroupItem>
       ))}
@@ -461,8 +461,8 @@ export function PlanPackages({
 
       <Tabs defaultValue="included" className="lg:hidden">
         <TabsList className="grid h-auto w-full grid-cols-2 border-b bg-card">
-          <TabsTrigger value="included" className="min-h-7 px-2">Pakete dahil</TabsTrigger>
-          <TabsTrigger value="addons" className="min-h-7 px-2">Ek özellikler</TabsTrigger>
+          <TabsTrigger value="included">Pakete dahil</TabsTrigger>
+          <TabsTrigger value="addons">Ek özellikler</TabsTrigger>
         </TabsList>
         <TabsContent value="included" className="space-y-4 rounded-xl border bg-card p-4">
           {PLAN_COMPARISON.map((category) => (
@@ -484,7 +484,7 @@ export function PlanPackages({
             </section>
           ))}
         </TabsContent>
-        <TabsContent value="addons" className="rounded-xl border bg-card p-4">
+        <TabsContent value="addons">
           <AddonList headingId="mobil-ek-ozellikler" />
         </TabsContent>
       </Tabs>

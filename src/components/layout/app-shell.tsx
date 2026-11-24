@@ -20,6 +20,7 @@ import { actorCan, type Permission } from "@/lib/roles"
 import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
 import type { GatedFeature } from "@/lib/plan"
 import { lockedFeatureLabels } from "@/lib/feature-catalog"
+import { LockedBadgeText } from "@/components/billing/locked-badge-text"
 import type { SidebarPlanStatus } from "@/lib/billing/sidebar-plan-status"
 import type { UserRole } from "@prisma/client"
 import {
@@ -662,7 +663,7 @@ function NavMenuItem({
         <SidebarMenuButton
           asChild
           isActive={isActive}
-          tooltip={isLocked && item.feature ? `${item.label} · ${lockedFeatureLabels(item.feature).tooltip}` : item.label}
+          tooltip={isLocked && item.feature ? `${item.label} · ${lockedFeatureLabels(item.feature).description}` : item.label}
           className={cn(APP_NAV_TEXT, isSoon && !isActive && "opacity-60")}
         >
           <Link href={item.href} {...(NAV_TOUR_ATTR[item.href] ? { "data-tour": NAV_TOUR_ATTR[item.href] } : {})}>
@@ -672,7 +673,7 @@ function NavMenuItem({
               <>
                 <LockKeyhole className="size-3.5 shrink-0" />
                 <Badge variant="secondary" className="h-4 px-1.5 text-[9px] group-data-[collapsible=icon]:hidden">
-                  {item.feature && lockedFeatureLabels(item.feature).badge}
+                  {item.feature && <LockedBadgeText feature={item.feature} />}
                 </Badge>
               </>
             )}
@@ -687,7 +688,7 @@ function NavMenuItem({
       <SidebarMenuButton
         onClick={() => setExpanded(!expanded)}
         isActive={isActive}
-        tooltip={isLocked && item.feature ? `${item.label} · ${lockedFeatureLabels(item.feature).tooltip}` : item.label}
+        tooltip={isLocked && item.feature ? `${item.label} · ${lockedFeatureLabels(item.feature).description}` : item.label}
         className={cn(APP_NAV_TEXT, isSoon && !isActive && "opacity-60")}
       >
         <Icon className="size-4" />
@@ -695,7 +696,7 @@ function NavMenuItem({
         {isLocked && <LockKeyhole className="size-3.5 shrink-0" />}
         {isLocked && (
           <Badge variant="secondary" className="h-4 px-1.5 text-[9px] group-data-[collapsible=icon]:hidden">
-            {item.feature && lockedFeatureLabels(item.feature).badge}
+            {item.feature && <LockedBadgeText feature={item.feature} />}
           </Badge>
         )}
         {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}

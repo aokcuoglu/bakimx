@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar"
 import type { GatedFeature } from "@/lib/plan"
 import { lockedFeatureLabels } from "@/lib/feature-catalog"
+import { LockedBadgeText } from "@/components/billing/locked-badge-text"
 import {
   ACCOUNT_SETTINGS_ITEMS,
   SETTINGS_NAV_GROUPS,
@@ -116,7 +117,7 @@ function SettingsNavLink({
       <SidebarMenuButton
         asChild
         isActive={isActive}
-        tooltip={isLocked && item.feature ? `${item.label} · ${lockedFeatureLabels(item.feature).tooltip}` : item.label}
+        tooltip={isLocked && item.feature ? `${item.label} · ${lockedFeatureLabels(item.feature).description}` : item.label}
         className="h-7 gap-1.5 rounded-[9px] px-2 py-0 text-sm font-medium leading-5 tracking-[-0.005em]"
       >
         <Link href={item.href} onClick={onNavigate}>
@@ -126,7 +127,7 @@ function SettingsNavLink({
             <>
               <LockKeyhole className="size-3.5 shrink-0" aria-hidden />
               <Badge variant="secondary" className="h-4 px-1.5 text-[9px] group-data-[collapsible=icon]:hidden">
-                {item.feature && lockedFeatureLabels(item.feature).badge}
+                {item.feature && <LockedBadgeText feature={item.feature} />}
               </Badge>
             </>
           ) : null}

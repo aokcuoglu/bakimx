@@ -184,18 +184,28 @@ export const FEATURE_CATALOG: Record<GatedFeature, FeatureDefinition> = {
     ...PRO_DEFAULT,
     name: "Gelişmiş yetkilendirme",
     title: "Erişimleri ayrıntılı rollerle yönetin",
-    description: "Gelişmiş yetkilendirme ürünleştiğinde Servis Paketi'nde sunulacaktır.",
+    description: "Yönetici, servis danışmanı ve teknisyen kendi rolünün yetkileriyle çalışır; rol bazlı yetkilendirme Servis Paketi'ne dahildir.",
     countLabel: "ekip kaydınız korunuyor",
   },
 }
 
+export type LockedFeatureLabels = {
+  /** Dar rozet (kenar çubuğu): "Ek" + ekran okuyucuya `badgeSrSuffix`. */
+  badge: string
+  badgeSrSuffix: string
+  /** Geniş yüzeylerde (arama, oluşturma merkezi) tam rozet metni. */
+  label: string
+  /** İpucu eki ve kilit ikonunun erişilebilir adı. */
+  description: string
+}
+
 /**
- * Kilitli gezinme öğesinin kısa rozeti ve ipucu eki (#782). Ek özellik
- * pakette yoktur ("EK"); pakete dahil bir özellik yalnız eski (Lite/Başlangıç)
- * satırında kilitli görünür ve çıkışı Servis Paketi'dir.
+ * Kilitli özelliğin rozet ve etiket metinleri (#782). Ek özellik pakette
+ * yoktur; pakete dahil bir özellik yalnız eski (Lite/Başlangıç) satırında
+ * kilitli görünür ve çıkışı Servis Paketi'dir.
  */
-export function lockedFeatureLabels(feature: GatedFeature): { badge: string; tooltip: string } {
+export function lockedFeatureLabels(feature: GatedFeature): LockedFeatureLabels {
   return FEATURE_CATALOG[feature].kind === "addon"
-    ? { badge: "EK", tooltip: "Ek özellik" }
-    : { badge: "PAKET", tooltip: "Servis Paketi" }
+    ? { badge: "Ek", badgeSrSuffix: " özellik", label: "Ek özellik", description: "Ek özellik" }
+    : { badge: "Pakette", badgeSrSuffix: "", label: "Pakette", description: "Servis Paketi özelliği" }
 }

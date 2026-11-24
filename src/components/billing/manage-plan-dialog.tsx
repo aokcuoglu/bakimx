@@ -134,7 +134,7 @@ export function ManagePlanDialog({
             Paketi yönet
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Mevcut plan, faturalama dönemi, kullanıcı sayısı ve ödeme bilgisi.
+            Mevcut paket, faturalama dönemi, kullanıcı sayısı ve ödeme bilgisi.
           </DialogDescription>
           <DialogClose asChild>
             <Button type="button" variant="ghost" size="icon-sm" className="absolute right-3 top-3 text-muted-foreground">
@@ -146,7 +146,7 @@ export function ManagePlanDialog({
 
         <div className="flex min-h-16 items-center justify-between gap-3 border-b px-4 py-3">
           <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">Mevcut plan</p>
+            <p className="text-xs text-muted-foreground">Mevcut paket</p>
             <p className="mt-0.5 text-lg font-semibold tracking-tight">{planTier ? pkg.name : planName}</p>
           </div>
         </div>

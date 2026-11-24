@@ -50,7 +50,7 @@ test("owner renews the single package from the manage dialog; staff can only vie
     await page.getByRole("button", { name: "Paketi yönet" }).click()
     const manage = page.getByRole("dialog", { name: "Paketi yönet" })
     await expect(manage).toBeVisible()
-    await expect(manage.getByText("Mevcut plan")).toBeVisible()
+    await expect(manage.getByText("Mevcut paket", { exact: true })).toBeVisible()
     await expect(manage.getByRole("button", { name: "Değiştir" })).toHaveCount(0)
     await expect(manage.getByRole("button", { name: "Onayla" })).toBeDisabled()
     await expect(manage.getByRole("link", { name: "Ek kullanıcı için iletişim" })).toHaveAttribute("href", /wa\.me/)

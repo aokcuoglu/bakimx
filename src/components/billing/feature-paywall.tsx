@@ -28,7 +28,7 @@ export function FeaturePaywall({
               <LockKeyhole className="size-7" />
             </div>
             <Badge variant="secondary" className="mb-2">
-              <Sparkles className="size-3" /> {addon ? "Ek özellik" : "Pakete dahil"}
+              <Sparkles className="size-3" /> {addon ? "Ek özellik" : "Servis Paketi özelliği"}
             </Badge>
             <CardTitle className="max-w-2xl text-2xl font-bold tracking-tight sm:text-3xl">
               {definition.title}
