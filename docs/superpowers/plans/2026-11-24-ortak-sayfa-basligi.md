@@ -81,7 +81,7 @@ Issue #823.
 
 ---
 
-### Görev 1: Rota kaydı ve çözücü
+### Task 1: Rota kaydı ve çözücü
 
 **Files:**
 - Create: `src/lib/navigation/app-nav.ts`
@@ -269,7 +269,7 @@ Expected: 9 pass, typecheck temiz.
 
 ---
 
-### Görev 2: `PageHeaderView`, `PageFrame` ve breadcrumb primitive'i
+### Task 2: `PageHeaderView`, `PageFrame` ve breadcrumb primitive'i
 
 **Files:**
 - Create (shadcn CLI): `src/components/ui/breadcrumb.tsx`
@@ -355,7 +355,7 @@ Expected: PASS.
 
 ---
 
-### Görev 3: Kabuğu bağla — `AppShell`, yükleme ekranı, üst bar
+### Task 3: Kabuğu bağla — `AppShell`, yükleme ekranı, üst bar
 
 **Files:**
 - Modify: `src/app/(app)/layout.tsx` (`userIdentity`'ye `teamPermissions: user.teamPermissions`)
@@ -425,7 +425,7 @@ Expected: spinner dönerken breadcrumb `Servis › Müşteriler`, başlık
 
 ---
 
-### Görev 4: Servis sayfalarını taşı
+### Task 4: Servis sayfalarını taşı
 
 **Files:**
 - Modify: `src/app/(app)/dashboard/page.tsx`,
@@ -487,7 +487,7 @@ Expected:
 
 ---
 
-### Görev 5: Depo & Finans, Analiz ve İletişim sayfalarını taşı
+### Task 5: Depo & Finans, Analiz ve İletişim sayfalarını taşı
 
 **Files:**
 - Modify: `src/app/(app)/parts/page.tsx` (iki `AppShell` dalı),
@@ -528,7 +528,7 @@ Expected: PASS. Kapı 19 yolun hepsinde yeşil.
 
 ---
 
-### Görev 6: Doğrulama, belge ve tam kapı
+### Task 6: Doğrulama, belge ve tam kapı
 
 **Files:**
 - Modify: `AGENTS.md` (UI Component Rules altına tek madde)
