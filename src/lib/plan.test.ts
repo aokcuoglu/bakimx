@@ -399,6 +399,6 @@ test("eski satırda kapalı paket özelliği 'paketinizde bulunmuyor' der", () =
 // --- VIN quota tests ---------------------------------------------------------
 
 test("şaseden parça ek özellik olduğu için Servis Paketi'nin VIN kotası 0", () => {
-  const quotas: Record<PlanTier, number> = { lite: 0, starter: 1_000, pro: 0, premium: 15_000 }
+  const quotas: Record<PlanTier, number> = { lite: 0, starter: 0, pro: 0, premium: 15_000 }
   expect(VIN_LOOKUP_QUOTA).toEqual(quotas)
 })

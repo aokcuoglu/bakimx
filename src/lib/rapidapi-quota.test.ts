@@ -91,14 +91,14 @@ test("eşzamanlı rezervasyonlar tenant aylık limitini aşamaz", async () => {
 test("Lite ek kotasız rezervasyonu mevcut quota_exceeded sözleşmesini korur", async () => {
   const db = new FakeQuotaDatabase(NOW)
   const context: WorkshopQuotaContext = { workshopId: "w-lite", tier: "lite", extraVinQuota: 0 }
-  expect(reserveWorkshopQuota(context, "vin", db, NOW)).rejects.toMatchObject({ code: "quota_exceeded" })
+  await expect(reserveWorkshopQuota(context, "vin", db, NOW)).rejects.toMatchObject({ code: "quota_exceeded" })
   expect(db.rows).toHaveLength(0)
 })
 
 test("Servis Paketi'nde şaseden parça kotası yok — ek özellik metniyle reddedilir (#782)", async () => {
   const db = new FakeQuotaDatabase(NOW)
   const context: WorkshopQuotaContext = { workshopId: "w-pro", tier: "pro", extraVinQuota: 0 }
-  expect(reserveWorkshopQuota(context, "vin", db, NOW)).rejects.toMatchObject({ code: "quota_exceeded", cap: 0 })
+  await expect(reserveWorkshopQuota(context, "vin", db, NOW)).rejects.toMatchObject({ code: "quota_exceeded", cap: 0 })
   expect(db.rows).toHaveLength(0)
   expect(new WorkshopQuotaExceededError(0).message).toBe(ADDON_LOCKED_MESSAGE)
   expect(new WorkshopQuotaExceededError(100).message).toContain("Aylık katalog sorgu limitiniz doldu")

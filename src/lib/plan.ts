@@ -103,7 +103,8 @@ export const PLAN_SEATS: Record<PlanTier, number> = {
  */
 export const VIN_LOOKUP_QUOTA: Record<PlanTier, number> = {
   lite: 0,
-  starter: 1_000,
+  // Eski Başlangıç'ta vinLookup/partsCatalog kapalı (ek özellik) — kota da yok.
+  starter: 0,
   pro: 0,
   premium: 15_000,
 }
