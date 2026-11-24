@@ -5,9 +5,10 @@ import { paymentPillTone } from "@/lib/orders/payment-pill"
 import { cn } from "@/lib/utils"
 import detail from "./order-detail.module.css"
 
-// `surface.tsx` değil `surface.module.css` doğrudan içeri alınır: surface.tsx
-// KPI fontu için `next/font/google` yükler ve bu modülü (dolaylı olarak)
-// içeri alan birim testleri (ör. header-actions.test.ts) bun'da çökerdi.
+// Birim testlerinden erişilebilen modüller (header-actions.test.ts →
+// order-management-panel → burası) `surface.tsx`i içeri almamalı: KPI fontu için
+// `next/font/google` yükler ve bun'da çöker. work-order-detail.tsx surface.tsx'i
+// kendisi içeri alır; burada yalnız CSS modülü kullanılır.
 export { detail, surface }
 
 /**

@@ -74,7 +74,7 @@ export function DetailHeader({
   return (
     <header className={detail.header}>
       <nav aria-label="Sayfa yolu" className={detail.crumb}>
-        <Link href={backHref} className={detail.crumbLink}>
+        <Link href={backHref} className={cn(detail.crumbLink, detail.hit)}>
           {backLabel}
         </Link>
         <ChevronRight className="size-4 shrink-0" aria-hidden="true" />
@@ -142,7 +142,6 @@ export function DetailHeader({
       )}
       <div className={detail.sub}>
         <span className={detail.subText}>{subline}</span>
-        {pills ? <span className="px-1.5 text-muted-foreground/40">·</span> : null}
         {pills}
         {meta}
       </div>

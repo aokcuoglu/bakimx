@@ -2,6 +2,9 @@
 .stack { display:flex; flex-direction:column; gap:28px; }
 .header { display:grid; gap:12px; grid-template-areas:"crumb" "title" "sub" "actions"; min-width:0; }
 .crumb { grid-area:crumb; display:flex; align-items:center; gap:6px; min-width:0; font-size:15px; line-height:20px; color:var(--muted-foreground); }
+.hit { position:relative; }
+.hit::before { content:""; position:absolute; inset:-12px -6px; }
+@media (min-width:768px) { .hit::before { display:none; } }
 .crumbLink { color:var(--primary-strong); border-radius:4px; outline:none; white-space:nowrap; }
 .crumbLink:hover { text-decoration:underline; }
 .crumbLink:focus-visible { box-shadow:0 0 0 2px var(--ring); }
@@ -9,7 +12,7 @@
 .titleRow { grid-area:title; display:flex; flex-direction:column; align-items:flex-start; gap:10px; min-width:0; }
 .title { min-width:0; font-size:30px; font-weight:700; line-height:1.08; letter-spacing:-0.035em; color:var(--foreground); overflow-wrap:anywhere; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
 .sub { grid-area:sub; display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; min-width:0; font-size:17px; line-height:1.35; color:var(--muted-foreground); }
-.subText { min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.subText { min-width:0; max-width:100%; overflow-wrap:anywhere; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
 .actions { grid-area:actions; display:flex; align-items:center; gap:8px; min-width:0; }
 .primaryAction { flex:1; min-width:0; }
 @media (min-width:640px) {
@@ -17,16 +20,23 @@
   .titleRow { flex-direction:row; align-items:center; gap:14px; }
   .title { font-size:36px; }
   .primaryAction { flex:none; }
+  .subText { display:block; -webkit-line-clamp:unset; text-overflow:ellipsis; white-space:nowrap; }
 }
-.kv { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:48px; padding:10px 18px; font-size:15px; line-height:20px; }
+.kv { min-width:0; display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:48px; padding:10px 18px; font-size:15px; line-height:20px; }
 .kv + .kv { border-top:1px solid var(--dash-sep); }
 .kvLabel { flex:none; color:var(--muted-foreground); }
 .kvValue { min-width:0; text-align:right; font-weight:500; color:var(--foreground); overflow-wrap:anywhere; }
 .kvStack { flex-direction:column; align-items:stretch; gap:4px; }
 .kvStack .kvValue { text-align:left; font-weight:400; white-space:pre-wrap; }
+/* Panel genişliği görünüm alanına değil kenar çubuğu + kayıt sütununa bağlı;
+   bu yüzden iki sütuna KONTEYNER genişliğiyle geçilir. Eşik: sütun başına
+   18+18 dolgu + 12 aralık + ~150 etiket ("Servise Geliş Nedeni") + >=150 Select
+   ≈ 350px; iki sütun ≈ 700px. */
+.kvWrap { container-type:inline-size; }
 .kvCols { display:grid; }
+.kvCols > * { min-width:0; }
 .kvCols > * + * { border-top:1px solid var(--dash-sep); }
-@media (min-width:768px) {
+@container (min-width:700px) {
   .kvCols { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .kvCols > * + * { border-top:0; border-left:1px solid var(--dash-sep); }
 }
@@ -35,12 +45,11 @@
 .block + .block { border-top:1px solid var(--dash-sep); }
 .shell { border-radius:22px; background:var(--card); }
 .tabList { justify-content:flex-start; height:auto; gap:4px; border-bottom:1px solid var(--dash-sep); }
-.tab { height:44px; padding-inline:12px; border-radius:0; border-color:transparent; background:transparent; font-size:15px; }
+.tab { height:var(--control-h); padding-inline:12px; border-radius:0; border-color:transparent; background:transparent; font-size:15px; }
 .tab:hover { background:transparent; color:var(--foreground); }
 .tab[data-state="active"] { background:transparent; border-color:transparent; color:var(--primary-strong); }
-.tab[data-state="active"]::after { bottom:-1px; height:2px; background:var(--primary); opacity:1; }
+.tab[data-state="active"]::after { bottom:0; height:2px; background:var(--primary); opacity:1; }
 .tab:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
-@media (max-width:639px) { .tabList { margin-inline:-16px; padding-inline:16px; scroll-padding-inline:16px; } }
-@media (min-width:768px) { .tab { height:40px; } }
+@media (max-width:639px) { .tabList { width:auto; margin-inline:-16px; padding-inline:16px; scroll-padding-inline:16px; } }
 .page :global([data-slot="card"]) { border-radius:22px; box-shadow:none; --card-spacing:18px; }
 .page :global([data-slot="card-title"]) { font-size:17px; line-height:22px; font-weight:600; letter-spacing:-0.02em; }

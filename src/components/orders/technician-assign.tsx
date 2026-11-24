@@ -77,7 +77,7 @@ export function TechnicianAssign({
 
   const trigger = isMeta
     ? cn(
-        "inline-flex max-w-[12rem] items-center gap-1 min-w-0 text-sm text-muted-foreground transition-colors touch-manipulation disabled:opacity-60",
+        "relative inline-flex max-w-[12rem] items-center gap-1 min-w-0 text-sm before:absolute before:inset-x-0 before:-inset-y-2 md:before:hidden text-muted-foreground transition-colors touch-manipulation disabled:opacity-60",
         !locked && "hover:text-primary",
         // Noktalı alt çizgi "buraya dokunulabilir" demek; kilitli emirde
         // hiçbir şey yapılamadığı için vaat edilmemeli.

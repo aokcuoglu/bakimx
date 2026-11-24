@@ -168,6 +168,7 @@ export function OrderInfoCard({
   return (
     <>
       <DetailPanel title="Araç Kabul Bilgileri">
+        <div className={detail.kvWrap}>
         <div className={detail.kvCols}>
           {/* SOL: mevcut iş emri kimliği ve atama bilgileri */}
           <div>
@@ -236,7 +237,7 @@ export function OrderInfoCard({
             />
             <DetailRow label="Durum">
               <Select value={order.status} onValueChange={handleStatusSelect} disabled={changingStatus || statusOptions.length <= 1}>
-                <SelectTrigger className="w-[170px]" aria-label="Durum"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full max-w-[170px] min-w-0" aria-label="Durum"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {statusOptions.map((s) => (
                     <SelectItem key={s} value={s} disabled={(s === "delivered" && deliveryBlocked) || (s === "ready_for_delivery" && partsDecisionBlocked)}>
@@ -251,7 +252,7 @@ export function OrderInfoCard({
                 <span>{arrivalReasonLabel(order.arrivalReason)}</span>
               ) : (
                 <Select value={order.arrivalReason ?? ""} onValueChange={handleReasonSelect} disabled={changingReason}>
-                  <SelectTrigger className="w-[170px]" aria-label="Servise geliş nedeni"><SelectValue placeholder="Belirtilmedi" /></SelectTrigger>
+                  <SelectTrigger className="w-full max-w-[170px] min-w-0" aria-label="Servise geliş nedeni"><SelectValue placeholder="Belirtilmedi" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Belirtilmedi</SelectItem>
                     {ARRIVAL_REASON_ORDER.map((r) => <SelectItem key={r} value={r}>{ARRIVAL_REASONS[r].label}</SelectItem>)}
@@ -260,6 +261,7 @@ export function OrderInfoCard({
               )}
             </DetailRow>
           </div>
+        </div>
         </div>
       </DetailPanel>
 
