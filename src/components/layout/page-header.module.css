@@ -84,6 +84,8 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    /* Düğmesiz sayfada da satır düğme boyunda kalır: başlık sayfalar arası kaymaz. */
+    min-height: 44px;
   }
 
   .title {
