@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useTransition, type ChangeEvent, type FormEvent, type MouseEvent } from "react"
 import { useRouter } from "next/navigation"
+import { buildOrderFilterSearch, buildOrderLoadMoreSearch } from "@/lib/orders/list-search"
 
 /** Keep the toolbar mounted while the server applies the list filters. */
 export function useOrderListNavigation(searchQuery: string) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [isLoadingMore, startLoadMore] = useTransition()
   const rootRef = useRef<HTMLDivElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const submittedQuery = useRef<string | null>(null)
@@ -45,19 +47,20 @@ export function useOrderListNavigation(searchQuery: string) {
   function applyFilters(form: HTMLFormElement, replace: boolean) {
     cancelSearch()
     // Read the current DOM, including the latest select and table view values.
-    const params = new URLSearchParams(window.location.search)
     const data = new FormData(form)
-    for (const name of ["q", "status", "payment", "technician", "invoice"]) {
-      const value = String(data.get(name) ?? "").trim()
-      if (value) params.set(name, value)
-      else params.delete(name)
-    }
+    const params = buildOrderFilterSearch(new URLSearchParams(window.location.search), data)
     submittedQuery.current = String(data.get("q") ?? "").trim()
     const href = `/orders${params.size ? `?${params}` : ""}`
     startTransition(() => {
       if (replace) router.replace(href, { scroll: false })
       else router.push(href, { scroll: false })
     })
+  }
+
+  /** Listeyi örten yükleme katmanı açılmadan pencereyi büyütür; `view` korunur. */
+  function loadMore(nextLimit: number) {
+    const params = buildOrderLoadMoreSearch(new URLSearchParams(window.location.search), nextLimit)
+    startLoadMore(() => router.replace(`/orders?${params}`, { scroll: false }))
   }
 
   function onChange(event: ChangeEvent<HTMLDivElement>) {
@@ -88,5 +91,5 @@ export function useOrderListNavigation(searchQuery: string) {
     startTransition(() => router.push(`${url.pathname}${url.search}`, { scroll: false }))
   }
 
-  return { rootRef, isPending, onChange, onSubmit, onClick }
+  return { rootRef, isPending, isLoadingMore, loadMore, onChange, onSubmit, onClick }
 }
