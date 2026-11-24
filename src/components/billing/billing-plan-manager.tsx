@@ -20,7 +20,7 @@ import { BillingUsagePanel } from "@/components/billing/billing-usage-panel"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { CancelPendingOrderButton } from "@/components/billing/pending-order-actions"
 import { createBillingOrder } from "@/app/(app)/billing/actions"
-import { DOWNGRADE_BLOCKED_MESSAGE, isPlanDowngrade } from "@/lib/billing/plan-change"
+import { DOWNGRADE_BLOCKED_MESSAGE, isDowngradeBlocked } from "@/lib/billing/plan-change"
 import { formatMinor, getPlanPriceMinor } from "@/lib/billing/pricing"
 import { getDiscountedPlanPriceMinor } from "@/lib/billing/referral-discount"
 import type { HavaleInfo } from "@/lib/billing/provider"
@@ -119,6 +119,10 @@ export function BillingPlanManager({
   const excessSeats = Math.max(0, seatUsage.used - getSeatLimit(tier, extraSeats))
   const periodLabel = cycle === "yearly" ? "yıllık" : "aylık"
 
+  // Sunucu kuralıyla aynı: engel yalnız ödenmiş dönem açıkken (createBillingOrder).
+  const downgradeBlocked = (targetTier: SalePlanTier) =>
+    isDowngradeBlocked({ subscriptionStatus: null, planTier: ownedTier, currentPeriodEnd, targetTier })
+
   function choosePlan(nextTier: SalePlanTier, nextCycle: Cycle) {
     setManageOpen(false)
     if (!open) {
@@ -127,9 +131,9 @@ export function BillingPlanManager({
     }
     form.setValue("tier", nextTier)
     form.setValue("cycle", nextCycle)
-    // Satışta tek paket var; aktif "Paket + ek özellikler" dönemi içinde Servis
+    // Satışta tek paket var; açık "Paket + ek özellikler" dönemi içinde Servis
     // Paketi'ne geçiş düşüştür ve sunucu da reddeder — kullanıcı nedenini önceden görsün.
-    setError(isPlanDowngrade(ownedTier, nextTier) ? DOWNGRADE_BLOCKED_MESSAGE : "")
+    setError(downgradeBlocked(nextTier) ? DOWNGRADE_BLOCKED_MESSAGE : "")
     setOpen(true)
   }
 
@@ -151,7 +155,7 @@ export function BillingPlanManager({
 
   async function submit(values: CheckoutInAppValues) {
     if (loading || hasPendingOrder || !canPurchase) return
-    if (isPlanDowngrade(ownedTier, values.tier)) {
+    if (downgradeBlocked(values.tier)) {
       setError(DOWNGRADE_BLOCKED_MESSAGE)
       return
     }

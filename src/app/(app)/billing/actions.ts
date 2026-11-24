@@ -69,14 +69,17 @@ export async function createBillingOrder(input: {
     }
   }
 
-  // Aktif / açık dönemde alt pakete geçiş yok — iade olmadığı için dönem
+  // Açık (ödenmiş) dönemde alt pakete geçiş yok — iade olmadığı için dönem
   // ortası düşürme ödenmiş hakları boşa harcar. Yenileme ve yükseltme serbest.
+  // Dönemi bitmiş eski bir paket (ör. premium) Servis Paketi'ni alabilir (#782).
+  const now = new Date()
   if (
     isDowngradeBlocked({
       subscriptionStatus: workshop.subscriptionStatus,
       planTier: workshop.planTier,
       currentPeriodEnd: workshop.currentPeriodEnd,
       targetTier: tier,
+      now,
     })
   ) {
     return { ok: false, error: DOWNGRADE_BLOCKED_MESSAGE }
@@ -91,11 +94,11 @@ export async function createBillingOrder(input: {
     planTier: workshop.planTier,
     currentPeriodEnd: workshop.currentPeriodEnd,
     targetTier: tier,
+    now,
   })
 
   // Paket değişimleri mevcut davranışı koruyarak kullanılmayan dönem kredisini
   // uygular; tip alanı hakediş için gerçek yükseltme/düşürmeyi ayrıca ayırır.
-  const now = new Date()
   const referralDiscountBps = getReferralDiscountBps(workshop, now)
   const catalogAmountMinor = getPlanPriceMinor(tier, cycle)
   const discountedAmountMinor = getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps)
