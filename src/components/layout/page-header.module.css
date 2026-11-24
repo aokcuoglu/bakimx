@@ -1,0 +1,114 @@
+/*
+ * Ortak sayfa başlığı çerçevesi (#823). Ölçüler dashboard hero'sundan
+ * (surface.module.css) türetildi; orası ayrı bir dalda değişiyor, o yüzden
+ * kopyalanır, içe aktarılmaz.
+ */
+.frame {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.crumbs {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.title {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: var(--foreground);
+}
+
+.subline {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--muted-foreground);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.secondary > * {
+  flex: 1;
+}
+
+.cta {
+  height: 50px;
+  padding-inline: 28px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.primary {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .frame {
+    gap: 32px;
+  }
+
+  .row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .title {
+    font-size: 36px;
+  }
+
+  .subline {
+    font-size: 19px;
+  }
+
+  .actions {
+    flex-direction: row-reverse;
+    align-items: center;
+  }
+
+  .secondary > * {
+    flex: none;
+  }
+
+  .primary {
+    width: auto;
+  }
+
+  .cta {
+    height: 44px;
+    padding-inline: 22px;
+  }
+}

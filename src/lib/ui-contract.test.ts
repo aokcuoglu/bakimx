@@ -69,6 +69,8 @@ test("Button çağrıları eylem rengini açıkça seçiyor ve mavi default'u be
           // Pazarlama kiti hap düğmesi (#781): e-santral `.d-blue` birincil eylemi —
           // tüm ana sayfa CTA'ları bu tek bileşenden geçer, rengi kit CSS'i verir.
           "components/marketing/kit/pill-button.tsx",
+          // Ortak sayfa başlığı (#823): her sidebar sayfasında birincil eylem mavi hap.
+          "components/layout/page-header.tsx",
         ].includes(relative(SRC, file)) && variant?.initializer?.getText(parsed) === '"default"'
         if (!variant || (/["']default["']/.test(variant.initializer?.getText(parsed) ?? "") && !attioPrimary)) {
           const line = parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1
