@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 export function useOrderListNavigation(searchQuery: string) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [isLoadingMore, startLoadMore] = useTransition()
   const rootRef = useRef<HTMLDivElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const submittedQuery = useRef<string | null>(null)
@@ -47,17 +48,26 @@ export function useOrderListNavigation(searchQuery: string) {
     // Read the current DOM, including the latest select and table view values.
     const params = new URLSearchParams(window.location.search)
     const data = new FormData(form)
-    for (const name of ["q", "status", "payment", "technician", "invoice"]) {
+    for (const name of ["q", "status", "payment", "technician", "invoice", "delivery"]) {
       const value = String(data.get(name) ?? "").trim()
       if (value) params.set(name, value)
       else params.delete(name)
     }
+    // Filtre değişince pencere ilk sayfaya döner.
+    params.delete("limit")
     submittedQuery.current = String(data.get("q") ?? "").trim()
     const href = `/orders${params.size ? `?${params}` : ""}`
     startTransition(() => {
       if (replace) router.replace(href, { scroll: false })
       else router.push(href, { scroll: false })
     })
+  }
+
+  /** Listeyi örten yükleme katmanı açılmadan pencereyi büyütür; `view` korunur. */
+  function loadMore(nextLimit: number) {
+    const params = new URLSearchParams(window.location.search)
+    params.set("limit", String(nextLimit))
+    startLoadMore(() => router.replace(`/orders?${params}`, { scroll: false }))
   }
 
   function onChange(event: ChangeEvent<HTMLDivElement>) {
@@ -88,5 +98,5 @@ export function useOrderListNavigation(searchQuery: string) {
     startTransition(() => router.push(`${url.pathname}${url.search}`, { scroll: false }))
   }
 
-  return { rootRef, isPending, onChange, onSubmit, onClick }
+  return { rootRef, isPending, isLoadingMore, loadMore, onChange, onSubmit, onClick }
 }

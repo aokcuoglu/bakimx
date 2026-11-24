@@ -39,34 +39,9 @@ import type { OrderStatus } from "@prisma/client"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { useOrderListNavigation } from "@/components/orders/use-order-list-navigation"
 import { ACTIVE_ORDER_FILTER } from "@/lib/orders/status-filter"
+import type { OrderListRow } from "@/lib/orders/list-query"
 
-type OrderRow = {
-  id: string
-  workOrderNo: string
-  status: string
-  paymentStatus: string
-  technicianName: string | null
-  assignedTechnicianId: string | null
-  assignedTechnicianName: string | null
-  estimatedDeliveryAt: string | null
-  createdAt: string
-  grandTotal: number
-  itemsCount: number
-  hasPrice: boolean
-  invoiceNo: string | null
-  /** Fatura beklenen statüde numara girilmemiş — sunucuda hesaplanır. */
-  invoiceMissing: boolean
-  vehicle: { plate: string; brand: string; model: string; id?: string }
-  customer: {
-    id?: string
-    firstName: string | null
-    lastName: string | null
-    fullName: string | null
-    companyName: string | null
-    type: string
-    phone: string
-  }
-}
+type OrderRow = OrderListRow
 
 type KPIs = {
   active: number
@@ -223,6 +198,9 @@ export function OrderList({
   activeDelivery = "",
   technicians = [],
   searchQuery = "",
+  totalCount,
+  nextLimit,
+  maxRows,
   toolbar,
   emptyState,
 }: {
@@ -235,10 +213,15 @@ export function OrderList({
   activeDelivery?: string
   technicians?: AssignableTechnician[]
   searchQuery?: string
+  /** Filtrelere uyan toplam kayıt (yüklenen `orders` bunun en yeni dilimi olabilir). */
+  totalCount: number
+  /** Bir sonraki `?limit=` değeri; yüklenecek kayıt yok ya da tavandaysa null. */
+  nextLimit: number | null
+  maxRows: number
   toolbar?: ReactNode
   emptyState?: ReactNode
 }) {
-  const { rootRef, isPending, onChange, onSubmit, onClick } = useOrderListNavigation(searchQuery)
+  const { rootRef, isPending, isLoadingMore, loadMore, onChange, onSubmit, onClick } = useOrderListNavigation(searchQuery)
   const router = useRouter()
   const kpiConfigs: KpiConfig[] = [
     { key: "active", label: "Aktif", count: kpis.active, filterValue: ACTIVE_ORDER_FILTER, icon: Wrench, accent: "info" },
@@ -430,6 +413,25 @@ export function OrderList({
   })
 
   const visibleOrders = table.getRowModel().rows.map((row) => row.original)
+  const isTruncated = totalCount > orders.length
+  const hasLocalView = sorting.length > 0 || columnFilters.length > 0
+  const footer =
+    nextLimit !== null ? (
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full rounded-full sm:w-auto"
+        disabled={isLoadingMore}
+        aria-busy={isLoadingMore}
+        onClick={() => loadMore(nextLimit)}
+      >
+        {isLoadingMore ? "Yükleniyor…" : "Daha fazla yükle"}
+      </Button>
+    ) : isTruncated ? (
+      <p className="text-sm text-muted-foreground">
+        En yeni {maxRows} kayıt gösteriliyor. Daha eskileri için arama veya filtre kullanın.
+      </p>
+    ) : null
 
   return (
     <div ref={rootRef} className="space-y-5 sm:space-y-6" onChange={onChange} onSubmit={onSubmit} onClickCapture={onClick}>
@@ -470,9 +472,18 @@ export function OrderList({
           </div>
         )}
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
-          <p className="text-[15px] font-semibold text-foreground" aria-live="polite">
-            {visibleOrders.length} <span className="font-normal text-muted-foreground">araç kabulü</span>
-          </p>
+          <div className="min-w-0">
+            <p className="text-[15px] font-semibold text-foreground" aria-live="polite">
+              {visibleOrders.length}
+              {isTruncated && <span className="font-normal text-muted-foreground"> / {totalCount.toLocaleString("tr-TR")}</span>}{" "}
+              <span className="font-normal text-muted-foreground">araç kabulü</span>
+            </p>
+            {isTruncated && hasLocalView && (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Sıralama ve kolon araması yalnız yüklenen {orders.length} kayıtta geçerli.
+              </p>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             {view && (
               <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => {
@@ -564,7 +575,9 @@ export function OrderList({
               ) : (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                    Bu filtrelere uyan araç kabulü yok
+                    {isTruncated
+                      ? "Yüklenen kayıtlarda eşleşme yok — tüm kayıtlarda aramak için üstteki aramayı kullanın"
+                      : "Bu filtrelere uyan araç kabulü yok"}
                   </TableCell>
                 </TableRow>
               )}
@@ -624,6 +637,7 @@ export function OrderList({
             )
           })}
         </ul>}
+        {orders.length > 0 && footer && <div className="border-t border-border px-4 py-3">{footer}</div>}
       </div>
     </div>
   )
