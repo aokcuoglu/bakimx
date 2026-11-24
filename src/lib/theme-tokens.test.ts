@@ -431,7 +431,6 @@ const OPACITY_EXCEPTIONS: OpacityException[] = [
   // --- Ayraçlar
   { file: "components/intake/public-share-page.tsx", className: "text-muted-foreground/40", decorative: true, reason: SEPARATOR_DOT },
   { file: "components/vehicles/public-vehicle-passport.tsx", className: "text-muted-foreground/40", decorative: true, reason: SEPARATOR_DOT },
-  { file: "components/orders/detail-header.tsx", className: "text-muted-foreground/40", decorative: true, reason: SEPARATOR_DOT },
   { file: "components/orders/parts-labor-grid.tsx", className: "text-muted-foreground/40", decorative: true, reason: `${SEPARATOR_DOT} Ayrıca boş-durum ikonları.` },
 
   // --- Görsel yer tutucuları

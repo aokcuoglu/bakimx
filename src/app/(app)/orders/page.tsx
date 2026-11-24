@@ -8,13 +8,20 @@ import { Input } from "@/components/ui/input"
 import { OrderList } from "@/components/orders/order-list"
 import { FilterSelect } from "@/components/shared/filter-select"
 import { OrderFiltersDisclosure } from "@/components/orders/order-filters-disclosure"
-import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { NEW_INTAKE_HREF } from "@/lib/intake/entry-links"
-import { calculateOrderTotals } from "@/lib/totals"
-import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
+import {
+  buildOrderListWhere,
+  buildOrderSearchWhere,
+  nextOrderListLimit,
+  ORDER_LIST_MAX_ROWS,
+  ORDER_LIST_ORDER_BY,
+  ORDER_LIST_SELECT,
+  resolveOrderListLimit,
+  toOrderListRow,
+} from "@/lib/orders/list-query"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { resolveTechnicianFilter, UNASSIGNED_TECHNICIAN } from "@/lib/orders/technician-filter"
-import { INVOICE_WITH, INVOICE_WITHOUT, isInvoiceMissing, resolveInvoiceFilter } from "@/lib/orders/invoice-filter"
+import { INVOICE_WITH, INVOICE_WITHOUT, resolveInvoiceFilter } from "@/lib/orders/invoice-filter"
 import { ACTIVE_ORDER_FILTER, ACTIVE_ORDER_STATUSES, IN_SERVICE_ORDER_FILTER, resolveOrderStatusFilter } from "@/lib/orders/status-filter"
 import { DELIVERY_OVERDUE, DELIVERY_TODAY, resolveDeliveryFilter } from "@/lib/orders/delivery-filter"
 
@@ -30,6 +37,7 @@ export default async function OrdersPage({
     technician?: string
     invoice?: string
     delivery?: string
+    limit?: string
   }>
 }) {
   const params = await searchParams
@@ -42,6 +50,8 @@ export default async function OrdersPage({
   // Teslim tarihi filtresi: "?delivery=today|overdue" — Genel Bakış'taki
   // "Bugün teslim" / "Geciken teslim" kartları buraya gelir.
   const deliveryFilter = resolveDeliveryFilter(params.delivery)
+  // Büyüyen pencere: en yeni `limit` kayıt yüklenir (#803).
+  const limit = resolveOrderListLimit(params.limit)
 
   const { user, workshop } = await getAppData()
   // Usta filtresi, atölyenin kendi usta listesine karşı doğrulanır; client'tan
@@ -52,39 +62,23 @@ export default async function OrdersPage({
     technicians.map((t) => t.id)
   )
 
-  const [orders, statusGroups] = await Promise.all([
+  const where = buildOrderListWhere(user.workshopId, [
+    statusFilter.where,
+    payment ? { paymentStatus: payment as import("@prisma/client").PaymentStatus } : {},
+    technicianFilter.where,
+    invoiceFilter.where,
+    deliveryFilter.where,
+    buildOrderSearchWhere(q),
+  ])
+
+  const [orders, totalCount, statusGroups] = await Promise.all([
     prisma.serviceOrder.findMany({
-      // Filtre parçaları yayılmak yerine AND'le birleşir: birden çoğu aynı
-      // anahtarı kullanıyor (durum + teslim → `status`, fatura yok + arama →
-      // `OR`) ve yayınca sonraki öncekini sessizce ezerdi.
-      where: {
-        workshopId: user.workshopId,
-        AND: [
-          statusFilter.where,
-          payment ? { paymentStatus: payment as import("@prisma/client").PaymentStatus } : {},
-          technicianFilter.where,
-          invoiceFilter.where,
-          deliveryFilter.where,
-          q
-          ? {
-              OR: [
-                { workOrderNo: { contains: q, mode: "insensitive" as const } },
-                { intakeForm: { vehicle: { plate: { contains: q, mode: "insensitive" as const } } } },
-                { intakeForm: { vehicle: { customer: { firstName: { contains: q, mode: "insensitive" as const } } } } },
-                { intakeForm: { vehicle: { customer: { lastName: { contains: q, mode: "insensitive" as const } } } } },
-                { intakeForm: { vehicle: { customer: { phone: { contains: q } } } } },
-              ],
-            }
-          : {},
-        ],
-      },
-      include: {
-        intakeForm: { include: { customer: true, vehicle: { include: { customer: true } } } },
-        items: true,
-        assignedTechnician: { select: { id: true, fullName: true, role: true } },
-      },
-      orderBy: { createdAt: "desc" },
+      where,
+      select: ORDER_LIST_SELECT,
+      orderBy: ORDER_LIST_ORDER_BY,
+      take: limit,
     }),
+    prisma.serviceOrder.count({ where }),
     prisma.serviceOrder.groupBy({
       by: ["status"],
       where: { workshopId: user.workshopId },
@@ -104,50 +98,16 @@ export default async function OrdersPage({
     waitingApproval: statusCountMap.get("waiting_approval" as import("@prisma/client").OrderStatus) ?? 0,
   }
 
-  const serializedOrders = orders.map((o) => {
-    const currentCustomer = currentWorkOrderCustomer(o.intakeForm)
-    const totals = calculateOrderTotals(o.items, {
-      discountAmount: o.discountAmount,
-      taxRate: o.taxRate,
-    })
-    return {
-      id: o.id,
-      workOrderNo: formatWorkOrderNo(o),
-      status: o.status,
-      paymentStatus: o.paymentStatus,
-      technicianName: o.technicianName,
-      assignedTechnicianId: o.assignedTechnicianId,
-      assignedTechnicianName: o.assignedTechnician?.fullName || null,
-      estimatedDeliveryAt: o.estimatedDeliveryAt ? o.estimatedDeliveryAt.toISOString() : null,
-      createdAt: o.createdAt.toISOString(),
-      grandTotal: totals.grandTotal,
-      itemsCount: o.items.length,
-      hasPrice: totals.hasAnyPrice,
-      invoiceNo: o.invoiceNo,
-      invoiceMissing: isInvoiceMissing(o.status, o.invoiceNo),
-      vehicle: {
-        id: o.intakeForm.vehicle.id,
-        plate: o.intakeForm.vehicle.plate,
-        brand: o.intakeForm.vehicle.brand,
-        model: o.intakeForm.vehicle.model,
-      },
-      customer: {
-        id: currentCustomer.id,
-        firstName: currentCustomer.firstName,
-        lastName: currentCustomer.lastName,
-        fullName: currentCustomer.fullName,
-        companyName: currentCustomer.companyName,
-        type: currentCustomer.type,
-        phone: currentCustomer.phone,
-      },
-    }
-  })
+  const serializedOrders = orders.map(toOrderListRow)
 
   return (
     <AppShell workshopName={workshop?.name}>
       <div className="space-y-5 sm:space-y-6">
         <OrderList
           orders={serializedOrders}
+          totalCount={totalCount}
+          nextLimit={nextOrderListLimit(limit, totalCount)}
+          maxRows={ORDER_LIST_MAX_ROWS}
           kpis={kpis}
           activeStatus={status}
           activePayment={payment}

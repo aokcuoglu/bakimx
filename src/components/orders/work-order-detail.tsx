@@ -14,15 +14,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { DashOrderStatus, surface } from "@/components/dashboard/surface"
+import { DetailPanel, OrderPaymentPill, detail } from "@/components/orders/order-detail-surface"
 import { orderListReturnHref } from "@/lib/orders/list-state"
 import { DetailHeader, type DetailHeaderAction } from "@/components/orders/detail-header"
 import { OrderRecordRail } from "@/components/orders/order-record-rail"
 import {
-  Car,
-  User,
-  Phone,
-  Mail,
-  ClipboardList,
   Camera,
   AlertTriangle,
   Share2,
@@ -46,7 +43,6 @@ import {
   Plus,
   Wallet,
   History,
-  ArrowRight,
   Calculator,
   TriangleAlert,
   Images,
@@ -61,7 +57,6 @@ import {
   VEHICLE_PHOTO_TYPES,
   type PhotoPhaseKey,
 } from "@/lib/constants"
-import { formatDate } from "@/lib/utils-client"
 import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
 import { STANDARD_TAX_BPS } from "@/lib/orders/line-vat"
@@ -77,8 +72,7 @@ import { partitionIntakePhotos, photoPhaseForStatus } from "@/lib/photos/phase-m
 import { generateWhatsAppShareText, getWhatsAppSendUrl } from "@/lib/share/whatsapp"
 import { calculatePhotoCompletion } from "@/lib/intake/completeness"
 import { IntakeEvidenceSummary } from "@/components/intake/intake-evidence-summary"
-import { FuelGauge, FuelLevelPicker } from "@/components/intake/fuel-gauge"
-import { formatFuelLevel } from "@/lib/fuel-level"
+import { FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { OrderActivityLog } from "@/components/orders/order-activity-log"
 import { useOrderSync } from "@/hooks/use-order-sync"
 import type { OrderActivityEntry } from "@/lib/orders/activity"
@@ -220,7 +214,7 @@ function HandoverPerson({
 }) {
   return (
     <div className="min-w-0">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
+      <p className={detail.fieldLabel}>{label}</p>
       {name ? (
         <>
           <p className="text-sm text-foreground break-words">{name}</p>
@@ -823,14 +817,22 @@ export function WorkOrderDetail({
   }
 
   return (
-    <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
+    <div className={cn(surface.root, detail.page, "pb-24 lg:pb-6")}>
+      <div className={detail.top}>
       <DetailHeader
         plate={order.vehicle.plate}
-        vehicleLabel={`${order.vehicle.brand} ${order.vehicle.model}${order.vehicle.modelYear ? ` (${order.vehicle.modelYear})` : ""}`}
-        customerLabel={customerName}
+        title={`${order.vehicle.brand} ${order.vehicle.model}`}
+        subline={`${customerName}${order.vehicle.modelYear ? ` · ${order.vehicle.modelYear}` : ""}`}
+        backHref={orderListReturnHref(returnTo)}
+        pills={
+          <>
+            <DashOrderStatus status={order.status} />
+            {canCashbox && <OrderPaymentPill status={order.paymentStatus} />}
+          </>
+        }
         meta={
           /* Atanan usta bir *durum* değil, işin kime ait olduğu bilgisi —
-             bu yüzden müşteri satırının yanında, rozetlerle yarışmadan durur. */
+             bu yüzden müşteri satırının yanında, hapla yarışmadan durur. */
           canTeam ? (
             <TechnicianAssign
               orderId={order.id}
@@ -844,7 +846,6 @@ export function WorkOrderDetail({
         }
         actions={headerActions}
         loading={loading}
-        onBack={() => router.push(orderListReturnHref(returnTo))}
       />
 
       {error && (
@@ -898,7 +899,7 @@ export function WorkOrderDetail({
       )}
 
       {deliveryOtpMode && order.status === "ready_for_delivery" && (
-        <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+        <div className={cn(detail.shell, "space-y-3 p-4")}>
           <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> SMS Teslim Onayı</p>
           {order.paymentStatus !== "paid" && (
             <p className="text-xs text-warning-strong">Uyarı: Bu araç kabulünde ödeme tamamlanmadı ({order.paymentStatus}).</p>
@@ -923,14 +924,15 @@ export function WorkOrderDetail({
           </div>
         </div>
       )}
+      </div>
 
       {/* Masaüstünde tutarlar sol kayıt listesinde. Şerit yalnız dar ekranda,
           sekmelerin üstünde kalır. */}
-      <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-8">
-      <OrderRecordRail order={order} customerName={customerName} showCashbox={canCashbox} />
+      <div className="lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <OrderRecordRail className="hidden lg:block" order={order} customerName={customerName} showCashbox={canCashbox} />
       <div className="min-w-0 space-y-5">
       {order.totals.hasAnyPrice && (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm lg:hidden">
+        <div className={cn("flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 text-sm lg:hidden", detail.shell)}>
           {/* İndirim/KDV varken Genel Toplam kalem tutarlarına EŞİT DEĞİLDİR:
               yalnız sonuç gösterilince (ör. ₺400'lük tek kalem → ₺240) rakam
               hatalı sanılıyordu (BAK-55). Zincir hep görünür: ara toplam →
@@ -957,12 +959,12 @@ export function WorkOrderDetail({
       )}
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList variant="line" className="flex w-full flex-nowrap gap-1 sm:gap-2 border-b border-border pb-0 -mb-px overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <TabsList variant="line" className={cn(detail.tabList, "flex w-full flex-nowrap overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden")}>
           {TABS.map((t) => {
             const Icon = t.icon
             const locked = Boolean(t.feature && !enabledFeatures.includes(t.feature))
             return (
-              <TabsTrigger key={t.key} value={t.key} className="shrink-0">
+              <TabsTrigger key={t.key} value={t.key} className={cn("shrink-0", detail.tab)}>
                 <Icon className="size-3.5" />
                 <span>{t.label}</span>
                 {locked && <LockKeyhole className="size-3" aria-label="Profesyonel paket özelliği" />}
@@ -972,10 +974,9 @@ export function WorkOrderDetail({
         </TabsList>
 
         {/* ÖZET */}
-        <TabsContent value="ozet" className="space-y-5">
+        <TabsContent value="ozet" className={detail.stack}>
           {canReopen && order.status === "delivered" && (
-            <Card>
-              <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+            <div className={cn(detail.shell, "flex flex-wrap items-center justify-between gap-3 p-4")}>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">Araç kabulü teslim edildi</p>
                   <p className="text-xs text-muted-foreground">
@@ -986,69 +987,10 @@ export function WorkOrderDetail({
                 <Button variant="outline" size="sm" onClick={() => setReopenOpen(true)}>
                   Yeniden Aç
                 </Button>
-              </CardContent>
-            </Card>
+            </div>
           )}
-          {/* Müşteri & Araç */}
-          {(canUsePhotoChecklist || canUseDamageMap) && <Card className="lg:hidden">
-            <CardHeader className="pb-3"><CardTitle className="text-base">Müşteri & Araç</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    <User className="size-3" /> Müşteri
-                  </div>
-                  <p className="text-sm font-semibold text-foreground">{customerName}</p>
-                  {order.customer.type === "corporate" && order.customer.contactName ? (
-                    <p className="text-xs text-muted-foreground">Yetkili: {order.customer.contactName}</p>
-                  ) : null}
-                  <a href={`tel:${order.customer.phone}`} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
-                    <Phone className="size-3.5" />
-                    {order.customer.phone}
-                  </a>
-                  {order.customer.email && (
-                    <a href={`mailto:${order.customer.email}`} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
-                      <Mail className="size-3.5" />
-                      {order.customer.email}
-                    </a>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      <Car className="size-3" /> Araç
-                    </div>
-                    <Link
-                      href={`/vehicles/${order.vehicle.id}`}
-                      className="text-xs text-primary hover:text-primary font-medium inline-flex items-center gap-1 shrink-0 touch-manipulation"
-                    >
-                      Araç Detayı
-                      <ArrowRight className="size-3" />
-                    </Link>
-                  </div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {order.vehicle.plate} · {order.vehicle.brand} {order.vehicle.model}
-                    {order.vehicle.modelYear ? ` (${order.vehicle.modelYear})` : ""}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                    {order.intake.mileageAtIntake != null && <span>Giriş KM: {order.intake.mileageAtIntake.toLocaleString("tr-TR")}</span>}
-                    {order.intake.fuelLevelAtIntake != null && (
-                      <span className="inline-flex items-center gap-1.5">
-                        <FuelGauge value={order.intake.fuelLevelAtIntake} size="sm" showLabel={false} />
-                        Yakıt: {formatFuelLevel(order.intake.fuelLevelAtIntake)}
-                      </span>
-                    )}
-                    {order.vehicle.mileage != null && <span>Kayıtlı: {order.vehicle.mileage.toLocaleString("tr-TR")} km</span>}
-                    {order.vehicle.vin && <span className="font-mono">Şase: {order.vehicle.vin}</span>}
-                  </div>
-                </div>
-              </div>
-              <div className="pt-3 border-t flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span>Kabul: {formatDate(order.intake.createdAt)}</span>
-                {order.intake.approvedAt && <span>Onay: {formatDate(order.intake.approvedAt)}</span>}
-              </div>
-            </CardContent>
-          </Card>}
+          {/* Müşteri & Araç: dar ekranda kayıt listesi ilk panel */}
+          <OrderRecordRail className="lg:hidden" order={order} customerName={customerName} showCashbox={canCashbox} />
 
           {/* İş Emri Bilgileri */}
           <OrderInfoCard
@@ -1060,64 +1002,61 @@ export function WorkOrderDetail({
           />
 
           {/* Şikayet & Notlar (düzenlenebilir) */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center justify-between gap-2">
-                <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Şikayet & Notlar</span>
-                {!editingInfo && canOpenInfoEditor && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Şikayet ve notları düzenle"
-                        onClick={startEditInfo}
-                      >
-                        <Pencil className="size-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Şikayet ve notları düzenle</TooltipContent>
-                  </Tooltip>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Müşteri Şikayeti</p>
-                    <p className="text-sm text-foreground whitespace-pre-wrap">{order.intake.customerComplaint}</p>
-                  </div>
-                  {order.intake.internalNote && (
-                    <div className="pt-3 border-t">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Teknisyen İç Notu</p>
-                      <p className="text-sm text-foreground whitespace-pre-wrap">{order.intake.internalNote}</p>
-                      <p className="mt-1 text-[11px] text-muted-foreground italic">Bu not müşteri çıktısında gösterilmez</p>
-                    </div>
-                  )}
-                  {/* BAK-102 — blok BOŞKEN DE görünür. Alan opsiyonel ama gizli
-                      olduğu sürece servis kullanıcısı var olduğunu fark etmiyor;
-                      teslim anında tek dokunuşla doldurulabilsin diye boş durum
-                      da yazılıyor. */}
-                  <div className="pt-3 border-t grid gap-3 sm:grid-cols-2">
-                    <HandoverPerson
-                      label="Aracı Getiren"
-                      name={order.intake.droppedOffByName}
-                      phone={order.intake.droppedOffByPhone}
-                      emptyText="Belirtilmedi — aracı müşterinin kendisi getirdi"
-                      onAdd={canOpenInfoEditor ? startEditInfo : undefined}
-                    />
-                    <HandoverPerson
-                      label="Aracı Teslim Alacak"
-                      name={order.intake.pickedUpByName}
-                      phone={order.intake.pickedUpByPhone}
-                      emptyText="Belirtilmedi — aracı müşterinin kendisi teslim alacak"
-                      onAdd={canOpenInfoEditor ? startEditInfo : undefined}
-                    />
-                  </div>
-                </div>
-            </CardContent>
-          </Card>
+          <DetailPanel
+            title="Şikayet & Notlar"
+            aside={
+              <>
+              {!editingInfo && canOpenInfoEditor && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Şikayet ve notları düzenle"
+                      onClick={startEditInfo}
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Şikayet ve notları düzenle</TooltipContent>
+                </Tooltip>
+              )}
+              </>
+            }
+          >
+            <div className={detail.block}>
+              <p className={detail.fieldLabel}>Müşteri şikayeti</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{order.intake.customerComplaint}</p>
+            </div>
+            {order.intake.internalNote && (
+              <div className={detail.block}>
+                <p className={detail.fieldLabel}>Teknisyen iç notu</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{order.intake.internalNote}</p>
+                <p className="mt-1 text-xs text-muted-foreground italic">Bu not müşteri çıktısında gösterilmez</p>
+              </div>
+            )}
+            {/* BAK-102 — blok BOŞKEN DE görünür. Alan opsiyonel ama gizli
+                olduğu sürece servis kullanıcısı var olduğunu fark etmiyor;
+                teslim anında tek dokunuşla doldurulabilsin diye boş durum
+                da yazılıyor. */}
+            <div className={cn(detail.block, "grid gap-4 sm:grid-cols-2")}>
+              <HandoverPerson
+                label="Aracı Getiren"
+                name={order.intake.droppedOffByName}
+                phone={order.intake.droppedOffByPhone}
+                emptyText="Belirtilmedi — aracı müşterinin kendisi getirdi"
+                onAdd={canOpenInfoEditor ? startEditInfo : undefined}
+              />
+              <HandoverPerson
+                label="Aracı Teslim Alacak"
+                name={order.intake.pickedUpByName}
+                phone={order.intake.pickedUpByPhone}
+                emptyText="Belirtilmedi — aracı müşterinin kendisi teslim alacak"
+                onAdd={canOpenInfoEditor ? startEditInfo : undefined}
+              />
+            </div>
+          </DetailPanel>
 
           <Dialog open={editingInfo} onOpenChange={(open) => { if (!savingInfo) setEditingInfo(open) }}>
             <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden sm:max-w-2xl">
@@ -1182,11 +1121,8 @@ export function WorkOrderDetail({
           </Dialog>
 
           {/* Kabul kanıtları */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Kabul kanıtları</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <DetailPanel title="Kabul kanıtları">
+            <div className={surface.cardBody}>
               <IntakeEvidenceSummary
                 photoCompletion={photoCompletion}
                 damageCount={damagePhotos.length}
@@ -1194,8 +1130,8 @@ export function WorkOrderDetail({
                 publicLinkStatus={publicLinkStatus}
                 onMissingPhotoClick={(key) => focusPhoto(key)}
               />
-            </CardContent>
-          </Card>
+            </div>
+          </DetailPanel>
 
           <div ref={pricingRef} className="scroll-mt-20">
             <PricingSummaryCard
@@ -1216,11 +1152,8 @@ export function WorkOrderDetail({
           </div>
 
           {/* Müşteri Çıktısı & Paylaşım */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2"><Share2 className="size-4 text-muted-foreground" /> Müşteri Çıktısı</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <DetailPanel title="Müşteri Çıktısı">
+            <div className={cn(surface.cardBody, "space-y-3")}>
               {!shareToken ? (
                 <>
                   <p className="text-xs text-muted-foreground">Müşteriyle paylaşabileceğiniz salt-görüntü bir özet linki oluşturun.</p>
@@ -1300,8 +1233,8 @@ export function WorkOrderDetail({
                   </Button>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </DetailPanel>
         </TabsContent>
 
         {/* PARÇA & İŞÇİLİK */}

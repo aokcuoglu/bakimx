@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useState } from "react"
 import { QuoteStatusBadge } from "@/components/quotes/quote-status-badge"
-import { PlateBadge } from "@/components/shared/status-badge"
+import { Plate } from "@/components/shared/plate"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatTRY, customerDisplayName } from "@/lib/format"
@@ -239,7 +239,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
               <CardContent>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <PlateBadge plate={quote.vehicle.plate} />
+                    <Plate plate={quote.vehicle.plate} />
                     <span className="text-sm font-medium text-foreground">
                       {quote.vehicle.brand} {quote.vehicle.model}
                     </span>

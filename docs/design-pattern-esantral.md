@@ -117,9 +117,14 @@ boşluk; kalın rakam üstte, küçük gri etiket altta. ("7 Serviste · 3 Hazı
 `#f0f0f3` çizgi, ilk satırda çizgi yok. Satır: `[plaka rozeti] [araç + iş özeti] [durum hapı]`,
 10px aralık, 9×12px iç boşluk. Orta kolon `min-width:0` + ellipsis.
 
-**Plaka rozeti.** 1.5px `#1d1d1f` çerçeve, 5px köşe, 700 ağırlık, +0.02em,
-`white-space:nowrap`. Plaka DB'de kompakt saklanır; gösterimde `34 ABC 123`
-biçimlenir.
+**Plaka rozeti.** Tek bileşen: `Plate` (`src/components/shared/plate.tsx`,
+`size="sm|md|lg"` → 22/28/34px). 1.5px `--foreground` çerçeve, 6px köşe, 700
+ağırlık, +0.02em, `white-space:nowrap`, sol kenarda ülke kodunu yazan `--primary`
+bant (TR dahil, #834).
+Plaka DB'de kompakt saklanır; gösterimde `34 ABC 123` biçimlenir. Ülke saklanan
+plakadan tahmin edilir (`src/lib/plate/country.ts`, #818): yabancı kodlar D, NL,
+B, BG, UK; ekran okuyucu yabancıda ülke adını da okur. Hollanda sarı zemin, Belçika kırmızı yazı
+alır. Yeni bir plaka rozeti yazma — `Plate`'i kullan.
 
 **Bildirim / aktivite kartı.** Ayrı beyaz kartlar (16px, 8px alt boşluk):
 `[34px ikon] [kalın başlık + gri alt satır]`. İkon tipleri: yuvarlak WhatsApp
@@ -177,7 +182,7 @@ saygılı.
 Önerilen ilk dilim (küçük, gözden geçirilebilir): **Dashboard** ekranı — büyük
 başlık + bağlam satırı, KPI şeridi, "Serviste" gruplu listesi (plaka rozeti +
 durum hapı), aktivite kartları. Token'ları (`--background`, `--primary`, kart
-varyantı, hap varyantları, `PlateBadge`) orada kurup diğer ekranlara yaymak.
+varyantı, hap varyantları, plaka rozeti — bugün `Plate`) orada kurup diğer ekranlara yaymak.
 
 ## 5. Açık kararlar
 

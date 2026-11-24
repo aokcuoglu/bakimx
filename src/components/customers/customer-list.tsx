@@ -21,6 +21,7 @@ import { StatCard } from "@/components/shared/stat-card"
 import { FilterSheet, type FilterField } from "@/components/shared/filter-sheet"
 import { formatTRY } from "@/lib/format"
 import { formatDate } from "@/lib/utils-client"
+import { newIntakeHref } from "@/lib/intake/entry-links"
 
 export type CustomerRow = {
   id: string
@@ -401,7 +402,7 @@ function DesktopTable({
                     <ActionsMenu
                       viewHref={`/customers/${row.id}`}
                       editHref={`/customers/${row.id}?edit=1`}
-                      workOrderHref={`/orders/new?customerId=${row.id}`}
+                      workOrderHref={newIntakeHref({ customerId: row.id })}
                       appointmentHref={`/appointments/new?customerId=${row.id}`}
                       onArchive={onDelete ? () => onDelete(row.id, nameFor(row)) : undefined}
                       archiveLabel="Sil"
@@ -462,7 +463,7 @@ function MobileCards({ rows }: { rows: CustomerRow[]; onDelete?: (id: string, la
             <MobileActionsMenu
               viewHref={`/customers/${row.id}`}
               editHref={`/customers/${row.id}?edit=1`}
-              workOrderHref={`/orders/new?customerId=${row.id}`}
+              workOrderHref={newIntakeHref({ customerId: row.id })}
               appointmentHref={`/appointments/new?customerId=${row.id}`}
             />
           </div>

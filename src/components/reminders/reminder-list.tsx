@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ReminderStatusBadge, ReminderTypeBadge } from "@/components/reminders/reminder-status-badge"
-import { PlateBadge } from "@/components/shared/plate-badge"
+import { Plate } from "@/components/shared/plate"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -248,7 +248,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                         </td>
                         <td className="py-3 px-3">
                           <Link href={`/vehicles/${r.vehicle.id}`} className="flex items-center gap-2">
-                            <PlateBadge plate={r.vehicle.plate} />
+                            <Plate plate={r.vehicle.plate} />
                             <span className="text-xs text-muted-foreground">{r.vehicle.brand} {r.vehicle.model}</span>
                           </Link>
                         </td>
@@ -335,7 +335,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <PlateBadge plate={r.vehicle.plate} />
+                          <Plate plate={r.vehicle.plate} />
                           <ReminderTypeBadge type={r.type} />
                         </div>
                         <h3 className="text-sm font-semibold text-foreground mt-1">{r.title}</h3>

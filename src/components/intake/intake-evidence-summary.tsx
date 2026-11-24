@@ -64,7 +64,7 @@ export function PhotoCompletionBar({
                 key={missing[index]}
                 type="button"
                 variant="outline"
-                size="xs"
+                size="sm"
                 onClick={() => onMissingClick?.(missing[index])}
                 aria-label={`${label} fotoğrafını ekle`}
               >
