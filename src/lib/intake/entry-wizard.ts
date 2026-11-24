@@ -11,6 +11,7 @@
 
 import { normalizePhone, normalizePlate } from "@/lib/format"
 import { parsePlateFromText } from "@/lib/ocr/plate"
+import { detectPlate } from "@/lib/plate/country"
 import { normalizeVin } from "@/lib/vin/types"
 
 export type EntryMethod = "plate" | "customer"
@@ -192,9 +193,13 @@ export function hasOwnerInput(o: OwnerFields): boolean {
  * araca aittir. Plaka sonradan değiştirilirse ikisi başka bir araca kalabilir:
  *
  * - `"match"`: fotoğraf yok ya da plaka aynı.
- * - `"typing"`: plaka farklı ama henüz tam bir TR plakası değil — uyarı yazarken
- *   titremesin diye gösterilmez, yine de kaydetme engellenir.
+ * - `"typing"`: plaka farklı ama henüz tam değil — uyarı yazarken titremesin diye
+ *   gösterilmez, yine de kaydetme engellenir.
  * - `"mismatch"`: plaka farklı ve tam — kullanıcı "aynı araç mı" diye seçmeli.
+ *
+ * "Tam" = geçerli bir TR plakası ya da tanınan bir yabancı plaka (#840). Yabancı
+ * plakanın ne zaman bittiğini bilemeyiz; tanınmasa yabancı araç bu ekranda
+ * "Plakayı eksiksiz girin" engelinden hiç çıkamıyordu.
  *
  * Plaka en sık okuma hatasını düzeltmek için değişir (aynı araç); bu yüzden
  * fotoğraf kendiliğinden silinmez, karar kullanıcıya bırakılır.
@@ -203,7 +208,17 @@ export function photoPlateStatus(photoPlate: string | null, currentPlate: string
   if (!photoPlate) return "match"
   const current = normalizePlate(currentPlate)
   if (current === photoPlate) return "match"
-  return parsePlateFromText(current) === current ? "mismatch" : "typing"
+  return parsePlateFromText(current) === current || isForeignPlate(current) ? "mismatch" : "typing"
+}
+
+/**
+ * Plaka tanınan bir yabancı plaka mı (D, NL, B, BG, UK — `detectPlate`, #818)?
+ * Tanınmayan plaka TR yedeğine düştüğü için yabancı sayılmaz. Araç fotoğrafı
+ * yalnız TR plakası okuyabildiğinden, yabancı plakada kare plaka okunmadan kabul
+ * edilir (`PlateScanner allowNoPlate`, #840).
+ */
+export function isForeignPlate(plate: string): boolean {
+  return plate.trim() !== "" && detectPlate(plate).country !== "TR"
 }
 
 /** Kartta gösterilen / sahip satırına yazılan ad. */

@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db"
 import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-image"
 import { parseOcrImageRequest } from "@/lib/ocr/parse-image-request"
 import { parsePlateFromText } from "@/lib/ocr/plate"
+import { plateScanResponse, shouldMatchBrand } from "@/lib/ocr/plate-scan-response"
 import { matchCatalogBrand } from "@/lib/ocr/vehicle-brand"
 import { getOcrProvider } from "@/lib/ocr/provider"
 import { extractRegistrationText } from "@/lib/ocr/tesseract-text-extractor"
@@ -16,9 +17,6 @@ import { assertWritableOr403 } from "@/lib/plan-guard"
 // Vision çağrısı / yerel OCR birkaç saniye sürebilir; Next'in varsayılan süresini
 // gevşet (proxy timeout ~60s'in altında kalır).
 export const maxDuration = 60
-
-const UNREADABLE_MESSAGE =
-  "Plaka okunamadı. Aracın önünü, plaka net görünecek şekilde biraz daha yakından çekin."
 
 /**
  * Araç fotoğrafından plakayı okur. Kare artık aracın önünün tamamıdır (plaka
@@ -35,9 +33,14 @@ const UNREADABLE_MESSAGE =
  * Aynı Vision çağrısı aracın markasını da tanır (ek çağrı/maliyet yok). Marka
  * katalogdaki yazımına çevrilir ki seçici modelleri yükleyebilsin; yalnız plaka
  * da okunduysa döner (422'de marka yok — Tesseract yedeğinde hiç yok).
+ *
+ * `?allowNoPlate=1` (#840): yabancı plakalı araçta araç fotoğrafı. Okuma yalnız
+ * TR plakası tanır; plaka okunmasa da 200 döner, marka okunduysa onunla. Yanıt
+ * sözleşmesi: `@/lib/ocr/plate-scan-response`.
  */
 export async function POST(request: Request) {
   try {
+    const allowNoPlate = new URL(request.url).searchParams.get("allowNoPlate") === "1"
     const { user, workshop } = await getCurrentUserWithWorkshop()
     const locked = assertWritableOr403(workshop)
     if (locked) return locked
@@ -55,7 +58,7 @@ export async function POST(request: Request) {
       const t0 = Date.now()
       const result = await provider.extractPlate(normalized.buffer, normalized.mimeType)
       plate = parsePlateFromText(result.rawPlate)
-      if (plate && result.rawBrand.trim()) {
+      if (shouldMatchBrand({ plate, rawBrand: result.rawBrand, allowNoPlate })) {
         // Marka kataloğu atölyeye ait değil, ortak referans tablosu.
         const catalog = await prisma.vehicleBrand.findMany({ select: { name: true } })
         brand = matchCatalogBrand(result.rawBrand, catalog.map((b) => b.name))
@@ -99,11 +102,8 @@ export async function POST(request: Request) {
       }
     }
 
-    if (!plate) {
-      return NextResponse.json({ error: UNREADABLE_MESSAGE }, { status: 422 })
-    }
-
-    return NextResponse.json(brand ? { plate, brand } : { plate })
+    const { status, body } = plateScanResponse({ plate, brand, allowNoPlate })
+    return NextResponse.json(body, { status })
   } catch (err) {
     const response = apiErrorResponse(err)
     if (response.status >= 500) console.error("[PLATE SCAN ERROR]", err)
