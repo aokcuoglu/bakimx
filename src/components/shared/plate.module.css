@@ -61,22 +61,22 @@
   align-items: center;
   justify-content: center;
   width: auto;
-  min-width: 14px;
+  min-width: 16px;
   padding: 0 3px;
   color: var(--primary-foreground);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0;
 }
 
 .plate[data-size="sm"]:not([data-plate-country="TR"]) .band {
-  min-width: 12px;
-  font-size: 7px;
+  min-width: 14px;
+  font-size: 8px;
 }
 
 .plate[data-size="lg"]:not([data-plate-country="TR"]) .band {
-  min-width: 16px;
-  font-size: 9.5px;
+  min-width: 18px;
+  font-size: 10.5px;
 }
 
 .plate[data-plate-country="NL"] {

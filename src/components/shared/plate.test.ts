@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { Plate, type PlateSize } from "./plate"
@@ -24,4 +26,15 @@ test("yabancı plaka bantta kodu, ekran okuyucuya ülke adını verir", () => {
   expect(html).toMatch(/aria-hidden="true"[^>]*>D</)
   expect(html).toContain('<span class="sr-only">Almanya plakası </span>')
   expect(html).toContain("MAB 1234")
+})
+
+/**
+ * D, UK ve BG'de ülkeyi gösteren TEK görsel işaret banttaki koddur. Kaldırılan
+ * `PlateBadge`, "TR" yazısını sm'de 8px, md'de 9px çiziyordu; yeni bant bu
+ * tabanın altına inmesin (#818 tasarım incelemesi).
+ */
+test("banttaki ülke kodu eski PlateBadge boylarının altına inmez", () => {
+  const css = readFileSync(join(import.meta.dir, "plate.module.css"), "utf8")
+  const sizes = [...css.matchAll(/\.band\s*\{[^}]*?font-size:\s*([\d.]+)px/g)].map((m) => Number(m[1]))
+  expect(sizes.sort((a, b) => a - b)).toEqual([8, 9, 10.5])
 })

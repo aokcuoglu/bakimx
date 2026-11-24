@@ -8,13 +8,22 @@ import { detectPlate, PLATE_COUNTRY_NAMES, type PlateCountry } from "./country"
  */
 describe("detectPlate", () => {
   const cases: [input: string, country: PlateCountry, text: string][] = [
-    // TR — il kodu (01–81) ile başlayan her harf+rakam dizisi TR'dir
+    // TR — 1–2 rakamla başlayan her harf+rakam dizisi TR'dir (yanlış yazılmış TR yabancı görünmez)
     ["34MHP923", "TR", "34 MHP 923"],
     ["38GZ189", "TR", "38 GZ 189"],
     ["06A12345", "TR", "06 A 12345"],
     ["34 mhp 923", "TR", "34 MHP 923"],
-    ["12AB34", "TR", "12 AB 34"], // NL sidecode 3 deseni ama il koduyla başlıyor
+    ["12BD34", "TR", "12 BD 34"], // NL sidecode 3 deseni (ünsüzler) ama il koduyla başlıyor — TR önce
     ["34ABC1234", "TR", "34 ABC 1234"], // standart dışı TR yine TR
+    // Başındaki sıfırı düşmüş / aralık dışı il kodu — yine TR, Hollanda'ya düşmez
+    ["6BD123", "TR", "6 BD 123"], // Ankara 06 BD 123
+    ["6BDF12", "TR", "6 BDF 12"],
+    ["7KL345", "TR", "7 KL 345"],
+    ["1BDF23", "TR", "1 BDF 23"], // NL sidecode 8 deseni
+    ["91BD12", "TR", "91 BD 12"],
+    ["00BD12", "TR", "00 BD 12"],
+    ["6ABC123", "TR", "6 ABC 123"], // başında sıfır yok — Belçika'ya düşmez
+    ["34ÖAB12", "TR", "34 ÖAB 12"], // OCR Türkçe harfi saklayabiliyor (lib/ocr/plate.ts)
     // Belçika
     ["1ABC123", "B", "1-ABC-123"],
     ["2XYZ987", "B", "2-XYZ-987"],
@@ -24,12 +33,11 @@ describe("detectPlate", () => {
     // İngiltere
     ["AB12CDE", "UK", "AB12 CDE"],
     // Hollanda — yalnız Hollanda plakalarında kullanılan ünsüzler
-    ["1BDF23", "NL", "1-BDF-23"],
+    ["1234BD", "NL", "12-34-BD"],
     ["BD123F", "NL", "BD-123-F"],
     ["B123DF", "NL", "B-123-DF"],
     ["BDF12G", "NL", "BDF-12-G"],
     ["B12DFG", "NL", "B-12-DFG"],
-    ["1BD234", "NL", "1-BD-234"],
     ["123BD4", "NL", "123-BD-4"],
     ["BD12FG", "NL", "BD-12-FG"],
     ["12BDFG", "NL", "12-BD-FG"],
@@ -41,7 +49,6 @@ describe("detectPlate", () => {
     ["GU1234AB", "TR", "GU1234AB"], // Avusturya — BG il kodu değil
     ["W12345A", "TR", "W12345A"], // Avusturya
     ["AB123CD", "TR", "AB123CD"], // Fransa/İtalya çakışması
-    ["6ABC123", "TR", "6ABC123"], // başında sıfır yok — Belçika'ya düşmez
     ["  xyz  ", "TR", "XYZ"],
     ["", "TR", ""],
   ]

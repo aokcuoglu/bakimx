@@ -53,8 +53,8 @@ dizilişi paylaşır (Fransa = İtalya; Avusturya, Bulgaristan ve Fransa ile ça
 
 | Ülke | Sıkıştırılmış desen | Gösterim |
 |---|---|---|
-| TR | `(0[1-9]\|[1-7]\d\|8[01])` + 1–3 harf + rakam | `34 MHP 923` |
-| Belçika (B) | rakam + 3 harf + 3 rakam | `1-ABC-123`, kırmızı yazı |
+| Belçika (B) | `1`/`2` + 3 harf + 3 rakam | `1-ABC-123`, kırmızı yazı |
+| TR | 1–2 rakam + 1–3 harf + rakam | `34 MHP 923` |
 | Bulgaristan (BG) | BG il kodu + 4 rakam + 2 harf | `CA 1234 AB` |
 | İngiltere (UK) | 2 harf + 2 rakam + 3 harf | `AB12 CDE` |
 | Hollanda (NL) | 6 karakterlik sidecode desenleri (tümü harf→rakam olan 1 ve 5 hariç) | `12-ABC-3`, sarı zemin |
@@ -63,6 +63,12 @@ dizilişi paylaşır (Fransa = İtalya; Avusturya, Bulgaristan ve Fransa ile ça
 
 Almanya'da boşluk yalnız harf/rakam sınırına konur — şehir kodunun nerede
 bittiği saklanan metinden çıkarılamaz.
+
+**İnceleme sonrası düzeltme (2026-11-24):** İlk sürümde TR kuralı yalnız 01–81
+il koduyla başlıyordu; başındaki sıfırı düşmüş bir TR plakası (`6BD123` = Ankara)
+Hollanda'ya düşüyordu — anti-hedefin ihlali. TR artık 1–2 rakamla başlayan her
+harf+rakam dizisini alır (Belçika'dan sonra, böylece `1ABC123` kabul edilen risk
+olarak "B" kalır). Bedeli: 2008–2015 Hollanda plakaları (sidecode 7, 8) TR görünür.
 
 ## Görünüm
 
