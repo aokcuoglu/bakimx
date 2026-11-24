@@ -1,58 +1,36 @@
 /**
  * Kabul sihirbazının "araç girişi" bölümünün saf akış mantığı (#309).
  *
- * Kullanıcı önce bir yöntem seçer (ruhsat görseli / camdan şase / plaka ile ara /
- * müşteri ile ara); sihirbazın kaç adımdan oluştuğu ve adım etiketleri bu seçime
- * göre değişir. Karar mantığı bileşenden ayrı tutuldu ki adım rayı ile gerçek akış
- * asla ayrışmasın ve testlenebilsin.
+ * Sihirbaz her zaman yakalama ekranıyla başlar: plaka/müşteri araması (odaklı
+ * akışta kamera açılışta hazır). Aramadan bir müşteri seçilince yakalama
+ * ekranı o müşterinin araçlarına döner. Ayrı bir yöntem seçim ekranı yoktur
+ * (#822); ruhsat okuma ve şase kamerası araç bilgileri ekranındadır. Karar
+ * mantığı bileşenden ayrı tutuldu ki adım rayı ile gerçek akış asla
+ * ayrışmasın ve testlenebilsin.
  */
 
 import { normalizePhone, normalizePlate } from "@/lib/format"
 import { parsePlateFromText } from "@/lib/ocr/plate"
 import { normalizeVin } from "@/lib/vin/types"
 
-export type EntryMethod = "registration" | "vin" | "plate" | "customer"
-export type EntryStep = "method" | "capture" | "vehicle" | "owner" | "confirm"
+export type EntryMethod = "plate" | "customer"
+export type EntryStep = "capture" | "vehicle" | "owner" | "confirm"
 
 export type EntryMethodOption = {
   value: EntryMethod
-  title: string
-  description: string
-  /** Yönteme özel yakalama adımının ray etiketi. */
+  /** Yakalama adımının ray etiketi. */
   captureLabel: string
 }
 
 export const ENTRY_METHODS: EntryMethodOption[] = [
-  {
-    value: "registration",
-    title: "Ruhsat görseli",
-    description: "Ruhsatı kamerayla çekin ya da dosyadan yükleyin; alanlar otomatik dolsun.",
-    captureLabel: "Ruhsat",
-  },
-  {
-    value: "vin",
-    title: "Camdan şase",
-    description: "Ön camdaki şase numarasını kamerayla okutun veya elle yazın.",
-    captureLabel: "Şase",
-  },
-  {
-    value: "plate",
-    title: "Plaka ile ara",
-    description: "Sistemde kayıtlı aracı plakasıyla bulun.",
-    captureLabel: "Plaka",
-  },
-  {
-    value: "customer",
-    title: "Müşteri ile ara",
-    description: "Kayıtlı müşteriyi bulun, araçlarından birini seçin.",
-    captureLabel: "Müşteri",
-  },
+  { value: "plate", captureLabel: "Plaka" },
+  { value: "customer", captureLabel: "Müşteri" },
 ]
 
 /**
- * URL'den gelen başlangıç yöntemi (`/orders/new?entry=plate`). Bilinmeyen ya da
- * boş değer `null` döner — sihirbaz o zaman her zamanki gibi yöntem seçimiyle
- * açılır.
+ * URL'den gelen başlangıç yöntemi (`/orders/new?entry=plate`) — verilirse akış
+ * odaklıdır (adım rayı yok). Bilinmeyen ya da boş değer `null` döner; sihirbaz
+ * o zaman tam kabukta plaka/müşteri aramasıyla açılır.
  */
 export function parseEntryMethod(raw: string | string[] | undefined): EntryMethod | null {
   const value = Array.isArray(raw) ? raw[0] : raw
@@ -66,20 +44,18 @@ export function entryMethodOption(method: EntryMethod): EntryMethodOption {
 }
 
 /**
- * Ray etiketleri. Yöntem seçilmeden önce yakalama adımı genel ("Araç") görünür;
- * seçildikten sonra yöntemin kendi etiketiyle anlamlanır.
+ * Ray etiketleri. Yakalama adımı yöntemin etiketini taşır ("Plaka" /
+ * "Müşteri").
  *
  * `knownVehicle` — kayıtlı bir araç zaten bulunduysa araç/sahip alanları
  * doldurulmaz, doğrudan onaya gidilir; ray da bu iki adımı göstermez.
  */
 export function entryStepLabels(
-  method: EntryMethod | null,
+  method: EntryMethod,
   opts: { knownVehicle?: boolean } = {}
 ): { id: EntryStep; label: string }[] {
-  const capture = method ? entryMethodOption(method).captureLabel : "Araç"
   const steps: { id: EntryStep; label: string }[] = [
-    { id: "method", label: "Yöntem" },
-    { id: "capture", label: capture },
+    { id: "capture", label: entryMethodOption(method).captureLabel },
   ]
   if (!opts.knownVehicle) {
     steps.push({ id: "vehicle", label: "Araç bilgileri" })
@@ -87,6 +63,24 @@ export function entryStepLabels(
   }
   steps.push({ id: "confirm", label: "Onay" })
   return steps
+}
+
+/**
+ * Müşteriden açılan kabulün başlangıç müşterisi (#822).
+ *
+ * `/orders/new?customerId=…` araçsız açıldıysa araç girişi o müşteri seçili
+ * başlar. Müşteri yalnız verilen listeden çözülür — sayfa onu atölyeye göre
+ * süzer, bu yüzden başka atölyenin ya da bilinmeyen bir id `null` döner (ve
+ * sihirbaz plaka aramasıyla açılır). Araç da verildiyse araç akışı (onay)
+ * geçerlidir; `consumed` ("Kaydet & Yeni" sonrası) sonraki aracın aynı müşteriyle
+ * başlamasını engeller.
+ */
+export function resolveInitialCustomer<C extends { id: string }>(
+  customers: readonly C[],
+  opts: { customerId?: string | null; vehicleId?: string | null; consumed?: boolean },
+): C | null {
+  if (opts.consumed || opts.vehicleId || !opts.customerId) return null
+  return customers.find((c) => c.id === opts.customerId) ?? null
 }
 
 /**
@@ -255,36 +249,34 @@ export function identityConflicts(
 /**
  * Bir adımdan geri dönüldüğünde nereye gidilir? Ray etiketleriyle aynı listeden
  * türetilir ki "Geri" ile rayda görünmeyen bir adıma düşmek mümkün olmasın.
+ * İlk adım (yakalama) kendisinde kalır.
  */
 export function previousEntryStep(
   current: EntryStep,
-  method: EntryMethod | null,
+  method: EntryMethod,
   opts: { knownVehicle?: boolean } = {}
 ): EntryStep {
   const steps = entryStepLabels(method, opts)
   const index = steps.findIndex((s) => s.id === current)
-  if (index <= 0) return "method"
+  if (index <= 0) return steps[0].id
   return steps[index - 1].id
 }
 
 /**
- * "Geri"nin gideceği adım ve yöntem (#817).
+ * "Geri"nin gideceği adım ve yöntem (#817, #822).
  *
- * Odaklı akışta (`?entry=…`, `startMethod` verilir) yöntem seçim ekranı YOKTUR:
- * ilk ekran başlangıç yönteminin yakalama ekranıdır (plaka için arama + kamera).
- * Akış içinde yöntem değişse bile (ör. aramadan müşteri seçilince `customer`)
- * normal geri hedefi `"method"` çıktığında oraya değil, başlangıç ekranına
- * dönülür. Odaklı olmayan akışta (`startMethod` yok) davranış
- * `previousEntryStep` ile aynıdır.
+ * Ara adımlar ray sırasıyla geri gider, yöntem korunur. Yakalama ekranından
+ * geri ise başlangıç yöntemine döner: aramadan seçilen müşterinin araç
+ * listesinden (`customer`) plaka/müşteri aramasına (`startMethod`). Başlangıç
+ * ekranındaysa olduğu yerde kalır — yöntem seçim ekranı yoktur.
  */
 export function entryBackTarget(
   current: EntryStep,
-  method: EntryMethod | null,
-  opts: { knownVehicle?: boolean; startMethod?: EntryMethod | null } = {}
-): { step: EntryStep; method: EntryMethod | null } {
-  const step = previousEntryStep(current, method, opts)
-  if (step !== "method" || !opts.startMethod) return { step, method }
-  return { step: "capture", method: opts.startMethod }
+  method: EntryMethod,
+  opts: { knownVehicle?: boolean; startMethod: EntryMethod }
+): { step: EntryStep; method: EntryMethod } {
+  if (current === "capture") return { step: "capture", method: opts.startMethod }
+  return { step: previousEntryStep(current, method, opts), method }
 }
 
 /**

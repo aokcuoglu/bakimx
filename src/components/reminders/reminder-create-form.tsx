@@ -24,7 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { PlateBadge } from "@/components/shared/plate-badge"
+import { Plate } from "@/components/shared/plate"
 import { useForm } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
 import { reminderSchema, type ReminderFormValues } from "@/lib/validations/reminder"
@@ -210,7 +210,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                 {selectedVehicle ? (
                   <div className="rounded-lg border border-border bg-muted p-3 space-y-1">
                     <div className="flex items-center gap-2">
-                      <PlateBadge plate={selectedVehicle.plate} />
+                      <Plate plate={selectedVehicle.plate} />
                       <span className="text-sm font-medium text-foreground">{selectedVehicle.brand} {selectedVehicle.model}</span>
                     </div>
                     {selectedVehicle.mileage != null ? (

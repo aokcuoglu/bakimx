@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AppointmentStatusBadge } from "@/components/appointments/appointment-status-badge"
-import { PlateBadge } from "@/components/shared/status-badge"
+import { Plate } from "@/components/shared/plate"
 import { APPOINTMENT_STATUS, type AppointmentStatusKey, REMINDER_STATUS } from "@/lib/constants"
 import { customerDisplayName } from "@/lib/format"
 import { formatDateTime } from "@/lib/utils-client"
@@ -253,7 +253,7 @@ export function AppointmentDetail({
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <PlateBadge plate={appointment.vehicle.plate} />
+                    <Plate plate={appointment.vehicle.plate} />
                     <span className="text-sm text-foreground">
                       {appointment.vehicle.brand} {appointment.vehicle.model}
                     </span>

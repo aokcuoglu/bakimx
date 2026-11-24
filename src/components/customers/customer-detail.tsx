@@ -29,7 +29,8 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { StatusBadge, PlateBadge } from "@/components/shared/status-badge"
+import { StatusBadge } from "@/components/shared/status-badge"
+import { Plate } from "@/components/shared/plate"
 import { ReminderStatusBadge, ReminderTypeBadge } from "@/components/reminders/reminder-status-badge"
 import { CustomerTypeBadge, CustomerTagBadge, PriceGroupBadge } from "@/components/customers/customer-badges"
 import { CustomerCreateForm, type CustomerFormInitial } from "@/components/customers/customer-create-form"
@@ -41,6 +42,7 @@ import { INTAKE_STATUS, CUSTOMER_SOURCES } from "@/lib/constants"
 import { summarizeCustomerOrders } from "@/lib/customer-totals"
 import { cn } from "@/lib/utils"
 import type { ReminderRow } from "@/lib/reminders/queries"
+import { newIntakeHref } from "@/lib/intake/entry-links"
 
 type Vehicle = {
   id: string
@@ -205,7 +207,7 @@ export function CustomerDetail({
           </div>
           <div className="flex flex-wrap items-center gap-2">
              <Button variant="outline" size="sm" asChild>
-               <Link href={`/orders/new?customerId=${customer.id}`}>
+               <Link href={newIntakeHref({ customerId: customer.id })}>
                  <Wrench className="size-4" />
                  Yeni Araç Kabul
                </Link>
@@ -272,7 +274,7 @@ export function CustomerDetail({
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <PlateBadge plate={v.plate} />
+                          <Plate plate={v.plate} />
                           <span className="text-sm font-medium text-foreground truncate">
                             {v.brand} {v.model}
                           </span>
@@ -301,7 +303,7 @@ export function CustomerDetail({
                 <Wrench className="size-10 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Henüz araç kabulü yok</p>
                 <Link
-                  href={`/orders/new?customerId=${customer.id}`}
+                  href={newIntakeHref({ customerId: customer.id })}
                   className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary font-medium"
                 >
                   <Plus className="size-3.5" />
@@ -322,7 +324,7 @@ export function CustomerDetail({
                             <span className="text-xs font-mono font-semibold text-muted-foreground">
                               {i.order.workOrderNo || "—"}
                             </span>
-                            <PlateBadge plate={i.vehicle.plate} />
+                            <Plate plate={i.vehicle.plate} />
                             <StatusBadge status={i.order.status} />
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
@@ -383,7 +385,7 @@ export function CustomerDetail({
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <PlateBadge plate={r.vehicle.plate} />
+                          <Plate plate={r.vehicle.plate} />
                           <span className="text-sm font-medium text-foreground truncate">{r.title}</span>
                           <ReminderStatusBadge status={r.status} />
                           <ReminderTypeBadge type={r.type} />
@@ -423,7 +425,7 @@ export function CustomerDetail({
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <PlateBadge plate={i.vehicle.plate} />
+                            <Plate plate={i.vehicle.plate} />
                             <span
                               className={cn(
                                 "inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border",

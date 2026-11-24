@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Car, Search, X, Filter, Calendar, Gauge } from "lucide-react"
 import { EmptyState } from "@/components/shared/empty-state"
-import { PlateBadge } from "@/components/shared/status-badge"
+import { Plate } from "@/components/shared/plate"
 import { ActionsMenu, MobileActionsMenu } from "@/components/shared/actions-menu"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import { VEHICLE_TYPES } from "@/lib/constants"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StatCard } from "@/components/shared/stat-card"
 import { FilterSheet, type FilterField } from "@/components/shared/filter-sheet"
+import { newIntakeHref } from "@/lib/intake/entry-links"
 
 export type VehicleRow = {
   id: string
@@ -276,7 +277,7 @@ function DesktopTable({
               <tr key={row.id} className="hover:bg-muted/60 transition-colors group">
                 <td className="px-4 py-3">
                   <Link href={`/vehicles/${row.id}`}>
-                    <PlateBadge plate={row.plate} />
+                    <Plate plate={row.plate} />
                   </Link>
                 </td>
                 <td className="px-4 py-3">
@@ -331,7 +332,7 @@ function DesktopTable({
                     <ActionsMenu
                       viewHref={`/vehicles/${row.id}`}
                       editHref={`/vehicles/${row.id}/edit`}
-                      workOrderHref={`/orders/new?vehicleId=${row.id}`}
+                      workOrderHref={newIntakeHref({ vehicleId: row.id })}
                       appointmentHref={`/appointments/new?vehicleId=${row.id}`}
                       passportHref={`/vehicles/${row.id}/passport`}
                     />
@@ -363,7 +364,7 @@ function MobileCards({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <Link href={`/vehicles/${row.id}`}>
-                <PlateBadge plate={row.plate} />
+                <Plate plate={row.plate} />
               </Link>
               <p className="mt-1.5 text-sm font-semibold text-foreground truncate">
                 {row.brand} {row.model}
@@ -379,7 +380,7 @@ function MobileCards({
             <MobileActionsMenu
               viewHref={`/vehicles/${row.id}`}
               editHref={`/vehicles/${row.id}/edit`}
-              workOrderHref={`/orders/new?vehicleId=${row.id}`}
+              workOrderHref={newIntakeHref({ vehicleId: row.id })}
               appointmentHref={`/appointments/new?vehicleId=${row.id}`}
               passportHref={`/vehicles/${row.id}/passport`}
             />

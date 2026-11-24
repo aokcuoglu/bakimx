@@ -654,6 +654,14 @@
   --popover-foreground: #1d1d1f;
   --primary: #0071e3;
   --primary-foreground: #ffffff;
+  /* Yabancı plaka renkleri (`Plate`, #818) — fiziksel plakanın rengi: Hollanda
+     sarı zemin, Belçika kırmızı yazı + çerçeve. `.dark` bloğunda bilinçli olarak
+     YOK: koyu temada da plaka kendi renginde kalır (TR plakası ise --card ile
+     temaya uyar). Çiftlerin kontrastını `theme-tokens.test.ts` ölçer. */
+  --plate-nl: #f7c600;
+  --plate-nl-foreground: #111111;
+  --plate-be: #ffffff;
+  --plate-be-foreground: #a6192e;
   /* AÇIK YÜZEY ÜZERİNDEKİ METİN/İKON tonu — success/warning/destructive ile
      aynı desen ve aynı L ölçeği (0.47). Temel --primary dolgu olarak canlı
      kalmak zorunda, ama METİN olarak `bg-primary/10` tonlu zeminde AA'nın
