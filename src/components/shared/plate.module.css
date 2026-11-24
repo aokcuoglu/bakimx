@@ -1,6 +1,6 @@
-/* Plaka rozeti (`Plate`, #818). TR görünümü eski `DashPlate` ile birebir:
-   çerçeve, sol kenara yapışık yazısız mavi bant. Yabancı plakada bant genişler
-   ve ülke kodunu yazar; Hollanda/Belçika kendi renklerini alır. */
+/* Plaka rozeti (`Plate`, #818). Çerçeve + sol kenara yapışık mavi bant; bant
+   her plakada ülke kodunu yazar (TR dahil, #834). Hollanda/Belçika kendi
+   renklerini alır. */
 .plate {
   display: inline-flex;
   flex: none;
@@ -36,46 +36,34 @@
   font-size: 12px;
 }
 
-/* Ülke bandı: çerçevenin içinde sol kenara yapışık; metin iç boşlukla başlar. */
+/* Ülke bandı: çerçevenin içinde sol kenara yapışık, ülke kodunu yazar; plaka
+   metni iç boşlukla başlar. Kod boyu kaldırılan `PlateBadge`in "TR" yazısının
+   altına inmez (sm 8px, md 9px). */
 .band {
-  align-self: stretch;
-  flex: none;
-  width: 8px;
-  margin-right: 7px;
-  background: var(--primary);
-}
-
-.plate[data-size="sm"] .band {
-  width: 6px;
-  margin-right: 6px;
-}
-
-.plate[data-size="lg"] .band {
-  width: 10px;
-  margin-right: 10px;
-}
-
-/* Yabancı plaka: bant ülke kodunu yazar. */
-.plate:not([data-plate-country="TR"]) .band {
   display: flex;
+  flex: none;
+  align-self: stretch;
   align-items: center;
   justify-content: center;
-  width: auto;
   min-width: 16px;
+  margin-right: 7px;
   padding: 0 3px;
+  background: var(--primary);
   color: var(--primary-foreground);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0;
 }
 
-.plate[data-size="sm"]:not([data-plate-country="TR"]) .band {
+.plate[data-size="sm"] .band {
   min-width: 14px;
+  margin-right: 6px;
   font-size: 8px;
 }
 
-.plate[data-size="lg"]:not([data-plate-country="TR"]) .band {
+.plate[data-size="lg"] .band {
   min-width: 18px;
+  margin-right: 10px;
   font-size: 10.5px;
 }
 

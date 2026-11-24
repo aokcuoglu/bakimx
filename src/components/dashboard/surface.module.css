@@ -485,9 +485,12 @@ a.row:focus-visible {
 
 /* Büyük plakalı listede ad sütunu aynı hizadan başlasın: plaka doğal
    genişliğinde kalır, başlangıç kolonu en uzun TR plaka boyuna sabitlenir
-   ("34 ABC 123", "34 AB 1234", "34 A 12345" — hepsi 10 karakter). */
+   ("34 ABC 123", "34 AB 1234", "34 A 12345" — hepsi 10 karakter). Bantta "TR"
+   yazdığı için (#834) bu plaka macOS sistem fontunda 143px ölçüldü; 150px,
+   daha geniş platform fontlarına ve "CA 1234 AB" gibi yabancı plakalara pay
+   bırakır. */
 .rowStart:has(> [data-plate-country][data-size="lg"]) {
-  min-width: 140px;
+  min-width: 150px;
 }
 
 .rowMain {
