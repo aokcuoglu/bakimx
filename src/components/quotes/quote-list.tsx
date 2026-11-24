@@ -132,8 +132,8 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                       <ActionsMenu
                         viewHref={`/quotes/${quote.id}`}
                         workOrderHref={quote.vehicle
-                          ? newIntakeHref({ vehicleId: quote.vehicle.id, customerId: quote.customer.id })
-                          : newIntakeHref({ customerId: quote.customer.id })
+                          ? newIntakeHref({ vehicleId: quote.vehicle.id, customerId: quote.customer.id, back: "/quotes" })
+                          : newIntakeHref({ customerId: quote.customer.id, back: "/quotes" })
                         }
                       />
                     </div>
@@ -181,8 +181,8 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
               <MobileActionsMenu
                 viewHref={`/quotes/${quote.id}`}
                 workOrderHref={quote.vehicle
-                  ? newIntakeHref({ vehicleId: quote.vehicle.id, customerId: quote.customer.id })
-                  : newIntakeHref({ customerId: quote.customer.id })
+                  ? newIntakeHref({ vehicleId: quote.vehicle.id, customerId: quote.customer.id, back: "/quotes" })
+                  : newIntakeHref({ customerId: quote.customer.id, back: "/quotes" })
                 }
               />
             </div>

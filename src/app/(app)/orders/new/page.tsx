@@ -8,13 +8,16 @@ import { Button } from "@/components/ui/button"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { getPlanState } from "@/lib/plan"
 import { parseEntryMethod } from "@/lib/intake/entry-wizard"
+import { parseIntakeBack } from "@/lib/intake/entry-links"
+import { displayCustomerName } from "@/lib/search/unified-results"
+import { detectPlate } from "@/lib/plate/country"
 
 export const metadata = { title: "Yeni Araç Kabul" }
 
 export default async function NewOrderPage({
   searchParams,
 }: {
-  searchParams: Promise<{ customerId?: string; vehicleId?: string; source?: string; entry?: string; from?: string }>
+  searchParams: Promise<{ customerId?: string; vehicleId?: string; source?: string; entry?: string; from?: string; back?: string }>
 }) {
   const { user, workshop } = await getAppData()
   const params = await searchParams
@@ -24,24 +27,46 @@ export default async function NewOrderPage({
   // breadcrumb yerine geri bağlantısı. Saha rolleri /orders'a giremez, onlar
   // için geri hedefi panelleridir.
   const focused = initialEntryMethod != null
-  const back = isTechnicianRestrictedRole(user.role) || params.from === "technician"
-    ? { href: "/technician", label: "Servis Yönetimi" }
-    : { href: "/orders", label: "Araç Kabulleri" }
 
   const customers = await prisma.customer.findMany({
     where: { workshopId: user.workshopId },
     orderBy: { firstName: "asc" },
   })
 
+  // Geri bağlantısı kabulün açıldığı sayfaya döner (#842): `back` yalnız izin
+  // listesindeki iç adreslerden biri olabilir. Müşteri adı ve plaka atölyeye göre
+  // süzülmüş veriden gelir; bulunamazsa genel etiket kalır (hedef sayfa kendi
+  // yetki kontrolünü yapar).
+  let back = { href: "/orders", label: "Araç Kabulleri" }
+  if (isTechnicianRestrictedRole(user.role) || params.from === "technician") {
+    back = { href: "/technician", label: "Servis Yönetimi" }
+  } else if (focused) {
+    const target = parseIntakeBack(params.back)
+    if (target?.kind === "page") {
+      back = { href: target.href, label: target.label }
+    } else if (target?.kind === "customer") {
+      const customer = customers.find((c) => c.id === target.id)
+      back = { href: target.href, label: customer ? displayCustomerName(customer) : "Müşteri" }
+    } else if (target?.kind === "vehicle") {
+      const vehicle = await prisma.vehicle.findFirst({
+        where: { id: target.id, workshopId: user.workshopId },
+        select: { plate: true },
+      })
+      back = { href: target.href, label: vehicle ? detectPlate(vehicle.plate).text : "Araç" }
+    }
+  }
+
   return (
     <AppShell workshopName={workshop?.name} pageTitle={focused ? "Araç Kabul" : "Yeni Araç Kabul"}>
       <div className={focused ? "mx-auto max-w-3xl space-y-5 sm:space-y-6" : "mx-auto max-w-6xl space-y-5 sm:space-y-6"}>
         {focused ? (
           <div>
-            <Button variant="ghost" asChild className="-ml-3 text-base">
+            {/* Etiket müşteri adı olabilir (uzun firma adı): telefonda sayfayı
+                yana taşırmasın, üç noktayla kısalsın (#842). */}
+            <Button variant="ghost" asChild className="-ml-3 max-w-[calc(100%+0.75rem)] text-base">
               <Link href={back.href}>
                 <ArrowLeft aria-hidden="true" />
-                {back.label}
+                <span className="min-w-0 truncate">{back.label}</span>
               </Link>
             </Button>
           </div>

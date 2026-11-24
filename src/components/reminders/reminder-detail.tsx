@@ -253,7 +253,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               </Button>
             ) : null}
             <Button variant="secondary" size="compact" asChild>
-              <Link href={newIntakeHref({ customerId: reminder.customer.id, vehicleId: reminder.vehicle.id })}>
+              <Link href={newIntakeHref({ customerId: reminder.customer.id, vehicleId: reminder.vehicle.id, back: `/reminders/${reminder.id}` })}>
                 <Wrench className="size-3.5" />
                 Araç Kabul Oluştur
               </Link>
@@ -461,7 +461,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
 
           <div className="flex flex-col gap-2">
             {isActive ? (
-              <Link href={newIntakeHref({ customerId: reminder.customer.id, vehicleId: reminder.vehicle.id })}>
+              <Link href={newIntakeHref({ customerId: reminder.customer.id, vehicleId: reminder.vehicle.id, back: `/reminders/${reminder.id}` })}>
                 <Button variant="outline" className="w-full gap-2">
                   <Wrench className="size-4" />
                   Araç Kabul Oluştur
