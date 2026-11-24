@@ -258,6 +258,14 @@
   text-align: right;
 }
 
+/* Genel Bakış KPI rakamı (#815): display fontu (kpi-font.ts). Kompakt filtre
+   kartları (Araç Kabulleri) sistem fontunda kalır. Dar fontta sıkı harf
+   aralığı rakamları birbirine yapıştırır, aralık nötre yakın tutulur. */
+.stat:not([data-size="compact"]) > .statValue {
+  font-family: var(--font-kpi, var(--font-sans));
+  letter-spacing: -0.005em;
+}
+
 .stat > .statLabel {
   grid-area: label;
   font-size: 15px;
@@ -320,9 +328,9 @@
 .statValue {
   display: block;
   overflow: hidden;
-  font-size: 28px;
+  font-size: 40px;
   font-weight: 700;
-  line-height: 32px;
+  line-height: 40px;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -351,8 +359,8 @@
   }
 
   .statValue {
-    font-size: 32px;
-    line-height: 36px;
+    font-size: 52px;
+    line-height: 52px;
   }
 
   .stat > .statIcon {

@@ -63,13 +63,19 @@ Yazı ailesi: `-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text
 antialiased`. BakımX'te 22 Kasım 2026'dan beri Inter yüklenmiyor; `--font-sans`
 `globals.css` `:root`'ta sistem yığınına bağlı (SF Pro / Segoe UI / Roboto).
 
+**Tek istisna — KPI rakamı (#815):** Genel Bakış KPI kartlarındaki büyük rakam
+Barlow Semi Condensed 700 ile yazılır (`components/dashboard/kpi-font.ts`,
+`next/font/google`, yalnız 700 + latin). Etiketler ve Araç Kabulleri'nin kompakt
+filtre kartları sistem fontunda kalır. Başka bir yere display fontu eklenmez.
+
 Uygulama ölçeği (maketten, 350px genişlik referansı):
 
 | Rol | Boyut / ağırlık / harf aralığı |
 |---|---|
 | Ekran başlığı (büyük başlık) | 25px / 700 / −0.03em / lh 1.1 |
 | Başlık altı (tarih, bağlam) | 13px / 400 / `#86868b` |
-| KPI rakamı | 20px / 700 / −0.02em |
+| KPI rakamı (Genel Bakış) | Barlow Semi Condensed 40px (≥640px: 52px) / 700 / −0.005em / lh 1 |
+| KPI rakamı (kompakt filtre kartı) | 20px / 700, sistem fontu |
 | KPI etiketi | 11px / `#86868b` |
 | Bölüm başlığı (liste üstü) | 12px / 600 / `#86868b`, 4px sola girinti |
 | Satır birincil | 13px / 600 |

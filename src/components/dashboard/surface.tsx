@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatTurkishPlate } from "@/components/shared/plate-badge"
 import { APPOINTMENT_STATUS, ORDER_STATUS, type AppointmentStatusKey, type OrderStatusKey } from "@/lib/constants"
+import { kpiNumeralFont } from "./kpi-font"
 import styles from "./surface.module.css"
 
 /**
@@ -274,7 +275,7 @@ export function DashStatGrid({
   size?: "default" | "compact"
 }) {
   return (
-    <div className={styles.stats} aria-label={label}>
+    <div className={cn(styles.stats, size !== "compact" && kpiNumeralFont.variable)} aria-label={label}>
       <div className={styles.statGrid} data-count={count} data-size={size === "compact" ? "compact" : undefined}>{children}</div>
     </div>
   )
