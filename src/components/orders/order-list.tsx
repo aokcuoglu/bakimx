@@ -18,7 +18,8 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table"
 
-import { DashOrderStatus, DashPlate, DashStat, DashStatGrid, type Tone } from "@/components/dashboard/surface"
+import { DashOrderStatus, DashStat, DashStatGrid, type Tone } from "@/components/dashboard/surface"
+import { Plate } from "@/components/shared/plate"
 import { OrderTableColumnHeader } from "@/components/orders/order-table-column-header"
 import { Button } from "@/components/ui/button"
 import {
@@ -281,7 +282,7 @@ export function OrderList({
           const order = row.original
           return (
             <DetailHint detail={`${order.vehicle.plate} · ${order.vehicle.brand} ${order.vehicle.model}`}>
-              <DashPlate plate={order.vehicle.plate} country size="sm" />
+              <Plate plate={order.vehicle.plate} size="sm" />
             </DetailHint>
           )
         },
@@ -602,7 +603,7 @@ export function OrderList({
             return (
               <li key={order.id} className="relative px-4 py-3.5 transition-colors hover:bg-muted/60">
                 <div className="flex items-center gap-2">
-                  <DashPlate plate={order.vehicle.plate} country size="lg" />
+                  <Plate plate={order.vehicle.plate} size="lg" />
                   <span className="ml-auto"><DashOrderStatus status={order.status} /></span>
                   <span className="relative z-10">
                     <MobileActionsMenu

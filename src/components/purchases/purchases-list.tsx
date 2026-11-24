@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { PlateBadge } from "@/components/shared/status-badge"
+import { Plate } from "@/components/shared/plate"
 import { StatCard } from "@/components/shared/stat-card"
 import { formatTRY } from "@/lib/format"
 import { Button } from "@/components/ui/button"
@@ -93,7 +93,7 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
                   </td>
                   <td className="px-4 py-2">
                     <Link href={`/vehicles/${r.vehicle.id}`}>
-                      <PlateBadge plate={r.vehicle.plate} size="sm" />
+                      <Plate plate={r.vehicle.plate} size="sm" />
                     </Link>
                   </td>
                   <td className="px-4 py-2 min-w-[12rem]">
@@ -136,7 +136,7 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono text-sm font-bold text-foreground">{r.workOrderNo}</span>
-                  <PlateBadge plate={r.vehicle.plate} size="sm" />
+                  <Plate plate={r.vehicle.plate} size="sm" />
                 </div>
                 <p className="mt-1.5 text-sm font-semibold text-foreground truncate">{r.name}</p>
                 <p className="text-xs text-muted-foreground truncate">

@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Car, Search, X, Filter, Calendar, Gauge } from "lucide-react"
 import { EmptyState } from "@/components/shared/empty-state"
-import { PlateBadge } from "@/components/shared/status-badge"
+import { Plate } from "@/components/shared/plate"
 import { ActionsMenu, MobileActionsMenu } from "@/components/shared/actions-menu"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -276,7 +276,7 @@ function DesktopTable({
               <tr key={row.id} className="hover:bg-muted/60 transition-colors group">
                 <td className="px-4 py-3">
                   <Link href={`/vehicles/${row.id}`}>
-                    <PlateBadge plate={row.plate} />
+                    <Plate plate={row.plate} />
                   </Link>
                 </td>
                 <td className="px-4 py-3">
@@ -363,7 +363,7 @@ function MobileCards({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <Link href={`/vehicles/${row.id}`}>
-                <PlateBadge plate={row.plate} />
+                <Plate plate={row.plate} />
               </Link>
               <p className="mt-1.5 text-sm font-semibold text-foreground truncate">
                 {row.brand} {row.model}

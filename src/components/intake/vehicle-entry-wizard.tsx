@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -11,7 +11,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Item, ItemActions, ItemContent, ItemDescription, ItemHeader, ItemTitle } from "@/components/ui/item"
 import {
   AlertTriangle,
-  Barcode,
   Camera,
   Car,
   Check,
@@ -20,16 +19,14 @@ import {
   Loader2,
   Phone,
   ScanLine,
-  Search,
   User,
   UserCog,
 } from "lucide-react"
-import { WizardActions, WizardChoiceCard, WizardHeading, WizardStepper } from "@/components/intake/wizard-ui"
-import { DashPlate } from "@/components/dashboard/surface"
+import { WizardActions, WizardHeading, WizardStepper } from "@/components/intake/wizard-ui"
+import { Plate } from "@/components/shared/plate"
 import { EntryVehicleFields, EMPTY_VEHICLE_FIELDS, type VehicleFields } from "@/components/intake/entry-vehicle-fields"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import { PlateScanner } from "@/components/intake/plate-scanner"
-import { VinScanner } from "@/components/intake/vin-scanner"
 import { RegistrationCameraScanner } from "@/components/intake/registration-camera-scanner"
 import { RuhsattanOku, type RuhsattanOkuResult } from "@/components/vehicles/ruhsattan-oku"
 import { IntakeDuplicatePhoneNotice, IntakeOwnerCard } from "@/components/intake/intake-owner-card"
@@ -50,7 +47,6 @@ import { ocrVehicleTypeToSlug, ocrFuelToSlug, tecdocFuelToFormValue } from "@/li
 import { hasFeature, type PlanTier } from "@/lib/plan"
 import {
   EMPTY_OWNER_FIELDS,
-  ENTRY_METHODS,
   confirmedVehicleParts,
   entryStepLabels,
   identityConflicts,
@@ -101,23 +97,26 @@ function ownerFormData(o: OwnerFields, allowDuplicatePhone: boolean): FormData {
 }
 
 const SEARCH_ENDPOINT = "/api/search/customer-vehicle"
-const RECENT_ENDPOINT = "/api/vehicles/recent"
 
-const METHOD_ICONS: Record<EntryMethod, ReactNode> = {
-  registration: <ScanLine className="size-5" />,
-  vin: <Barcode className="size-5" />,
-  plate: <Search className="size-5" />,
-  customer: <User className="size-5" />,
+/** Müşterinin kayıtlı araçları (müşteri seçilince "Aracı seçin" listesi). */
+function fetchCustomerVehicles(customerId: string): Promise<CustVehicle[]> {
+  return fetch(`/api/vehicles?customerId=${encodeURIComponent(customerId)}`)
+    .then((r) => r.json())
+    .then((d: unknown) => {
+      const arr = Array.isArray(d) ? d : []
+      return arr.map((v) => ({ id: String(v.id), plate: String(v.plate), brand: String(v.brand), model: String(v.model) }))
+    })
 }
 
 /**
  * Kabul akışının araç girişi sihirbazı (#309).
  *
- * Kullanıcı önce **nasıl başlayacağını** seçer — ruhsat görseli, camdan şase,
- * plaka araması ya da müşteri araması — sonra o yolun kendi tam-genişlikte adımı
- * gelir. Kayıtlı araç bulunursa doğrudan onaya, bulunmazsa "Araç bilgileri" ve
- * "Müşteri" adımlarına geçilir. Eskiden bunların hepsi tek bir dar diyalogun
- * içinde üst üste duruyordu; ruhsat yükleme alanı da bir şeride sıkışmıştı.
+ * Her zaman plaka/müşteri aramasıyla başlar (odaklı akışta plaka kamerası
+ * açılışta hazır). Aramadan müşteri seçilirse — ya da kabul bir müşteriden
+ * açıldıysa (`initialCustomer`) — o müşterinin araçları listelenir. Kayıtlı araç
+ * bulunursa doğrudan onaya, bulunmazsa "Araç bilgileri" ve "Müşteri" adımlarına
+ * geçilir. Ayrı bir yöntem seçim ekranı yoktur (#822): ruhsat okuma ve şase
+ * kamerası araç bilgileri ekranındadır.
  *
  * Seçim `onChange` ile dışarı verilir (kabul sihirbazı formu + URL'i besler),
  * kullanıcı onayladığında `onComplete` çağrılır.
@@ -128,6 +127,7 @@ export function VehicleEntryWizard({
   onComplete,
   planTier,
   initialMethod = null,
+  initialCustomer = null,
   onVehiclePhotoChange,
   onConfirmOrder,
 }: {
@@ -135,8 +135,18 @@ export function VehicleEntryWizard({
   onChange: (v: { customerId: string; vehicleId: string }) => void
   onComplete: () => void
   planTier?: string
-  /** Verilirse yöntem seçimi atlanır, sihirbaz bu yöntemin yakalama adımında açılır. */
+  /**
+   * Verilirse akış odaklıdır (adım rayı yok) ve bu yöntemin yakalama adımında
+   * açılır; plaka akışında kamera açılışta hazır gelir. Verilmezse tam kabukta
+   * plaka/müşteri aramasıyla açılır.
+   */
   initialMethod?: EntryMethod | null
+  /**
+   * Kabul bir müşteriden açıldıysa (`/orders/new?customerId=…`, araçsız): o
+   * müşteri seçili başlar ve araçları listelenir (#822). Etiket, sunucunun
+   * atölyeye göre süzdüğü müşteri listesinden gelir.
+   */
+  initialCustomer?: { id: string; label: string } | null
   /**
    * Kabul fotoğrafı olarak yüklenecek araç karesi (plaka taramasında ya da araç
    * bilgileri ekranındaki kartta çekilen). Kabul kaydı oluşunca kabul sihirbazı
@@ -151,8 +161,11 @@ export function VehicleEntryWizard({
    */
   onConfirmOrder?: (v: { customerId: string; vehicleId: string }) => Promise<string | null>
 }) {
-  const [step, setStep] = useState<EntryStep>(initialMethod ? "capture" : "method")
-  const [method, setMethod] = useState<EntryMethod | null>(initialMethod)
+  // Sihirbazın başlangıç ekranı: odaklı akışta URL'deki yöntem, değilse plaka
+  // araması. Geri ve "Başka araç seç" buraya döner — yöntem seçim ekranı yok.
+  const startMethod: EntryMethod = initialMethod ?? "plate"
+  const [step, setStep] = useState<EntryStep>("capture")
+  const [method, setMethod] = useState<EntryMethod>(initialCustomer ? "customer" : startMethod)
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
 
@@ -167,7 +180,7 @@ export function VehicleEntryWizard({
   const [conflicts, setConflicts] = useState<IdentityConflict[]>([])
 
   // Sahip
-  const [owner, setOwner] = useState<{ id: string; label: string } | null>(null)
+  const [owner, setOwner] = useState<{ id: string; label: string } | null>(initialCustomer)
   const [ownerSeed, setOwnerSeed] = useState<OwnerSeed | null>(null)
   const [ownerMode, setOwnerMode] = useState(false)
 
@@ -175,17 +188,22 @@ export function VehicleEntryWizard({
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<UnifiedResult[]>([])
   const [searching, setSearching] = useState(false)
-  const [recent, setRecent] = useState<VehicleResult[]>([])
   const [custVehicles, setCustVehicles] = useState<CustVehicle[]>([])
-  const [pickedCustomer, setPickedCustomer] = useState<{ id: string; label: string } | null>(null)
+  const [custVehiclesLoading, setCustVehiclesLoading] = useState(!!initialCustomer)
+  const [pickedCustomer, setPickedCustomer] = useState<{ id: string; label: string } | null>(initialCustomer)
+  // Araç listesi hangi müşteri için isteniyor: geç gelen yanıt, kullanıcı o
+  // arada başka müşteriye geçtiyse yeni müşterinin altına eskinin araçlarını
+  // yazmasın (yoksa seçim customerId: Y + X'in aracı olurdu).
+  const custVehiclesFor = useRef<string | null>(initialCustomer?.id ?? null)
   // "vehiclePhoto": araç bilgileri ekranındaki fotoğraf kartı, plaka ekranıyla
   // AYNI tarayıcıyı açar; okunan kare kabul fotoğrafı olur.
   // Odaklı plaka akışında (?entry=plate, ör. teknisyenin "Araç Kabul" düğmesi)
   // tarayıcı açılışta hazır gelir: işin ilk adımı zaten aracın önünü çekmek.
-  // Yazmayı seçen "El ile gir" ile kutuya düşer.
+  // Yazmayı seçen "El ile gir" ile kutuya düşer. Kabul bir müşteriden açıldıysa
+  // ilk ekran o müşterinin araçlarıdır; kamera onun üstünde açılmaz.
   // "registration": "Ruhsattan doldur" — aynı tam ekran kamera kabuğunda ruhsat.
-  const [scanner, setScanner] = useState<"plate" | "vin" | "vehiclePhoto" | "registration" | null>(
-    initialMethod === "plate" ? "plate" : null,
+  const [scanner, setScanner] = useState<"plate" | "vehiclePhoto" | "registration" | null>(
+    initialMethod === "plate" && !initialCustomer ? "plate" : null,
   )
   const plateQueryRef = useRef<HTMLInputElement>(null)
   // Kamera kapatılınca (X ya da "El ile gir") kullanıcı yazmaya döner: arama
@@ -239,7 +257,6 @@ export function VehicleEntryWizard({
   const knownVehicle = foundExisting
   const steps = entryStepLabels(method, { knownVehicle })
   const completed: string[] = []
-  if (method) completed.push("method")
   if (confirmed) completed.push("capture", "vehicle", "owner")
 
   const vinResolve = useVinResolve({
@@ -363,15 +380,14 @@ export function VehicleEntryWizard({
     return () => { active = false }
   }, [value.vehicleId, value.customerId, confirmed?.vehicleId, onChange, confirmless])
 
-  // ——— Arama (plaka / şase modları) ———
+  // ——— Arama (plaka/müşteri) ———
   useEffect(() => {
-    if (step !== "capture" || (method !== "plate" && method !== "vin")) return
+    if (step !== "capture" || method !== "plate") return
     const q = query.trim()
     // Boş/eksik sorguda listeyi temizle. setState doğrudan effect gövdesinde
     // çağrılmıyor (react-hooks/set-state-in-effect) — aynı desen picker'da da var.
     // Plaka modunda yalnız il kodu ("34") aranmaz; il kodundan sonra harf beklenir.
-    const incomplete = method === "vin" ? !isValidVin(q) : !isPlateOrCustomerQueryReady(q)
-    if (incomplete) {
+    if (!isPlateOrCustomerQueryReady(q)) {
       const clear = setTimeout(() => { setResults([]); setSearching(false) }, 0)
       return () => clearTimeout(clear)
     }
@@ -380,7 +396,7 @@ export function VehicleEntryWizard({
     const controller = new AbortController()
     const t = setTimeout(() => {
       setSearching(true)
-      fetch(`${SEARCH_ENDPOINT}?q=${encodeURIComponent(method === "vin" ? normalizeVin(q) : q)}`, { signal: controller.signal })
+      fetch(`${SEARCH_ENDPOINT}?q=${encodeURIComponent(q)}`, { signal: controller.signal })
         .then((r) => r.json())
         .then((d) => setResults(Array.isArray(d?.results) ? d.results : []))
         .catch(() => { if (!controller.signal.aborted) setResults([]) })
@@ -389,22 +405,20 @@ export function VehicleEntryWizard({
     return () => { clearTimeout(t); controller.abort() }
   }, [query, step, method])
 
-  // ——— Son araçlar (yöntem adımında yazmadan seçim) ———
-  const recentRequested = useRef(false)
+  // ——— Müşteriden açılan kabul (#822): araç listesini yükle ———
+  // Müşteri ilk durumda seçili; burada yalnız araçları çekilir (setState
+  // yanıt geldiğinde — react-hooks/set-state-in-effect).
+  const initialCustomerId = initialCustomer?.id
   useEffect(() => {
-    if (step !== "method" || recentRequested.current) return
-    recentRequested.current = true
+    if (!initialCustomerId) return
     let active = true
-    fetch(RECENT_ENDPOINT)
-      .then((r) => r.json())
-      .then((d: unknown) => {
-        if (!active) return
-        const list = Array.isArray((d as { results?: unknown })?.results) ? (d as { results: UnifiedResult[] }).results : []
-        setRecent(list.filter((r): r is VehicleResult => r.kind === "vehicle"))
-      })
-      .catch(() => {})
+    const current = () => active && custVehiclesFor.current === initialCustomerId
+    fetchCustomerVehicles(initialCustomerId)
+      .then((list) => { if (current()) setCustVehicles(list) })
+      .catch(() => { if (current()) setCustVehicles([]) })
+      .finally(() => { if (current()) setCustVehiclesLoading(false) })
     return () => { active = false }
-  }, [step])
+  }, [initialCustomerId])
 
   // ——— Plaka çakışması: araç adımında girilen plaka zaten kayıtlıysa uyar ———
   useEffect(() => {
@@ -527,16 +541,6 @@ export function VehicleEntryWizard({
   }
 
   // ——— Geçişler ———
-  function chooseMethod(m: EntryMethod) {
-    setMethod(m)
-    setError("")
-    setQuery("")
-    setResults([])
-    setPickedCustomer(null)
-    setCustVehicles([])
-    setStep("capture")
-  }
-
   function selectExisting(r: VehicleResult) {
     if (confirmless && !finishesOrder()) { openPlateScreen(r.plate); return }
     setFoundExisting(true)
@@ -835,12 +839,12 @@ export function VehicleEntryWizard({
     setOwnerMode(false)
   }
 
-  // Odaklı akış (?entry=…) yöntem seçim ekranına hiç dönmez (#817): "Başka araç
-  // seç" akışı açılıştaki gibi baştan başlatır — plaka akışında kamera hazır.
+  // "Başka araç seç": akışı baştan, başlangıç aramasıyla başlatır (#817, #822);
+  // odaklı plaka akışında kamera açılıştaki gibi hazır gelir.
   function restart() {
-    setStep(initialMethod ? "capture" : "method")
+    setStep("capture")
     setRuhsatView(false)
-    setMethod(initialMethod ?? null)
+    setMethod(startMethod)
     if (initialMethod === "plate") setScanner("plate")
     setConfirmed(null)
     setFoundExisting(false)
@@ -854,8 +858,7 @@ export function VehicleEntryWizard({
     setConflicts([])
     setQuery("")
     setResults([])
-    setPickedCustomer(null)
-    setCustVehicles([])
+    clearPickedCustomer()
     setError("")
     setVehiclePhoto(null)
     setPhotoMissing(false)
@@ -872,15 +875,14 @@ export function VehicleEntryWizard({
 
   function goBack() {
     setError("")
-    const target = entryBackTarget(step, method, { knownVehicle, startMethod: initialMethod })
+    const target = entryBackTarget(step, method, { knownVehicle, startMethod })
     if (target.method !== method) {
-      // Odaklı akışta müşteri seçiminden plaka aramasına dönüş (#817): seçim
+      // Müşterinin araç listesinden plaka/müşteri aramasına dönüş (#817): seçim
       // ve önceki arama bırakılır, kutu boş açılır.
       setMethod(target.method)
       setQuery("")
       setResults([])
-      setPickedCustomer(null)
-      setCustVehicles([])
+      clearPickedCustomer()
       // pickCustomer sahibi de yazar; plaka aramasında yeni araç bu müşteriye
       // sessizce bağlanmasın.
       setOwner(null)
@@ -891,13 +893,22 @@ export function VehicleEntryWizard({
   function pickCustomer(customerId: string, label: string) {
     setPickedCustomer({ id: customerId, label })
     setOwner({ id: customerId, label })
-    fetch(`/api/vehicles?customerId=${customerId}`)
-      .then((r) => r.json())
-      .then((d: unknown) => {
-        const arr = Array.isArray(d) ? d : []
-        setCustVehicles(arr.map((v) => ({ id: String(v.id), plate: String(v.plate), brand: String(v.brand), model: String(v.model) })))
-      })
-      .catch(() => setCustVehicles([]))
+    custVehiclesFor.current = customerId
+    setCustVehicles([])
+    setCustVehiclesLoading(true)
+    const current = () => custVehiclesFor.current === customerId
+    fetchCustomerVehicles(customerId)
+      .then((list) => { if (current()) setCustVehicles(list) })
+      .catch(() => { if (current()) setCustVehicles([]) })
+      .finally(() => { if (current()) setCustVehiclesLoading(false) })
+  }
+
+  /** Seçili müşteriyi ve (uçuştaki isteği geçersiz kılarak) araç listesini bırakır. */
+  function clearPickedCustomer() {
+    custVehiclesFor.current = null
+    setPickedCustomer(null)
+    setCustVehicles([])
+    setCustVehiclesLoading(false)
   }
 
   const vehicleHits = results.filter((r): r is VehicleResult => r.kind === "vehicle")
@@ -913,7 +924,7 @@ export function VehicleEntryWizard({
   const stepEyebrow = focused ? undefined : `Adım ${stepIndex + 1}`
   const confirmedParts = confirmed ? confirmedVehicleParts(confirmed.label, confirmed.sublabel) : null
 
-  // Hangi yoldan gelinirse gelinsin (plaka araması, şase, müşteri) ruhsat araç
+  // Hangi yoldan gelinirse gelinsin (plaka araması ya da müşteri) ruhsat araç
   // bilgileri ekranında da okutulabilir — alanları elle doldurmak zorunda kalmayın.
   const ruhsatCard = hasFeature((planTier ?? "pro") as PlanTier, "ocrIntake") ? (
     <RuhsattanOku
@@ -954,135 +965,7 @@ export function VehicleEntryWizard({
         </Alert>
       )}
 
-      {/* ——— Adım: yöntem seçimi ——— */}
-      {step === "method" && (
-        <div className="space-y-5">
-          <WizardHeading
-            eyebrow={stepEyebrow}
-            title="Aracı nasıl kaydedelim?"
-            description="Ruhsatı okutabilir, camdaki şaseyi taratabilir ya da sistemde kayıtlı aracı arayabilirsiniz."
-          />
-          <div className="grid gap-3 sm:grid-cols-2">
-            {ENTRY_METHODS.map((m) => (
-              <WizardChoiceCard
-                key={m.value}
-                icon={METHOD_ICONS[m.value]}
-                title={m.title}
-                description={m.description}
-                selected={method === m.value}
-                onClick={() => chooseMethod(m.value)}
-              />
-            ))}
-          </div>
-
-          {recent.length > 0 && (
-            <div className="space-y-2 border-t border-border pt-4">
-              <p className="text-sm font-medium text-foreground">Son araçlar</p>
-              <p className="text-xs text-muted-foreground">Yakın zamanda işlem gören araçlar — tek dokunuşla seçin.</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {recent.map((r) => (
-                  <Button
-                    key={r.vehicleId}
-                    type="button"
-                    variant="outline"
-                    className="h-auto md:h-auto w-full justify-start gap-2 whitespace-normal py-2 text-left"
-                    onClick={() => selectExisting(r)}
-                  >
-                    <Car className="size-4 shrink-0 text-primary" />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium text-foreground">{r.label}</span>
-                      <span className="block text-xs text-muted-foreground">{r.sublabel}</span>
-                    </span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ——— Adım: yönteme özel yakalama ——— */}
-      {step === "capture" && method === "registration" && (
-        <div className="space-y-5">
-          <WizardHeading
-            eyebrow={stepEyebrow}
-            title="Ruhsatı yükleyin"
-            description="Fotoğrafı çekin ya da dosyadan seçin; plaka, marka, model ve teknik alanlar otomatik dolar."
-          />
-          {hasFeature((planTier ?? "pro") as PlanTier, "ocrIntake") ? (
-            <RuhsattanOku
-              variant="hero"
-              title="Ruhsat fotoğrafını yükleyin"
-              description="Kamerayla çekin, dosyadan seçin veya bu alana sürükleyin."
-              onResult={applyOcr}
-            />
-          ) : (
-            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              Ruhsat okuma özelliği paketinizde bulunmuyor.
-              <br />
-              Bilgileri elle girerek devam edebilirsiniz.
-            </div>
-          )}
-          <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
-            <Button type="button" variant="ghost" onClick={() => goToVehicleStep()}>
-              Ruhsatsız devam et — bilgileri elle gir
-            </Button>
-          </WizardActions>
-        </div>
-      )}
-
-      {step === "capture" && method === "vin" && (
-        <div className="space-y-5">
-          <WizardHeading
-            eyebrow={stepEyebrow}
-            title="Şase numarasını okutun"
-            description="Ön camın altındaki 17 haneli şase numarasını kamerayla okutun veya elle yazın."
-          />
-          <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-6 text-center sm:p-10">
-            <div className="flex flex-col items-center gap-4">
-              <span className="flex size-16 items-center justify-center rounded-lg border border-border bg-muted text-foreground">
-                <Barcode className="size-8" />
-              </span>
-              <Button variant="foreground" type="button" className="gap-2" onClick={() => setScanner("vin")}>
-                <ScanLine className="size-4" /> Kamerayla şase oku
-              </Button>
-              <div className="w-full max-w-sm space-y-1.5 text-left">
-                <Label htmlFor="entry-vin">veya elle yazın</Label>
-                <Input
-                  id="entry-vin"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value.toUpperCase())}
-                  placeholder="17 haneli şase numarası"
-                  autoComplete="off"
-                />
-              </div>
-            </div>
-          </div>
-          <SearchHits
-            loading={searching}
-            hits={vehicleHits}
-            emptyText={
-              isValidVin(query)
-                ? `«${normalizeVin(query)}» sistemde kayıtlı değil.`
-                : query.trim()
-                  ? "17 haneli geçerli bir şase numarası girin."
-                  : ""
-            }
-            onPick={selectExisting}
-          />
-          <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
-            <Button variant="foreground"
-              type="button"
-              className="gap-2"
-              disabled={!isValidVin(query)}
-              onClick={() => goToVehicleStep({ vin: query })}
-            >
-              Bu şaseyle yeni araç <ChevronRight className="size-4" />
-            </Button>
-          </WizardActions>
-        </div>
-      )}
-
+      {/* ——— Adım: yakalama — plaka/müşteri araması ——— */}
       {step === "capture" && method === "plate" && (
         <div className="space-y-5">
           <WizardHeading
@@ -1164,7 +1047,7 @@ export function VehicleEntryWizard({
                 onPick={selectExisting}
                 onPickCustomer={(c) => { setMethod("customer"); setQuery(""); setResults([]); pickCustomer(c.customerId, c.label) }}
               />
-              <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
+              <WizardActions>
                 <Button variant="foreground"
                   type="button"
                   className="gap-2"
@@ -1192,7 +1075,7 @@ export function VehicleEntryWizard({
                 <span className="flex items-center gap-2 text-sm font-medium">
                   <User className="size-4 text-primary" /> {pickedCustomer.label}
                 </span>
-                <Button type="button" variant="ghost" size="sm" onClick={() => { setPickedCustomer(null); setCustVehicles([]) }}>
+                <Button type="button" variant="ghost" size="sm" onClick={clearPickedCustomer}>
                   Değiştir
                 </Button>
               </div>
@@ -1216,7 +1099,11 @@ export function VehicleEntryWizard({
                     }
                   />
                 ))}
-                {!custVehicles.length && (
+                {custVehiclesLoading ? (
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin" /> Araçlar yükleniyor…
+                  </p>
+                ) : !custVehicles.length && (
                   <p className="text-sm text-muted-foreground">Bu müşterinin kayıtlı aracı yok.</p>
                 )}
               </div>
@@ -1224,7 +1111,7 @@ export function VehicleEntryWizard({
           ) : (
             <CustomerSearchOrCreate onSelected={pickCustomer} />
           )}
-          <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
+          <WizardActions back={method !== startMethod && <Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
             {pickedCustomer && (
               <Button variant="foreground"
                 type="button"
@@ -1498,7 +1385,7 @@ export function VehicleEntryWizard({
           <Item variant="outline" className="bg-card/80 shadow-xs">
             <ItemContent>
               <ItemHeader>
-                <DashPlate plate={confirmedParts.plate} country size="lg" />
+                <Plate plate={confirmedParts.plate} size="lg" />
               </ItemHeader>
               {confirmedParts.vehicleName && (
                 <ItemTitle className="flex items-center gap-2 text-base font-semibold">
@@ -1586,12 +1473,6 @@ export function VehicleEntryWizard({
             setShowDetails(true)
             setRuhsatView(true)
           }}
-        />
-      )}
-      {scanner === "vin" && (
-        <VinScanner
-          onDetected={(vin) => { setScanner(null); setQuery(normalizeVin(vin)) }}
-          onClose={() => setScanner(null)}
         />
       )}
     </div>
@@ -1694,7 +1575,7 @@ function VehicleHitCard({
       <Item className="w-full p-0">
         <ItemContent>
           <ItemHeader>
-            <DashPlate plate={plate} country size={large ? "lg" : "md"} />
+            <Plate plate={plate} size={large ? "lg" : "md"} />
           </ItemHeader>
           <ItemTitle className="flex items-center gap-2 text-base font-semibold">
             <Car className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

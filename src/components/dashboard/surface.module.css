@@ -486,7 +486,7 @@ a.row:focus-visible {
 /* Büyük plakalı listede ad sütunu aynı hizadan başlasın: plaka doğal
    genişliğinde kalır, başlangıç kolonu en uzun TR plaka boyuna sabitlenir
    ("34 ABC 123", "34 AB 1234", "34 A 12345" — hepsi 10 karakter). */
-.rowStart:has(> .plate[data-size="lg"]) {
+.rowStart:has(> [data-plate-country][data-size="lg"]) {
   min-width: 140px;
 }
 
@@ -646,66 +646,6 @@ a.row:focus-visible {
   .mdOnly {
     display: inline-flex;
   }
-}
-
-/* ── Plaka ──────────────────────────────────────────────── */
-.plate {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  height: 28px;
-  padding: 0 7px;
-  border: 1.5px solid var(--foreground);
-  border-radius: 6px;
-  background: var(--card);
-  font-size: 13.5px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  color: var(--foreground);
-}
-
-/* Büyük plaka (DashPlate size="lg") — teknisyen kartlarında birincil kimlik. */
-.plate[data-size="lg"] {
-  height: 34px;
-  padding: 0 10px;
-  border-width: 2px;
-  border-radius: 7px;
-  font-size: 17px;
-}
-
-/* Küçük plaka (DashPlate size="sm") — tablo satırlarında metinle aynı ölçekte. */
-.plate[data-size="sm"] {
-  height: 22px;
-  padding: 0 6px;
-  border-width: 1.25px;
-  border-radius: 5px;
-  font-size: 12px;
-}
-
-/* İsteğe bağlı mavi ülke şeridi (DashPlate country). Yazısız bant; çerçevenin
-   içinde sol kenara yapışık durur, plaka metni yine iç boşlukla başlar. */
-.plate[data-country] {
-  padding-left: 0;
-  overflow: hidden;
-}
-
-.plateCountry {
-  align-self: stretch;
-  flex: none;
-  width: 8px;
-  margin-right: 7px;
-  background: var(--primary);
-}
-
-.plate[data-size="sm"] .plateCountry {
-  width: 6px;
-  margin-right: 6px;
-}
-
-.plate[data-size="lg"] .plateCountry {
-  width: 10px;
-  margin-right: 10px;
 }
 
 /* ── Hap ve ikon kutusu tonları ─────────────────────────── */
