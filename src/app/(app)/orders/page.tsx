@@ -10,6 +10,7 @@ import { FilterSelect } from "@/components/shared/filter-select"
 import { OrderFiltersDisclosure } from "@/components/orders/order-filters-disclosure"
 import { surface } from "@/components/dashboard/surface"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
+import { NEW_INTAKE_HREF } from "@/lib/intake/entry-links"
 import { calculateOrderTotals } from "@/lib/totals"
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
@@ -155,7 +156,7 @@ export default async function OrdersPage({
         <section className={surface.hero}>
           <h1 className={surface.heroTitle}>Araç Kabulleri</h1>
           <Button variant="default" className={surface.heroCta} asChild>
-            <Link href="/orders/new">
+            <Link href={NEW_INTAKE_HREF}>
               <Plus className="size-4" />
               Yeni Araç Kabul
             </Link>
@@ -304,7 +305,7 @@ export default async function OrdersPage({
                   : "Yeni bir araç kabulü oluşturarak başlayabilirsiniz"}
               </p>
               <Button variant={hasAnyFilter ? "outline" : "foreground"} size="sm" className="mt-4" asChild>
-                <Link href={hasAnyFilter ? "/orders" : "/orders/new"}>
+                <Link href={hasAnyFilter ? "/orders" : NEW_INTAKE_HREF}>
                   {hasAnyFilter ? <X className="size-3.5" /> : <Plus className="size-3.5" />}
                   {hasAnyFilter ? "Filtreleri temizle" : "Yeni Araç Kabul"}
                 </Link>

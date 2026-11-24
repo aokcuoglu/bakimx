@@ -47,9 +47,9 @@ test("Oluştur modalı klavye ve dar ekranlarda kullanılabilir", async ({
       page.getByRole("button", { name: "Oluşturma merkezini kapat" }),
     ).toBeFocused()
     await expect(dialog.getByRole("link")).toHaveCount(4)
-    await expect(dialog.getByRole("link", { name: /İş Emri/ })).toHaveAttribute(
+    await expect(dialog.getByRole("link", { name: /Araç Kabul/ })).toHaveAttribute(
       "href",
-      "/orders/new",
+      "/orders/new?entry=plate",
     )
     await dialog.screenshot({ path: testInfo.outputPath("create-modal-desktop.png"), animations: "disabled" })
 
