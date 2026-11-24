@@ -24,7 +24,8 @@ import { intakeSchema, type IntakeFormValues } from "@/lib/validations/intake"
 import { typedResolver } from "@/lib/validations/resolver"
 import { VehicleEntryWizard } from "@/components/intake/vehicle-entry-wizard"
 import type { PendingVehiclePhoto } from "@/components/intake/vehicle-photo-capture"
-import type { EntryMethod } from "@/lib/intake/entry-wizard"
+import { resolveInitialCustomer, type EntryMethod } from "@/lib/intake/entry-wizard"
+import { displayCustomerName } from "@/lib/search/unified-results"
 import { WizardStepper } from "@/components/intake/wizard-ui"
 import { FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
@@ -144,6 +145,20 @@ export function IntakeWizard({
   if (selectedCustomerId && selectedVehicleId) completedSteps.add(1)
   if (customerComplaint.trim()) completedSteps.add(3)
 
+  // Müşteriden açılan kabul (#822): araçsız `?customerId=` ile gelindiyse araç
+  // girişi o müşteri seçili ve araçları listeli başlar. Müşteri, sunucunun
+  // atölyeye göre süzdüğü listeden çözülür. "Kaydet & Yeni"de tüketilir: sonraki
+  // araç aynı müşteriyle başlamasın (URL temizlenmeden yeniden mount olur).
+  const [prefillCustomerConsumed, setPrefillCustomerConsumed] = useState(false)
+  const prefillCustomer = resolveInitialCustomer(customers, {
+    customerId: prefillCustomerId,
+    vehicleId: prefillVehicleId,
+    consumed: prefillCustomerConsumed,
+  })
+  const initialCustomer = prefillCustomer
+    ? { id: prefillCustomer.id, label: displayCustomerName(prefillCustomer) }
+    : null
+
   // Prefill from OCR redirect (registration scanner)
   useEffect(() => {
     if (prefillCustomerId && customers.find((c) => c.id === prefillCustomerId)) {
@@ -197,6 +212,7 @@ export function IntakeWizard({
     setOrderId("")
     setVehicleInfo(null)
     setError("")
+    setPrefillCustomerConsumed(true)
     setStep(1)
     // URL'deki önceki müşteri/araç seçimini temizle (rehydrate/prefill tetiklenmesin).
     // Giriş yöntemi (`entry`) ve kaynak (`from=technician`) KALIR: yoksa ikinci
@@ -298,7 +314,7 @@ export function IntakeWizard({
   }
 
   // Sihirbaz rayı: üst seviye üç adım. Araç girişinin kendi alt adımları
-  // (yöntem → yakalama → araç → müşteri → onay) 1. adımın içinde yaşar (#309).
+  // (yakalama → araç → müşteri → onay) 1. adımın içinde yaşar (#309, #822).
   const railSteps = STEPS.map((s) => ({ id: String(s.id), label: s.label }))
   const railCompleted = [...completedSteps].map(String)
   // Doğrudan giriş (?entry=…): adım rayı yok, tek kolon.
@@ -354,6 +370,7 @@ export function IntakeWizard({
                 onComplete={() => setStep(3)}
                 planTier={planTier}
                 initialMethod={initialEntryMethod}
+                initialCustomer={initialCustomer}
                 onVehiclePhotoChange={(photo) => { pendingVehiclePhoto.current = photo }}
                 onConfirmOrder={focused ? handleConfirmOrder : undefined}
               />
