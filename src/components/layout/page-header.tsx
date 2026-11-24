@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, type ReactNode } from "react"
+import { createContext, Fragment, useContext, type ReactNode } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -65,21 +65,23 @@ export function PageHeaderView({
 
   return (
     <header data-slot="page-header" data-tour={header.tourId} className={styles.header}>
-      <Breadcrumb className={styles.crumbs}>
+      <Breadcrumb aria-label="Sayfa yolu" className={styles.crumbs}>
         <BreadcrumbList className="text-[length:inherit]">
           {crumbs.map((crumb, i) => (
-            <BreadcrumbItem key={`${i}-${crumb.label}`}>
+            <Fragment key={`${i}-${crumb.label}`}>
               {i > 0 && <BreadcrumbSeparator />}
-              {i === crumbs.length - 1 ? (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-              ) : crumb.href ? (
-                <BreadcrumbLink asChild>
-                  <Link href={crumb.href}>{crumb.label}</Link>
-                </BreadcrumbLink>
-              ) : (
-                <span>{crumb.label}</span>
-              )}
-            </BreadcrumbItem>
+              <BreadcrumbItem>
+                {i === crumbs.length - 1 ? (
+                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                ) : crumb.href ? (
+                  <BreadcrumbLink asChild>
+                    <Link href={crumb.href}>{crumb.label}</Link>
+                  </BreadcrumbLink>
+                ) : (
+                  <span>{crumb.label}</span>
+                )}
+              </BreadcrumbItem>
+            </Fragment>
           ))}
         </BreadcrumbList>
       </Breadcrumb>

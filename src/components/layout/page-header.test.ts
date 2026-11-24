@@ -21,6 +21,8 @@ describe("PageHeaderView", () => {
     const html = render({})
     expect(html).toContain('aria-current="page"')
     expect(html).toContain('href="/cashbox"')
+    expect(html).toContain('aria-label="Sayfa yolu"')
+    expect(html).not.toMatch(/<li[^>]*>(?:(?!<\/li>).)*<li/)
     expect(html).not.toMatch(/<a[^>]*>Servis/)
   })
 
@@ -31,10 +33,12 @@ describe("PageHeaderView", () => {
   test("dynamic subtitle reserves an empty aria-hidden row until the page supplies text", () => {
     const empty = render({ dynamicSubtitle: true })
     expect(empty).toContain('data-slot="page-subtitle"')
-    expect(empty).toContain('aria-hidden="true"')
+    expect(empty).toMatch(/data-slot="page-subtitle"[^>]*aria-hidden="true"|aria-hidden="true"[^>]*data-slot="page-subtitle"/)
     const filled = render({ dynamicSubtitle: true }, "3 kayıt")
     expect(filled).toContain("3 kayıt")
-    expect(filled.slice(filled.indexOf('data-slot="page-subtitle"'))).not.toContain('aria-hidden="true"')
+    const tag = filled.match(/<p[^>]*data-slot="page-subtitle"[^>]*>/)?.[0] ?? ""
+    expect(tag).not.toBe("")
+    expect(tag).not.toContain("aria-hidden")
   })
 
   test("static description renders inside the subtitle slot", () => {
