@@ -3,7 +3,6 @@ import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { CalendarView } from "@/components/appointments/calendar-view"
 import { getCalendarEvents } from "@/lib/calendar/queries"
-import Link from "next/link"
 
 export const metadata = { title: "Takvim" }
 
@@ -46,15 +45,8 @@ export default async function CalendarPage({
   }))
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Takvim">
+    <AppShell workshopName={workshop?.name}>
       <div className="space-y-5 sm:space-y-6">
-
-
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <p className="text-sm text-muted-foreground mt-0.5">Randevular, teslimatlar ve bakım hatırlatmaları</p>
-          </div>
-        </div>
 
         <CalendarView
           initialEvents={serializedEvents}

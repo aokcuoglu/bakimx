@@ -2,6 +2,7 @@ import { expect, test } from "bun:test"
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
 import ts from "typescript"
+import { PAGE_HEADERS } from "./navigation/page-headers"
 
 const SRC = join(import.meta.dir, "..")
 const SCOPES = [
@@ -63,9 +64,6 @@ test("Button çağrıları eylem rengini açıkça seçiyor ve mavi default'u be
           // e-santral kalıbı Dashboard prototipi (docs/design-pattern-esantral.md):
           // birincil eylem mavi hap. Kalıp onaylanınca kural DESIGN.md ile birlikte güncellenecek.
           "app/(app)/dashboard/page.tsx",
-          // Araç Kabulleri listesi Dashboard kalıbına taşındı: "Yeni Araç Kabul"
-          // aynı mavi hap birincil eylem (Dashboard hero CTA'sıyla eş).
-          "app/(app)/orders/page.tsx",
           // Pazarlama kiti hap düğmesi (#781): e-santral `.d-blue` birincil eylemi —
           // tüm ana sayfa CTA'ları bu tek bileşenden geçer, rengi kit CSS'i verir.
           "components/marketing/kit/pill-button.tsx",
@@ -491,4 +489,16 @@ test("Button basılma efekti konum translate'ini ezmiyor", () => {
 
   expect(writesTranslate).toEqual([])
   expect(classTokens).toContain("active:not-aria-[haspopup]:[transform:translateY(1px)]")
+})
+
+test("kayıtlı menü sayfaları başlığı PageFrame'e bırakır (#823)", () => {
+  const FORBIDDEN = ["surface.hero", "<h1", "pageActions=", "pageTitle="]
+  const offenders: string[] = []
+  for (const href of Object.keys(PAGE_HEADERS)) {
+    const file = join(SRC, "app", "(app)", href, "page.tsx")
+    const source = readFileSync(file, "utf8")
+    const found = FORBIDDEN.filter((token) => source.includes(token))
+    if (found.length > 0) offenders.push(`${href}: ${found.join(", ")}`)
+  }
+  expect(offenders).toEqual([])
 })

@@ -107,24 +107,8 @@ export default async function AppointmentsPage({
   ]
 
   return (
-    <AppShell
-      workshopName={workshop?.name}
-      pageTitle="Randevular"
-    >
+    <AppShell workshopName={workshop?.name}>
       <div className="space-y-5 sm:space-y-6">
-
-
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <p className="text-sm text-muted-foreground mt-0.5">Servis randevularını planlayın ve yönetin</p>
-          </div>
-          <Button variant="foreground" size="default" className="hidden sm:inline-flex" asChild>
-            <Link href="/appointments/new">
-              <Plus className="size-4" />
-              Yeni Randevu
-            </Link>
-          </Button>
-        </div>
 
         <form action="/appointments" method="get" className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
