@@ -29,7 +29,8 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { StatusBadge, PlateBadge } from "@/components/shared/status-badge"
+import { StatusBadge } from "@/components/shared/status-badge"
+import { Plate } from "@/components/shared/plate"
 import { ReminderStatusBadge, ReminderTypeBadge } from "@/components/reminders/reminder-status-badge"
 import { CustomerTypeBadge, CustomerTagBadge, PriceGroupBadge } from "@/components/customers/customer-badges"
 import { CustomerCreateForm, type CustomerFormInitial } from "@/components/customers/customer-create-form"
@@ -272,7 +273,7 @@ export function CustomerDetail({
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <PlateBadge plate={v.plate} />
+                          <Plate plate={v.plate} />
                           <span className="text-sm font-medium text-foreground truncate">
                             {v.brand} {v.model}
                           </span>
@@ -322,7 +323,7 @@ export function CustomerDetail({
                             <span className="text-xs font-mono font-semibold text-muted-foreground">
                               {i.order.workOrderNo || "—"}
                             </span>
-                            <PlateBadge plate={i.vehicle.plate} />
+                            <Plate plate={i.vehicle.plate} />
                             <StatusBadge status={i.order.status} />
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
@@ -383,7 +384,7 @@ export function CustomerDetail({
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <PlateBadge plate={r.vehicle.plate} />
+                          <Plate plate={r.vehicle.plate} />
                           <span className="text-sm font-medium text-foreground truncate">{r.title}</span>
                           <ReminderStatusBadge status={r.status} />
                           <ReminderTypeBadge type={r.type} />
@@ -423,7 +424,7 @@ export function CustomerDetail({
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <PlateBadge plate={i.vehicle.plate} />
+                            <Plate plate={i.vehicle.plate} />
                             <span
                               className={cn(
                                 "inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border",

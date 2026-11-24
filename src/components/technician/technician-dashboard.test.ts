@@ -57,7 +57,7 @@ describe("teknisyen paneli KPI filtreleri", () => {
   })
 
   test("iş kartı yalnız durum, plaka, araç ve müşteriyi gösterir", () => {
-    expect(source).toContain('<DashPlate plate={order.plate} country size="lg" />')
+    expect(source).toContain('<Plate plate={order.plate} size="lg" />')
     expect(source).toContain('<ItemDescription className="flex items-center gap-2">')
     expect(source).not.toContain('order.workOrderNo}')
     expect(source).not.toContain('Kontrol listesi')

@@ -59,5 +59,3 @@ export function CollectionStatusBadge({ status, size = "sm", className }: { stat
   const key = status as CollectionStatusKey
   return <StatusPill label={COLLECTION_STATUS_LABELS[key] || status} color={COLLECTION_STATUS_COLORS[key]} size={size} className={className} />
 }
-
-export { PlateBadge } from "@/components/shared/plate-badge"

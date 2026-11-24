@@ -4,11 +4,11 @@ import {
   DashEmpty,
   DashOrderStatus,
   DashPanel,
-  DashPlate,
   DashRow,
   DashTile,
   formatTime,
 } from "@/components/dashboard/surface"
+import { Plate } from "@/components/shared/plate"
 
 type AgendaItem = {
   key: string
@@ -64,7 +64,7 @@ export function TodayAgenda({
             stack
             start={
               item.plate
-                ? <DashPlate plate={item.plate} country size="lg" />
+                ? <Plate plate={item.plate} size="lg" />
                 : <DashTile tone="info">{formatTime(item.at)}</DashTile>
             }
             title={item.title}

@@ -1,6 +1,7 @@
 import type { InServiceOrderRow } from "@/lib/dashboard/queries"
 import { IN_SERVICE_ORDER_FILTER } from "@/lib/orders/status-filter"
-import { DashEmpty, DashOrderStatus, DashPanel, DashPlate, DashRow } from "@/components/dashboard/surface"
+import { DashEmpty, DashOrderStatus, DashPanel, DashRow } from "@/components/dashboard/surface"
+import { Plate } from "@/components/shared/plate"
 
 function waitingText(days: number): string {
   if (days === 0) return "Bugün geldi"
@@ -23,7 +24,7 @@ export function LongestWaiting({ orders }: { orders: InServiceOrderRow[] }) {
             key={o.id}
             href={`/orders/${o.id}`}
             stack
-            start={<DashPlate plate={o.plate} country size="lg" />}
+            start={<Plate plate={o.plate} size="lg" />}
             title={o.customerName}
             sub={[waitingText(o.daysInService), [o.brand, o.model].filter(Boolean).join(" ")].filter(Boolean).join(" · ")}
             end={<DashOrderStatus status={o.status} />}

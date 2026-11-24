@@ -25,7 +25,7 @@ import {
   UserCog,
 } from "lucide-react"
 import { WizardActions, WizardChoiceCard, WizardHeading, WizardStepper } from "@/components/intake/wizard-ui"
-import { DashPlate } from "@/components/dashboard/surface"
+import { Plate } from "@/components/shared/plate"
 import { EntryVehicleFields, EMPTY_VEHICLE_FIELDS, type VehicleFields } from "@/components/intake/entry-vehicle-fields"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import { PlateScanner } from "@/components/intake/plate-scanner"
@@ -1482,7 +1482,7 @@ export function VehicleEntryWizard({
           <Item variant="outline" className="bg-card/80 shadow-xs">
             <ItemContent>
               <ItemHeader>
-                <DashPlate plate={confirmedParts.plate} country size="lg" />
+                <Plate plate={confirmedParts.plate} size="lg" />
               </ItemHeader>
               {confirmedParts.vehicleName && (
                 <ItemTitle className="flex items-center gap-2 text-base font-semibold">
@@ -1678,7 +1678,7 @@ function VehicleHitCard({
       <Item className="w-full p-0">
         <ItemContent>
           <ItemHeader>
-            <DashPlate plate={plate} country size={large ? "lg" : "md"} />
+            <Plate plate={plate} size={large ? "lg" : "md"} />
           </ItemHeader>
           <ItemTitle className="flex items-center gap-2 text-base font-semibold">
             <Car className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
