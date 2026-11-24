@@ -175,7 +175,7 @@ export function AppointmentList({
                     <div className="flex items-center justify-end">
                       <ActionsMenu
                         viewHref={`/appointments/${a.id}`}
-                        workOrderHref={a.vehicle ? newIntakeHref({ vehicleId: a.vehicle.id, customerId: a.customer.id }) : newIntakeHref({ customerId: a.customer.id })}
+                        workOrderHref={a.vehicle ? newIntakeHref({ vehicleId: a.vehicle.id, customerId: a.customer.id, back: "/appointments" }) : newIntakeHref({ customerId: a.customer.id, back: "/appointments" })}
                       />
                     </div>
                   </td>
@@ -227,7 +227,7 @@ export function AppointmentList({
               </div>
               <MobileActionsMenu
                 viewHref={`/appointments/${a.id}`}
-                workOrderHref={a.vehicle ? newIntakeHref({ vehicleId: a.vehicle.id, customerId: a.customer.id }) : newIntakeHref({ customerId: a.customer.id })}
+                workOrderHref={a.vehicle ? newIntakeHref({ vehicleId: a.vehicle.id, customerId: a.customer.id, back: "/appointments" }) : newIntakeHref({ customerId: a.customer.id, back: "/appointments" })}
               />
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">

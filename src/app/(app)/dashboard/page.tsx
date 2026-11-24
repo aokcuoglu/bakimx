@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button"
 import styles from "@/components/dashboard/dashboard-layout.module.css"
 import { Plus } from "lucide-react"
 import { getPlanState, hasFeature } from "@/lib/plan"
-import { NEW_INTAKE_HREF } from "@/lib/intake/entry-links"
+import { newIntakeHref } from "@/lib/intake/entry-links"
+
+const DASHBOARD_INTAKE_HREF = newIntakeHref({ back: "/dashboard" })
 
 import {
   getDashboardStats,
@@ -100,7 +102,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <Button variant="default" className={surface.heroCta} asChild>
-            <Link href={NEW_INTAKE_HREF} data-tour="welcome-cta">
+            <Link href={DASHBOARD_INTAKE_HREF} data-tour="welcome-cta">
               <Plus className="size-4" />
               Yeni Araç Kabul
             </Link>
@@ -114,7 +116,7 @@ export default async function DashboardPage() {
               <p className="mt-2 text-[17px] leading-6 text-muted-foreground">Kurulum tercihleriniz kaydedildi. İlk müşterinizi ve aracınızı kaydedin, ardından araç kabulünüzü açın. Araç kabul ekranında da müşteri ve araç ekleyebilirsiniz.</p>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <Button asChild variant="outline" className="rounded-full"><Link href="/customers/new">İlk müşteriyi ekle</Link></Button>
-                <Button variant="default" asChild className="rounded-full"><Link href={NEW_INTAKE_HREF}>İlk araç kabulünü oluştur</Link></Button>
+                <Button variant="default" asChild className="rounded-full"><Link href={DASHBOARD_INTAKE_HREF}>İlk araç kabulünü oluştur</Link></Button>
               </div>
             </div>
           </DashPanel>
