@@ -23,15 +23,23 @@ describe("ofisin Yeni Araç Kabul hedefi (#813)", () => {
     expect(CREATE_OPTIONS.find((option) => option.id === "order")?.href).toBe(NEW_INTAKE_HREF)
   })
 
+  // Sayfa başlığındaki "Yeni Araç Kabul" düğmesi #823'ten beri kayıttan gelir
+  // (page-headers.ts); sayfada yalnız boş durum düğmeleri kalır.
   // Genel Bakış ve Araç Kabulleri sunucu bileşenleri; render etmeden ancak
   // kaynaktan bakılabilir. Çıplak "/orders/new" geri gelirse o düğme kamerasız
   // eski sihirbaza döner.
   test.each([
-    ["Genel Bakış", "src/app/(app)/dashboard/page.tsx", 2],
-    ["Araç Kabulleri", "src/app/(app)/orders/page.tsx", 2],
+    ["Genel Bakış", "src/app/(app)/dashboard/page.tsx", 1],
+    ["Araç Kabulleri", "src/app/(app)/orders/page.tsx", 1],
   ])("%s düğmeleri ortak hedefi kullanır", (_label, file, uses) => {
     const source = readFileSync(join(process.cwd(), file), "utf8")
     expect(source).not.toContain('"/orders/new"')
     expect(source.match(/NEW_INTAKE_HREF\b/g)?.length ?? 0).toBeGreaterThanOrEqual(uses + 1)
+  })
+
+  test("sayfa başlığı kaydındaki Yeni Araç Kabul düğmesi ortak hedefi kullanır", () => {
+    const source = readFileSync(join(process.cwd(), "src/lib/navigation/page-headers.ts"), "utf8")
+    expect(source).not.toContain('"/orders/new"')
+    expect(source).toContain("href: NEW_INTAKE_HREF")
   })
 })
