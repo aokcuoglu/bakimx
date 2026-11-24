@@ -49,7 +49,7 @@ test("sekme geçişi sunucu navigasyonu tetiklemez", () => {
 
 test("kayıt detayı solda, sekmeler sağda durur", () => {
   expect(SOURCE).toContain("OrderRecordRail")
-  expect(SOURCE).toContain("lg:grid-cols-[280px_minmax(0,1fr)]")
+  expect(SOURCE).toContain("lg:grid-cols-[320px_minmax(0,1fr)]")
 })
 
 test("düzenleme aksiyonu order.edit yetkisine bağlıdır", () => {

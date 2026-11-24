@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { PaymentBadge } from "@/components/shared/status-badge"
+import { DetailPanel, OrderPaymentPill, surface } from "@/components/orders/order-detail-surface"
 import type { OrderStatusKey } from "@/lib/constants"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus, percentToBps, applyDiscountKurus, applyTaxBps, addKurus } from "@/lib/money"
@@ -25,7 +25,6 @@ import {
   Wrench,
   Loader2,
   Pencil,
-  Calculator,
   Wallet,
   ChevronRight,
 } from "lucide-react"
@@ -289,17 +288,8 @@ export function PricingSummaryCard({
 }) {
   return (
     <>
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calculator className="size-4 text-muted-foreground" />
-            Fiyatlandırma
-          </CardTitle>
-          {showCashbox && <PaymentBadge status={paymentStatus} size="md" />}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
+    <DetailPanel title="Fiyatlandırma" aside={showCashbox && <OrderPaymentPill status={paymentStatus} />}>
+      <div className={cn(surface.cardBody, "space-y-2")}>
         <SummaryRow label="Parça Toplamı" value={totals.partsCount > 0 ? formatTRY(totals.partsTotal) : "—"} muted={totals.partsCount === 0} />
         <SummaryRow label="İşçilik Toplamı" value={totals.laborCount > 0 ? formatTRY(totals.laborTotal) : "—"} muted={totals.laborCount === 0} />
         <SummaryRow label="Dış İşçilik Toplamı" value={totals.externalLaborCount > 0 ? formatTRY(totals.externalLaborTotal) : "—"} muted={totals.externalLaborCount === 0} />
@@ -350,8 +340,8 @@ export function PricingSummaryCard({
             </Button>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </DetailPanel>
     <Dialog open={editingMeta} onOpenChange={(open) => { if (!loading) setEditingMeta(open) }}>
       <DialogContent>
         <DialogHeader>

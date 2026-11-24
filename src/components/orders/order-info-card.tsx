@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
@@ -21,7 +20,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog"
-import { PaymentBadge } from "@/components/shared/status-badge"
+import { DetailPanel, DetailRow, OrderPaymentPill, detail } from "@/components/orders/order-detail-surface"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
 import { formatTRY } from "@/lib/format"
@@ -29,7 +28,7 @@ import { ORDER_STATUS, ARRIVAL_REASON_ORDER, ARRIVAL_REASONS, arrivalReasonLabel
 import { isOrderLocked, orderStatusOptions } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import { cn } from "@/lib/utils"
-import { Calendar, Loader2, Pencil, Receipt } from "lucide-react"
+import { Loader2, Pencil } from "lucide-react"
 import type { OrderDetailData } from "@/components/orders/order-management-panel"
 
 export function OrderInfoCard({
@@ -168,29 +167,20 @@ export function OrderInfoCard({
 
   return (
     <>
-      <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Receipt className="size-4 text-muted-foreground" />
-          Araç Kabul Bilgileri
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="text-sm">
-        <div className="grid grid-cols-1 gap-y-2.5 md:grid-cols-2 md:gap-x-8">
+      <DetailPanel title="Araç Kabul Bilgileri">
+        <div className={detail.kvCols}>
           {/* SOL: mevcut iş emri kimliği ve atama bilgileri */}
-          <div className="space-y-2.5">
+          <div>
             <InfoRow label="İş No" value={order.workOrderNo} mono />
-            <InfoRow label="Oluşturulma" value={formatDateTime(order.createdAt)} icon={Calendar} />
+            <InfoRow label="Oluşturulma" value={formatDateTime(order.createdAt)} />
             <InfoRow
               label="Tahmini Teslim"
               value={order.estimatedDeliveryAt ? formatDateTime(order.estimatedDeliveryAt) : "—"}
-              icon={Calendar}
             />
             {order.completedAt && (
-              <InfoRow label="Tamamlanma" value={formatDateTime(order.completedAt)} icon={Calendar} />
+              <InfoRow label="Tamamlanma" value={formatDateTime(order.completedAt)} />
             )}
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground">Atanan Usta</span>
+            <DetailRow label="Atanan Usta">
               {/* Atama tek bir yerden yürür (technician-assign); burada yalnız tetikleyici durur. */}
               <TechnicianAssign
                 orderId={order.id}
@@ -199,60 +189,52 @@ export function OrderInfoCard({
                 technicians={technicians ?? []}
                 locked={locked}
               />
-            </div>
+            </DetailRow>
             {order.technicianName && order.technicianName !== order.assignedTechnicianName && (
               <InfoRow label="Teknisyen (eski)" value={order.technicianName} />
             )}
             {order.notes && (
-              <div className="pt-2 border-t">
-                <p className="text-xs text-muted-foreground mb-1">Notlar</p>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{order.notes}</p>
-              </div>
+              <DetailRow label="Notlar" stack>
+                {order.notes}
+              </DetailRow>
             )}
-            <div className="pt-2 border-t">
-              <p className="text-xs text-muted-foreground mb-1.5">Ödeme</p>
-              <PaymentBadge status={order.paymentStatus} size="md" />
-            </div>
+            <DetailRow label="Ödeme">
+              <OrderPaymentPill status={order.paymentStatus} />
+            </DetailRow>
           </div>
 
-          {/* SAĞ: fatura, tutar, durum, geliş nedeni.
-              Mobilde dikey çizgi yerine üst kenarlık — kolonlar alt alta düşüyor. */}
-          <div className="space-y-2.5 border-t pt-3 md:border-t-0 md:border-l md:pt-0 md:pl-6">
-            <>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-muted-foreground">Fatura Numarası</span>
-                  <span className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-foreground">{order.invoiceNo || "—"}</span>
-                    {invoiceEditable && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Fatura bilgilerini düzenle"
-                            onClick={startEditInvoice}
-                          >
-                            <Pencil className="size-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Fatura bilgilerini düzenle</TooltipContent>
-                      </Tooltip>
-                    )}
-                  </span>
-                </div>
-                <InfoRow
-                  label="Fatura Tarihi"
-                  value={order.invoiceDate ? formatDate(order.invoiceDate) : "—"}
-                  icon={Calendar}
-                />
-            </>
+          {/* SAĞ: fatura, tutar, durum, geliş nedeni. */}
+          <div>
+            <DetailRow label="Fatura Numarası">
+              <span className="flex items-center justify-end gap-2">
+                <span className="font-mono text-sm">{order.invoiceNo || "—"}</span>
+                {invoiceEditable && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Fatura bilgilerini düzenle"
+                        onClick={startEditInvoice}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Fatura bilgilerini düzenle</TooltipContent>
+                  </Tooltip>
+                )}
+              </span>
+            </DetailRow>
+            <InfoRow
+              label="Fatura Tarihi"
+              value={order.invoiceDate ? formatDate(order.invoiceDate) : "—"}
+            />
             <InfoRow
               label="Toplam Tutar"
               value={order.totals.hasAnyPrice ? formatTRY(order.totals.grandTotal) : "—"}
             />
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground">Durum</span>
+            <DetailRow label="Durum">
               <Select value={order.status} onValueChange={handleStatusSelect} disabled={changingStatus || statusOptions.length <= 1}>
                 <SelectTrigger className="w-[170px]" aria-label="Durum"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -263,11 +245,10 @@ export function OrderInfoCard({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground">Servise Geliş Nedeni</span>
+            </DetailRow>
+            <DetailRow label="Servise Geliş Nedeni">
               {locked ? (
-                <span className="text-sm text-foreground">{arrivalReasonLabel(order.arrivalReason)}</span>
+                <span>{arrivalReasonLabel(order.arrivalReason)}</span>
               ) : (
                 <Select value={order.arrivalReason ?? ""} onValueChange={handleReasonSelect} disabled={changingReason}>
                   <SelectTrigger className="w-[170px]" aria-label="Servise geliş nedeni"><SelectValue placeholder="Belirtilmedi" /></SelectTrigger>
@@ -277,11 +258,10 @@ export function OrderInfoCard({
                   </SelectContent>
                 </Select>
               )}
-            </div>
+            </DetailRow>
           </div>
         </div>
-      </CardContent>
-      </Card>
+      </DetailPanel>
 
       <Dialog open={editingInvoice} onOpenChange={(open) => { if (!savingInvoice) setEditingInvoice(open) }}>
         <DialogContent>
@@ -334,24 +314,10 @@ export function OrderInfoCard({
   )
 }
 
-function InfoRow({
-  label,
-  value,
-  mono,
-  icon: Icon,
-}: {
-  label: string
-  value: string
-  mono?: boolean
-  icon?: React.ComponentType<{ className?: string }>
-}) {
+function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={cn("text-sm text-foreground flex items-center gap-1.5", mono && "font-mono text-xs")}>
-        {Icon && <Icon className="size-3.5 text-muted-foreground" />}
-        {value}
-      </span>
-    </div>
+    <DetailRow label={label}>
+      <span className={cn(mono && "font-mono text-sm")}>{value}</span>
+    </DetailRow>
   )
 }
