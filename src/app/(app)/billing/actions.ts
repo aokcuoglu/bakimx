@@ -1,12 +1,11 @@
 "use server"
 
-import { assertLiteRegistrationOpen, LiteRegistrationClosedError, isLiteRegistrationOpen, LITE_REGISTRATION_CLOSED } from "@/lib/lite-campaign"
 import { revalidatePath } from "next/cache"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { checkoutInAppSchema } from "@/lib/validations/billing"
-import { getPlanPriceMinor, isComplimentaryPlan } from "@/lib/billing/pricing"
+import { getPlanPriceMinor } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
 import { computeUpgradeAmountMinor } from "@/lib/billing/proration"
 import { getDiscountedPlanPriceMinor, getOrderReferralDiscountBps, getReferralDiscountBps } from "@/lib/billing/referral-discount"
@@ -16,7 +15,6 @@ import { createBillingTaxSnapshot } from "@/lib/billing/tax"
 import type { BillingCycle } from "@prisma/client"
 import type { PlanTier } from "@/lib/plan"
 import { actorCan } from "@/lib/roles"
-import { activateBillingOrder } from "@/lib/billing/activate"
 import { canCancelPendingCardOrder } from "@/lib/billing/cancellation"
 
 /**
@@ -33,7 +31,7 @@ export async function createBillingOrder(input: {
   taxNumber: string
   taxOffice?: string
 }): Promise<
-  | { ok: true; reference: string; amountMinor: number; method: "card" | "havale"; complimentary: boolean }
+  | { ok: true; reference: string; amountMinor: number; method: "card" | "havale" }
   | { ok: false; error: string }
 > {
   const { user, workshop } = await getCurrentUserWithWorkshop()
@@ -50,9 +48,6 @@ export async function createBillingOrder(input: {
   const data = parsed.data
   const tier = data.tier as PlanTier
   const cycle = data.cycle as BillingCycle
-  if (tier === "lite" && !workshop.liteFreeGrantedAt && !isLiteRegistrationOpen()) {
-    return { ok: false, error: LITE_REGISTRATION_CLOSED }
-  }
 
   // Tekrar mükerrer talebi engelle: aynı workshop'un zaten bekleyen bir siparişi
   // varsa (hesap üzerinden) VEYA aynı vergi/TC no ile başka bir workshop'un
@@ -113,7 +108,6 @@ export async function createBillingOrder(input: {
     : null
   const previousDiscountBps = getOrderReferralDiscountBps(previousOrder?.billingSnapshot)
   const amountMinor =
-    tier === "lite" && workshop.liteFreeGrantedAt ? 0 :
     type === "upgrade" || type === "downgrade"
       ? computeUpgradeAmountMinor({
           currentTier: workshop.planTier as PlanTier,
@@ -146,8 +140,7 @@ export async function createBillingOrder(input: {
   for (let attempt = 0; attempt < 5; attempt++) {
     const reference = generateOrderReference()
     try {
-      const order = await prisma.$transaction(async (tx) => {
-        if (!workshop.liteFreeGrantedAt) assertLiteRegistrationOpen(tier)
+      await prisma.$transaction(async (tx) => {
         await tx.workshop.update({
           where: { id: workshop.id },
           data: {
@@ -183,20 +176,11 @@ export async function createBillingOrder(input: {
         "billing_order_created",
         JSON.stringify({ tier, cycle, amountMinor, catalogAmountMinor, referralDiscountBps, netAmountMinor: taxSnapshot.netAmountMinor, type, method: data.method })
       )
-      const complimentary = (tier === "lite" && !!workshop.liteFreeGrantedAt) || isComplimentaryPlan(tier, cycle)
-      if (complimentary) {
-        const activation = await activateBillingOrder(order.id, {
-          actor: "payment",
-          confirmedByEmail: "opening-promotion",
-        })
-        if (!activation.ok) return activation
-      }
       revalidatePath("/settings/plans")
       revalidatePath("/settings/billing")
       revalidatePath("/admin")
-      return { ok: true, reference, amountMinor, method: data.method, complimentary }
+      return { ok: true, reference, amountMinor, method: data.method }
     } catch (err) {
-      if (err instanceof LiteRegistrationClosedError) return { ok: false, error: err.message }
       if ((err as { code?: string })?.code === "P2002") continue // reference collision → retry
       console.error("[createBillingOrder] failed:", err)
       return { ok: false, error: "Sipariş oluşturulamadı. Lütfen tekrar deneyin." }

@@ -41,7 +41,8 @@ export async function POST(request: Request) {
     const { user, workshop } = await getCurrentUserWithWorkshop()
     const locked = assertWritableOr403(workshop)
     if (locked) return locked
-    assertFeature(workshop, "ocrIntake")
+    // Plaka okuma Servis Paketi'ne dahil; ruhsat OCR'ı (ocrIntake) ek özelliktir (#782).
+    assertFeature(workshop, "plateScan")
 
     const parsed = await parseOcrImageRequest(request)
     if (parsed instanceof NextResponse) return parsed

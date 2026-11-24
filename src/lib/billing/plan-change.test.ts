@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { getFeaturesLostOnDowngrade, isDowngradeBlocked, isPlanDowngrade, isPlanUpgrade } from "@/lib/billing/plan-change"
+import { isDowngradeBlocked, isPlanDowngrade, isPlanUpgrade } from "@/lib/billing/plan-change"
 
 test("premium → pro/lite düşürmedir", () => {
   expect(isPlanDowngrade("premium", "pro")).toBe(true)
@@ -73,7 +73,8 @@ test("isPlanUpgrade üst paketi tanır", () => {
   expect(isPlanUpgrade("premium", "pro")).toBe(false)
 })
 
-test("düşürmede kaybedilen özellikler listelenir", () => {
-  const lost = getFeaturesLostOnDowngrade("premium", "lite")
-  expect(lost.length).toBeGreaterThan(0)
+test("eski satırdan Servis Paketi'ne geçiş yükseltmedir; Paket + ek özelliklerden düşüştür", () => {
+  expect(isPlanUpgrade("lite", "pro")).toBe(true)
+  expect(isPlanUpgrade("starter", "pro")).toBe(true)
+  expect(isPlanDowngrade("premium", "pro")).toBe(true)
 })

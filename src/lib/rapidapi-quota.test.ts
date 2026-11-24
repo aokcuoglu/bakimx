@@ -8,6 +8,7 @@ import {
   type QuotaReservationDatabase,
   type WorkshopQuotaContext,
 } from "@/lib/rapidapi-quota"
+import { ADDON_LOCKED_MESSAGE } from "@/lib/plan"
 
 type UsageRow = { workshopId: string; source: string; createdAt: Date }
 
@@ -94,9 +95,18 @@ test("Lite ek kotasız rezervasyonu mevcut quota_exceeded sözleşmesini korur",
   expect(db.rows).toHaveLength(0)
 })
 
+test("Servis Paketi'nde şaseden parça kotası yok — ek özellik metniyle reddedilir (#782)", async () => {
+  const db = new FakeQuotaDatabase(NOW)
+  const context: WorkshopQuotaContext = { workshopId: "w-pro", tier: "pro", extraVinQuota: 0 }
+  expect(reserveWorkshopQuota(context, "vin", db, NOW)).rejects.toMatchObject({ code: "quota_exceeded", cap: 0 })
+  expect(db.rows).toHaveLength(0)
+  expect(new WorkshopQuotaExceededError(0).message).toBe(ADDON_LOCKED_MESSAGE)
+  expect(new WorkshopQuotaExceededError(100).message).toContain("Aylık katalog sorgu limitiniz doldu")
+})
+
 test("kullanım özeti ay sınırını, ek kotayı ve VIN/TecDoc kırılımını taşır", () => {
   const usage = summarizeWorkshopQuotaUsage(
-    { workshopId: "w1", tier: "pro", extraVinQuota: 250 },
+    { workshopId: "w1", tier: "premium", extraVinQuota: 250 },
     [
       { source: "vin", count: 125 },
       { source: "tecdoc", count: 375 },
@@ -104,11 +114,11 @@ test("kullanım özeti ay sınırını, ek kotayı ve VIN/TecDoc kırılımını
     NOW,
   )
   expect(usage).toMatchObject({
-    baseQuota: 5_000,
+    baseQuota: 15_000,
     extraQuota: 250,
-    totalCap: 5_250,
+    totalCap: 15_250,
     used: 500,
-    remaining: 4_750,
+    remaining: 14_750,
     vinUsed: 125,
     tecdocUsed: 375,
   })

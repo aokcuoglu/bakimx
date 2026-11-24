@@ -4,7 +4,7 @@ import { useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm, useWatch } from "react-hook-form"
-import { AlertTriangle, ArrowLeft, Check, CheckCircle2, CreditCard, Landmark, Package, X } from "lucide-react"
+import { AlertTriangle, CheckCircle2, CreditCard, Landmark, Package, X } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,12 +13,10 @@ import {
 } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { PlanPackages } from "@/components/billing/plan-packages"
 import { ManagePlanDialog } from "@/components/billing/manage-plan-dialog"
 import { BillingUsagePanel } from "@/components/billing/billing-usage-panel"
-import { DowngradePlanDialog } from "@/components/billing/downgrade-plan-dialog"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { CancelPendingOrderButton } from "@/components/billing/pending-order-actions"
 import { createBillingOrder } from "@/app/(app)/billing/actions"
@@ -28,15 +26,15 @@ import { getDiscountedPlanPriceMinor } from "@/lib/billing/referral-discount"
 import type { HavaleInfo } from "@/lib/billing/provider"
 import { getSeatLimit, isSalePlanTier, type PlanState, type PlanTier, type SalePlanTier } from "@/lib/plan"
 import type { WorkshopQuotaUsage } from "@/lib/rapidapi-quota"
-import { PLAN_COMPARISON, PLAN_PACKAGES, getPlanPackage } from "@/lib/plans-catalog"
+import { getPlanPackage } from "@/lib/plans-catalog"
+import { TRIAL_PLAN_NAME } from "@/lib/billing/sidebar-plan-status"
 import { typedResolver } from "@/lib/validations/resolver"
 import { checkoutInAppSchema, type CheckoutInAppValues } from "@/lib/validations/billing"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
-import { cn } from "@/lib/utils"
 import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
 
 type Cycle = "monthly" | "yearly"
-type PaymentResult = { reference: string; amountMinor: number; method: "card" | "havale"; complimentary: boolean }
+type PaymentResult = { reference: string; amountMinor: number; method: "card" | "havale" }
 
 export function BillingPlanManager({
   ownedTier,
@@ -52,8 +50,6 @@ export function BillingPlanManager({
   pendingPlanTier,
   pendingCycle,
   canPurchase,
-  liteRegistrationOpen,
-  liteFreeGranted,
   defaultInvoiceTitle,
   defaultTaxNumber,
   defaultTaxOffice,
@@ -79,8 +75,6 @@ export function BillingPlanManager({
   pendingPlanTier?: PlanTier
   pendingCycle?: Cycle
   canPurchase: boolean
-  liteRegistrationOpen: boolean
-  liteFreeGranted: boolean
   defaultInvoiceTitle: string
   defaultTaxNumber: string
   defaultTaxOffice: string
@@ -98,8 +92,6 @@ export function BillingPlanManager({
   const [manageOpen, setManageOpen] = useState(false)
   const [pendingPaymentOpen, setPendingPaymentOpen] = useState(false)
   const [managePreferredCycle, setManagePreferredCycle] = useState<Cycle | null>(null)
-  const [downgradeTier, setDowngradeTier] = useState<SalePlanTier | null>(null)
-  const [view, setView] = useState<"checkout" | "compare">("checkout")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState<PaymentResult | null>(null)
@@ -107,14 +99,6 @@ export function BillingPlanManager({
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
   const saleOwned = ownedTier && isSalePlanTier(ownedTier) ? ownedTier : null
   const initialTier = saleOwned ?? "pro"
-  const periodEndLabel =
-    currentPeriodEnd != null
-      ? new Date(currentPeriodEnd).toLocaleDateString("tr-TR", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })
-      : null
   const form = useForm<CheckoutInAppValues, unknown, CheckoutInAppValues>({
     resolver: typedResolver<CheckoutInAppValues>(checkoutInAppSchema),
     defaultValues: {
@@ -132,15 +116,10 @@ export function BillingPlanManager({
   const pkg = getPlanPackage(tier)
   const catalogAmount = getPlanPriceMinor(tier, cycle)
   const discountedAmount = getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps)
-  const complimentary = catalogAmount === 0 && (tier !== "lite" || liteFreeGranted || liteRegistrationOpen)
   const excessSeats = Math.max(0, seatUsage.used - getSeatLimit(tier, extraSeats))
   const periodLabel = cycle === "yearly" ? "yıllık" : "aylık"
 
   function choosePlan(nextTier: SalePlanTier, nextCycle: Cycle) {
-    if (isPlanDowngrade(ownedTier, nextTier)) {
-      setDowngradeTier(nextTier)
-      return
-    }
     setManageOpen(false)
     if (!open) {
       returnFocusRef.current = document.activeElement as HTMLElement | null
@@ -148,8 +127,9 @@ export function BillingPlanManager({
     }
     form.setValue("tier", nextTier)
     form.setValue("cycle", nextCycle)
-    setError("")
-    setView("checkout")
+    // Satışta tek paket var; aktif "Paket + ek özellikler" dönemi içinde Servis
+    // Paketi'ne geçiş düşüştür ve sunucu da reddeder — kullanıcı nedenini önceden görsün.
+    setError(isPlanDowngrade(ownedTier, nextTier) ? DOWNGRADE_BLOCKED_MESSAGE : "")
     setOpen(true)
   }
 
@@ -164,7 +144,6 @@ export function BillingPlanManager({
     if (nextOpen) {
       setDone(null)
       setError("")
-      setView("checkout")
     } else if (done) {
       router.refresh()
     }
@@ -227,8 +206,6 @@ export function BillingPlanManager({
             workshopName={workshopName}
             hasPendingOrder={hasPendingOrder}
             canPurchase={canPurchase}
-            liteRegistrationOpen={liteRegistrationOpen}
-            trialTier={isTrialing ? "premium" : null}
             currentCycle={currentCycle}
             isTrialing={isTrialing}
             trialDaysLeft={trialDaysLeft}
@@ -236,7 +213,6 @@ export function BillingPlanManager({
             onSelectPlan={choosePlan}
             onManagePlan={() => openManage()}
             onRequestCycleChange={(next) => openManage(next)}
-            onDowngrade={(next) => setDowngradeTier(next)}
           />
         </div>
       )}
@@ -257,7 +233,7 @@ export function BillingPlanManager({
           key={`${saleOwned ?? "none"}-${currentCycle ?? "monthly"}-${managePreferredCycle ?? "current"}`}
           open={manageOpen}
           onOpenChange={setManageOpen}
-          planName={isTrialing ? "Premium denemesi" : currentPlanName}
+          planName={isTrialing ? TRIAL_PLAN_NAME : currentPlanName}
           planTier={saleOwned}
           currentCycle={currentCycle}
           currentPeriodEnd={currentPeriodEnd}
@@ -269,7 +245,7 @@ export function BillingPlanManager({
                 <Button type="button" variant="navy" size="sm" onClick={() => { setManageOpen(false); setPendingPaymentOpen(true) }}>Ödemeye devam et</Button>
                 <CancelPendingOrderButton reference={pendingReference} />
               </>}
-              {pendingMethod !== "card" && <Button asChild variant="outline" size="sm"><Link href={getSupportWhatsAppUrl(`Merhaba, ${pendingReference} numaralı havale talebimi iptal edip başka paket seçmek istiyorum.`)} target="_blank" rel="noopener noreferrer">İptal için destek</Link></Button>}
+              {pendingMethod !== "card" && <Button asChild variant="outline" size="sm"><Link href={getSupportWhatsAppUrl(`Merhaba, ${pendingReference} numaralı havale talebimi iptal etmek istiyorum.`)} target="_blank" rel="noopener noreferrer">İptal için destek</Link></Button>}
             </div>
           ) : undefined}
           preferredCycle={managePreferredCycle}
@@ -280,15 +256,6 @@ export function BillingPlanManager({
           defaultTaxNumber={defaultTaxNumber}
           defaultTaxOffice={defaultTaxOffice}
           referralDiscountBps={referralDiscountBps}
-          onChangePlan={() => {
-            setManageOpen(false)
-            document.getElementById("paketler")?.scrollIntoView({ behavior: "smooth", block: "start" })
-          }}
-          onSelectPlan={(nextTier, nextCycle) => {
-            setManageOpen(false)
-            choosePlan(nextTier, nextCycle)
-          }}
-          onDowngrade={(next) => setDowngradeTier(next)}
           onConfirm={(draft) => {
             const nextTier = saleOwned ?? "pro"
             form.setValue("tier", nextTier)
@@ -300,7 +267,6 @@ export function BillingPlanManager({
             setManageOpen(false)
             setDone(null)
             setError("")
-            setView("checkout")
             setOpen(true)
             void submit({
               tier: nextTier,
@@ -311,16 +277,6 @@ export function BillingPlanManager({
               taxOffice: draft.taxOffice,
             })
           }}
-        />
-      )}
-
-      {saleOwned && downgradeTier && (
-        <DowngradePlanDialog
-          open={!!downgradeTier}
-          onOpenChange={(next) => { if (!next) setDowngradeTier(null) }}
-          fromTier={saleOwned}
-          toTier={downgradeTier}
-          periodEndLabel={periodEndLabel}
         />
       )}
 
@@ -339,23 +295,16 @@ export function BillingPlanManager({
       <Dialog open={open} onOpenChange={closeDialog}>
         <DialogContent className="flex max-h-[min(92dvh,900px)] w-[calc(100%-1rem)] max-w-5xl flex-col gap-0 overflow-hidden rounded-xl bg-card p-0 sm:max-w-5xl" showCloseButton={false} onOpenAutoFocus={(event) => { event.preventDefault(); closeButtonRef.current?.focus() }} onCloseAutoFocus={(event) => { event.preventDefault(); returnFocusRef.current?.focus() }}>
           <DialogHeader className="shrink-0 border-b bg-card px-5 py-4 pr-14 sm:px-7">
-            <DialogTitle>{view === "compare" ? "Paketleri karşılaştır" : done ? "Siparişiniz" : "Ödemeyi tamamla"}</DialogTitle>
+            <DialogTitle>{done ? "Siparişiniz" : "Ödemeyi tamamla"}</DialogTitle>
             <DialogDescription>
-              {view === "compare" ? "İhtiyacınıza uygun paketi seçin." : done ? "Sipariş tutarı ve sonraki adımlar aşağıda." : "Fatura bilgilerinizi ve ödeme yönteminizi onaylayın."}
+              {done ? "Sipariş tutarı ve sonraki adımlar aşağıda." : "Fatura bilgilerinizi ve ödeme yönteminizi onaylayın."}
             </DialogDescription>
             <DialogClose asChild><Button ref={closeButtonRef} type="button" variant="ghost" size="icon-sm" className="absolute right-3 top-3 text-muted-foreground"><X className="size-4" /><span className="sr-only">Kapat</span></Button></DialogClose>
           </DialogHeader>
 
           <div className="min-h-0 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7 sm:py-6">
             {done ? (
-              done.complimentary ? (
-                <div className="mx-auto max-w-lg space-y-4 py-8 text-center" role="status">
-                  <CheckCircle2 className="mx-auto size-10 text-success-strong" aria-hidden="true" />
-                  <h3 className="text-lg font-semibold">{pkg?.name} paketiniz etkin</h3>
-                  <p className="text-sm text-muted-foreground">Ücretsiz paket etkinleştirildi. Ödeme yapmanız gerekmiyor.</p>
-                  <Button type="button" variant="outline" onClick={() => closeDialog(false)}>Sayfaya dön</Button>
-                </div>
-              ) : done.method === "card" ? (
+              done.method === "card" ? (
                 <div className="mx-auto max-w-lg py-3">
                   <CardPaymentPanel reference={done.reference} amountMinor={done.amountMinor} planLabel={`${pkg?.name} · ${cycle === "yearly" ? "Yıllık" : "Aylık"}`} />
                 </div>
@@ -376,60 +325,13 @@ export function BillingPlanManager({
                   <Button type="button" variant="outline" onClick={() => closeDialog(false)}>Sayfaya dön</Button>
                 </div>
               )
-            ) : view === "compare" ? (
-              <div className="space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <Button type="button" variant="ghost" onClick={() => setView("checkout")}><ArrowLeft className="size-4" /> Ödeme özetine dön</Button>
-                  <BillingCycleSwitch cycle={cycle} onChange={(value) => form.setValue("cycle", value)} />
-                </div>
-                <div className="grid gap-3 md:grid-cols-3">
-                  {PLAN_PACKAGES.map((plan) => {
-                    const unavailable = plan.tier === "lite" && !liteRegistrationOpen && !liteFreeGranted
-                    const downgradeBlocked = isPlanDowngrade(ownedTier, plan.tier)
-                    return (
-                      <section key={plan.tier} className={cn("flex flex-col rounded-xl border bg-card p-4", plan.tier === tier && !downgradeBlocked && "border-foreground ring-1 ring-foreground")} aria-label={`${plan.name} paketi`}>
-                        <div className="flex items-center justify-between gap-2"><h3 className="text-base font-semibold">{plan.name}</h3>{ownedTier === plan.tier && <Badge variant="outline">Mevcut</Badge>}</div>
-                        <p className="mt-1 min-h-10 text-xs text-muted-foreground">{plan.tagline}</p>
-                        <p className="mt-4 text-2xl font-semibold">{formatMinor(getDiscountedPlanPriceMinor(plan.tier, cycle, referralDiscountBps))}</p>
-                        {referralDiscountBps > 0 && plan.tier !== "lite" && <p className="text-xs text-muted-foreground"><s>{formatMinor(getPlanPriceMinor(plan.tier, cycle))}</s> · İlk yıl referans indirimi %10</p>}
-                        <p className="text-xs text-muted-foreground">/{cycle === "yearly" ? "yıl" : "ay"} · KDV dahil</p>
-                        <Button type="button" variant={plan.tier === tier && !downgradeBlocked ? "foreground" : "outline"} className="mt-4 w-full" disabled={unavailable || downgradeBlocked} onClick={() => choosePlan(plan.tier, cycle)}>
-                          {downgradeBlocked ? "Dönem içinde düşürülemez" : plan.tier === tier ? <><Check className="size-4" /> Seçili paket</> : "Bu paketi seç"}
-                        </Button>
-                        {unavailable && <p className="mt-2 text-xs text-muted-foreground">Yeni Lite kayıtları kapalı.</p>}
-                        {downgradeBlocked && (
-                          <p className="mt-2 text-xs text-muted-foreground">
-                            Para iadesi olmadığı için aktif abonelikte alt pakete geçilemez.
-                          </p>
-                        )}
-                        <ul className="mt-5 space-y-2 border-t pt-4 text-xs text-muted-foreground">
-                          {plan.highlights.slice(0, 4).map((highlight) => <li key={highlight} className="flex gap-2"><Check className="size-3.5 shrink-0 text-foreground" aria-hidden="true" />{highlight}</li>)}
-                        </ul>
-                      </section>
-                    )
-                  })}
-                </div>
-                <div className="overflow-x-auto rounded-xl border">
-                  <Table aria-label="Paket özelliklerini karşılaştırın" className="min-w-[650px]">
-                    <TableHeader><TableRow><TableHead scope="col">Özellik ve limit</TableHead>{PLAN_PACKAGES.map((plan) => <TableHead key={plan.tier} scope="col" className="text-center">{plan.name}</TableHead>)}</TableRow></TableHeader>
-                    {PLAN_COMPARISON.map((category) => <TableBody key={category.key}>
-                      <TableRow className="bg-muted/40"><TableHead scope="rowgroup" colSpan={4} className="font-semibold">{category.label}</TableHead></TableRow>
-                      {category.rows.map((row) => <TableRow key={row.key}>
-                        <TableHead scope="row" className="whitespace-normal font-normal">{row.label}</TableHead>
-                        {PLAN_PACKAGES.map((plan) => <TableCell key={plan.tier} className="text-center text-xs">{row.values[plan.tier].label}</TableCell>)}
-                      </TableRow>)}
-                    </TableBody>)}
-                  </Table>
-                </div>
-              </div>
             ) : (
               <div className="space-y-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs text-muted-foreground">Mevcut durum</p>
-                    <p className="font-semibold">{isTrialing ? `Ücretsiz deneme${trialDaysLeft != null ? ` · ${trialDaysLeft} iş günü kaldı` : ""}` : currentPlanName}</p>
+                    <p className="font-semibold">{isTrialing ? `${TRIAL_PLAN_NAME}${trialDaysLeft != null ? ` · ${trialDaysLeft} iş günü kaldı` : ""}` : currentPlanName}</p>
                   </div>
-                  <Button type="button" variant="outline" onClick={() => setView("compare")}>Paket değiştir</Button>
                 </div>
 
                 {hasPendingOrder && (
@@ -440,7 +342,6 @@ export function BillingPlanManager({
                   </AlertDescription></Alert>
                 )}
                 {!canPurchase && <Alert><AlertDescription>Paket değişikliği için yöneticinizle görüşün. Paketleri karşılaştırabilirsiniz.</AlertDescription></Alert>}
-                {tier === "lite" && !liteRegistrationOpen && !liteFreeGranted && <Alert variant="warning"><AlertDescription>Yeni Lite kayıtları kapalı. Diğer paketleri seçebilirsiniz.</AlertDescription></Alert>}
                 {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
 
                 <Form {...form}>
@@ -451,7 +352,7 @@ export function BillingPlanManager({
                         <p className="mt-2 text-sm text-muted-foreground">{pkg?.tagline}</p>
                         <div className="mt-5"><BillingCycleSwitch cycle={cycle} onChange={(value) => form.setValue("cycle", value)} /></div>
                         <p className="mt-4 text-2xl font-semibold">{formatMinor(discountedAmount)} <span className="text-xs font-normal text-muted-foreground">/{cycle === "yearly" ? "yıl" : "ay"} · KDV dahil</span></p>
-                        {referralDiscountBps > 0 && tier !== "lite" && <p className="text-xs text-muted-foreground"><s>{formatMinor(catalogAmount)}</s> · İlk yıl referans indirimi %10</p>}
+                        {referralDiscountBps > 0 && <p className="text-xs text-muted-foreground"><s>{formatMinor(catalogAmount)}</s> · İlk yıl referans indirimi %10</p>}
                       </section>
                       {excessSeats > 0 && <Alert variant="warning"><AlertTriangle /><AlertDescription>
                         Bu paket {getSeatLimit(tier, extraSeats)} koltuk destekliyor. Ödeme teyidinde {excessSeats} fazla kullanıcı veya davet devre dışı bırakılacak. Kayıt geçmişleri silinmeyecek.
@@ -471,21 +372,21 @@ export function BillingPlanManager({
                       <div><h3 className="font-semibold">Ödeme özeti</h3><p className="mt-1 text-xs text-muted-foreground">{pkg?.name} · {periodLabel} dönem</p></div>
                       <dl className="space-y-3 border-b pb-4 text-sm">
                         <div className="flex justify-between gap-3"><dt>Liste tutarı</dt><dd className="font-medium">{formatMinor(catalogAmount)}</dd></div>
-                        {referralDiscountBps > 0 && tier !== "lite" && <div className="flex justify-between gap-3"><dt>Referans indirimi (%10)</dt><dd>−{formatMinor(catalogAmount - discountedAmount)}</dd></div>}
+                        {referralDiscountBps > 0 && <div className="flex justify-between gap-3"><dt>Referans indirimi (%10)</dt><dd>−{formatMinor(catalogAmount - discountedAmount)}</dd></div>}
                         <div className="flex justify-between gap-3"><dt>Dahil kullanıcı</dt><dd>{pkg?.seats}</dd></div>
                         {ownedTier && ownedTier !== tier && <div className="flex justify-between gap-3"><dt>Kalan dönem kredisi</dt><dd>Sonraki adımda</dd></div>}
                       </dl>
                       <div className="flex items-center justify-between gap-3 font-semibold"><span>{ownedTier && ownedTier !== tier ? "Kredi öncesi tutar" : "Ödenecek"}</span><span>{formatMinor(discountedAmount)}</span></div>
                       {ownedTier && ownedTier !== tier && <p className="text-xs text-muted-foreground">Kalan dönem kredisi uygulanır; kesin ödeme tutarı sipariş oluşturulduktan sonra gösterilir.</p>}
-                      {canPurchase && !hasPendingOrder && !complimentary && <div className="space-y-2 border-t pt-4"><p className="text-sm font-medium">Ödeme yöntemi</p>
+                      {canPurchase && !hasPendingOrder && <div className="space-y-2 border-t pt-4"><p className="text-sm font-medium">Ödeme yöntemi</p>
                         <ToggleGroup type="single" value={method} onValueChange={(value) => { if (value) form.setValue("method", value as "card" | "havale") }} className="grid grid-cols-2 gap-2" aria-label="Ödeme yöntemi">
                           <ToggleGroupItem value="card" variant="outline" className="h-auto min-h-9 flex-col gap-1 data-[state=on]:border-foreground data-[state=on]:bg-card data-[state=on]:text-foreground"><CreditCard className="size-4" />Kart</ToggleGroupItem>
                           <ToggleGroupItem value="havale" variant="outline" className="h-auto min-h-9 flex-col gap-1 data-[state=on]:border-foreground data-[state=on]:bg-card data-[state=on]:text-foreground"><Landmark className="size-4" />Havale/EFT</ToggleGroupItem>
                         </ToggleGroup>
                       </div>}
-                      {canPurchase && !hasPendingOrder && <><p className="text-xs leading-5 text-muted-foreground">{complimentary ? "Ücretsiz Lite paketi hemen etkinleşir." : method === "card" ? "Siparişten sonra kart bilgilerinizi girip bankanızın 3D Secure ekranına geçersiniz." : "Siparişten sonra havale talimatı ve referans kodu gösterilir. Paket, ödeme teyidinde etkinleşir."}</p>
-                        <Button type="submit" variant="foreground" className="w-full" disabled={loading || (tier === "lite" && !liteRegistrationOpen && !liteFreeGranted)}>
-                          {loading ? "Sipariş oluşturuluyor…" : complimentary ? "Ücretsiz etkinleştir" : "Siparişi oluştur"}
+                      {canPurchase && !hasPendingOrder && <><p className="text-xs leading-5 text-muted-foreground">{method === "card" ? "Siparişten sonra kart bilgilerinizi girip bankanızın 3D Secure ekranına geçersiniz." : "Siparişten sonra havale talimatı ve referans kodu gösterilir. Paket, ödeme teyidinde etkinleşir."}</p>
+                        <Button type="submit" variant="foreground" className="w-full" disabled={loading}>
+                          {loading ? "Sipariş oluşturuluyor…" : "Siparişi oluştur"}
                         </Button>
                       </>}
                     </aside>

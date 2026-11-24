@@ -1,6 +1,4 @@
-import { recordMarketingConversion } from "@/lib/marketing-conversion-outbox"
 import { NextResponse } from "next/server"
-import { assertLiteRegistrationOpen, LiteRegistrationClosedError } from "@/lib/lite-campaign"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/db"
 import { registerSchema } from "@/lib/validations/auth"
@@ -160,7 +158,6 @@ export async function POST(request: Request) {
         const loginCode = workshopCodeCandidate(data.workshopName, attempt)
         try {
           return await prisma.$transaction(async (tx) => {
-            assertLiteRegistrationOpen(data.planTier)
             const conversionAt = new Date()
             const salesLink = salesRegistrationTokenHash
               ? await tx.salesRegistrationLink.findUnique({
@@ -249,8 +246,7 @@ export async function POST(request: Request) {
                 // Approval-gated trial: pending until the e-mail is verified. The trial
                 // (trialStartedAt/EndsAt) starts in activateVerifiedWorkshop, not here.
                 approvalStatus: "pending",
-                subscriptionStatus: data.planTier === "lite" ? "active" : "trialing",
-                liteFreeGrantedAt: data.planTier === "lite" ? conversionAt : null,
+                subscriptionStatus: "trialing",
                 trialStartedAt: null,
                 trialEndsAt: null,
                 planTier: data.planTier,
@@ -347,9 +343,6 @@ export async function POST(request: Request) {
               })
             }
 
-            if (data.planTier === "lite") {
-              await recordMarketingConversion(tx, { name: "lite_registered", workshopId: ws.id, key: ws.id, payload: { plan_tier: "lite" }, attribution: raw.marketingAttribution })
-            }
             return ws
           })
         } catch (err) {
@@ -405,9 +398,6 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ ok: true })
   } catch (err) {
-    if (err instanceof LiteRegistrationClosedError) {
-      return NextResponse.json({ error: err.message, code: "lite_registration_closed" }, { status: 409 })
-    }
     if (err instanceof SalesRegistrationError) {
       return NextResponse.json({ error: err.message }, { status: 410 })
     }

@@ -1,5 +1,4 @@
-import { isPlanTier, PLAN_TIERS, type SalePlanTier } from "@/lib/plan"
-import { PLAN_COMPARISON } from "@/lib/plans-catalog"
+import { isPlanTier, PLAN_TIERS } from "@/lib/plan"
 
 /**
  * Hedef paket mevcut paketten daha düşük mü? (lite < starter < pro < premium)
@@ -18,25 +17,6 @@ export function isPlanUpgrade(
 ): boolean {
   if (!isPlanTier(currentTier) || !isPlanTier(targetTier)) return false
   return PLAN_TIERS.indexOf(targetTier) > PLAN_TIERS.indexOf(currentTier)
-}
-
-/** Karşılaştırma tablosundan düşürmede kaybedilecek özellik etiketleri. */
-export function getFeaturesLostOnDowngrade(
-  fromTier: SalePlanTier,
-  toTier: SalePlanTier,
-): string[] {
-  if (!isPlanDowngrade(fromTier, toTier)) return []
-  const lost: string[] = []
-  for (const category of PLAN_COMPARISON) {
-    for (const row of category.rows) {
-      const from = row.values[fromTier]
-      const to = row.values[toTier]
-      const fromOk = from.state === "included" || from.state === "text" || from.state === "coming-soon"
-      const toGone = to.state === "unavailable"
-      if (fromOk && toGone) lost.push(row.label)
-    }
-  }
-  return lost
 }
 
 /**

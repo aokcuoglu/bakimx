@@ -12,14 +12,14 @@ const COPY: Record<
   trial_expired: {
     title: "Deneme süreniz doldu",
     description:
-      "7 iş günlük ücretsiz kullanımınız sona erdi ve üyeliğiniz donduruldu. Verileriniz güvende — kaldığınız yerden devam etmek için bir paket seçin.",
+      "7 iş günlük ücretsiz kullanımınız sona erdi ve üyeliğiniz donduruldu. Verileriniz güvende — kaldığınız yerden devam etmek için Servis Paketi'ni satın alın.",
     icon: Clock,
     showPackages: true,
   },
   subscription_inactive: {
     title: "Aboneliğiniz pasif",
     description:
-      "Hesabınızı yeniden etkinleştirmek için bir paket seçin. Verileriniz korunmaktadır.",
+      "Hesabınızı yeniden etkinleştirmek için Servis Paketi'ni satın alın. Verileriniz korunmaktadır.",
     icon: Lock,
     showPackages: true,
   },

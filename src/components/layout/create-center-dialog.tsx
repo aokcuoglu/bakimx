@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { CREATE_OPTIONS } from "@/components/layout/create-center"
 import type { GatedFeature } from "@/lib/plan"
+import { lockedFeatureLabels } from "@/lib/feature-catalog"
 
 const OPTION_ICONS = {
   order: Wrench,
@@ -119,9 +120,9 @@ export function CreateCenterDialog({
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
                         {option.title}
-                        {locked && (
+                        {locked && feature && (
                           <Badge variant="secondary" className="gap-1 text-[10px]">
-                            <LockKeyhole className="size-3" /> PRO
+                            <LockKeyhole className="size-3" /> {lockedFeatureLabels(feature).badge}
                           </Badge>
                         )}
                       </span>

@@ -48,6 +48,7 @@ async function countPreservedItems(workshopId: string, feature: GatedFeature): P
       return prisma.vehicle.count({ where: { workshopId } })
     case "partsCatalog":
       return prisma.serviceOrder.count({ where: { workshopId } })
+    case "plateScan":
     case "multiBranch":
     case "rbac":
       return 0

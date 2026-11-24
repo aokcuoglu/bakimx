@@ -461,10 +461,10 @@ export function RegisterForm({
         </p>
         <div className="mt-6 border-y border-border py-6">
           <p className="text-sm leading-6 text-foreground">
-            {preferredPlan?.tier === "lite" ? "Bağlantıya tıkladığınızda süresiz ücretsiz Lite kullanımınız başlar." : "Bağlantıya tıkladığınızda ücretsiz 7 iş günlük kullanımınız başlar."}
+            Bağlantıya tıkladığınızda ücretsiz 7 iş günlük kullanımınız başlar.
           </p>
           <p className="mt-3 text-xs leading-5 text-muted-foreground">
-            {preferredPlan?.tier === "lite" ? "Kart bilgisi gerekmez. Lite süreli deneme değildir ve otomatik ücretliye dönüşmez." : "Kart bilgisi gerekmez. Süre sonunda paket satın alınmazsa hesabınız ve verileriniz korunarak erişim dondurulur."}
+            Kart bilgisi gerekmez. Süre sonunda paket satın alınmazsa hesabınız ve verileriniz korunarak erişim dondurulur.
           </p>
         </div>
         <Button asChild variant="ghost" className="mt-6 min-h-7 text-muted-foreground">
@@ -514,7 +514,6 @@ export function RegisterForm({
                 {currentStep === 4 && (
                   <AccountStep
                     form={form}
-                    isLite={preferredPlan?.tier === "lite"}
                     city={city}
                     acquisitionSource={acquisitionSource}
                     salesAdvisorName={salesRegistration?.advisorName}
@@ -573,10 +572,10 @@ function PreferredPlanBanner({
   tier,
   cycle,
 }: {
-  tier: string
+  tier: SalePlanTier
   cycle: "monthly" | "yearly"
 }) {
-  const pkg = getPlanPackage(tier as "lite" | "pro" | "premium" | "starter")
+  const pkg = getPlanPackage(tier)
   if (!pkg) return null
   return (
     <div className="mb-5 rounded-lg border border-border bg-card px-4 py-3 lg:hidden">
@@ -591,7 +590,7 @@ function PreferredPlanBanner({
         </span>
       </p>
       <p className="mt-0.5 text-xs text-muted-foreground-strong">
-        {tier === "lite" ? "Lite kapsamı süresiz ücretsizdir. Kart gerekmez; otomatik ücretliye dönüşmez." : "Önce 7 iş günü ücretsiz deneyin; deneme bitince bu paketi kendi onayınızla etkinleştirebilirsiniz."}
+        Önce 7 iş günü ücretsiz deneyin; deneme bitince paketi kendi onayınızla etkinleştirebilirsiniz.
       </p>
     </div>
   )
@@ -1040,7 +1039,6 @@ function ModulesStep({ form }: { form: WizardForm }) {
 
 function AccountStep({
   form,
-  isLite,
   city,
   acquisitionSource,
   salesAdvisorName,
@@ -1048,7 +1046,6 @@ function AccountStep({
   onShowPasswordChange,
 }: {
   form: WizardForm
-  isLite?: boolean
   city: string
   acquisitionSource: WizardFormValues["acquisitionSource"]
   salesAdvisorName?: string
@@ -1149,7 +1146,7 @@ function AccountStep({
             <div className="flex items-start gap-3 py-1">
               <FormControl><Checkbox checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} aria-label="Aydınlatma metni onayı" /></FormControl>
               <div className="text-xs leading-5 text-muted-foreground">
-                <Link href="/kvkk" target="_blank" className="font-medium text-primary hover:underline">KVKK Aydınlatma Metni</Link>&apos;ni okudum. {isLite ? "Lite paket kapsamını süresiz ücretsiz kullanacağımı ve hesabımın otomatik ücretliye dönüşmeyeceğini biliyorum." : "Hesabımın ücretsiz 7 iş günü kullanılacağını, satın alma yapılmazsa verilerim korunarak erişimin dondurulacağını biliyorum."}
+                <Link href="/kvkk" target="_blank" className="font-medium text-primary hover:underline">KVKK Aydınlatma Metni</Link>&apos;ni okudum. Hesabımın ücretsiz 7 iş günü kullanılacağını, satın alma yapılmazsa verilerim korunarak erişimin dondurulacağını biliyorum.
                 <FormMessage />
               </div>
             </div>
