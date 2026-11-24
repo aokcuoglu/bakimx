@@ -31,6 +31,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
+import { detail } from "@/components/orders/order-detail-surface"
 import { formatKurus } from "@/lib/money"
 import { PARTS_REQUEST_STATUS } from "@/lib/constants"
 import { isExternalLaborRequest } from "@/lib/orders/parts-request-item"
@@ -111,7 +112,7 @@ export function PartsRequestPanel({
   if (requests.length === 0) return null
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className={cn(detail.shell, "p-4")}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
           <Package className="size-4" />
