@@ -420,10 +420,13 @@ export function OrderList({
       <Button
         type="button"
         variant="outline"
-        className="w-full rounded-full sm:w-auto"
-        disabled={isLoadingMore}
+        className="w-full rounded-full aria-disabled:pointer-events-none aria-disabled:text-muted-foreground sm:w-auto"
+        aria-disabled={isLoadingMore}
         aria-busy={isLoadingMore}
-        onClick={() => loadMore(nextLimit)}
+        onClick={() => {
+          if (isLoadingMore) return
+          loadMore(nextLimit)
+        }}
       >
         {isLoadingMore ? "Yükleniyor…" : "Daha fazla yükle"}
       </Button>
@@ -637,7 +640,7 @@ export function OrderList({
             )
           })}
         </ul>}
-        {orders.length > 0 && footer && <div className="border-t border-border px-4 py-3">{footer}</div>}
+        {orders.length > 0 && footer && <div className="border-t border-border px-4 py-3 sm:px-5">{footer}</div>}
       </div>
     </div>
   )

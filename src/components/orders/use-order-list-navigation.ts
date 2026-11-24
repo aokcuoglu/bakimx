@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useTransition, type ChangeEvent, type FormEvent, type MouseEvent } from "react"
 import { useRouter } from "next/navigation"
+import { buildOrderFilterSearch, buildOrderLoadMoreSearch } from "@/lib/orders/list-search"
 
 /** Keep the toolbar mounted while the server applies the list filters. */
 export function useOrderListNavigation(searchQuery: string) {
@@ -46,15 +47,8 @@ export function useOrderListNavigation(searchQuery: string) {
   function applyFilters(form: HTMLFormElement, replace: boolean) {
     cancelSearch()
     // Read the current DOM, including the latest select and table view values.
-    const params = new URLSearchParams(window.location.search)
     const data = new FormData(form)
-    for (const name of ["q", "status", "payment", "technician", "invoice", "delivery"]) {
-      const value = String(data.get(name) ?? "").trim()
-      if (value) params.set(name, value)
-      else params.delete(name)
-    }
-    // Filtre değişince pencere ilk sayfaya döner.
-    params.delete("limit")
+    const params = buildOrderFilterSearch(new URLSearchParams(window.location.search), data)
     submittedQuery.current = String(data.get("q") ?? "").trim()
     const href = `/orders${params.size ? `?${params}` : ""}`
     startTransition(() => {
@@ -65,8 +59,7 @@ export function useOrderListNavigation(searchQuery: string) {
 
   /** Listeyi örten yükleme katmanı açılmadan pencereyi büyütür; `view` korunur. */
   function loadMore(nextLimit: number) {
-    const params = new URLSearchParams(window.location.search)
-    params.set("limit", String(nextLimit))
+    const params = buildOrderLoadMoreSearch(new URLSearchParams(window.location.search), nextLimit)
     startLoadMore(() => router.replace(`/orders?${params}`, { scroll: false }))
   }
 
