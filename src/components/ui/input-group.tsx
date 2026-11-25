@@ -5,16 +5,28 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Input, inputSizeClasses, type InputSize } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
-function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
+/**
+ * `size` Input'la aynı ölçek (docs/ui-control-sizing.md): değişkenler grup
+ * üzerinde yeniden bağlanır, içindeki `InputGroupInput` aynı yükseklik, metin
+ * ve dolguyu buradan miras alır. Blok hizalı eklenti ve textarea'lı grup
+ * `h-auto` kalır.
+ */
+function InputGroup({
+  className,
+  size = "default",
+  ...props
+}: React.ComponentProps<"div"> & { size?: InputSize }) {
   return (
     <div
       data-slot="input-group"
+      data-size={size}
       role="group"
       className={cn(
         "group/input-group relative flex h-(--control-h) w-full min-w-0 items-center rounded-[12px] border border-input bg-card transition-colors outline-none in-data-[slot=combobox-content]:focus-within:border-inherit in-data-[slot=combobox-content]:focus-within:ring-0 has-disabled:bg-input/50 has-disabled:opacity-50 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-3 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-3 has-[[data-slot][aria-invalid=true]]:ring-destructive/20 has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto dark:bg-input/30 dark:has-disabled:bg-input/80 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40 has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5",
+        inputSizeClasses,
         className
       )}
       {...props}
@@ -83,6 +95,13 @@ const inputGroupButtonVariants = cva(
   }
 )
 
+/**
+ * Düğme `sm` / `compact` grubun kutusundan taşmasın: grup ölçüsüne göre
+ * küçülür (32px düğme 28px grupta kenarlığı aşıyordu).
+ */
+const inputGroupButtonFit =
+  "group-data-[size=sm]/input-group:data-[size=xs]:h-7 group-data-[size=sm]/input-group:data-[size=icon-xs]:size-7 group-data-[size=sm]/input-group:data-[size=icon-sm]:size-7 group-data-[size=compact]/input-group:data-[size=xs]:h-6 group-data-[size=compact]/input-group:data-[size=icon-xs]:size-6 group-data-[size=compact]/input-group:data-[size=icon-sm]:size-6"
+
 function InputGroupButton({
   className,
   type = "button",
@@ -96,7 +115,7 @@ function InputGroupButton({
       type={type}
       data-size={size}
       variant={variant}
-      className={cn(inputGroupButtonVariants({ size }), className)}
+      className={cn(inputGroupButtonVariants({ size }), inputGroupButtonFit, className)}
       {...props}
     />
   )
@@ -114,10 +133,11 @@ function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
   )
 }
 
+/** Ölçüyü `InputGroup`'un `size`'ından alır; kendi `size` prop'u yoktur. */
 function InputGroupInput({
   className,
   ...props
-}: React.ComponentProps<"input">) {
+}: Omit<React.ComponentProps<"input">, "size">) {
   return (
     <Input
       data-slot="input-group-control"
