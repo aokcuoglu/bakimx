@@ -13,10 +13,14 @@ describe("Parça & İşçilik kabuğu (#849)", () => {
     for (const hook of hooks) expect(grid).toContain(`data-pl="${hook}"`)
   })
 
-  test("table/cards kuralları display yazmaz (hidden/@min geçişi bozulur)", () => {
+  test("table/cards display'i yalnız iki sınırlı kapsayıcı bandında yazılır", () => {
+    const band = css.match(/@container \(min-width: 52rem\) and \(max-width: 61\.99rem\) \{([\s\S]*?)\n\}/)
+    expect(band).not.toBeNull()
+    const outside = css.replace(band![0], "")
     for (const hook of ["table", "cards"]) {
-      const rule = css.match(new RegExp(`\\[data-pl="${hook}"\\]\\s*\\{([^}]*)\\}`))
+      const rule = outside.match(new RegExp(`\\[data-pl="${hook}"\\]\\s*\\{([^}]*)\\}`))
       if (rule) expect(rule[1]).not.toContain("display")
+      expect(band![1]).toContain(`[data-pl="${hook}"]`)
     }
   })
 

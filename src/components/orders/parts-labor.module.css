@@ -54,8 +54,28 @@
   background: var(--pl-hover);
 }
 
-.skin [data-pl="table"] [data-pl="type"] svg {
+.skin [data-pl="table"] [data-pl="type"] svg,
+.skin [data-pl="card"] [data-pl="type"] svg {
   display: none;
+}
+
+/* Kart başlığı: sol grup küçülür, tür hapı etiketi kırpar; rozet aksiyon
+   grubuna binmez. (Hap flex değil block: ellipsis yalnız blok kapsayıcıda çalışır.) */
+.skin [data-pl="head"] {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.skin [data-pl="head"] [data-pl="type"] {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 26px;
+}
+
+.skin [data-pl="head"] [data-pl="source"] {
+  flex-shrink: 0;
 }
 
 .skin [data-pl="accent"] {
@@ -96,7 +116,25 @@
   letter-spacing: normal;
 }
 
+/* Tablo ~52rem'de başlar ama sabit kolonlar (160+112+96+64+144+112+96 ≈ 784px)
+   ad kolonuna 48px bırakır. Ad kolonu ≥~200px olana dek (784 + 200 ≈ 62rem)
+   kart düzeni sürer. Taban kurallara display YAZILMAZ; yalnız bu bantta. */
+@container (min-width: 52rem) and (max-width: 61.99rem) {
+  .skin [data-pl="table"] {
+    display: none;
+  }
+
+  .skin [data-pl="cards"] {
+    display: block;
+  }
+}
+
 @media (max-width: 767px) {
+  .skin [data-pl="head"] [data-pl="type"] {
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
   .skin [data-pl="actions"] {
     gap: 8px;
   }

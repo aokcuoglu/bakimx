@@ -2613,7 +2613,7 @@ function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, s
 
       {/* Başlık: tür çipi + kaynak rozeti · satır aksiyonları (tek grup) */}
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-1.5" data-pl="head">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
           <RowFlash kind={flash} />
