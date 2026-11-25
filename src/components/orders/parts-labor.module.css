@@ -21,6 +21,7 @@
 }
 
 .skin [data-slot="alert"] {
+  width: auto;
   margin: 14px 18px;
   border: 0;
   border-radius: 14px;
@@ -117,7 +118,7 @@
   .skin [data-pl="source"]::before {
     content: "";
     position: absolute;
-    inset: -10px;
+    inset: -10px -6px;
   }
 
   .skin [data-pl="procurement"] button {

@@ -39,4 +39,9 @@ describe("Parça & İşçilik kabuğu (#849)", () => {
     expect(css).toContain('tbody tr:has([data-pl="type"]):hover')
     expect(css).not.toMatch(/tbody tr:hover/)
   })
+
+  test("alert kuralı genişlik verir (w-full + yan margin taşar)", () => {
+    const rule = css.match(/\[data-slot="alert"\]\s*\{([^}]*)\}/)
+    expect(rule?.[1]).toContain("width: auto")
+  })
 })

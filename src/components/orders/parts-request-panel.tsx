@@ -125,11 +125,11 @@ export function PartsRequestPanel({
       }
     >
       {undecidedCount > 0 && !locked && (
-        <div className={cn(detail.block, "flex items-start gap-2 bg-warning/10 text-sm")}>
+        <div className={cn(detail.block, "flex items-start gap-2 bg-warning/10 text-sm text-muted-foreground-strong")}>
           <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning-strong" />
           <div className="min-w-0">
-            <p className="font-medium">Karar bekleyen parça/işçilik talebi var.</p>
-            <p className="text-xs text-muted-foreground-strong">
+            <p className="font-medium text-foreground">Karar bekleyen parça/işçilik talebi var.</p>
+            <p className="text-xs">
               Her talebi ya araç kabulüne kalem olarak ekleyin ya da iptal edin. Karar verilmeden araç kabulü
               teslime hazırlanamaz ve teslim edilemez. Dış işçilik talebi kaleme eklendiğinde
               &quot;Dış İşçilik&quot; kalemi olarak açılır; satış fiyatını siz girersiniz.
