@@ -81,13 +81,6 @@
   margin-top: 1.5rem;
 }
 
-/* Yalnız yerleşim: kutunun ölçüsü ve görünümü InputGroup'tan gelir (#888). */
-.search {
-  flex: 1 1 14rem;
-  min-width: 0;
-  max-width: 22rem;
-}
-
 .layout {
   margin-inline: auto;
   max-width: 72rem;

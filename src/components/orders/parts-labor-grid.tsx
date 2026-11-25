@@ -770,9 +770,12 @@ function ComposerCard({ children }: { children: React.ReactNode }) {
 }
 
 // ── Composer: küçük alan etiketi ─────────────────────────────────────────────
+// flex + gap, space-y DEĞİL: Base UI Autocomplete kökü alanın sonuna gizli bir
+// input öğesi ekliyor; space-y görünür girdiye 4px alt boşluk verip items-end
+// satırda adı Miktar/Fiyat'tan 4px yukarı itiyordu (#888).
 function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("min-w-0 space-y-1", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-1", className)}>
       <span className="block text-xs font-medium text-muted-foreground">{label}</span>
       {children}
     </div>
@@ -1608,7 +1611,7 @@ function QtyStepper({ row, editable, onCell, size = "compact" }: {
   row: Row; editable: boolean; onCell: OnCell; size?: "default" | "compact"
 }) {
   return (
-    <div data-slot="qty-stepper" className={cn("inline-flex items-center rounded-lg border border-input bg-background transition-colors", size === "default" ? "h-(--control-h)" : "h-(--control-h-xs)")}>
+    <div data-slot="qty-stepper" className={cn("inline-flex items-center rounded-(--control-radius) border border-input bg-card transition-colors dark:bg-input/30", size === "default" ? "h-(--control-h)" : "h-(--control-h-xs)")}>
       <Button type="button" variant="ghost" size="icon-xs" className="rounded-r-none" aria-label="Azalt"
         disabled={!editable || row.quantity <= 1}
         onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })}>
@@ -1783,7 +1786,11 @@ function ModalPriceField({ row, onCell }: { row: Row; onCell: OnCell }) {
  * kuralı uygular (external-labor-cost.ts) — burada yalnız anında görünsün diye.
  * Boş bırakmak "değiştirme" demektir: alış silinip satış 0'a inmesin.
  */
-function CostPriceInput({ row, onCell, id }: { row: Row; onCell: OnCell; id?: string }) {
+// size: composer'da (form alanı) default; düzenleme modalında yanındaki FİYAT
+// ile aynı compact.
+function CostPriceInput({ row, onCell, id, size = "default" }: {
+  row: Row; onCell: OnCell; id?: string; size?: "default" | "compact"
+}) {
   const [draft, setDraft] = useState(() => toPriceDraft(row.purchasePriceKurus ?? null))
   function commit() {
     if (!draft.trim()) {
@@ -1811,6 +1818,7 @@ function CostPriceInput({ row, onCell, id }: { row: Row; onCell: OnCell; id?: st
       autoComplete="off"
       placeholder="₺0,00"
       aria-label="Alış fiyatı (KDV hariç)"
+      size={size}
       className="w-32 text-right tabular-nums"
       value={draft}
       onFocus={(event) => event.currentTarget.select()}
@@ -1830,7 +1838,7 @@ function CostPriceField({ row, onCell }: { row: Row; onCell: OnCell }) {
         <Label htmlFor={id} className="text-sm font-medium">Alış fiyatı</Label>
         <p className="text-xs text-muted-foreground">Dışarıya ödenen tutar, KDV hariç. Müşteri görmez.</p>
       </div>
-      <CostPriceInput id={id} row={row} onCell={onCell} />
+      <CostPriceInput id={id} row={row} onCell={onCell} size="compact" />
     </div>
   )
 }
@@ -2432,15 +2440,14 @@ const GHOST_ROW = cn(
   "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=qty-stepper]]:border-input focus-within:[&_[data-slot=price-field]]:border-input",
 )
 
-// Marka/Kategori alanlarının ortak kompakt ölçüsü/tipografisi: ad satırının
-// altında ikincil meta olarak okunmalı → 11px, muted. !important → GHOST_ROW'un
-// genel input-group kurallarını bu alanlarda ezer.
-// NOT: alan-içi input `[&_input]` ile hedeflenir. `[data-slot=input-group-control]`
-// seçicisiyle yazılan kurallar Tailwind çıktısında hiç üretilmiyordu (tipografi
-// sessizce uygulanmıyordu) — bu yüzden bilerek input etiketi kullanılıyor.
+// Marka/Kategori alanları: ölçü, köşe ve yazı boyutu `PartAttributeField
+// size="compact"`tan gelir (telefonda 16px — 11px'lik eski ezme iOS'ta odakta
+// sayfayı yakınlaştırıyordu, #888). Burada yalnız hayalet görünüm kalır: ikincil
+// meta olarak muted renk. !important → GHOST_ROW'un genel kurallarını ezer.
+// NOT: eski not "[data-slot=input-group-control] seçicisi üretilmiyor" diyordu;
+// asıl neden AutocompleteInput'un slot'u ezmesiydi (#888'de düzeldi).
 const META_FIELD_BASE = cn(
-  "[&_[data-slot=input-group]]:!rounded-md",
-  "[&_input]:!text-[11px] [&_input]:!text-muted-foreground",
+  "[&_input]:!text-muted-foreground",
   "focus-within:[&_input]:!text-foreground",
 )
 
@@ -2661,7 +2668,7 @@ function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, s
         "mt-1.5",
         "[&_[data-slot=input-group]]:border-transparent [&_[data-slot=input-group]]:bg-transparent [&_[data-slot=input]]:border-transparent [&_[data-slot=input]]:bg-transparent",
         "[&_[data-slot=input-group]]:px-0 [&_[data-slot=input]]:!px-0 [&_[data-slot=input]]:font-medium",
-        "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-2.5",
+        "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-(--field-px)",
       )}>
         <PartField row={row} ed={ed} onCell={onCell} readOnlyHint={readOnlyFields && !locked ? "Kalemi düzenle ile değiştirin" : undefined} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
@@ -2681,7 +2688,9 @@ function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, s
           etiketi üstünde olduğu için rakamın anlamı kart genişliğinden bağımsız;
           sabit ilk iki kolon + esnek fiyat kolonu 360px ekranda taşmaz. */}
       <div className="mt-2 border-t border-border pt-2" data-pl="finance">
-        <div className="grid grid-cols-[4rem_minmax(0,1fr)_6.5rem] items-start gap-1.5">
+        {/* İşçilik satırında miktar adımlayıcısı (~82px) 4rem'e sığmıyor, BİRİM
+            "—"nin üstüne taşıyordu: o kolon içeriği kadar açılır (#888). */}
+        <div className={cn("grid items-start gap-1.5", ed.isPart ? "grid-cols-[4rem_minmax(0,1fr)_6.5rem]" : "grid-cols-[auto_minmax(0,1fr)_6.5rem]")}>
           <div className="min-w-0 space-y-1 [&_input]:!w-full">
             <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground" data-pl="label">Miktar</span>
             {ed.isPart

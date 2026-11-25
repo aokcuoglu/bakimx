@@ -54,7 +54,6 @@ export function CancelCollectionButton({ collectionId }: { collectionId: string 
             onChange={(e) => setReason(e.target.value)}
             placeholder="İptal nedeni (zorunlu)…"
             rows={2}
-            className="border-destructive/20 focus-visible:border-destructive focus-visible:ring-destructive/30"
           />
           <div className="flex items-center gap-2 justify-end">
             <Button variant="outline" size="sm" onClick={() => { setShowConfirm(false); setReason("") }}>Vazgeç</Button>

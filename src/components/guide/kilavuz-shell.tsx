@@ -77,7 +77,7 @@ export function KilavuzShell() {
             <span className="text-xs text-muted-foreground">Son güncelleme: {KILAVUZ_UPDATED_LABEL}</span>
           </div>
           <div className={`${styles.toolbar} print:hidden`}>
-            <InputGroup className={styles.search}>
+            <InputGroup className="max-w-88 grow basis-56">
               <InputGroupAddon>
                 <Search aria-hidden />
               </InputGroupAddon>

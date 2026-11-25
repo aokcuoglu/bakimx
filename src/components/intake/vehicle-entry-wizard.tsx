@@ -1044,7 +1044,7 @@ export function VehicleEntryWizard({
                 className="tracking-wide placeholder:tracking-normal"
               />
               <InputGroupAddon align="inline-end">
-                <InputGroupButton size="icon-sm" aria-label="Plakayı kamerayla tara" onClick={() => setScanner("plate")} className="size-(--control-h)">
+                <InputGroupButton size="icon-sm" aria-label="Plakayı kamerayla tara" onClick={() => setScanner("plate")}>
                   <ScanLine className="size-6" />
                 </InputGroupButton>
               </InputGroupAddon>
