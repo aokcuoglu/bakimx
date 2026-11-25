@@ -256,20 +256,38 @@ const RADIUS = [
     token: "sm",
     px: "6",
     className: "rounded-sm",
-    use: "Kontrol (Button, Input)",
+    use: "Küçük iç öğe",
   },
   { token: "md", px: "8", className: "rounded-md", use: "Menü satırı" },
   {
+    token: "control",
+    px: "10 / 8",
+    className: "rounded-(--control-radius)",
+    use: "Input, Select, Textarea, Alert",
+  },
+  {
     token: "lg",
-    px: "10",
+    px: "12",
     className: "rounded-lg",
-    use: "Yüzey (Card, Dialog)",
+    use: "Card, Popover",
   },
   {
     token: "xl",
     px: "12",
     className: "rounded-xl",
-    use: "Büyük panel üst sınır",
+    use: "Sabit 12px — --radius'tan bağımsız; açılır menü/liste",
+  },
+  {
+    token: "panel",
+    px: "14",
+    className: "rounded-(--radius-panel)",
+    use: "Panel, KPI kartı",
+  },
+  {
+    token: "dialog",
+    px: "18",
+    className: "rounded-[var(--radius-dialog)]",
+    use: "Dialog, mobil sheet",
   },
   {
     token: "full",
@@ -633,7 +651,7 @@ export default function DesignSystemPage() {
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-foreground">Radius</h3>
               <p className="text-xs text-muted-foreground">
-                Kontrol = 6px (sm), yüzey = 10px (lg). 2xl+ yeni işte yok.
+                Girdi 10px (md+ 8px), Card 12px, panel 14px, diyalog 18px. Düğmeler hap.
               </p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {RADIUS.map((row) => (
