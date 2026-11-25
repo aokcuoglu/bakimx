@@ -31,7 +31,7 @@ import { PhotoAnnotate } from "@/components/intake/photo-annotate"
 import { DamageCapture } from "@/components/intake/damage-capture"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS, PHOTO_TYPES } from "@/lib/constants"
-import { hasFeature, type PlanTier } from "@/lib/plan"
+import type { IntakeEntitlements } from "@/lib/intake/entitlements"
 import { isTechnicianFlow } from "@/lib/sidebarless-route"
 
 type Customer = {
@@ -72,14 +72,15 @@ export function IntakeWizard({
   prefillCustomerId,
   prefillVehicleId,
   source,
-  planTier,
+  entitlements,
   initialEntryMethod,
 }: {
   customers: Customer[]
   prefillCustomerId?: string
   prefillVehicleId?: string
   source?: string
-  planTier?: string
+  /** Sunucuda atölye ve rolden çözülen giriş yetkileri (#828). */
+  entitlements: IntakeEntitlements
   /** Araç girişi bu yöntemin adımında açılır (ör. teknisyen panelinden plaka). */
   initialEntryMethod?: EntryMethod | null
 }) {
@@ -365,7 +366,7 @@ export function IntakeWizard({
                   if (!focused) syncSelectionToUrl(v.customerId, v.vehicleId)
                 }}
                 onComplete={() => setStep(3)}
-                planTier={planTier}
+                entitlements={entitlements}
                 initialMethod={initialEntryMethod}
                 initialCustomer={prefillCustomer}
                 hasPrefilledVehicle={!!prefillVehicleId}
@@ -585,13 +586,13 @@ export function IntakeWizard({
           <Card className={step === 4 ? undefined : "hidden"}>
             <CardHeader><CardTitle>Fotoğraf & Hasar İşaretleme</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {hasFeature((planTier ?? "pro") as PlanTier, "damageMap") && (
+              {entitlements.damageMap && (
                 <DamageCapture
                   intakeFormId={intakeId}
                   vehicle={vehicleInfo ? { plate: vehicleInfo.plate, brand: vehicleInfo.brand, model: vehicleInfo.model } : null}
                 />
               )}
-              {hasFeature((planTier ?? "pro") as PlanTier, "photoChecklist") && (
+              {entitlements.photoChecklist && (
                 <>
                   <div className="border-t pt-4">
                     <h3 className="font-medium">Hasar fotoğrafları</h3>
@@ -600,8 +601,7 @@ export function IntakeWizard({
                   <PhotoAnnotate intakeFormId={intakeId} />
                 </>
               )}
-              {!hasFeature((planTier ?? "pro") as PlanTier, "damageMap") &&
-               !hasFeature((planTier ?? "pro") as PlanTier, "photoChecklist") && (
+              {!entitlements.damageMap && !entitlements.photoChecklist && (
                 <p className="text-sm text-muted-foreground">
                   Hasar işaretleme ve fotoğraf üzerine işaretleme paketinizde bulunmuyor; bu özellikler Servis Paketi&apos;ne dahildir.
                 </p>

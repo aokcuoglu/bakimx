@@ -4,13 +4,14 @@ import { AppShell } from "@/components/layout/app-shell"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { AppointmentCreateForm } from "@/components/appointments/appointment-create-form"
+import { resolveIntakeEntitlements } from "@/lib/intake/entitlements"
 
 export const metadata = { title: "Yeni Randevu" }
 
 export default async function NewAppointmentPage() {
   const paywall = await getFeaturePaywall("appointments")
   if (paywall) return paywall
-  const { workshop } = await getAppData()
+  const { user, workshop } = await getAppData()
 
   // Müşteri ve araç listeleri artık istemciye toptan indirilmiyor: müşteri
   // sunucu tarafı arama uç noktasından, araçlar da seçilen müşteriye göre
@@ -34,7 +35,7 @@ export default async function NewAppointmentPage() {
           </p>
         </div>
 
-        <AppointmentCreateForm />
+        <AppointmentCreateForm entitlements={resolveIntakeEntitlements(workshop, user.role)} />
       </div>
     </AppShell>
   )

@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import Link from "next/link"
 import { ArrowRight, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { FEATURE_CATALOG, type FeatureDefinition } from "@/lib/feature-catalog"
+import { addonContactMessage, type FeatureDefinition } from "@/lib/feature-catalog"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import type { GatedFeature, PlanTier } from "@/lib/plan"
 import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
@@ -46,7 +46,7 @@ export function FeatureUpgradeActions({ feature, currentTier, kind, placement, c
   const size = compact ? "sm" : "lg"
 
   if (kind === "addon") {
-    const message = `Merhaba, BakımX ${FEATURE_CATALOG[feature].name} ek özelliği hakkında bilgi almak istiyorum.`
+    const message = addonContactMessage(feature)
     return (
       <div className={compact ? "flex flex-col gap-2 sm:items-start" : "flex flex-col items-center gap-2"}>
         <Button variant="foreground" asChild size={size}>
