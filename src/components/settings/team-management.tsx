@@ -509,7 +509,7 @@ export function TeamManagement({
               {manageable ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button type="button" variant="ghost" size="icon" className="size-7" aria-label="Üye işlemleri">
+                    <Button type="button" variant="ghost" size="icon-sm" aria-label="Üye işlemleri">
                       <MoreHorizontal className="size-4" />
                     </Button>
                   </DropdownMenuTrigger>

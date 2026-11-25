@@ -37,7 +37,6 @@ import {
   type TeamSizeId,
 } from "@/lib/register-onboarding"
 import { createBranchSchema, type CreateBranchInput } from "@/lib/validations/branch"
-import { cn } from "@/lib/utils"
 
 const STEPS = [
   { title: "Şube bilgileri", description: "Ad, iletişim ve adres" },
@@ -318,33 +317,20 @@ export function CreateBranchWizard({
                     <FormItem>
                       <FormLabel>Modüller</FormLabel>
                       <FormControl>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          {REGISTER_MODULE_IDS.map((id) => {
-                            const selected = field.value.includes(id)
-                            return (
-                              <Button
-                                key={id}
-                                type="button"
-                                variant="outline"
-                                className={cn(
-                                  "h-auto justify-start rounded-lg px-3 py-2 text-left text-sm whitespace-normal",
-                                  selected
-                                    ? "border-foreground bg-muted font-medium"
-                                    : "border-border bg-background hover:bg-muted/60",
-                                )}
-                                onClick={() => {
-                                  field.onChange(
-                                    selected
-                                      ? field.value.filter((m) => m !== id)
-                                      : [...field.value, id],
-                                  )
-                                }}
-                              >
-                                {MODULE_LABELS[id]}
-                              </Button>
-                            )
-                          })}
-                        </div>
+                        <ToggleGroup
+                          type="multiple"
+                          variant="outline"
+                          size="control"
+                          value={field.value}
+                          onValueChange={(value) => field.onChange(value as RegisterModuleId[])}
+                          className="grid w-full gap-2 sm:grid-cols-2"
+                        >
+                          {REGISTER_MODULE_IDS.map((id) => (
+                            <ToggleGroupItem key={id} value={id} className="justify-start">
+                              {MODULE_LABELS[id]}
+                            </ToggleGroupItem>
+                          ))}
+                        </ToggleGroup>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

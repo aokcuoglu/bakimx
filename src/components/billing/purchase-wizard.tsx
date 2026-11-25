@@ -457,35 +457,30 @@ export function PurchaseWizard({
                       {/* Ödeme yöntemi seçimi — kart görünümlü iki seçenek */}
                       <div>
                         <Label className="text-xs">Ödeme yöntemi</Label>
-                        <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
+                        <ToggleGroup
+                          type="single"
+                          variant="outline"
+                          size="control"
+                          value={method}
+                          onValueChange={(value) => { if (value) setMethod(value as PayMethod) }}
+                          aria-label="Ödeme yöntemi"
+                          className="mt-1.5 grid w-full gap-2 sm:grid-cols-2"
+                        >
                           {(
                             [
                               { value: "card", label: "Kredi/Banka Kartı", icon: CreditCard },
                               { value: "havale", label: "Havale/EFT", icon: Landmark },
                             ] as const
                           ).map((opt) => {
-                            const selected = method === opt.value
                             const Icon = opt.icon
                             return (
-                              <Button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => setMethod(opt.value)}
-                                aria-pressed={selected}
-                                variant="outline"
-                                className={cn(
-                                  "h-auto min-h-7 justify-start gap-2 rounded-xl p-3 text-left whitespace-normal",
-                                  selected
-                                    ? "border-primary bg-primary/5 ring-1 ring-primary/40 text-foreground"
-                                    : "border-border text-muted-foreground hover:bg-muted/60 hover:bg-muted/30",
-                                )}
-                              >
+                              <ToggleGroupItem key={opt.value} value={opt.value} className="justify-start gap-2">
                                 <Icon className="size-4 shrink-0 text-primary" />
                                 {opt.label}
-                              </Button>
+                              </ToggleGroupItem>
                             )
                           })}
-                        </div>
+                        </ToggleGroup>
                       </div>
 
                       <p className="text-sm text-muted-foreground">

@@ -200,7 +200,8 @@ export function NotificationSettings({
               type="button"
               onClick={() => setExpandedKey(expandedKey === template.key ? null : template.key)}
               variant="ghost"
-              className="h-auto w-full justify-between rounded-none px-5 py-4"
+              size="row"
+              className="w-full justify-between px-5"
               aria-expanded={expandedKey === template.key}
             >
               <div className="text-left">

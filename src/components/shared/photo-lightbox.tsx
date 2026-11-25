@@ -169,7 +169,7 @@ export function PhotoLightbox({
               type="button"
               variant="ghost"
               size="icon"
-              className="rounded-full bg-white/20 text-white hover:bg-white/30 hover:text-white"
+              className="bg-white/20 text-white hover:bg-white/30 hover:text-white"
               aria-label="Kapat"
             >
               <X />

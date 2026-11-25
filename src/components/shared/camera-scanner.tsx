@@ -293,12 +293,12 @@ export function CameraScanner({
     <div className="fixed inset-0 z-50 flex flex-col bg-black text-white">
       {/* Üst bar */}
       <div className="flex items-center justify-between p-4 shrink-0">
-        <Button type="button" variant="ghost" size="icon" onClick={handleClose} className="rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white" aria-label="Kapat">
+        <Button type="button" variant="ghost" size="icon" onClick={handleClose} className="bg-white/10 text-white hover:bg-white/20 hover:text-white" aria-label="Kapat">
           <X className="size-5" />
         </Button>
         <span className="text-sm font-medium">{title}</span>
         {torchSupported && status === "ready" ? (
-          <Button type="button" variant="ghost" size="icon" onClick={toggleTorch} className="rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white" aria-label="Flaş">
+          <Button type="button" variant="ghost" size="icon" onClick={toggleTorch} className="bg-white/10 text-white hover:bg-white/20 hover:text-white" aria-label="Flaş">
             {torchOn ? <Zap className="size-5 text-warning-strong" /> : <ZapOff className="size-5" />}
           </Button>
         ) : (

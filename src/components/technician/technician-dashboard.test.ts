@@ -47,7 +47,9 @@ describe("teknisyen paneli KPI filtreleri", () => {
   test("iş listelerinde adet, tıklanabilirlik ve aktif iş vurgusu gösterir", () => {
     expect(source).toContain('const count = section.total !== undefined ? section.total : section.orders.length')
     expect(source).toContain('({count})')
-    expect(source).toContain('h-auto min-w-0 cursor-pointer')
+    // KPI kartı doğal yüksekliğini `size="row"`dan alır (#889; eski `h-auto`).
+    expect(source).toContain('variant="outline"\n                  size="row"')
+    expect(source).toContain('"min-w-0 cursor-pointer items-start')
     expect(source).toContain('cursor-pointer bg-card/80 shadow-xs transition-all hover:bg-muted/60 hover:bg-primary/10 hover:ring-2 hover:ring-primary/20')
   })
 

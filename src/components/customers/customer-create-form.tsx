@@ -19,6 +19,7 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { CustomerTagBadge, PriceGroupBadge } from "@/components/customers/customer-badges"
@@ -34,7 +35,6 @@ import {
 } from "@/components/ui/form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { createCustomerAction, updateCustomerAction } from "@/app/(app)/customers/actions"
-import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils-client"
 import { useForm } from "react-hook-form"
 import { customerSchema, type CustomerFormValues } from "@/lib/validations/customer"
@@ -234,38 +234,24 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                   control={form.control}
                   name="type"
                   render={({ field }) => (
-                    <div className="inline-flex rounded-md border border-border bg-muted p-0.5 text-xs font-medium">
-                      <Button
-                        type="button"
-                        onClick={() => field.onChange("individual")}
-                        variant={field.value === "individual" ? "secondary" : "ghost"}
-                        size="sm"
-                        className={cn(
-                          "gap-1.5",
-                          field.value === "individual"
-                            ? "bg-card text-foreground shadow-sm ring-1 ring-border"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
+                    <ToggleGroup
+                      type="single"
+                      variant="outline"
+                      size="control"
+                      spacing={0}
+                      value={field.value}
+                      onValueChange={(value) => { if (value) field.onChange(value) }}
+                      aria-label="Müşteri tipi"
+                    >
+                      <ToggleGroupItem value="individual" className="gap-1.5">
                         <UserIcon className="size-3.5" />
                         Bireysel
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => field.onChange("corporate")}
-                        variant={field.value === "corporate" ? "secondary" : "ghost"}
-                        size="sm"
-                        className={cn(
-                          "gap-1.5",
-                          field.value === "corporate"
-                            ? "bg-card text-foreground shadow-sm ring-1 ring-border"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="corporate" className="gap-1.5">
                         <Building2 className="size-3.5" />
                         Kurumsal
-                      </Button>
-                    </div>
+                      </ToggleGroupItem>
+                    </ToggleGroup>
                   )}
                 />
               </header>
@@ -510,29 +496,25 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                     <FormItem>
                       <FormLabel>Etiket</FormLabel>
                       <FormControl>
-                        <div className="flex flex-wrap gap-1.5">
+                        <ToggleGroup
+                          type="single"
+                          variant="outline"
+                          size="control"
+                          value={field.value}
+                          onValueChange={(value) => { if (value) field.onChange(value) }}
+                          className="flex-wrap"
+                        >
                           {[
                             { key: "standard", label: "Standart" },
                             { key: "vip", label: "VIP" },
                             { key: "risky", label: "Riskli" },
                             { key: "fleet", label: "Filo" },
                           ].map((opt) => (
-                            <Button
-                              key={opt.key}
-                              type="button"
-                              onClick={() => field.onChange(opt.key)}
-                              variant="outline"
-                              size="sm"
-                              className={cn(
-                                field.value === opt.key
-                                  ? "border-primary bg-primary/10 text-primary-strong"
-                                  : "border-border bg-card text-muted-foreground hover:bg-muted"
-                              )}
-                            >
+                            <ToggleGroupItem key={opt.key} value={opt.key}>
                               {opt.label}
-                            </Button>
+                            </ToggleGroupItem>
                           ))}
-                        </div>
+                        </ToggleGroup>
                       </FormControl>
                       <p className="text-[11px] text-muted-foreground mt-1.5">
                         Önizleme: <CustomerTagBadge tag={tag} />
@@ -574,28 +556,24 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                     <FormItem>
                       <FormLabel>Fiyat Grubu</FormLabel>
                       <FormControl>
-                        <div className="flex flex-wrap gap-1.5">
+                        <ToggleGroup
+                          type="single"
+                          variant="outline"
+                          size="control"
+                          value={field.value}
+                          onValueChange={(value) => { if (value) field.onChange(value) }}
+                          className="flex-wrap"
+                        >
                           {[
                             { key: "standard", label: "Standart" },
                             { key: "discounted", label: "İndirimli" },
                             { key: "fleet", label: "Filo" },
                           ].map((opt) => (
-                            <Button
-                              key={opt.key}
-                              type="button"
-                              onClick={() => field.onChange(opt.key)}
-                              variant="outline"
-                              size="sm"
-                              className={cn(
-                                field.value === opt.key
-                                  ? "border-primary bg-primary/10 text-primary-strong"
-                                  : "border-border bg-card text-muted-foreground hover:bg-muted"
-                              )}
-                            >
+                            <ToggleGroupItem key={opt.key} value={opt.key}>
                               {opt.label}
-                            </Button>
+                            </ToggleGroupItem>
                           ))}
-                        </div>
+                        </ToggleGroup>
                       </FormControl>
                       {priceGroup ? (
                         <p className="text-[11px] text-muted-foreground mt-1.5">

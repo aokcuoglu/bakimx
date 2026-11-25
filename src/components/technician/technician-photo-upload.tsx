@@ -127,10 +127,10 @@ export function TechnicianPhotoUpload({
             <Button
               key={key}
               type="button"
-              variant="outline"
-              size="sm"
+              variant="destructive"
+              size="xs"
               onClick={() => openWith(key)}
-              className="h-7 rounded-full border-destructive/20 bg-destructive/10 px-2 text-[11px] font-medium text-destructive-strong touch-manipulation"
+              className="touch-manipulation"
             >
               <Camera className="size-3" />
               {PHOTO_TYPES[key].label}
@@ -257,8 +257,9 @@ export function TechnicianPhotoUpload({
               <Button
                 type="button"
                 variant="outline"
+                size="row"
                 onClick={() => fileInputRef.current?.click()}
-                className="h-auto w-full flex-col gap-1.5 border-dashed py-6 text-muted-foreground touch-manipulation"
+                className="w-full flex-col justify-center gap-1.5 border-dashed text-center text-muted-foreground touch-manipulation"
               >
                 <Camera className="size-6" />
                 Kamera ile çek veya galeriden seç

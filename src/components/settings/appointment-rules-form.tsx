@@ -203,9 +203,7 @@ export function AppointmentRulesForm({ settings }: { settings: SettingsData }) {
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
                 onClick={addReminder}
-                className="font-medium"
               >
                 <Plus className="size-4 mr-1" />
                 Hatırlatma Ekle
