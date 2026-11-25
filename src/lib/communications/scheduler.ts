@@ -22,6 +22,7 @@ async function eligibleWorkshopIds(feature: GatedFeature, workshopId?: string): 
       trialEndsAt: true,
       liteFreeGrantedAt: true,
       currentPeriodEnd: true,
+      addons: true,
     },
   })
   return workshops
