@@ -245,6 +245,9 @@ export function PlanPackages({
   if (!isPublic) {
     const currentPkg = isTrialing ? PACKAGE : ownedTier ? getPlanPackage(ownedTier) : undefined
     const stripCycle = currentCycle ?? "yearly"
+    // Denemede seçilmiş bir dönem yoktur; dönem ifadesi ve geçiş eylemi yalnız
+    // dönemi belli ücretli aboneliklerde gösterilir.
+    const hasCommittedCycle = !isTrialing && currentCycle !== null
     const monthlyEquivalent = (tier: PlanTier, cycle: BillingCycle) => {
       const discounted = getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps) / 100
       return cycle === "monthly" ? discounted : Math.round(discounted / 12)
@@ -290,8 +293,7 @@ export function PlanPackages({
                       </div>
                       <p className="text-xs font-medium leading-4 text-muted-foreground">
                         ₺{monthlyEquivalent(currentPkg.tier, stripCycle).toLocaleString("tr-TR")} / ay
-                        {" · "}
-                        {stripCycle === "yearly" ? "yıllık faturalandırılır" : "aylık faturalandırılır"}
+                        {hasCommittedCycle && (stripCycle === "yearly" ? " · yıllık faturalandırılır" : " · aylık faturalandırılır")}
                       </p>
                     </div>
                   </div>
@@ -302,18 +304,20 @@ export function PlanPackages({
                         Paketi yönet
                       </Button>
                     )}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="shrink-0 text-primary"
-                      onClick={() => {
-                        const next = stripCycle === "yearly" ? "monthly" : "yearly"
-                        if (onRequestCycleChange) onRequestCycleChange(next)
-                        else setBilling(next)
-                      }}
-                    >
-                      {stripCycle === "yearly" ? "Aylığa geç" : "Yıllığa geç"}
-                    </Button>
+                    {hasCommittedCycle && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="shrink-0 text-primary"
+                        onClick={() => {
+                          const next = stripCycle === "yearly" ? "monthly" : "yearly"
+                          if (onRequestCycleChange) onRequestCycleChange(next)
+                          else setBilling(next)
+                        }}
+                      >
+                        {stripCycle === "yearly" ? "Aylığa geç" : "Yıllığa geç"}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

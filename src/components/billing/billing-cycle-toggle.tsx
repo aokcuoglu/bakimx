@@ -36,7 +36,7 @@ export function BillingCycleToggle({
       aria-label={label}
       className={cn(
         "gap-0.5 rounded-lg bg-muted p-0.5",
-        fullWidth ? "grid w-full grid-cols-2" : "inline-grid grid-cols-2"
+        fullWidth ? "grid w-full grid-cols-2" : "inline-grid grid-cols-[auto_auto]"
       )}
       value={value}
       onValueChange={(next) => {
@@ -51,7 +51,7 @@ export function BillingCycleToggle({
         >
           {cycle === "monthly" ? "Aylık" : "Yıllık"}
           {cycle === "yearly" && yearlyHint && (
-            <span className="rounded-md bg-primary/10 px-1 text-[11px] font-medium leading-4 text-primary-strong">{yearlyHint}{yearlyHintSrSuffix && <span className="sr-only">{yearlyHintSrSuffix}</span>}</span>
+            <span className="rounded-md bg-primary/10 px-1 text-[11px] font-medium leading-4 text-primary-strong"><span className="sr-only">, </span>{yearlyHint}{yearlyHintSrSuffix && <span className="sr-only">{yearlyHintSrSuffix}</span>}</span>
           )}
         </ToggleGroupItem>
       ))}
