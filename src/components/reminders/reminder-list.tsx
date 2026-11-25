@@ -157,12 +157,12 @@ export function ReminderList({ initialReminders, stats }: Props) {
                 placeholder="Müşteri, plaka, başlık ara..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 text-sm"
+                className="pl-9"
               />
             </div>
             <div className="flex gap-2 flex-wrap">
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "")}>
-                <SelectTrigger className="w-[130px] text-sm">
+                <SelectTrigger className="w-[130px]">
                   <SelectValue placeholder="Durum" />
                 </SelectTrigger>
                 <SelectContent>
@@ -176,7 +176,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                 </SelectContent>
               </Select>
               <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v || "")}>
-                <SelectTrigger className="w-[140px] text-sm">
+                <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Bakım Türü" />
                 </SelectTrigger>
                 <SelectContent>
@@ -187,7 +187,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                 </SelectContent>
               </Select>
               <Select value={dateFilter} onValueChange={(v) => setDateFilter(v || "")}>
-                <SelectTrigger className="w-[130px] text-sm">
+                <SelectTrigger className="w-[130px]">
                   <SelectValue placeholder="Tarih" />
                 </SelectTrigger>
                 <SelectContent>

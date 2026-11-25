@@ -266,7 +266,7 @@ export function NotificationSettings({
                             value={editContent}
                             onChange={(e) => setEditContent(e.target.value)}
                             rows={ch === "email" ? 8 : 3}
-                            className="bg-muted font-mono border-border focus-visible:border-primary focus-visible:ring-primary/30"
+                            className="font-mono"
                           />
                           <div className="flex gap-2">
                             <Button variant="foreground"

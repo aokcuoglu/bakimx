@@ -80,7 +80,7 @@ export function SetPasswordForm({
           <Label className="text-sm font-medium text-muted-foreground">E-posta</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-            <Input value={email} disabled readOnly className="pl-9 bg-muted/50" />
+            <Input value={email} disabled readOnly className="pl-9" />
           </div>
         </div>
 

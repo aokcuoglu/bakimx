@@ -109,7 +109,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               placeholder="En az 8 karakter"
-              className="h-7 rounded-[8px] bg-card pl-9 pr-9 shadow-xs"
+              className="pl-9 pr-9"
               required
             />
             <Button
@@ -137,7 +137,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               placeholder="Şifreyi tekrar girin"
-              className="h-7 rounded-[8px] bg-card pl-9 shadow-xs"
+              className="pl-9"
               required
             />
           </div>

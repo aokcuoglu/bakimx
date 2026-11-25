@@ -17,10 +17,9 @@ import {
 } from "@/components/ui/autocomplete"
 import { Info, PackageSearch, Search, XIcon, Plus, PencilLine, TriangleAlert, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import type { InputSize } from "@/components/ui/input"
 import { VehicleFitToggle } from "@/components/parts/vehicle-fit-toggle"
 import { formatTRY } from "@/lib/format"
-import { cn } from "@/lib/utils"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import { BAKIMX_SUGGESTION_LIMIT, useBakimxProductSearch } from "@/lib/parts/bakimx-client"
@@ -60,7 +59,7 @@ export function PartSearchInput({
   categoryId,
   disabled,
   placeholder,
-  inputClassName,
+  size = "default",
   plain,
   onNameChange,
   onSelectArticle,
@@ -91,9 +90,15 @@ export function PartSearchInput({
   categoryId?: number | null
   disabled?: boolean
   placeholder?: string
-  /** Composer gibi yüzeyler giriş alanını çevresinden daha belirgin yapabilir. */
-  inputClassName?: string
-  /** Composer'da gruplu arama yüzeyi yerine doğrudan shadcn Input kullanır. */
+  /**
+   * Input ölçeği (docs/ui-control-sizing.md). Varsayılan: telefonda 44px, md+
+   * 36px. Yoğun tablo satırı `compact` seçer; görünüm `className` ile ezilmez.
+   */
+  size?: InputSize
+  /**
+   * Composer düğmeleri: 🔍 ve X odağı alanda tutar (popup kapanmaz), X yalnız
+   * alan doluyken görünür, seçili parça çipi gösterilmez.
+   */
   plain?: boolean
   /** Yazarken çağrılır — YALNIZ yerel güncelleme (kaydetmez); katalog modunda arama sorgusu. */
   onNameChange: (name: string) => void
@@ -324,36 +329,33 @@ export function PartSearchInput({
   const showFitToggle =
     vehicleTypeId != null && (onlyFits || (fittingCount > 0 && fittingCount < allSuggestions.length))
 
-  const plainActions = (inputValue: string) => (
-    <div className="absolute inset-y-0 right-1 flex items-center gap-1">
-      {onSearchClick && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={searchTitle ?? "Ara"}
-          title={searchTitle}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={onSearchClick}
-          disabled={searchDisabled}
-        >
-          <Search />
-        </Button>
-      )}
-      {canClear && inputValue && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          aria-label="Temizle"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={onClear}
-        >
-          <XIcon />
-        </Button>
-      )}
-    </div>
-  )
+  const plainActions = (inputValue: string) =>
+    onSearchClick || (canClear && inputValue) ? (
+      <InputGroupAddon align="inline-end">
+        {onSearchClick && (
+          <InputGroupButton
+            size="icon-xs"
+            aria-label={searchTitle ?? "Ara"}
+            title={searchTitle}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={onSearchClick}
+            disabled={searchDisabled}
+          >
+            <Search />
+          </InputGroupButton>
+        )}
+        {canClear && inputValue && (
+          <InputGroupButton
+            size="icon-xs"
+            aria-label="Temizle"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={onClear}
+          >
+            <XIcon />
+          </InputGroupButton>
+        )}
+      </InputGroupAddon>
+    ) : null
 
   // Araç kataloğa bağlı değil VE ne BakımX ne stok araması var → arama yapacak
   // bir şey kalmaz, düz metin girişi + (composer'da) create aksiyonları.
@@ -365,8 +367,8 @@ export function PartSearchInput({
   if (vehicleTypeId == null && !onSelectStockPart && !onSelectBakimxProduct && !onSelectGetirbakimProduct) {
     if (plain) {
       return (
-        <div className="relative">
-          <Input
+        <InputGroup size={size}>
+          <InputGroupInput
             value={value}
             onChange={(e) => onNameChange(e.target.value)}
             onBlur={showCreate ? undefined : onCommit}
@@ -379,14 +381,13 @@ export function PartSearchInput({
             placeholder={placeholder}
             disabled={disabled}
             title={value || undefined}
-            className={cn("h-7 rounded-lg pr-16 text-sm", inputClassName)}
           />
           {plainActions(value)}
-        </div>
+        </InputGroup>
       )
     }
     const inputGroup = (
-      <InputGroup>
+      <InputGroup size={size}>
         {skuChip}
         <InputGroupInput
           value={value}
@@ -407,7 +408,6 @@ export function PartSearchInput({
           placeholder={placeholder}
           disabled={disabled}
           title={value || undefined}
-          className={cn("text-sm", inputClassName)}
         />
         {trailing}
       </InputGroup>
@@ -435,7 +435,7 @@ export function PartSearchInput({
       }}
     >
       {plain ? (
-        <div className="relative">
+        <InputGroup size={size}>
           <AutocompleteInput
             onKeyDown={(e) => {
               if (e.key === "Enter" && suggestions.length === 0 && query.trim()) {
@@ -443,12 +443,12 @@ export function PartSearchInput({
                 onCommit?.()
               }
             }}
-            render={<Input placeholder={placeholder} disabled={disabled} title={value || undefined} className={cn("h-7 rounded-lg pr-16 text-sm", inputClassName)} />}
+            render={<InputGroupInput placeholder={placeholder} disabled={disabled} title={value || undefined} />}
           />
           {plainActions(query)}
-        </div>
+        </InputGroup>
       ) : (
-      <InputGroup>
+      <InputGroup size={size}>
         {skuChip}
         <AutocompleteInput
           onKeyDown={(e) => {
@@ -460,7 +460,7 @@ export function PartSearchInput({
             }
           }}
           render={
-            <InputGroupInput placeholder={placeholder} disabled={disabled} title={value || undefined} className={cn("text-sm", inputClassName)} />
+            <InputGroupInput placeholder={placeholder} disabled={disabled} title={value || undefined} />
           }
         />
         {trailing}

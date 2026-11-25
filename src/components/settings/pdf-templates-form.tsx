@@ -143,7 +143,7 @@ export function PdfTemplatesForm({ settings }: { settings: SettingsData }) {
                     <Textarea
                       {...field}
                       rows={10}
-                      className="font-mono text-xs"
+                      className="font-mono"
                       placeholder="Araç kabul PDF şablonunu buraya yazın..."
                     />
                   </FormControl>
@@ -186,7 +186,7 @@ export function PdfTemplatesForm({ settings }: { settings: SettingsData }) {
                     <Textarea
                       {...field}
                       rows={10}
-                      className="font-mono text-xs"
+                      className="font-mono"
                       placeholder="Servis pasaportu PDF şablonunu buraya yazın..."
                     />
                   </FormControl>
@@ -229,7 +229,7 @@ export function PdfTemplatesForm({ settings }: { settings: SettingsData }) {
                     <Textarea
                       {...field}
                       rows={10}
-                      className="font-mono text-xs"
+                      className="font-mono"
                       placeholder="Tahsilat makbuzu PDF şablonunu buraya yazın..."
                     />
                   </FormControl>

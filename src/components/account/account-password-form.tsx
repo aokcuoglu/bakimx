@@ -59,7 +59,7 @@ export function AccountPasswordForm() {
             <FormItem className="gap-1">
               <FormLabel className="text-xs font-medium text-muted-foreground">Mevcut Şifre</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="current-password" {...field} className="h-8" />
+                <Input type="password" autoComplete="current-password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -73,7 +73,7 @@ export function AccountPasswordForm() {
               <FormItem className="gap-1">
                 <FormLabel className="text-xs font-medium text-muted-foreground">Yeni Şifre</FormLabel>
                 <FormControl>
-                  <Input type="password" autoComplete="new-password" {...field} className="h-8" />
+                  <Input type="password" autoComplete="new-password" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -86,7 +86,7 @@ export function AccountPasswordForm() {
               <FormItem className="gap-1">
                 <FormLabel className="text-xs font-medium text-muted-foreground">Yeni Şifre (Tekrar)</FormLabel>
                 <FormControl>
-                  <Input type="password" autoComplete="new-password" {...field} className="h-8" />
+                  <Input type="password" autoComplete="new-password" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

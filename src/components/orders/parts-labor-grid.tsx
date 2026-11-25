@@ -850,7 +850,6 @@ function LaborAutocompleteField({ draft, onCell, disabled, catalog }: {
             placeholder="İşçilik ara veya kendi kalemini yaz"
             disabled={disabled}
             title={draft.name || undefined}
-            className="h-7 rounded-lg bg-background text-sm"
           />
         }
       />
@@ -939,7 +938,6 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog, modalLayou
           placeholder="Dış işçilik adı (ör. dış atölye kaporta)"
           title={draft.name || undefined}
           disabled={disabled}
-          className="h-7 rounded-lg bg-background text-sm"
         />
       ) : (
         <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} catalog={catalog} />
@@ -948,14 +946,14 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog, modalLayou
   )
   const detailFields = (
     <>
-      <Field label="Miktar"><QtyStepper row={draft} editable onCell={onCell} /></Field>
+      <Field label="Miktar"><QtyStepper row={draft} editable onCell={onCell} size="default" /></Field>
       {vat.perLine && (
-        <Field label="KDV"><div className="flex h-7 items-center"><VatCell row={draft} ed={ed} onCell={onCell} /></div></Field>
+        <Field label="KDV"><div className="flex h-(--control-h) items-center"><VatCell row={draft} ed={ed} onCell={onCell} /></div></Field>
       )}
       {isExternal && (
         <Field label="Alış Fiyatı"><CostPriceInput row={draft} onCell={onCell} /></Field>
       )}
-      <Field label={isExternal ? "Satış Fiyatı" : "Birim Fiyat"}><PriceField row={draft} ed={ed} wide /></Field>
+      <Field label={isExternal ? "Satış Fiyatı" : "Birim Fiyat"}><PriceField row={draft} ed={ed} wide size="default" /></Field>
     </>
   )
   const actions = (
@@ -1227,7 +1225,6 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         categoryId={filter.categoryId ?? null}
         disabled={disabled}
         placeholder="Parça no, adı, marka veya OEM ara…"
-        inputClassName="bg-background"
         plain
         onNameChange={setName}
         onSelectArticle={(a) => void add(catalogDraft(a))}
@@ -1563,7 +1560,8 @@ function PartNameField({ row, onCell, oneLine }: { row: Row; onCell: OnCell; one
         placeholder="Parça tanımı"
         aria-label="Parça tanımı"
         title={hint}
-        className="h-7 min-w-0 flex-1 text-sm font-medium"
+        size="compact"
+        className="min-w-0 flex-1"
       />
     </div>
   )
@@ -1595,7 +1593,7 @@ function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
           onChange={(e) => onCell(row, { name: e.target.value }, { debounce: true })}
           placeholder="İşçilik adı"
           disabled={!ed.editable || row.__saving}
-          className="text-sm"
+          size="compact"
           data-pl="name"
         />
       )}
@@ -1604,9 +1602,13 @@ function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
   )
 }
 
-function QtyStepper({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
+// Yükseklik kontrol ölçeğinden: satırda compact (32 / 28px), composer'da
+// yanındaki varsayılan alanlarla aynı hizada default (44 / 36px).
+function QtyStepper({ row, editable, onCell, size = "compact" }: {
+  row: Row; editable: boolean; onCell: OnCell; size?: "default" | "compact"
+}) {
   return (
-    <div data-slot="qty-stepper" className="inline-flex h-7 items-center rounded-lg border border-input bg-background transition-colors">
+    <div data-slot="qty-stepper" className={cn("inline-flex items-center rounded-lg border border-input bg-background transition-colors", size === "default" ? "h-(--control-h)" : "h-(--control-h-xs)")}>
       <Button type="button" variant="ghost" size="icon-xs" className="rounded-r-none" aria-label="Azalt"
         disabled={!editable || row.quantity <= 1}
         onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })}>
@@ -1648,7 +1650,8 @@ function QuantityField({ row, editable, onCell }: { row: Row; editable: boolean;
       inputMode="decimal"
       value={draft}
       aria-label={`${row.name || "Satır"} miktarı`}
-      className="h-7 w-24 text-center text-sm tabular-nums"
+      size="compact"
+      className="w-24 text-center tabular-nums"
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur() }}
@@ -1708,7 +1711,10 @@ const MARGIN_TONE: Record<PurchaseMarginState, string> = {
   "marked-up": "",
 }
 
-function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean }) {
+// size: satır hücresinde compact; composer'da (form alanı) default.
+function PriceField({ row, ed, wide, size = "compact" }: {
+  row: Row; ed: RowEditor; wide?: boolean; size?: "default" | "compact"
+}) {
   const tone = MARGIN_TONE[ed.marginState]
   if (!ed.editable) {
     return (
@@ -1725,7 +1731,8 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
       autoComplete="off"
       placeholder="₺0,00"
       aria-label="Birim fiyat"
-      className={cn("h-7 px-2.5 text-right text-sm tabular-nums", tone, wide ? "w-32" : "w-28")}
+      size={size}
+      className={cn("text-right tabular-nums", tone, wide ? "w-32" : "w-28")}
       value={ed.editingPrice ? ed.priceDraft : row.unitPrice != null ? formatTRY(row.unitPrice) : ""}
       onFocus={(e) => { if (!ed.editingPrice) ed.startPrice(); e.currentTarget.select() }}
       onChange={(e) => { if (!ed.editingPrice) ed.startPrice(); ed.setPriceDraft(e.target.value) }}
@@ -1757,7 +1764,8 @@ function ModalPriceField({ row, onCell }: { row: Row; onCell: OnCell }) {
       autoComplete="off"
       placeholder="₺0,00"
       aria-label="Birim fiyat"
-      className="h-7 w-28 px-2.5 text-right text-sm tabular-nums"
+      size="compact"
+      className="w-28 text-right tabular-nums"
       value={draft}
       onFocus={(event) => event.currentTarget.select()}
       onChange={(event) => setDraft(event.target.value)}
@@ -1803,7 +1811,7 @@ function CostPriceInput({ row, onCell, id }: { row: Row; onCell: OnCell; id?: st
       autoComplete="off"
       placeholder="₺0,00"
       aria-label="Alış fiyatı (KDV hariç)"
-      className="h-7 w-32 px-2.5 text-right text-sm tabular-nums"
+      className="w-32 text-right tabular-nums"
       value={draft}
       onFocus={(event) => event.currentTarget.select()}
       onChange={(event) => setDraft(event.target.value)}
@@ -2366,6 +2374,7 @@ function AttrCell({ kind, row, ed, vehicle, onCell, bare, oneLine }: {
   return (
     <PartAttributeField
       kind={kind}
+      size="compact"
       vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
       value={value ?? ""}
       disabled={row.__saving}
@@ -2440,7 +2449,6 @@ const META_FIELD_BASE = cn(
 // düzenlenebilir olduğu anlaşılır, ama boştayken satırı şişirmez.
 const META_FIELD_DESKTOP = cn(
   META_FIELD_BASE,
-  "[&_[data-slot=input-group]]:!h-7",
   "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-transparent",
   // Zemin ANINDA gelsin: input ve input-group'un kendi `transition-colors`ı
   // (150 ms) hover'da "geç beliriyor" hissi veriyordu. Dolgu zaten her durumda
@@ -2454,7 +2462,6 @@ const META_FIELD_DESKTOP = cn(
 // bu yüzden kart içinde hafif gri çip görünümü korunur.
 const META_FIELD_MOBILE = cn(
   META_FIELD_BASE,
-  "[&_[data-slot=input-group]]:!h-7",
   "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-muted/60",
   "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background",
 )

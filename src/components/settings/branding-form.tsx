@@ -151,7 +151,7 @@ export function BrandingForm({ settings }: { settings: SettingsData }) {
                             type="color"
                             value={field.value || "#3B82F6"}
                             onChange={(e) => field.onChange(e.target.value)}
-                            className="size-8 cursor-pointer p-1"
+                            className="w-(--control-h) shrink-0 cursor-pointer p-1"
                             aria-label="Ana rengi seç"
                           />
                           <Input {...field} placeholder="#3B82F6" />
@@ -175,7 +175,7 @@ export function BrandingForm({ settings }: { settings: SettingsData }) {
                             type="color"
                             value={field.value || "#10B981"}
                             onChange={(e) => field.onChange(e.target.value)}
-                            className="size-8 cursor-pointer p-1"
+                            className="w-(--control-h) shrink-0 cursor-pointer p-1"
                             aria-label="Vurgu rengini seç"
                           />
                           <Input {...field} placeholder="#10B981" />

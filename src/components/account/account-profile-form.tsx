@@ -58,7 +58,7 @@ export function AccountProfileForm({
               <FormItem className="gap-1">
                 <FormLabel className="text-xs font-medium text-muted-foreground">Ad</FormLabel>
                 <FormControl>
-                  <Input {...field} className="h-8" />
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -71,7 +71,7 @@ export function AccountProfileForm({
               <FormItem className="gap-1">
                 <FormLabel className="text-xs font-medium text-muted-foreground">Soyad</FormLabel>
                 <FormControl>
-                  <Input {...field} className="h-8" />
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

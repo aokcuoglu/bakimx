@@ -43,7 +43,7 @@ export function MultiStringCombobox({
       onValueChange={(v: string[]) => onValueChange(v)}
     >
       {/* İlk satır diğer form kontrolleriyle 32px hizalanır; chip eklenince büyür. */}
-      <ComboboxChips ref={anchorRef} className="w-full min-h-7">
+      <ComboboxChips ref={anchorRef} className="w-full">
         {value.map((item) => (
           <ComboboxChip key={item} aria-label={item}>
             {item}

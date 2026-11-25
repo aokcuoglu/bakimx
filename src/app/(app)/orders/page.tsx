@@ -132,7 +132,7 @@ export default async function OrdersPage({
                     defaultValue={q}
                     placeholder="Araç kabulü, plaka veya müşteri ara…"
                     aria-label="Araç kabulü ara"
-                    className="h-11 rounded-xl border-0 bg-foreground/[0.06] pl-10 pr-36 text-[17px] shadow-none md:h-10 md:text-[15px]"
+                    className="pl-10 pr-36"
                   />
                 }
               >

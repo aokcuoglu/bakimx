@@ -103,7 +103,7 @@ export function ForgotPasswordForm() {
               type="email"
               autoComplete="email"
               placeholder="ornek@isyeri.com"
-              className="h-7 rounded-[8px] bg-card pl-9 shadow-xs"
+              className="pl-9"
               required
             />
           </div>

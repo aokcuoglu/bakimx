@@ -442,7 +442,7 @@ export function IntakeWizard({
                         <Textarea
                           {...field}
                           placeholder="Müşterinin şikayetini detaylı olarak yazınız..."
-                          className="min-h-[100px]"
+                          className="min-h-25"
                         />
                       </FormControl>
                       <FormMessage />
@@ -476,7 +476,7 @@ export function IntakeWizard({
                     <FormItem>
                       <FormLabel>İç Not</FormLabel>
                       <FormControl>
-                        <Textarea {...field} placeholder="Servis içi notlar (opsiyonel)..." className="min-h-[80px]" />
+                        <Textarea {...field} placeholder="Servis içi notlar (opsiyonel)..." className="min-h-20" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

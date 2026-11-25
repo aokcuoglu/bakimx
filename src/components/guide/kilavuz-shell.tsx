@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Search } from "lucide-react"
 import { PrintButton } from "@/components/shared/print-button"
-import { Input } from "@/components/ui/input"
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { GuideBlocks } from "@/components/guide/kilavuz-blocks"
 import {
   KILAVUZ_H1,
@@ -77,18 +77,19 @@ export function KilavuzShell() {
             <span className="text-xs text-muted-foreground">Son güncelleme: {KILAVUZ_UPDATED_LABEL}</span>
           </div>
           <div className={`${styles.toolbar} print:hidden`}>
-            <label className={styles.search}>
-              <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <span className="sr-only">Kılavuzda ara</span>
-              <Input
+            <InputGroup className={styles.search}>
+              <InputGroupAddon>
+                <Search aria-hidden />
+              </InputGroupAddon>
+              <InputGroupInput
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Kılavuzda ara…"
+                aria-label="Kılavuzda ara"
                 autoComplete="off"
-                className="h-auto border-0 bg-transparent p-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
               />
-            </label>
+            </InputGroup>
             <PrintButton label="Kılavuzu yazdır" />
           </div>
         </div>

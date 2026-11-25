@@ -24,23 +24,9 @@
   color: var(--foreground);
 }
 
-.form :global(input[data-slot="form-control"]),
-.form :global(button[data-slot="form-control"][role="combobox"]),
-.form :global([data-slot="input"]),
-.form :global([data-slot="select-trigger"]),
-.form :global([data-slot="input-group"]),
-.form :global([data-slot="combobox-input"]),
-.form :global([data-slot="combobox-trigger"]) {
-  min-height: 28px;
-  border-radius: 8px;
-  background: var(--card);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 3%, transparent);
-}
-
-.form :global([data-slot="select-trigger"]) {
-  min-height: 32px;
-  border-radius: 9px;
-}
+/* Form kontrolleri burada yeniden biçimlenmez (#888): ölçü, köşe, zemin ve
+   gölge yalnız ui/input ailesinden ve docs/ui-control-sizing.md matrisinden
+   gelir. Eski Attio ölçüsü (28px / 8px köşe / gölge) kaldırıldı. */
 
 .form :global([data-slot="form-label"]) {
   font-size: 14px;

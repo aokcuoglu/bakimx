@@ -337,7 +337,7 @@ export function SalesLeadDetail({
               )}
               {generatedRegistrationUrl && (
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <Input readOnly value={generatedRegistrationUrl} aria-label="Müşteri kayıt bağlantısı" className="font-mono text-xs" />
+                  <Input readOnly value={generatedRegistrationUrl} aria-label="Müşteri kayıt bağlantısı" className="font-mono" />
                   <Button type="button" variant="outline" onClick={async () => {
                     await navigator.clipboard.writeText(generatedRegistrationUrl)
                     toast.success("Kayıt bağlantısı kopyalandı.")

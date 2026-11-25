@@ -111,7 +111,6 @@ export function LaborItemDialog({
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="ISC-001"
-                className="text-sm"
                 maxLength={32}
               />
             </div>
@@ -121,7 +120,6 @@ export function LaborItemDialog({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ör. motor yağı ve filtre değişimi"
-                className="text-sm"
                 maxLength={120}
                 autoFocus
               />
@@ -140,7 +138,7 @@ export function LaborItemDialog({
                 onValueChange={(v: string) => setCategory(v)}
               >
                 <AutocompleteInput
-                  render={<Input placeholder="Bakım, Fren, Motor…" className="text-sm" maxLength={60} />}
+                  render={<Input placeholder="Bakım, Fren, Motor…" maxLength={60} />}
                 />
                 <AutocompleteContent>
                   <AutocompleteEmpty>Yeni kategori olarak kaydedilecek</AutocompleteEmpty>
@@ -156,7 +154,7 @@ export function LaborItemDialog({
             </div>
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">Varsayılan ücret</span>
-              <InputGroup className="h-7">
+              <InputGroup>
                 <InputGroupAddon className="text-muted-foreground">₺</InputGroupAddon>
                 <InputGroupInput
                   type="number"
@@ -164,7 +162,7 @@ export function LaborItemDialog({
                   min="0"
                   step="0.01"
                   placeholder="0,00"
-                  className="text-sm tabular-nums"
+                  className="tabular-nums"
                   value={priceDraft}
                   onChange={(e) => setPriceDraft(e.target.value)}
                 />
@@ -178,7 +176,7 @@ export function LaborItemDialog({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="İsteğe bağlı not"
-              className="text-sm min-h-16"
+              className="min-h-16"
               maxLength={500}
             />
           </div>
