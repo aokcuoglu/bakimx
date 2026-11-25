@@ -1,18 +1,7 @@
 /**
  * Client-safe formatters (no Node-only deps).
+ *
+ * #861: gövdeler `@/lib/format-date`'e taşındı (Europe/Istanbul sabit); mevcut
+ * çağıranlar için adlar ve imzalar aynı kalır.
  */
-export function formatDate(iso: string | Date): string {
-  const d = typeof iso === "string" ? new Date(iso) : iso
-  return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })
-}
-
-export function formatDateTime(iso: string | Date): string {
-  const d = typeof iso === "string" ? new Date(iso) : iso
-  return d.toLocaleString("tr-TR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
+export { formatTrDate as formatDate, formatTrDateTime as formatDateTime } from "./format-date"

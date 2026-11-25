@@ -107,6 +107,7 @@ import type { GatedFeature, PlanTier } from "@/lib/plan"
 import { lockedFeatureLabels } from "@/lib/feature-catalog"
 import { compressImagesForUpload } from "@/lib/image/compress-image"
 import { cn } from "@/lib/utils"
+import { istanbulDateTimeInputValue } from "@/lib/istanbul-time"
 import { usePendingScroll } from "@/hooks/use-pending-scroll"
 import { OrderQuickActions } from "@/components/orders/order-quick-actions"
 import { orderQuickActions, type OrderQuickAction } from "@/lib/orders/quick-actions"
@@ -317,7 +318,7 @@ export function WorkOrderDetail({
   const [metaDraft, setMetaDraft] = useState<PricingMetaDraft>({
     technicianName: order.technicianName || "",
     estimatedDeliveryAt: order.estimatedDeliveryAt
-      ? new Date(order.estimatedDeliveryAt).toISOString().slice(0, 16)
+      ? istanbulDateTimeInputValue(new Date(order.estimatedDeliveryAt))
       : "",
     discountAmount: order.discountAmount != null ? String(kurusToLira(order.discountAmount)) : "",
     taxRate: order.taxRate != null ? String(bpsToPercent(order.taxRate)) : "",
@@ -330,7 +331,7 @@ export function WorkOrderDetail({
       setMetaDraft({
         technicianName: order.technicianName || "",
         estimatedDeliveryAt: order.estimatedDeliveryAt
-          ? new Date(order.estimatedDeliveryAt).toISOString().slice(0, 16)
+          ? istanbulDateTimeInputValue(new Date(order.estimatedDeliveryAt))
           : "",
         discountAmount: order.discountAmount != null ? String(kurusToLira(order.discountAmount)) : "",
         taxRate: order.taxRate != null ? String(bpsToPercent(order.taxRate)) : "",
@@ -503,7 +504,7 @@ export function WorkOrderDetail({
       formData.set("technicianName", order.technicianName ?? "")
       formData.set(
         "estimatedDeliveryAt",
-        order.estimatedDeliveryAt ? new Date(order.estimatedDeliveryAt).toISOString().slice(0, 16) : ""
+        order.estimatedDeliveryAt ? istanbulDateTimeInputValue(new Date(order.estimatedDeliveryAt)) : ""
       )
       formData.set("discountAmount", String(order.discountAmount ?? 0))
       formData.set("taxRate", String(STANDARD_TAX_BPS))
@@ -1482,12 +1483,14 @@ export function WorkOrderDetail({
                     className="hidden"
                     onChange={(e) => { addPickedPhotos(e.target.files); e.target.value = "" }}
                   />
+                  {/* Kısa etiket (#886): telefonda diyalog içeriği ~326px, iki
+                      sütunda "Galeriden seç" 44px düğmeye sığmayıp kenara taşıyordu. */}
                   <div className="grid grid-cols-2 gap-2">
                     <Button type="button" variant="outline" disabled={loading} onClick={() => cameraInputRef.current?.click()}>
-                      <Camera className="size-4 mr-1.5" /> Kamera
+                      <Camera /> Kamera
                     </Button>
                     <Button type="button" variant="outline" disabled={loading} onClick={() => galleryInputRef.current?.click()}>
-                      <Images className="size-4 mr-1.5" /> Galeriden seç
+                      <Images /> Galeri
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">

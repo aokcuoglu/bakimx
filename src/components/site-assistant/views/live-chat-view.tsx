@@ -292,7 +292,7 @@ export function LiveChatView({ onBack }: LiveChatViewProps) {
           variant="navy"
           aria-label="Gönder"
           disabled={sending || draft.trim().length === 0}
-          className="size-9 shrink-0 rounded-lg"
+          className="size-9 shrink-0 rounded-(--control-radius)"
         >
           {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
         </Button>

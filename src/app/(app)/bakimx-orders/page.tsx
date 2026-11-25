@@ -9,6 +9,7 @@ import {
   type BakimxOrderStatusValue,
 } from "@/lib/catalog/bakimx-order"
 import { formatTRY } from "@/lib/format"
+import { formatTrDateTime } from "@/lib/format-date"
 import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
 import { formatDiscountLabel } from "@/lib/parts/bakimx-price"
 import { FeaturePaywall } from "@/components/billing/feature-paywall"
@@ -75,16 +76,16 @@ export default async function BakimxOrdersPage() {
                           {BAKIMX_ORDER_STATUS_LABELS[order.status]}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {order.createdAt.toLocaleString("tr-TR")} tarihinde talep edildi
+                          {formatTrDateTime(order.createdAt)} tarihinde talep edildi
                         </span>
                         {order.shippedAt && (
                           <span className="text-xs text-success-strong">
-                            · {order.shippedAt.toLocaleString("tr-TR")} tarihinde gönderildi
+                            · {formatTrDateTime(order.shippedAt)} tarihinde gönderildi
                           </span>
                         )}
                         {order.cancelledAt && (
                           <span className="text-xs text-destructive-strong">
-                            · {order.cancelledAt.toLocaleString("tr-TR")} tarihinde iptal edildi
+                            · {formatTrDateTime(order.cancelledAt)} tarihinde iptal edildi
                           </span>
                         )}
                       </div>

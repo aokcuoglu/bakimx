@@ -13,7 +13,7 @@ import { calculateOrderTotals } from "@/lib/totals"
 import { formatDate } from "@/lib/utils-client"
 import { cn } from "@/lib/utils"
 import { updateQuoteStatusAction, convertQuoteToWorkOrderAction } from "@/app/(app)/quotes/actions"
-import { ArrowLeft, Phone, Car, User, FileText, Printer, Share2, Loader2, ArrowRight, Info, Calendar } from "lucide-react"
+import { Phone, Car, User, FileText, Printer, Share2, Loader2, ArrowRight, Info, Calendar } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { QUOTE_STATUS } from "@/lib/constants"
 import { getWhatsAppShareUrl } from "@/lib/share/whatsapp"
@@ -148,15 +148,6 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
-      <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/quotes" className="hover:text-foreground inline-flex items-center gap-1 touch-manipulation">
-          <ArrowLeft className="size-3.5" />
-          Teklifler
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-foreground font-medium">{quote.quoteNo}</span>
-      </div>
-
       {error && (
         <Alert variant="destructive">
           <Info />
@@ -169,7 +160,6 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
           <div className="flex items-center gap-3 min-w-0">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-bold text-foreground">{quote.quoteNo}</h2>
                 <QuoteStatusBadge status={quote.status} size="md" />
               </div>
               {quote.title && (

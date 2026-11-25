@@ -6,7 +6,6 @@ import { toast } from "sonner"
 import Link from "next/link"
 import {
   Car,
-  ArrowLeft,
   Plus,
   Pencil,
   Wrench,
@@ -177,15 +176,6 @@ export function VehicleDetail({
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/vehicles" className="hover:text-foreground inline-flex items-center gap-1">
-          <ArrowLeft className="size-4" />
-          Araçlar
-        </Link>
-        <span className="mx-1">/</span>
-        <span className="text-foreground font-medium truncate">{v.plate}</span>
-      </div>
-
       <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <VehicleIdentity plate={v.plate} brand={v.brand} model={v.model} />

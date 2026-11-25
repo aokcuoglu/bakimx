@@ -6,6 +6,7 @@ import { quantityToNumber } from "@/lib/orders/quantity"
 import { notFound } from "next/navigation"
 import { CustomerDetail } from "@/components/customers/customer-detail"
 import { getCustomerReminders } from "@/lib/reminders/queries"
+import { customerDisplayName } from "@/lib/format"
 
 export const metadata = { title: "Müşteri Detayı" }
 
@@ -56,10 +57,7 @@ export default async function CustomerDetailPage({
   const reminders = await getCustomerReminders(user.workshopId, id)
 
   return (
-    <AppShell
-      workshopName={workshop?.name}
-      pageTitle={customer.type === "corporate" ? customer.companyName || "Kurumsal Müşteri" : [customer.firstName, customer.lastName].filter(Boolean).join(" ") || customer.fullName || "Müşteri"}
-    >
+    <AppShell workshopName={workshop?.name} recordTitle={customerDisplayName(customer)}>
       <CustomerDetail
         showEditInitially={showEdit}
         customer={{

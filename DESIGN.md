@@ -14,9 +14,13 @@ Attio bölümleri karar geçmişi olarak duruyor ve ekranlar taşındıkça buda
 - **Yazı:** sistem fontu (e-santral ile birebir yığın), gövde harf aralığı −0.01em.
   Telefonda iOS ölçeği (gövde 17px), masaüstü veri ekranlarında kompakt (15px).
   Ekran başlığı kalın, −0.03em.
-- **Kontroller:** düğmeler hap; telefonda 44px, md+ 36px. Girdi 12px köşe.
+- **Kontroller:** düğmeler hap; telefonda 44px, md+ 36px. Girdi 10px köşe
+  (md+ 8px, `--control-radius`; karar 25-11, #878).
   Matris: [`docs/ui-control-sizing.md`](./docs/ui-control-sizing.md).
-- **Yüzey:** kart 16px köşe, çerçeve yok ya da çok hafif; gölge yok. Diyalog 28px.
+- **Yüzey:** kart 12px köşe (`--radius`), panel / KPI kartı 14px
+  (`--radius-panel`); çerçeve yok ya da çok hafif; gölge yok. Diyalog ve mobil
+  sheet 18px (`--radius-dialog`). Uygulama içi köşeler e-santral'in bir kademe
+  altıdır (karar 25-11, #878); pazarlama yüzeyi `--mk-r-*` ölçeğinde kalır.
 - **Birincil eylem:** mavi dolgu hap (`default`); ikincil düz bağlantı ya da
   `outline`; geri/kapat `ghost`.
 - **Kabuk:** buzlu yarı saydam üst bar ve mobil sekme çubuğu, beyaz sidebar,

@@ -18,7 +18,6 @@ import {
   convertAppointmentToWorkOrderAction,
 } from "@/app/(app)/appointments/actions"
 import {
-  ArrowLeft,
   CalendarClock,
   User,
   Car,
@@ -138,21 +137,6 @@ export function AppointmentDetail({
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
-      <div className="flex items-center text-sm text-muted-foreground">
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          onClick={() => router.push("/appointments")}
-          className="px-0 text-muted-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          Randevular
-        </Button>
-        <span className="mx-2">/</span>
-        <span className="text-foreground font-medium">{appointment.appointmentNo}</span>
-      </div>
-
       {(statusUpdateError || convertError) && (
         <Alert variant="destructive">
           <Info />
@@ -162,7 +146,6 @@ export function AppointmentDetail({
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-sm font-bold text-foreground">{appointment.appointmentNo}</span>
           <AppointmentStatusBadge status={appointment.status} size="md" />
         </div>
         <h2 className="text-xl font-bold text-foreground">

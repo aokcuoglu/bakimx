@@ -100,7 +100,7 @@ export function VehicleBrandModelPicker({
 
   return (
     <>
-      <div className="space-y-1">
+      <div className="min-w-0 space-y-1">
         <Label>Marka {required && "*"}</Label>
         <Combobox
           items={brands}
@@ -134,7 +134,7 @@ export function VehicleBrandModelPicker({
         </Combobox>
       </div>
 
-      <div className="space-y-1">
+      <div className="min-w-0 space-y-1">
         <Label>Model {required && "*"}</Label>
         <Combobox
           items={models}
