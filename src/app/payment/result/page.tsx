@@ -3,6 +3,7 @@ import Link from "next/link"
 import { CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react"
 import { prisma } from "@/lib/db"
 import { formatMinor } from "@/lib/billing/pricing"
+import { formatTrDate } from "@/lib/format-date"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { TAMI_ERROR_MESSAGES } from "@/lib/tami/errors"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
@@ -165,11 +166,7 @@ export default async function PaymentResultPage({
             <p className="mt-3 text-xs text-muted-foreground">
               Dönem bitişi:{" "}
               <span className="font-medium text-foreground">
-                {order.periodEnd.toLocaleDateString("tr-TR", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                })}
+                {formatTrDate(order.periodEnd)}
               </span>
             </p>
           )}

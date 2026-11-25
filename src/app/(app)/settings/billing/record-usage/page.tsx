@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PhotoQuotaDialog } from "@/components/billing/photo-quota-dialog"
 import { getAccountBillingContext } from "@/lib/billing/account-context"
 import { prisma } from "@/lib/db"
+import { formatTrMediumDate } from "@/lib/format-date"
 import { MAX_ACTIVE_PHOTOS_PER_INTAKE } from "@/lib/photos/limits"
 import { photoUsageWhere } from "@/lib/billing/photo-usage"
 
@@ -44,7 +45,7 @@ export default async function RecordUsagePage() {
           <div role="progressbar" aria-label="Listelenen araç kabullerinde fotoğraf kullanımı" aria-valuemin={0} aria-valuemax={capacity} aria-valuenow={Math.min(used, capacity)} className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full bg-primary" style={{ width: `${capacity ? Math.min(100, used / capacity * 100) : 0}%` }} /></div>
           <p className="mt-2 text-xs text-muted-foreground">Son {orders.length} araç kabulü · silinmiş fotoğraflar sayılmaz · her araç kabulünün hakkı ayrıdır.</p>
         </div>
-        {orders.length ? <div className="overflow-x-auto"><Table aria-label="Araç kabul fotoğraf kullanımı"><TableHeader><TableRow><TableHead>Araç kabulü</TableHead><TableHead>Tarih</TableHead><TableHead className="text-right">Kullanılan</TableHead><TableHead className="text-right">Kalan</TableHead></TableRow></TableHeader><TableBody>{orders.map((order) => { const count = countByIntake.get(order.intakeFormId) ?? 0; return <TableRow key={order.id}><TableCell><Link href={`/orders/${order.id}`} className="font-medium text-primary hover:underline">{order.workOrderNo || order.id.slice(0, 8)}</Link></TableCell><TableCell className="text-muted-foreground">{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium" }).format(order.createdAt)}</TableCell><TableCell className="text-right tabular-nums">{count} / {limit}</TableCell><TableCell className="text-right tabular-nums">{Math.max(0, limit - count)}</TableCell></TableRow> })}</TableBody></Table></div> : <p className="px-4 py-12 text-center text-sm text-muted-foreground">Henüz araç kabulü bulunmuyor.</p>}
+        {orders.length ? <div className="overflow-x-auto"><Table aria-label="Araç kabul fotoğraf kullanımı"><TableHeader><TableRow><TableHead>Araç kabulü</TableHead><TableHead>Tarih</TableHead><TableHead className="text-right">Kullanılan</TableHead><TableHead className="text-right">Kalan</TableHead></TableRow></TableHeader><TableBody>{orders.map((order) => { const count = countByIntake.get(order.intakeFormId) ?? 0; return <TableRow key={order.id}><TableCell><Link href={`/orders/${order.id}`} className="font-medium text-primary hover:underline">{order.workOrderNo || order.id.slice(0, 8)}</Link></TableCell><TableCell className="text-muted-foreground">{formatTrMediumDate(order.createdAt)}</TableCell><TableCell className="text-right tabular-nums">{count} / {limit}</TableCell><TableCell className="text-right tabular-nums">{Math.max(0, limit - count)}</TableCell></TableRow> })}</TableBody></Table></div> : <p className="px-4 py-12 text-center text-sm text-muted-foreground">Henüz araç kabulü bulunmuyor.</p>}
       </div>
       </div>
     </AppShell>

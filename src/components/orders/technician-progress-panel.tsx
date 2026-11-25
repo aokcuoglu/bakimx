@@ -11,6 +11,7 @@ import {
 import { CHECKLIST_CATEGORIES, type ChecklistCategoryKey } from "@/lib/constants"
 import { summarizeChecklist } from "@/lib/technician/gates"
 import { formatMinutes } from "@/lib/format"
+import { formatTrDateTime, formatTrTime } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
 
 /**
@@ -62,20 +63,6 @@ const CATEGORY_TONE: Record<ChecklistCategoryKey, DetailTone> = {
 // `.item + .item` ayracı <li> kardeşlerinde eşleşmez; ayraç li'ye verilir.
 const LI_SEP = "border-t border-[var(--dash-sep)] first:border-t-0"
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
-}
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("tr-TR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
-
 function ChecklistCategoryBlock({
   category,
   items,
@@ -112,7 +99,7 @@ function ChecklistCategoryBlock({
                 </span>
               }
               sub={item.note}
-              meta={item.completedAt && formatDateTime(item.completedAt)}
+              meta={item.completedAt && formatTrDateTime(item.completedAt)}
             />
           </li>
         ))}
@@ -176,7 +163,7 @@ export function TechnicianProgressPanel({
               <li className={LI_SEP}>
                 <DetailItem
                   title="İşçilik devam ediyor"
-                  meta={`Başlangıç: ${formatTime(activeLabor.startTime)}`}
+                  meta={`Başlangıç: ${formatTrTime(activeLabor.startTime)}`}
                   end={
                     <DetailPill tone="success">
                       <span className="size-2 rounded-full bg-success animate-pulse" aria-hidden />
@@ -189,7 +176,7 @@ export function TechnicianProgressPanel({
             {finishedLabor.map((session) => (
               <li key={session.id} className={LI_SEP}>
                 <DetailItem
-                  title={`${formatTime(session.startTime)} → ${formatTime(session.endTime!)}`}
+                  title={`${formatTrTime(session.startTime)} → ${formatTrTime(session.endTime!)}`}
                   sub={
                     session.note ? (
                       <span className="whitespace-pre-wrap text-foreground">{session.note}</span>
@@ -197,7 +184,7 @@ export function TechnicianProgressPanel({
                   }
                   meta={
                     session.editedAt
-                      ? `Elle düzeltildi · ${formatDateTime(session.editedAt)}${session.editedByName ? ` · ${session.editedByName}` : ""}`
+                      ? `Elle düzeltildi · ${formatTrDateTime(session.editedAt)}${session.editedByName ? ` · ${session.editedByName}` : ""}`
                       : undefined
                   }
                   end={
@@ -232,7 +219,7 @@ export function TechnicianProgressPanel({
                     </span>
                   }
                   title={<span className="whitespace-pre-wrap font-normal">{note.content}</span>}
-                  meta={formatDateTime(note.createdAt)}
+                  meta={formatTrDateTime(note.createdAt)}
                 />
               </li>
             ))}

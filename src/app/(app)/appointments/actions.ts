@@ -13,6 +13,7 @@ import { generateUniqueWorkOrderNo } from "@/lib/work-order-number"
 import { AuditLogAction } from "@/lib/audit"
 import { notifyAppointmentCreated } from "@/lib/communications/triggers"
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync"
+import { parseIstanbulLocalDateTime } from "@/lib/istanbul-time"
 
 async function requireAuth() {
   return (await requireFeatureWorkshop("appointments")).user
@@ -45,8 +46,9 @@ export async function createAppointmentAction(formData: FormData) {
     if (!vehicle) return { error: "Araç bulunamadı veya müşteriyle eşleşmiyor" }
   }
 
-  const appointmentDate = new Date(`${appointmentAt}T${appointmentTime}:00`)
-  if (isNaN(appointmentDate.getTime())) return { error: "Geçersiz tarih/saat" }
+  // Girilen saat Türkiye duvar saatidir; sunucunun TZ'si değil (#861).
+  const appointmentDate = parseIstanbulLocalDateTime(`${appointmentAt}T${appointmentTime}`)
+  if (!appointmentDate) return { error: "Geçersiz tarih/saat" }
 
   if (appointmentDate < new Date(new Date().toDateString())) {
     return { error: "Randevu tarihi geçmiş olamaz" }
