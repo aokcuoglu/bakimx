@@ -75,6 +75,33 @@ describe("design system radius contract", () => {
     expect(page).toContain("Brand & Accent")
   })
 
+  test("panel yarıçapı tek kaynaktan: --radius-panel (#878)", () => {
+    expect(read("src/components/dashboard/surface.module.css")).toContain("var(--radius-panel)")
+    expect(read("src/components/orders/order-detail.module.css")).toContain("var(--radius-panel)")
+
+    // Uygulama panelleri 14px'in üstüne literal köşe yazmaz; yeni panel token'ı kullanır.
+    for (const rel of [
+      "src/components/dashboard/surface.module.css",
+      "src/components/orders/order-detail.module.css",
+      "src/components/orders/parts-labor.module.css",
+      "src/components/layout/app-shell.module.css",
+    ]) {
+      expect({ rel, offenders: read(rel).match(/border-radius:\s*(?:1[4-9]|[2-9]\d)px/g) ?? [] }).toEqual({
+        rel,
+        offenders: [],
+      })
+    }
+
+    // 22px yalnız düğme hap köşesidir (telefon yüksekliğinin yarısı); pazarlama kendi ölçeğinde.
+    const offenders: string[] = []
+    for (const file of walkSrc()) {
+      const rel = file.replace(root + "/", "")
+      if (rel === "src/components/ui/button.tsx" || rel.startsWith("src/components/marketing/")) continue
+      if (readFileSync(file, "utf8").includes("rounded-[22px]")) offenders.push(rel)
+    }
+    expect(offenders).toEqual([])
+  })
+
   test("src has no panel-scale rounded-2xl/3xl outside Badge pills", () => {
     const offenders: string[] = []
     for (const file of walkSrc()) {
@@ -90,6 +117,27 @@ describe("design system radius contract", () => {
       }
     }
     expect(offenders).toEqual([])
+  })
+})
+
+describe("pazarlama köşeleri değişmedi (#878)", () => {
+  // Uygulama ölçeği bir kademe indi; landing ve pazarlama kiti piksel piksel aynı kalır.
+  test("--mk-r-* değerleri e-santral kaynağında", () => {
+    const css = read("src/app/globals.css")
+    expect(css).toContain("--mk-r-input: 12px;")
+    expect(css).toContain("--mk-r-card: 24px;")
+    expect(css).toContain("--mk-r-tile: 28px;")
+    expect(css).toContain("--mk-r-box: 32px;")
+    expect(css).toContain("--mk-r-modal: 30px;")
+  })
+
+  test("/design pazarlama vitrini --radius'u 16px'e sabitler", () => {
+    expect(read("src/app/design/marketing-kit.tsx")).toContain("[--radius:1rem]")
+  })
+
+  test("çerez bandı ikon kutusu daire kalır (32px kutuda eski 16px köşe)", () => {
+    const cookie = read("src/components/cookie-consent/cookie-consent.tsx")
+    expect(cookie).toContain("size-8 shrink-0 items-center justify-center rounded-full border")
   })
 })
 
