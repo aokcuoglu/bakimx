@@ -24,19 +24,11 @@
   flex-direction: column;
   gap: 36px;
   width: 100%;
-  max-width: 1440px;
-  margin-inline: auto;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
 }
 
 /* ── Başlık ─────────────────────────────────────────────── */
-.hero {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
 .heroTitle {
   font-size: 30px;
   font-weight: 700;
@@ -53,21 +45,7 @@
   color: var(--muted-foreground);
 }
 
-.heroCta {
-  height: 50px;
-  padding-inline: 28px;
-  border-radius: 999px;
-  font-size: 17px;
-  font-weight: 500;
-}
-
 @media (min-width: 640px) {
-  .hero {
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-  }
-
   .root {
     gap: 44px;
   }
@@ -78,11 +56,6 @@
 
   .heroSub {
     font-size: 19px;
-  }
-
-  .heroCta {
-    height: 44px;
-    padding-inline: 22px;
   }
 }
 
