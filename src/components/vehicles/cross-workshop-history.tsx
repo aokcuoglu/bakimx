@@ -89,7 +89,7 @@ export function CrossWorkshopHistoryCard({
         )}
 
         {history.owner ? (
-          <div className="rounded-lg border border-border bg-muted/50 px-3 py-2">
+          <div className="rounded-md border border-border bg-muted/50 px-3 py-2">
             <p className="text-[11px] font-medium text-muted-foreground">Kayıtlı Sahip</p>
             <p className="mt-0.5 text-sm font-semibold text-foreground">{history.owner.name}</p>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
@@ -130,7 +130,7 @@ export function CrossWorkshopHistoryCard({
               <Wrench className="size-3" />
               Araç Kabul Geçmişi
             </p>
-            <div className="divide-y divide-border rounded-lg border border-border">
+            <div className="divide-y divide-border rounded-md border border-border">
               {history.orders.map((o) => (
                 <div key={o.key} className="px-3 py-2.5">
                   <div className="flex flex-wrap items-center gap-2">
@@ -169,7 +169,7 @@ export function CrossWorkshopHistoryCard({
               <AlertTriangle className="size-3" />
               Diğer Servislerde Kaydedilen Hasarlar ({history.damageMarks.length})
             </p>
-            <div className="divide-y divide-border rounded-lg border border-border">
+            <div className="divide-y divide-border rounded-md border border-border">
               {history.damageMarks.map((dm) => {
                 const dt = DAMAGE_TYPES[dm.damageType as keyof typeof DAMAGE_TYPES]
                 const sev = DAMAGE_SEVERITY[dm.severity as keyof typeof DAMAGE_SEVERITY]
@@ -210,7 +210,7 @@ export function WorkshopChip({ name, city }: { name: string; city?: string | nul
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border bg-muted/50 px-3 py-2">
+    <div className="rounded-md border border-border bg-muted/50 px-3 py-2">
       <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
       <p className="mt-0.5 text-sm font-semibold text-foreground">{value}</p>
     </div>
@@ -219,7 +219,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function Field({ label, value, mono }: { label: string; value: string | null; mono?: boolean }) {
   return (
-    <div className="rounded-lg border border-border bg-muted/50 px-3 py-2">
+    <div className="rounded-md border border-border bg-muted/50 px-3 py-2">
       <dt className="text-[11px] font-medium text-muted-foreground">{label}</dt>
       <dd className={mono ? "mt-0.5 font-mono text-xs text-foreground" : "mt-0.5 text-sm font-semibold text-foreground"}>
         {value || "—"}

@@ -226,6 +226,7 @@ kod yazmadan önce hangisinin kapsamına girdiğine bak:
 | `src/lib/ui-contract.test.ts` (BAK-190) | Base UI Escape guard'larının paylaşılan bileşenlerden düşmesi ya da call-site'lara geri kopyalanması — düşerse Combobox seçimi / Autocomplete serbest metni Escape'te sessizce siliniyor, diyalog içindeki popup'ta tek Escape ikisini birden kapatıyor |
 | `src/components/ui/control-sizing.test.ts` | Upstream shadcn `nova` kontrol ölçeğinin (tek ölçek, breakpoint yok) ve `--radius`'un bozulması — bkz. [ui-control-sizing.md](../ui-control-sizing.md) |
 | `src/components/ui/tabs-overflow.test.ts` | Kaydırılabilir sekme şeridinde düz `justify-center` (taşan şeritte ilk sekme erişilemez oluyor — #277) |
+| `src/lib/nested-radius.test.ts` (#898) | Kart/panel/popover (12-14px) içinde aynı dosyada kapla aynı köşeyi (`rounded-lg/xl`) taşıyan iç kutu — iç köşe `rounded-md`, onun içindeki `rounded-sm` olmalı ([ui-control-sizing.md](../ui-control-sizing.md) → İç içe köşe). Yalnız aynı dosyadaki sözcüksel iç içeliği görür; kapsam şimdilik siparişler/panel/müşteriler/araçlar |
 | `src/lib/rbac-coverage.test.ts` | Yetki kapısını hiç çağırmayan yeni mutasyon action'ı (#183) |
 | `src/lib/intake/photo-visibility.test.ts` | Fotoğraf okuyan sorguda `VISIBLE_PHOTO` filtresinin unutulması — soft-delete edilmiş kare galeride/PDF'te geri görünür |
 | `src/lib/test-mock-isolation.test.ts` | Kendi test dosyası olan bir modülün `mock.module` ile sahtelenmesi — sahte süreç geneli kalıcıdır ve asıl testi dosya sırasına göre düşürür (§7) |
