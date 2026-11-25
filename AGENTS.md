@@ -30,6 +30,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## Tech Stack
 - Next.js 16 App Router + TypeScript + Tailwind CSS v4 + shadcn/ui (radix-nova style)
 - **Dynamic route `params` and `searchParams` are Promises** — type them as `Promise<...>` and `await` them. Reading `params.code` directly yields `undefined` and throws at runtime while typecheck and lint stay green; that shipped the `/w/[code]` login page broken to production (PR #336, fixed pattern in `src/app/w/[code]/page.tsx:9-17`)
+- **Tarih/saat biçimleme yalnız `@/lib/format-date` ile** (`formatTrDate`, `formatTrTime`,
+  `formatTrDateTime` …; hepsi `Europe/Istanbul`). Çıplak `toLocaleDateString("tr-TR")` çıktıyı
+  sürecin saat diliminde üretir; prod UTC'de koşarsa 09:00 randevu 06:00 görünür (#861).
+  Kullanıcının girdiği tarih+saat (`datetime-local`, `date` + `time`) `new Date("…T09:00")` ile
+  değil, `parseIstanbulLocalDateTime` (`@/lib/istanbul-time`) ile ayrıştırılır; giriş kutusunu
+  `istanbulDateTimeInputValue` doldurur. Kapı: `src/lib/format-date-coverage.test.ts`.
 - **Primitive hattı Radix'tir; geçiş KAPANDI** (`components.json` → `"style":
   "radix-nova"`, BAK-152…BAK-156). Radix'e taşınanlar (`radix-ui` paketi,
   `asChild`): çekirdek (Button, Badge, Label, Separator — BAK-152), overlay
@@ -152,7 +158,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
   başlık ve standart düğmeler `src/lib/navigation/page-headers.ts` kaydından
   çizilir (yükleme ekranı dahil). Kayıtlı bir sayfa kendi `h1`/hero'sunu,
   `pageTitle`/`pageActions`'ını vermez; yalnız `subtitle` verir. Yeni menü
-  sayfası = kayda bir satır. Kapı: `src/lib/ui-contract.test.ts`.
+  sayfası = kayda bir satır. Kapı: `src/lib/ui-contract.test.ts`. Alt sayfalar
+  (`/customers/[id]`, `/vehicles/new` …) `SUB_PAGE_HEADERS`'a kaydolur ve
+  `recordTitle` verir; telefonda breadcrumb yerine `PageTrail`'in `‹ <üst>`
+  geri bağlantısı çıkar, içerikte ayrıca geri bağlantısı/breadcrumb çizilmez (#855).
 
 ## Form Rules
 - **All forms use react-hook-form + zod + shadcn Form component** (NOT useState)

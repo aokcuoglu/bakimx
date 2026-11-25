@@ -68,7 +68,7 @@ export default async function ReminderDetailPage({ params }: { params: Promise<{
   }
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle={reminder.title}>
+    <AppShell workshopName={workshop?.name} recordTitle={reminder.title}>
       <ReminderDetail reminder={safe} />
     </AppShell>
   )

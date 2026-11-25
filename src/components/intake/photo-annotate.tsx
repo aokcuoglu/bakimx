@@ -102,8 +102,8 @@ export function PhotoAnnotate({ intakeFormId, label = "Hasar", phase = "intake",
     <Input ref={camera} type="file" accept="image/*" capture="environment" className="hidden" onChange={choose} />
     <Input ref={gallery} type="file" accept="image/*" multiple className="hidden" onChange={choose} />
     {!source && <div className="grid grid-cols-2 gap-2">
-      <Button type="button" variant="outline" disabled={preparing} onClick={() => camera.current?.click()}><Camera className="size-4" />Foto çek</Button>
-      <Button type="button" variant="outline" disabled={preparing} onClick={() => gallery.current?.click()}><Images className="size-4" />Galeriden seç</Button>
+      <Button type="button" variant="outline" disabled={preparing} onClick={() => camera.current?.click()}><Camera />Kamera</Button>
+      <Button type="button" variant="outline" disabled={preparing} onClick={() => gallery.current?.click()}><Images />Galeri</Button>
     </div>}
     {preparing && <p className="text-sm text-muted-foreground">Fotoğraf hazırlanıyor…</p>}
     {source && <PhotoEditor key={source.requestId} sourceUrl={source.url} onSave={save} onCancel={() => { setSource(null); setQueue([]) }} />}

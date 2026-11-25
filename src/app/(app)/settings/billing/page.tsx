@@ -12,6 +12,7 @@ import { getAccountBillingContext } from "@/lib/billing/account-context"
 import { formatMinor } from "@/lib/billing/pricing"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import { prisma } from "@/lib/db"
+import { formatTrLongDate } from "@/lib/format-date"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { TRIAL_INCLUDES_ADDONS } from "@/lib/plan"
 import { getReferralDiscountBps } from "@/lib/billing/referral-discount"
@@ -20,7 +21,7 @@ import { getWorkshopQuotaContext, getWorkshopQuotaUsage } from "@/lib/rapidapi-q
 export const metadata = { title: "Faturalandırma" }
 
 function formatDate(date: Date | null): string {
-  return date ? new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long", year: "numeric" }).format(date) : "—"
+  return date ? formatTrLongDate(date) : "—"
 }
 
 export default async function SettingsBillingPage({ searchParams }: {

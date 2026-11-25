@@ -1,5 +1,6 @@
 import { BODY_TYPES, getVehicleGeometry, type BodyType } from "@/components/damage/vehicle-geometry"
 import { escapeHtml } from "@/lib/html-escape"
+import { formatTrDateTime } from "@/lib/format-date"
 import type { SafeIntakeData } from "@/lib/intake/data-safety"
 
 /** Only same-origin authorized photo routes can be embedded in this customer report. */
@@ -35,5 +36,5 @@ export function renderDamageReport(data: SafeIntakeData): string {
     }).filter(Boolean)
     return `<article class="damage-card"><h3>#${mark.number} · ${mark.zoneLabel}</h3><p>${mark.damageTypeLabel} · ${mark.severityLabel}</p>${mark.note ? `<p class="damage-note">${mark.note}</p>` : ""}${images.length ? `<div class="damage-images">${images.join("")}</div>` : `<p class="field-sub">${data.photosVisible === false ? "Fotoğraflar bu paylaşımda gösterilmiyor" : "Fotoğraf eklenmedi"}</p>`}</article>`
   }).join("")
-  return `<section class="damage-report"><h2 class="section-title">Araç Hasar Kontrolü</h2><p>${inspection}${data.inspectedAt ? ` · ${new Date(data.inspectedAt).toLocaleString("tr-TR")}` : ""}</p><p class="field-sub">${BODY_TYPES[body]} · Temsili açılım şeması. Sol ve sağ, aracın sürüş yönüne göredir.</p>${diagram}${cards ? `<h2 class="section-title">Hasar Kayıtları</h2>${cards}` : ""}</section>`
+  return `<section class="damage-report"><h2 class="section-title">Araç Hasar Kontrolü</h2><p>${inspection}${data.inspectedAt ? ` · ${formatTrDateTime(data.inspectedAt)}` : ""}</p><p class="field-sub">${BODY_TYPES[body]} · Temsili açılım şeması. Sol ve sağ, aracın sürüş yönüne göredir.</p>${diagram}${cards ? `<h2 class="section-title">Hasar Kayıtları</h2>${cards}` : ""}</section>`
 }

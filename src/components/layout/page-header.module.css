@@ -19,13 +19,6 @@
   min-width: 0;
 }
 
-.crumbs {
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.4;
-  color: var(--muted-foreground);
-}
-
 .row {
   display: flex;
   flex-direction: column;
@@ -39,6 +32,29 @@
   line-height: 1.08;
   letter-spacing: -0.035em;
   color: var(--foreground);
+}
+
+/*
+ * Kayıt adı başlığı (#855): telefonda en çok iki satır, ≥640px tek satır;
+ * taşarsa üç nokta. Uzun ad telefonda alttaki içeriği iter, başlığın üst
+ * kenarı yerinde kalır.
+ */
+.titleRecord {
+  flex: 1 1 auto;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  /*
+   * lh 1.08'de 2. satırın inişleri (Ş, Ç) ile 3. satırın aksanları (İ, Ü, Ğ)
+   * aynı şeride düşer: kesme kutusunu büyütmek 3. satırın izini gösterir,
+   * büyütmemek çengelleri keser. lh 1.25 ikisini ayırır. Negatif kenar
+   * boşlukları (her biri satır farkının yarısı) ilk satırın glifini ve
+   * alttaki içeriği liste başlığıyla (lh 1.08) aynı yerde tutar.
+   */
+  line-height: 1.25;
+  margin-block: calc((1.08 - 1.25) * 0.5em);
 }
 
 .subline {
@@ -97,6 +113,20 @@
 
   .title {
     font-size: 36px;
+  }
+
+  /*
+   * Tek satır: 3. satır yok, kesme kutusu dikeyde 0,12em genişler ki iniş
+   * çizgileri kırpılmasın; negatif kenar boşluğu konumu korur.
+   */
+  .titleRecord {
+    display: block;
+    -webkit-line-clamp: none;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 1.08;
+    padding-block: 0.12em;
+    margin-block: -0.12em;
   }
 
   .subline {

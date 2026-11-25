@@ -29,7 +29,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
   const quoteNo = quote.quoteNo || formatQuoteNo(quote)
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle={`Teklif Detay - ${quoteNo}`} showGlobalSearch={false}>
+    <AppShell workshopName={workshop?.name} recordTitle={quoteNo} showGlobalSearch={false}>
       <QuoteDetail
         quote={{
           id: quote.id,

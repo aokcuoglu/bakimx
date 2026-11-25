@@ -1029,7 +1029,7 @@ export function VehicleEntryWizard({
           />
           {focused ? (
             // Kamera düğmesi kutunun içinde: dar telefonda yazı alanı daralmasın.
-            <InputGroup className="h-14 rounded-xl">
+            <InputGroup className="h-14">
               <InputGroupInput
                 value={query}
                 onChange={(e) => onQueryChange(e.target.value)}

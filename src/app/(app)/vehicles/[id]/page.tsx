@@ -8,6 +8,7 @@ import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { getVehicleReminders } from "@/lib/reminders/queries"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { getCrossWorkshopVehicleHistory } from "@/lib/vehicle-history/queries"
+import { detectPlate } from "@/lib/plate/country"
 
 export const metadata = { title: "Araç Detayı" }
 
@@ -90,7 +91,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
   }
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle={vehicle.plate} showGlobalSearch={false}>
+    <AppShell workshopName={workshop?.name} recordTitle={detectPlate(vehicle.plate).text} showGlobalSearch={false}>
       <VehicleDetail
         vehicle={serialized}
         workshopName={workshop?.name ?? "Bu servis"}

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import { formatTrDate, formatTrTime } from "@/lib/format-date"
 import { notifyAppointmentReminder, notifyMaintenanceReminder } from "@/lib/communications/triggers"
 import { formatReminderType } from "@/lib/reminders/format"
 import { getPlanState, hasWorkshopFeature, type GatedFeature } from "@/lib/plan"
@@ -80,11 +81,8 @@ export async function processAppointmentReminders(workshopId?: string): Promise<
       if (hoursBefore === 1 && hoursSinceLastReminder < 0.5) continue
     }
 
-    const appointmentDate = appointment.appointmentAt.toLocaleDateString("tr-TR")
-    const appointmentTime = appointment.appointmentAt.toLocaleTimeString("tr-TR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+    const appointmentDate = formatTrDate(appointment.appointmentAt)
+    const appointmentTime = formatTrTime(appointment.appointmentAt)
 
     try {
       await notifyAppointmentReminder(
@@ -195,7 +193,7 @@ export async function processMaintenanceReminders(workshopId?: string): Promise<
     if (!shouldSend) continue
 
     const dueDateStr = reminder.dueDate
-      ? reminder.dueDate.toLocaleDateString("tr-TR")
+      ? formatTrDate(reminder.dueDate)
       : null
 
     try {
