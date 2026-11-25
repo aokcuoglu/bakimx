@@ -157,6 +157,8 @@ export function TecdocSearchResults({
       {categories.length > 0 && (
         <section>
           <SectionHeading>Kategoriler ({categories.length + categoryOverflow})</SectionHeading>
+          {/* Satır hover'ı köşeli kabuğa değmesin: liste 4px içeride (#889). */}
+          <div className="px-1">
           {categories.map((c) => (
             <Button
               key={`${c.node.id}-${c.path}`}
@@ -164,7 +166,7 @@ export function TecdocSearchResults({
               variant="ghost"
               size="row"
               onClick={() => onCategorySelect(c)}
-              className="w-full justify-between gap-2 px-4"
+              className="w-full justify-between gap-2"
             >
               <span className="min-w-0 flex-1">
                 <span className="block text-sm truncate">{c.node.name}</span>
@@ -175,6 +177,7 @@ export function TecdocSearchResults({
               <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
             </Button>
           ))}
+          </div>
           {categoryOverflow > 0 && (
             <p className="px-4 py-2 text-xs text-muted-foreground">
               +{categoryOverflow} kategori daha — aramayı daraltın.

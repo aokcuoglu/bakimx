@@ -529,7 +529,7 @@ export default function DesignSystemPage() {
                 </Button>
               ))}
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid items-start gap-3 sm:grid-cols-3">
               <p className="text-sm text-muted-foreground">
                 inline — metin içinde{" "}
                 <Button variant="link" size="inline">

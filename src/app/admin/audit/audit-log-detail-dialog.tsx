@@ -50,7 +50,9 @@ export function AuditLogDetailDialog({
         <Button
           variant="ghost"
           size="row"
-          className="-mx-3 -my-2.5 w-full min-w-72 justify-between"
+          // Satır dolgusu hücre içeriğiyle hizalı kalsın: negatif kenar boşluğu
+          // dolguyu dengeler, genişlik iki yandaki 12px kadar büyür.
+          className="-mx-3 -my-2.5 w-[calc(100%+1.5rem)] min-w-72 justify-between"
           aria-label={`${actionLabel} kaydının ayrıntılarını görüntüle`}
         >
           <span className="min-w-0">

@@ -1659,34 +1659,38 @@ function MobileTotalsBar({
   onJump: () => void
 }) {
   if (!totals.hasAnyPrice) return null
+  // Yapışkan kabuk opak `bg-card` (#889): outline düğmenin koyu temadaki
+  // yarı saydam zemini altındaki içeriği gösteriyordu. Düğme stok kalır.
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size="row"
-      onClick={onJump}
-      aria-label="Fiyatlandırma özetine git"
-      className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 w-full justify-between bg-background/95 px-4 shadow-lg backdrop-blur md:hidden"
-    >
-      <span className="flex min-w-0 flex-col items-start gap-0.5">
-        <span className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Calculator className="size-4" />
-          Genel Toplam
-          <span className="text-xs text-muted-foreground">· {itemCount} kalem</span>
-        </span>
-        {/* Kalem toplamı ile genel toplam farklıysa farkın nedeni burada yazar
-            (BAK-55) — mobilde fiyatlandırma kartı ekranın çok altında kalıyor. */}
-        {(totals.discountAmount > 0 || totals.taxAmount > 0) && (
-          <span className="truncate text-[11px] text-muted-foreground">
-            {[
-              `Ara toplam ${formatTRY(totals.subtotal)}`,
-              totals.discountAmount > 0 ? `indirim −${formatTRY(totals.discountAmount)}` : null,
-              totals.taxAmount > 0 ? `KDV ${formatTRY(totals.taxAmount)}` : null,
-            ].filter(Boolean).join(" · ")}
+    <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 rounded-md bg-card shadow-lg md:hidden">
+      <Button
+        type="button"
+        variant="outline"
+        size="row"
+        onClick={onJump}
+        aria-label="Fiyatlandırma özetine git"
+        className="w-full justify-between px-4"
+      >
+        <span className="flex min-w-0 flex-col items-start gap-0.5">
+          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Calculator className="size-4" />
+            Genel Toplam
+            <span className="text-xs text-muted-foreground">· {itemCount} kalem</span>
           </span>
-        )}
-      </span>
-      <span className="text-base font-bold tabular-nums text-foreground">{formatTRY(totals.grandTotal)}</span>
-    </Button>
+          {/* Kalem toplamı ile genel toplam farklıysa farkın nedeni burada yazar
+              (BAK-55) — mobilde fiyatlandırma kartı ekranın çok altında kalıyor. */}
+          {(totals.discountAmount > 0 || totals.taxAmount > 0) && (
+            <span className="truncate text-[11px] text-muted-foreground">
+              {[
+                `Ara toplam ${formatTRY(totals.subtotal)}`,
+                totals.discountAmount > 0 ? `indirim −${formatTRY(totals.discountAmount)}` : null,
+                totals.taxAmount > 0 ? `KDV ${formatTRY(totals.taxAmount)}` : null,
+              ].filter(Boolean).join(" · ")}
+            </span>
+          )}
+        </span>
+        <span className="text-base font-bold tabular-nums text-foreground">{formatTRY(totals.grandTotal)}</span>
+      </Button>
+    </div>
   )
 }

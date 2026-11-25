@@ -1635,7 +1635,7 @@ function SearchHits({
  */
 // Ölçü ve köşe `size="row"`dan (#889); burada yalnız yüzey tonu ve hover vurgusu.
 const HIT_CARD_CLASS =
-  "w-full bg-card/80 tracking-normal shadow-xs hover:bg-primary/10 hover:ring-2 hover:ring-primary/20"
+  "w-full tracking-normal shadow-xs hover:bg-primary/10 hover:ring-2 hover:ring-primary/20"
 
 /** Araç kartı: üstte mavi bantlı plaka, altında araç ve (varsa) sahip satırı. */
 function VehicleHitCard({

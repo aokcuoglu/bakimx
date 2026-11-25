@@ -7,6 +7,21 @@ import { cn } from "@/lib/utils"
 // e-santral kalıbı (docs/design-pattern-esantral.md): düz mavi dolgu, gölge yok.
 const primaryFill = "bg-primary text-primary-foreground hover:bg-primary/90"
 
+// Kendi kenarlığı olmayan variant'lar (row satırına şeffaf 1px çerçeve alır).
+const NO_BORDER_VARIANTS = [
+  "default",
+  "inverse",
+  "foreground",
+  "navy",
+  "whatsapp",
+  "secondary",
+  "ghost",
+  "destructive",
+  "success",
+  "warning",
+  "link",
+] as const
+
 // Basılma efekti `translate` değil `transform` yazar (#819): call-site'lar
 // düğmeyi `-translate-y-1/2` ile ortalıyor ve upstream'in 1px'lik translate'i
 // aynı `--tw-translate-y`'yi ezip düğmeyi basılıyken yarı boyu aşağı
@@ -39,7 +54,7 @@ const buttonVariants = cva(
         // Input / SelectTrigger ile aynı çerçeve, zemin, ağırlık ve odak halkası;
         // köşe aşağıdaki compoundVariants'ta (#889).
         field:
-          "border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20 dark:bg-input/30",
+          "border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:ring-4 aria-invalid:ring-destructive/10 dark:bg-input/30 dark:aria-invalid:ring-destructive/20",
       },
       size: {
         // Ölçüler --control-* değişkenlerinden: telefonda 44px, md+ 36px
@@ -73,9 +88,20 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-    // Alan görünümlü tetikleyici her boyutta girdinin köşesini taşır (size'ın
-    // hap köşesinden sonra gelir, onu ezer).
-    compoundVariants: [{ variant: "field", className: "rounded-(--control-radius)" }],
+    // compoundVariants size ve variant sınıflarından sonra gelir, onları ezer.
+    compoundVariants: [
+      // Alan görünümlü tetikleyici her boyutta girdinin köşesini taşır; compact
+      // metni compact girdiyle aynı (telefonda 16px — iOS odak yakınlaştırması).
+      { variant: "field", className: "rounded-(--control-radius)" },
+      { variant: "field", size: "compact", className: "text-(length:--control-fs-field-xs)" },
+      // Liste satırları variant'tan bağımsız aynı çerçeve kutusunda durur:
+      // seçili (secondary) satır outline komşularından 2px kısa kalmaz,
+      // seçim değişince satır kaymaz. Çerçeveli variant'lar (outline, field)
+      // kendi kenarlık rengini korur.
+      { size: "row", variant: [...NO_BORDER_VARIANTS], className: "border border-transparent" },
+      // Hayalet liste satırı soluk (devre dışı gibi) okunmaz.
+      { size: "row", variant: "ghost", className: "text-foreground dark:text-foreground" },
+    ],
   }
 )
 
