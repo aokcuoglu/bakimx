@@ -22,7 +22,6 @@ import type {
 import { formatDate } from "@/lib/utils-client"
 import {
   Plus,
-  Wrench,
   Loader2,
   Pencil,
   Wallet,
@@ -31,6 +30,7 @@ import {
 import { cn } from "@/lib/utils"
 import { SendReminderButton } from "@/components/orders/send-reminder-button"
 import { PartsLaborGrid } from "@/components/orders/parts-labor-grid"
+import pl from "./parts-labor.module.css"
 import type { LaborCatalogRow } from "@/lib/labor/types"
 import type { PartsRequestRow } from "@/components/orders/parts-request-panel"
 import { CollectionQuickModal } from "@/components/cashbox/collection-quick-modal"
@@ -229,17 +229,11 @@ export function PartsLaborCard({
   onApplyStandardTax?: () => void
 }) {
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Wrench className="size-4 text-muted-foreground" />
-            Kullanılan Parçalar & İşçilikler
-          </CardTitle>
-          <span className="text-xs text-muted-foreground">{items.length} kalem</span>
-        </div>
-      </CardHeader>
-      <CardContent>
+    <DetailPanel
+      title="Parçalar & İşçilikler"
+      aside={<span className={surface.rowEndText}>{items.length} kalem</span>}
+    >
+      <div className={pl.skin}>
         <PartsLaborGrid
           orderId={orderId}
           status={status}
@@ -252,8 +246,8 @@ export function PartsLaborCard({
           taxRateBps={taxRateBps}
           onApplyStandardTax={onApplyStandardTax}
         />
-      </CardContent>
-    </Card>
+      </div>
+    </DetailPanel>
   )
 }
 

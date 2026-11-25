@@ -1,0 +1,126 @@
+/* #849 — Parça & İşçilik sekmesi için kapsamlı e-santral kabuğu.
+   Yalnız PartsLaborCard `.skin` sarar; teklif formu ve teknisyen ekranı aynı
+   ızgarayı kullanır ama bu kuralları görmez. Kancalar grid'deki data-pl
+   özniteliğidir (TooltipTrigger kendi data-slot'unu yazdığı için data-slot
+   değil). `!important` yardımcı sınıflar (META_FIELD_*) ezilemez; denenmez. */
+.skin {
+  --pl-sep: var(--dash-sep, var(--border));
+  --pl-hover: var(--dash-hover, var(--muted));
+}
+
+.skin [data-pl="root"] > * {
+  margin-block: 0;
+}
+
+.skin [data-pl="toolbar"] {
+  padding: 14px 18px;
+}
+
+.skin [data-slot="separator"] {
+  background: var(--pl-sep);
+}
+
+.skin [data-slot="alert"] {
+  margin: 14px 18px;
+  border: 0;
+  border-radius: 14px;
+}
+
+/* table ve cards: display YAZMA (hidden / @min-[52rem]:block geçişi bozulur) */
+.skin [data-pl="table"] {
+  border: 0;
+  border-radius: 0;
+}
+
+/* sticky başlık OPAK kalmalı */
+.skin [data-pl="table"] thead {
+  background: var(--card);
+}
+
+.skin [data-pl="table"] th {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.skin [data-pl="table"] tr {
+  border-color: var(--pl-sep);
+}
+
+.skin [data-pl="table"] tbody tr:hover {
+  background: var(--pl-hover);
+}
+
+.skin [data-pl="table"] [data-pl="type"] svg {
+  display: none;
+}
+
+.skin [data-pl="accent"] {
+  display: none;
+}
+
+.skin [data-pl="type"] {
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.skin [data-pl="card"] {
+  margin: 0;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.skin [data-pl="card"] + [data-pl="card"] {
+  border-top: 1px solid var(--pl-sep);
+}
+
+.skin [data-pl="finance"],
+.skin [data-pl="total"] {
+  border-color: var(--pl-sep);
+}
+
+.skin [data-pl="label"] {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+@media (max-width: 767px) {
+  .skin [data-pl="actions"] {
+    gap: 8px;
+  }
+
+  .skin [data-pl="actions"] > button {
+    position: relative;
+  }
+
+  .skin [data-pl="actions"] > button::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+  }
+
+  .skin [data-pl="source"] {
+    position: relative;
+  }
+
+  .skin [data-pl="source"]::before {
+    content: "";
+    position: absolute;
+    inset: -10px;
+  }
+
+  .skin [data-pl="procurement"] button {
+    min-height: 44px;
+  }
+}
