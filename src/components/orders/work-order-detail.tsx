@@ -1027,7 +1027,7 @@ export function WorkOrderDetail({
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className={detail.pageTabs}>
         <TabsList ref={tabListRef} variant="line" className={cn(detail.tabList, "flex w-full flex-nowrap overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden")}>
           {TABS.map((t) => {
             const Icon = t.icon

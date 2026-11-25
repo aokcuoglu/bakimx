@@ -79,9 +79,9 @@ a.item:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
 .page :global([data-slot="feature-upsell-icon"]) { border:0; border-radius:10px; }
 .block :global([data-slot="feature-upsell"]) { padding:0; border-radius:0; background:transparent; }
 /* #897 — sekme şeridi ile ilk bölüm arası: Tabs kökü 8px aralık verir; üstüne 16/20 = 24/28px.
-   Paylaşılan ui/tabs.tsx'e dokunulmaz; bu sayfanın tüm sekme panelleri (kilitli/upsell dahil). */
-.page [role="tabpanel"] { margin-top:16px; }
-@media (min-width:640px) { .page [role="tabpanel"] { margin-top:20px; } }
+   Paylaşılan ui/tabs.tsx'e dokunulmaz; yalnız sayfa düzeyindeki paneller (`>` — Kanıt'taki iç faz sekmeleri etkilenmez). */
+.pageTabs > [role="tabpanel"] { margin-top:16px; }
+@media (min-width:640px) { .pageTabs > [role="tabpanel"] { margin-top:20px; } }
 /* #897 — Teknisyen sekmesi bağlam kartı: [simge] [usta / not] [panel bağlantısı]; dar ekranda bağlantı alta tam genişlik */
 .context { display:flex; flex-wrap:wrap; align-items:center; gap:12px 14px; padding:14px 18px; }
 .contextMain { flex:1 1 220px; min-width:0; }

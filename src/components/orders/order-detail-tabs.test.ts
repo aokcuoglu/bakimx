@@ -49,8 +49,11 @@ test(".tap katmanı position yazmaz (Tailwind absolute'ı ezerdi)", () => {
 })
 
 test("#897: sekme panelleri şeritten tutarlı 24/28px aşağıda başlar (paylaşılan tabs.tsx'e dokunmadan)", () => {
-  expect(CSS).toMatch(/\.page \[role="tabpanel"\] \{ margin-top:16px; \}/)
-  expect(CSS).toMatch(/min-width:640px\) \{ \.page \[role="tabpanel"\] \{ margin-top:20px; \}/)
+  expect(CSS).toMatch(/\.pageTabs > \[role="tabpanel"\] \{ margin-top:16px; \}/)
+  expect(CSS).toMatch(/min-width:640px\) \{ \.pageTabs > \[role="tabpanel"\] \{ margin-top:20px; \}/)
+  // İç içe Tabs (PhotoPhaseMatrix) etkilenmesin: yalın torun seçici yok.
+  expect(CSS).not.toMatch(/\.\w+ \[role="tabpanel"\]/)
+  expect(DETAIL).toContain("className={detail.pageTabs}")
 })
 
 test("#897: Teknisyen Panelinde Aç bağlantısı bağlam kartının içinde, yalın sağa yaslı satırda değil", () => {
