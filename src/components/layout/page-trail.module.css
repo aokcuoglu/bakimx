@@ -21,6 +21,12 @@
 }
 
 .crumbs [data-slot="breadcrumb-item"] {
+  flex-shrink: 0;
+}
+
+/* Satır sığmazsa yalnız en uzun halka kısalır (PageTrail `data-shrink`). */
+.crumbs [data-slot="breadcrumb-item"][data-shrink] {
+  flex-shrink: 1;
   min-width: 0;
 }
 
@@ -37,7 +43,12 @@
 
 .back {
   position: relative;
-  display: inline-flex;
+  /*
+   * Blok düzeyi: satır içi bir kutu üst öğenin 17px gövde satır kutusuna oturur
+   * ve satırı ~25px'e çıkarıp başlığı aşağı iterdi.
+   */
+  display: flex;
+  width: fit-content;
   align-items: center;
   gap: 2px;
   max-width: 100%;

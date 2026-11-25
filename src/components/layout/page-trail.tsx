@@ -28,6 +28,9 @@ export type PageTrailProps = {
  * istemci ağacında aynı çizilir.
  */
 export function PageTrail({ crumbs, back, className }: PageTrailProps) {
+  // Satır sığmazsa yalnız en uzun halka (kayıt adı) üç noktayla kısalır;
+  // "Servis", "Müşteriler" gibi kısa halkalar tam kalır.
+  const shrinkIndex = crumbs.reduce((best, crumb, i) => (crumb.label.length > crumbs[best].label.length ? i : best), 0)
   return (
     <div data-slot="page-trail" data-has-back={back ? "true" : undefined} className={cn(styles.trail, className)}>
       <Breadcrumb aria-label="Sayfa yolu" className={styles.crumbs}>
@@ -35,7 +38,7 @@ export function PageTrail({ crumbs, back, className }: PageTrailProps) {
           {crumbs.map((crumb, i) => (
             <Fragment key={`${i}-${crumb.label}`}>
               {i > 0 && <BreadcrumbSeparator />}
-              <BreadcrumbItem>
+              <BreadcrumbItem data-shrink={i === shrinkIndex ? "true" : undefined}>
                 {crumb.href ? (
                   <BreadcrumbLink asChild>
                     <Link href={crumb.href}>{crumb.label}</Link>

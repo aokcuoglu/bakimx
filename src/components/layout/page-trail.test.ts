@@ -49,6 +49,19 @@ describe("PageTrail (#855)", () => {
     expect(html).toMatch(/aria-current="page"[^>]*>Ali</)
   })
 
+  test("yalnız en uzun halka kısalmaya işaretlenir (kayıt adı; düzenlemede bağlantı halkası)", () => {
+    const html = render({
+      crumbs: [
+        { label: "Servis" },
+        { label: "Araçlar", href: "/vehicles" },
+        { label: "Çok Uzun Kurumsal Müşteri Adı", href: "/vehicles/v1" },
+        { label: "Düzenle" },
+      ],
+    })
+    expect(html.match(/data-shrink/g)).toHaveLength(1)
+    expect(html).toMatch(/<li[^>]*data-shrink="true"[^>]*><a[^>]*href="\/vehicles\/v1"/)
+  })
+
   test("className kök elemana eklenir", () => {
     expect(render({ crumbs: menuCrumbs, className: "ek-sinif" })).toMatch(/data-slot="page-trail"[^>]*class="[^"]*ek-sinif/)
   })
