@@ -1,8 +1,11 @@
+import { TECHNICIAN_RESTRICTED_ROLES } from "@/lib/technician-route-access"
+import type { UserRole } from "@prisma/client"
 import { describe, expect, test } from "bun:test"
 import {
   ACCOUNT_SETTINGS_ITEMS,
   WORKSPACE_SETTINGS_ITEMS,
   buildSettingsTrail,
+  shouldShowSettingsTrail,
 } from "@/lib/settings-nav"
 
 describe("buildSettingsTrail (#856)", () => {
@@ -64,5 +67,22 @@ describe("buildSettingsTrail (#856)", () => {
       expect(crumbs).toHaveLength(3)
       expect(back).toBeNull()
     }
+  })
+})
+
+describe("shouldShowSettingsTrail (#856)", () => {
+  const crumbs = [{ label: "Ayarlar" }, { label: "Kişisel" }, { label: "Profil" }]
+  test("usta rolleri yol satırı görmez", () => {
+    for (const role of TECHNICIAN_RESTRICTED_ROLES) {
+      expect(shouldShowSettingsTrail({ role: role as UserRole }, crumbs)).toBe(false)
+    }
+  })
+  test("ofis rolleri görür", () => {
+    expect(shouldShowSettingsTrail({ role: "owner" as UserRole }, crumbs)).toBe(true)
+    expect(shouldShowSettingsTrail({ role: "manager" as UserRole }, crumbs)).toBe(true)
+  })
+  test("aktör yok → yok; boş zincir → yok", () => {
+    expect(shouldShowSettingsTrail(null, crumbs)).toBe(false)
+    expect(shouldShowSettingsTrail({ role: "owner" as UserRole }, [])).toBe(false)
   })
 })

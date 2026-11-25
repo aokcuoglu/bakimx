@@ -1,6 +1,7 @@
 import type { GatedFeature } from "@/lib/plan"
 import type { LucideIcon } from "lucide-react"
-import type { Crumb, LinkCrumb } from "@/lib/navigation/page-headers"
+import type { Crumb, LinkCrumb, PageHeaderActor } from "@/lib/navigation/page-headers"
+import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import {
   Bell,
   Building2,
@@ -97,7 +98,11 @@ type SettingsSubPage = {
   label?: string
 }
 
-/** Menüde olmayan Ayarlar alt sayfaları; üst halka menü öğesidir. */
+/**
+ * Menüde olmayan Ayarlar alt sayfaları; üst halka menü öğesidir. Ekip kaydının
+ * üstü bilerek `/teams` (Ekipler sekmesi): detaya ekip listesinden gidilir,
+ * kenar çubuğundaki "Üyeler ve ekipler" ise `/members`a açılır.
+ */
 const SETTINGS_SUBPAGES: SettingsSubPage[] = [
   { prefix: "/settings/billing/record-usage", label: "Kullanımlar", parent: { label: "Faturalandırma", href: "/settings/billing" } },
   { prefix: "/settings/billing/automation-credit-usage", label: "Krediler", parent: { label: "Faturalandırma", href: "/settings/billing" } },
@@ -128,4 +133,10 @@ export function buildSettingsTrail(
     return { crumbs, back: sub.parent }
   }
   return { crumbs: [], back: null }
+}
+
+/** Yol satırı çizilsin mi? Aktör yoksa ya da usta rolündeyse hayır (kapalı başarısız olur). */
+export function shouldShowSettingsTrail(actor: PageHeaderActor | null, crumbs: readonly Crumb[]): boolean {
+  if (!actor || isTechnicianRestrictedRole(actor.role)) return false
+  return crumbs.length > 0
 }

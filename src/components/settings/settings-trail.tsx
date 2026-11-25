@@ -4,8 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { usePathname } from "next/navigation"
 import { PageTrail } from "@/components/layout/page-trail"
 import { PageHeaderAccessContext } from "@/components/layout/page-header"
-import { buildSettingsTrail } from "@/lib/settings-nav"
-import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
+import { buildSettingsTrail, shouldShowSettingsTrail } from "@/lib/settings-nav"
 
 const SetRecordTitleContext = createContext<(title: string | undefined) => void>(() => {})
 const RecordTitleContext = createContext<string | undefined>(undefined)
@@ -39,6 +38,6 @@ export function SettingsTrail() {
   const recordTitle = useContext(RecordTitleContext)
   const { actor } = useContext(PageHeaderAccessContext)
   const trail = useMemo(() => buildSettingsTrail(pathname, { recordTitle }), [pathname, recordTitle])
-  if (isTechnicianRestrictedRole(actor?.role) || trail.crumbs.length === 0) return null
+  if (!shouldShowSettingsTrail(actor, trail.crumbs)) return null
   return <PageTrail crumbs={trail.crumbs} back={trail.back} className="mb-2" />
 }
