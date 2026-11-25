@@ -9,7 +9,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { PrintButton } from "@/components/shared/print-button"
 import { FilterSelect } from "@/components/shared/filter-select"
-import { Plus, Search, Filter, Wallet, Eye, Download } from "lucide-react"
+import { Search, Filter, Wallet, Eye, Download } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
 type SP = { q?: string; method?: string; status?: string; period?: string; dateFrom?: string; dateTo?: string }
@@ -99,27 +99,16 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
   if (dateTo) exportParams.set("dateTo", dateTo.toISOString().slice(0, 10))
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Tahsilatlar">
+    <AppShell workshopName={workshop?.name} subtitle={`${total} kayıt bulundu`}>
       <div className="space-y-5 sm:space-y-6 max-w-full">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <p className="text-sm text-muted-foreground">{total} kayıt bulundu</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="print:hidden" asChild>
-              <a href={`/api/cashbox/export?type=collections&${exportParams.toString()}`} download>
-                <Download className="size-4" />
-                CSV
-              </a>
-            </Button>
-            <PrintButton className="print:hidden" />
-            <Button variant="foreground" size="default" asChild>
-              <Link href="/cashbox/payments/new">
-                <Plus className="size-4" />
-                Yeni Tahsilat
-              </Link>
-            </Button>
-          </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" className="print:hidden" asChild>
+            <a href={`/api/cashbox/export?type=collections&${exportParams.toString()}`} download>
+              <Download className="size-4" />
+              CSV
+            </a>
+          </Button>
+          <PrintButton className="print:hidden" />
         </div>
 
         <form action="/cashbox/payments" method="get" className="space-y-3">
