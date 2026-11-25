@@ -29,8 +29,22 @@ değişkenlerini öğenin kendisinde yeniden bağlar; taban sınıflar aynı kal
 `InputGroup` bağlamayı grup üzerinde yaptığı için içindeki `InputGroupInput`
 yüksekliği, metni ve dolguyu gruptan miras alır (kendi `size` prop'u yoktur);
 `sm` / `compact` grupta `InputGroupButton` kutudan taşmayacak kadar küçülür.
-`ComboboxInput` aynı `size`'ı `InputGroup`'a geçirir. `PartSearchInput` ve
-`PartAttributeField` da `size` alır (kalem satırında `compact`).
+`ComboboxInput` aynı `size`'ı `InputGroup`'a geçirir. `PartSearchInput`,
+`PartAttributeField` ve `FilterSelect` da `size` alır (kalem satırında
+`compact`, yoğun filtre çubuğunda `sm`).
+
+**Autocomplete eklentili grupta:** `AutocompleteInput` bir `InputGroup` içinde
+eklentiyle (🔍 / X, SKU çipi) duruyorsa kap `AutocompleteInputGroup`'tur
+(Base UI `Autocomplete.InputGroup` + `InputGroup`). Popup girdiye değil kutuya
+çapalanır, liste kutunun tam genişliğinde ve hizasında açılır; düz
+`InputGroup`'ta eklenti genişliği kadar dar kalıyordu.
+`src/components/ui/input-group-contract.test.ts` bekçiliyor.
+
+**Odak halkası** tüm form kontrollerinde aynıdır: `ring-4 ring-ring/20`,
+geçersizde `ring-4 ring-destructive/10` (koyu temada `/20`). `InputGroup`
+halkayı grupta çizer ve iç denetimin `data-slot`'una bağlı değildir
+(`has-[input:focus-visible]`); `InputGroupInput` slot'unu props'tan sonra
+yazar.
 
 **iOS yakınlaştırması:** iOS Safari 16px altındaki metin girdisine odaklanınca
 sayfayı yakınlaştırır. Bu yüzden `compact` girdinin metni telefonda 16px'te
@@ -95,12 +109,17 @@ Pazarlama yüzeyi bu token'lara bağlı değildir; `--mk-r-*` ölçeğini kullan
   ekle, `className` yazma. `md` dışındaki kırılımla boyut değiştirme.
 - Form kontrolleri (`Input`, `InputGroup`, `InputGroupInput`,
   `InputGroupTextarea`, `Textarea`, `SelectTrigger`, `AutocompleteInput`,
-  `ComboboxInput`, `ComboboxChips`) açılış etiketinde yükseklik (`h-*`,
-  `min-h-*`, `size-*`), köşe (`rounded*`), yazı boyutu (`text-xs…xl`, keyfi
-  değer), dolgu (`p-*`, `py-*`, `pt-*`, `pb-*`), kenarlık kaldırma
-  (`border-0|none|transparent`), zemin (`bg-*`), gölge (`shadow-*`) ve yazı
+  `ComboboxInput`, `ComboboxChips`, `AutocompleteInputGroup`) ve onlara
+  `className` ileten sarmalayıcılar (`FilterSelect`, `CitySelect`,
+  `DistrictSelect`) açılış etiketinde yükseklik (`h-*`, `min-h-*`, `size-*`),
+  köşe (`rounded*`), yazı boyutu (`text-xs…xl`, keyfi uzunluk), satır
+  yüksekliği (`leading-*`), dolgu (`p-*`, `py-*`, `pt-*`, `pb-*`), kenarlık
+  kaldırma/kalınlığı (`border-0|none|transparent`, `border-2|4|8`), zemin
+  (`bg-*`), gölge (`shadow-*`), halka (`ring-*`), `outline-*` ve yazı
   ağırlığı (`font-medium…`) taşımaz; `!` ve `md:` / `data-[…]:` önekleri de
-  sayılır. `className` yerleşim içindir: genişlik, flex/grid, dış boşluk, ikon
+  sayılır. CSS modülü sınıfı (`className={styles.x}`) da ihlaldir. Yeni bir
+  sarmalayıcı `className`'i kontrole iletiyorsa kapının listesine eklenir
+  (test bunu ister). `className` yerleşim içindir: genişlik, flex/grid, dış boşluk, ikon
   yeri için yatay dolgu (`pl-9`), `text-right`, `tabular-nums`, `font-mono`,
   `uppercase`, `tracking-*`. Textarea içerik yüksekliği yalnız ölçekten
   (`min-h-20`, `min-h-[80px]` değil). Bilinçli istisna gerekçesiyle
