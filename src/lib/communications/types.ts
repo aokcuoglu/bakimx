@@ -54,6 +54,7 @@ export interface TemplateVariables {
   vehiclePlate?: string
   vehicleBrand?: string
   vehicleModel?: string
+  appointmentDay?: string
   appointmentDate?: string
   appointmentTime?: string
   workOrderNo?: string
