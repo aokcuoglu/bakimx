@@ -4,7 +4,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { GATED_FEATURES, getPlanState, hasFeature, isPlanExpiredLock } from "@/lib/plan"
+import { getEnabledFeatures, getPlanState, isPlanExpiredLock } from "@/lib/plan"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { getSidebarPlanStatus } from "@/lib/billing/sidebar-plan-status"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
@@ -54,6 +54,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       liteFreeGrantedAt: true,
       currentPeriodEnd: true,
       requestedPlanTier: true,
+      addons: true,
       kind: true,
       onboardingProfile: true,
     },
@@ -87,7 +88,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Kapısı olan menü satırları için (BAK-60: BakımX Siparişleri). Kapı SUNUCUDA
   // çözülür; istemciye yalnız "açık olanlar" listesi iner, kapının nasıl
   // hesaplandığı değil.
-  const enabledFeatures = GATED_FEATURES.filter((feature) => hasFeature(plan.accessTier, feature))
+  // Paket + atölye bazında açılmış ek özellikler (#827).
+  const enabledFeatures = getEnabledFeatures(workshop)
 
   const membershipRows = await listUserMemberships(user.id)
   const workspaceMemberships =

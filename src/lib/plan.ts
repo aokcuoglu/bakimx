@@ -27,15 +27,21 @@ import type { Workshop } from "@prisma/client"
  *    read-only mode (data visible, writes blocked) now only survives for
  *    founder impersonation, so a locked tenant can still be inspected.
  *
- * Per-feature gating (#782 — tek paket):
+ * Per-feature gating (#782 — tek paket, #827 — atölye bazında ek özellik):
  *  - Satışta tek paket var: `pro` = "Servis Paketi". Paket servis yönetimi için
  *    gereken her şeyi içerir (plaka okuma dahil).
- *  - {@link ADDON_FEATURES} pakete DAHİL DEĞİLDİR; ileride uygulama içinden ek
- *    özellik olarak satılacak. Bugün yalnız `premium` erişim profili ("Paket +
- *    ek özellikler") onları açar — deneme bu profile çözülür
- *    ({@link TRIAL_ACCESS_TIER}), admin de elle verebilir.
+ *  - {@link ADDON_FEATURES} pakete DAHİL DEĞİLDİR. Bir ek özellik iki yoldan
+ *    açılır: (1) erişim profili — `premium` ("Paket + ek özellikler") hepsini
+ *    açar, aktif deneme bu profile çözülür ({@link TRIAL_ACCESS_TIER});
+ *    (2) atölyenin kendi `Workshop.addons` listesi — tek tek, pakete
+ *    bakmaksızın. Liste bugün yalnız admin anahtarıyla yazılır; uygulama içi
+ *    satın alma (#829) da oraya yazacak. Self-serve paket yenilemesi listeye
+ *    dokunmaz, yani `premium` → `pro` dönüşünde ek özellikler kaybolmaz.
+ *  - `hasFeature(tier, …)` saf ve yalnız pakete bakar; atölye satırı olan her
+ *    yer {@link hasWorkshopFeature} / {@link getEnabledFeatures} kullanır.
  *  - `lite` / `starter` / `premium` satışa kapalıdır ama mevcut satırlar
- *    okunur kalır (enum/tip kırılmaz).
+ *    okunur kalır (enum/tip kırılmaz). Eski `lite`/`starter` satırında da
+ *    `addons` geçerlidir.
  *  - `assertFeature` (throw-based) is ready to adopt inside server actions.
  *  - `eInvoice`: planned gate on e-Fatura issuance when the integration lands.
  *  - `multiBranch`: gate on branch creation (`canCreateBranch`).
@@ -99,7 +105,8 @@ export const PLAN_SEATS: Record<PlanTier, number> = {
 /**
  * Per-tier monthly VIN/katalog kotası (atölye başına). Ek kota Workshop.extraVinQuota ile eklenir.
  * Şaseden parça (VIN + parça kataloğu) Servis Paketi'ne dahil olmayan bir ek
- * özellik olduğu için `pro` kotası 0'dır (#782).
+ * özellik olduğu için `pro` kotası 0'dır (#782). Ek özelliği `addons` ile
+ * açılmış atölyenin taban kotası {@link getVinLookupBaseQuota}'dadır (#827).
  */
 export const VIN_LOOKUP_QUOTA: Record<PlanTier, number> = {
   lite: 0,
@@ -236,8 +243,10 @@ export const TRIAL_INCLUDES_ADDONS = true
 export const TRIAL_ACCESS_TIER: PlanTier = TRIAL_INCLUDES_ADDONS ? "premium" : "pro"
 
 /**
- * Lowest purchasable/legacy tier which owns a capability. Add-on'lar bugün
- * yalnız `premium` erişim profiliyle (deneme / elle verilen) açılır.
+ * Lowest purchasable/legacy tier which owns a capability. Add-on'lar paket
+ * olarak yalnız `premium` erişim profiliyle (deneme / elle verilen) açılır;
+ * atölye bazında `Workshop.addons` ile de açılabilirler (#827) — bu tablo o
+ * yolu bilmez, yetki için {@link hasWorkshopFeature} kullanılır.
  */
 export const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   ocrIntake: "premium",
@@ -283,6 +292,25 @@ export type WorkshopPlanFields = Pick<
   Workshop,
   "planTier" | "subscriptionStatus" | "approvalStatus" | "trialEndsAt" | "currentPeriodEnd"
 > & { liteFreeGrantedAt?: Date | null }
+
+/**
+ * Özellik yetkisi çözmek için gereken alanlar: paket alanları + atölyenin
+ * kendi ek özellik listesi (#827). `addons` bilinçli olarak ZORUNLU — dar bir
+ * `select` onu unutursa ek özellik sessizce kapalı görünürdü; tip bunu
+ * derleme anında yakalar.
+ */
+export type WorkshopEntitlementFields = WorkshopPlanFields & { addons: readonly string[] }
+
+/**
+ * `Workshop.addons` ham dizisini geçerli, tekrarsız ve {@link ADDON_FEATURES}
+ * sırasında bir listeye çevirir. Bilinmeyen dize (eski/elle yazılmış değer)
+ * yok sayılır — veritabanı bütünlüğü kodda tutulur (#827).
+ */
+export function normalizeAddons(addons: readonly string[] | null | undefined): AddonFeature[] {
+  if (!addons || addons.length === 0) return []
+  const present = new Set(addons)
+  return ADDON_FEATURES.filter((addon) => present.has(addon))
+}
 
 export interface PlanState {
   /** Persisted billing tier. */
@@ -432,21 +460,62 @@ export function computeTrialEnd(from: Date): Date {
   return result
 }
 
+/**
+ * Yalnız pakete (erişim profiline) bakan saf kapı. Atölyenin tek tek açılmış
+ * ek özelliklerini BİLMEZ — atölye satırı elindeyse {@link hasWorkshopFeature}
+ * kullan (#827).
+ */
 export function hasFeature(tier: PlanTier, feature: GatedFeature): boolean {
   // `premium` = "Paket + ek özellikler" erişim profili (deneme / elle verilen).
   if (tier === "premium") return true
-  // Ek özellikler pakete dahil değil — ayrı satın alma akışı gelene kadar kapalı.
+  // Ek özellikler pakete dahil değil — atölye bazında `addons` ile açılır.
   if (isAddonFeature(feature)) return false
   if (tier === "pro") return true
   if (tier === "starter") return STARTER_FEATURES.has(feature)
   return false
 }
 
+/**
+ * Atölyenin bir özelliğe yetkisi: paketi (aktif deneme `TRIAL_ACCESS_TIER`'a
+ * çözülür) ya da ek özellikse kendi `addons` listesi (#827). Erişim kilidine
+ * (`hasAccess`) BAKMAZ — o ayrı katman (`assertWriteAccess`, ödeme duvarı).
+ */
 export function hasWorkshopFeature(
-  workshop: WorkshopPlanFields,
+  workshop: WorkshopEntitlementFields,
   feature: GatedFeature
 ): boolean {
-  return hasFeature(getPlanState(workshop).accessTier, feature)
+  if (hasFeature(getPlanState(workshop).accessTier, feature)) return true
+  return isAddonFeature(feature) && normalizeAddons(workshop.addons).includes(feature)
+}
+
+/** Atölyede açık olan tüm kapılı özellikler — menü/başlık kilitleri için tek kaynak. */
+export function getEnabledFeatures(workshop: WorkshopEntitlementFields): GatedFeature[] {
+  const accessTier = getPlanState(workshop).accessTier
+  const addons = normalizeAddons(workshop.addons)
+  return GATED_FEATURES.filter(
+    (feature) =>
+      hasFeature(accessTier, feature) || (isAddonFeature(feature) && addons.includes(feature)),
+  )
+}
+
+/**
+ * Ek özellik (`vinLookup` ya da `partsCatalog`) atölye bazında açıldığında
+ * gelen aylık taban katalog kotası. TİCARİ bir sayı: bugün `premium` profilinin
+ * kotasıyla aynı tutuldu; #829'da fiyat tablosundaki "Dahil kullanım" ile
+ * yeniden tanımlanacak — değişecek tek yer burası.
+ */
+export const ADDON_VIN_LOOKUP_QUOTA = VIN_LOOKUP_QUOTA.premium
+
+/**
+ * Atölyenin aylık taban katalog kotası (ek kota `extraVinQuota` HARİÇ):
+ * paketin kotası ile, şaseden parça ek özelliği açıksa
+ * {@link ADDON_VIN_LOOKUP_QUOTA}'nın büyüğü (#827).
+ */
+export function getVinLookupBaseQuota(workshop: WorkshopEntitlementFields): number {
+  const tierQuota = VIN_LOOKUP_QUOTA[getPlanState(workshop).accessTier] ?? 0
+  const addons = normalizeAddons(workshop.addons)
+  const catalogAddon = addons.includes("vinLookup") || addons.includes("partsCatalog")
+  return Math.max(tierQuota, catalogAddon ? ADDON_VIN_LOOKUP_QUOTA : 0)
 }
 
 export function getEffectiveSeatLimit(
@@ -455,7 +524,10 @@ export function getEffectiveSeatLimit(
   return getSeatLimit(getPlanState(workshop).accessTier, workshop.extraSeats ?? 0)
 }
 
-/** Ek özellik kilidinde gösterilen metin — satın alma akışı henüz yok (#782). */
+/**
+ * Ek özellik kilidinde gösterilen metin — uygulama içi satın alma henüz yok
+ * (#782); bugün ek özellik admin tarafından atölye bazında açılır (#827).
+ */
 export const ADDON_LOCKED_MESSAGE =
   "Bu özellik pakete dahil değildir; ek özellik olarak yakında satın alınabilecek. Bilgi için bizimle iletişime geçin."
 
@@ -485,12 +557,13 @@ export class PlanFeatureLockedError extends Error {
 }
 
 /**
- * Throws if the workshop's tier does not include the feature. Adopt inside
- * server actions as premium features ship (API routes should prefer the
- * `hasFeature`-based 403 pattern instead of throwing).
+ * Throws if the workshop is not entitled to the feature (package or per-workshop
+ * add-on, see {@link hasWorkshopFeature}). Adopt inside server actions as
+ * features ship (API routes should prefer the `hasWorkshopFeature`-based 403
+ * pattern instead of throwing).
  */
 export function assertFeature(
-  workshop: WorkshopPlanFields,
+  workshop: WorkshopEntitlementFields,
   feature: GatedFeature
 ): void {
   if (!hasWorkshopFeature(workshop, feature)) throw new PlanFeatureLockedError(feature)
