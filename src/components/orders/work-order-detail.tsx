@@ -912,13 +912,11 @@ export function WorkOrderDetail({
       )}
       </div>
 
-      {/* Masaüstünde tutarlar sol kayıt listesinde. Şerit yalnız dar ekranda,
-          sekmelerin üstünde kalır. */}
-      <div className="lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start lg:gap-8">
-      <OrderRecordRail className="hidden lg:block" order={order} customerName={customerName} showCashbox={canCashbox} />
+      {/* Tek sütun (#860): sol kayıt sütunu yok, sekmeler başlığın hemen altında
+          tam genişlikte. Tutar şeridi her genişlikte sekmelerin üstünde kalır. */}
       <div className="min-w-0 space-y-5">
       {order.totals.hasAnyPrice && (
-        <div className={cn("flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 text-sm lg:hidden", detail.shell)}>
+        <div className={cn("flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 text-sm", detail.shell)}>
           {/* İndirim/KDV varken Genel Toplam kalem tutarlarına EŞİT DEĞİLDİR:
               yalnız sonuç gösterilince (ör. ₺400'lük tek kalem → ₺240) rakam
               hatalı sanılıyordu (BAK-55). Zincir hep görünür: ara toplam →
@@ -975,8 +973,8 @@ export function WorkOrderDetail({
                 </Button>
             </div>
           )}
-          {/* Müşteri & Araç: dar ekranda kayıt listesi ilk panel */}
-          <OrderRecordRail className="lg:hidden" order={order} customerName={customerName} showCashbox={canCashbox} />
+          {/* Müşteri & Araç: Özet'in ilk paneli, her genişlikte */}
+          <OrderRecordRail order={order} customerName={customerName} />
 
           {/* İş Emri Bilgileri */}
           <OrderInfoCard
@@ -1521,7 +1519,6 @@ export function WorkOrderDetail({
           <OrderActivityLog entries={activity} />
         </TabsContent>
       </Tabs>
-      </div>
       </div>
 
       <AlertDialog open={reopenOpen} onOpenChange={(o) => { if (!reopening) setReopenOpen(o) }}>
