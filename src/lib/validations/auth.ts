@@ -1,4 +1,5 @@
 import { z } from "zod/v4"
+import { SALE_PLAN_TIERS } from "@/lib/plan"
 import { isEmailIdentifier } from "@/lib/user-identity"
 import { ACQUISITION_SOURCES } from "@/lib/acquisition-sources"
 import { optionalReferralCodeSchema } from "@/lib/validations/referral-code"
@@ -33,7 +34,8 @@ export const loginSchema = z
 
 export const registerSchema = z
   .object({
-    planTier: z.enum(["lite", "pro", "premium"]).default("pro"),
+    // #782: satışta yalnız Servis Paketi var; Lite ve Premium kaydı reddedilir.
+    planTier: z.enum(SALE_PLAN_TIERS).default("pro"),
     sector: z.enum(REGISTER_SECTOR_IDS).default("auto_service"),
     businessFeatures: z.array(z.enum(BUSINESS_FEATURE_IDS)).default([]),
     teamSize: z.enum(TEAM_SIZE_IDS).default("solo"),

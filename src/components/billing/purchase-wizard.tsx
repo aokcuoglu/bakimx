@@ -22,8 +22,8 @@ import {
   type CheckoutInAppValues,
   type CheckoutPublicValues,
 } from "@/lib/validations/billing"
-import { PLAN_PACKAGES } from "@/lib/plans-catalog"
-import { getPlanPriceMinor, formatMinor, isComplimentaryPlan } from "@/lib/billing/pricing"
+import { ADDON_CATALOG, SERVICE_PACKAGE } from "@/lib/plans-catalog"
+import { getPlanPriceMinor, formatMinor } from "@/lib/billing/pricing"
 import { createBillingOrder } from "@/app/(app)/billing/actions"
 import { getSeatLimit, type PlanTier } from "@/lib/plan"
 import type { HavaleInfo } from "@/lib/billing/provider"
@@ -50,7 +50,6 @@ const DAY_LABELS = [
 
 export function PurchaseWizard({
   mode,
-  initialTier = "pro",
   initialCycle = "monthly",
   initialStep = 0,
   ownedTier = null,
@@ -62,7 +61,6 @@ export function PurchaseWizard({
   referralDiscountBps = 0,
 }: {
   mode: Mode
-  initialTier?: PlanTier
   initialCycle?: Cycle
   initialStep?: number
   /** Workshop's currently active tier (inapp only) — can't be re-purchased. */
@@ -79,7 +77,9 @@ export function PurchaseWizard({
     ? ["Paket", "Hesap & Fatura", "Özet"]
     : ["Paket", "Fatura Bilgisi", "Özet"]
   const [step, setStep] = useState(initialStep)
-  const [tier, setTier] = useState<PlanTier>(initialTier)
+  // Satışta tek paket var (#782); sihirbaz yalnız dönemi seçtirir.
+  const pkg = SERVICE_PACKAGE
+  const tier = pkg.tier
   const [cycle, setCycle] = useState<Cycle>(initialCycle)
   const [method, setMethod] = useState<PayMethod>("card")
   const [loading, setLoading] = useState(false)
@@ -88,7 +88,6 @@ export function PurchaseWizard({
     reference: string
     amountMinor: number
     method: PayMethod
-    complimentary: boolean
   } | null>(null)
   const submitRef = useRef(false)
 
@@ -96,7 +95,7 @@ export function PurchaseWizard({
   const form = useForm<CheckoutPublicValues | CheckoutInAppValues>({
     resolver: typedResolver(schema as never) as never,
     defaultValues: {
-      tier: initialTier,
+      tier,
       cycle: initialCycle,
       invoiceTitle: defaultInvoiceTitle,
       acquisitionSource: "unknown",
@@ -126,7 +125,6 @@ export function PurchaseWizard({
   })
   const { register, trigger, getValues, formState } = form
   const reduce = useReducedMotion()
-  const complimentary = isComplimentaryPlan(tier, cycle)
   const targetSeatLimit = getSeatLimit(tier, extraSeats)
   const excessSeatCount = Math.max(0, (seatUsage?.used ?? 0) - targetSeatLimit)
 
@@ -145,7 +143,7 @@ export function PurchaseWizard({
     setError("")
     setLoading(true)
     try {
-      const effectiveMethod: PayMethod = complimentary ? "havale" : method
+      const effectiveMethod: PayMethod = method
       const values = getValues() as Record<string, unknown>
       values.tier = tier
       values.cycle = cycle
@@ -159,7 +157,7 @@ export function PurchaseWizard({
         const data = await res.json()
         if (data.success) {
           trackMarketingEvent("purchase_submitted", { plan_tier: tier, billing_cycle: cycle, payment_method: effectiveMethod })
-          setDone({ reference: data.reference, amountMinor: data.amountMinor, method: effectiveMethod, complimentary: Boolean(data.complimentary) })
+          setDone({ reference: data.reference, amountMinor: data.amountMinor, method: effectiveMethod })
         } else setError(data.error || "Satın alma başarısız")
       } else {
         const res = await createBillingOrder({
@@ -172,7 +170,7 @@ export function PurchaseWizard({
         })
         if (res.ok) {
           trackMarketingEvent("purchase_submitted", { plan_tier: tier, billing_cycle: cycle, payment_method: res.method })
-          setDone({ reference: res.reference, amountMinor: res.amountMinor, method: res.method, complimentary: res.complimentary })
+          setDone({ reference: res.reference, amountMinor: res.amountMinor, method: res.method })
         }
         else setError(res.error)
       }
@@ -198,9 +196,7 @@ export function PurchaseWizard({
         {/* my-auto: boş alan varsa dikey ortalar, içerik taşarsa kırpmadan üstten başlar */}
         <div className="mx-auto w-full max-w-md md:my-auto">
           {done ? (
-            done.complimentary ? (
-              <ComplimentaryDonePanel mode={mode} />
-            ) : done.method === "card" ? (
+            done.method === "card" ? (
               <CardPaymentPanel
                 reference={done.reference}
                 amountMinor={done.amountMinor}
@@ -250,78 +246,51 @@ export function PurchaseWizard({
                   {/* Step 0: plan + cycle */}
                   {step === 0 && (
                     <div className="space-y-4">
-                      <h2 className="text-lg font-bold text-foreground">Paket seçin</h2>
-                      <div className="inline-flex w-full gap-1 rounded-lg border bg-muted/40 p-1">
+                      <h2 className="text-lg font-bold text-foreground">Dönem seçin</h2>
+                      <ToggleGroup
+                        type="single"
+                        value={cycle}
+                        onValueChange={(value) => { if (value) setCycle(value as Cycle) }}
+                        className="grid w-full grid-cols-2 gap-1 rounded-lg border bg-muted/40 p-1"
+                        aria-label="Faturalama dönemi"
+                      >
                         {(["monthly", "yearly"] as const).map((c) => (
-                          <Button
+                          <ToggleGroupItem
                             key={c}
-                            type="button"
-                            onClick={() => setCycle(c)}
-                            variant={cycle === c ? "secondary" : "ghost"}
-                            className={cn(
-                              "flex-1",
-                              cycle === c
-                                ? "bg-card text-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground",
-                            )}
+                            value={c}
+                            className="w-full text-muted-foreground hover:text-foreground data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm"
                           >
                             {c === "monthly" ? "Aylık" : "Yıllık (2 ay bedava)"}
-                          </Button>
+                          </ToggleGroupItem>
                         ))}
-                      </div>
-                      <div className="grid gap-3">
-                        {PLAN_PACKAGES.map((pkg) => {
-                          const isOwned = ownedTier === pkg.tier
-                          const selected = tier === pkg.tier
-                          const minor = isPublic ? getPlanPriceMinor(pkg.tier, cycle) : getDiscountedPlanPriceMinor(pkg.tier, cycle, referralDiscountBps)
-                          return (
-                            <Button
-                              key={pkg.tier}
-                              type="button"
-                              onClick={() => setTier(pkg.tier)}
-                              aria-pressed={selected}
-                              variant="outline"
-                              className={cn(
-                                "relative h-auto min-h-16 w-full justify-between rounded-xl p-4 text-left whitespace-normal",
-                                selected
-                                  ? "border-primary bg-primary/5 ring-1 ring-primary/40"
-                                  : "border-border hover:bg-muted/60 hover:bg-muted/30",
-                              )}
-                            >
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <p className="font-semibold text-foreground">{pkg.name}</p>
-                                  {isOwned ? (
-                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-strong">
-                                      Mevcut paketiniz — Yenile
-                                    </span>
-                                  ) : pkg.popular ? (
-                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-strong">
-                                      Popüler
-                                    </span>
-                                  ) : null}
-                                </div>
-                                <p className="mt-0.5 text-xs text-muted-foreground">
-                                  {pkg.tagline} · {pkg.seats} kullanıcı
-                                </p>
-                              </div>
-                              <div className="ml-3 shrink-0 text-right">
-                                {!isPublic && referralDiscountBps > 0 && pkg.tier !== "lite" ? (
-                                  <s className="block text-xs text-muted-foreground">{formatMinor(getPlanPriceMinor(pkg.tier, cycle))}</s>
-                                ) : pkg.listMonthlyLabel && (
-                                  <s className="block text-xs text-muted-foreground">
-                                    {cycle === "monthly" ? pkg.listMonthlyLabel : pkg.listYearlyLabel}
-                                  </s>
-                                )}
-                                <p className="font-bold text-foreground">{formatMinor(minor)}</p>
-                                <p className="text-[11px] text-muted-foreground">
-                                  {pkg.tier === "lite" ? "Açılışa özel · sınırlı süre" : !isPublic && referralDiscountBps > 0 ? "İlk yıl %10 indirim · KDV dahil" : cycle === "monthly" ? "/ay · KDV dahil" : "/yıl · KDV dahil"}
-                                </p>
-                              </div>
-                            </Button>
-                          )
-                        })}
-                      </div>
+                      </ToggleGroup>
+                      <section aria-label={pkg.name} className="flex items-start justify-between gap-3 rounded-xl border border-primary bg-primary/5 p-4">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-foreground">{pkg.name}</p>
+                            {ownedTier === tier && (
+                              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary-strong">
+                                Mevcut paketiniz — Yenile
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {pkg.tagline} · {pkg.seats} kullanıcı
+                          </p>
+                        </div>
+                        <div className="ml-3 shrink-0 text-right">
+                          {!isPublic && referralDiscountBps > 0 && (
+                            <s className="block text-xs text-muted-foreground">{formatMinor(getPlanPriceMinor(tier, cycle))}</s>
+                          )}
+                          <p className="font-bold text-foreground">{formatMinor(isPublic ? getPlanPriceMinor(tier, cycle) : getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps))}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {!isPublic && referralDiscountBps > 0 ? "İlk yıl %10 indirim · KDV dahil" : cycle === "monthly" ? "/ay · KDV dahil" : "/yıl · KDV dahil"}
+                          </p>
+                        </div>
+                      </section>
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        Ek özellikler ({ADDON_CATALOG.map((addon) => addon.name).join(", ")}) pakete dahil değildir; yakında uygulama içinden ayrıca alınabilecek.
+                      </p>
                       {!isPublic && excessSeatCount > 0 && seatUsage && (
                         <Alert variant="warning">
                           <AlertTriangle />
@@ -501,7 +470,7 @@ export function PurchaseWizard({
                       <h2 className="text-lg font-bold text-foreground">Özet</h2>
 
                       {/* Ödeme yöntemi seçimi — kart görünümlü iki seçenek */}
-                      {!complimentary && <div>
+                      <div>
                         <Label className="text-xs">Ödeme yöntemi</Label>
                         <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
                           {(
@@ -532,12 +501,10 @@ export function PurchaseWizard({
                             )
                           })}
                         </div>
-                      </div>}
+                      </div>
 
                       <p className="text-sm text-muted-foreground">
-                        {complimentary
-                          ? "Lite paketiniz açılışa özel kampanya kapsamında ücretsiz etkinleştirilecek. Kart veya havale bilgisi gerekmiyor."
-                          : method === "card"
+                        {method === "card"
                           ? isPublic
                             ? "Onayladığınızda 3D Secure ödeme adımına geçersiniz. Ödeme onaylanınca paketiniz hemen aktifleşir."
                             : "Onayladığınızda 3D Secure ödeme adımına geçersiniz. Ödeme onaylanınca paketiniz hemen güncellenir."
@@ -574,8 +541,6 @@ export function PurchaseWizard({
                             <>
                               <BrandSpinner size={20} /> Gönderiliyor…
                             </>
-                          ) : complimentary ? (
-                            "Ücretsiz etkinleştir"
                           ) : method === "card" ? (
                             "Ödemeye geç"
                           ) : (
@@ -592,25 +557,6 @@ export function PurchaseWizard({
           )}
         </div>
       </div>
-    </div>
-  )
-}
-
-function ComplimentaryDonePanel({ mode }: { mode: Mode }) {
-  return (
-    <div className="space-y-4 text-center">
-      <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10">
-        <CheckCircle2 className="size-7 text-primary" />
-      </div>
-      <div>
-        <h2 className="text-lg font-bold text-foreground">Lite paketiniz etkin</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Açılışa özel kampanya uygulandı; ödeme yapmanız gerekmiyor.
-        </p>
-      </div>
-      <Link href={mode === "public" ? "/login" : "/settings/plans"} className="inline-block text-sm text-primary hover:underline">
-        {mode === "public" ? "Giriş sayfasına git" : "Paket sayfasına dön"}
-      </Link>
     </div>
   )
 }

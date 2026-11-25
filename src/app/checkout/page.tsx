@@ -7,7 +7,7 @@ import { formatMinor } from "@/lib/billing/pricing"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import { prisma } from "@/lib/db"
 import { getPlanPackage } from "@/lib/plans-catalog"
-import { getPlanState, isPlanExpiredLock, isPlanTier, type PlanTier } from "@/lib/plan"
+import { getPlanState, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
 import { Button } from "@/components/ui/button"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
 import { getSeatUsage } from "@/lib/rbac"
@@ -27,15 +27,16 @@ export default async function CheckoutPage({
 }) {
   const { workshop } = await getAppData()
   const sp = await searchParams
-  const explicitTier = isPlanTier(sp.tier) ? sp.tier : null
-  const tier = explicitTier ?? "pro"
-  const cycle = (sp.cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly"
+  // Satışta tek paket var (#782): `?tier=` ne gelirse gelsin Servis Paketi
+  // satılır; eski bağlantılar (`?tier=premium`) kırılmaz.
+  const explicitCycle = sp.cycle === "yearly" || sp.cycle === "monthly" ? sp.cycle : null
+  const cycle = explicitCycle ?? "monthly"
   const ownedTier = workshop?.subscriptionStatus === "active" ? (workshop.planTier as PlanTier) : null
   const seatUsage = workshop ? await getSeatUsage(workshop.id) : null
-  // Açık bir paketle gelindiyse (yükseltme VEYA aynı paketi yenileme) doğrudan
-  // fatura adımına atla. Aynı paketin yenilenmesi kasıtlı olarak mümkündür
-  // (bkz. deriveBillingOrderType → "renewal"); adım 0'da yine seçili görünür.
-  const skipPackageStep = explicitTier !== null
+  // Dönem verildiyse (kilit yüzeyi, e-posta, yenileme bağlantısı) doğrudan fatura
+  // adımına atla. Aynı paketin yenilenmesi kasıtlı olarak mümkündür
+  // (bkz. deriveBillingOrderType → "renewal").
+  const skipPackageStep = explicitCycle !== null
 
   // createBillingOrder da aynı kuralı sunucu tarafında zorunlu kılar; bu yalnızca
   // sihirbazın 3 adımını doldurup sonda reddedilmek yerine erken ve net bir mesaj verir.
@@ -105,7 +106,6 @@ export default async function CheckoutPage({
     <main className="min-h-[100dvh] bg-background">
       <PurchaseWizard
         mode="inapp"
-        initialTier={tier}
         initialCycle={cycle}
         initialStep={skipPackageStep ? 1 : 0}
         ownedTier={ownedTier}

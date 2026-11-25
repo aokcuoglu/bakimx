@@ -1,9 +1,8 @@
-import { hasLifetimeLite } from "@/lib/lite-campaign"
 import { prisma } from "@/lib/db"
-import { computeTrialEnd } from "@/lib/plan"
 import { AuditLogAction } from "@/lib/audit"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
-import { welcomeTrialEmail, welcomeLiteEmail } from "@/lib/emails/system-emails"
+import { welcomeTrialEmail } from "@/lib/emails/system-emails"
+import { verifiedRegistrationTrialData } from "@/lib/billing/registration-trial"
 
 /**
  * E-posta doğrulaması tamamlandığında pending workshop'u active bir denemeye çevirir.
@@ -14,27 +13,22 @@ import { welcomeTrialEmail, welcomeLiteEmail } from "@/lib/emails/system-emails"
  *    KALKTI, çifte gönderim olmaz). count===0 → workshop zaten approved (callback replay
  *    ya da eşzamanlı ikinci callback) → YAN ETKİSİZ ok:true.
  *  - trial CALLBACK'te başlar (register pending yaratır, trial* null bırakır).
+ *  - Ücretsiz paket yok (#782): yarım kalmış eski `lite`/`premium` kaydı da
+ *    Servis Paketi denemesi olarak açılır (`verifiedRegistrationTrialData`);
+ *    süresiz Lite hakkı bu yoldan artık verilmez.
  *  - Beklenmedik DB hatası → ok:false (çağıran founder alert + txn'i completed YAPMAZ).
  */
 export async function activateVerifiedWorkshop(workshopId: string): Promise<{ ok: boolean }> {
-  const now = new Date()
-  const trialEndsAt = computeTrialEnd(now)
+  const trial = verifiedRegistrationTrialData(new Date())
+  const { trialEndsAt } = trial
 
-  let lifetimeLite = false
   let claimed = 0
   try {
-    const plan = await prisma.workshop.findUnique({ where: { id: workshopId }, select: { planTier: true, liteFreeGrantedAt: true } })
-    if (!plan) return { ok: false }
-    lifetimeLite = hasLifetimeLite(plan)
+    const exists = await prisma.workshop.findUnique({ where: { id: workshopId }, select: { id: true } })
+    if (!exists) return { ok: false }
     const res = await prisma.workshop.updateMany({
       where: { id: workshopId, approvalStatus: "pending" },
-      data: {
-        approvalStatus: "approved",
-        subscriptionStatus: lifetimeLite ? "active" : "trialing",
-        trialStartedAt: lifetimeLite ? null : now,
-        trialEndsAt: lifetimeLite ? null : trialEndsAt,
-        ...(lifetimeLite ? { currentPeriodEnd: null } : {}),
-      },
+      data: trial,
     })
     claimed = res.count
   } catch (err) {
@@ -57,7 +51,7 @@ export async function activateVerifiedWorkshop(workshopId: string): Promise<{ ok
     ])
     const to = owner?.email || workshop?.email
     if (workshop && to) {
-      const built = lifetimeLite ? welcomeLiteEmail({ firstName: owner?.firstName || "", workshopName: workshop.name }) : welcomeTrialEmail({
+      const built = welcomeTrialEmail({
         ownerName: owner?.firstName || "",
         workshopName: workshop.name,
         trialEndsAt,
@@ -71,7 +65,7 @@ export async function activateVerifiedWorkshop(workshopId: string): Promise<{ ok
         subject: built.subject,
         html: built.html,
         workshopId,
-        templateKey: lifetimeLite ? "welcome_lite" : "welcome_trial",
+        templateKey: "welcome_trial",
         audience: "workshop",
       })
     }
@@ -84,7 +78,7 @@ export async function activateVerifiedWorkshop(workshopId: string): Promise<{ ok
     undefined,
     "Workshop",
     workshopId,
-    lifetimeLite ? "email_verified_lite_activated" : "email_verified_trial_started"
+    "email_verified_trial_started"
   ).catch((err) => {
     console.error("[activateVerifiedWorkshop] audit failed:", err instanceof Error ? err.message : err)
   })

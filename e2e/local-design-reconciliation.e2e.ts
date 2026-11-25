@@ -20,14 +20,15 @@ for (const width of [320, 390, 768, 1000, 1440]) {
 }
 
 for (const width of [320, 390, 768, 1440]) {
+  // #782: tek paket — eski `?tier=lite` bağlantısı da Servis Paketi denemesine iner.
   for (const tier of ["lite", "pro"]) {
-    test(`registration verification preserves ${tier} terms at ${width}px`, async ({ page }, testInfo) => {
+    test(`registration verification from ?tier=${tier} keeps Servis Paketi trial terms at ${width}px`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 })
       await page.emulateMedia({ reducedMotion: "reduce" })
       let submissions = 0
       await page.route("**/api/auth/register", async (route) => {
         submissions++
-        expect(route.request().postDataJSON()).toMatchObject({ planTier: tier, kvkkConsent: true })
+        expect(route.request().postDataJSON()).toMatchObject({ planTier: "pro", kvkkConsent: true })
         await route.fulfill({ json: submissions === 1 ? { ok: false, error: "QA geçici hata" } : { ok: true } })
       })
       await page.goto(`/register?tier=${tier}`)
@@ -52,7 +53,7 @@ for (const width of [320, 390, 768, 1440]) {
       const confirmation = page.getByRole("region", { name: "E-postanızı kontrol edin" })
       await expect(confirmation).toBeVisible()
       await expect(confirmation).toContainText(email)
-      await expect(confirmation).toContainText(tier === "lite" ? "süresiz ücretsiz Lite" : "ücretsiz 7 iş günlük")
+      await expect(confirmation).toContainText("ücretsiz 7 iş günlük")
       await expect(confirmation.getByRole("heading")).toHaveCSS("font-size", width < 640 ? "28px" : "32px")
       const back = confirmation.getByRole("link", { name: "Giriş sayfasına dön" })
       await expect(back).toHaveAttribute("href", "/login")

@@ -32,7 +32,7 @@ describe("oto servis programı arama niyeti sözleşmesi", () => {
     )
 
     expect(kasaTahsilatFaq).toBeDefined()
-    expect(kasaTahsilatFaq?.answer).toContain("Profesyonel pakette")
+    expect(kasaTahsilatFaq?.answer).toContain("Servis Paketi'nde")
     expect(kasaTahsilatFaq?.answer).toContain("kasa")
     expect(kasaTahsilatFaq?.answer).toContain("tahsilat")
     expect(kasaTahsilatFaq?.answer).toContain("e-Fatura/e-Arşiv")

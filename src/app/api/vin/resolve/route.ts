@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod/v4"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
-import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
+import { featureLockedMessage, getPlanState, hasWorkshopFeature } from "@/lib/plan"
 import { assertWritableOr403 } from "@/lib/plan-guard"
 import { getWorkshopQuotaContext } from "@/lib/rapidapi-quota"
 import { rateLimit } from "@/lib/rate-limit"
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   if (!hasWorkshopFeature(workshop, "vinLookup")) {
     return NextResponse.json(
       {
-        error: "Şaseden araç tanıma bu çalışma alanında kapalı.",
+        error: featureLockedMessage("vinLookup"),
         code: "feature_locked",
         currentTier: getPlanState(workshop).tier,
       },

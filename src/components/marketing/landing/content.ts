@@ -1,9 +1,12 @@
 /**
  * Ana sayfa metinleri — e-santral.com/bakimx ile kelimesi kelimesine aynı
- * (docs/design/esantral-reference/index.html). Tek istisna spec §6.1'deki üç
- * revizyon (PRICE.subtitle, PRICE.items[1], LANDING_FAQ[0].answer): sahip kararı
- * "ek maliyetli kısımlar uygulama içinde satılır" (22-11-2026, #781/#782).
- * Fiyat ve kapsam metni İş 2 (#782) tarafından buradan güncellenir.
+ * (docs/design/esantral-reference/index.html). İstisnalar sahip kararlarıdır:
+ * spec §6.1'deki üç revizyon (PRICE.subtitle, PRICE.items[1],
+ * LANDING_FAQ[0].answer) — "ek maliyetli kısımlar uygulama içinde satılır"
+ * (22-11-2026, #781/#782) — ve #782'nin kapsam düzeltmesi: ruhsat OCR ek
+ * özellik, plaka okuma pakete dahil (PRICE.items[1], DAY_CARDS[0].text), e-Fatura
+ * ek özellik (LANDING_FAQ[3].answer). Fiyat `SERVICE_PACKAGE` ile aynı kalmak
+ * zorunda; content.test.ts bekçidir.
  */
 import type { FeatureIconName } from "./feature-icons"
 
@@ -69,7 +72,7 @@ export const DAY_CARDS = [
     img: "/landing/esantral/kabul.webp",
     alt: "Usta, servis girişinde müşterinin aracının fotoğrafını telefonla çekiyor",
     label: "Araç Kabul",
-    text: "Araç kabul: ruhsat okuması ve aracın fotoğraflarının çekilmesi. Evet bu kadar hızlı.",
+    text: "Araç kabul: plaka okuma ve aracın fotoğraflarının çekilmesi. Evet bu kadar hızlı.",
   },
   {
     img: "/landing/esantral/parca.webp",
@@ -124,7 +127,7 @@ export const PRICE = {
   monthlyPriceTry: 1499,
   items: [
     "Sınırsız müşteri ve araç kabul",
-    "Ruhsat okuma ile hızlı araç kabul",
+    "Plaka okuma ile hızlı araç kabul",
     "Fotoğraflı kabul ve hasar kaydı",
     "Kasa, tahsilat ve randevu",
     "WhatsApp'tan müşteri bilgilendirme",
@@ -152,7 +155,7 @@ export const LANDING_FAQ = [
   },
   {
     question: "e-Fatura kesebilir miyim?",
-    answer: "e-Fatura ve e-Arşiv yakında ekleniyor.",
+    answer: "e-Fatura ve e-Arşiv yakında ek özellik olarak ekleniyor; uygulama içinden ayrıca alabileceksiniz.",
   },
   {
     question: "Hangi cihazlarda çalışır?",

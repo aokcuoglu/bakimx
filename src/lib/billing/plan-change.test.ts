@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { getFeaturesLostOnDowngrade, isDowngradeBlocked, isPlanDowngrade, isPlanUpgrade } from "@/lib/billing/plan-change"
+import { isDowngradeBlocked, isPlanDowngrade, isPlanUpgrade } from "@/lib/billing/plan-change"
 
 test("premium → pro/lite düşürmedir", () => {
   expect(isPlanDowngrade("premium", "pro")).toBe(true)
@@ -14,7 +14,33 @@ test("aynı paket veya yükseltme düşürme değildir", () => {
   expect(isPlanDowngrade(null, "lite")).toBe(false)
 })
 
-test("aktif abonelikte düşürme engellenir (dönem sonu olmasa da)", () => {
+test("dönemi süren premium hâlâ engelli", () => {
+  expect(
+    isDowngradeBlocked({
+      subscriptionStatus: "active",
+      planTier: "premium",
+      currentPeriodEnd: new Date("2026-12-24T00:00:00Z"),
+      targetTier: "pro",
+      now: new Date("2026-11-24T00:00:00Z"),
+    }),
+  ).toBe(true)
+})
+
+// #782: satışta yalnız Servis Paketi var. Durum `active` kalsa bile dönemi bitmiş
+// (ya da hiç dönemi olmayan, elle verilmiş) premium satırı kilitli kalmamalı.
+test("süresi dolmuş premium Servis Paketi'ni satın alabilir", () => {
+  expect(
+    isDowngradeBlocked({
+      subscriptionStatus: "active",
+      planTier: "premium",
+      currentPeriodEnd: new Date("2026-10-01T00:00:00Z"),
+      targetTier: "pro",
+      now: new Date("2026-11-24T00:00:00Z"),
+    }),
+  ).toBe(false)
+})
+
+test("dönemsiz (elle verilmiş) aktif premium Servis Paketi'ni satın alabilir", () => {
   expect(
     isDowngradeBlocked({
       subscriptionStatus: "active",
@@ -22,7 +48,7 @@ test("aktif abonelikte düşürme engellenir (dönem sonu olmasa da)", () => {
       currentPeriodEnd: null,
       targetTier: "pro",
     }),
-  ).toBe(true)
+  ).toBe(false)
 })
 
 test("açık dönemde past_due olsa bile düşürme engellenir", () => {
@@ -73,7 +99,8 @@ test("isPlanUpgrade üst paketi tanır", () => {
   expect(isPlanUpgrade("premium", "pro")).toBe(false)
 })
 
-test("düşürmede kaybedilen özellikler listelenir", () => {
-  const lost = getFeaturesLostOnDowngrade("premium", "lite")
-  expect(lost.length).toBeGreaterThan(0)
+test("eski satırdan Servis Paketi'ne geçiş yükseltmedir; Paket + ek özelliklerden düşüştür", () => {
+  expect(isPlanUpgrade("lite", "pro")).toBe(true)
+  expect(isPlanUpgrade("starter", "pro")).toBe(true)
+  expect(isPlanDowngrade("premium", "pro")).toBe(true)
 })

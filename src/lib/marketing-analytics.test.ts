@@ -48,21 +48,32 @@ describe("marketing analytics contract", () => {
 
   test("paywall analytics keeps only non-PII feature and plan dimensions", () => {
     const payload = sanitizeMarketingPayload("feature_upgrade_clicked", {
-      feature_id: "appointments",
-      current_tier: "lite",
-      target_tier: "pro",
+      feature_id: "vinLookup",
+      current_tier: "pro",
+      kind: "addon",
       placement: "page",
-      destination: "checkout",
+      destination: "contact",
       email: "secret@example.com",
       workshop_name: "Private Garage",
     } as never)
     expect(payload).toEqual({
+      feature_id: "vinLookup",
+      current_tier: "pro",
+      kind: "addon",
+      placement: "page",
+      destination: "contact",
+    })
+  })
+
+  test("paywall analytics no longer carries a purchasable target tier (#782)", () => {
+    const payload = sanitizeMarketingPayload("feature_paywall_viewed", {
       feature_id: "appointments",
       current_tier: "lite",
-      target_tier: "pro",
-      placement: "page",
-      destination: "checkout",
-    })
+      kind: "package",
+      placement: "inline",
+      target_tier: "premium",
+    } as never)
+    expect(payload).toEqual({ feature_id: "appointments", current_tier: "lite", kind: "package", placement: "inline" })
   })
 })
 

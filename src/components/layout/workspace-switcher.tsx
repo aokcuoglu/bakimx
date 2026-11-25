@@ -158,7 +158,7 @@ export function WorkspaceSwitcher({
                     <span className="flex size-6 items-center justify-center">
                       <LockKeyhole className="size-3.5" />
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium leading-5">Yeni şube · Premium</span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium leading-5">Yeni şube · Ek özellik</span>
                   </Link>
                 </DropdownMenuItem>
               )}
