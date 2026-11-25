@@ -229,9 +229,10 @@ kod yazmadan önce hangisinin kapsamına girdiğine bak:
 | `src/lib/rbac-coverage.test.ts` | Yetki kapısını hiç çağırmayan yeni mutasyon action'ı (#183) |
 | `src/lib/intake/photo-visibility.test.ts` | Fotoğraf okuyan sorguda `VISIBLE_PHOTO` filtresinin unutulması — soft-delete edilmiş kare galeride/PDF'te geri görünür |
 | `src/lib/test-mock-isolation.test.ts` | Kendi test dosyası olan bir modülün `mock.module` ile sahtelenmesi — sahte süreç geneli kalıcıdır ve asıl testi dosya sırasına göre düşürür (§7) |
+| `src/lib/format-date-coverage.test.ts` | `timeZone` vermeyen tarih/saat biçimlemesi (`toLocaleDateString`/`toLocaleTimeString`/`Intl.DateTimeFormat`, tarih seçenekli `toLocaleString`) ve sunucu dosyasında `date-fns` — prod konteyneri UTC'de koşarsa 09:00 randevu 06:00 görünür (#861). Biçimleme `@/lib/format-date` ile |
 
-`rbac-coverage`, `photo-visibility` ve `test-mock-isolation` bilinçli istisnalar için gerekçeli bir
-allowlist tutar. İstisna gerekiyorsa oraya **gerekçesiyle** ekle; testi gevşetme
+`rbac-coverage`, `photo-visibility`, `test-mock-isolation` ve `format-date-coverage` bilinçli
+istisnalar için gerekçeli bir allowlist tutar. İstisna gerekiyorsa oraya **gerekçesiyle** ekle; testi gevşetme
 ya da taramayı daraltma.
 
 ## 6. `dev`'e merge app-dev'e deploy ETMEZ — `[deploy-dev]` yaz

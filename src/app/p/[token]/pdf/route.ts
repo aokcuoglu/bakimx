@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db"
 import { quantityToNumber } from "@/lib/orders/quantity"
 import { sanitizePassportForPublic, escapePassportForHtml } from "@/lib/passport/data-safety"
 import { formatTRY, formatMileage } from "@/lib/format"
+import { formatTrDate, formatTrDateTime } from "@/lib/format-date"
 import { fuelGaugeSvgMarkup, formatFuelLevel } from "@/lib/fuel-level"
 import { VEHICLE_ZONES, fuelTypeLabel } from "@/lib/constants"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
@@ -49,8 +50,6 @@ async function generatePassportPdfHtml(data: {
   const safeCustomerName = escapeHtml(customerName)
   const safeCustomerPhone = escapeHtml(customer.phone)
 
-  const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString("tr-TR")
-
   let workOrdersHtml = ""
   if (visibility.showWorkOrders && passportData.workOrders.length > 0) {
     workOrdersHtml = `<div style="margin-bottom:12px;">
@@ -67,7 +66,7 @@ async function generatePassportPdfHtml(data: {
       workOrdersHtml += `<div style="border:1px solid #E5E7EB;border-radius:6px;padding:8px;margin-bottom:6px;background:#fff;">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
           <div><span style="font-family:monospace;font-size:9px;font-weight:600;color:#666;">${wo.workOrderNo || "—"}</span> <span style="font-size:9px;padding:1px 6px;border-radius:10px;border:1px solid ${primaryColor};color:${primaryColor};">${wo.statusLabel}</span>${wo.paymentStatusLabel && visibility.showPaymentStatus ? ` <span style="font-size:9px;padding:1px 6px;border-radius:10px;border:1px solid #999;color:#666;">${wo.paymentStatusLabel}</span>` : ""}</div>
-          <span style="font-size:9px;color:#999;">${fmtDate(wo.createdAt)}</span>
+          <span style="font-size:9px;color:#999;">${formatTrDate(wo.createdAt)}</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:#333;margin-bottom:4px;">${wo.fuelLevelAtIntake != null ? `${fuelGaugeSvgMarkup(wo.fuelLevelAtIntake, 36)}<span style="color:#666;">Yakıt: ${formatFuelLevel(wo.fuelLevelAtIntake)}</span>` : ""}<span>${wo.customerComplaint}</span></div>
         ${wo.items.length > 0 ? `<div style="border-top:1px solid #f1f5f9;padding-top:4px;margin-top:4px;">${itemsHtml}</div>` : ""}
@@ -104,7 +103,7 @@ async function generatePassportPdfHtml(data: {
     const reminderRows = passportData.reminders.map((r) =>
       `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f1f5f9;">
         <div><span style="font-weight:600;font-size:9px;">${r.title}</span> <span style="font-size:8px;padding:1px 4px;border-radius:8px;border:1px solid #2563EB;color:#2563EB;">${r.typeLabel}</span> <span style="font-size:8px;padding:1px 4px;border-radius:8px;border:1px solid #999;color:#666;">${r.statusLabel}</span></div>
-        <div style="font-size:8px;color:#999;">${r.dueDate ? fmtDate(r.dueDate) : ""}${r.dueMileage ? ` ${r.dueMileage.toLocaleString("tr-TR")} km` : ""}</div>
+        <div style="font-size:8px;color:#999;">${r.dueDate ? formatTrDate(r.dueDate) : ""}${r.dueMileage ? ` ${r.dueMileage.toLocaleString("tr-TR")} km` : ""}</div>
       </div>`
     ).join("")
 
@@ -121,7 +120,7 @@ async function generatePassportPdfHtml(data: {
     const timelineRows = passportData.serviceHistory.slice(0, 20).map((e) =>
       `<div style="padding:4px 0;border-left:2px solid #e2e8f0;margin-left:8px;padding-left:12px;">
         <div style="font-weight:600;font-size:9px;">${e.description}</div>
-        <div style="font-size:8px;color:#999;">${new Date(e.createdAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+        <div style="font-size:8px;color:#999;">${formatTrDateTime(e.createdAt)}</div>
       </div>`
     ).join("")
 
@@ -136,7 +135,7 @@ async function generatePassportPdfHtml(data: {
   let photosHtml = ""
   if (visibility.showPhotos && passportData.photoHistory.length > 0) {
     const photoRows = passportData.photoHistory.map((p) =>
-      `<div style="padding:3px 0;color:#333;font-size:9px;">✓ ${p.label} <span style="font-size:8px;color:#999;">(${fmtDate(p.createdAt)})</span></div>`
+      `<div style="padding:3px 0;color:#333;font-size:9px;">✓ ${p.label} <span style="font-size:8px;color:#999;">(${formatTrDate(p.createdAt)})</span></div>`
     ).join("")
 
     photosHtml = `<div style="margin-bottom:12px;">
@@ -189,7 +188,7 @@ async function generatePassportPdfHtml(data: {
       </div>
     </div>
     <div style="text-align:right;">
-      <div style="font-size:10px;color:#333;">${fmtDate(createdAt)}</div>
+      <div style="font-size:10px;color:#333;">${formatTrDate(createdAt)}</div>
     </div>
   </div>
 
