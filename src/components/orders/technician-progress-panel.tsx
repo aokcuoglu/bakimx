@@ -112,12 +112,10 @@ export function TechnicianProgressPanel({
   checklistItems,
   laborSessions,
   internalNotes,
-  technicianName,
 }: {
   checklistItems: TechnicianChecklistItem[]
   laborSessions: TechnicianLaborSession[]
   internalNotes: TechnicianInternalNote[]
-  technicianName: string | null
 }) {
   const summary = summarizeChecklist(checklistItems)
   const activeLabor = laborSessions.find((l) => !l.endTime)
@@ -126,12 +124,6 @@ export function TechnicianProgressPanel({
 
   return (
     <div className={detail.stack}>
-      {!technicianName && (
-        <p className={detail.footnote}>
-          Bu araç kabulüne henüz teknisyen atanmadı. Atama yapıldığında kontrol listesi otomatik oluşur.
-        </p>
-      )}
-
       <DetailPanel
         title="Kontrol Listesi"
         aside={
@@ -226,10 +218,6 @@ export function TechnicianProgressPanel({
           </ul>
         )}
       </DetailPanel>
-
-      <p className={detail.footnote}>
-        Bu bölüm salt okunurdur. İşaretleme, işçilik başlatma ve not ekleme teknisyen panelinden yapılır.
-      </p>
     </div>
   )
 }

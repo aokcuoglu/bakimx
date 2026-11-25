@@ -47,3 +47,22 @@ test(".tap katmanı position yazmaz (Tailwind absolute'ı ezerdi)", () => {
   expect(block).toContain("position:absolute")
   expect(CSS).not.toMatch(/\.tap\s*\{[^}]*position/)
 })
+
+test("#897: sekme panelleri şeritten tutarlı 24/28px aşağıda başlar (paylaşılan tabs.tsx'e dokunmadan)", () => {
+  expect(CSS).toMatch(/\.pageTabs > \[role="tabpanel"\] \{ margin-top:16px; \}/)
+  expect(CSS).toMatch(/min-width:640px\) \{ \.pageTabs > \[role="tabpanel"\] \{ margin-top:20px; \}/)
+  // İç içe Tabs (PhotoPhaseMatrix) etkilenmesin: yalın torun seçici yok.
+  expect(CSS).not.toMatch(/\.\w+ \[role="tabpanel"\]/)
+  expect(DETAIL).toContain("className={detail.pageTabs}")
+})
+
+test("#897: Teknisyen Panelinde Aç bağlantısı bağlam kartının içinde, yalın sağa yaslı satırda değil", () => {
+  const tab = DETAIL.slice(DETAIL.indexOf('<TabsContent value="teknisyen"'))
+  const card = tab.slice(tab.indexOf("<section"), tab.indexOf("</section>"))
+  expect(card).toContain("detail.context")
+  expect(card).toContain("canOpenTechnicianView(order.assignedTechnicianId)")
+  expect(card).toContain("technicianOrderPath(order.id)")
+  expect(card).toContain("Henüz usta atanmadı")
+  expect(tab).not.toContain("flex justify-end")
+  expect(TECH).not.toContain("Bu bölüm salt okunurdur")
+})
