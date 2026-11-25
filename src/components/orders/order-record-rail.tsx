@@ -3,96 +3,78 @@
 import Link from "next/link"
 import { DetailPanel, DetailRow as Row, detail } from "@/components/orders/order-detail-surface"
 import { cn } from "@/lib/utils"
-import { formatTRY } from "@/lib/format"
 import { formatFuelLevel } from "@/lib/fuel-level"
-import { arrivalReasonLabel } from "@/lib/constants"
 import { formatDate } from "@/lib/utils-client"
 import type { OrderDetailData } from "@/components/orders/order-management-panel"
 
 /**
- * İş emri kaydının özellik paneli: beyaz kart, etiket solda soluk, değer
- * sağda. Durum/ödeme başlıkta olduğundan burada tekrarlanmaz. Masaüstünde sol
- * sütun, dar ekranda Özet'in ilk paneli.
+ * Özet sekmesinin ilk paneli: müşteri ve araç kaydı. Eskiden masaüstünde sol
+ * sütundu (#860 ile kalktı); artık her genişlikte Özet'te durur ve geniş
+ * ekranda "Araç Kabul Bilgileri" gibi kart içinde iki sütuna bölünür.
+ *
+ * İş no, kabul tarihi, usta, geliş nedeni ve tutarlar burada YOK: ilk dördü
+ * "Araç Kabul Bilgileri"nde, tutarlar sekmelerin üstündeki şeritte. Durum ve
+ * ödeme başlıktaki haplarda.
  */
 export function OrderRecordRail({
   order,
   customerName,
-  showCashbox,
-  className,
 }: {
   order: OrderDetailData
   customerName: string
-  showCashbox: boolean
-  className?: string
 }) {
   const vehicle = `${order.vehicle.brand} ${order.vehicle.model}${order.vehicle.modelYear ? ` (${order.vehicle.modelYear})` : ""}`
   const mileage = order.intake.mileageAtIntake ?? order.vehicle.mileage
 
   return (
-    <div className={className}>
-    <DetailPanel title="Kayıt">
-        <Row label="Araç kabulü">
-          <span className="font-medium">{order.workOrderNo}</span>
-        </Row>
-        <Row label="Müşteri">
-          <Link href={`/customers/${order.customer.id}`} className={cn(detail.hit, "text-primary hover:underline")}>
-            {customerName}
-          </Link>
-          {order.customer.type === "corporate" && order.customer.contactName ? (
-            <p className="text-xs text-muted-foreground">Yetkili: {order.customer.contactName}</p>
-          ) : null}
-        </Row>
-        <Row label="Telefon">
-          <a href={`tel:${order.customer.phone}`} className={cn(detail.hit, "text-primary hover:underline")}>
-            {order.customer.phone}
-          </a>
-        </Row>
-        {order.customer.email ? (
-          <Row label="E-posta">
-            <a href={`mailto:${order.customer.email}`} className={cn(detail.hit, "break-all text-primary hover:underline")}>
-              {order.customer.email}
-            </a>
-          </Row>
-        ) : null}
-        <Row label="Araç">
-          <Link href={`/vehicles/${order.vehicle.id}`} className={cn(detail.hit, "text-primary hover:underline")}>
-            {vehicle}
-          </Link>
-        </Row>
-        {mileage != null && (
-          <Row label="Kilometre">{mileage.toLocaleString("tr-TR")} km</Row>
-        )}
-        {order.intake.fuelLevelAtIntake != null && (
-          <Row label="Yakıt">{formatFuelLevel(order.intake.fuelLevelAtIntake)}</Row>
-        )}
-        {order.vehicle.vin ? (
-          <Row label="Şase">
-            <span className="font-mono text-sm">{order.vehicle.vin}</span>
-          </Row>
-        ) : null}
-        {order.arrivalReason ? (
-          <Row label="Geliş">{arrivalReasonLabel(order.arrivalReason)}</Row>
-        ) : null}
-        <Row label="Kabul">{formatDate(order.intake.createdAt)}</Row>
-        {order.intake.approvedAt ? <Row label="Onay">{formatDate(order.intake.approvedAt)}</Row> : null}
-        {order.assignedTechnicianName || order.technicianName ? (
-          <Row label="Usta">{order.assignedTechnicianName || order.technicianName}</Row>
-        ) : null}
-        {order.totals.hasAnyPrice && (
-          <>
-            <Row label="Toplam">
-              <span className="font-medium tabular-nums">{formatTRY(order.totals.grandTotal)}</span>
+    <DetailPanel title="Müşteri & Araç">
+      <div className={detail.kvWrap}>
+        <div className={detail.kvCols}>
+          {/* SOL: müşteri ve iletişim */}
+          <div>
+            <Row label="Müşteri">
+              <Link href={`/customers/${order.customer.id}`} className={cn(detail.hit, "text-primary hover:underline")}>
+                {customerName}
+              </Link>
+              {order.customer.type === "corporate" && order.customer.contactName ? (
+                <p className="text-xs text-muted-foreground">Yetkili: {order.customer.contactName}</p>
+              ) : null}
             </Row>
-            {showCashbox && (
-              <Row label="Kalan">
-                <span className={`font-medium tabular-nums ${order.remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>
-                  {formatTRY(order.remainingAmount)}
-                </span>
+            <Row label="Telefon">
+              <a href={`tel:${order.customer.phone}`} className={cn(detail.hit, "text-primary hover:underline")}>
+                {order.customer.phone}
+              </a>
+            </Row>
+            {order.customer.email ? (
+              <Row label="E-posta">
+                <a href={`mailto:${order.customer.email}`} className={cn(detail.hit, "break-all text-primary hover:underline")}>
+                  {order.customer.email}
+                </a>
               </Row>
+            ) : null}
+            {order.intake.approvedAt ? <Row label="Müşteri onayı">{formatDate(order.intake.approvedAt)}</Row> : null}
+          </div>
+          {/* SAĞ: araç ve kabuldeki durumu */}
+          <div>
+            <Row label="Araç">
+              <Link href={`/vehicles/${order.vehicle.id}`} className={cn(detail.hit, "text-primary hover:underline")}>
+                {vehicle}
+              </Link>
+            </Row>
+            {order.vehicle.vin ? (
+              <Row label="Şase">
+                <span className="font-mono text-sm">{order.vehicle.vin}</span>
+              </Row>
+            ) : null}
+            {mileage != null && (
+              <Row label="Kilometre">{mileage.toLocaleString("tr-TR")} km</Row>
             )}
-          </>
-        )}
+            {order.intake.fuelLevelAtIntake != null && (
+              <Row label="Yakıt">{formatFuelLevel(order.intake.fuelLevelAtIntake)}</Row>
+            )}
+          </div>
+        </div>
+      </div>
     </DetailPanel>
-    </div>
   )
 }
