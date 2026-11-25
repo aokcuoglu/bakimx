@@ -620,7 +620,6 @@ const OPACITY_UTILITY_EXCEPTIONS: OpacityUtilityException[] = [
     className: "opacity-30",
     reason: EMPTY_STATE_ICON,
   },
-  {
 
   // --- Etkisiz (disabled/pending) durumlar — WCAG 1.4.3 muafiyeti
   {
