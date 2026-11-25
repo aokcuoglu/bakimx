@@ -47,9 +47,27 @@ test("sekme geçişi sunucu navigasyonu tetiklemez", () => {
   expect(SOURCE).toContain("parseOrderTab")
 })
 
-test("kayıt detayı solda, sekmeler sağda durur", () => {
-  expect(SOURCE).toContain("OrderRecordRail")
-  expect(SOURCE).toContain("lg:grid-cols-[320px_minmax(0,1fr)]")
+/**
+ * #860 — sayfa tek sütundur: sekmeler başlığın altında tam genişlikte, müşteri
+ * ve araç kaydı her genişlikte Özet'in ilk paneli. Sol kayıt sütunu ve yalnız
+ * dar ekranda görünen tutar şeridi geri gelmez.
+ */
+test("sol kayıt sütunu yok; kayıt Özet'te, tutar şeridi her genişlikte", () => {
+  expect(SOURCE).not.toContain("lg:grid-cols-[320px_minmax(0,1fr)]")
+  expect(SOURCE).not.toMatch(/<OrderRecordRail[^>]*className=/)
+  expect(SOURCE.match(/<OrderRecordRail\b/g)).toHaveLength(1)
+  const ozet = SOURCE.slice(SOURCE.indexOf('<TabsContent value="ozet"'), SOURCE.indexOf('<TabsContent value="parca"'))
+  expect(ozet).toContain("<OrderRecordRail order={order} customerName={customerName} />")
+  expect(SOURCE).not.toMatch(/px-4 py-2\.5 text-sm lg:hidden/)
+})
+
+test("Müşteri & Araç paneli Araç Kabul Bilgileri'ni tekrar etmez", () => {
+  const RAIL = readFileSync(join(import.meta.dir, "order-record-rail.tsx"), "utf8")
+  expect(RAIL).toContain('title="Müşteri & Araç"')
+  expect(RAIL).toContain("detail.kvCols")
+  for (const label of ["Araç kabulü", "Kabul", "Usta", "Geliş", "Toplam", "Kalan"]) {
+    expect(RAIL).not.toContain(`label="${label}"`)
+  }
 })
 
 test("düzenleme aksiyonu order.edit yetkisine bağlıdır", () => {
