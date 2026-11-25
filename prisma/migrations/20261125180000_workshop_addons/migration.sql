@@ -6,14 +6,14 @@
 -- AlterTable
 ALTER TABLE "Workshop" ADD COLUMN     "addons" TEXT[] DEFAULT ARRAY[]::TEXT[];
 
--- Backfill: elle "Paket + ek özellikler" (`premium`) verilmiş atölyeler beş ek
--- özelliği de açık olarak taşır. `planTier`'a dokunulmaz — premium satırı
--- zaten hepsini açar; bu yazım, satır ileride self-serve yenilemeyle `pro`'ya
--- dönerse ek özelliklerin kaybolmamasını sağlar.
--- Deneme (`trialing`) satırları bilinçli olarak hariç: deneme ek özellikleri
--- `TRIAL_ACCESS_TIER` ile zaten açar; buraya yazılırsa ödeme sonrası da ücretsiz
--- açık kalırdı. `subscriptionStatus` NOT NULL bir enum olduğu için `<>`
--- karşılaştırmasında NULL'a düşen satır yoktur.
+-- Backfill: elle "Paket + ek özellikler" (`premium`) verilmiş ve ŞU AN aktif
+-- (`active`) atölyeler beş ek özelliği de açık olarak taşır. `planTier`'a
+-- dokunulmaz — premium satırı zaten hepsini açar; bu yazım, satır ileride
+-- self-serve yenilemeyle `pro`'ya dönerse ek özelliklerin kaybolmamasını sağlar.
+-- Bilinçli olarak hariç: `trialing` (deneme ek özellikleri `TRIAL_ACCESS_TIER` ile
+-- zaten açar; yazılırsa ödeme sonrası da ücretsiz açık kalırdı) ve `past_due`,
+-- `canceled` vb. (ödemesi sürmeyen satır kalıcı ek özellik kazanmasın; ileride
+-- paket alırlarsa ek özellikler ayrıca açılır).
 UPDATE "Workshop"
 SET "addons" = ARRAY['vinLookup', 'partsCatalog', 'ocrIntake', 'eInvoice', 'multiBranch']
-WHERE "planTier" = 'premium' AND "subscriptionStatus" <> 'trialing';
+WHERE "planTier" = 'premium' AND "subscriptionStatus" = 'active';
