@@ -127,6 +127,8 @@ export async function activateBillingOrder(
       await tx.workshop.update({
         where: { id: order.workshopId },
         data: {
+          // `addons` bilerek yazılmaz (#827): ek özellikler atölye bazında admin
+          // anahtarıyla tutulur; paket yenilemesi onları ne açar ne kapatır.
           planTier: order.planTier,
           billingCycle: order.billingCycle,
           subscriptionStatus: "active",

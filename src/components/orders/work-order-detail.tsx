@@ -44,7 +44,6 @@ import {
   History,
   Calculator,
   TriangleAlert,
-  Images,
   X,
   Wrench,
   HardHat,
@@ -111,6 +110,7 @@ import { cn } from "@/lib/utils"
 import { istanbulDateTimeInputValue } from "@/lib/istanbul-time"
 import { usePendingScroll } from "@/hooks/use-pending-scroll"
 import { OrderQuickActions } from "@/components/orders/order-quick-actions"
+import { PhotoSourceButtons } from "@/components/intake/photo-source-buttons"
 import { orderQuickActions, type OrderQuickAction } from "@/lib/orders/quick-actions"
 import type { PartsAddType } from "@/components/orders/parts-labor-grid"
 
@@ -1483,18 +1483,13 @@ export function WorkOrderDetail({
                     className="hidden"
                     onChange={(e) => { addPickedPhotos(e.target.files); e.target.value = "" }}
                   />
-                  {/* Kısa etiket (#886): telefonda diyalog içeriği ~326px, iki
-                      sütunda "Galeriden seç" 44px düğmeye sığmayıp kenara taşıyordu. */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button type="button" variant="outline" disabled={loading} onClick={() => cameraInputRef.current?.click()}>
-                      <Camera /> Kamera
-                    </Button>
-                    <Button type="button" variant="outline" disabled={loading} onClick={() => galleryInputRef.current?.click()}>
-                      <Images /> Galeri
-                    </Button>
-                  </div>
+                  <PhotoSourceButtons
+                    disabled={loading}
+                    onCamera={() => cameraInputRef.current?.click()}
+                    onFiles={() => galleryInputRef.current?.click()}
+                  />
                   <p className="text-xs text-muted-foreground">
-                    Galeriden tek seferde birden fazla fotoğraf seçebilirsiniz (en fazla {MAX_BATCH_PHOTOS}).
+                    Galeriden ya da dosyadan tek seferde birden fazla fotoğraf seçebilirsiniz (en fazla {MAX_BATCH_PHOTOS}).
                   </p>
                   {pendingPhotos.length > 0 && (
                     <div className="mt-2 space-y-2">
