@@ -33,6 +33,8 @@ const FIELD_LABELS: Record<string, string> = {
   targetEmail: "Hedef e-posta",
   delivered: "Teslim edildi",
   extraSeats: "Ek kullanıcı sayısı",
+  added: "Eklenen",
+  removed: "Kaldırılan",
   status: "Durum",
   workshopId: "İş yeri",
   storageProvider: "Depolama sağlayıcısı",
