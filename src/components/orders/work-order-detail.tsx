@@ -1482,12 +1482,14 @@ export function WorkOrderDetail({
                     className="hidden"
                     onChange={(e) => { addPickedPhotos(e.target.files); e.target.value = "" }}
                   />
+                  {/* Kısa etiket (#886): telefonda diyalog içeriği ~326px, iki
+                      sütunda "Galeriden seç" 44px düğmeye sığmayıp kenara taşıyordu. */}
                   <div className="grid grid-cols-2 gap-2">
                     <Button type="button" variant="outline" disabled={loading} onClick={() => cameraInputRef.current?.click()}>
-                      <Camera className="size-4 mr-1.5" /> Kamera
+                      <Camera /> Kamera
                     </Button>
                     <Button type="button" variant="outline" disabled={loading} onClick={() => galleryInputRef.current?.click()}>
-                      <Images className="size-4 mr-1.5" /> Galeriden seç
+                      <Images /> Galeri
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
