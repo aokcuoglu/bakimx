@@ -59,8 +59,10 @@ export function TechnicianAssign({
    * `pill` — rozet görünümü (liste kartı, "İş Emri Bilgileri" kartı).
    * `meta` — başlığın kimlik satırı; araç/müşteri satırlarıyla aynı dil,
    *          rozet ağırlığı taşımaz ki durum rozetleriyle yarışmasın.
+   * `cta`  — usta henüz atanmadıysa beklenen adım budur (#866): birincil
+   *          çerçeveli, ikonlu, standart ölçülü düğme (telefonda 44px).
    */
-  variant?: "pill" | "meta"
+  variant?: "pill" | "meta" | "cta"
   className?: string
 }) {
   const router = useRouter()
@@ -74,8 +76,9 @@ export function TechnicianAssign({
   )
 
   const isMeta = variant === "meta"
+  const isCta = variant === "cta"
 
-  const trigger = isMeta
+  const trigger = isMeta || isCta
     ? cn(
         "relative inline-flex max-w-[12rem] items-center gap-1 min-w-0 text-sm before:absolute before:inset-x-0 before:-inset-y-2 md:before:hidden text-muted-foreground transition-colors touch-manipulation disabled:opacity-60",
         !locked && "hover:text-primary",
@@ -96,7 +99,7 @@ export function TechnicianAssign({
 
   const label = assignedTechnicianName ?? "Usta ata"
   const Icon = assignedTechnicianName ? HardHat : UserPlus
-  const iconSize = isMeta ? "size-3.5" : size === "sm" ? "size-3" : "size-3.5"
+  const iconSize = isCta ? "size-4" : isMeta ? "size-3.5" : size === "sm" ? "size-3" : "size-3.5"
 
   if (locked) {
     return (
@@ -144,8 +147,12 @@ export function TechnicianAssign({
       <DialogTrigger asChild>
         <Button
           type="button"
-          variant="ghost"
-          className={cn("h-auto min-h-7 justify-start whitespace-normal", trigger)}
+          variant={isCta ? "outline" : "ghost"}
+          className={
+            isCta
+              ? cn("border-primary/40 text-primary-strong hover:bg-primary/10 hover:text-primary-strong", className)
+              : cn("h-auto min-h-7 justify-start whitespace-normal", trigger)
+          }
           aria-label={
             assignedTechnicianName
               ? `Atanan usta: ${assignedTechnicianName} — değiştir`
