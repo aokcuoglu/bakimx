@@ -275,7 +275,7 @@ const RADIUS = [
     token: "xl",
     px: "12",
     className: "rounded-xl",
-    use: "Büyük panel üst sınır",
+    use: "Sabit 12px — --radius'tan bağımsız; açılır menü/liste",
   },
   {
     token: "panel",

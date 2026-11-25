@@ -164,9 +164,8 @@ describe("köşe yarıçapı", () => {
   })
 
   test("--control-radius telefonda 10px, md+ 8px (#878)", () => {
-    const [mobile, desktop] = globals.split("@media (min-width: 768px)")
-    expect(mobile).toContain("--control-radius: 0.625rem;")
-    expect(desktop).toContain("--control-radius: 0.5rem;")
+    expect(globals).toMatch(/(?:^|\n):root\s*\{[^}]*--control-radius: 0\.625rem;/)
+    expect(globals).toMatch(/@media \(min-width: 768px\)\s*\{\s*:root\s*\{[^}]*--control-radius: 0\.5rem;/)
   })
 
   test("Input, Select, Textarea, InputGroup ve Alert köşeyi değişkenden alır", () => {

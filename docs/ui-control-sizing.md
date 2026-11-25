@@ -59,6 +59,13 @@ Köşe md'de değişen tek token `--control-radius`'tur; `--control-*` ailesi gi
 `@media (min-width: 768px)` bloğunda kırılır, bileşende `md:rounded-` yazılmaz.
 Düğmeler hap (`rounded-full` / telefon yüksekliğinin yarısı), durum hapları ve
 avatarlar daire kalır. `--radius-sm/md/xl` sabit değerlerdir (6 / 8 / 12px).
+
+**Bilinçli istisna — InputGroup içindeki düğme.** `InputGroupButton`'ın `xs`
+(varsayılan) ve `icon-xs` boyutları hap değildir: grubun köşesini eş merkezli
+izler, `calc(var(--control-radius) - 3px)` = telefonda 7px, md+ 5px (kbd
+rozeti `- 5px` = 5 / 3px). Kutunun içinde duran düğme kutudan yuvarlak olursa
+köşesi çerçeveye çarpar; iç köşe her zaman dış köşeden küçüktür (#878).
+`sm` / `icon-sm` boyutları `Button`'ın kendi köşesini taşır.
 Pazarlama yüzeyi bu token'lara bağlı değildir; `--mk-r-*` ölçeğini kullanır.
 
 ## Kurallar

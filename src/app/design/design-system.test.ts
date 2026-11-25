@@ -93,11 +93,12 @@ describe("design system radius contract", () => {
     }
 
     // 22px yalnız düğme hap köşesidir (telefon yüksekliğinin yarısı); pazarlama kendi ölçeğinde.
+    const hint = "rounded-[22px] yerine düğmede rounded-full, panelde rounded-(--radius-panel) kullan"
     const offenders: string[] = []
     for (const file of walkSrc()) {
       const rel = file.replace(root + "/", "")
       if (rel === "src/components/ui/button.tsx" || rel.startsWith("src/components/marketing/")) continue
-      if (readFileSync(file, "utf8").includes("rounded-[22px]")) offenders.push(rel)
+      if (readFileSync(file, "utf8").includes("rounded-[22px]")) offenders.push(`${rel}: ${hint}`)
     }
     expect(offenders).toEqual([])
   })

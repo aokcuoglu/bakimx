@@ -349,7 +349,7 @@ function DesktopTable({
               <tr key={row.id} className="hover:bg-muted/60 transition-colors group">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="size-9 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-xs font-semibold shrink-0">
+                    <div className="size-9 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-xs font-semibold shrink-0">
                       {row.type === "corporate" ? (
                         <Building2 className="size-4" />
                       ) : (
@@ -430,7 +430,7 @@ function MobileCards({ rows }: { rows: CustomerRow[]; onDelete?: (id: string, la
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-3">
-                <div className="size-10 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
+                <div className="size-10 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
                   {row.type === "corporate" ? (
                     <Building2 className="size-4" />
                   ) : (
