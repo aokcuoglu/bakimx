@@ -119,15 +119,34 @@ export function jsxOpeningTags(source: string, names: readonly string[], fileNam
  * bölmez). `md:h-7!` → `h-7`.
  */
 export function utilityCore(token: string): string {
+  const parts = splitVariants(token)
+  return parts[parts.length - 1].replace(/^!/, "").replace(/!$/, "")
+}
+
+/**
+ * Tailwind sınıfının varyant önekleri, sırasıyla: `md:hover:bg-muted` →
+ * `["md", "hover"]`, `[&_svg]:size-4` → `["[&_svg]"]`, `h-7` → `[]`.
+ */
+export function utilityVariants(token: string): string[] {
+  return splitVariants(token).slice(0, -1)
+}
+
+/** Köşeli / yuvarlak parantez dışındaki `:` işaretlerinden böler. */
+function splitVariants(token: string): string[] {
+  const parts: string[] = []
   let depth = 0
   let start = 0
   for (let i = 0; i < token.length; i++) {
     const ch = token[i]
     if (ch === "[" || ch === "(") depth++
     else if (ch === "]" || ch === ")") depth--
-    else if (ch === ":" && depth === 0) start = i + 1
+    else if (ch === ":" && depth === 0) {
+      parts.push(token.slice(start, i))
+      start = i + 1
+    }
   }
-  return token.slice(start).replace(/^!/, "").replace(/!$/, "")
+  parts.push(token.slice(start))
+  return parts
 }
 
 /** `dir` altındaki `.tsx` dosyaları; `skip` göreli yolu dışarıda bırakır. */

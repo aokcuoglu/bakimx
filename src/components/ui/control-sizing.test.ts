@@ -48,6 +48,25 @@ describe("kontrol ölçeği — e-santral (mobil 44px / masaüstü 36px)", () =>
     expect(block).not.toContain("has-data-[icon=")
   })
 
+  /**
+   * #889 — düğme olmayan kalıplar çağrı yerinde `h-auto` / `p-0` / `rounded-*`
+   * yazmasın diye kendi `size`'ları var; alan görünümlü tetikleyici `field`
+   * variant'ıyla girdinin köşesini taşır.
+   */
+  test("satır içi, liste satırı ve karo için size; alan görünümlü tetikleyici (#889)", () => {
+    const block = buttonSizeBlock()
+    expect(block).toContain('inline: "gap-1 rounded-sm p-0 text-[length:inherit] leading-[inherit]"')
+    expect(block).toContain('row: "min-h-(--control-h) justify-start gap-3 rounded-md px-3 py-2.5 text-left ')
+    expect(block).toContain('tile: "flex-col gap-1.5 overflow-hidden rounded-md p-0 ')
+    const button = read("./button.tsx")
+    expect(button).toContain("border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20")
+    expect(button).toContain('compoundVariants: [{ variant: "field", className: "rounded-(--control-radius)" }]')
+    // Vitrin her boyutu gösterir.
+    const page = read("../../app/design/page.tsx")
+    expect(page).toContain('data-testid="button-sizes"')
+    for (const size of ["inline", "row", "tile"]) expect(page).toContain(`size="${size}"`)
+  })
+
   test("Input, Select, Textarea ve InputGroup değişkenden ölçülür", () => {
     for (const file of ["./input.tsx", "./select.tsx", "./textarea.tsx", "./input-group.tsx"]) {
       expect(read(file)).not.toMatch(/(?:sm|md|lg|xl):(?:h|min-h|px|pl|pr|text|rounded)-/)

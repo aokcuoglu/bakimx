@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { relative, sep } from "node:path"
 import { fileURLToPath } from "node:url"
-import { eachTsx, jsxOpeningTags, utilityCore, type JsxOpeningTag } from "./jsx-source-scan"
+import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningTag } from "./jsx-source-scan"
 
 /**
  * #888 — form kontrolleri çağrı yerinde ezilmez (docs/ui-control-sizing.md).
@@ -34,12 +34,24 @@ import { eachTsx, jsxOpeningTags, utilityCore, type JsxOpeningTag } from "./jsx-
  *   seçicilerle ezilmez (#888'de 11px ve `rounded-md` kaldırıldı); yenisi
  *   eklenmez.
  *
- * #889 aynı kapıyı `Button` / `InputGroupButton` için genişletecek: bileşeni
- * `CONTROLS`'a, gerekiyorsa yasak aileyi `FORBIDDEN`'a eklemek yeterli.
+ * #889 — düğmeler (`Button`, `InputGroupButton` ve onlara `className` ileten
+ * sarmalayıcılar) aynı tarayıcıyla, kendi kural setiyle (`BUTTON_FORBIDDEN`)
+ * taranır. Ölçü, köşe, yazı boyutu/ağırlığı yalnız `size` / `variant`'tan
+ * gelir; satır içi bağlantı `size="inline"`, çok satırlı liste satırı / seçenek
+ * kartı `size="row"`, görsel karosu `size="tile"`. Seçili durum `variant`
+ * değiştirerek verilir (`variant={on ? "secondary" : "outline"}`), zemin
+ * `className` ile boyanmaz. Düğmede serbest kalanlar: yatay dolgu (`px-*`),
+ * durum renkleri (`hover:` / `disabled:` / `aria-*:`), durum tonu
+ * (`bg-destructive/10`), yüzen düğme gölgesi (`shadow-md`), `border-dashed`,
+ * `font-mono`, kart üzerinde vurgu halkası (`hover:ring-2`).
+ * `before:` / `after:` (şeffaf dokunma alanı) ve `[&…]:` / `*:` (ikon boyutu
+ * gibi torun seçicisi) önekli sınıflar düğmenin kutusunu değiştirmez, sayılmaz.
+ * Kör nokta: `buttonVariants({ className })` çağrısı JSX değildir, taranmaz
+ * (#889 anında tek kullanım `ui/` içinde).
  */
 
-/** Kapsamdaki kontroller ve onlara `className` ileten sarmalayıcılar. */
-export const CONTROLS = [
+/** Kapsamdaki form kontrolleri ve onlara `className` ileten sarmalayıcılar. */
+export const FIELD_CONTROLS = [
   "Input",
   "InputGroup",
   "InputGroupInput",
@@ -59,7 +71,25 @@ export const CONTROLS = [
   "DistrictSelect",
 ] as const
 
+/** Düğmeler (#889) ve onlara `className` ileten sarmalayıcılar. */
+export const BUTTON_CONTROLS = [
+  "Button",
+  "InputGroupButton",
+  // Sarmalayıcılar: className'i Button'a iletir.
+  "ColorCard",
+  "CookiePreferencesButton",
+  "OrderItemUnitCombobox",
+  "PhotoDeleteButton",
+  "PrintButton",
+  "StopLaborButton",
+  "TechnicianAssign",
+] as const
+
+export const CONTROLS = [...FIELD_CONTROLS, ...BUTTON_CONTROLS] as const
+
 type Control = (typeof CONTROLS)[number]
+
+const isButton = (name: string) => (BUTTON_CONTROLS as readonly string[]).includes(name)
 
 type Family = {
   /** Raporda görünen ad. */
@@ -68,7 +98,19 @@ type Family = {
   pattern: RegExp
   /** Bu bileşenlerde ailenin şu çekirdekleri serbesttir. */
   allow?: { tags: readonly Control[]; pattern: RegExp; reason: string }
+  /**
+   * Hangi öneklerle yasak (yalnız `BUTTON_FORBIDDEN`): varsayılan her önek;
+   * `"base"` yalnız öneksiz ya da kırılım/koyu tema önekli (`md:`, `dark:`) —
+   * `hover:` / `disabled:` / `aria-*:` durum rengi serbest; `"focus"` yalnız
+   * `focus*:` önekli (düğmenin kendi odak halkası ezilmez).
+   */
+  when?: "base" | "focus"
 }
+
+// Keyfi değerde yalnız uzunluk: `text-[17px]`, `text-(length:--x)`; renk
+// (`text-[color:…]`, `text-(--x)`) yerleşim/renk serbestliği içinde kalır.
+const TEXT_SIZE = /^text-(?:xs|sm|base|lg|\d?xl|\[(?:length:|[\d.])[^\]]*\]|\(length:[^)]*\))$/
+const FONT_WEIGHT = /^font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/
 
 /** Yasak sınıf aileleri. */
 export const FORBIDDEN: readonly Family[] = [
@@ -84,9 +126,7 @@ export const FORBIDDEN: readonly Family[] = [
   },
   { name: "kare ölçü", pattern: /^size-/ },
   { name: "köşe", pattern: /^rounded(?:-|$)/ },
-  // Keyfi değerde yalnız uzunluk: `text-[17px]`, `text-(length:--x)`; renk
-  // (`text-[color:…]`, `text-(--x)`) yerleşim/renk serbestliği içinde kalır.
-  { name: "yazı boyutu", pattern: /^text-(?:xs|sm|base|lg|\d?xl|\[(?:length:|[\d.])[^\]]*\]|\(length:[^)]*\))$/ },
+  { name: "yazı boyutu", pattern: TEXT_SIZE },
   { name: "satır yüksekliği", pattern: /^leading-/ },
   { name: "dolgu", pattern: /^p[ytb]?-/ },
   { name: "kenarlık kaldırma", pattern: /^border(?:-[trblxy])?-(?:0|none|transparent)$/ },
@@ -95,18 +135,50 @@ export const FORBIDDEN: readonly Family[] = [
   { name: "gölge", pattern: /^shadow(?:-|$)/ },
   { name: "odak halkası", pattern: /^ring(?:-|$)/ },
   { name: "outline", pattern: /^outline(?:-|$)/ },
-  { name: "yazı ağırlığı", pattern: /^font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/ },
+  { name: "yazı ağırlığı", pattern: FONT_WEIGHT },
   { name: "keyfi özellik", pattern: /^\[(?:height|min-height|border-radius|font-size|font-weight|line-height|background|box-shadow|padding|outline)/ },
 ]
 
+/**
+ * Düğme ailesinin yasak sınıfları (#889). Form kontrollerinden farkı: yatay
+ * dolgu, durum rengi ve tonu, yüzen gölge, `border-dashed`, vurgu halkası
+ * serbest; `h-full` / `size-full` (hücreyi dolduran düğme) yerleşimdir.
+ */
+export const BUTTON_FORBIDDEN: readonly Family[] = [
+  { name: "yükseklik", pattern: /^h-(?!full$)/ },
+  { name: "en az / en çok yükseklik", pattern: /^m(?:in|ax)-h-/ },
+  { name: "kare ölçü", pattern: /^size-(?!full$)/ },
+  { name: "köşe", pattern: /^rounded(?:-|$)/ },
+  { name: "yazı boyutu", pattern: TEXT_SIZE },
+  { name: "satır yüksekliği", pattern: /^leading-/ },
+  { name: "dikey dolgu", pattern: /^p[ytb]?-/ },
+  { name: "yazı ağırlığı", pattern: FONT_WEIGHT },
+  { name: "odak halkası", pattern: /^(?:ring|outline)(?:-|$)/, when: "focus" },
+  { name: "zemin", pattern: /^bg-(?:background|card|transparent|muted(?:\/\d+)?)$/, when: "base" },
+  { name: "kenarlık kaldırma", pattern: /^border(?:-[trblxy])?-(?:0|none|transparent)$/, when: "base" },
+  { name: "gölge kaldırma", pattern: /^shadow-none$/, when: "base" },
+  { name: "keyfi özellik", pattern: /^\[(?:height|min-height|max-height|border-radius|font-size|font-weight|line-height|padding)/ },
+]
+
+/** Düğmenin kendi kutusunu değil sözde öğeyi / torunu biçimleyen önek. */
+const DESCENDANT_VARIANT = /^(?:before|after|\*{1,2}|\[&)/
+/** Durum değil, yalnız ekran genişliği / tema önekleri. */
+const BASE_VARIANT = /^(?:sm|md|lg|xl|2xl|dark|print)$/
+
 /** Etiketin yasak sınıfları: `["h-7 (yükseklik)", "styles.input (CSS modülü)", …]`. */
 export function violations(tag: Pick<JsxOpeningTag, "name" | "classLiterals" | "cssModuleRefs">): string[] {
+  const button = isButton(tag.name)
+  const families = button ? BUTTON_FORBIDDEN : FORBIDDEN
   const found: string[] = []
   for (const literal of tag.classLiterals) {
     for (const token of literal.split(/\s+/).filter(Boolean)) {
       const core = utilityCore(token)
-      for (const family of FORBIDDEN) {
+      const variants = utilityVariants(token)
+      if (button && variants.some((v) => DESCENDANT_VARIANT.test(v))) continue
+      for (const family of families) {
         if (!family.pattern.test(core)) continue
+        if (family.when === "base" && !variants.every((v) => BASE_VARIANT.test(v))) continue
+        if (family.when === "focus" && !variants.some((v) => v.startsWith("focus"))) continue
         if (family.allow?.tags.includes(tag.name as Control) && family.allow.pattern.test(core)) continue
         found.push(`${token} (${family.name})`)
       }
@@ -120,6 +192,11 @@ type Exception = {
   /** `src/`'ye göre yol. */
   file: string
   tag: Control
+  /**
+   * Dosyada aynı adlı birden çok etiket varken istisnayı birine bağlar:
+   * açılış etiketi metninin değişmez bir parçası (`aria-label="Çek"`).
+   */
+  match?: string
   /** Yalnız bu sınıflar serbest; aynı etikete eklenen başka ezme yine düşer. */
   allow: readonly string[]
   reason: string
@@ -151,7 +228,66 @@ export const EXCEPTIONS: readonly Exception[] = [
     reason:
       "Genel arama paletinin başlık girdisi: paletin kendi 53px başlık bandında kenarlıksız, dolgusuz satır (design-pattern-esantral §6, #712 ölçümü). Kutu değil, paletin parçası.",
   },
+  // — Düğmeler (#889) —
+  {
+    file: "components/layout/global-search-box.tsx",
+    tag: "Button",
+    match: 'role="option"',
+    allow: ["styles.option", "styles.selected"],
+    reason:
+      "Genel arama paletinin sonuç satırı (role=option): paletin #712 ölçümlü liste satırı — 36px, ikon kutusu, klavyeyle seçili satır --palette-hover. Başlık girdisiyle aynı paletin parçası (design-pattern-esantral §6).",
+  },
+  {
+    file: "components/layout/app-shell.tsx",
+    tag: "Button",
+    match: 'aria-label="Genel arama"',
+    allow: ["shellStyles.search"],
+    reason:
+      "Kenar çubuğu arama tetikleyicisi iOS dolgulu arama çubuğu görünümündedir (gri dolgu, kenarlıksız, 10px köşe; design-pattern-esantral §6). Düğme değil, paleti açan arama alanı taklidi.",
+  },
+  {
+    file: "components/auth/login-form.tsx",
+    tag: "Button",
+    match: "aria-pressed={showPassword}",
+    allow: ["formStyles.passwordToggle"],
+    reason:
+      "Giriş formu pazarlama kitinin FloatingField'ıyla kurulur; şifre göster/gizle metin düğmesi o alanın içindeki --mk-* ölçeğindeki parçadır (dialog-form.module.css, design-pattern-esantral §7).",
+  },
+  {
+    file: "components/shared/photo-lightbox.tsx",
+    tag: "Button",
+    match: "aria-current",
+    allow: ["rounded-md", "p-0"],
+    reason:
+      "Tam ekran fotoğraf görüntüleyicinin küçük resim şeridi: görselin kendisi düğmedir (matris Kurallar — görüntüleyicinin kendi kontrolleri kapsam dışı).",
+  },
+  {
+    file: "components/shared/camera-scanner.tsx",
+    tag: "Button",
+    match: 'aria-label="Çek"',
+    allow: ["size-16", "rounded-full"],
+    reason: "Tam ekran kamera katmanının deklanşörü: 64px halkalı daire (kamera uygulaması kalıbı), kontrol matrisi dışında.",
+  },
+  {
+    file: "components/shared/camera-scanner.tsx",
+    tag: "Button",
+    match: "flex-col gap-1 rounded-xl",
+    allow: ["h-auto", "rounded-xl", "py-2", "text-xs"],
+    reason:
+      "Tam ekran kamera katmanında deklanşörün iki yanındaki ikon-üstü-etiket kontrolleri (El ile gir / Dosyadan): kamera uygulaması kalıbı, kontrol matrisi dışında.",
+  },
+  {
+    file: "components/intake/registration-scanner.tsx",
+    tag: "Button",
+    match: 'aria-label="Çek"',
+    allow: ["size-16", "rounded-full"],
+    reason: "Tam ekran ruhsat tarayıcısının deklanşörü: 64px halkalı daire (kamera uygulaması kalıbı), kontrol matrisi dışında.",
+  },
 ]
+
+/** İstisna bu etikete uygulanır mı (`match` verilmişse etiket metninde aranır). */
+const exceptionCovers = (e: Exception, row: Pick<Row, "file" | "tag" | "text">) =>
+  e.file === row.file && e.tag === row.tag && (!e.match || row.text.includes(e.match))
 
 const SRC = fileURLToPath(new URL("../../", import.meta.url))
 const OUT_OF_SCOPE = [
@@ -185,19 +321,19 @@ function scan() {
   return scanned
 }
 
-type Row = { file: string; tag: string; line: number; hits: string[] }
+type Row = { file: string; tag: string; line: number; text: string; hits: string[] }
 
 function callSiteViolations(): Row[] {
   return scan().controls.flatMap((tag) => {
     const hits = violations(tag)
-    return hits.length ? [{ file: tag.file, tag: tag.name, line: tag.line, hits }] : []
+    return hits.length ? [{ file: tag.file, tag: tag.name, line: tag.line, text: tag.text, hits }] : []
   })
 }
 
 /** `"h-7 (yükseklik)"` → `"h-7"` */
 const hitClass = (hit: string) => hit.slice(0, hit.lastIndexOf(" ("))
 
-describe("form kontrolleri çağrı yerinde ezilmez (#888)", () => {
+describe("form kontrolleri ve düğmeler çağrı yerinde ezilmez (#888, #889)", () => {
   test("kapı bilinen ihlalleri yakalar, yerleşim sınıflarına dokunmaz", () => {
     // Tailwind içerik tarayıcısı test dosyalarını da gezer: kaynakta başka yerde
     // geçmeyen sınıflar parçalanarak yazılır, üretilen CSS'e ölü kural girmesin.
@@ -243,10 +379,47 @@ describe("form kontrolleri çağrı yerinde ezilmez (#888)", () => {
     }
   })
 
-  test("Input / Textarea / Select / InputGroup çağrı yerlerinde ölçü ezmesi yok", () => {
+  test("düğme kuralı ölçü/köşe/yazı ezmesini yakalar, yerleşim ve durum rengine dokunmaz (#889)", () => {
+    const bad = [
+      '<Button size="sm" className="h-7 text-xs">',
+      `<Button variant="ghost" size="icon" className="${"size-" + "11"} ${"lg:" + "size-8"}">`,
+      '<Button onClick={() => go()} className={cn("h-auto w-full rounded-xl p-4", open && "bg-muted")}>',
+      '<Button className="rounded-full">',
+      '<Button className="font-normal">',
+      `<Button className="${"print:" + "h-36"}">`,
+      `<InputGroupButton size="icon-sm" className="${"size-" + "11"}">`,
+      '<Button className="min-h-7 justify-start">',
+      '<Button className="focus-visible:ring-0">',
+      '<Button variant="ghost" className="dark:bg-transparent">',
+      '<Button variant="outline" className="border-transparent shadow-none">',
+      '<Button className={styles.cta}>',
+      // className'i Button'a ileten sarmalayıcı da aynı kuralla taranır.
+      '<PrintButton className="h-8" />',
+    ]
+    for (const source of bad) {
+      const tags = jsxOpeningTags(`import styles from "./x.module.css"\n${source}`, CONTROLS)
+      expect(tags.length).toBeGreaterThan(0)
+      expect(violations(tags[0])).not.toEqual([])
+    }
+
+    const good = [
+      '<Button className="w-full justify-between gap-2 text-left whitespace-normal md:hidden">',
+      `<Button size="icon" className="${"[&_svg:not([class*='size-'])]:" + "size-5"}">`,
+      `<Button className="relative before:absolute ${"before:" + "h-11"} ${"before:" + "min-h-full"}">`,
+      '<Button variant="ghost" className="text-muted-foreground hover:bg-destructive/10 disabled:hover:bg-transparent">',
+      '<Button className="shadow-md">',
+      '<Button size="row" className="w-full items-start border-dashed px-4 font-mono">',
+      '<Button variant="outline" size="row" className="h-full hover:ring-2 hover:ring-primary">',
+    ]
+    for (const source of good) {
+      for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])
+    }
+  })
+
+  test("form kontrolü ve düğme çağrı yerlerinde ölçü ezmesi yok", () => {
     const offenders = callSiteViolations().flatMap((row) => {
       const allowed = new Set(
-        EXCEPTIONS.filter((e) => e.file === row.file && e.tag === row.tag).flatMap((e) => e.allow)
+        EXCEPTIONS.filter((e) => exceptionCovers(e, row)).flatMap((e) => e.allow)
       )
       const hits = row.hits.filter((hit) => !allowed.has(hitClass(hit)))
       return hits.length ? [`${row.file}:${row.line} <${row.tag}> ${hits.join(", ")}`] : []
@@ -259,9 +432,9 @@ describe("form kontrolleri çağrı yerinde ezilmez (#888)", () => {
     const stale = EXCEPTIONS.filter(
       (e) =>
         !e.allow.every((cls) =>
-          rows.some((row) => row.file === e.file && row.tag === e.tag && row.hits.some((hit) => hitClass(hit) === cls))
+          rows.some((row) => exceptionCovers(e, row) && row.hits.some((hit) => hitClass(hit) === cls))
         )
-    ).map((e) => `${e.file} <${e.tag}> ${e.allow.join(" ")}`)
+    ).map((e) => `${e.file} <${e.tag}>${e.match ? ` [${e.match}]` : ""} ${e.allow.join(" ")}`)
     expect(stale).toEqual([])
     for (const e of EXCEPTIONS) expect(e.reason.length).toBeGreaterThan(20)
   })
