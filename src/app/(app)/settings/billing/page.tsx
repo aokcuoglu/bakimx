@@ -12,8 +12,8 @@ import { getAccountBillingContext } from "@/lib/billing/account-context"
 import { formatMinor } from "@/lib/billing/pricing"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import { prisma } from "@/lib/db"
-import { isLiteRegistrationOpen } from "@/lib/lite-campaign"
 import { getPlanPackage } from "@/lib/plans-catalog"
+import { TRIAL_INCLUDES_ADDONS } from "@/lib/plan"
 import { getReferralDiscountBps } from "@/lib/billing/referral-discount"
 import { getWorkshopQuotaContext, getWorkshopQuotaUsage } from "@/lib/rapidapi-quota"
 
@@ -47,8 +47,8 @@ export default async function SettingsBillingPage({ searchParams }: {
       <div className="space-y-7">
         {plan.isTrialing && (
           <div className="hidden flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary-strong lg:flex">
-            <p>Premium denemeniz {formatDate(plan.trialEndsAt)} tarihinde bitiyor. {plan.trialDaysLeft ?? 0} iş günü kaldı; otomatik ücretlendirme yapılmaz.</p>
-            <Button asChild variant="outline" size="compact"><Link href="/settings/plans">Paketleri incele</Link></Button>
+            <p>Ücretsiz denemeniz {formatDate(plan.trialEndsAt)} tarihinde bitiyor. {plan.trialDaysLeft ?? 0} iş günü kaldı{TRIAL_INCLUDES_ADDONS ? "; deneme süresince ek özellikler de açık" : ""}; otomatik ücretlendirme yapılmaz.</p>
+            <Button asChild variant="outline" size="compact"><Link href="/settings/plans">Paketi incele</Link></Button>
           </div>
         )}
         {pendingOrder && <PendingPaymentNotice canPurchase={canPurchase} order={{
@@ -74,8 +74,6 @@ export default async function SettingsBillingPage({ searchParams }: {
             pendingPlanTier={pendingOrder?.planTier}
             pendingCycle={pendingOrder?.billingCycle}
             canPurchase={canPurchase}
-            liteRegistrationOpen={isLiteRegistrationOpen()}
-            liteFreeGranted={!!workshop.liteFreeGrantedAt}
             defaultInvoiceTitle={workshop.invoiceTitle || workshop.name}
             defaultTaxNumber={workshop.taxNumber || ""}
             defaultTaxOffice={workshop.taxOffice || ""}

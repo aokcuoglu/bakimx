@@ -1,9 +1,10 @@
 import { FEATURE_CATALOG } from "@/lib/feature-catalog"
 import {
+  PLAN_LABELS,
   PLAN_SEATS,
   SALE_PLAN_TIERS,
-  VIN_LOOKUP_QUOTA,
   hasFeature,
+  type AddonFeature,
   type GatedFeature,
   type PlanTier,
   type SalePlanTier,
@@ -17,8 +18,8 @@ import {
 } from "@/lib/photos/limits"
 
 /** Shared sales metadata. Numeric entitlements live in their domain contracts. */
-export interface PlanPackage {
-  tier: SalePlanTier
+export interface PlanPackage<T extends PlanTier = PlanTier> {
+  tier: T
   name: string
   /** Monthly price in TRY (VAT-included — the customer pays the displayed amount). */
   monthlyPrice: number
@@ -26,86 +27,136 @@ export interface PlanPackage {
   yearlyPrice: number
   monthlyLabel: string
   yearlyLabel: string
-  /** Optional pre-campaign prices shown struck through. */
-  listMonthlyLabel?: string
-  listYearlyLabel?: string
   tagline: string
   /** Included login seats, derived from PLAN_SEATS. */
   seats: number
-  highlights: string[]
-  popular?: boolean
+  highlights: readonly string[]
 }
 
-type PlanPackageDefinition = Omit<
-  PlanPackage,
-  "monthlyLabel" | "yearlyLabel" | "listMonthlyLabel" | "listYearlyLabel"
-> & {
-  listMonthlyPrice?: number
-  listYearlyPrice?: number
-}
+/** A package offered for new purchases. */
+export type SalePlanPackage = PlanPackage<SalePlanTier>
+
+type PlanPackageDefinition<T extends PlanTier> = Omit<PlanPackage<T>, "monthlyLabel" | "yearlyLabel">
 
 function priceLabel(price: number, cycle: "ay" | "yıl"): string {
+  if (price === 0) return "0 TL/ay"
   return `₺${price.toLocaleString("tr-TR")}/${cycle}`
 }
 
-function definePlanPackage(definition: PlanPackageDefinition): PlanPackage {
-  const { listMonthlyPrice, listYearlyPrice, ...plan } = definition
+function definePlanPackage<T extends PlanTier>(definition: PlanPackageDefinition<T>): PlanPackage<T> {
   return {
-    ...plan,
-    monthlyLabel: plan.tier === "lite" ? "0 TL/ay" : priceLabel(plan.monthlyPrice, "ay"),
-    yearlyLabel: plan.tier === "lite" ? "0 TL/ay" : priceLabel(plan.yearlyPrice, "yıl"),
-    ...(listMonthlyPrice == null ? {} : { listMonthlyLabel: priceLabel(listMonthlyPrice, "ay") }),
-    ...(listYearlyPrice == null ? {} : { listYearlyLabel: priceLabel(listYearlyPrice, "yıl") }),
+    ...definition,
+    monthlyLabel: priceLabel(definition.monthlyPrice, "ay"),
+    yearlyLabel: priceLabel(definition.yearlyPrice, "yıl"),
   }
 }
 
-export const LITE_CAMPAIGN_DESCRIPTION = "Kampanya döneminde Lite’a katılan işletmeler, Lite paket kapsamını süresiz ücretsiz kullanır. Yeni Lite kayıtları kapansa da mevcut üyelerin ücretsiz kullanımı devam eder."
+/**
+ * Tek satış paketi (#782): ₺1.499/ay KDV dahil, yıllık 10 × aylık. Makbuz ve
+ * TAMI satırı bu adı kullanır ("Servis Paketi · Aylık").
+ */
+export const SERVICE_PACKAGE: SalePlanPackage = definePlanPackage({
+  tier: "pro",
+  name: PLAN_LABELS.pro,
+  monthlyPrice: 1499,
+  yearlyPrice: 14990,
+  tagline: "Servis yönetimi için gereken her şey tek pakette",
+  seats: PLAN_SEATS.pro,
+  highlights: [
+    FEATURE_CATALOG.plateScan.name,
+    FEATURE_CATALOG.photoChecklist.name,
+    FEATURE_CATALOG.cashbox.name,
+    FEATURE_CATALOG.partsInventory.name,
+    FEATURE_CATALOG.appointments.name,
+    FEATURE_CATALOG.analytics.name,
+  ],
+})
 
-export const PLAN_PACKAGES: PlanPackage[] = [
+export const PLAN_PACKAGES: readonly SalePlanPackage[] = [SERVICE_PACKAGE]
+
+/**
+ * Satışa kapalı paketler. Mevcut satırlar (sipariş, makbuz, proration, yaşam
+ * döngüsü e-postası) kırılmadan okunabilsin diye tutar ve ad burada kalır.
+ * Yeni satış yalnız {@link PLAN_PACKAGES} üzerinden yapılır.
+ */
+export const LEGACY_PLAN_PACKAGES: readonly PlanPackage[] = [
   definePlanPackage({
     tier: "lite",
-    name: "Lite",
+    name: PLAN_LABELS.lite,
     monthlyPrice: 0,
     yearlyPrice: 0,
-    tagline: "Temel kayıtlarını dijitale taşıyan servisler için",
+    tagline: "Artık yeni satışa kapalı eski paket",
     seats: PLAN_SEATS.lite,
-    highlights: [
-      "Sınırsız müşteri, araç ve araç kabulü",
-      "Manuel araç kabul",
-      "Müşteri paylaşım bağlantısı ve WhatsApp",
-    ],
+    highlights: [],
   }),
   definePlanPackage({
-    tier: "pro",
-    name: "Profesyonel",
-    monthlyPrice: 1799,
-    yearlyPrice: 17990,
-    tagline: "Aktif servis operasyonunu uçtan uca yöneten ekipler için",
-    popular: true,
-    seats: PLAN_SEATS.pro,
-    highlights: [
-      FEATURE_CATALOG.ocrIntake.name,
-      FEATURE_CATALOG.photoChecklist.name,
-      FEATURE_CATALOG.cashbox.name,
-      FEATURE_CATALOG.partsInventory.name,
-      FEATURE_CATALOG.appointments.name,
-      FEATURE_CATALOG.analytics.name,
-    ],
+    tier: "starter",
+    name: PLAN_LABELS.starter,
+    monthlyPrice: 749,
+    yearlyPrice: 7490,
+    tagline: "Artık yeni satışa kapalı eski paket",
+    seats: PLAN_SEATS.starter,
+    highlights: [],
   }),
   definePlanPackage({
     tier: "premium",
-    name: "Premium",
+    name: PLAN_LABELS.premium,
     monthlyPrice: 2999,
     yearlyPrice: 29990,
-    tagline: "Daha büyük ekipler ve yüksek katalog sorgu hacmi için",
+    tagline: "Servis Paketi ve tüm ek özellikler",
     seats: PLAN_SEATS.premium,
-    highlights: [
-      "Profesyonel paketteki tüm canlı özellikler",
-      `${PLAN_SEATS.premium} kullanıcı dahil`,
-      `${VIN_LOOKUP_QUOTA.premium.toLocaleString("tr-TR")} şase ve canlı katalog sorgusu/ay`,
-      "Premium yol haritasına erişim",
-    ],
+    highlights: [],
   }),
+]
+
+export function getPlanPackage(tier: PlanTier): PlanPackage | undefined {
+  return PLAN_PACKAGES.find((p) => p.tier === tier) ?? LEGACY_PLAN_PACKAGES.find((p) => p.tier === tier)
+}
+
+/**
+ * Pakete dahil OLMAYAN, ileride uygulama içinden ayrıca satılacak yetenekler.
+ * Fiyatları henüz belirlenmedi — bilinçli olarak fiyat alanı yok; kilitli
+ * yüzeyler "yakında satın alınabilir / bizimle iletişime geçin" der.
+ */
+export type AddonCatalogItem = {
+  key: AddonFeature | "aiAssistant"
+  name: string
+  description: string
+  /** Bu ek özelliğin açtığı kapılar. AI danışmanının kodda kapısı yok. */
+  features: readonly AddonFeature[]
+}
+
+export const ADDON_CATALOG: readonly AddonCatalogItem[] = [
+  {
+    key: "vinLookup",
+    name: "Şaseden parça",
+    description: "Şase numarasından aracı tanıyın, uyumlu parçaları katalogdan bulun.",
+    features: ["vinLookup", "partsCatalog"],
+  },
+  {
+    key: "aiAssistant",
+    name: "AI danışmanı",
+    description: "Arıza ve bakım kararlarında yapay zekâ destekli öneriler.",
+    features: [],
+  },
+  {
+    key: "ocrIntake",
+    name: FEATURE_CATALOG.ocrIntake.name,
+    description: "Ruhsat fotoğrafından müşteri ve araç alanlarını otomatik doldurun.",
+    features: ["ocrIntake"],
+  },
+  {
+    key: "eInvoice",
+    name: FEATURE_CATALOG.eInvoice.name,
+    description: "e-Fatura ve e-Arşiv işlemlerini BakımX içinde tamamlayın.",
+    features: ["eInvoice"],
+  },
+  {
+    key: "multiBranch",
+    name: FEATURE_CATALOG.multiBranch.name,
+    description: "Birden fazla şubeyi tek hesaptan yönetin.",
+    features: ["multiBranch"],
+  },
 ]
 
 export type PlanComparisonValue = {
@@ -121,7 +172,7 @@ export type PlanComparisonRow = {
 }
 
 export type PlanComparisonCategory = {
-  key: "limits" | "core" | "intake" | "operations" | "roadmap"
+  key: "limits" | "core" | "intake" | "operations"
   label: string
   rows: readonly PlanComparisonRow[]
 }
@@ -130,25 +181,22 @@ const unavailable = (): PlanComparisonValue => ({ state: "unavailable", label: "
 const included = (label = "Dahil"): PlanComparisonValue => ({ state: "included", label })
 const text = (label: string): PlanComparisonValue => ({ state: "text", label })
 
+function perSaleTier(value: (tier: SalePlanTier) => PlanComparisonValue): Record<SalePlanTier, PlanComparisonValue> {
+  return Object.fromEntries(SALE_PLAN_TIERS.map((tier) => [tier, value(tier)])) as Record<
+    SalePlanTier,
+    PlanComparisonValue
+  >
+}
+
 function featureRow(
-  feature: GatedFeature,
-  options: { label?: string; description?: string; comingSoon?: boolean } = {},
+  feature: Exclude<GatedFeature, AddonFeature>,
+  options: { label?: string; description?: string } = {},
 ): PlanComparisonRow {
   return {
     key: feature,
     label: options.label ?? FEATURE_CATALOG[feature].name,
     description: options.description,
-    values: Object.fromEntries(
-      SALE_PLAN_TIERS.map((tier) => {
-        if (!hasFeature(tier, feature)) return [tier, unavailable()]
-        return [
-          tier,
-          options.comingSoon
-            ? ({ state: "coming-soon", label: "Yakında" } satisfies PlanComparisonValue)
-            : included(),
-        ]
-      }),
-    ) as Record<SalePlanTier, PlanComparisonValue>,
+    values: perSaleTier((tier) => (hasFeature(tier, feature) ? included() : unavailable())),
   }
 }
 
@@ -182,9 +230,13 @@ export const PHOTO_UPLOAD_POLICY = {
 const coreRow = (key: string, label: string): PlanComparisonRow => ({
   key,
   label,
-  values: { lite: included(), pro: included(), premium: included() },
+  values: perSaleTier(() => included()),
 })
 
+/**
+ * "Pakete dahil" tablosu. Yalnız paketteki yetenekler listelenir; ek
+ * özellikler ayrı {@link ADDON_CATALOG} listesinde durur.
+ */
 export const PLAN_COMPARISON: readonly PlanComparisonCategory[] = [
   {
     key: "limits",
@@ -193,35 +245,21 @@ export const PLAN_COMPARISON: readonly PlanComparisonCategory[] = [
       {
         key: "seats",
         label: "Dahil kullanıcı",
-        values: Object.fromEntries(
-          SALE_PLAN_TIERS.map((tier) => [tier, text(String(PLAN_SEATS[tier]))]),
-        ) as Record<SalePlanTier, PlanComparisonValue>,
-      },
-      {
-        key: "live-catalog-quota",
-        label: "Şase + canlı katalog sorgusu",
-        values: Object.fromEntries(
-          SALE_PLAN_TIERS.map((tier) => {
-            const quota = VIN_LOOKUP_QUOTA[tier]
-            return [tier, quota > 0 ? text(`${quota.toLocaleString("tr-TR")}/ay`) : unavailable()]
-          }),
-        ) as Record<SalePlanTier, PlanComparisonValue>,
+        values: perSaleTier((tier) => text(String(PLAN_SEATS[tier]))),
       },
       {
         key: "records",
         label: "Müşteri, araç ve araç kabulü",
-        values: { lite: text("Sınırsız"), pro: text("Sınırsız"), premium: text("Sınırsız") },
+        values: perSaleTier(() => text("Sınırsız")),
       },
       {
         key: "work-order-photos",
         label: "Araç kabul fotoğrafı",
         description: "Aktif, silinmemiş fotoğraflar için araç kabul başına limit.",
-        values: Object.fromEntries(
-          SALE_PLAN_TIERS.map((tier) => {
-            const policy = PLAN_PHOTO_POLICY[tier]
-            return [tier, policy.enabled ? text(`${policy.maxActivePerWorkOrder} aktif/araç kabulü`) : unavailable()]
-          }),
-        ) as Record<SalePlanTier, PlanComparisonValue>,
+        values: perSaleTier((tier) => {
+          const policy = PLAN_PHOTO_POLICY[tier]
+          return policy.enabled ? text(`${policy.maxActivePerWorkOrder} aktif/araç kabulü`) : unavailable()
+        }),
       },
     ],
   },
@@ -239,7 +277,7 @@ export const PLAN_COMPARISON: readonly PlanComparisonCategory[] = [
     key: "intake",
     label: "Araç kabul ve kanıt",
     rows: [
-      featureRow("ocrIntake"),
+      featureRow("plateScan"),
       featureRow("photoChecklist"),
       featureRow("damageMap"),
       featureRow("vehiclePassport"),
@@ -260,30 +298,4 @@ export const PLAN_COMPARISON: readonly PlanComparisonCategory[] = [
       featureRow("reports"),
     ],
   },
-  {
-    key: "roadmap",
-    label: "Premium yol haritası",
-    rows: [
-      featureRow("eInvoice", { label: "e-Fatura / e-Arşiv", comingSoon: true }),
-      featureRow("multiBranch"),
-      featureRow("rbac", { comingSoon: true }),
-    ],
-  },
 ] as const
-
-const LEGACY_STARTER_PACKAGE = {
-  tier: "starter" as const,
-  name: "Başlangıç (eski)",
-  monthlyPrice: 749,
-  yearlyPrice: 7490,
-  monthlyLabel: "₺749/ay",
-  yearlyLabel: "₺7.490/yıl",
-  tagline: "Artık yeni satışa kapalı eski paket",
-  seats: PLAN_SEATS.starter,
-  highlights: [],
-}
-
-export function getPlanPackage(tier: PlanTier): PlanPackage | typeof LEGACY_STARTER_PACKAGE | undefined {
-  if (tier === "starter") return LEGACY_STARTER_PACKAGE
-  return PLAN_PACKAGES.find((p) => p.tier === tier)
-}

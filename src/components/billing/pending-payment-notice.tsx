@@ -43,7 +43,7 @@ export function PendingPaymentNotice({ order, canPurchase = false }: { order: Pe
         </Button>
         </div>
       )}
-      {order.method === "havale" && canPurchase && <Button asChild variant="outline" size="sm" className="self-start sm:self-center"><Link href={getSupportWhatsAppUrl(`Merhaba, ${order.reference} numaralı havale talebimi iptal edip başka paket seçmek istiyorum.`)} target="_blank" rel="noopener noreferrer">İptal için destek</Link></Button>}
+      {order.method === "havale" && canPurchase && <Button asChild variant="outline" size="sm" className="self-start sm:self-center"><Link href={getSupportWhatsAppUrl(`Merhaba, ${order.reference} numaralı havale talebimi iptal etmek istiyorum.`)} target="_blank" rel="noopener noreferrer">İptal için destek</Link></Button>}
     </Alert>
       {order.method === "card" && (
       <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>

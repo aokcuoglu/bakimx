@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeft, CalendarRange, Check, CreditCard, Gauge, Hexagon, Minus, Plus, Users, X } from "lucide-react"
+import Link from "next/link"
+import { CalendarRange, CreditCard, MessageCircle, Users, X } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,32 +15,16 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatMinor } from "@/lib/billing/pricing"
 import { getDiscountedPlanPriceMinor } from "@/lib/billing/referral-discount"
-import { getSeatLimit, VIN_LOOKUP_QUOTA, type SalePlanTier } from "@/lib/plan"
-import { isPlanDowngrade, isPlanUpgrade } from "@/lib/billing/plan-change"
-import { PLAN_PACKAGES, getPlanPackage } from "@/lib/plans-catalog"
-import { PlanPackages } from "@/components/billing/plan-packages"
+import { getSeatLimit, type SalePlanTier } from "@/lib/plan"
+import { SERVICE_PACKAGE } from "@/lib/plans-catalog"
+import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
 import { cn } from "@/lib/utils"
 
 type Cycle = "monthly" | "yearly"
 type Method = "card" | "havale"
-
-const QUOTA_PACKS = [
-  { amount: 0, priceMinor: 0, label: "Ek kota yok" },
-  { amount: 1_000, priceMinor: 19_900, label: "+1.000 sorgu/ay" },
-  { amount: 3_000, priceMinor: 49_900, label: "+3.000 sorgu/ay" },
-  { amount: 5_000, priceMinor: 79_900, label: "+5.000 sorgu/ay" },
-  { amount: 10_000, priceMinor: 149_900, label: "+10.000 sorgu/ay" },
-] as const
 
 export type ManagePlanDraft = {
   cycle: Cycle
@@ -59,9 +44,6 @@ export function ManagePlanDialog({
   canPurchase,
   hasPendingOrder,
   pendingActions,
-  onChangePlan,
-  onSelectPlan,
-  onDowngrade,
   onConfirm,
   preferredCycle = null,
   isTrialing = false,
@@ -75,16 +57,13 @@ export function ManagePlanDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
   planName: string
+  /** Owned (active, paid) sale tier — `null` during a trial or on a legacy row. */
   planTier: SalePlanTier | null
   currentCycle: Cycle | null
   currentPeriodEnd: Date | string | null
   canPurchase: boolean
   hasPendingOrder: boolean
   pendingActions?: React.ReactNode
-  onChangePlan: () => void
-  /** Picks a different tier from the in-dialog upgrade cards. */
-  onSelectPlan?: (tier: SalePlanTier, cycle: Cycle) => void
-  onDowngrade?: (tier: SalePlanTier) => void
   onConfirm: (draft: ManagePlanDraft) => void
   preferredCycle?: Cycle | null
   isTrialing?: boolean
@@ -101,29 +80,26 @@ export function ManagePlanDialog({
   const [invoiceTitle, setInvoiceTitle] = useState(defaultInvoiceTitle)
   const [taxNumber, setTaxNumber] = useState(defaultTaxNumber)
   const [taxOffice, setTaxOffice] = useState(defaultTaxOffice)
-  const [addedSeats, setAddedSeats] = useState(extraSeats)
-  const [quotaAmount, setQuotaAmount] = useState("0")
   const [error, setError] = useState("")
-  const [picker, setPicker] = useState(false)
-  const [pickerCycle, setPickerCycle] = useState<Cycle>(preferredCycle ?? baseline)
 
-  const includedSeats = planTier ? getSeatLimit(planTier, 0) : 1
-  const seatTotal = includedSeats + addedSeats
-  const includedQuota = planTier ? VIN_LOOKUP_QUOTA[planTier] : 0
-  const quotaPack = QUOTA_PACKS.find((pack) => String(pack.amount) === quotaAmount) ?? QUOTA_PACKS[0]
-  const planAmount = planTier != null ? getDiscountedPlanPriceMinor(planTier, cycle, referralDiscountBps) : 0
+  // Satışta tek paket var (#782): sahip olunan paket ne olursa olsun yenileme /
+  // satın alma Servis Paketi üzerinden fiyatlanır.
+  const pkg = SERVICE_PACKAGE
+  const seatTotal = getSeatLimit(pkg.tier, extraSeats)
+  const planAmount = getDiscountedPlanPriceMinor(pkg.tier, cycle, referralDiscountBps)
   const total = planAmount
   const periodEnd =
     currentPeriodEnd != null
       ? new Date(currentPeriodEnd).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })
       : null
-  const pkg = planTier ? getPlanPackage(planTier) : null
   const locked = !canPurchase || hasPendingOrder
-  const dirty = cycle !== baseline || quotaPack.amount > 0 || addedSeats !== extraSeats
+  // Paketi henüz satın almamış atölye (deneme / eski satır) varsayılan dönemi de onaylayabilir.
+  const dirty = planTier == null || cycle !== baseline
   const perMonth = (option: Cycle) => {
-    const optionAmount = planTier ? getDiscountedPlanPriceMinor(planTier, option, referralDiscountBps) : 0
+    const optionAmount = getDiscountedPlanPriceMinor(pkg.tier, option, referralDiscountBps)
     return option === "yearly" ? Math.round(optionAmount / 12) : optionAmount
   }
+  const seatContactHref = getSupportWhatsAppUrl(`Merhaba, BakımX hesabımıza ek kullanıcı eklemek istiyoruz. (${planName})`)
 
   function confirm() {
     if (invoiceTitle.trim().length < 2) {
@@ -155,15 +131,10 @@ export function ManagePlanDialog({
       >
         <DialogHeader className="min-h-11 justify-center border-b px-4 py-2 pr-12">
           <DialogTitle className="flex items-center gap-2 text-sm font-medium">
-            {picker && (
-              <Button type="button" variant="ghost" size="icon-sm" aria-label="Geri" onClick={() => setPicker(false)}>
-                <ArrowLeft className="size-4" />
-              </Button>
-            )}
-            {picker ? "Paketi yükselt" : "Paketi yönet"}
+            Paketi yönet
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Mevcut plan, faturalama dönemi, koltuk, katalog kotası ve ödeme bilgisi.
+            Mevcut paket, faturalama dönemi, kullanıcı sayısı ve ödeme bilgisi.
           </DialogDescription>
           <DialogClose asChild>
             <Button type="button" variant="ghost" size="icon-sm" className="absolute right-3 top-3 text-muted-foreground">
@@ -173,145 +144,19 @@ export function ManagePlanDialog({
           </DialogClose>
         </DialogHeader>
 
-        {!picker && <div className="flex min-h-16 items-center justify-between gap-3 border-b px-4 py-3">
+        <div className="flex min-h-16 items-center justify-between gap-3 border-b px-4 py-3">
           <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">Mevcut plan</p>
-            <p className="mt-0.5 text-lg font-semibold tracking-tight">{pkg ? `${pkg.name} paketini yönet` : planName}</p>
+            <p className="text-xs text-muted-foreground">Mevcut paket</p>
+            <p className="mt-0.5 text-lg font-semibold tracking-tight">{planTier ? pkg.name : planName}</p>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!canPurchase}
-            onClick={() => {
-              if (onSelectPlan) setPicker(true)
-              else onChangePlan()
-            }}
-          >
-            Değiştir
-          </Button>
-        </div>}
+        </div>
 
-        {picker ? (
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
-            <div className="flex justify-center">
-              <ToggleGroup
-                type="single"
-                value={pickerCycle}
-                onValueChange={(value) => { if (value) setPickerCycle(value as Cycle) }}
-                className="inline-flex gap-0.5 rounded-lg bg-muted p-0.5"
-                aria-label="Faturalama dönemi"
-              >
-                {(["yearly", "monthly"] as const).map((option) => (
-                  <ToggleGroupItem
-                    key={option}
-                    value={option}
-                    className="h-7! min-w-0 rounded-lg px-2 text-sm font-medium text-muted-foreground data-[state=on]:!bg-card data-[state=on]:!text-foreground data-[state=on]:shadow-[inset_0_0_0_1px_var(--border)]"
-                  >
-                    {option === "yearly" ? "Yıllık" : "Aylık"}
-                    {option === "yearly" && <span className="rounded-md bg-primary/10 px-1 text-[11px] font-medium text-primary-strong">-17%</span>}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {PLAN_PACKAGES.filter((pkg) => pkg.tier !== "lite").map((pkg) => {
-                const owned = planTier === pkg.tier
-                const downgrade = isPlanDowngrade(planTier, pkg.tier)
-                const upgrade = isPlanUpgrade(planTier, pkg.tier)
-                const discountedPrice = getDiscountedPlanPriceMinor(pkg.tier, pickerCycle, referralDiscountBps) / 100
-                const perMonth = pickerCycle === "yearly" ? Math.round(discountedPrice / 12) : discountedPrice
-                return (
-                  <article key={pkg.tier} className="rounded-xl border bg-card p-4">
-                    <span className="flex size-9 items-center justify-center rounded-lg bg-muted text-primary">
-                      <Hexagon className="size-4" aria-hidden="true" />
-                    </span>
-                    <h3 className="mt-3 text-lg font-semibold">{pkg.name}</h3>
-                    <p className="mt-2 text-2xl font-semibold tracking-tight">₺{perMonth.toLocaleString("tr-TR")}</p>
-                    {referralDiscountBps > 0 && pkg.tier !== "lite" && <p className="text-xs text-muted-foreground">İlk yıl %10 referans indirimi</p>}
-                    <p className="text-xs text-muted-foreground">Atölye başına · {pickerCycle === "yearly" ? "aylık karşılık, yıllık faturalandırılır" : "aylık faturalandırılır"}</p>
-                    <Button
-                      type="button"
-                      variant={owned ? "secondary" : pkg.popular && upgrade ? "navy" : "outline"}
-                      className="mt-4 w-full"
-                      disabled={owned || !canPurchase || hasPendingOrder}
-                      onClick={() => {
-                        if (downgrade) onDowngrade?.(pkg.tier)
-                        else onSelectPlan?.(pkg.tier, pickerCycle)
-                      }}
-                    >
-                      {owned ? "Mevcut paket" : downgrade ? `${pkg.name} paketine düş` : upgrade || planTier == null ? "Yükselt" : "Bu paketi seç"}
-                    </Button>
-                    <p className="mt-4 text-sm font-medium">{pkg.tagline}</p>
-                    <ul className="mt-2 space-y-1.5">
-                      {pkg.highlights.slice(0, 3).map((highlight) => (
-                        <li key={highlight} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <Check className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                          {highlight}
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                )
-              })}
-            </div>
-            {PLAN_PACKAGES.filter((pkg) => pkg.tier === "lite").map((pkg) => {
-              const owned = planTier === pkg.tier
-              const downgrade = isPlanDowngrade(planTier, pkg.tier)
-              return (
-                <article key={pkg.tier} className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-primary">
-                      <Hexagon className="size-4" aria-hidden="true" />
-                    </span>
-                    <div>
-                      <h3 className="text-lg font-semibold">{pkg.name}</h3>
-                      <p className="text-sm text-muted-foreground">{pkg.tagline}</p>
-                      <ul className="mt-2 space-y-1">
-                        {pkg.highlights.slice(0, 3).map((highlight) => (
-                          <li key={highlight} className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <Check className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                            {highlight}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="shrink-0"
-                    disabled={owned || !canPurchase || hasPendingOrder}
-                    onClick={() => {
-                      if (downgrade) onDowngrade?.(pkg.tier)
-                      else onSelectPlan?.(pkg.tier, pickerCycle)
-                    }}
-                  >
-                    {owned ? "Mevcut paket" : "Lite paketine düş"}
-                  </Button>
-                </article>
-              )
-            })}
-            <PlanPackages
-              referralDiscountBps={referralDiscountBps}
-              key={pickerCycle}
-              presentation="settings"
-              settingsChrome={false}
-              ownedTier={planTier}
-              currentCycle={pickerCycle}
-              canPurchase={canPurchase}
-              hasPendingOrder={hasPendingOrder}
-              onSelectPlan={onSelectPlan}
-              onDowngrade={onDowngrade}
-            />
-          </div>
-        ) : (
         <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:overflow-hidden">
           <div className="min-w-0 space-y-6 border-b px-4 py-4 lg:overflow-y-auto lg:border-r lg:border-b-0">
             {hasPendingOrder && (
               <Alert variant="warning">
                 <AlertDescription className="space-y-2">
-                  <p>Bekleyen bir paket talebiniz var. Yeni paket seçmek için önce bu talebi tamamlayın veya iptal edin.</p>
+                  <p>Bekleyen bir paket talebiniz var. Yeni sipariş için önce bu talebi tamamlayın veya iptal edin.</p>
                   {pendingActions}
                 </AlertDescription>
               </Alert>
@@ -347,7 +192,7 @@ export function ManagePlanDialog({
                       {option === "yearly" ? "Yıllık (2 ay bedava)" : "Aylık"}
                     </span>
                     <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                      {perMonth(option) > 0 ? `${formatMinor(perMonth(option))} / ay` : "₺0 / ay"}
+                      {formatMinor(perMonth(option))} / ay
                     </span>
                   </ToggleGroupItem>
                 ))}
@@ -357,38 +202,18 @@ export function ManagePlanDialog({
             <section className="space-y-2 border-t pt-5">
               <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
                 <Users className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                Koltuk
-                <span className="font-normal text-muted-foreground">{includedSeats} dahil, {seatUsed} kullanılıyor</span>
+                Kullanıcı
+                <span className="font-normal text-muted-foreground">{seatTotal} dahil, {seatUsed} kullanılıyor</span>
               </h3>
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" size="icon-sm" aria-label="Koltuk azalt" disabled={locked || addedSeats <= 0 || seatTotal <= seatUsed} onClick={() => setAddedSeats((count) => Math.max(0, count - 1))}>
-                  <Minus className="size-4" />
-                </Button>
-                <span className="w-8 text-center text-sm font-medium" aria-live="polite">{seatTotal}</span>
-                <Button type="button" variant="outline" size="icon-sm" aria-label="Koltuk artır" disabled={locked} onClick={() => setAddedSeats((count) => count + 1)}>
-                  <Plus className="size-4" />
-                </Button>
-              </div>
-            </section>
-
-            <section className="space-y-2 border-t pt-5">
-              <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
-                <Gauge className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                Katalog kotası
-                <span className="font-normal text-muted-foreground">{includedQuota.toLocaleString("tr-TR")} dahil</span>
-              </h3>
-              <Select value={quotaAmount} onValueChange={setQuotaAmount} disabled={locked}>
-                <SelectTrigger className="w-full" aria-label="Ek katalog kotası">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {QUOTA_PACKS.map((pack) => (
-                    <SelectItem key={pack.amount} value={String(pack.amount)}>
-                      {pack.label}{pack.priceMinor > 0 ? ` · ${formatMinor(pack.priceMinor)} / ay` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <p className="text-xs leading-5 text-muted-foreground">
+                {pkg.name} {pkg.seats} kullanıcı içerir. Daha fazlası için bizimle iletişime geçin.
+              </p>
+              <Button asChild variant="outline" size="sm">
+                <Link href={seatContactHref} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="size-4" aria-hidden="true" />
+                  Ek kullanıcı için iletişim
+                </Link>
+              </Button>
             </section>
 
             <section className="space-y-3 border-t pt-5">
@@ -439,15 +264,11 @@ export function ManagePlanDialog({
             )}
             <dl className="space-y-2 text-sm">
               <div className="flex items-start justify-between gap-3">
-                <dt className="min-w-0 text-muted-foreground">{seatTotal} koltuk</dt>
-                <dd>{planAmount > 0 ? formatMinor(planAmount) : "₺0"}</dd>
-              </div>
-              <div className="flex items-start justify-between gap-3">
-                <dt className="min-w-0 text-muted-foreground">{(includedQuota + quotaPack.amount).toLocaleString("tr-TR")} katalog sorgusu</dt>
-                <dd>{quotaPack.priceMinor > 0 ? formatMinor(quotaPack.priceMinor) : "Dahil"}</dd>
+                <dt className="min-w-0 text-muted-foreground">{pkg.name} · {seatTotal} kullanıcı</dt>
+                <dd>{formatMinor(planAmount)}</dd>
               </div>
               <div className="flex items-start justify-between gap-3 border-t pt-3">
-                <dt className="font-medium">Yenilemede toplam</dt>
+                <dt className="font-medium">{planTier ? "Yenilemede toplam" : "Toplam"}</dt>
                 <dd className="text-lg font-semibold">{formatMinor(total)}</dd>
               </div>
             </dl>
@@ -459,11 +280,9 @@ export function ManagePlanDialog({
               {method === "card"
                 ? "Onaydan sonra kart ödemesi 3D Secure ile açılır."
                 : "Onaydan sonra Havale/EFT bilgileri gösterilir."}
-              {quotaPack.amount > 0 ? " Ek katalog kotası özet satırında durur; yenileme tutarı paket bedelidir." : ""}
             </p>
           </div>
         </div>
-        )}
       </DialogContent>
     </Dialog>
   )

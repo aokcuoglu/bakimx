@@ -1,5 +1,4 @@
-import { isPlanTier, PLAN_TIERS, type SalePlanTier } from "@/lib/plan"
-import { PLAN_COMPARISON } from "@/lib/plans-catalog"
+import { isPlanTier, PLAN_TIERS } from "@/lib/plan"
 
 /**
  * Hedef paket mevcut paketten daha düşük mü? (lite < starter < pro < premium)
@@ -20,42 +19,28 @@ export function isPlanUpgrade(
   return PLAN_TIERS.indexOf(targetTier) > PLAN_TIERS.indexOf(currentTier)
 }
 
-/** Karşılaştırma tablosundan düşürmede kaybedilecek özellik etiketleri. */
-export function getFeaturesLostOnDowngrade(
-  fromTier: SalePlanTier,
-  toTier: SalePlanTier,
-): string[] {
-  if (!isPlanDowngrade(fromTier, toTier)) return []
-  const lost: string[] = []
-  for (const category of PLAN_COMPARISON) {
-    for (const row of category.rows) {
-      const from = row.values[fromTier]
-      const to = row.values[toTier]
-      const fromOk = from.state === "included" || from.state === "text" || from.state === "coming-soon"
-      const toGone = to.state === "unavailable"
-      if (fromOk && toGone) lost.push(row.label)
-    }
-  }
-  return lost
-}
-
 /**
- * Aktif abonelik / açık dönem içinde alt pakete geçiş kapalıdır.
- * BakımX iade yapmadığı için dönem ortası düşürme özellikleri düşürüp
- * ödenmiş süreyi boşa harcar; yenileme ve yükseltme serbesttir.
+ * Ödenmiş dönem açıkken alt pakete geçiş kapalıdır. BakımX iade yapmadığı için
+ * dönem ortası düşürme özellikleri düşürüp ödenmiş süreyi boşa harcar;
+ * yenileme ve yükseltme serbesttir.
+ *
+ * Engel YALNIZ dönem gerçekten açıkken geçerlidir (#782). Durum alanı tek
+ * başına yetmez: dönemi bitmiş ama `subscriptionStatus` hâlâ `active` kalan ya
+ * da dönemsiz (elle verilmiş) bir `premium` satırı, satışta tek paket kaldığı
+ * için başka hiçbir şey satın alamaz hale gelirdi. Durum parametresi çağıranlar
+ * kırılmasın diye korunur; karar `currentPeriodEnd`'e dayanır.
  */
 export function isDowngradeBlocked(input: {
   subscriptionStatus: string | null | undefined
   planTier: string | null | undefined
-  currentPeriodEnd: Date | null | undefined
+  currentPeriodEnd: Date | string | null | undefined
   targetTier: string
   now?: Date
 }): boolean {
   if (!isPlanDowngrade(input.planTier, input.targetTier)) return false
+  if (input.currentPeriodEnd == null) return false
   const now = input.now ?? new Date()
-  const periodOpen =
-    input.currentPeriodEnd != null && input.currentPeriodEnd.getTime() > now.getTime()
-  return input.subscriptionStatus === "active" || periodOpen
+  return new Date(input.currentPeriodEnd).getTime() > now.getTime()
 }
 
 export const DOWNGRADE_BLOCKED_MESSAGE =

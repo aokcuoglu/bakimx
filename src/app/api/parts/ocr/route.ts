@@ -7,7 +7,7 @@ import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-ima
 import { parseOcrImageRequest } from "@/lib/ocr/parse-image-request"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
-import { hasWorkshopFeature } from "@/lib/plan"
+import { featureLockedMessage, hasWorkshopFeature } from "@/lib/plan"
 
 // Part-box dedup'ı ruhsat dedup'ından ayrı tutmak için imageHash'e namespace öneki koyulur:
 // aynı görsel iki akışa da yüklenirse cache'ler karışmaz (part-box JSON'u ruhsat JSON'una benzemez).
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     if (locked) return locked
     if (!hasWorkshopFeature(workshop, "partsInventory")) {
       return NextResponse.json(
-        { error: "Parça kutusu okuma Profesyonel pakette kullanılabilir.", code: "feature_locked" },
+        { error: featureLockedMessage("partsInventory"), code: "feature_locked" },
         { status: 403 },
       )
     }

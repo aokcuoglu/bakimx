@@ -186,7 +186,7 @@ export const KILAVUZ_SECTIONS: GuideSection[] = [
       },
       {
         type: "tip",
-        text: "Lite planda ilk araç kabulüne giden kısa yol Genel Bakış’taki karttan da açılır.",
+        text: "Genel Bakış’taki “Yeni Araç Kabul” düğmesi de doğrudan yeni araç kabulünü açar.",
       },
       {
         type: "links",

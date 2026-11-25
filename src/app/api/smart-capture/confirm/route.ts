@@ -5,7 +5,7 @@ import { assertWritableOr403 } from "@/lib/plan-guard"
 import { prisma } from "@/lib/db"
 import { normalizePhone, normalizePlate } from "@/lib/format"
 import { AuditLogAction } from "@/lib/audit"
-import { hasWorkshopFeature } from "@/lib/plan"
+import { featureLockedMessage, hasWorkshopFeature } from "@/lib/plan"
 import { resolveVinToCatalog } from "@/lib/vin/resolve"
 import { isValidVin } from "@/lib/vin/types"
 import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     if (locked) return locked
     if (!hasWorkshopFeature(workshop, "ocrIntake")) {
       return NextResponse.json(
-        { error: "Bu pakette OCR özelliği bulunmuyor. Paketinizi yükseltin.", code: "feature_locked" },
+        { error: featureLockedMessage("ocrIntake"), code: "feature_locked" },
         { status: 403 },
       )
     }
