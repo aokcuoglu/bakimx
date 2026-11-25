@@ -8,6 +8,7 @@ import { hasLifetimeLite } from "@/lib/lite-campaign"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
 import { activateBillingOrder } from "@/lib/billing/activate"
 import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
+import { verifiedRegistrationTrialData } from "@/lib/billing/registration-trial"
 import type { DemoRequestStatus, SupportRequestStatus, UserRole } from "@prisma/client"
 import { workshopApprovedEmail, workshopRejectedEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
@@ -99,15 +100,21 @@ export async function approveWorkshop(workshopId: string): Promise<Result> {
 
   const now = new Date()
   const currentPlan = await prisma.workshop.findUnique({ where: { id: workshopId } })
-  const lifetimeLite = currentPlan ? hasLifetimeLite(currentPlan) : false
+  // #782: hiç doğrulanmamış (pending) kayıt, eski Lite hakkı işaretli olsa bile
+  // Servis Paketi denemesiyle açılır; askıdan geri alınan etkin eski Lite
+  // atölyesi ise süresiz hakkını korur.
+  const pendingRegistration = currentPlan?.approvalStatus === "pending"
+  const lifetimeLite = currentPlan && !pendingRegistration ? hasLifetimeLite(currentPlan) : false
   const ws = await prisma.workshop.update({
     where: { id: workshopId },
-    data: {
-      approvalStatus: "approved",
-      subscriptionStatus: lifetimeLite ? "active" : "trialing",
-      trialStartedAt: lifetimeLite ? null : now,
-      trialEndsAt: lifetimeLite ? null : computeTrialEnd(now),
-    },
+    data: pendingRegistration
+      ? verifiedRegistrationTrialData(now)
+      : {
+          approvalStatus: "approved",
+          subscriptionStatus: lifetimeLite ? "active" : "trialing",
+          trialStartedAt: lifetimeLite ? null : now,
+          trialEndsAt: lifetimeLite ? null : computeTrialEnd(now),
+        },
   })
   await AuditLogAction(workshopId, ctx.user.id, "Workshop", workshopId, "admin_workshop_approved")
   if (!lifetimeLite) await sendOwnerDecisionEmail(workshopId, ws.name, ws.email, "approved")

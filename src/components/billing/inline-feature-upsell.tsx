@@ -27,7 +27,7 @@ export function InlineFeatureUpsell({
       <FeatureUpgradeActions
         feature={feature}
         currentTier={currentTier}
-        targetTier={definition.targetTier}
+        kind={definition.kind}
         placement="inline"
         compact
       />

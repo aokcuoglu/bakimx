@@ -603,7 +603,7 @@ export function IntakeWizard({
               {!hasFeature((planTier ?? "pro") as PlanTier, "damageMap") &&
                !hasFeature((planTier ?? "pro") as PlanTier, "photoChecklist") && (
                 <p className="text-sm text-muted-foreground">
-                  Hasar işaretleme ve fotoğraf annotation özellikleri paketinizde bulunmuyor. Paketinizi yükselterek bu özelliklere erişebilirsiniz.
+                  Hasar işaretleme ve fotoğraf üzerine işaretleme paketinizde bulunmuyor; bu özellikler Servis Paketi&apos;ne dahildir.
                 </p>
               )}
               <div className="pt-4 flex flex-wrap items-center justify-between gap-2">

@@ -1,4 +1,4 @@
-import type { GatedFeature, PlanTier } from "@/lib/plan"
+import type { GatedFeature } from "@/lib/plan"
 
 export type FeatureDefinition = {
   name: string
@@ -6,15 +6,29 @@ export type FeatureDefinition = {
   description: string
   benefits: readonly string[]
   countLabel: string
-  targetTier: Extract<PlanTier, "pro" | "premium">
+  /**
+   * `package` = Servis Paketi'ne dahil (eski Lite/Başlangıç satırında kilitli
+   * olabilir); `addon` = pakete dahil değil, ileride ayrıca satılacak (#782).
+   * `ADDON_FEATURES` (plan.ts) ile aynı olmak zorunda — feature-catalog testi bekçidir.
+   */
+  kind: "package" | "addon"
 }
 
 const PRO_DEFAULT = {
-  targetTier: "pro" as const,
+  kind: "package" as const,
   benefits: [
     "Daha hızlı ve standart operasyon akışları",
     "Ekip ve müşteri iletişiminde daha az manuel takip",
     "Kayıtlarınızı silmeden kaldığınız yerden devam",
+  ],
+}
+
+const ADDON_DEFAULT = {
+  kind: "addon" as const,
+  benefits: [
+    "Servis Paketi'nin üzerine ayrıca eklenir",
+    "Fiyatı netleşince uygulama içinden satın alınabilir",
+    "Kayıtlarınız silinmez, açıldığında kaldığınız yerden devam",
   ],
 }
 
@@ -44,7 +58,7 @@ export const FEATURE_CATALOG: Record<GatedFeature, FeatureDefinition> = {
     ...PRO_DEFAULT,
     name: "Ekip ve teknisyenler",
     title: "İşleri ekibinize atayın ve ilerlemeyi izleyin",
-    description: "Teknisyen hesapları, görev atama ve ekip performansı Profesyonel pakete dahildir.",
+    description: "Teknisyen hesapları, görev atama ve ekip performansı Servis Paketi'ne dahildir.",
     countLabel: "ekip kaydınız korunuyor",
   },
   partsInventory: {
@@ -97,10 +111,17 @@ export const FEATURE_CATALOG: Record<GatedFeature, FeatureDefinition> = {
     countLabel: "araç pasaportu kaydınız korunuyor",
   },
   ocrIntake: {
-    ...PRO_DEFAULT,
+    ...ADDON_DEFAULT,
     name: "Ruhsat OCR",
     title: "Ruhsat bilgilerini saniyeler içinde aktarın",
     description: "Ruhsat fotoğrafından müşteri ve araç alanlarını otomatik doldurun.",
+    countLabel: "araç kaydınız hazır",
+  },
+  plateScan: {
+    ...PRO_DEFAULT,
+    name: "Plaka okuma",
+    title: "Aracı plakasından saniyeler içinde kabul edin",
+    description: "Kamerayla aracın önünü çekin; plaka ve marka araç kabulüne otomatik gelsin.",
     countLabel: "araç kaydınız hazır",
   },
   photoChecklist: {
@@ -118,14 +139,14 @@ export const FEATURE_CATALOG: Record<GatedFeature, FeatureDefinition> = {
     countLabel: "hasar kaydınız korunuyor",
   },
   vinLookup: {
-    ...PRO_DEFAULT,
+    ...ADDON_DEFAULT,
     name: "VIN ile araç tanıma",
     title: "Aracı VIN üzerinden doğru varyantıyla bulun",
     description: "Şase numarasından marka, model, motor ve katalog eşleşmesini otomatik getirin.",
     countLabel: "araç kaydınız hazır",
   },
   partsCatalog: {
-    ...PRO_DEFAULT,
+    ...ADDON_DEFAULT,
     name: "Parça kataloğu",
     title: "Doğru parçayı katalogdan hızla bulun",
     description: "Araç uyumlu parça sonuçlarını araç kabulüne ekleyin.",
@@ -146,27 +167,45 @@ export const FEATURE_CATALOG: Record<GatedFeature, FeatureDefinition> = {
     countLabel: "dış sipariş kaydınız korunuyor",
   },
   eInvoice: {
-    ...PRO_DEFAULT,
-    targetTier: "premium",
+    ...ADDON_DEFAULT,
     name: "e-Fatura",
     title: "e-Fatura işlemlerini BakımX içinde tamamlayın",
-    description: "Entegrasyon kullanıma açıldığında Premium paket kapsamında sunulacaktır.",
+    description: "Entegrasyon kullanıma açıldığında ek özellik olarak sunulacaktır.",
     countLabel: "araç kabul kaydınız hazır",
   },
   multiBranch: {
-    ...PRO_DEFAULT,
-    targetTier: "premium",
+    ...ADDON_DEFAULT,
     name: "Çoklu şube",
     title: "Şubelerinizi tek merkezden yönetin",
-    description: "Aynı hesapla birden fazla şube oluşturun ve aralarında geçiş yapın. Premium paket kapsamında sunulur.",
+    description: "Aynı hesapla birden fazla şube oluşturun ve aralarında geçiş yapın.",
     countLabel: "kaydınız korunuyor",
   },
   rbac: {
     ...PRO_DEFAULT,
-    targetTier: "premium",
     name: "Gelişmiş yetkilendirme",
     title: "Erişimleri ayrıntılı rollerle yönetin",
-    description: "Gelişmiş yetkilendirme ürünleştiğinde Premium paket kapsamında sunulacaktır.",
+    description: "Yönetici, servis danışmanı ve teknisyen kendi rolünün yetkileriyle çalışır; rol bazlı yetkilendirme Servis Paketi'ne dahildir.",
     countLabel: "ekip kaydınız korunuyor",
   },
+}
+
+export type LockedFeatureLabels = {
+  /** Dar rozet (kenar çubuğu): "Ek" + ekran okuyucuya `badgeSrSuffix`. */
+  badge: string
+  badgeSrSuffix: string
+  /** Geniş yüzeylerde (arama, oluşturma merkezi) tam rozet metni. */
+  label: string
+  /** İpucu eki ve kilit ikonunun erişilebilir adı. */
+  description: string
+}
+
+/**
+ * Kilitli özelliğin rozet ve etiket metinleri (#782). Ek özellik pakette
+ * yoktur; pakete dahil bir özellik yalnız eski (Lite/Başlangıç) satırında
+ * kilitli görünür ve çıkışı Servis Paketi'dir.
+ */
+export function lockedFeatureLabels(feature: GatedFeature): LockedFeatureLabels {
+  return FEATURE_CATALOG[feature].kind === "addon"
+    ? { badge: "Ek", badgeSrSuffix: " özellik", label: "Ek özellik", description: "Ek özellik" }
+    : { badge: "Pakette", badgeSrSuffix: "", label: "Pakette", description: "Servis Paketi özelliği" }
 }

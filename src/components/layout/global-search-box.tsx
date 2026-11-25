@@ -15,6 +15,7 @@ import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import type { UnifiedResult } from "@/lib/search/unified-results"
 import { trIncludes } from "@/lib/tr-search"
 import type { GatedFeature } from "@/lib/plan"
+import { lockedFeatureLabels } from "@/lib/feature-catalog"
 import { cn } from "@/lib/utils"
 import styles from "./global-search-box.module.css"
 
@@ -259,7 +260,7 @@ export function GlobalSearch({
                       <span className="block truncate text-sm font-medium leading-5 tracking-[-0.005em] text-foreground">{item.label}</span>
                       {q && item.sublabel ? <span className="block truncate text-xs leading-4 text-muted-foreground">{item.sublabel}</span> : null}
                     </span>
-                    {locked ? <span className="text-xs font-medium text-muted-foreground">PRO</span> : null}
+                    {locked && item.feature ? <span className="text-xs font-medium text-muted-foreground">{lockedFeatureLabels(item.feature).label}</span> : null}
                   </Button>
                 )
               })}

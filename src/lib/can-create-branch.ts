@@ -6,7 +6,7 @@ type WorkshopPlanFields = Pick<
   "planTier" | "subscriptionStatus" | "approvalStatus" | "trialEndsAt" | "currentPeriodEnd"
 > & { liteFreeGrantedAt?: Date | null }
 
-/** Owner + Premium (or trial Premium access) may create another branch. */
+/** Owner + çoklu şube ek özelliği (deneme ya da "Paket + ek özellikler") may create another branch. */
 export function canCreateBranch(
   input: WorkshopPlanFields & { role: UserRole },
 ): boolean {

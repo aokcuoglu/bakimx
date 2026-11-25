@@ -29,7 +29,17 @@ describe("canCreateBranch", () => {
     ).toBe(false)
   })
 
-  test("allows trialing owners (trial accessTier is premium)", () => {
+  test("blocks paid Servis Paketi owners — çoklu şube ek özellik (#782)", () => {
+    expect(
+      canCreateBranch({
+        ...base,
+        planTier: "pro",
+        role: "owner",
+      }),
+    ).toBe(false)
+  })
+
+  test("allows trialing owners (trial includes add-ons)", () => {
     expect(
       canCreateBranch({
         ...base,

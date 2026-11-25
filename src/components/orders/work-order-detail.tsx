@@ -101,6 +101,7 @@ import type { LaborCatalogRow } from "@/lib/labor/types"
 import { MAX_BATCH_PHOTOS, describeUploadFailure, selectPhotoFiles } from "@/lib/photos/select-photo-files"
 import { InlineFeatureUpsell } from "@/components/billing/inline-feature-upsell"
 import type { GatedFeature, PlanTier } from "@/lib/plan"
+import { lockedFeatureLabels } from "@/lib/feature-catalog"
 import { compressImagesForUpload } from "@/lib/image/compress-image"
 import { cn } from "@/lib/utils"
 
@@ -965,7 +966,7 @@ export function WorkOrderDetail({
               <TabsTrigger key={t.key} value={t.key} className={cn("shrink-0", detail.tab)}>
                 <Icon className="size-3.5" />
                 <span>{t.label}</span>
-                {locked && <LockKeyhole className="size-3" aria-label="Profesyonel paket özelliği" />}
+                {locked && t.feature && <LockKeyhole className="size-3" aria-label={lockedFeatureLabels(t.feature).description} />}
               </TabsTrigger>
             )
           })}

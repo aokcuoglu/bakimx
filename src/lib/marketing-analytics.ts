@@ -11,6 +11,8 @@ export type MarketingEventName = (typeof MARKETING_EVENT_NAMES)[number]
 export type PlanTier = "lite" | "starter" | "pro" | "premium"
 export type BillingCycle = "monthly" | "yearly"
 export type FeaturePlacement = "page" | "inline"
+/** Kilitli özellik pakete mi dahil, yoksa ayrıca satılacak ek özellik mi (#782). */
+export type FeatureKind = "package" | "addon"
 
 type Common = {
   source_page?: string
@@ -52,15 +54,15 @@ export type MarketingEventPayloads = {
   feature_paywall_viewed: Common & {
     feature_id: string
     current_tier: PlanTier
-    target_tier: "pro" | "premium"
+    kind: FeatureKind
     placement: FeaturePlacement
   }
   feature_upgrade_clicked: Common & {
     feature_id: string
     current_tier: PlanTier
-    target_tier: "pro" | "premium"
+    kind: FeatureKind
     placement: FeaturePlacement
-    destination: "checkout" | "plans"
+    destination: "checkout" | "plans" | "contact"
   }
 }
 
@@ -88,8 +90,8 @@ const EVENT_FIELDS: Record<MarketingEventName, readonly string[]> = {
   demo_submitted: ["form_location"],
   purchase_started: ["plan_tier", "billing_cycle"],
   purchase_submitted: ["plan_tier", "billing_cycle", "payment_method"],
-  feature_paywall_viewed: ["feature_id", "current_tier", "target_tier", "placement"],
-  feature_upgrade_clicked: ["feature_id", "current_tier", "target_tier", "placement", "destination"],
+  feature_paywall_viewed: ["feature_id", "current_tier", "kind", "placement"],
+  feature_upgrade_clicked: ["feature_id", "current_tier", "kind", "placement", "destination"],
 }
 
 export function sanitizeMarketingPayload<N extends MarketingEventName>(name: N, payload: MarketingEventPayloads[N]) {

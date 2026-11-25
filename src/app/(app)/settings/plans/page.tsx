@@ -3,7 +3,6 @@ import { BillingPlanManager } from "@/components/billing/billing-plan-manager"
 import { PendingPaymentNotice } from "@/components/billing/pending-payment-notice"
 import { getAccountBillingContext } from "@/lib/billing/account-context"
 import { getHavaleInstructions } from "@/lib/billing/provider"
-import { isLiteRegistrationOpen } from "@/lib/lite-campaign"
 import { getReferralDiscountBps } from "@/lib/billing/referral-discount"
 
 export const metadata = { title: "Paketler" }
@@ -36,8 +35,6 @@ export default async function SettingsPlansPage() {
           pendingPlanTier={pendingOrder?.planTier}
           pendingCycle={pendingOrder?.billingCycle}
           canPurchase={canPurchase}
-          liteRegistrationOpen={isLiteRegistrationOpen()}
-          liteFreeGranted={!!workshop.liteFreeGrantedAt}
           defaultInvoiceTitle={workshop.invoiceTitle || workshop.name}
           defaultTaxNumber={workshop.taxNumber || ""}
           defaultTaxOffice={workshop.taxOffice || ""}
