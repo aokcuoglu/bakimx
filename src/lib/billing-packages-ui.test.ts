@@ -55,3 +55,10 @@ test("paket kartı dönem seçicisi ortak BillingCycleToggle'dır ve yüksekliğ
   expect(toggle).toContain('size="control"')
   expect(toggle).not.toContain("framer-motion")
 })
+
+test("ayarlar paket şeridi dönemi belli değilken aylık liste fiyatını gösterir (#846)", () => {
+  const source = read("src/components/billing/plan-packages.tsx")
+  expect(source).toContain('const stripPriceCycle: BillingCycle = hasCommittedCycle ? stripCycle : "monthly"')
+  expect(source).toContain("monthlyEquivalent(currentPkg.tier, stripPriceCycle)")
+  expect(source).not.toContain("monthlyEquivalent(currentPkg.tier, stripCycle)")
+})

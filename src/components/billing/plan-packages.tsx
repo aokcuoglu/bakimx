@@ -248,6 +248,8 @@ export function PlanPackages({
     // Denemede seçilmiş bir dönem yoktur; dönem ifadesi ve geçiş eylemi yalnız
     // dönemi belli ücretli aboneliklerde gösterilir.
     const hasCommittedCycle = !isTrialing && currentCycle !== null
+    // Dönem belli değilken aylık liste fiyatı gösterilir (landing / fiyatlar ile aynı).
+    const stripPriceCycle: BillingCycle = hasCommittedCycle ? stripCycle : "monthly"
     const monthlyEquivalent = (tier: PlanTier, cycle: BillingCycle) => {
       const discounted = getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps) / 100
       return cycle === "monthly" ? discounted : Math.round(discounted / 12)
@@ -292,7 +294,7 @@ export function PlanPackages({
                         )}
                       </div>
                       <p className="text-xs font-medium leading-4 text-muted-foreground">
-                        ₺{monthlyEquivalent(currentPkg.tier, stripCycle).toLocaleString("tr-TR")} / ay
+                        ₺{monthlyEquivalent(currentPkg.tier, stripPriceCycle).toLocaleString("tr-TR")} / ay
                         {hasCommittedCycle && (stripCycle === "yearly" ? " · yıllık faturalandırılır" : " · aylık faturalandırılır")}
                       </p>
                     </div>
