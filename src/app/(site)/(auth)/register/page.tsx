@@ -1,15 +1,13 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
-import { isLiteRegistrationOpen } from "@/lib/lite-campaign"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { RegisterClient } from "@/components/auth/register-client"
 import { isAuthenticated } from "@/lib/auth"
-import { isSalePlanTier, type SalePlanTier } from "@/lib/plan"
+import { SERVICE_PACKAGE } from "@/lib/plans-catalog"
 import { parseReferralCodeQuery } from "@/lib/referral-code"
 
 export const metadata: Metadata = {
   title: "Ücretsiz Hesap Oluştur",
-  description: "BakimX hesabınızı oluşturun. Lite kampanyasında süresiz ücretsiz kullanım; ücretli paketlerde 7 iş günlük deneme.",
+  description: "BakımX hesabınızı oluşturun. Servis Paketi'ni kart bilgisi olmadan 7 iş günü ücretsiz deneyin.",
 }
 
 export const dynamic = "force-dynamic"
@@ -24,13 +22,11 @@ export default async function RegisterPage({
   }
 
   const sp = await searchParams
-  const preferredTier: SalePlanTier | undefined = isSalePlanTier(sp.tier) ? sp.tier : undefined
+  // Satışta tek paket var (#782): fiyat sayfasından `?tier=` ile gelindiyse
+  // (eski `lite`/`premium` bağlantıları dahil) ilgilenilen paket Servis Paketi'dir.
+  const preferredTier = sp.tier ? SERVICE_PACKAGE.tier : undefined
   const preferredCycle = sp.cycle === "yearly" ? "yearly" as const : sp.cycle === "monthly" ? "monthly" as const : undefined
   const referralCode = parseReferralCodeQuery(sp.ref)
-
-  if (preferredTier === "lite" && !isLiteRegistrationOpen()) {
-    return <main className="mx-auto max-w-xl p-6"><Alert><AlertTitle>Yeni Lite kayıtları kapalı</AlertTitle><AlertDescription>Mevcut Lite üyelerinin ücretsiz kullanımı devam ediyor. Kayıt sırasında başka bir paket otomatik seçilmez.</AlertDescription></Alert></main>
-  }
 
   return (
     <RegisterClient

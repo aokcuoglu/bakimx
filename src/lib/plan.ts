@@ -27,12 +27,18 @@ import type { Workshop } from "@prisma/client"
  *    read-only mode (data visible, writes blocked) now only survives for
  *    founder impersonation, so a locked tenant can still be inspected.
  *
- * Per-feature gating:
- *  - `assertFeature` (throw-based) is ready to adopt inside server actions as
- *    further premium features ship.
- *  - `eInvoice`: planned gate on e-Fatura issuance when the integration lands
- *    (work-order completion flow).
- *  - `multiBranch`: planned gate on branch creation (`/app/branches`).
+ * Per-feature gating (#782 — tek paket):
+ *  - Satışta tek paket var: `pro` = "Servis Paketi". Paket servis yönetimi için
+ *    gereken her şeyi içerir (plaka okuma dahil).
+ *  - {@link ADDON_FEATURES} pakete DAHİL DEĞİLDİR; ileride uygulama içinden ek
+ *    özellik olarak satılacak. Bugün yalnız `premium` erişim profili ("Paket +
+ *    ek özellikler") onları açar — deneme bu profile çözülür
+ *    ({@link TRIAL_ACCESS_TIER}), admin de elle verebilir.
+ *  - `lite` / `starter` / `premium` satışa kapalıdır ama mevcut satırlar
+ *    okunur kalır (enum/tip kırılmaz).
+ *  - `assertFeature` (throw-based) is ready to adopt inside server actions.
+ *  - `eInvoice`: planned gate on e-Fatura issuance when the integration lands.
+ *  - `multiBranch`: gate on branch creation (`canCreateBranch`).
  *  - `rbac`: defined for completeness; today RBAC roles (owner/manager/staff)
  *    are available across all tiers, so the gate is informational only.
  */
@@ -66,8 +72,11 @@ export function businessDaysUntil(from: Date, until: Date): number {
 export const PLAN_TIERS = ["lite", "starter", "pro", "premium"] as const
 export type PlanTier = (typeof PLAN_TIERS)[number]
 
-/** Tiers offered for new purchases. `starter` remains readable for legacy workshops. */
-export const SALE_PLAN_TIERS = ["lite", "pro", "premium"] as const
+/**
+ * Tiers offered for new purchases — yalnız Servis Paketi (#782). `lite`,
+ * `starter` ve `premium` eski/elle verilen satırlar için okunur kalır.
+ */
+export const SALE_PLAN_TIERS = ["pro"] as const
 export type SalePlanTier = (typeof SALE_PLAN_TIERS)[number]
 
 export function isPlanTier(value: unknown): value is PlanTier {
@@ -78,8 +87,8 @@ export function isSalePlanTier(value: unknown): value is SalePlanTier {
   return typeof value === "string" && SALE_PLAN_TIERS.some((tier) => tier === value)
 }
 
-// Included login seats per plan tier. getPlanState resolves active trials to a
-// Premium access tier, regardless of the stored sales/default tier.
+// Included login seats per plan tier. getPlanState resolves active trials to
+// TRIAL_ACCESS_TIER, regardless of the stored sales/default tier.
 export const PLAN_SEATS: Record<PlanTier, number> = {
   lite: 1,
   starter: 1,
@@ -87,11 +96,16 @@ export const PLAN_SEATS: Record<PlanTier, number> = {
   premium: 15,
 }
 
-/** Per-tier monthly VIN/katalog kotası (atölye başına). Ek kota Workshop.extraVinQuota ile eklenir. */
+/**
+ * Per-tier monthly VIN/katalog kotası (atölye başına). Ek kota Workshop.extraVinQuota ile eklenir.
+ * Şaseden parça (VIN + parça kataloğu) Servis Paketi'ne dahil olmayan bir ek
+ * özellik olduğu için `pro` kotası 0'dır (#782).
+ */
 export const VIN_LOOKUP_QUOTA: Record<PlanTier, number> = {
   lite: 0,
-  starter: 1_000,
-  pro: 5_000,
+  // Eski Başlangıç'ta vinLookup/partsCatalog kapalı (ek özellik) — kota da yok.
+  starter: 0,
+  pro: 0,
   premium: 15_000,
 }
 
@@ -102,19 +116,20 @@ export function getSeatLimit(tier: PlanTier, extraSeats: number = 0): number {
 
 /** Pakete göre okunur ad — hata metinlerinde "starter" değil "Başlangıç" geçsin. */
 export const PLAN_LABELS: Record<PlanTier, string> = {
-  lite: "Lite",
-  starter: "Başlangıç",
-  pro: "Profesyonel",
-  premium: "Premium",
+  lite: "Lite (eski)",
+  starter: "Başlangıç (eski)",
+  pro: "Servis Paketi",
+  premium: "Paket + ek özellikler",
 }
 
 /**
  * Koltuk limiti dolduğunda kullanıcının GÖRDÜĞÜ cümle (BAK-37).
  *
- * `starter` paketinin koltuk limiti 1'dir — yani başlangıç paketindeki bir
- * atölye HİÇ alt kullanıcı açamaz ve ekip paneline her girişinde bu duvara
- * toslar. Sessiz bir "işlem başarısız" burada kabul edilemez: metin kaç/kaç
- * olduğunu, neden olduğunu ve çıkışın yükseltme olduğunu söylemek zorunda.
+ * Eski `lite`/`starter` satırlarının koltuk limiti 1'dir — o atölye HİÇ alt
+ * kullanıcı açamaz ve ekip paneline her girişinde bu duvara toslar. Sessiz bir
+ * "işlem başarısız" burada kabul edilemez: metin kaç/kaç olduğunu, neden
+ * olduğunu ve çıkışı söylemek zorunda. Servis Paketi 5 kullanıcı içerir; fazlası
+ * satılmıyor, iletişimle açılıyor (#782).
  *
  * Saf fonksiyon — hem sunucu kapısı (`assertSeatAvailableTx`) hem ekip paneli
  * aynı cümleyi kullanır, ikisi ayrışmasın.
@@ -124,12 +139,11 @@ export function seatLimitMessage(tier: PlanTier, used: number, limit: number): s
   if (limit <= 1) {
     return (
       `Koltuk limitiniz dolu ${counts}. ${PLAN_LABELS[tier]} paketi tek kullanıcı içerir — ` +
-      `ekibinize kullanıcı eklemek için paketinizi yükseltmeniz gerekiyor.`
+      `ekibinize kullanıcı eklemek için ${PLAN_SEATS.pro} kullanıcılı ${PLAN_LABELS.pro}'ne geçmeniz gerekiyor.`
     )
   }
   return (
-    `Koltuk limitiniz dolu ${counts}. Yeni kullanıcı eklemek için paketinizi yükseltin ` +
-    `ya da ek koltuk için bizimle iletişime geçin.`
+    `Koltuk limitiniz dolu ${counts}. Ek kullanıcı için bizimle iletişime geçin.`
   )
 }
 
@@ -164,6 +178,7 @@ export function isPlanExpiredLock(
 
 export type GatedFeature =
   | "ocrIntake"
+  | "plateScan"
   | "photoChecklist"
   | "damageMap"
   | "eInvoice"
@@ -186,22 +201,54 @@ export type GatedFeature =
   | "vehiclePassport"
 
 export const GATED_FEATURES: readonly GatedFeature[] = [
-  "ocrIntake", "photoChecklist", "damageMap", "eInvoice", "multiBranch", "rbac",
+  "ocrIntake", "plateScan", "photoChecklist", "damageMap", "eInvoice", "multiBranch", "rbac",
   "vinLookup", "partsCatalog", "bakimxCatalog", "getirbakimCatalog", "quotes",
   "appointments", "automatedReminders", "team", "partsInventory", "procurement",
   "cashbox", "analytics", "reports", "communications", "vehiclePassport",
 ] as const
 
-/** Lowest purchasable/legacy tier which owns a capability. */
+/**
+ * Pakete dahil olmayan, ileride uygulama içinden ayrıca satılacak yetenekler
+ * (#782): şaseden parça (`vinLookup` + `partsCatalog`), ruhsat OCR, e-Fatura ve
+ * çoklu şube. AI danışmanının kodda kapısı yok; yalnız katalogda listelenir.
+ * Plaka okuma (`plateScan`) pakete DAHİLDİR, burada yer almaz.
+ */
+export const ADDON_FEATURES = [
+  "vinLookup",
+  "partsCatalog",
+  "ocrIntake",
+  "eInvoice",
+  "multiBranch",
+] as const satisfies readonly GatedFeature[]
+export type AddonFeature = (typeof ADDON_FEATURES)[number]
+
+export function isAddonFeature(feature: GatedFeature): feature is AddonFeature {
+  return ADDON_FEATURES.some((addon) => addon === feature)
+}
+
+/**
+ * Deneme süresince ek özellikler de açık mı? Tek karar noktası: `false`
+ * yapılırsa deneme yalnız Servis Paketi haklarıyla çalışır (#782).
+ */
+export const TRIAL_INCLUDES_ADDONS = true
+
+/** Aktif denemenin çözüldüğü erişim profili. */
+export const TRIAL_ACCESS_TIER: PlanTier = TRIAL_INCLUDES_ADDONS ? "premium" : "pro"
+
+/**
+ * Lowest purchasable/legacy tier which owns a capability. Add-on'lar bugün
+ * yalnız `premium` erişim profiliyle (deneme / elle verilen) açılır.
+ */
 export const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
-  ocrIntake: "starter",
+  ocrIntake: "premium",
+  plateScan: "starter",
   photoChecklist: "starter",
   damageMap: "starter",
   eInvoice: "premium",
   multiBranch: "premium",
-  rbac: "premium",
-  vinLookup: "pro",
-  partsCatalog: "starter",
+  rbac: "pro",
+  vinLookup: "premium",
+  partsCatalog: "premium",
   bakimxCatalog: "starter",
   getirbakimCatalog: "starter",
   quotes: "pro",
@@ -217,18 +264,20 @@ export const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   vehiclePassport: "starter",
 }
 
+/**
+ * Eski Başlangıç (`starter`) satırlarının hakları. Ruhsat OCR ve parça kataloğu
+ * artık ek özellik olduğu için buradan çıktı; plaka okuma kaldığı yerden devam
+ * eder (#782).
+ */
 const STARTER_FEATURES = new Set<GatedFeature>([
-  "ocrIntake",
+  "plateScan",
   "photoChecklist",
   "damageMap",
-  "partsCatalog",
   "bakimxCatalog",
   "getirbakimCatalog",
   "cashbox",
   "vehiclePassport",
 ])
-
-const PREMIUM_ONLY_FEATURES = new Set<GatedFeature>(["eInvoice", "multiBranch", "rbac"])
 
 type WorkshopPlanFields = Pick<
   Workshop,
@@ -238,7 +287,7 @@ type WorkshopPlanFields = Pick<
 export interface PlanState {
   /** Persisted billing tier. */
   tier: PlanTier
-  /** Entitlement tier used by feature, seat and quota checks. Trials are Premium. */
+  /** Entitlement tier used by feature, seat and quota checks. Trials resolve to TRIAL_ACCESS_TIER. */
   accessTier: PlanTier
   isApproved: boolean
   isTrialing: boolean
@@ -315,7 +364,7 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
 
   return {
     tier,
-    accessTier: hasAccess && isTrialing ? "premium" : tier,
+    accessTier: hasAccess && isTrialing ? TRIAL_ACCESS_TIER : tier,
     isApproved,
     isTrialing,
     trialEndsAt,
@@ -384,8 +433,11 @@ export function computeTrialEnd(from: Date): Date {
 }
 
 export function hasFeature(tier: PlanTier, feature: GatedFeature): boolean {
+  // `premium` = "Paket + ek özellikler" erişim profili (deneme / elle verilen).
   if (tier === "premium") return true
-  if (tier === "pro") return !PREMIUM_ONLY_FEATURES.has(feature)
+  // Ek özellikler pakete dahil değil — ayrı satın alma akışı gelene kadar kapalı.
+  if (isAddonFeature(feature)) return false
+  if (tier === "pro") return true
   if (tier === "starter") return STARTER_FEATURES.has(feature)
   return false
 }
@@ -403,18 +455,32 @@ export function getEffectiveSeatLimit(
   return getSeatLimit(getPlanState(workshop).accessTier, workshop.extraSeats ?? 0)
 }
 
+/** Ek özellik kilidinde gösterilen metin — satın alma akışı henüz yok (#782). */
+export const ADDON_LOCKED_MESSAGE =
+  "Bu özellik pakete dahil değildir; ek özellik olarak yakında satın alınabilecek. Bilgi için bizimle iletişime geçin."
+
+/** Pakette olan ama eski (Lite/Başlangıç) satırda kapalı özelliğin metni. */
+export const PACKAGE_FEATURE_LOCKED_MESSAGE = "Bu özellik paketinizde bulunmuyor."
+
+/** API route'larının 403 `feature_locked` gövdesindeki tek kaynak metin. */
+export function featureLockedMessage(feature: GatedFeature): string {
+  return isAddonFeature(feature) ? ADDON_LOCKED_MESSAGE : PACKAGE_FEATURE_LOCKED_MESSAGE
+}
+
 export class PlanFeatureLockedError extends Error {
+  // İstemciler (api-errors.ts, vin-resolve.tsx, vin-link-prompt.tsx) bu koda bakar — sabit kalır.
   readonly code = "feature_locked"
   readonly feature: GatedFeature
   readonly requiredTier: PlanTier
+  /** True when the feature is a not-yet-purchasable add-on rather than a package feature. */
+  readonly addon: boolean
 
   constructor(feature: GatedFeature) {
-    const requiredTier = FEATURE_MIN_TIER[feature]
-    const purchasableTier = requiredTier === "premium" ? "premium" : "pro"
-    super(`Bu özellik ${PLAN_LABELS[purchasableTier]} pakette kullanılabilir. Devam etmek için paketinizi yükseltin.`)
+    super(featureLockedMessage(feature))
     this.name = "PlanFeatureLockedError"
     this.feature = feature
-    this.requiredTier = requiredTier
+    this.requiredTier = FEATURE_MIN_TIER[feature]
+    this.addon = isAddonFeature(feature)
   }
 }
 

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { checkoutInAppSchema } from "@/lib/validations/billing"
 
 const validOrder = {
-  tier: "lite",
+  tier: "pro",
   cycle: "monthly",
   method: "card",
   invoiceTitle: "Örnek Oto Servis",
@@ -10,8 +10,12 @@ const validOrder = {
   taxOffice: "Kadıköy",
 }
 
-test("ödeme şeması Lite paket siparişini kabul eder", () => {
+test("ödeme şeması Servis Paketi siparişini kabul eder", () => {
   expect(checkoutInAppSchema.safeParse(validOrder).success).toBe(true)
+})
+
+test.each(["lite", "premium"])("ödeme şeması satıştan kalkan %s paketini reddeder (#782)", (tier) => {
+  expect(checkoutInAppSchema.safeParse({ ...validOrder, tier }).success).toBe(false)
 })
 
 test("ödeme şeması bilinmeyen paketleri reddeder", () => {

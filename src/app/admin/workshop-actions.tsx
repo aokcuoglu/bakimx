@@ -11,11 +11,13 @@ import {
   activateWorkshopPlan,
   setWorkshopExtraSeats,
 } from "@/app/admin/actions"
+import { PLAN_LABELS } from "@/lib/plan"
 
+// #782: Servis Paketi tek satış paketi; premium = "Paket + ek özellikler" (elle verilir).
 const TIER_LABELS: Record<string, string> = {
-  starter: "Başlangıç",
-  pro: "Profesyonel",
-  premium: "Premium",
+  starter: PLAN_LABELS.starter,
+  pro: PLAN_LABELS.pro,
+  premium: PLAN_LABELS.premium,
 }
 const TIERS = ["starter", "pro", "premium"] as const
 

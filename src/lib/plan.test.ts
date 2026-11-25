@@ -20,6 +20,15 @@ import {
   GATED_FEATURES,
   assertFeature,
   PlanFeatureLockedError,
+  ADDON_FEATURES,
+  ADDON_LOCKED_MESSAGE,
+  SALE_PLAN_TIERS,
+  TRIAL_ACCESS_TIER,
+  TRIAL_INCLUDES_ADDONS,
+  isAddonFeature,
+  isSalePlanTier,
+  featureLockedMessage,
+  type PlanTier,
 } from "@/lib/plan"
 
 function wsFields(over: Partial<Parameters<typeof getPlanState>[0]> = {}) {
@@ -66,21 +75,44 @@ test("active subscription with null period keeps access (legacy/admin-provisione
   expect(s.subscriptionDaysLeft).toBe(null)
 })
 
-// VIN'den araç tanıma (rapidapi) is a Pro+ capability: billed external lookups,
-// so starter is locked out while an active Premium-equivalent trial keeps access.
-test("vinLookup is gated to the pro tier and above", () => {
-  expect(hasFeature("starter", "vinLookup")).toBe(false)
-  expect(hasFeature("pro", "vinLookup")).toBe(true)
-  expect(hasFeature("premium", "vinLookup")).toBe(true)
+// #782: tek paket. Ek özellikler (şaseden parça, ruhsat OCR, e-Fatura, çoklu
+// şube) Servis Paketi'ne dahil değil; yalnız "Paket + ek özellikler" profili
+// (premium — deneme / elle verilen) açar.
+test("satışta yalnız Servis Paketi var", () => {
+  expect(SALE_PLAN_TIERS).toEqual(["pro"])
+  expect(isSalePlanTier("pro")).toBe(true)
+  for (const tier of ["lite", "starter", "premium"]) expect(isSalePlanTier(tier)).toBe(false)
+  expect(PLAN_LABELS.pro).toBe("Servis Paketi")
+  expect(PLAN_LABELS.premium).toBe("Paket + ek özellikler")
 })
 
-test("all premium-gated features are locked below the premium tier", () => {
-  const premiumOnly = ["eInvoice", "multiBranch", "rbac"] as const
-  for (const feature of premiumOnly) {
-    expect(hasFeature("starter", feature)).toBe(false)
+test("ek özellikler Servis Paketi'nde kapalı, Paket + ek özellikler profilinde açık", () => {
+  expect([...ADDON_FEATURES]).toEqual(["vinLookup", "partsCatalog", "ocrIntake", "eInvoice", "multiBranch"])
+  for (const feature of ADDON_FEATURES) {
+    expect(isAddonFeature(feature)).toBe(true)
     expect(hasFeature("pro", feature)).toBe(false)
+    expect(hasFeature("starter", feature)).toBe(false)
+    expect(hasFeature("lite", feature)).toBe(false)
     expect(hasFeature("premium", feature)).toBe(true)
   }
+})
+
+test("Servis Paketi ek özellikler dışındaki her yeteneği içerir", () => {
+  const packageFeatures = GATED_FEATURES.filter((feature) => !isAddonFeature(feature))
+  expect(packageFeatures.every((feature) => hasFeature("pro", feature))).toBe(true)
+  expect(GATED_FEATURES.filter((feature) => !hasFeature("pro", feature))).toEqual([
+    "ocrIntake", "eInvoice", "multiBranch", "vinLookup", "partsCatalog",
+  ])
+})
+
+test("plaka okuma pakete dahil — ruhsat OCR ek özelliktir", () => {
+  expect(isAddonFeature("plateScan")).toBe(false)
+  expect(hasFeature("pro", "plateScan")).toBe(true)
+  expect(hasFeature("starter", "plateScan")).toBe(true)
+  expect(hasFeature("premium", "plateScan")).toBe(true)
+  expect(hasFeature("lite", "plateScan")).toBe(false)
+  expect(hasFeature("pro", "ocrIntake")).toBe(false)
+  expect(() => assertFeature(wsFields({ planTier: "pro" }), "plateScan")).not.toThrow()
 })
 
 // --- canWrite matrix: read-only lock on plan expiry -------------------------
@@ -220,42 +252,51 @@ test("starter paketi tek koltuk taşır — alt kullanıcı açılamaz", () => {
   expect(getSeatLimit("starter", 2)).toBe(3)
 })
 
-test("koltuk limiti mesajı sayıları ve yükseltme çıkışını söyler", () => {
+test("Servis Paketi 5 kullanıcı içerir; fazlası için iletişim önerilir", () => {
+  expect(PLAN_SEATS.pro).toBe(5)
   const message = seatLimitMessage("pro", 5, 5)
   expect(message).toContain("(5/5)")
-  expect(message).toContain("yükseltin")
+  expect(message).toContain("Ek kullanıcı için bizimle iletişime geçin")
+  // Tek paket var — "yükseltin" diyecek bir üst paket yok.
+  expect(message).not.toContain("yükselt")
   // Sessiz bir "işlem başarısız" kabul edilemez — metin ne yapılacağını söylemeli.
   expect(message).not.toBe("İşlem başarısız")
 })
 
-test("tek koltuklu pakette mesaj nedeni açıkça anlatır", () => {
+test("tek koltuklu eski pakette mesaj nedeni ve Servis Paketi çıkışını anlatır", () => {
   const message = seatLimitMessage("starter", 1, 1)
   expect(message).toContain("(1/1)")
   expect(message).toContain("Başlangıç")
   expect(message).toContain("tek kullanıcı")
-  expect(message).toContain("yükseltmeniz")
+  expect(message).toContain("5 kullanıcılı Servis Paketi")
 })
 
-// --- Lite tier tests ---------------------------------------------------------
+// --- Eski satırlar (lite / starter / premium) ---------------------------------
 
-test("lite tier has rank 0 (below starter)", () => {
+test("eski Lite satırı okunur kalır", () => {
   expect(PLAN_SEATS.lite).toBe(1)
-  expect(PLAN_LABELS.lite).toBe("Lite")
+  expect(PLAN_LABELS.lite).toBe("Lite (eski)")
   expect(VIN_LOOKUP_QUOTA.lite).toBe(0)
 })
 
-test("checkout tier doğrulaması Lite dahil merkezi paket listesini kullanır", () => {
+test("enum eski paketleri okunur tutar — tip ve doğrulama kırılmaz", () => {
   expect(PLAN_TIERS).toEqual(["lite", "starter", "pro", "premium"])
   for (const tier of PLAN_TIERS) expect(isPlanTier(tier)).toBe(true)
   expect(isPlanTier("enterprise")).toBe(false)
   expect(isPlanTier(["lite"])).toBe(false)
 })
 
-test("ocrIntake is gated to starter tier and above", () => {
-  expect(hasFeature("lite", "ocrIntake")).toBe(false)
-  expect(hasFeature("starter", "ocrIntake")).toBe(true)
-  expect(hasFeature("pro", "ocrIntake")).toBe(true)
-  expect(hasFeature("premium", "ocrIntake")).toBe(true)
+test("eski lite/starter/premium satırları getPlanState'te patlamaz", () => {
+  const future = new Date(Date.now() + 5 * 86_400_000)
+  for (const planTier of ["lite", "starter", "premium"] as const) {
+    const state = getPlanState(wsFields({ planTier, currentPeriodEnd: future }))
+    expect(state.tier).toBe(planTier)
+    expect(state.accessTier).toBe(planTier)
+    expect(state.hasAccess).toBe(true)
+  }
+  const lifetimeLite = getPlanState(wsFields({ planTier: "lite", liteFreeGrantedAt: new Date() }))
+  expect(lifetimeLite.hasAccess).toBe(true)
+  expect(lifetimeLite.accessTier).toBe("lite")
 })
 
 test("photoChecklist is gated to starter tier and above", () => {
@@ -272,30 +313,18 @@ test("damageMap is gated to starter tier and above", () => {
   expect(hasFeature("premium", "damageMap")).toBe(true)
 })
 
-test("partsCatalog is available from starter tier (not lite)", () => {
-  expect(hasFeature("lite", "partsCatalog")).toBe(false)
-  expect(hasFeature("starter", "partsCatalog")).toBe(true)
-})
-
-test("vinLookup requires pro tier (not available in lite or starter)", () => {
-  expect(hasFeature("lite", "vinLookup")).toBe(false)
-  expect(hasFeature("starter", "vinLookup")).toBe(false)
-  expect(hasFeature("pro", "vinLookup")).toBe(true)
-})
-
 test("Lite has only the manual core and no gated capabilities", () => {
   for (const feature of GATED_FEATURES) {
     expect(hasFeature("lite", feature)).toBe(false)
   }
 })
 
-test("legacy Starter keeps its existing OCR, photo, catalog, cashbox and passport rights", () => {
+test("eski Başlangıç fotoğraf, plaka, katalog sipariş, kasa ve pasaport haklarını korur; ek özellikler çıktı", () => {
   const starterFeatures = GATED_FEATURES.filter((feature) => hasFeature("starter", feature))
   expect(starterFeatures).toEqual([
-    "ocrIntake",
+    "plateScan",
     "photoChecklist",
     "damageMap",
-    "partsCatalog",
     "bakimxCatalog",
     "getirbakimCatalog",
     "cashbox",
@@ -303,53 +332,73 @@ test("legacy Starter keeps its existing OCR, photo, catalog, cashbox and passpor
   ])
 })
 
-test("Pro has every operational capability while Premium adds premium-only controls", () => {
-  const premiumOnly = ["eInvoice", "multiBranch", "rbac"]
-  expect(GATED_FEATURES.filter((feature) => !hasFeature("pro", feature))).toEqual(premiumOnly)
-  expect(GATED_FEATURES.every((feature) => hasFeature("premium", feature))).toBe(true)
-})
-
-test("an active trial gets Premium features, seats and quotas regardless of stored tier", () => {
+test("aktif deneme TRIAL_ACCESS_TIER'a çözülür ve ek özellikleri açar", () => {
+  expect(TRIAL_INCLUDES_ADDONS).toBe(true)
+  expect(TRIAL_ACCESS_TIER).toBe("premium")
   const trial = wsFields({
-    planTier: "lite",
+    planTier: "pro",
     subscriptionStatus: "trialing",
     trialEndsAt: new Date(Date.now() + 86_400_000),
   })
-  expect(getPlanState(trial).accessTier).toBe("premium")
-  expect(hasWorkshopFeature(trial, "rbac")).toBe(true)
-  expect(getEffectiveSeatLimit({ ...trial, extraSeats: 2 })).toBe(17)
+  expect(getPlanState(trial).accessTier).toBe(TRIAL_ACCESS_TIER)
+  for (const feature of ADDON_FEATURES) expect(hasWorkshopFeature(trial, feature)).toBe(true)
+  expect(hasWorkshopFeature(trial, "plateScan")).toBe(true)
+  expect(getEffectiveSeatLimit({ ...trial, extraSeats: 2 })).toBe(PLAN_SEATS[TRIAL_ACCESS_TIER] + 2)
+})
+
+test("ücretli Servis Paketi ek özellikleri açmaz", () => {
+  const paid = wsFields({ planTier: "pro", currentPeriodEnd: new Date(Date.now() + 86_400_000) })
+  expect(getPlanState(paid).accessTier).toBe("pro")
+  for (const feature of ADDON_FEATURES) expect(hasWorkshopFeature(paid, feature)).toBe(false)
+  expect(getEffectiveSeatLimit({ ...paid, extraSeats: 0 })).toBe(5)
 })
 
 test("a pending workshop does not gain trial entitlements before approval", () => {
   const pending = wsFields({
-    planTier: "lite",
+    planTier: "pro",
     subscriptionStatus: "trialing",
     approvalStatus: "pending",
     trialEndsAt: new Date(Date.now() + 86_400_000),
   })
-  expect(getPlanState(pending).accessTier).toBe("lite")
-  expect(hasWorkshopFeature(pending, "rbac")).toBe(false)
+  expect(getPlanState(pending).accessTier).toBe("pro")
+  expect(hasWorkshopFeature(pending, "multiBranch")).toBe(false)
 })
 
-test("feature errors point to a purchasable upgrade while retaining the entitlement tier", () => {
-  const lite = wsFields({ planTier: "lite" })
-  expect(() => assertFeature(lite, "ocrIntake")).toThrow("Profesyonel pakette")
-
+test("ek özellik kilidi satın alma sayfasına değil iletişime yönlendirir; kod sabit kalır", () => {
   try {
-    assertFeature(lite, "ocrIntake")
+    assertFeature(wsFields({ planTier: "pro" }), "vinLookup")
+    throw new Error("expected throw")
   } catch (error) {
     expect(error).toBeInstanceOf(PlanFeatureLockedError)
-    expect((error as PlanFeatureLockedError).requiredTier).toBe("starter")
+    const locked = error as PlanFeatureLockedError
+    expect(locked.code).toBe("feature_locked")
+    expect(locked.addon).toBe(true)
+    expect(locked.requiredTier).toBe("premium")
+    expect(locked.message).toBe(ADDON_LOCKED_MESSAGE)
+    expect(locked.message).toBe(
+      "Bu özellik pakete dahil değildir; ek özellik olarak yakında satın alınabilecek. Bilgi için bizimle iletişime geçin.",
+    )
   }
+})
 
-  expect(() => assertFeature(wsFields({ planTier: "pro" }), "eInvoice")).toThrow("Premium pakette")
+test("eski satırda kapalı paket özelliği 'paketinizde bulunmuyor' der", () => {
+  try {
+    assertFeature(wsFields({ planTier: "lite" }), "appointments")
+    throw new Error("expected throw")
+  } catch (error) {
+    expect(error).toBeInstanceOf(PlanFeatureLockedError)
+    const locked = error as PlanFeatureLockedError
+    expect(locked.addon).toBe(false)
+    expect(locked.code).toBe("feature_locked")
+    expect(locked.message).toBe("Bu özellik paketinizde bulunmuyor.")
+  }
+  expect(featureLockedMessage("ocrIntake")).toBe(ADDON_LOCKED_MESSAGE)
+  expect(featureLockedMessage("cashbox")).toBe("Bu özellik paketinizde bulunmuyor.")
 })
 
 // --- VIN quota tests ---------------------------------------------------------
 
-test("VIN quotas increase by tier", () => {
-  expect(VIN_LOOKUP_QUOTA.lite).toBe(0)
-  expect(VIN_LOOKUP_QUOTA.starter).toBe(1_000)
-  expect(VIN_LOOKUP_QUOTA.pro).toBe(5_000)
-  expect(VIN_LOOKUP_QUOTA.premium).toBe(15_000)
+test("şaseden parça ek özellik olduğu için Servis Paketi'nin VIN kotası 0", () => {
+  const quotas: Record<PlanTier, number> = { lite: 0, starter: 0, pro: 0, premium: 15_000 }
+  expect(VIN_LOOKUP_QUOTA).toEqual(quotas)
 })

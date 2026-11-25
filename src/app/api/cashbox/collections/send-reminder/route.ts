@@ -5,7 +5,7 @@ import { assertWritableOr403 } from "@/lib/plan-guard"
 import { prisma } from "@/lib/db"
 import { notifyCollectionReminder } from "@/lib/communications/triggers"
 import type { SendableChannel } from "@/lib/communications/types"
-import { hasWorkshopFeature } from "@/lib/plan"
+import { featureLockedMessage, hasWorkshopFeature } from "@/lib/plan"
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     if (locked) return locked
     if (!hasWorkshopFeature(workshop, "cashbox")) {
       return NextResponse.json(
-        { error: "Kasa ve tahsilat Profesyonel pakette kullanılabilir.", code: "feature_locked" },
+        { error: featureLockedMessage("cashbox"), code: "feature_locked" },
         { status: 403 },
       )
     }

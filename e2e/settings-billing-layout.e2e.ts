@@ -53,11 +53,11 @@ test("bekleyen kart ödemesi aynı sayfada açılır", async ({ page }) => {
       data: {
         workshopId: workshop.id,
         type: "new_purchase",
-        planTier: "premium",
+        planTier: "pro",
         billingCycle: "monthly",
-        amountMinor: 74900,
-        grossAmountMinor: 74900,
-        netAmountMinor: 62417,
+        amountMinor: 149900,
+        grossAmountMinor: 149900,
+        netAmountMinor: 124917,
         method: "card",
         reference,
       },
@@ -99,7 +99,8 @@ test("bekleyen kart ödemesi aynı sayfada açılır", async ({ page }) => {
     expect((await prisma.billingOrder.findUnique({ where: { reference } }))?.status).toBe("cancelled")
     await page.goto("/settings/plans")
     await expect(page.getByRole("button", { name: "Bekleyen talebiniz var" })).toHaveCount(0)
-    await expect(page.getByText(/Atölye başına · /)).toHaveCount(3)
+    // #782: tek paket kartı.
+    await expect(page.getByText(/Atölye başına · /)).toHaveCount(1)
   } finally {
     await prisma.auditLog.deleteMany({ where: { workshopId: workshop.id } })
     await prisma.billingOrder.deleteMany({ where: { workshopId: workshop.id } })

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { assertWritableOr403 } from "@/lib/plan-guard"
-import { hasWorkshopFeature } from "@/lib/plan"
+import { featureLockedMessage, hasWorkshopFeature } from "@/lib/plan"
 import { getOcrProvider } from "@/lib/ocr/provider"
 import { hashImageBuffer } from "@/lib/ocr/image-hash"
 import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-image"
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     if (!hasWorkshopFeature(workshop, "ocrIntake")) {
       return NextResponse.json(
-        { error: "Bu pakette ruhsat okuma özelliği bulunmuyor. Paketinizi yükseltin.", code: "feature_locked" },
+        { error: featureLockedMessage("ocrIntake"), code: "feature_locked" },
         { status: 403 },
       )
     }

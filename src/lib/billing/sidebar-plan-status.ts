@@ -6,17 +6,20 @@ export type SidebarPlanStatus = {
   action: string
 }
 
+/** Denemenin her yüzeyde aynı adı (#782 — satışta artık "Premium" yok). */
+export const TRIAL_PLAN_NAME = "Ücretsiz deneme"
+
 /** Keep the sidebar copy aligned with the effective trial entitlement. */
 export function getSidebarPlanStatus(plan: PlanState, planName: string): SidebarPlanStatus {
   if (plan.isTrialing) {
     return {
       title: plan.trialDaysLeft == null
-        ? "Premium denemesi"
+        ? "Deneme sürüyor"
         : plan.trialDaysLeft === 0
           ? "Deneme bugün bitiyor"
           : `${plan.trialDaysLeft} iş günü kaldı`,
-      detail: "Premium denemesi",
-      action: "Paket seç",
+      detail: TRIAL_PLAN_NAME,
+      action: "Paketi al",
     }
   }
   if (!plan.hasAccess) {

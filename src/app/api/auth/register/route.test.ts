@@ -1,7 +1,6 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test"
 import { hashSalesRegistrationToken } from "@/lib/sales/registration-link"
 
-const originalLiteRegistrationOpen = process.env.LITE_REGISTRATION_OPEN
 const originalRateLimitStore = process.env.RATE_LIMIT_STORE
 
 let createdWorkshopData: Record<string, unknown> | null = null
@@ -35,8 +34,9 @@ let cancelledTaskCount = 0
 let failLeadConversion = false
 let existingUser: {
   password: string
-  workshop: { id: string; planTier: "lite" | "pro"; approvalStatus: "pending"; trialStartedAt: Date | null }
+  workshop: { id: string; planTier: "lite" | "pro" | "premium"; approvalStatus: "pending"; trialStartedAt: Date | null }
 } | null = null
+let resumedWorkshopUpdate: { where: Record<string, unknown>; data: Record<string, unknown> } | null = null
 
 mock.module("@/lib/db", () => ({
   prisma: {
@@ -50,6 +50,10 @@ mock.module("@/lib/db", () => ({
         if (where.id) return { name: "Ayşe Oto", email: "owner@example.com" }
         const id = where.referralCode ? referralCodes.get(where.referralCode) : null
         return id ? { id } : null
+      },
+      updateMany: async (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
+        resumedWorkshopUpdate = args
+        return { count: 1 }
       },
     },
     communicationLog: { create: async () => ({ id: "communication-log" }) },
@@ -222,7 +226,6 @@ function prepareSalesLink(token: string, overrides: Partial<NonNullable<typeof s
 }
 
 beforeEach(() => {
-  process.env.LITE_REGISTRATION_OPEN = "true"
   process.env.RATE_LIMIT_STORE = "memory"
   resetRateLimitStateForTests()
   createdWorkshopData = null
@@ -237,11 +240,10 @@ beforeEach(() => {
   cancelledTaskCount = 0
   failLeadConversion = false
   existingUser = null
+  resumedWorkshopUpdate = null
 })
 
 afterAll(() => {
-  if (originalLiteRegistrationOpen === undefined) delete process.env.LITE_REGISTRATION_OPEN
-  else process.env.LITE_REGISTRATION_OPEN = originalLiteRegistrationOpen
   if (originalRateLimitStore === undefined) {
     delete process.env.RATE_LIMIT_STORE
   } else {
@@ -456,50 +458,44 @@ describe("POST /api/auth/register onboarding and attribution", () => {
   })
 })
 
-describe("Lite campaign server admission", () => {
-  test("open admission persists Lite and permanent grant without trial or payment", async () => {
-    const response = await POST(request({ ...validBody, planTier: "lite" }, "198.51.100.90"))
-    expect(response.status).toBe(200)
-    expect(createdWorkshopData).toMatchObject({ planTier: "lite", liteFreeGrantedAt: expect.any(Date), subscriptionStatus: "active", trialStartedAt: null, trialEndsAt: null, approvalStatus: "pending" })
-    expect(createdWorkshopData).not.toHaveProperty("billingCycle")
-    expect(createdWorkshopCount).toBe(1)
-  })
-  test("closed campaign rejects direct API and forged grant, creates no tenant", async () => {
-    process.env.LITE_REGISTRATION_OPEN = "false"
-    const response = await POST(request({ ...validBody, planTier: "lite", liteFreeGrantedAt: new Date().toISOString() }, "198.51.100.91"))
-    expect(response.status).toBe(409)
-    expect(await response.json()).toMatchObject({ code: "lite_registration_closed" })
-    expect(createdWorkshopCount).toBe(0)
-    expect(createdOwnerCount).toBe(0)
-  })
-  test.each(["starter", "admin", "LITE"])("rejects unoffered plan %s", async (planTier) => {
+describe("tek paket kaydı (#782)", () => {
+  test.each(["lite", "premium", "starter", "admin", "LITE"])("satışta olmayan %s paketi 400 ile reddedilir, kiracı açılmaz", async (planTier) => {
     const response = await POST(request({ ...validBody, planTier }, "198.51.100.92"))
     expect(response.status).toBe(400)
     expect(transactionCount).toBe(0)
+    expect(createdWorkshopCount).toBe(0)
+    expect(createdOwnerCount).toBe(0)
   })
-  test.each(["pro", "premium"])("closed campaign preserves %s trial registration", async (planTier) => {
-    process.env.LITE_REGISTRATION_OPEN = "false"
-    const response = await POST(request({ ...validBody, planTier, liteFreeGrantedAt: new Date().toISOString() }, "198.51.100.93"))
+  test.each([{ planTier: "pro" }, {}])("Servis Paketi kaydı denemeye düşer; sahte ücretsiz hak yok sayılır (%o)", async (plan) => {
+    const response = await POST(request({ ...validBody, ...plan, liteFreeGrantedAt: new Date().toISOString() }, "198.51.100.93"))
     expect(response.status).toBe(200)
-    expect(createdWorkshopData).toMatchObject({ planTier, liteFreeGrantedAt: null, subscriptionStatus: "trialing", trialStartedAt: null, trialEndsAt: null })
+    expect(createdWorkshopData).toMatchObject({ planTier: "pro", subscriptionStatus: "trialing", trialStartedAt: null, trialEndsAt: null, approvalStatus: "pending" })
+    expect(createdWorkshopData).not.toHaveProperty("liteFreeGrantedAt")
   })
 })
 
-test("authenticated pending Pro cannot silently resume from Lite selection", async () => {
+// #782: ücretsiz paket yok. Eski Lite (süresiz hak işaretli) ya da Premium ile
+// yarım kalmış kayıt engellenmez; yeniden gönderimde Servis Paketi denemesi
+// şekline çekilir ve süresiz Lite hakkı silinir. Deneme doğrulamada başlar.
+test.each(["lite", "premium"] as const)("yarım kalan eski %s kaydı Servis Paketi denemesine çekilerek devam eder", async (planTier) => {
   const bcrypt = await import("bcryptjs")
-  existingUser = { password: await bcrypt.hash(validBody.password, 4), workshop: { id: "existing-pro", planTier: "pro", approvalStatus: "pending", trialStartedAt: null } }
-  const response = await POST(request({ ...validBody, planTier: "lite" }, "198.51.100.94"))
-  expect(response.status).toBe(409)
-  expect(await response.json()).toMatchObject({ code: "registration_plan_mismatch" })
-  expect(createdWorkshopCount).toBe(0)
-})
-test("matching pending Lite resumes after campaign closes", async () => {
-  const bcrypt = await import("bcryptjs")
-  process.env.LITE_REGISTRATION_OPEN = "false"
-  existingUser = { password: await bcrypt.hash(validBody.password, 4), workshop: { id: "existing-lite", planTier: "lite", approvalStatus: "pending", trialStartedAt: null } }
-  const response = await POST(request({ ...validBody, planTier: "lite" }, "198.51.100.95"))
+  existingUser = { password: await bcrypt.hash(validBody.password, 4), workshop: { id: `existing-${planTier}`, planTier, approvalStatus: "pending", trialStartedAt: null } }
+  const response = await POST(request({ ...validBody, planTier: "pro" }, "198.51.100.94"))
   expect(response.status).toBe(200)
   expect(await response.json()).toEqual({ ok: true, resumed: true })
+  expect(resumedWorkshopUpdate).toEqual({
+    where: { id: `existing-${planTier}`, approvalStatus: "pending", trialStartedAt: null },
+    data: { planTier: "pro", subscriptionStatus: "trialing", liteFreeGrantedAt: null },
+  })
+  expect(createdWorkshopCount).toBe(0)
+})
+test("yarım kalan Servis Paketi kaydı doğrulama e-postasıyla devam eder", async () => {
+  const bcrypt = await import("bcryptjs")
+  existingUser = { password: await bcrypt.hash(validBody.password, 4), workshop: { id: "existing-pro", planTier: "pro", approvalStatus: "pending", trialStartedAt: null } }
+  const response = await POST(request({ ...validBody, planTier: "pro" }, "198.51.100.95"))
+  expect(response.status).toBe(200)
+  expect(await response.json()).toEqual({ ok: true, resumed: true })
+  expect(resumedWorkshopUpdate).toBeNull()
   expect(createdWorkshopCount).toBe(0)
 })
 

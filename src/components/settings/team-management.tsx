@@ -19,8 +19,9 @@ import {
   TriangleAlert,
 } from "lucide-react"
 import type { UserRole } from "@prisma/client"
-import { PLAN_SEATS, type PlanTier } from "@/lib/plan"
+import { PLAN_LABELS, PLAN_SEATS, type PlanTier } from "@/lib/plan"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
+import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -235,13 +236,29 @@ export function TeamManagement({
       {canManage && atLimit && (
         <div className="mb-4 p-3 rounded-lg border border-warning/20 bg-warning/10 text-sm text-warning-strong">
           Koltuk limitiniz dolu ({seatUsed}/{seatLimit}).
-          {seatLimit <= 1
-            ? " Paketiniz tek kullanıcı içeriyor — ekibinize kullanıcı eklemek için "
-            : " Yeni kullanıcı eklemek ya da davet etmek için "}
-          <Link href="/settings/plans" onClick={() => (accessTier === "lite" || accessTier === "pro") && trackMarketingEvent("feature_upgrade_clicked", { feature_id: "team", current_tier: accessTier, target_tier: accessTier === "pro" ? "premium" : "pro", placement: "inline", destination: "plans" })} className="font-semibold underline underline-offset-2">
-            {accessTier === "pro" ? `${PLAN_SEATS.premium} kullanıcılı Premium paketini inceleyin` : accessTier === "lite" ? `${PLAN_SEATS.pro} kullanıcılı Profesyonel paketini inceleyin` : "paket seçeneklerini inceleyin"}
-          </Link>{" "}
-          ya da ek koltuk için bizimle iletişime geçin.
+          {seatLimit <= 1 ? (
+            <>
+              {" "}Paketiniz tek kullanıcı içeriyor — ekibinize kullanıcı eklemek için{" "}
+              <Link href="/settings/plans" onClick={() => trackMarketingEvent("feature_upgrade_clicked", { feature_id: "team", current_tier: accessTier, kind: "package", placement: "inline", destination: "plans" })} className="font-semibold underline underline-offset-2">
+                {PLAN_SEATS.pro} kullanıcılı {PLAN_LABELS.pro}&apos;ni inceleyin
+              </Link>
+              .
+            </>
+          ) : (
+            <>
+              {" "}Ek kullanıcı için{" "}
+              <Link
+                href={getSupportWhatsAppUrl(`Merhaba, BakımX hesabımıza ek kullanıcı eklemek istiyoruz.${workshopName ? ` (${workshopName})` : ""}`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackMarketingEvent("feature_upgrade_clicked", { feature_id: "team", current_tier: accessTier, kind: "package", placement: "inline", destination: "contact" })}
+                className="font-semibold underline underline-offset-2"
+              >
+                bizimle iletişime geçin
+              </Link>
+              .
+            </>
+          )}
         </div>
       )}
 

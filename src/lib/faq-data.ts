@@ -49,12 +49,12 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Ruhsat okuma nasıl çalışır?",
     answer:
-      "Ruhsat fotoğrafından plaka, marka/model, şasi numarası ve model yılı okunur. Bilgileri kontrol edip onaylarsınız. Araç eşleştirmesi yapıldığında ilgili katalog parçalarını inceleyebilirsiniz; fiyatlar kendi kataloğunuzdan gelir.",
+      "Ruhsat fotoğrafından plaka, marka/model, şasi numarası ve model yılı okunur; bilgileri kontrol edip onaylarsınız. Ruhsat okuma Servis Paketi'ne dahil olmayan bir ek özelliktir ve yakında uygulama içinden ayrıca alınabilecek. Plaka okuma ise pakete dahildir.",
   },
   {
     question: "Hangi modüller bugün hazır?",
     answer:
-      "İş emri, teklif, randevu, stok/parça, tedarikçi, kasa, müşteri ve araç yönetimi, bakım hatırlatmaları ve raporlar kullanıma hazır. Modül ve kullanım hakları pakete göre değişir. e-Fatura/e-Arşiv ve çoklu şube yönetimi planlanan geliştirmelerdir; henüz kullanıma açık değildir.",
+      "İş emri, teklif, randevu, stok/parça, tedarikçi, kasa, müşteri ve araç yönetimi, bakım hatırlatmaları ve raporlar Servis Paketi'nde kullanıma hazır. e-Fatura/e-Arşiv ve çoklu şube yönetimi ek özellik olarak planlanan geliştirmelerdir; henüz kullanıma açık değildir.",
   },
   {
     question: "Stok, tedarikçi ve tahsilat takibi var mı?",
@@ -89,7 +89,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Fiyatlandırma nasıl çalışıyor?",
     answer:
-      "Lite, Profesyonel ve Premium paketlerini Fiyatlar sayfasında karşılaştırabilirsiniz. Özellikler, dahil kullanıcı sayısı ve kullanım kotaları pakete göre değişir. Güncel aylık ve yıllık tutarlar aynı sayfada yer alır.",
+      "Tek paket var: Servis Paketi aylık ₺1.499 (KDV dahil), yıllık ödemede ₺14.990 — 2 ay bedava. Pakette 5 kullanıcı vardır; daha fazlası için bizimle iletişime geçebilirsiniz. Şaseden parça, ruhsat okuma, AI danışmanı, e-Fatura ve çoklu şube pakete dahil değildir; ek özellik olarak yakında uygulama içinden alınabilecek.",
   },
   {
     question: "Mevcut verilerimi içeri aktarabilir miyim?",
