@@ -50,13 +50,13 @@ export function DatePicker({
           variant="outline"
           disabled={disabled}
           className={cn(
-            "w-full justify-start gap-2 font-normal",
+            "w-full min-w-0 justify-start gap-2 font-normal",
             !selected && "text-muted-foreground",
             className
           )}
         >
-          <CalendarIcon className="size-4 opacity-60" />
-          {selected ? format(selected, STORAGE_FORMAT) : placeholder}
+          <CalendarIcon className="size-4 shrink-0 opacity-60" />
+          <span className="min-w-0 truncate">{selected ? format(selected, STORAGE_FORMAT) : placeholder}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
