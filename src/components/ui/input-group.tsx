@@ -13,6 +13,11 @@ import { Textarea } from "@/components/ui/textarea"
  * üzerinde yeniden bağlanır, içindeki `InputGroupInput` aynı yükseklik, metin
  * ve dolguyu buradan miras alır. Blok hizalı eklenti ve textarea'lı grup
  * `h-auto` kalır.
+ *
+ * Odak halkası grupta çizilir (iç girdi kendi halkasını kapatır) ve iç
+ * denetimin `data-slot`'una bağlı değildir: `has-[input:focus-visible]`.
+ * Base UI `render` birleştirmesi slot'u ezdiğinde (`AutocompleteInput`)
+ * halka kayboluyordu (#888). Halka Input ile aynı: 4px, ring/20.
  */
 function InputGroup({
   className,
@@ -25,7 +30,7 @@ function InputGroup({
       data-size={size}
       role="group"
       className={cn(
-        "group/input-group relative flex h-(--control-h) w-full min-w-0 items-center rounded-(--control-radius) border border-input bg-card transition-colors outline-none in-data-[slot=combobox-content]:focus-within:border-inherit in-data-[slot=combobox-content]:focus-within:ring-0 has-disabled:bg-input/50 has-disabled:opacity-50 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-3 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-3 has-[[data-slot][aria-invalid=true]]:ring-destructive/20 has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto dark:bg-input/30 dark:has-disabled:bg-input/80 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40 has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5",
+        "group/input-group relative flex h-(--control-h) w-full min-w-0 items-center rounded-(--control-radius) border border-input bg-card transition-colors outline-none in-data-[slot=combobox-content]:focus-within:border-inherit in-data-[slot=combobox-content]:focus-within:ring-0 has-disabled:bg-input/50 has-disabled:opacity-50 has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-4 has-[input:focus-visible]:ring-ring/20 has-[textarea:focus-visible]:border-ring has-[textarea:focus-visible]:ring-4 has-[textarea:focus-visible]:ring-ring/20 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-4 has-[[data-slot][aria-invalid=true]]:ring-destructive/10 has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto dark:bg-input/30 dark:has-disabled:bg-input/80 dark:has-[[data-slot][aria-invalid=true]]:border-destructive/50 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/20 has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5",
         inputSizeClasses,
         className
       )}
@@ -140,12 +145,14 @@ function InputGroupInput({
 }: Omit<React.ComponentProps<"input">, "size">) {
   return (
     <Input
+      {...props}
+      // Slot props'tan sonra: `AutocompleteInput` gibi render birleştirmesi
+      // kendi slot'unu geçse de grup denetimi olarak işaretli kalır.
       data-slot="input-group-control"
       className={cn(
         "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent",
         className
       )}
-      {...props}
     />
   )
 }
@@ -156,12 +163,12 @@ function InputGroupTextarea({
 }: React.ComponentProps<"textarea">) {
   return (
     <Textarea
+      {...props}
       data-slot="input-group-control"
       className={cn(
         "flex-1 resize-none rounded-none border-0 bg-transparent py-2 shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent",
         className
       )}
-      {...props}
     />
   )
 }
