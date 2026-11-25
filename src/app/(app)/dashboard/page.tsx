@@ -1,3 +1,4 @@
+import { formatTodayTr } from "@/lib/format-today"
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import Link from "next/link"
@@ -83,11 +84,7 @@ export default async function DashboardPage() {
   const needsFirstOrder = accessTier === "lite" && !firstOrder
 
   const greetingName = user.firstName || null
-  const today = new Date().toLocaleDateString("tr-TR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  })
+  const today = formatTodayTr(new Date())
   const subtitle = `${workshop?.name ?? "Genel Bakış"} · ${today}${greetingName ? ` · Hoş geldiniz, ${greetingName}` : ""}`
 
   return (
