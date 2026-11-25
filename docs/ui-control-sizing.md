@@ -15,11 +15,27 @@ kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (76
 | Button `xs` / `compact` | 32px | 28px | yoğun tablo ve araç çubuğu |
 | Button `icon` / `icon-sm` / `icon-lg` | 44 / 36 / 50px | 36 / 32 / 44px | daire |
 | Button `icon-xs` / `icon-compact` | 32px | 28px | |
-| Input / InputGroup | 44px | 36px | 10px köşe (md+ 8px, `--control-radius`), 17px / 15px metin |
+| Input / InputGroup `default` | 44px | 36px | 10px köşe (md+ 8px, `--control-radius`), 17px / 15px metin — her form, diyalog ve arama alanı |
+| Input / InputGroup `sm` | 36px | 32px | köşe ve metin `default` ile aynı — yoğun filtre araç çubuğu, tablo başlığı süzgeci |
+| Input / InputGroup `compact` | 32px | 28px | 16px / 14px metin (`--control-fs-field-xs`) — tablo satırı içi düzenleyici |
+| Input / InputGroup `lg` | 50px | 44px | köşe ve metin `default` ile aynı — tek başına duran büyük giriş (plaka, teslim kodu) |
 | Select `default` / `sm` / `compact` | 44 / 36 / 32px | 36 / 32 / 28px | |
 | `ToggleGroup` / `Toggle` `size="control"` | 44px | 36px | öğe yüksekliği; ray kendi dolgusunu ekler |
 | `Tabs` — `TabsList size="control"` (segment) | 44px | 36px | trigger yüksekliği; şerit `h-auto` |
 | Textarea | `min-h-16` | `min-h-16` | 10px köşe (md+ 8px, `--control-radius`) |
+
+**Input / InputGroup `size`** `--control-h`, `--control-fs` ve `--field-px`
+değişkenlerini öğenin kendisinde yeniden bağlar; taban sınıflar aynı kalır.
+`InputGroup` bağlamayı grup üzerinde yaptığı için içindeki `InputGroupInput`
+yüksekliği, metni ve dolguyu gruptan miras alır (kendi `size` prop'u yoktur);
+`sm` / `compact` grupta `InputGroupButton` kutudan taşmayacak kadar küçülür.
+`ComboboxInput` aynı `size`'ı `InputGroup`'a geçirir. `PartSearchInput` ve
+`PartAttributeField` da `size` alır (kalem satırında `compact`).
+
+**iOS yakınlaştırması:** iOS Safari 16px altındaki metin girdisine odaklanınca
+sayfayı yakınlaştırır. Bu yüzden `compact` girdinin metni telefonda 16px'te
+kalır, yalnız md+ 14px'e iner (`--control-fs-field-xs`). `--control-fs-xs`
+(telefonda 14px) metin girdisinde kullanılmaz; yalnız Select ve düğme içindir.
 
 `default/sm/lg` Toggle (32px) ve `line` sekme (28px) upstream nova ölçeğidir;
 yalnız masaüstü yoğun araç çubuğu ve tablo başlığı içindir. Telefonda görünen
@@ -77,6 +93,19 @@ Pazarlama yüzeyi bu token'lara bağlı değildir; `--mk-r-*` ölçeğini kullan
 
 - Boyut sınıfları **çağrı yerinde ezilmez**. İhtiyacın olan ölçek yoksa varyant
   ekle, `className` yazma. `md` dışındaki kırılımla boyut değiştirme.
+- Form kontrolleri (`Input`, `InputGroup`, `InputGroupInput`,
+  `InputGroupTextarea`, `Textarea`, `SelectTrigger`, `AutocompleteInput`,
+  `ComboboxInput`, `ComboboxChips`) açılış etiketinde yükseklik (`h-*`,
+  `min-h-*`, `size-*`), köşe (`rounded*`), yazı boyutu (`text-xs…xl`, keyfi
+  değer), dolgu (`p-*`, `py-*`, `pt-*`, `pb-*`), kenarlık kaldırma
+  (`border-0|none|transparent`), zemin (`bg-*`), gölge (`shadow-*`) ve yazı
+  ağırlığı (`font-medium…`) taşımaz; `!` ve `md:` / `data-[…]:` önekleri de
+  sayılır. `className` yerleşim içindir: genişlik, flex/grid, dış boşluk, ikon
+  yeri için yatay dolgu (`pl-9`), `text-right`, `tabular-nums`, `font-mono`,
+  `uppercase`, `tracking-*`. Textarea içerik yüksekliği yalnız ölçekten
+  (`min-h-20`, `min-h-[80px]` değil). Bilinçli istisna gerekçesiyle
+  `src/components/ui/control-call-sites.test.ts` listesine yazılır; artık
+  eşleşmeyen istisna testi düşürür.
 - `ToggleGroupItem` / `TabsTrigger` / `TabsList` üzerinde `!` ile yükseklik
   ezilmez (`h-7!`). Telefonda tek başına duran eylem düğmesi `default` ya da
   üstüdür; `sm/xs/compact` yoğun satır ve araç çubuğu içindir.
@@ -85,7 +114,9 @@ Pazarlama yüzeyi bu token'lara bağlı değildir; `--mk-r-*` ölçeğini kullan
   fotoğraf görüntüleyicinin kendi kontrolleri) kontrol değildir; bu matrisin
   kapsamı dışındadır.
 - Ham HTML etkileşimli kontrol kullanılmaz. Form gönderimi için kullanıcıya
-  görünmeyen `input[type="hidden"]` alanları istisnadır.
+  görünmeyen `input[type="hidden"]` alanları ve bir `Button`'un tetiklediği
+  gizli dosya seçici (`type="file"` + `className="hidden"`) istisnadır.
 
-Matrisi `src/components/ui/control-sizing.test.ts` ve
+Matrisi `src/components/ui/control-sizing.test.ts`,
+`src/components/ui/control-call-sites.test.ts` ve
 `src/app/design/design-system.test.ts` CI'da bekçiliyor.
