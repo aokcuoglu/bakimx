@@ -36,6 +36,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
   Kullanıcının girdiği tarih+saat (`datetime-local`, `date` + `time`) `new Date("…T09:00")` ile
   değil, `parseIstanbulLocalDateTime` (`@/lib/istanbul-time`) ile ayrıştırılır; giriş kutusunu
   `istanbulDateTimeInputValue` doldurur. Kapı: `src/lib/format-date-coverage.test.ts`.
+  Sunucudaki gün/ay sınırları ("bugün", "bu ay", günlük grafik kovaları) da `@/lib/istanbul-time`
+  ile kurulur (`istanbulDayBounds`, `istanbulDayStart`, `istanbulMonthStart`, `istanbulDayKey`);
+  `setHours(0, 0, 0, 0)` ya da `new Date(y, m, d)` sürecin gece yarısını verir, UTC prod'da
+  TR 00:00–03:00 kayıtları önceki güne düşer (#874).
 - **Primitive hattı Radix'tir; geçiş KAPANDI** (`components.json` → `"style":
   "radix-nova"`, BAK-152…BAK-156). Radix'e taşınanlar (`radix-ui` paketi,
   `asChild`): çekirdek (Button, Badge, Label, Separator — BAK-152), overlay

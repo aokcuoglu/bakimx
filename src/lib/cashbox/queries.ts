@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
 import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
+import { istanbulDayKey, istanbulDayStart, istanbulMonthStart, istanbulRecentDays } from "@/lib/istanbul-time"
 
 export type CashboxStats = {
   todayCollected: number
@@ -64,19 +65,10 @@ export type PaymentMethodBreakdown = {
   total: number
 }
 
-function todayStart(): Date {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-}
-
-function monthStart(): Date {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
-}
-
 export async function getCashboxStats(workshopId: string): Promise<CashboxStats> {
-  const today = todayStart()
-  const monthStartD = monthStart()
+  // Bugün ve bu ay Türkiye takvimine göre, sunucunun saat diliminden bağımsız (#874).
+  const today = istanbulDayStart()
+  const monthStartD = istanbulMonthStart()
 
   const [
     todayCollections,
@@ -623,9 +615,10 @@ export async function getReceivableAging(workshopId: string): Promise<AgingBucke
 }
 
 export async function getCashboxDailyCollections(workshopId: string, days = 30): Promise<Array<{ date: string; label: string; amount: number; count: number }>> {
-  const start = new Date()
-  start.setDate(start.getDate() - (days - 1))
-  start.setHours(0, 0, 0, 0)
+  // Günlük kovalar Türkiye günüdür (#874).
+  const buckets = istanbulRecentDays(days)
+  if (buckets.length === 0) return []
+  const start = buckets[0].start
 
   const collections = await prisma.collectionPayment.findMany({
     where: { workshopId, status: "completed", paymentDate: { gte: start } },
@@ -634,27 +627,20 @@ export async function getCashboxDailyCollections(workshopId: string, days = 30):
 
   const dayNames = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"]
   const dayMap = new Map<string, { amount: number; count: number }>()
-  for (let i = 0; i < days; i++) {
-    const d = new Date(start.getTime() + i * 86400000)
-    const key = d.toISOString().slice(0, 10)
-    dayMap.set(key, { amount: 0, count: 0 })
+  for (const bucket of buckets) {
+    dayMap.set(bucket.key, { amount: 0, count: 0 })
   }
 
   for (const c of collections) {
-    const key = c.paymentDate.toISOString().slice(0, 10)
-    const entry = dayMap.get(key)
+    const entry = dayMap.get(istanbulDayKey(c.paymentDate))
     if (entry) {
       entry.amount += c.amount
       entry.count += 1
     }
   }
 
-  const result: Array<{ date: string; label: string; amount: number; count: number }> = []
-  for (let i = 0; i < days; i++) {
-    const d = new Date(start.getTime() + i * 86400000)
-    const key = d.toISOString().slice(0, 10)
-    const entry = dayMap.get(key) || { amount: 0, count: 0 }
-    result.push({ date: key, label: dayNames[d.getDay()], amount: entry.amount, count: entry.count })
-  }
-  return result
+  return buckets.map((bucket) => {
+    const entry = dayMap.get(bucket.key) || { amount: 0, count: 0 }
+    return { date: bucket.key, label: dayNames[bucket.weekday], amount: entry.amount, count: entry.count }
+  })
 }
