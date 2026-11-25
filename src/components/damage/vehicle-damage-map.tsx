@@ -14,7 +14,7 @@ import { getVehicleGeometry, type BodyType } from "./vehicle-geometry"
 import { modelForBody } from "./vehicle-3d-models"
 
 // three.js stays out of every other bundle: it is fetched only when the 3D view renders.
-const Vehicle3DViewer = dynamic(() => import("./vehicle-3d-viewer"), { ssr: false, loading: () => <div className="grid h-[320px] place-items-center rounded-xl border bg-card sm:h-[400px]"><BrandSpinner size={40} label="3B model yükleniyor" /></div> })
+const Vehicle3DViewer = dynamic(() => import("./vehicle-3d-viewer"), { ssr: false, loading: () => <div className="grid h-[320px] place-items-center rounded-(--control-radius) bg-card sm:h-[400px]"><BrandSpinner size={40} label="3B model yükleniyor" /></div> })
 
 let webglSupport: boolean | undefined
 function detectWebGL() {
@@ -44,12 +44,12 @@ export function VehicleDamageMap({ damageMarks, bodyType = "sedan", photos = [],
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="min-w-0 space-y-2">
         {bodyType !== "unsupported" && <div className="relative space-y-2">
-          {model && webgl && <ToggleGroup type="single" variant="outline" size="sm" value={mode} onValueChange={v => v && setMode(v as "3d" | "plan")} aria-label="Hasar görünümü" className="absolute left-3 top-3 z-10 bg-card print:hidden">
+          {model && webgl && <ToggleGroup type="single" variant="outline" size="control" value={mode} onValueChange={v => v && setMode(v as "3d" | "plan")} aria-label="Hasar görünümü" className="print:hidden">
             <ToggleGroupItem value="3d">3B</ToggleGroupItem>
             <ToggleGroupItem value="plan">Açılım</ToggleGroupItem>
           </ToggleGroup>}
           {show3d && <div className="print:hidden"><Vehicle3DViewer model={model} marks={marksByZone} onZoneClick={onZoneClick} /></div>}
-          <div className={cn("rounded-xl border bg-card p-3 sm:p-4", model && webgl && "pt-12 sm:pt-12", show3d && "hidden print:block")}>
+          <div className={cn("rounded-(--control-radius) bg-card p-3 sm:p-4", show3d && "hidden print:block")}>
             <svg viewBox={geometry.viewBox} role={onZoneClick ? "group" : "img"} aria-label="Araç hasar şeması" className="mx-auto block h-auto w-full max-w-[380px]" strokeLinejoin="round">
               {geometry.labels.map(l => <text key={l.text} x={l.x} y={l.y} transform={l.rotate ? `rotate(${l.rotate} ${l.x} ${l.y})` : undefined} textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600} letterSpacing="0.12em" className="fill-muted-foreground">{l.text}</text>)}
               {geometry.panels.map(p => {
@@ -71,16 +71,16 @@ export function VehicleDamageMap({ damageMarks, bodyType = "sedan", photos = [],
           </div>
           <p className={cn("text-xs text-muted-foreground", show3d && "hidden print:block")}>Temsili açılım şeması. Sol ve sağ, aracın sürüş yönüne göredir.</p>
         </div>}
-        {onZoneClick && <Accordion type="single" collapsible><AccordionItem value="zones"><AccordionTrigger>Bölge listesinden hasar ekle</AccordionTrigger><AccordionContent><div className="grid grid-cols-2 gap-1">{Object.entries(VEHICLE_ZONES).map(([key,label])=><Button key={key} type="button" variant="outline" size="sm" onClick={()=>onZoneClick(key)}>{label}</Button>)}</div></AccordionContent></AccordionItem></Accordion>}
+        {onZoneClick && <Accordion type="single" collapsible><AccordionItem value="zones"><AccordionTrigger>Bölge listesinden hasar ekle</AccordionTrigger><AccordionContent><div className="grid grid-cols-2 gap-2">{Object.entries(VEHICLE_ZONES).map(([key,label])=><Button key={key} type="button" variant="outline" onClick={()=>onZoneClick(key)}>{label}</Button>)}</div></AccordionContent></AccordionItem></Accordion>}
       </div>
       <div className="min-w-0" aria-label="Hasar kayıtları">
         {damageMarks.length === 0 ? (
-          <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+          <p className="rounded-(--control-radius) bg-muted p-6 text-center text-sm text-muted-foreground">
             {inspectionStatus === "no_visible_damage" ? "Kontrol edildi, görünür hasar gözlenmedi." : onZoneClick ? "Henüz hasar kaydı yok. Araç üzerinde bir panele dokunarak ekleyin." : "Hasar kaydı yok."}
           </p>
         ) : (
-          <ul className="divide-y rounded-xl border bg-card">
-            {damageMarks.map((m,index)=>{ const number = m.number ?? index+1; const linked = photos.filter(p=>m.photoIds?.includes(p.id)); return <li key={m.id} className="break-inside-avoid space-y-2 p-3" data-damage-number={number}>
+          <ul className="divide-y">
+            {damageMarks.map((m,index)=>{ const number = m.number ?? index+1; const linked = photos.filter(p=>m.photoIds?.includes(p.id)); return <li key={m.id} className="break-inside-avoid space-y-2 py-3" data-damage-number={number}>
               <div className="flex items-start gap-3">
                 <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-foreground text-xs font-semibold tabular-nums text-background" aria-hidden="true">{number}</span>
                 <div className="min-w-0 flex-1">

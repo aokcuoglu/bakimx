@@ -165,11 +165,11 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
           </p>
           {!readOnly && <div className="flex flex-wrap items-center gap-2">
             {modalMetadata ? (
-              <Button variant="outline" size="sm" onClick={() => { setBodyTypeDraft(bodyType); setMetadataOpen(true) }} disabled={metadataBusy}>Araç şeması: {BODY_TYPES[bodyType]}</Button>
+              <Button variant="outline" onClick={() => { setBodyTypeDraft(bodyType); setMetadataOpen(true) }} disabled={metadataBusy}>Araç şeması: {BODY_TYPES[bodyType]}</Button>
             ) : (
               <Select value={bodyType} onValueChange={v=>void updateInspection({bodyType:v as BodyType})} disabled={metadataBusy}><SelectTrigger aria-label="Araç şeması" className="w-48"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(BODY_TYPES).map(([key,label])=><SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select>
             )}
-            {marks.length === 0 && inspectionStatus !== "no_visible_damage" && <Button type="button" variant="outline" size="sm" disabled={metadataBusy} onClick={() => { if (modalMetadata) setInspectionConfirmOpen(true); else void updateInspection({inspectionStatus:"no_visible_damage"}) }}>Hasar yok olarak işaretle</Button>}
+            {marks.length === 0 && inspectionStatus !== "no_visible_damage" && <Button type="button" variant="outline" disabled={metadataBusy} onClick={() => { if (modalMetadata) setInspectionConfirmOpen(true); else void updateInspection({inspectionStatus:"no_visible_damage"}) }}>Hasar yok olarak işaretle</Button>}
           </div>}
         </div>
         <VehicleDamageMap showSummary={false} damageMarks={marks} photos={photos} bodyType={bodyType} inspectionStatus={inspectionStatus} inspectedAt={inspectedAt} onZoneClick={readOnly ? undefined : chooseZone} onEditMark={readOnly ? undefined : editMark} onRemoveMark={readOnly ? undefined : setRemoveId} vehicle={vehicle} />
