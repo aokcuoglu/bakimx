@@ -279,7 +279,7 @@ const STARTER_FEATURES = new Set<GatedFeature>([
   "vehiclePassport",
 ])
 
-type WorkshopPlanFields = Pick<
+export type WorkshopPlanFields = Pick<
   Workshop,
   "planTier" | "subscriptionStatus" | "approvalStatus" | "trialEndsAt" | "currentPeriodEnd"
 > & { liteFreeGrantedAt?: Date | null }

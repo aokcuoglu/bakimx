@@ -1,3 +1,5 @@
+import type { PaymentPillTone } from "@/lib/orders/payment-pill"
+
 /**
  * Client-safe presentation of a local GetirBakım procurement row (contract v2.0).
  * `cancellationCode` values come from procurementCancellationCode in service.ts.
@@ -42,4 +44,24 @@ export function procurementCancelAction(state: ProcurementBadgeState): "cancel" 
 /** Open GetirBakım orders whose state can still change; their status is pulled on demand (no webhooks in v2.0). */
 export function procurementCanRefresh(state: ProcurementBadgeState): boolean {
   return state.status === "REQUESTED" || state.status === "CONFIRMED" || state.status === "SHIPPED"
+}
+
+/** Dış alım durumu → rozet hapının tonu (etiketle aynı durum ayrımı). */
+export function procurementPillTone(state: ProcurementBadgeState): PaymentPillTone {
+  switch (state.status) {
+    case "INITIATING":
+    case "REQUESTED":
+      return "warning"
+    case "CONFIRMED":
+      return state.cancellationRequestedAt && state.cancellationCode !== "REQUEST_REJECTED" ? "warning" : "info"
+    case "SHIPPED":
+      return "info"
+    case "COMPLETED":
+      return "success"
+    case "CANCELLED":
+    case "FAILED":
+      return "destructive"
+    default:
+      return "neutral"
+  }
 }

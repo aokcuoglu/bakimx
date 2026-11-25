@@ -18,6 +18,8 @@ import { AlertTriangle, Car, ChevronDown, Loader2, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import { VehicleBrandModelPicker } from "@/components/vehicles/vehicle-brand-model-picker"
 import { RuhsattanOku, type RuhsattanOkuResult } from "@/components/vehicles/ruhsattan-oku"
+import { AddonGate, AddonLockedNote } from "@/components/billing/addon-gate"
+import type { VehicleCaptureEntitlements } from "@/lib/intake/entitlements"
 import { VinResolveButton, VinCandidateList, VinLockedNotice, VinResolveNotice, useVinResolve } from "@/components/vehicles/vin-resolve"
 import { isValidVin, normalizeVin, type VinCandidate } from "@/lib/vin/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
@@ -75,6 +77,7 @@ export function InlineCreateModal({
   initialVin,
   fixedCustomer,
   onCreated,
+  entitlements,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -82,6 +85,11 @@ export function InlineCreateModal({
   initialVin?: string
   fixedCustomer?: { id: string; label: string }
   onCreated: (result: InlineCreateResult) => void
+  /**
+   * Sunucuda çözülen yetkiler (#828): ruhsat OCR ve şaseden tanıma ek özellik;
+   * kapalıysa giriş çizilmez ve otomatik şase sorgusu gönderilmez.
+   */
+  entitlements: VehicleCaptureEntitlements
 }) {
   const [owner, setOwner] = useState<{ id: string; label: string } | null>(fixedCustomer ?? null)
   const [fields, setFields] = useState<VehicleFields>(EMPTY_FIELDS)
@@ -148,10 +156,11 @@ export function InlineCreateModal({
       setCatalogIds({})
       vinResolve.reset()
       // Kullanıcının niyeti "VIN'den bul" → ipuçsuz oto-decode; marka/model/motor
-      // beklemeden dolar, belirsizse VinCandidateList görünür.
-      if (hasVin) void vinResolve.resolve(seedVin, {})
+      // beklemeden dolar, belirsizse VinCandidateList görünür. Şaseden tanıma
+      // kapalıysa şase yalnız alana yazılır.
+      if (hasVin && entitlements.vinLookup) void vinResolve.resolve(seedVin, {})
     }, 0)
-  }, [open, initialPlate, initialVin, fixedCustomer]) // eslint-disable-line react-hooks/exhaustive-deps -- vinResolve is stable-shaped, re-running on its identity would loop
+  }, [open, initialPlate, initialVin, fixedCustomer, entitlements.vinLookup]) // eslint-disable-line react-hooks/exhaustive-deps -- vinResolve is stable-shaped, re-running on its identity would loop
 
   // Plaka değişince mevcut aracı ara (debounce). contains araması → client'ta
   // birebir plaka filtresi. Modal kapalıyken çalışmaz.
@@ -212,7 +221,7 @@ export function InlineCreateModal({
     })
     if (owner.label) setOwnerSeed(owner)
     setShowDetails(true)
-    if (isValidVin(values.vin)) {
+    if (entitlements.vinLookup && isValidVin(values.vin)) {
       void vinResolve.resolve(values.vin, {
         engineDisplacement: values.engineDisplacement || undefined,
         enginePower: values.enginePower || undefined,
@@ -309,16 +318,20 @@ export function InlineCreateModal({
           {/* Sahibi dışarıdan sabitlenmediyse bu diyalog müşteriyi de oluşturur —
               başlık picker'daki "Yeni müşteri & araç ekle" düğmesiyle aynı şeyi söylesin. */}
           <DialogTitle>{fixedCustomer ? "Yeni araç" : "Yeni müşteri & araç"}</DialogTitle>
-          <DialogDescription>Ruhsatı tarayın veya bilgileri elle girin.</DialogDescription>
+          <DialogDescription>
+            {entitlements.ocrIntake ? "Ruhsatı tarayın veya bilgileri elle girin." : "Bilgileri elle girin."}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
-          {/* Ruhsat scan */}
-          <RuhsattanOku
-            onResult={applyOcr}
-            onScannerOpenChange={setScannerActive}
-            description="Tarayın; alanlar otomatik dolsun, sonra kontrol edip kaydedin."
-          />
+          {/* Ruhsat scan — ek özellik; kapalıysa "Ek özellik" notu (#828). */}
+          <AddonGate feature="ocrIntake" enabled={entitlements.ocrIntake} showUpsell={entitlements.showAddonUpsell}>
+            <RuhsattanOku
+              onResult={applyOcr}
+              onScannerOpenChange={setScannerActive}
+              description="Tarayın; alanlar otomatik dolsun, sonra kontrol edip kaydedin."
+            />
+          </AddonGate>
 
           {/* Customer */}
           <div className="space-y-1">
@@ -426,20 +439,23 @@ export function InlineCreateModal({
                 <Label className="flex items-center gap-1">Şase no {lowConf("vin") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <div className="flex gap-2">
                   <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className={fieldClass("vin")} />
-                  <VinResolveButton
-                    loading={vinResolve.loading}
-                    disabled={!isValidVin(fields.vin)}
-                    onClick={() =>
-                      vinResolve.resolve(fields.vin, {
-                        engineDisplacement: fields.engineDisplacement || undefined,
-                        enginePower: fields.enginePower || undefined,
-                        fuelType: fields.fuelType || undefined,
-                        firstRegistrationDate: fields.firstRegistrationDate || undefined,
-                        modelYear: fields.modelYear ? Number(fields.modelYear) || undefined : undefined,
-                      })
-                    }
-                  />
+                  {entitlements.vinLookup && (
+                    <VinResolveButton
+                      loading={vinResolve.loading}
+                      disabled={!isValidVin(fields.vin)}
+                      onClick={() =>
+                        vinResolve.resolve(fields.vin, {
+                          engineDisplacement: fields.engineDisplacement || undefined,
+                          enginePower: fields.enginePower || undefined,
+                          fuelType: fields.fuelType || undefined,
+                          firstRegistrationDate: fields.firstRegistrationDate || undefined,
+                          modelYear: fields.modelYear ? Number(fields.modelYear) || undefined : undefined,
+                        })
+                      }
+                    />
+                  )}
                 </div>
+                {!entitlements.vinLookup && entitlements.showAddonUpsell && <AddonLockedNote feature="vinLookup" />}
                 {vinResolve.loading && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Loader2 className="size-3 animate-spin" /> Şase sorgulanıyor…

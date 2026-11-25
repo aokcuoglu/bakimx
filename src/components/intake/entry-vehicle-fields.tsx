@@ -11,6 +11,7 @@ import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES } from "@/lib/constants"
 import { VehicleBrandModelPicker } from "@/components/vehicles/vehicle-brand-model-picker"
 import { VinResolveButton, VinCandidateList, VinLockedNotice, VinResolveNotice, type useVinResolve } from "@/components/vehicles/vin-resolve"
 import { VinScanner } from "@/components/intake/vin-scanner"
+import { AddonLockedNote } from "@/components/billing/addon-gate"
 import { isValidVin, normalizeVin } from "@/lib/vin/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 
@@ -59,6 +60,8 @@ export function EntryVehicleFields({
   showDetails,
   onToggleDetails,
   vinResolve,
+  vinLookup,
+  showAddonUpsell,
   onBrandChange,
   onModelChange,
   hidePlate = false,
@@ -71,6 +74,14 @@ export function EntryVehicleFields({
   showDetails: boolean
   onToggleDetails: () => void
   vinResolve: ReturnType<typeof useVinResolve>
+  /**
+   * Şaseden araç tanıma (ek özellik) açık mı (#828)? Kapalıysa şase kamerası
+   * ve "Şaseden getir" çizilmez — ikisi de 403'e giderdi. Şase alanı yine elle
+   * yazılır.
+   */
+  vinLookup: boolean
+  /** Kilitliyken yerine "Ek özellik" notu gösterilsin mi (saha rollerinde hayır)? */
+  showAddonUpsell: boolean
   onBrandChange: (value: string) => void
   onModelChange: (value: string) => void
   /** Plaka alanı ekranda ayrıca (en üstte) gösteriliyorsa burada çizilmez. */
@@ -86,6 +97,8 @@ export function EntryVehicleFields({
 
   /** VIN'i katalogda sorgular; ruhsat alanları ipucu olarak gider. */
   function resolveVin(vin: string) {
+    // Tek sorgu yolu; şaseden tanıma kapalıysa 403'e gitmesin (#828).
+    if (!vinLookup) return
     void vinResolve.resolve(vin, {
       engineDisplacement: fields.engineDisplacement || undefined,
       enginePower: fields.enginePower || undefined,
@@ -199,27 +212,30 @@ export function EntryVehicleFields({
                 className={`min-w-44 flex-1 ${fieldClass("vin")}`.trim()}
                 placeholder="17 haneli şase numarası"
               />
-              <div className="flex gap-2">
-                {/* Camdaki şaseyi elle yazmak hataya açık; okutulan numara okunur
-                    okunmaz katalog sorgusunu da tetikler (BAK-76). */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label="Şaseyi kamerayla tara"
-                  title="Şaseyi kamerayla tara"
-                  onClick={() => setScannerOpen(true)}
-                >
-                  <ScanLine className="size-4" />
-                </Button>
-                <VinResolveButton
-                  loading={vinResolve.loading}
-                  disabled={!isValidVin(fields.vin)}
-                  onClick={() => resolveVin(fields.vin)}
-                />
-              </div>
+              {vinLookup && (
+                <div className="flex gap-2">
+                  {/* Camdaki şaseyi elle yazmak hataya açık; okutulan numara okunur
+                      okunmaz katalog sorgusunu da tetikler (BAK-76). */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Şaseyi kamerayla tara"
+                    title="Şaseyi kamerayla tara"
+                    onClick={() => setScannerOpen(true)}
+                  >
+                    <ScanLine className="size-4" />
+                  </Button>
+                  <VinResolveButton
+                    loading={vinResolve.loading}
+                    disabled={!isValidVin(fields.vin)}
+                    onClick={() => resolveVin(fields.vin)}
+                  />
+                </div>
+              )}
             </div>
-            {scannerOpen && (
+            {!vinLookup && showAddonUpsell && <AddonLockedNote feature="vinLookup" />}
+            {vinLookup && scannerOpen && (
               <VinScanner
                 onDetected={(vin) => {
                   setScannerOpen(false)

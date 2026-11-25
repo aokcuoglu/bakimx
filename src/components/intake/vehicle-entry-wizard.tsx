@@ -15,6 +15,7 @@ import {
   Car,
   Check,
   ChevronRight,
+  FileText,
   Info,
   Loader2,
   Phone,
@@ -29,6 +30,7 @@ import { CustomerSearchOrCreate } from "@/components/customers/customer-search-o
 import { PlateScanner } from "@/components/intake/plate-scanner"
 import { RegistrationCameraScanner } from "@/components/intake/registration-camera-scanner"
 import { RuhsattanOku, type RuhsattanOkuResult } from "@/components/vehicles/ruhsattan-oku"
+import { AddonGate } from "@/components/billing/addon-gate"
 import { IntakeDuplicatePhoneNotice, IntakeOwnerCard } from "@/components/intake/intake-owner-card"
 import { VehiclePhotoCapture, createPendingVehiclePhoto, type PendingVehiclePhoto } from "@/components/intake/vehicle-photo-capture"
 import { updateCustomerContactAction } from "@/app/(app)/customers/actions"
@@ -44,7 +46,7 @@ import { isPlateOrCustomerQueryReady } from "@/lib/search/plate-search"
 import { formatPhoneTR, normalizePlate, uppercaseIfPlateLike } from "@/lib/format"
 import { isValidVin, normalizeVin, type VinCandidate } from "@/lib/vin/types"
 import { ocrVehicleTypeToSlug, ocrFuelToSlug, tecdocFuelToFormValue } from "@/lib/constants"
-import { hasFeature, type PlanTier } from "@/lib/plan"
+import type { IntakeEntitlements } from "@/lib/intake/entitlements"
 import {
   EMPTY_OWNER_FIELDS,
   confirmedVehicleParts,
@@ -144,7 +146,7 @@ export function VehicleEntryWizard({
   value,
   onChange,
   onComplete,
-  planTier,
+  entitlements,
   initialMethod = null,
   initialCustomer = null,
   hasPrefilledVehicle = false,
@@ -154,7 +156,13 @@ export function VehicleEntryWizard({
   value: { customerId: string; vehicleId: string }
   onChange: (v: { customerId: string; vehicleId: string }) => void
   onComplete: () => void
-  planTier?: string
+  /**
+   * Sunucuda çözülen giriş yetkileri (#828). Kilitli ek özelliğin girişi
+   * (ruhsat kamerası, şase kamerası, "Şaseden getir") çizilmez; yerine
+   * yönetici rollerinde kompakt bir "Ek özellik" notu gelir. Elle giriş her
+   * durumda açık kalır.
+   */
+  entitlements: IntakeEntitlements
   /**
    * Verilirse akış odaklıdır (adım rayı yok) ve bu yöntemin yakalama adımında
    * açılır; plaka akışında kamera açılışta hazır gelir. Verilmezse tam kabukta
@@ -262,7 +270,7 @@ export function VehicleEntryWizard({
   // kontrol edilir / elle girilir; araç bilgileri ekranının yerine geçer.
   const [ruhsatView, setRuhsatView] = useState(false)
   const plateFirst = focused && method === "plate"
-  const photoFeature = hasFeature((planTier ?? "pro") as PlanTier, "photoChecklist")
+  const photoFeature = entitlements.photoChecklist
 
   // Araç fotoğrafı (kabul "Ön" fotoğrafı olacak)
   const [vehiclePhoto, setVehiclePhotoState] = useState<PendingVehiclePhoto | null>(null)
@@ -360,7 +368,7 @@ export function VehicleEntryWizard({
   /** Çakışan alanda ruhsattan okunan değeri kullan. */
   function applyScannedValue(c: IdentityConflict) {
     setField(c.key, c.scanned)
-    if (c.key === "vin" && isValidVin(c.scanned)) {
+    if (c.key === "vin" && entitlements.vinLookup && isValidVin(c.scanned)) {
       void vinResolve.resolve(c.scanned, {
         engineDisplacement: fields.engineDisplacement || undefined,
         enginePower: fields.enginePower || undefined,
@@ -677,8 +685,9 @@ export function VehicleEntryWizard({
     }
     setShowDetails(true)
     // Çakışmada kullanıcının şasesi korunuyor; onu zaten girdiği adımda
-    // sorguladık — ruhsattaki farklı şase için kota harcama.
-    if (!keep.has("vin") && isValidVin(values.vin)) {
+    // sorguladık — ruhsattaki farklı şase için kota harcama. Şaseden tanıma
+    // ayrı bir ek özellik: kapalıysa sorgu 403 olurdu, hiç gönderilmez.
+    if (entitlements.vinLookup && !keep.has("vin") && isValidVin(values.vin)) {
       void vinResolve.resolve(values.vin, {
         engineDisplacement: values.engineDisplacement || undefined,
         enginePower: values.enginePower || undefined,
@@ -698,7 +707,7 @@ export function VehicleEntryWizard({
     }))
     if (seed.vin) {
       setShowDetails(true)
-      void vinResolve.resolve(normalizeVin(seed.vin), {})
+      if (entitlements.vinLookup) void vinResolve.resolve(normalizeVin(seed.vin), {})
     }
     setError("")
     setRuhsatView(false)
@@ -782,7 +791,9 @@ export function VehicleEntryWizard({
     // Araç alanları bu ekranda sorulmuyor: marka fotoğraftan (ya da ruhsattan)
     // gelir, model sonra araç kaydından tamamlanır.
     if (!duplicate && !fields.brand.trim()) {
-      return "Marka fotoğraftan okunamadı. Fotoğrafı tekrar çekin ya da ruhsattan doldurun."
+      return entitlements.ocrIntake
+        ? "Marka fotoğraftan okunamadı. Fotoğrafı tekrar çekin ya da ruhsattan doldurun."
+        : "Marka fotoğraftan okunamadı. Fotoğrafı tekrar çekin ya da markayı \"Ruhsat bilgileri\"nden girin."
     }
     if (!duplicate) return vehicleFieldError(fields, { modelOptional: true })
     return null
@@ -965,13 +976,16 @@ export function VehicleEntryWizard({
 
   // Hangi yoldan gelinirse gelinsin (plaka araması ya da müşteri) ruhsat araç
   // bilgileri ekranında da okutulabilir — alanları elle doldurmak zorunda kalmayın.
-  const ruhsatCard = hasFeature((planTier ?? "pro") as PlanTier, "ocrIntake") ? (
-    <RuhsattanOku
-      title="Ruhsattan otomatik doldur"
-      description="Ruhsatı kamerayla çekin ya da dosyadan seçin; aşağıdaki alanlar dolsun."
-      onResult={applyOcr}
-    />
-  ) : null
+  // Ruhsat OCR ek özellik: kapalıysa kart yerine "Ek özellik" notu (#828).
+  const ruhsatCard = (
+    <AddonGate feature="ocrIntake" enabled={entitlements.ocrIntake} showUpsell={entitlements.showAddonUpsell}>
+      <RuhsattanOku
+        title="Ruhsattan otomatik doldur"
+        description="Ruhsatı kamerayla çekin ya da dosyadan seçin; aşağıdaki alanlar dolsun."
+        onResult={applyOcr}
+      />
+    </AddonGate>
+  )
 
   const conflictsBox = conflicts.length > 0 ? (
     <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
@@ -1180,6 +1194,8 @@ export function VehicleEntryWizard({
             showDetails={showDetails}
             onToggleDetails={() => setShowDetails((s) => !s)}
             vinResolve={vinResolve}
+            vinLookup={entitlements.vinLookup}
+            showAddonUpsell={entitlements.showAddonUpsell}
             onBrandChange={(v) => { setField("brand", v); setCatalogIds({}) }}
             onModelChange={(v) => { setField("model", v); setCatalogIds((p) => ({ brandId: p.brandId })) }}
           />
@@ -1214,23 +1230,30 @@ export function VehicleEntryWizard({
 
       {/* ——— Odaklı plaka akışı: ruhsat bilgileri ekranı ———
           "Ruhsattan doldur" kamerasından gelinir: okunan alanlar burada kontrol
-          edilir (düşük güvenli olanlar sarı), "El ile gir" ile boş açılır. */}
+          edilir (düşük güvenli olanlar sarı), "El ile gir" ile boş açılır.
+          Ruhsat OCR kapalıysa (#828) "Ruhsat bilgileri" düğmesiyle doğrudan
+          açılır: kamera yok, alanlar elle girilir. OCR için ayrı not yok —
+          başlık ve düğme zaten anlatıyor; ilk alan telefonda üst yarıda kalsın. */}
       {step === "vehicle" && plateFirst && ruhsatView && (
         <div className="space-y-5">
           <div className="flex items-center justify-between gap-2">
             <WizardHeading
               title="Ruhsat bilgileri"
-              description="Ruhsattaki bilgileri kontrol edin ya da elle girin. Sarı işaretli alanları ruhsatla karşılaştırın."
+              description={entitlements.ocrIntake
+                ? "Ruhsattaki bilgileri kontrol edin ya da elle girin. Sarı işaretli alanları ruhsatla karşılaştırın."
+                : "Ruhsattaki bilgileri elle girin."}
             />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="shrink-0 gap-1.5 text-primary"
-              onClick={() => setScanner("registration")}
-            >
-              <Camera className="size-4" /> Ruhsatı çek
-            </Button>
+            {entitlements.ocrIntake && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="shrink-0 gap-1.5 text-primary"
+                onClick={() => setScanner("registration")}
+              >
+                <Camera className="size-4" /> Ruhsatı çek
+              </Button>
+            )}
           </div>
           {conflictsBox}
           <EntryVehicleFields
@@ -1241,6 +1264,8 @@ export function VehicleEntryWizard({
             showDetails={showDetails}
             onToggleDetails={() => setShowDetails((s) => !s)}
             vinResolve={vinResolve}
+            vinLookup={entitlements.vinLookup}
+            showAddonUpsell={entitlements.showAddonUpsell}
             onBrandChange={(v) => { setField("brand", v); setCatalogIds({}) }}
             onModelChange={(v) => { setField("model", v); setCatalogIds((p) => ({ brandId: p.brandId })) }}
           />
@@ -1264,10 +1289,12 @@ export function VehicleEntryWizard({
           {/* Ruhsat okuma bu ekranın asıl işi değil: başlığın yanında tek düğme.
               Dokununca "Aracı Çek" ile aynı tam ekran kamera açılır (ruhsatı
               çek ya da "El ile gir"), ardından "Ruhsat bilgileri" ekranı gelir.
+              Ruhsat OCR kapalıysa (#828) düğme kamerasız "Ruhsat bilgileri"
+              ekranını açar: şase, motor no, yakıt ve tescil tarihi elle girilir.
               Kayıtlı araçta araç alanları sorulmadığı için yok. */}
           <div className="flex items-center justify-between gap-2">
             <WizardHeading title="Araç bilgileri" />
-            {!duplicate && hasFeature((planTier ?? "pro") as PlanTier, "ocrIntake") && (
+            {!duplicate && (entitlements.ocrIntake ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -1277,7 +1304,18 @@ export function VehicleEntryWizard({
               >
                 <ScanLine className="size-4" /> Ruhsattan doldur
               </Button>
-            )}
+            ) : (
+              // Ruhsat verisine tek giriş yolu: keşfedilsin diye çerçeveli.
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => { setShowDetails(true); setRuhsatView(true) }}
+              >
+                <FileText className="size-4" /> Ruhsat bilgileri
+              </Button>
+            ))}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="entry-plate">Plaka *</Label>
@@ -1501,7 +1539,7 @@ export function VehicleEntryWizard({
           allowNoPlate={isForeignPlate(fields.plate)}
         />
       )}
-      {scanner === "registration" && (
+      {scanner === "registration" && entitlements.ocrIntake && (
         <RegistrationCameraScanner
           onResult={(r) => {
             setScanner(null)

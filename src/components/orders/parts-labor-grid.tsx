@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
+import surface from "@/components/dashboard/surface.module.css"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
@@ -55,7 +55,7 @@ import {
 } from "@/components/ui/autocomplete"
 import { Checkbox } from "@/components/ui/checkbox"
 import { formatTRY } from "@/lib/format"
-import { procurementCancelAction, procurementCanRefresh, procurementStatusLabel } from "@/lib/external-procurement/presentation"
+import { procurementCancelAction, procurementCanRefresh, procurementPillTone, procurementStatusLabel } from "@/lib/external-procurement/presentation"
 import { readCancellationResponse } from "@/lib/parts/supplier-price-responses"
 import { formatItemAddedMessage } from "@/lib/orders/item-added-message"
 import { kurusToLira, parseTRYToKurus } from "@/lib/money"
@@ -288,10 +288,10 @@ export function PartsLaborEditor({
         @container: masaüstü tablo / mobil kart seçimi artık ekran genişliğine
         değil DÜZENLEYİCİNİN KENDİ genişliğine bakıyor — dar bir kolonda
         (teklif formu ~730px) yatay kaydırmalı tablo yerine kart düzeni çıkar. */}
-    <div className="@container min-w-0 space-y-4">
+    <div className="@container min-w-0 space-y-4" data-pl="root">
       {/* İş emrinde ekleme modalı, teklif editöründe mevcut inline composer. */}
       {!locked && onSaveRow && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" data-pl="toolbar">
           <Button variant="outline" onClick={() => setAddingType("parca")}><PackagePlus className="size-4" /> Parça ekle</Button>
           <Button variant="outline" onClick={() => setAddingType("iscilik")}><Wrench className="size-4" /> İşçilik ekle</Button>
         </div>
@@ -356,7 +356,7 @@ export function PartsLaborEditor({
           aşağıdaki kart düzeni devreye girer.
           Satır alanı kendi içinde kayar; listenin sonunda `overscroll` sayfaya
           devredildiği için kullanıcı aynı hareketle ana sayfayı sürdürür. */}
-      <div className="hidden overflow-hidden rounded-lg border border-border @min-[52rem]:block">
+      <div className="hidden overflow-hidden rounded-lg border border-border @min-[52rem]:block" data-pl="table">
         <Table className="min-w-[52rem] table-fixed" containerClassName={ITEM_LIST_SCROLL}>
           <colgroup>
             <col className="w-40" />{/* Tür */}
@@ -415,7 +415,7 @@ export function PartsLaborEditor({
       {/* Dar kapsayıcı (<52rem): kart düzeni — mobil ekran VE masaüstündeki dar
           kolon (teklif formu) aynı düzeni paylaşır. İç scroll sonu sayfaya
           zincirlenir; kullanıcı parmağını/işaretçiyi taşımak zorunda kalmaz. */}
-      <div className={cn("space-y-2 @min-[52rem]:hidden", rows.length > 0 && ITEM_LIST_SCROLL)}>
+      <div className={cn("space-y-2 @min-[52rem]:hidden", rows.length > 0 && ITEM_LIST_SCROLL)} data-pl="cards">
         {rows.length === 0 ? (
           <EmptyItemsHint locked={locked} />
         ) : (
@@ -1911,7 +1911,7 @@ function TypeChip({ type }: { type: ItemType }) {
   }
   const { Icon, cls } = cfg[type]
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium", cls)}>
+    <span className={cn("inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium", cls)} data-pl="type">
       <Icon className="size-3.5" /> {TYPE_LABELS[type]}
     </span>
   )
@@ -1934,6 +1934,7 @@ function SourceBadge({ source }: { source: OrderItem["source"] }) {
       <TooltipTrigger
         aria-label={label}
         className={cn("inline-flex size-6 shrink-0 items-center justify-center rounded-md", cls)}
+        data-pl="source"
       >
         <Icon className="size-3.5" />
       </TooltipTrigger>
@@ -1990,8 +1991,8 @@ function ProcurementBadge({ procurement }: { procurement?: OrderItem["externalPr
     finally { setBusy(null) }
   }
   return (
-    <span className="mt-1.5 flex flex-wrap items-center gap-2">
-      <Badge variant="outline">{label}</Badge>
+    <span className="mt-1.5 flex flex-wrap items-center gap-2" data-pl="procurement">
+      <span className={cn(surface.pill, surface[`tone-${procurementPillTone(procurement)}`])}>{label}</span>
       {procurement.grossKurus != null ? (
         <span className="text-xs tabular-nums text-muted-foreground">
           {formatTRY(procurement.grossKurus)}
@@ -2124,7 +2125,7 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail, onEdit,
           listenin sonunda kurulduğu için sil ikonu HER satırda en sağdaki
           slotta durur — bazı satırda ⋯ olup bazısında olmaması kolonu
           kaydırmaz. */}
-      <div className="flex items-center justify-end gap-0.5">
+      <div className="flex items-center justify-end gap-0.5" data-pl="actions">
         {overflow.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -2498,7 +2499,7 @@ function DesktopPartRow({ row, orderId, locked, readOnlyFields = false, onEdit, 
           w-40'lık kolona sığmıyor, ikon alt satıra düşüp ad kolonundaki
           Marka/Kategori satırının üstüne biniyordu. Artık `RowActions` içinde. */}
       <TableCell className="relative py-3.5 pl-[18px]">
-        <span className={cn("absolute inset-y-2 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} />
+        <span className={cn("absolute inset-y-2 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} data-pl="accent" />
         <div className="flex min-w-0 items-center gap-1.5">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
@@ -2606,13 +2607,13 @@ function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, s
   const showMeta = showAttributes && ed.isPart && (ed.editable || !!row.brand || !!row.category)
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-2.5 pl-3.5 shadow-sm">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-2.5 pl-3.5 shadow-sm" data-pl="card">
       {/* Sol tür aksanı */}
-      <span className={cn("absolute inset-y-3 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} />
+      <span className={cn("absolute inset-y-3 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} data-pl="accent" />
 
       {/* Başlık: tür çipi + kaynak rozeti · satır aksiyonları (tek grup) */}
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-1.5" data-pl="head">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
           <RowFlash kind={flash} />
@@ -2653,26 +2654,26 @@ function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, s
       {/* Mobil finans bloğu: üç ana giriş aynı hizada ve görünür. Her alanın
           etiketi üstünde olduğu için rakamın anlamı kart genişliğinden bağımsız;
           sabit ilk iki kolon + esnek fiyat kolonu 360px ekranda taşmaz. */}
-      <div className="mt-2 border-t border-border pt-2">
+      <div className="mt-2 border-t border-border pt-2" data-pl="finance">
         <div className="grid grid-cols-[4rem_minmax(0,1fr)_6.5rem] items-start gap-1.5">
           <div className="min-w-0 space-y-1 [&_input]:!w-full">
-            <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Miktar</span>
+            <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground" data-pl="label">Miktar</span>
             {ed.isPart
               ? <QuantityField row={row} editable={ed.editable} onCell={onCell} />
               : <QtyStepper row={row} editable={ed.editable} onCell={onCell} />}
           </div>
           <div className="min-w-0 space-y-1 [&_[role=combobox]]:!w-full">
-            <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Birim</span>
+            <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground" data-pl="label">Birim</span>
             <UnitField row={row} editable={ed.editable} onCell={onCell} />
           </div>
           <div className="min-w-0 space-y-1 [&_[data-slot=price-field]]:!w-full">
-            <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Fiyat</span>
+            <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground" data-pl="label">Fiyat</span>
             {showActions ? <PriceField row={row} ed={ed} /> : <ModalPriceField row={row} onCell={onCell} />}
             <PurchaseCostHint row={row} ed={ed} />
           </div>
         </div>
 
-        <div className="mt-2 flex min-h-7 items-center justify-between gap-2 border-t border-border/60 pt-2">
+        <div className="mt-2 flex min-h-7 items-center justify-between gap-2 border-t border-border/60 pt-2" data-pl="total">
           {vatPerLine ? (
             <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <VatCell row={row} ed={ed} onCell={onCell} />

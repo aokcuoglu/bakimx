@@ -1,4 +1,6 @@
 import type { ReactNode } from "react"
+import Link from "next/link"
+import { ChevronRight } from "lucide-react"
 import surface from "@/components/dashboard/surface.module.css"
 import { PAYMENT_STATUS } from "@/lib/constants"
 import { paymentPillTone } from "@/lib/orders/payment-pill"
@@ -65,4 +67,58 @@ export function OrderPaymentPill({ status }: { status: string }) {
       {PAYMENT_STATUS[status as keyof typeof PAYMENT_STATUS]?.label ?? status}
     </span>
   )
+}
+
+export type DetailTone = "info" | "warning" | "success" | "destructive" | "neutral"
+
+export function DetailPill({ tone, children }: { tone: DetailTone; children: ReactNode }) {
+  return <span className={cn(surface.pill, surface[`tone-${tone}`])}>{children}</span>
+}
+
+export function DetailEmpty({ children }: { children: ReactNode }) {
+  return <p className={detail.emptyText}>{children}</p>
+}
+
+/** Gruplu liste satırı: başlangıç + (başlık / alt satır / zaman) + son. */
+export function DetailItem({
+  href,
+  start,
+  title,
+  sub,
+  meta,
+  end,
+  chevron = Boolean(href),
+}: {
+  href?: string
+  start?: ReactNode
+  title: ReactNode
+  sub?: ReactNode
+  meta?: ReactNode
+  end?: ReactNode
+  chevron?: boolean
+}) {
+  const content = (
+    <>
+      {start ? <span className={detail.itemStart}>{start}</span> : null}
+      <span className={detail.itemMain}>
+        <span className={cn(detail.itemTitle, "block")}>{title}</span>
+        {sub ? <span className={cn(detail.itemSub, "block")}>{sub}</span> : null}
+        {meta ? <span className={cn(detail.itemMeta, "block")}>{meta}</span> : null}
+      </span>
+      {end || chevron ? (
+        <span className={detail.itemEnd}>
+          {end}
+          {chevron ? <ChevronRight aria-hidden className={surface.chevron} /> : null}
+        </span>
+      ) : null}
+    </>
+  )
+  if (href) {
+    return (
+      <Link href={href} prefetch={false} className={detail.item}>
+        {content}
+      </Link>
+    )
+  }
+  return <div className={detail.item}>{content}</div>
 }

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react"
 import { toast } from "sonner"
-import { Ban, Loader2, MoreHorizontal, Package, Pencil, Plus, RotateCcw, TriangleAlert } from "lucide-react"
+import { Ban, Loader2, MoreHorizontal, Pencil, Plus, RotateCcw, TriangleAlert } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,9 +31,10 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
-import { detail } from "@/components/orders/order-detail-surface"
+import { DetailPanel, detail, surface } from "@/components/orders/order-detail-surface"
 import { formatKurus } from "@/lib/money"
 import { PARTS_REQUEST_STATUS } from "@/lib/constants"
+import { partsRequestPillTone } from "@/lib/orders/parts-request-pill"
 import { isExternalLaborRequest } from "@/lib/orders/parts-request-item"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
@@ -112,26 +113,23 @@ export function PartsRequestPanel({
   if (requests.length === 0) return null
 
   return (
-    <div className={cn(detail.shell, "p-4")}>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-          <Package className="size-4" />
-          Parça &amp; İşçilik Talepleri
-          <span className="text-xs font-normal text-muted-foreground">({requests.length})</span>
-        </h3>
-        {undecidedCount > 0 && (
-          <span className="inline-flex items-center rounded-full border border-warning/20 bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-foreground">
-            {undecidedCount} karar bekliyor
-          </span>
-        )}
-      </div>
-
+    <DetailPanel
+      title="Talepler"
+      aside={
+        <span className="flex items-center gap-2">
+          {undecidedCount > 0 && (
+            <span className={cn(surface.pill, surface["tone-warning"])}>{undecidedCount} karar bekliyor</span>
+          )}
+          <span className={surface.rowEndText}>{requests.length} talep</span>
+        </span>
+      }
+    >
       {undecidedCount > 0 && !locked && (
-        <div className="mb-3 flex items-start gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-sm">
+        <div className={cn(detail.block, "flex items-start gap-2 bg-warning/10 text-sm text-muted-foreground-strong")}>
           <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning-strong" />
           <div className="min-w-0">
-            <p className="font-medium">Karar bekleyen parça/işçilik talebi var.</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="font-medium text-foreground">Karar bekleyen parça/işçilik talebi var.</p>
+            <p className="text-xs">
               Her talebi ya araç kabulüne kalem olarak ekleyin ya da iptal edin. Karar verilmeden araç kabulü
               teslime hazırlanamaz ve teslim edilemez. Dış işçilik talebi kaleme eklendiğinde
               &quot;Dış İşçilik&quot; kalemi olarak açılır; satış fiyatını siz girersiniz.
@@ -140,22 +138,20 @@ export function PartsRequestPanel({
         </div>
       )}
 
-      <div className="space-y-2">
-        {ordered.map((req) => (
-          <PartsRequestCard
-            key={req.id}
-            request={req}
-            locked={locked}
-            onError={onError}
-            onEdit={() => setEditing(req)}
-            onCancel={() => setCancelling(req)}
-          />
-        ))}
-      </div>
+      {ordered.map((req) => (
+        <PartsRequestCard
+          key={req.id}
+          request={req}
+          locked={locked}
+          onError={onError}
+          onEdit={() => setEditing(req)}
+          onCancel={() => setCancelling(req)}
+        />
+      ))}
 
       <EditPartsRequestDialog request={editing} onOpenChange={(open) => { if (!open) setEditing(null) }} onError={onError} />
       <CancelPartsRequestDialog request={cancelling} onOpenChange={(open) => { if (!open) setCancelling(null) }} onError={onError} />
-    </div>
+    </DetailPanel>
   )
 }
 
@@ -192,17 +188,19 @@ function PartsRequestCard({
   }
 
   return (
-    <div
-      className={cn(
-        "rounded-lg border px-3 py-2.5",
-        // Karar bekleyen talep göz alsın; karara bağlanmış olan geri çekilsin.
-        decided ? "border-transparent bg-muted" : "border-warning/20 bg-warning/[0.06]",
-      )}
-    >
+    <div className={detail.block}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-sm font-medium text-foreground break-words">{request.partName}</span>
+            <span
+              className={cn(
+                "text-sm font-medium break-words",
+                // Karara bağlanmış talep geri çekilsin; bekleyen göz alsın.
+                decided ? "text-muted-foreground" : "text-foreground",
+              )}
+            >
+              {request.partName}
+            </span>
             {request.partSku && <span className="font-mono text-xs text-muted-foreground">{request.partSku}</span>}
             {request.brand && <span className="text-xs text-muted-foreground">{request.brand}</span>}
             {/* Dış işçilikte miktar yok: tek iştir, sunucu 1'e sabitler. */}
@@ -218,7 +216,7 @@ function PartsRequestCard({
             </p>
           )}
           {request.note && <p className="mt-0.5 text-xs text-muted-foreground break-words">{request.note}</p>}
-          <p className="mt-0.5 text-[10px] text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {request.requestedByName ? `${request.requestedByName} · ` : ""}
             {new Date(request.createdAt).toLocaleDateString("tr-TR")}
             {request.tecdocArticleId != null && " · Katalog parçası"}
@@ -232,21 +230,16 @@ function PartsRequestCard({
 
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           {externalLabor && (
-            <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-foreground">
+            <span className={cn(surface.pill, surface["tone-info"])}>
               Dış İşçilik
             </span>
           )}
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium",
-              status?.color,
-            )}
-          >
+          <span className={cn(surface.pill, surface[`tone-${partsRequestPillTone(request.status)}`])}>
             {status?.label || request.status}
           </span>
 
           {converted && (
-            <span className="inline-flex items-center rounded-full border border-success/20 bg-success/10 px-2 py-0.5 text-[11px] font-medium text-foreground">
+            <span className={cn(surface.pill, surface["tone-success"])}>
               Kaleme eklendi
             </span>
           )}
@@ -255,7 +248,6 @@ function PartsRequestCard({
             <>
               <Button
                 variant="outline"
-                size="lg"
                 disabled={isPending}
                 onClick={() => run(() => convertPartsRequestToOrderItemAction(request.id), "Talep kaleme eklendi")}
                 className="touch-manipulation"
@@ -264,12 +256,16 @@ function PartsRequestCard({
                 Kaleme Ekle
               </Button>
               <DropdownMenu>
-                <DropdownMenuTrigger
-                  disabled={isPending}
-                  aria-label={`${request.partName} için diğer işlemler`}
-                  className="inline-flex size-8 shrink-0 touch-manipulation items-center justify-center rounded-md border border-border transition-colors hover:bg-muted disabled:opacity-50"
-                >
-                  <MoreHorizontal className="size-4 text-muted-foreground" />
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={isPending}
+                    aria-label={`${request.partName} için diğer işlemler`}
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem className="gap-2" onClick={onEdit}>
@@ -292,7 +288,6 @@ function PartsRequestCard({
           {!locked && cancelled && (
             <Button
               variant="outline"
-              size="lg"
               disabled={isPending}
               onClick={() => run(() => reopenPartsRequestAction(request.id), "İptal geri alındı")}
               className="touch-manipulation"

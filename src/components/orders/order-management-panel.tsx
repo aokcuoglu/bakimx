@@ -1,14 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { DetailPanel, OrderPaymentPill, surface } from "@/components/orders/order-detail-surface"
+import { DetailPanel, DetailRow, DetailPill, DetailEmpty, DetailItem, OrderPaymentPill, detail, surface } from "@/components/orders/order-detail-surface"
 import type { OrderStatusKey } from "@/lib/constants"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus, percentToBps, applyDiscountKurus, applyTaxBps, addKurus } from "@/lib/money"
@@ -22,15 +20,13 @@ import type {
 import { formatDate } from "@/lib/utils-client"
 import {
   Plus,
-  Wrench,
   Loader2,
   Pencil,
-  Wallet,
-  ChevronRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SendReminderButton } from "@/components/orders/send-reminder-button"
 import { PartsLaborGrid } from "@/components/orders/parts-labor-grid"
+import pl from "./parts-labor.module.css"
 import type { LaborCatalogRow } from "@/lib/labor/types"
 import type { PartsRequestRow } from "@/components/orders/parts-request-panel"
 import { CollectionQuickModal } from "@/components/cashbox/collection-quick-modal"
@@ -229,17 +225,11 @@ export function PartsLaborCard({
   onApplyStandardTax?: () => void
 }) {
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Wrench className="size-4 text-muted-foreground" />
-            Kullanılan Parçalar & İşçilikler
-          </CardTitle>
-          <span className="text-xs text-muted-foreground">{items.length} kalem</span>
-        </div>
-      </CardHeader>
-      <CardContent>
+    <DetailPanel
+      title="Parçalar & İşçilikler"
+      aside={<span className={surface.rowEndText}>{items.length} kalem</span>}
+    >
+      <div className={pl.skin}>
         <PartsLaborGrid
           orderId={orderId}
           status={status}
@@ -252,8 +242,8 @@ export function PartsLaborCard({
           taxRateBps={taxRateBps}
           onApplyStandardTax={onApplyStandardTax}
         />
-      </CardContent>
-    </Card>
+      </div>
+    </DetailPanel>
   )
 }
 
@@ -432,92 +422,76 @@ export function PaymentHistoryCard({
   const [collectionModalOpen, setCollectionModalOpen] = useState(false)
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Wallet className="size-4 text-muted-foreground" />
-            Tahsilat Geçmişi
-          </CardTitle>
-          {!collectionsLocked && (
-            <Button variant="foreground" size="sm" onClick={() => setCollectionModalOpen(true)}>
-              <Plus className="size-3.5 mr-1" />
+    <>
+      <DetailPanel
+        title="Tahsilat Geçmişi"
+        aside={
+          !collectionsLocked && (
+            <Button variant="foreground" onClick={() => setCollectionModalOpen(true)}>
+              <Plus className="size-3.5" />
               Tahsilat Ekle
             </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
+          )
+        }
+      >
         {collections.length === 0 ? (
-          <div className="text-center py-4">
-            <Wallet className="size-8 mx-auto mb-2 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">Henüz tahsilat kaydı yok</p>
-            {!collectionsLocked && (
-              <Button
-                variant="link"
-                className="mt-2 h-auto p-0 text-sm font-medium"
-                onClick={() => setCollectionModalOpen(true)}
-              >
-                <Plus className="size-3.5 mr-1" /> İlk tahsilatı ekle
-              </Button>
-            )}
+          <div className={detail.group}>
+            <DetailEmpty>Henüz tahsilat kaydı yok</DetailEmpty>
           </div>
         ) : (
-          <div className="space-y-1.5">
+          <div className={detail.group}>
             {collections.map((c) => {
               const methodLabel = PAYMENT_METHOD_LABELS[c.method as PaymentMethodKey] || c.method
               const isRowCancelled = c.status === "cancelled"
               return (
-                <Link
+                <DetailItem
                   key={c.id}
                   href={`/cashbox/payments/${c.id}`}
-                  className={`flex items-center justify-between p-2.5 rounded-lg transition-colors ${isRowCancelled ? "bg-destructive/10 hover:bg-destructive/10 border border-destructive/20" : "bg-muted hover:bg-muted"}`}
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className={`text-sm font-semibold ${isRowCancelled ? "text-destructive-strong line-through" : "text-foreground"}`}>{formatTRY(c.amount)}</p>
-                      <span className={`inline-flex items-center h-5 px-1.5 rounded border text-[11px] font-medium ${isRowCancelled ? "bg-destructive/10 text-foreground border-destructive/20" : "bg-success/10 text-foreground border-success/20"}`}>
-                        {isRowCancelled ? "İptal" : methodLabel}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{formatDate(c.paymentDate)}</p>
-                    {isRowCancelled && c.cancellationReason && (
-                      <p className="text-xs text-destructive-strong mt-0.5 truncate">{c.cancellationReason}</p>
-                    )}
-                    {!isRowCancelled && c.referenceNo && (
-                      <p className="text-xs text-muted-foreground mt-0.5">Ref: {c.referenceNo}</p>
-                    )}
-                  </div>
-                  <ChevronRight className="size-4 text-muted-foreground shrink-0" />
-                </Link>
+                  title={
+                    <span className={cn("tabular-nums font-semibold", isRowCancelled && "text-destructive-strong line-through")}>
+                      {formatTRY(c.amount)}
+                    </span>
+                  }
+                  sub={
+                    isRowCancelled ? (
+                      c.cancellationReason ? (
+                        <span className="text-destructive-strong">{c.cancellationReason}</span>
+                      ) : undefined
+                    ) : c.referenceNo ? (
+                      <>Ref: {c.referenceNo}</>
+                    ) : undefined
+                  }
+                  meta={formatDate(c.paymentDate)}
+                  end={
+                    <DetailPill tone={isRowCancelled ? "destructive" : "neutral"}>
+                      {isRowCancelled ? "İptal" : methodLabel}
+                    </DetailPill>
+                  }
+                />
               )
             })}
           </div>
         )}
         {totals.hasAnyPrice && (
-          <div className="border-t pt-2 mt-2 space-y-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Genel Toplam</span>
-              <span className="font-medium text-foreground">{formatTRY(totals.grandTotal)}</span>
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Tahsil Edilen</span>
-              <span className="font-medium text-foreground">{formatTRY(paidAmount)}</span>
-            </div>
+          <div className={detail.group}>
+            <DetailRow label="Genel Toplam">
+              <span className="tabular-nums">{formatTRY(totals.grandTotal)}</span>
+            </DetailRow>
+            <DetailRow label="Tahsil Edilen">
+              <span className="tabular-nums">{formatTRY(paidAmount)}</span>
+            </DetailRow>
             {cancelledCollections.length > 0 && (
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>İptal Edilen</span>
-                <span className="font-medium text-foreground">{formatTRY(cancelledCollections.reduce((s, c) => s + c.amount, 0))}</span>
-              </div>
+              <DetailRow label="İptal Edilen">
+                <span className="tabular-nums">{formatTRY(cancelledCollections.reduce((s, c) => s + c.amount, 0))}</span>
+              </DetailRow>
             )}
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground font-medium">Kalan</span>
-              <span className="font-bold text-foreground">{formatTRY(remainingAmount)}</span>
-            </div>
+            <DetailRow label="Kalan">
+              <span className="font-semibold tabular-nums">{formatTRY(remainingAmount)}</span>
+            </DetailRow>
           </div>
         )}
         {remainingAmount > 0 && totals.hasAnyPrice && (
-          <div className="pt-2 mt-1">
+          <div className={cn(detail.group, detail.block)}>
             <SendReminderButton
               customerId={customerId}
               serviceOrderId={orderId}
@@ -526,7 +500,7 @@ export function PaymentHistoryCard({
             />
           </div>
         )}
-      </CardContent>
+      </DetailPanel>
 
       {!collectionsLocked && (
         <CollectionQuickModal
@@ -539,6 +513,6 @@ export function PaymentHistoryCard({
           remainingAmount={remainingAmount}
         />
       )}
-    </Card>
+    </>
   )
 }

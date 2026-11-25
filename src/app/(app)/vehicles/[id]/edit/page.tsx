@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { VehicleCreateForm } from "@/components/vehicles/vehicle-create-form"
+import { resolveIntakeEntitlements } from "@/lib/intake/entitlements"
 import { VehicleIdentity } from "@/components/vehicles/vehicle-identity"
 import { detectPlate } from "@/lib/plate/country"
 
@@ -31,6 +32,7 @@ export default async function EditVehiclePage({ params }: { params: Promise<{ id
         <VehicleCreateForm
           customers={customers}
           mode="edit"
+          entitlements={resolveIntakeEntitlements(workshop, user.role)}
           initial={{
             id: vehicle.id,
             customerId: vehicle.customerId,

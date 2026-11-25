@@ -174,6 +174,7 @@ export function ManagePlanDialog({
               </h3>
               <ToggleGroup
                 type="single"
+                size="control"
                 orientation="vertical"
                 value={cycle}
                 onValueChange={(value) => { if (value) setCycle(value as Cycle) }}
@@ -185,7 +186,7 @@ export function ManagePlanDialog({
                   <ToggleGroupItem
                     key={option}
                     value={option}
-                    className="h-auto w-full justify-between gap-3 rounded-xl border bg-card px-2.5 py-2 text-left font-normal whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/5 data-[state=on]:ring-2 data-[state=on]:ring-primary/10"
+                    className="h-auto min-h-(--control-h) w-full justify-between gap-3 rounded-xl border bg-card py-1.5 text-left font-normal whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/5 data-[state=on]:ring-2 data-[state=on]:ring-primary/10"
                   >
                     <span className="flex items-center gap-2">
                       <span className={cn("size-4 rounded-full border", cycle === option ? "border-primary bg-primary shadow-[inset_0_0_0_3px_var(--card)]" : "border-input")} aria-hidden="true" />
@@ -235,14 +236,15 @@ export function ManagePlanDialog({
               </div>
               <ToggleGroup
                 type="single"
+                size="control"
                 value={method}
                 onValueChange={(value) => { if (value) setMethod(value as Method) }}
                 className="grid w-full grid-cols-2 gap-2"
                 aria-label="Ödeme yöntemi"
                 disabled={locked}
               >
-                <ToggleGroupItem value="card" className="h-7 rounded-[8px] border data-[state=on]:border-primary data-[state=on]:bg-primary/5">Kart</ToggleGroupItem>
-                <ToggleGroupItem value="havale" className="h-7 rounded-[8px] border data-[state=on]:border-primary data-[state=on]:bg-primary/5">Havale/EFT</ToggleGroupItem>
+                <ToggleGroupItem value="card" className="rounded-[8px] border data-[state=on]:border-primary data-[state=on]:bg-primary/5">Kart</ToggleGroupItem>
+                <ToggleGroupItem value="havale" className="rounded-[8px] border data-[state=on]:border-primary data-[state=on]:bg-primary/5">Havale/EFT</ToggleGroupItem>
               </ToggleGroup>
             </section>
           </div>

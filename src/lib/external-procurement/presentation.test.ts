@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { procurementCancelAction, procurementCanRefresh, procurementShippingKurus, procurementStatusLabel } from "./presentation"
+import { procurementCancelAction, procurementCanRefresh, procurementPillTone, procurementShippingKurus, procurementStatusLabel } from "./presentation"
 
 const base = { cancellationRequestedAt: null, cancellationCode: null }
 
@@ -30,5 +30,19 @@ describe("procurement presentation (contract v2.0)", () => {
     expect(procurementShippingKurus({ bindingNetKurus: 26000, bindingVatKurus: 5200, bindingGrossKurus: 36200 })).toBe(5000)
     expect(procurementShippingKurus({ bindingNetKurus: 1000, bindingVatKurus: 200, bindingGrossKurus: 1200 })).toBe(0)
     expect(procurementShippingKurus({ bindingNetKurus: null, bindingVatKurus: null, bindingGrossKurus: null })).toBeNull()
+  })
+
+  test("maps every state to a pill tone", () => {
+    const pending = "2026-11-18T11:00:00.000Z"
+    expect(procurementPillTone({ ...base, status: "INITIATING" })).toBe("warning")
+    expect(procurementPillTone({ ...base, status: "REQUESTED" })).toBe("warning")
+    expect(procurementPillTone({ ...base, status: "CONFIRMED" })).toBe("info")
+    expect(procurementPillTone({ ...base, status: "CONFIRMED", cancellationRequestedAt: pending, cancellationCode: "REQUEST_PENDING" })).toBe("warning")
+    expect(procurementPillTone({ ...base, status: "CONFIRMED", cancellationRequestedAt: pending, cancellationCode: "REQUEST_REJECTED" })).toBe("info")
+    expect(procurementPillTone({ ...base, status: "SHIPPED" })).toBe("info")
+    expect(procurementPillTone({ ...base, status: "COMPLETED" })).toBe("success")
+    expect(procurementPillTone({ ...base, status: "CANCELLED" })).toBe("destructive")
+    expect(procurementPillTone({ ...base, status: "FAILED" })).toBe("destructive")
+    expect(procurementPillTone({ ...base, status: "RESERVATION_EXPIRED" })).toBe("neutral")
   })
 })

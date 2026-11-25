@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { resolveOrderStatusFilter } from "@/lib/orders/status-filter"
 import { resolveTechnicianFilter } from "@/lib/orders/technician-filter"
-import { UNASSIGNED_IN_SERVICE_HREF, UNASSIGNED_IN_SERVICE_WHERE } from "@/lib/orders/unassigned-in-service"
+import { UNASSIGNED_IN_SERVICE_HREF, UNASSIGNED_IN_SERVICE_WHERE, isUnassignedListHref } from "@/lib/orders/unassigned-in-service"
 
 describe("Genel Bakış 'usta bekliyor' uyarısı (#833)", () => {
   // Liste sayfası (`orders/page.tsx`) URL'i bu iki çözücüyle `where`e çevirip
@@ -23,5 +23,24 @@ describe("Genel Bakış 'usta bekliyor' uyarısı (#833)", () => {
 
   test("bağlantı Araç Kabulleri listesini açar", () => {
     expect(new URL(UNASSIGNED_IN_SERVICE_HREF, "http://localhost").pathname).toBe("/orders")
+  })
+})
+
+describe("ustasız listeden mi gelindi? (#866)", () => {
+  test("Genel Bakış kartının açtığı liste ustasız listedir", () => {
+    expect(isUnassignedListHref(UNASSIGNED_IN_SERVICE_HREF)).toBe(true)
+  })
+
+  test("durum filtresi ne olursa olsun Usta = Atanmamış yeterli", () => {
+    expect(isUnassignedListHref("/orders?technician=none")).toBe(true)
+    expect(isUnassignedListHref("/orders?technician=none&status=active&q=34")).toBe(true)
+  })
+
+  test("başka listeler ve eksik değer ustasız sayılmaz", () => {
+    expect(isUnassignedListHref("/orders")).toBe(false)
+    expect(isUnassignedListHref("/orders?technician=t1")).toBe(false)
+    expect(isUnassignedListHref("/orders?status=in_service")).toBe(false)
+    expect(isUnassignedListHref(undefined)).toBe(false)
+    expect(isUnassignedListHref("")).toBe(false)
   })
 })
