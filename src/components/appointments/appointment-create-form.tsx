@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/incompatible-library */
 "use client"
 
+import { listThenSelect } from "@/lib/ui/list-then-select"
 import { useState, useActionState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -130,14 +131,18 @@ export function AppointmentCreateForm({
       brand: r.brand ?? "",
       model: r.model ?? "",
     }
-    if (r.customerId && r.customerId !== customer?.id) {
-      setCustomer({ id: r.customerId, label: r.customerName || "Seçili müşteri" })
-      form.setValue("customerId", r.customerId, { shouldValidate: true })
-      setVehicles([created])
-    } else {
-      setVehicles((prev) => withVehicle(prev, created))
-    }
-    form.setValue("vehicleId", created.id)
+    listThenSelect(
+      () => {
+        if (r.customerId && r.customerId !== customer?.id) {
+          setCustomer({ id: r.customerId, label: r.customerName || "Seçili müşteri" })
+          form.setValue("customerId", r.customerId, { shouldValidate: true })
+          setVehicles([created])
+        } else {
+          setVehicles((prev) => withVehicle(prev, created))
+        }
+      },
+      () => form.setValue("vehicleId", created.id)
+    )
   }
 
   const vehiclePlaceholder = !customerId
