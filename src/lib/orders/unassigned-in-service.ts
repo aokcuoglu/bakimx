@@ -16,3 +16,16 @@ export const UNASSIGNED_IN_SERVICE_WHERE = {
 
 export const UNASSIGNED_IN_SERVICE_HREF =
   `/orders?status=${IN_SERVICE_ORDER_FILTER}&technician=${UNASSIGNED_TECHNICIAN}`
+
+/**
+ * Kabul "usta bekliyor" listesinden mi açıldı? (#866) `returnTo` ile gelen,
+ * `orderListReturnHref`ten geçmiş liste adresi verilir. Usta filtresi
+ * "Atanmamış" ise evet — durum filtresi ve arama önemsiz. Detay sayfası bu
+ * durumda "henüz usta atanmadı" notunu ve atamadan sonra "Listeye dön"ü gösterir.
+ */
+export function isUnassignedListHref(listHref: string | null | undefined): boolean {
+  if (!listHref) return false
+  const query = listHref.split("?")[1]
+  if (!query) return false
+  return new URLSearchParams(query).get("technician") === UNASSIGNED_TECHNICIAN
+}

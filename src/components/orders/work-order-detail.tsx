@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DashOrderStatus, surface } from "@/components/dashboard/surface"
 import { DetailPanel, DetailRow, DetailPill, DetailEmpty, OrderPaymentPill, detail } from "@/components/orders/order-detail-surface"
 import { orderListReturnHref } from "@/lib/orders/list-state"
+import { isUnassignedListHref } from "@/lib/orders/unassigned-in-service"
 import { DetailHeader, type DetailHeaderAction } from "@/components/orders/detail-header"
 import { OrderRecordRail } from "@/components/orders/order-record-rail"
 import {
@@ -47,6 +48,8 @@ import {
   X,
   Wrench,
   HardHat,
+  UserPlus,
+  ArrowLeft,
   LockKeyhole,
 } from "lucide-react"
 import {
@@ -296,6 +299,10 @@ export function WorkOrderDetail({
   const [error, setError] = useState("")
 
   const orderLocked = isOrderLocked(order.status as OrderStatus)
+  // Kabulün açıldığı liste (filtreleri korunur) ve o liste "usta bekliyor"
+  // listesi mi (#866): öyleyse üstte usta atama notu gösterilir.
+  const listHref = orderListReturnHref(returnTo)
+  const fromUnassignedList = isUnassignedListHref(listHref)
   const canCashbox = enabledFeatures.includes("cashbox")
   const canTeam = enabledFeatures.includes("team")
   const canUseInventory = enabledFeatures.includes("partsInventory")
@@ -818,7 +825,8 @@ export function WorkOrderDetail({
         }
         meta={
           /* Atanan usta bir *durum* değil, işin kime ait olduğu bilgisi —
-             bu yüzden müşteri satırının yanında, hapla yarışmadan durur. */
+             bu yüzden müşteri satırının yanında, hapla yarışmadan durur.
+             Usta henüz yoksa atamak beklenen adımdır: belirgin düğme (#866). */
           canTeam ? (
             <TechnicianAssign
               orderId={order.id}
@@ -826,7 +834,7 @@ export function WorkOrderDetail({
               assignedTechnicianName={order.assignedTechnicianName}
               technicians={technicians ?? []}
               locked={orderLocked}
-              variant="meta"
+              variant={!orderLocked && !order.assignedTechnicianId ? "cta" : "meta"}
             />
           ) : undefined
         }
@@ -839,6 +847,43 @@ export function WorkOrderDetail({
           <Info />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
+      )}
+
+      {/* "Usta bekliyor" listesinden gelindi (#866): beklenen adım usta atamak.
+          Atanınca not yeşile döner ve sıradaki kabul için listeye tek tık
+          (atanan kabul o listeden çıktığı için sıradaki en üsttedir). */}
+      {fromUnassignedList && canTeam && !orderLocked && (
+        order.assignedTechnicianId ? (
+          <Alert variant="success">
+            <CheckCircle2 />
+            <AlertTitle>Usta atandı: {order.assignedTechnicianName}</AlertTitle>
+            <AlertDescription>
+              <p>Sıradaki ustasız kabul için listeye dönün.</p>
+              <Button variant="outline" asChild className="mt-1">
+                <Link href={listHref}>
+                  <ArrowLeft />
+                  Listeye dön
+                </Link>
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Alert variant="info">
+            <UserPlus />
+            <AlertTitle>Bu kabule henüz usta atanmadı.</AlertTitle>
+            <AlertDescription>
+              <p>Ustayı seçince kabul &quot;usta bekliyor&quot; listesinden çıkar.</p>
+              <TechnicianAssign
+                orderId={order.id}
+                assignedTechnicianId={order.assignedTechnicianId}
+                assignedTechnicianName={order.assignedTechnicianName}
+                technicians={technicians ?? []}
+                variant="cta"
+                className="mt-1"
+              />
+            </AlertDescription>
+          </Alert>
+        )
       )}
 
       {/* Teslim adımında fiyatsız kalem varsa: başlıktaki teslim butonu pasif,
