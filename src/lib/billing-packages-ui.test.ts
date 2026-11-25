@@ -46,3 +46,19 @@ test("koltuk sorgusu yalnız süresi geçmemiş davetleri sayar", () => {
   const source = read("src/lib/rbac.ts")
   expect(source).toContain('status: "pending", expiresAt: { gt: new Date() }')
 })
+
+test("paket kartı dönem seçicisi ortak BillingCycleToggle'dır ve yüksekliği ezmez (#846)", () => {
+  const source = read("src/components/billing/plan-packages.tsx")
+  expect(source).not.toContain("h-7!")
+  expect(source).toContain("BillingCycleToggle")
+  const toggle = read("src/components/billing/billing-cycle-toggle.tsx")
+  expect(toggle).toContain('size="control"')
+  expect(toggle).not.toContain("framer-motion")
+})
+
+test("ayarlar paket şeridi dönemi belli değilken aylık liste fiyatını gösterir (#846)", () => {
+  const source = read("src/components/billing/plan-packages.tsx")
+  expect(source).toContain('const stripPriceCycle: BillingCycle = hasCommittedCycle ? stripCycle : "monthly"')
+  expect(source).toContain("monthlyEquivalent(currentPkg.tier, stripPriceCycle)")
+  expect(source).not.toContain("monthlyEquivalent(currentPkg.tier, stripCycle)")
+})

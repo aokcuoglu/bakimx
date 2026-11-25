@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test"
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
+import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 
 const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8")
 
@@ -63,6 +65,94 @@ describe("kontrol ölçeği — e-santral (mobil 44px / masaüstü 36px)", () =>
     const partsLaborGrid = read("../orders/parts-labor-grid.tsx")
 
     expect(partsLaborGrid).not.toContain("h-9")
+  })
+})
+
+describe("dokunma ölçülü seçiciler — size=\"control\" (#846)", () => {
+  test("Toggle ve Tabs primitive'leri ölçüyü değişkenden alır", () => {
+    const toggle = read("./toggle.tsx")
+    const tabs = read("./tabs.tsx")
+    expect(toggle).toContain('control: "h-(--control-h) min-w-(--control-h)')
+    expect(tabs).toContain("group-data-[size=control]/tabs-list:h-(--control-h)")
+    for (const source of [toggle, tabs]) {
+      expect(source).not.toMatch(/(?:sm|md|lg|xl):(?:h|size|min-h)-/)
+    }
+  })
+
+  /**
+   * Çağrı yeri mandalı: açılış etiketinde `h-7!` / `!h-7` / `md:h-7!` /
+   * `size-7!` (ve `min-h`) yasak. Etiket, süslü parantez dışındaki ilk `>`'a
+   * kadar taranır (ok fonksiyonlu prop'lar ve `[&>svg]` etiketi bölmez).
+   * Sınırı: sabite çıkarılmış sınıfları (`const cls = "h-7!"`) görmez.
+   */
+  const OPENING = /<(?:ToggleGroupItem|ToggleGroup|Toggle|TabsList|TabsTrigger)(?=[\s>/])/g
+  const IMPORTANT = /(?:^|[\s"'`:])(?:h|min-h|size)-[^\s"'`]+!|!(?:h|min-h|size)-[^\s"'`]+/
+
+  function openingTags(source: string) {
+    const tags: string[] = []
+    for (const match of source.matchAll(OPENING)) {
+      let depth = 0
+      let i = match.index
+      let quote = ""
+      for (; i < source.length; i++) {
+        const ch = source[i]
+        if (quote) {
+          if (ch === quote) quote = ""
+        } else if (ch === '"' || ch === "'" || ch === "`") quote = ch
+        else if (ch === "{") depth++
+        else if (ch === "}") depth--
+        else if (ch === ">" && depth === 0 && source[i - 1] !== "=") break
+      }
+      tags.push(source.slice(match.index, i + 1))
+    }
+    return tags
+  }
+
+  function eachTsx(dir: string, visit: (path: string, source: string) => void) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name)
+      if (entry.isDirectory()) eachTsx(path, visit)
+      else if (entry.name.endsWith(".tsx")) visit(path, readFileSync(path, "utf8"))
+    }
+  }
+
+  const srcRoot = fileURLToPath(new URL("../../", import.meta.url))
+
+  test("mandal regex'i bilinen ihlalleri yakalar", () => {
+    const bad = [
+      '<ToggleGroupItem onClick={() => go()} className="h-7!">',
+      '<TabsTrigger className="md:h-7!">',
+      '<ToggleGroupItem className="size-7! [&>svg]:size-4">',
+      '<ToggleGroupItem className="[&>svg]:size-4 !h-7">',
+    ]
+    for (const tag of bad) {
+      const found = openingTags(tag)
+      expect(found.length).toBe(1)
+      expect(IMPORTANT.test(found[0])).toBe(true)
+    }
+    expect(IMPORTANT.test(openingTags('<TabsList size="control" className="grid h-auto">')[0])).toBe(false)
+  })
+
+  test("ToggleGroup / Toggle / Tabs çağrı yerinde yükseklik `!` ile ezilmez", () => {
+    const offenders: string[] = []
+    eachTsx(srcRoot, (path, source) => {
+      for (const tag of openingTags(source)) {
+        if (IMPORTANT.test(tag)) offenders.push(`${path}: ${tag.slice(0, 80)}`)
+      }
+    })
+    expect(offenders).toEqual([])
+  })
+
+  test('TabsList size="control" ile variant="line" birlikte kullanılmaz', () => {
+    const offenders: string[] = []
+    eachTsx(srcRoot, (path, source) => {
+      for (const tag of openingTags(source)) {
+        if (tag.startsWith("<TabsList") && /size="control"/.test(tag) && /variant="line"/.test(tag)) {
+          offenders.push(path)
+        }
+      }
+    })
+    expect(offenders).toEqual([])
   })
 })
 
