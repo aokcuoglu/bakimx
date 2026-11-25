@@ -14,7 +14,7 @@ import { getVehicleGeometry, type BodyType } from "./vehicle-geometry"
 import { modelForBody } from "./vehicle-3d-models"
 
 // three.js stays out of every other bundle: it is fetched only when the 3D view renders.
-const Vehicle3DViewer = dynamic(() => import("./vehicle-3d-viewer"), { ssr: false, loading: () => <div className="grid h-[320px] place-items-center rounded-(--control-radius) bg-card sm:h-[400px]"><BrandSpinner size={40} label="3B model yükleniyor" /></div> })
+const Vehicle3DViewer = dynamic(() => import("./vehicle-3d-viewer"), { ssr: false, loading: () => <div className="grid h-[320px] place-items-center rounded-md bg-muted sm:h-[400px]"><BrandSpinner size={40} label="3B model yükleniyor" /></div> })
 
 let webglSupport: boolean | undefined
 function detectWebGL() {
@@ -43,13 +43,13 @@ export function VehicleDamageMap({ damageMarks, bodyType = "sedan", photos = [],
     {showSummary && <p className="text-sm text-muted-foreground">{damageMarks.length ? `${damageMarks.length} hasar kaydı` : inspectionStatus === "no_visible_damage" ? "Kontrol edildi, görünür hasar gözlenmedi" : "Kontrol kaydı yok"}{inspectedAt && ` · ${new Date(inspectedAt).toLocaleString("tr-TR")}`}</p>}
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="min-w-0 space-y-2">
-        {bodyType !== "unsupported" && <div className="relative space-y-2">
+        {bodyType !== "unsupported" && <div className="space-y-2">
           {model && webgl && <ToggleGroup type="single" variant="outline" size="control" value={mode} onValueChange={v => v && setMode(v as "3d" | "plan")} aria-label="Hasar görünümü" className="print:hidden">
             <ToggleGroupItem value="3d">3B</ToggleGroupItem>
             <ToggleGroupItem value="plan">Açılım</ToggleGroupItem>
           </ToggleGroup>}
           {show3d && <div className="print:hidden"><Vehicle3DViewer model={model} marks={marksByZone} onZoneClick={onZoneClick} /></div>}
-          <div className={cn("rounded-(--control-radius) bg-card p-3 sm:p-4", show3d && "hidden print:block")}>
+          <div className={cn("rounded-md bg-card print:border p-3 sm:p-4", show3d && "hidden print:block")}>
             <svg viewBox={geometry.viewBox} role={onZoneClick ? "group" : "img"} aria-label="Araç hasar şeması" className="mx-auto block h-auto w-full max-w-[380px]" strokeLinejoin="round">
               {geometry.labels.map(l => <text key={l.text} x={l.x} y={l.y} transform={l.rotate ? `rotate(${l.rotate} ${l.x} ${l.y})` : undefined} textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600} letterSpacing="0.12em" className="fill-muted-foreground">{l.text}</text>)}
               {geometry.panels.map(p => {
@@ -75,7 +75,7 @@ export function VehicleDamageMap({ damageMarks, bodyType = "sedan", photos = [],
       </div>
       <div className="min-w-0" aria-label="Hasar kayıtları">
         {damageMarks.length === 0 ? (
-          <p className="rounded-(--control-radius) bg-muted p-6 text-center text-sm text-muted-foreground">
+          <p className="rounded-md bg-muted p-6 text-center text-sm text-muted-foreground">
             {inspectionStatus === "no_visible_damage" ? "Kontrol edildi, görünür hasar gözlenmedi." : onZoneClick ? "Henüz hasar kaydı yok. Araç üzerinde bir panele dokunarak ekleyin." : "Hasar kaydı yok."}
           </p>
         ) : (

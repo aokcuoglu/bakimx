@@ -203,7 +203,7 @@ export default function Vehicle3DViewer(props: Vehicle3DViewerProps) {
   }, [hovered, props.onZoneClick])
 
   return <div className="space-y-1.5">
-    <div ref={wrapper} className="relative h-[320px] w-full touch-none overflow-hidden rounded-(--control-radius) bg-card sm:h-[400px]">
+    <div ref={wrapper} className="relative h-[320px] w-full touch-none overflow-hidden rounded-md bg-muted sm:h-[400px]">
       <Canvas dpr={[1, 2]} camera={{ position: [6, 2.6, 6.7], fov: 30, near: 0.1, far: 50 }} gl={{ antialias: true, preserveDrawingBuffer: false }} aria-label="3B araç hasar modeli">
         <ambientLight intensity={0.35} />
         <directionalLight position={[5, 8, 4]} intensity={1.1} />

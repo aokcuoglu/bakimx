@@ -107,16 +107,13 @@ function PhotoGalleryCard({
 
   const frame = "block aspect-square h-auto w-full overflow-hidden rounded-md bg-muted p-0"
 
-  const metaLine = [photo.fileName, photo.sizeBytes != null ? formatSize(photo.sizeBytes) : null]
+  const metaLine = [photo.sizeBytes != null ? formatSize(photo.sizeBytes) : null, photo.fileName]
     .filter(Boolean)
     .join(" · ")
 
   return (
     <div className="min-w-0 space-y-1">
       <div className="relative">
-        {canDelete && (
-          <PhotoDeleteButton photoId={photo.id} photoLabel={typeLabel} onDeleted={onDeleted} />
-        )}
         {photo.fileUrl && onOpen ? (
           <Button
             type="button"
@@ -134,6 +131,9 @@ function PhotoGalleryCard({
               <span className="text-xs text-muted-foreground">Dosya yok</span>
             </div>
           </div>
+        )}
+        {canDelete && (
+          <PhotoDeleteButton photoId={photo.id} photoLabel={typeLabel} onDeleted={onDeleted} />
         )}
       </div>
       <div className="min-w-0 space-y-0.5">
