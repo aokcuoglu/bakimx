@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
 import ts from "typescript"
-import { PAGE_HEADERS } from "./navigation/page-headers"
+import { PAGE_HEADERS, SUB_PAGE_HEADERS } from "./navigation/page-headers"
 
 const SRC = join(import.meta.dir, "..")
 const SCOPES = [
@@ -491,14 +491,31 @@ test("Button basılma efekti konum translate'ini ezmiyor", () => {
   expect(classTokens).toContain("active:not-aria-[haspopup]:[transform:translateY(1px)]")
 })
 
-test("kayıtlı menü sayfaları başlığı PageFrame'e bırakır (#823)", () => {
-  const FORBIDDEN = ["surface.hero", "<h1", "pageActions=", "pageTitle="]
+/**
+ * Kayıtlı sayfa başlığını, breadcrumb'ını ve geri bağlantısını `PageFrame`'e
+ * bırakır. Alt sayfaların detay bileşenleri de içerikte ikinci bir yol satırı
+ * (`ArrowLeft` geri bağlantısı, `<span>/</span>` ayıracı) çizmez (#855).
+ */
+test("kayıtlı sayfalar başlığı PageFrame'e bırakır — alt sayfalar dahil (#823, #855)", () => {
+  const FORBIDDEN = ["surface.hero", "<h1", "pageActions=", "pageTitle=", "text-page-title", "ArrowLeft", ">/</span>"]
   const offenders: string[] = []
-  for (const href of Object.keys(PAGE_HEADERS)) {
+  for (const href of [...Object.keys(PAGE_HEADERS), ...Object.keys(SUB_PAGE_HEADERS)]) {
     const file = join(SRC, "app", "(app)", href, "page.tsx")
     const source = readFileSync(file, "utf8")
     const found = FORBIDDEN.filter((token) => source.includes(token))
     if (found.length > 0) offenders.push(`${href}: ${found.join(", ")}`)
+  }
+  const FRAMED_CONTENT_FILES = [
+    join("components", "customers", "customer-detail.tsx"),
+    join("components", "vehicles", "vehicle-detail.tsx"),
+    join("components", "quotes", "quote-detail.tsx"),
+    join("components", "appointments", "appointment-detail.tsx"),
+    join("components", "reminders", "reminder-detail.tsx"),
+  ]
+  for (const file of FRAMED_CONTENT_FILES) {
+    const source = readFileSync(join(SRC, file), "utf8")
+    const found = ["ArrowLeft", ">/</span>"].filter((token) => source.includes(token))
+    if (found.length > 0) offenders.push(`${file}: ${found.join(", ")}`)
   }
   expect(offenders).toEqual([])
 })
