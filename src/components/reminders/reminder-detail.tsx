@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
-  ArrowLeft,
   Pencil,
   BellRing,
   CheckCircle2,
@@ -150,15 +149,6 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/reminders" className="hover:text-foreground inline-flex items-center gap-1">
-          <ArrowLeft className="size-4" />
-          Bakım Hatırlatmaları
-        </Link>
-        <span className="mx-1">/</span>
-        <span className="text-foreground font-medium truncate">{reminder.title}</span>
-      </div>
-
       {actionError ? (
         <Alert variant="destructive"><AlertDescription>{actionError}</AlertDescription></Alert>
       ) : null}
@@ -171,7 +161,6 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">{reminder.title}</h2>
                 <ReminderStatusBadge status={reminder.status} size="md" />
                 <ReminderTypeBadge type={reminder.type} />
               </div>

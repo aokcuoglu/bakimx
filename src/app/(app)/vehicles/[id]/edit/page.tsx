@@ -5,7 +5,7 @@ import { notFound } from "next/navigation"
 import { VehicleCreateForm } from "@/components/vehicles/vehicle-create-form"
 import { resolveIntakeEntitlements } from "@/lib/intake/entitlements"
 import { VehicleIdentity } from "@/components/vehicles/vehicle-identity"
-import Link from "next/link"
+import { detectPlate } from "@/lib/plate/country"
 
 export const metadata = { title: "Araç Düzenle" }
 
@@ -25,18 +25,9 @@ export default async function EditVehiclePage({ params }: { params: Promise<{ id
   })
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Aracı Düzenle" showGlobalSearch={false}>
+    <AppShell workshopName={workshop?.name} recordTitle={detectPlate(vehicle.plate).text} showGlobalSearch={false}>
       <div className="space-y-5 sm:space-y-6">
-        <div className="space-y-2">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Link href="/vehicles" className="hover:text-foreground">Araçlar</Link>
-            <span className="mx-2">/</span>
-            <Link href={`/vehicles/${vehicle.id}`} className="hover:text-foreground">{vehicle.plate}</Link>
-            <span className="mx-2">/</span>
-            <span className="text-foreground font-medium">Düzenle</span>
-          </div>
-          <VehicleIdentity plate={vehicle.plate} brand={vehicle.brand} model={vehicle.model} />
-        </div>
+        <VehicleIdentity plate={vehicle.plate} brand={vehicle.brand} model={vehicle.model} />
 
         <VehicleCreateForm
           customers={customers}

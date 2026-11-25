@@ -43,6 +43,7 @@ import { summarizeCustomerOrders } from "@/lib/customer-totals"
 import { cn } from "@/lib/utils"
 import type { ReminderRow } from "@/lib/reminders/queries"
 import { newIntakeHref } from "@/lib/intake/entry-links"
+import styles from "./customer-detail.module.css"
 
 type Vehicle = {
   id: string
@@ -145,33 +146,15 @@ export function CustomerDetail({
 
   if (editing) {
     return (
-      <div className="space-y-5">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/customers" className="hover:text-foreground">Müşteriler</Link>
-          <span className="mx-2">/</span>
-          <Link
-            href={`/customers/${customer.id}`}
-            className="hover:text-foreground"
-            onClick={() => setEditing(false)}
-          >
-            {displayName}
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Düzenle</span>
-        </div>
+      <section aria-labelledby="customer-edit-title">
+        <h2 id="customer-edit-title" className={styles.editTitle}>Müşteri bilgilerini düzenle</h2>
         <CustomerCreateForm mode="edit" initial={customer} onCancel={() => setEditing(false)} />
-      </div>
+      </section>
     )
   }
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/customers" className="hover:text-foreground">Müşteriler</Link>
-        <span className="mx-2">/</span>
-        <span className="text-foreground font-medium">{displayName}</span>
-      </div>
-
       <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -180,7 +163,6 @@ export function CustomerDetail({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">{displayName}</h2>
                 <CustomerTypeBadge type={customer.type || "individual"} />
                 {customer.tag ? <CustomerTagBadge tag={customer.tag} /> : null}
               </div>

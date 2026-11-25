@@ -158,7 +158,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
   başlık ve standart düğmeler `src/lib/navigation/page-headers.ts` kaydından
   çizilir (yükleme ekranı dahil). Kayıtlı bir sayfa kendi `h1`/hero'sunu,
   `pageTitle`/`pageActions`'ını vermez; yalnız `subtitle` verir. Yeni menü
-  sayfası = kayda bir satır. Kapı: `src/lib/ui-contract.test.ts`.
+  sayfası = kayda bir satır. Kapı: `src/lib/ui-contract.test.ts`. Alt sayfalar
+  (`/customers/[id]`, `/vehicles/new` …) `SUB_PAGE_HEADERS`'a kaydolur ve
+  `recordTitle` verir; telefonda breadcrumb yerine `PageTrail`'in `‹ <üst>`
+  geri bağlantısı çıkar, içerikte ayrıca geri bağlantısı/breadcrumb çizilmez (#855).
 
 ## Form Rules
 - **All forms use react-hook-form + zod + shadcn Form component** (NOT useState)

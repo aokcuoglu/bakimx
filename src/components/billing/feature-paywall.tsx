@@ -20,7 +20,9 @@ export function FeaturePaywall({
   const addon = definition.kind === "addon"
 
   return (
-    <AppShell pageTitle={definition.name} showGlobalSearch={false} wide>
+    // Kayıtlı alt sayfada (/quotes/[id] …) başlığı PageFrame çizer; kayıt
+    // okunmadığı için başlık özellik adıdır, yoksa h1 boş kalırdı (#855).
+    <AppShell pageTitle={definition.name} recordTitle={definition.name} showGlobalSearch={false} wide>
       <div className="mx-auto flex min-h-[65vh] max-w-4xl items-center justify-center py-6 sm:py-10">
         <Card className="relative w-full overflow-hidden border-border bg-card shadow-md">
           <CardHeader className="relative items-center px-5 pt-8 text-center sm:px-10 sm:pt-12">

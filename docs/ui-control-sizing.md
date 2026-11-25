@@ -38,6 +38,11 @@ e-santral kaynağıyla birebirdir: telefonda ~37px (`8px 14px`). Dokunma alanı
 şeffaf bir `::before` katmanıyla 44px'e çıkar (#810). Görünür boyutu 44px'e
 büyütme; ihlal değil, bilinçli istisna.
 
+**Alt sayfanın telefon geri bağlantısı** (`‹ Müşteriler`,
+`page-trail.module.css` → `.back`) görselde 18px satırdır: breadcrumb satırının
+yerini alır ve başlığın Y konumunu liste sayfasıyla aynı tutar. Dokunma alanı
+aynı yolla, şeffaf `::before` ile 44px'tir (#855). Satırı 44px'e büyütme.
+
 ## Yazı ölçeği
 
 `text-xs` / `text-sm` / `text-base` duyarlıdır (`globals.css` → `--fs-*`):
