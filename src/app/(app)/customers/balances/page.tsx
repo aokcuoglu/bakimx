@@ -8,6 +8,7 @@ import { Wallet, ChevronRight, Info, AlertTriangle, Search, Building2, Filter } 
 import { Input } from "@/components/ui/input"
 import { CustomerTypeBadge, CustomerTagBadge } from "@/components/customers/customer-badges"
 import { formatTRY } from "@/lib/format"
+import { formatTrDate } from "@/lib/format-date"
 import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { cn } from "@/lib/utils"
 import { FilterSelect } from "@/components/shared/filter-select"
@@ -290,7 +291,7 @@ function DesktopBalanceTable({ rows }: { rows: Array<{ id: string; type: string;
                   {row.remainingAmount > 0 ? formatTRY(row.remainingAmount) : formatTRY(0)}
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                  {row.lastPaymentDate ? new Date(row.lastPaymentDate).toLocaleDateString("tr-TR") : "—"}
+                  {row.lastPaymentDate ? formatTrDate(row.lastPaymentDate) : "—"}
                 </td>
                 <td className="px-4 py-3">
                   <BalanceStatusBadge remaining={row.remainingAmount} grandTotal={row.grandTotal} />

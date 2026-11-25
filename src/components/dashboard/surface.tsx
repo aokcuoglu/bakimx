@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { formatTrShortDate, formatTrTime } from "@/lib/format-date"
 import { APPOINTMENT_STATUS, ORDER_STATUS, type AppointmentStatusKey, type OrderStatusKey } from "@/lib/constants"
 import { kpiNumeralFont } from "./kpi-font"
 import styles from "./surface.module.css"
@@ -174,12 +175,12 @@ export function initials(name: string): string {
 
 export function formatTime(iso: string | null): string {
   if (!iso) return ""
-  return new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
+  return formatTrTime(iso)
 }
 
 export function formatShortDate(iso: string | null): string {
   if (!iso) return ""
-  return new Date(iso).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })
+  return formatTrShortDate(iso)
 }
 
 const accentClass: Record<Tone, string> = {
