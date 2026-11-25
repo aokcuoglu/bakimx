@@ -334,7 +334,7 @@ export function InlineCreateModal({
           </AddonGate>
 
           {/* Customer */}
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1">
             <Label>Müşteri (sahip) *</Label>
             {owner ? (
               <div className="flex items-center justify-between rounded-lg border border-border p-2.5">
@@ -360,11 +360,11 @@ export function InlineCreateModal({
 
           {/* Primary vehicle fields */}
           <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
-            <div className="space-y-1">
+            <div className="min-w-0 space-y-1">
               <Label className="flex items-center gap-1">Plaka * {lowConf("plate") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
               <Input value={fields.plate} onChange={(e) => setField("plate", e.target.value.toUpperCase())} className={fieldClass("plate")} />
             </div>
-            <div className="space-y-1">
+            <div className="min-w-0 space-y-1">
               <Label className="flex items-center gap-1">Yıl {lowConf("modelYear") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
               <Input value={fields.modelYear} onChange={(e) => setField("modelYear", e.target.value)} inputMode="numeric" className={fieldClass("modelYear")} />
             </div>
@@ -405,11 +405,11 @@ export function InlineCreateModal({
 
           {showDetails && (
             <div className="grid grid-cols-2 gap-2 rounded-lg border border-border p-3">
-              <div className="space-y-1 col-span-2">
+              <div className="min-w-0 space-y-1 col-span-2">
                 <Label>Ticari Adı</Label>
                 <Input value={fields.commercialName} onChange={(e) => setField("commercialName", e.target.value)} />
               </div>
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 <Label className="flex items-center gap-1">Tipi {lowConf("vehicleType") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <Select value={fields.vehicleType} onValueChange={(v) => setField("vehicleType", v)}>
                   <SelectTrigger className={`w-full ${fieldClass("vehicleType")}`}>
@@ -422,7 +422,7 @@ export function InlineCreateModal({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 <Label>Yakıt Cinsi</Label>
                 <Select value={fields.fuelType} onValueChange={(v) => setField("fuelType", v)}>
                   <SelectTrigger className="w-full">
@@ -435,7 +435,7 @@ export function InlineCreateModal({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1 col-span-2">
+              <div className="min-w-0 space-y-1 col-span-2">
                 <Label className="flex items-center gap-1">Şase no {lowConf("vin") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <div className="flex gap-2">
                   <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className={fieldClass("vin")} />
@@ -473,23 +473,23 @@ export function InlineCreateModal({
                   />
                 )}
               </div>
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 <Label className="flex items-center gap-1">Motor No {lowConf("engineNo") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <Input value={fields.engineNo} onChange={(e) => setField("engineNo", e.target.value.toUpperCase())} className={fieldClass("engineNo")} />
               </div>
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 <Label>Silindir Hacmi</Label>
                 <Input value={fields.engineDisplacement} onChange={(e) => setField("engineDisplacement", e.target.value)} placeholder="1598" />
               </div>
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 <Label>Motor Gücü</Label>
                 <Input value={fields.enginePower} onChange={(e) => setField("enginePower", e.target.value)} placeholder="85 kW" />
               </div>
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 <Label className="flex items-center gap-1">İlk Tescil Tarihi {lowConf("firstRegistrationDate") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <DatePicker value={fields.firstRegistrationDate} onChange={(v) => setField("firstRegistrationDate", v)} className={fieldClass("firstRegistrationDate")} />
               </div>
-              <div className="space-y-1 col-span-2">
+              <div className="min-w-0 space-y-1 col-span-2">
                 <Label>Muayene Geçerlilik Tarihi</Label>
                 <DatePicker value={fields.inspectionValidUntil} onChange={(v) => setField("inspectionValidUntil", v)} />
               </div>
