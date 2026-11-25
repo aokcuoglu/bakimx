@@ -43,6 +43,7 @@ import { summarizeCustomerOrders } from "@/lib/customer-totals"
 import { cn } from "@/lib/utils"
 import type { ReminderRow } from "@/lib/reminders/queries"
 import { newIntakeHref } from "@/lib/intake/entry-links"
+import styles from "./customer-detail.module.css"
 
 type Vehicle = {
   id: string
@@ -145,7 +146,10 @@ export function CustomerDetail({
 
   if (editing) {
     return (
-      <CustomerCreateForm mode="edit" initial={customer} onCancel={() => setEditing(false)} />
+      <section aria-labelledby="customer-edit-title">
+        <h2 id="customer-edit-title" className={styles.editTitle}>Müşteri bilgilerini düzenle</h2>
+        <CustomerCreateForm mode="edit" initial={customer} onCancel={() => setEditing(false)} />
+      </section>
     )
   }
 

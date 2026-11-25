@@ -1,0 +1,13 @@
+/*
+ * Düzenleme bölüm başlığı (#855): kart dışında, gri zeminde duran bölüm başlığı.
+ * Ölçüler Genel Bakış panel başlığından (dashboard/surface.module.css
+ * `.panelTitle`, e-santral kalıbı) kopyalanır, içe aktarılmaz.
+ */
+.editTitle {
+  margin: 0 4px 12px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 26px;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+}
