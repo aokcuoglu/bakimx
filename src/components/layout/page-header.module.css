@@ -47,11 +47,14 @@
   overflow: hidden;
   overflow-wrap: anywhere;
   /*
-   * lh 1.08'de iniş çizgileri (Ş, Ç, ğ, y) satır kutusunun altına taşar;
-   * kesme kutusu dikeyde genişler, negatif kenar boşluğu konumu korur.
+   * lh 1.08'de 2. satırın inişleri (Ş, Ç) ile 3. satırın aksanları (İ, Ü, Ğ)
+   * aynı şeride düşer: kesme kutusunu büyütmek 3. satırın izini gösterir,
+   * büyütmemek çengelleri keser. lh 1.25 ikisini ayırır. Negatif kenar
+   * boşlukları (her biri satır farkının yarısı) ilk satırın glifini ve
+   * alttaki içeriği liste başlığıyla (lh 1.08) aynı yerde tutar.
    */
-  padding-block: 0.12em;
-  margin-block: -0.12em;
+  line-height: 1.25;
+  margin-block: calc((1.08 - 1.25) * 0.5em);
 }
 
 .subline {
@@ -112,11 +115,18 @@
     font-size: 36px;
   }
 
+  /*
+   * Tek satır: 3. satır yok, kesme kutusu dikeyde 0,12em genişler ki iniş
+   * çizgileri kırpılmasın; negatif kenar boşluğu konumu korur.
+   */
   .titleRecord {
     display: block;
     -webkit-line-clamp: none;
     white-space: nowrap;
     text-overflow: ellipsis;
+    line-height: 1.08;
+    padding-block: 0.12em;
+    margin-block: -0.12em;
   }
 
   .subline {
