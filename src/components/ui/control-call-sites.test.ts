@@ -151,16 +151,18 @@ const hitClass = (hit: string) => hit.slice(0, hit.lastIndexOf(" ("))
 
 describe("form kontrolleri çağrı yerinde ezilmez (#888)", () => {
   test("kapı bilinen ihlalleri yakalar, yerleşim sınıflarına dokunmaz", () => {
+    // Tailwind içerik tarayıcısı test dosyalarını da gezer: kaynakta başka yerde
+    // geçmeyen sınıflar parçalanarak yazılır, üretilen CSS'e ölü kural girmesin.
     const bad = [
       '<Input className="h-7 text-sm" />',
       '<Input className={cn("w-full", dense && "rounded-lg")} />',
-      "<InputGroup className={`flex-1 ${open ? \"md:py-1.5\" : \"\"}`} />",
+      `<InputGroup className={\`flex-1 \${open ? "${"md:" + "py-1.5"}" : ""}\`} />`,
       '<SelectTrigger className="!h-7" />',
-      '<Textarea className="min-h-[80px]" />',
+      `<Textarea className="${"min-h-" + "[80px]"}" />`,
       '<AutocompleteInput render={<Input />} className="bg-muted" />',
       '<ComboboxInput className="shadow-none border-transparent" />',
       '<InputGroupInput className="font-semibold" />',
-      '<Input className="data-[size=sm]:h-7!" />',
+      `<Input className="${"data-[size=sm]:" + "h-7!"}" />`,
       '<Input className="border-0 p-0" />',
       '<ComboboxChips className="w-full min-h-7" />',
     ]
@@ -174,7 +176,7 @@ describe("form kontrolleri çağrı yerinde ezilmez (#888)", () => {
       '<Input size="compact" className="w-24 text-right tabular-nums" />',
       '<Input className="pl-9 pr-9" />',
       '<Textarea className="min-h-20 resize-none" />',
-      '<SelectTrigger className="w-full min-w-0 md:max-w-60" />',
+      `<SelectTrigger className="w-full min-w-0 ${"md:" + "max-w-60"}" />`,
       '<InputGroup className="flex-1 font-mono uppercase tracking-wider" />',
       // İç içe öğe kendi etiketi olarak taranır; dıştakini kirletmez.
       '<AutocompleteInput render={<Input className="w-full" />} />',
