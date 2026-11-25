@@ -44,8 +44,16 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * durum renkleri (`hover:` / `disabled:` / `aria-*:`), durum tonu
  * (`bg-destructive/10`), yüzen düğme gölgesi (`shadow-md`), `border-dashed`,
  * `font-mono`, kart üzerinde vurgu halkası (`hover:ring-2`).
- * `before:` / `after:` (şeffaf dokunma alanı) ve `[&…]:` / `*:` (ikon boyutu
- * gibi torun seçicisi) önekli sınıflar düğmenin kutusunu değiştirmez, sayılmaz.
+ * `before:` / `after:` (şeffaf dokunma alanı) ve torun / kardeş seçicisi
+ * (`[&_svg]:`, `[&>svg]:`, `[&+…]:`, `[&~…]:`, `*:`, `**:` — ikon boyutu gibi)
+ * önekli sınıflar düğmenin kutusunu değiştirmez, sayılmaz. Öğenin kendisini
+ * seçen `[&]:` / `[&:not(:disabled)]:` sayılır.
+ * Seçiciler (`ToggleGroup`, `ToggleGroupItem`, `Toggle`) aynı kural setiyle
+ * taranır: ölçü `size`'dan (`control`, seçenek kartı `row`), seçili görünüm
+ * variant'tan (`outline` birincil ton, `segment` gri ray + beyaz kart).
+ * `TabsList` / `TabsTrigger` kapsam dışı: telefonda görünen `line` sekmenin
+ * ölçeğe bağlanması #854'te; `!` ile yükseklik ezmesini control-sizing.test.ts
+ * zaten yakalar.
  * Kör nokta: `buttonVariants({ className })` çağrısı JSX değildir, taranmaz
  * (#889 anında tek kullanım `ui/` içinde).
  */
@@ -83,13 +91,21 @@ export const BUTTON_CONTROLS = [
   "PrintButton",
   "StopLaborButton",
   "TechnicianAssign",
+  // ui/sidebar: Button'a className iletir (çağrı yerleri ui/ dışında).
+  "SidebarTrigger",
+  // `triggerClassName`'i tetikleyici Button'a iletir.
+  "FilterSheet",
 ] as const
 
-export const CONTROLS = [...FIELD_CONTROLS, ...BUTTON_CONTROLS] as const
+/** Seçiciler (#889): düğme kural setiyle taranır. */
+export const TOGGLE_CONTROLS = ["ToggleGroup", "ToggleGroupItem", "Toggle"] as const
+
+export const CONTROLS = [...FIELD_CONTROLS, ...BUTTON_CONTROLS, ...TOGGLE_CONTROLS] as const
 
 type Control = (typeof CONTROLS)[number]
 
-const isButton = (name: string) => (BUTTON_CONTROLS as readonly string[]).includes(name)
+const usesButtonRules = (name: string) =>
+  (BUTTON_CONTROLS as readonly string[]).includes(name) || (TOGGLE_CONTROLS as readonly string[]).includes(name)
 
 type Family = {
   /** Raporda görünen ad. */
@@ -154,20 +170,24 @@ export const BUTTON_FORBIDDEN: readonly Family[] = [
   { name: "dikey dolgu", pattern: /^p[ytb]?-/ },
   { name: "yazı ağırlığı", pattern: FONT_WEIGHT },
   { name: "odak halkası", pattern: /^(?:ring|outline)(?:-|$)/, when: "focus" },
-  { name: "zemin", pattern: /^bg-(?:background|card|transparent|muted(?:\/\d+)?)$/, when: "base" },
+  // Yarı saydam hâli de (`bg-background/95`, `bg-card/80`) aynı yüzey ezmesidir.
+  { name: "zemin", pattern: /^bg-(?:background|card|transparent|muted)(?:\/(?:\d+|\[[^\]]+\]))?$/, when: "base" },
   { name: "kenarlık kaldırma", pattern: /^border(?:-[trblxy])?-(?:0|none|transparent)$/, when: "base" },
   { name: "gölge kaldırma", pattern: /^shadow-none$/, when: "base" },
   { name: "keyfi özellik", pattern: /^\[(?:height|min-height|max-height|border-radius|font-size|font-weight|line-height|padding)/ },
 ]
 
-/** Düğmenin kendi kutusunu değil sözde öğeyi / torunu biçimleyen önek. */
-const DESCENDANT_VARIANT = /^(?:before|after|\*{1,2}|\[&)/
-/** Durum değil, yalnız ekran genişliği / tema önekleri. */
-const BASE_VARIANT = /^(?:sm|md|lg|xl|2xl|dark|print)$/
+/** Düğmenin kendi kutusunu değil sözde öğeyi / torunu / kardeşi biçimleyen önek. */
+const DESCENDANT_VARIANT = /^(?:before|after|\*{1,2}|\[&[_>+~])/
+/**
+ * Durum değil, yalnız ekran / kap genişliği ve tema önekleri: `md:`,
+ * `max-md:`, `min-[400px]:`, `max-[600px]:`, `@xl:`, `@max-md:`, `dark:`.
+ */
+const BASE_VARIANT = /^(?:(?:max-)?(?:sm|md|lg|xl|2xl)|(?:min|max)-\[[^\]]+\]|@.+|dark|print)$/
 
 /** Etiketin yasak sınıfları: `["h-7 (yükseklik)", "styles.input (CSS modülü)", …]`. */
 export function violations(tag: Pick<JsxOpeningTag, "name" | "classLiterals" | "cssModuleRefs">): string[] {
-  const button = isButton(tag.name)
+  const button = usesButtonRules(tag.name)
   const families = button ? BUTTON_FORBIDDEN : FORBIDDEN
   const found: string[] = []
   for (const literal of tag.classLiterals) {
@@ -297,6 +317,13 @@ const OUT_OF_SCOPE = [
   `components${sep}sections${sep}`,
   `components${sep}marketing${sep}`,
 ]
+/**
+ * Kapsam dışı klasördeki istisnai dosyalar: `sections/Footer.tsx` pazarlama
+ * bölümü değil, uygulamaya bitişik genel sayfaların (fiyatlar, blog, rehber,
+ * demo, durum, yasal) ortak altbilgisi — kontrolleri matrise uyar (#889;
+ * "Demo talep et" CSS modülüyle 28px'e indirilmişti ve kapı görmüyordu).
+ */
+const IN_SCOPE_FILES = ["components/sections/Footer.tsx"]
 
 type ScannedTag = JsxOpeningTag & { file: string }
 
@@ -315,7 +342,11 @@ function scan() {
         ;(tag.name === "input" ? rawInputs : controls).push({ ...tag, file })
       }
     },
-    (path) => OUT_OF_SCOPE.some((dir) => `${relative(SRC, path)}${sep}`.startsWith(dir))
+    (path) => {
+      const rel = relative(SRC, path)
+      if (IN_SCOPE_FILES.includes(rel.split(sep).join("/"))) return false
+      return OUT_OF_SCOPE.some((dir) => `${rel}${sep}`.startsWith(dir))
+    }
   )
   scanned = { controls, rawInputs }
   return scanned
@@ -395,6 +426,20 @@ describe("form kontrolleri ve düğmeler çağrı yerinde ezilmez (#888, #889)",
       '<Button className={styles.cta}>',
       // className'i Button'a ileten sarmalayıcı da aynı kuralla taranır.
       '<PrintButton className="h-8" />',
+      // `*ClassName` prop'u da içteki kontrole gider.
+      '<FilterSheet triggerClassName="h-7" />',
+      // Öğenin kendisini seçen keyfi varyant sayılır (torun seçicisi değil).
+      `<Button className="${"[&]:" + "h-7"}">`,
+      `<Button className="${"[&:not(:disabled)]:" + "rounded-lg"}">`,
+      // Kırılım / kap önekli nötr yüzey ezmesi de yüzey ezmesidir.
+      `<Button variant="ghost" className="${"max-md:" + "bg-transparent"}">`,
+      `<Button className="${"@xl:" + "bg-muted"}">`,
+      `<Button className="${"min-[400px]:" + "shadow-none"}">`,
+      // Yarı saydam nötr yüzey.
+      `<Button variant="outline" className="${"bg-background/" + "95"}">`,
+      // Seçiciler aynı kural setiyle taranır.
+      `<ToggleGroupItem className="${"h-auto rounded-lg " + "py-2"}">`,
+      '<ToggleGroup className="rounded-lg bg-muted p-0.5">',
     ]
     for (const source of bad) {
       const tags = jsxOpeningTags(`import styles from "./x.module.css"\n${source}`, CONTROLS)
@@ -410,6 +455,9 @@ describe("form kontrolleri ve düğmeler çağrı yerinde ezilmez (#888, #889)",
       '<Button className="shadow-md">',
       '<Button size="row" className="w-full items-start border-dashed px-4 font-mono">',
       '<Button variant="outline" size="row" className="h-full hover:ring-2 hover:ring-primary">',
+      `<Button size="icon" className="${"[&>svg]:" + "size-5"} ${"*:" + "size-4"}">`,
+      '<ToggleGroup variant="outline" size="control" className="grid w-full gap-2 sm:grid-cols-2">',
+      '<ToggleGroupItem className="w-full justify-start text-muted-foreground">',
     ]
     for (const source of good) {
       for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])

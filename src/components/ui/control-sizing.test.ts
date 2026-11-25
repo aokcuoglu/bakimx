@@ -59,8 +59,13 @@ describe("kontrol ölçeği — e-santral (mobil 44px / masaüstü 36px)", () =>
     expect(block).toContain('row: "min-h-(--control-h) justify-start gap-3 rounded-md px-3 py-2.5 text-left ')
     expect(block).toContain('tile: "flex-col gap-1.5 overflow-hidden rounded-md p-0 ')
     const button = read("./button.tsx")
-    expect(button).toContain("border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20")
-    expect(button).toContain('compoundVariants: [{ variant: "field", className: "rounded-(--control-radius)" }]')
+    expect(button).toContain("border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:ring-4 aria-invalid:ring-destructive/10")
+    expect(button).toContain('{ variant: "field", className: "rounded-(--control-radius)" }')
+    // compact alan tetikleyicisi compact girdiyle aynı metin (telefonda 16px).
+    expect(button).toContain('{ variant: "field", size: "compact", className: "text-(length:--control-fs-field-xs)" }')
+    // row satırları variant'tan bağımsız aynı çerçeve kutusunda; hayalet satır soluk değil.
+    expect(button).toContain('{ size: "row", variant: [...NO_BORDER_VARIANTS], className: "border border-transparent" }')
+    expect(button).toContain('{ size: "row", variant: "ghost", className: "text-foreground dark:text-foreground" }')
     // Vitrin her boyutu gösterir.
     const page = read("../../app/design/page.tsx")
     expect(page).toContain('data-testid="button-sizes"')
@@ -116,6 +121,11 @@ describe("dokunma ölçülü seçiciler — size=\"control\" (#846)", () => {
     const toggle = read("./toggle.tsx")
     const tabs = read("./tabs.tsx")
     expect(toggle).toContain('control: "h-(--control-h) min-w-(--control-h)')
+    // #889: seçenek kartı boyutu; outline seçili = birincil ton, segment = ray + beyaz kart.
+    expect(toggle).toContain('row: "min-h-(--control-h) justify-start gap-3 rounded-md px-3 py-2.5 text-left ')
+    expect(toggle).toContain("data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong")
+    expect(toggle).toContain("data-[state=on]:bg-card data-[state=on]:text-foreground")
+    expect(read("./toggle-group.tsx")).toContain("data-[variant=segment]:bg-muted data-[variant=segment]:p-0.5")
     expect(tabs).toContain("group-data-[size=control]/tabs-list:h-(--control-h)")
     for (const source of [toggle, tabs]) {
       expect(source).not.toMatch(/(?:sm|md|lg|xl):(?:h|size|min-h)-/)

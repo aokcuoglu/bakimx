@@ -21,11 +21,15 @@ export type JsxOpeningTag = {
   line: number
   /** Açılış etiketinin kaynak metni (`<Input … />` ya da `<Input …>`). */
   text: string
-  /** `className` ifadesindeki dizge sabitleri; prop yoksa boş. */
+  /**
+   * `className` ve `*ClassName` (`triggerClassName`) ifadelerindeki dizge
+   * sabitleri; prop yoksa boş. Sarmalayıcıya verilen `triggerClassName`
+   * içteki kontrole gider, o yüzden aynı listeye girer.
+   */
   classLiterals: string[]
-  /** `className` ifadesindeki CSS modülü başvuruları (`styles.input`). */
+  /** Aynı ifadelerdeki CSS modülü başvuruları (`styles.input`). */
   cssModuleRefs: string[]
-  /** `className` ifadesi bir `className` değişkenini/prop'unu iletiyor mu. */
+  /** İfade bir `className` / `*ClassName` değişkenini ya da prop'unu iletiyor mu. */
   forwardsClassName: boolean
   /** Etiketi içeren en yakın adlı fonksiyon/bileşen (`FilterSelect`). */
   owner: string | null
@@ -34,6 +38,9 @@ export type JsxOpeningTag = {
 }
 
 type ClassInfo = Pick<JsxOpeningTag, "classLiterals" | "cssModuleRefs" | "forwardsClassName">
+
+/** `className` ya da sarmalayıcının ilettiği `triggerClassName` gibi prop adları. */
+const CLASS_PROP = /^(?:className|[a-z]\w*ClassName)$/
 
 function readClassExpression(node: ts.Node, file: ts.SourceFile, cssModules: Set<string>, out: ClassInfo) {
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
@@ -52,7 +59,7 @@ function readClassExpression(node: ts.Node, file: ts.SourceFile, cssModules: Set
     out.cssModuleRefs.push(node.getText(file))
     return
   }
-  if (ts.isIdentifier(node) && node.text === "className") out.forwardsClassName = true
+  if (ts.isIdentifier(node) && CLASS_PROP.test(node.text)) out.forwardsClassName = true
   // className içine gömülü bir JSX öğesi kendi etiketi olarak ayrıca taranır.
   if (ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) return
   ts.forEachChild(node, (child) => readClassExpression(child, file, cssModules, out))
@@ -95,7 +102,7 @@ export function jsxOpeningTags(source: string, names: readonly string[], fileNam
           if (!ts.isJsxAttribute(prop)) continue
           const attr = prop.name.getText(file)
           attributes.set(attr, prop.initializer?.getText(file) ?? "true")
-          if (attr === "className" && prop.initializer) readClassExpression(prop.initializer, file, cssModules, info)
+          if (CLASS_PROP.test(attr) && prop.initializer) readClassExpression(prop.initializer, file, cssModules, info)
         }
         tags.push({
           name,
