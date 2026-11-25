@@ -33,7 +33,13 @@ test("birim testinden erişilen modüller surface.tsx'i içeri almaz (next/font 
 })
 
 test("Özet'ten gelen kaydırma hedefi korunur", () => {
-  expect(DETAIL).toContain('<div ref={photosRef} className="scroll-mt-4">')
+  expect(DETAIL).toMatch(/<div ref=\{(photosRef|attachPhotos)\} className="scroll-mt-4">/)
+})
+
+test("sekme şeridi etkin sekmeyi yatay kaydırarak görünür kılar (sayfayı kaydırmaz)", () => {
+  expect(DETAIL).toContain("tabListRef")
+  expect(DETAIL).toContain('[data-state="active"]')
+  expect(DETAIL).toContain("list.scrollTo({ left")
 })
 
 test(".tap katmanı position yazmaz (Tailwind absolute'ı ezerdi)", () => {

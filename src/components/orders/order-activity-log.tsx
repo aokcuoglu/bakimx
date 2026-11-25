@@ -78,11 +78,10 @@ export function OrderActivityLog({ entries }: { entries: OrderActivityEntry[] })
       )}
 
       {collapsible && (
-        <div className={cn(surface.cardFoot, "justify-center")}>
+        <div className={surface.cardFoot}>
           <Button
             type="button"
             variant="ghost"
-            size="sm"
             onClick={() => setExpanded((v) => !v)}
             className="w-full text-muted-foreground"
           >

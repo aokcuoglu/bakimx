@@ -170,21 +170,22 @@ export function TechnicianProgressPanel({
         title="İşçilik Süresi"
         aside={totalLaborMinutes > 0 && <DetailPill tone="neutral">Toplam: {formatMinutes(totalLaborMinutes)}</DetailPill>}
       >
-        {activeLabor && (
-          <DetailItem
-            title="İşçilik devam ediyor"
-            meta={`Başlangıç: ${formatTime(activeLabor.startTime)}`}
-            end={
-              <DetailPill tone="success">
-                <span className="size-2 rounded-full bg-success animate-pulse" aria-hidden />
-                Sürüyor
-              </DetailPill>
-            }
-          />
-        )}
-
-        {finishedLabor.length > 0 ? (
+        {activeLabor || finishedLabor.length > 0 ? (
           <ul>
+            {activeLabor && (
+              <li className={LI_SEP}>
+                <DetailItem
+                  title="İşçilik devam ediyor"
+                  meta={`Başlangıç: ${formatTime(activeLabor.startTime)}`}
+                  end={
+                    <DetailPill tone="success">
+                      <span className="size-2 rounded-full bg-success animate-pulse" aria-hidden />
+                      Sürüyor
+                    </DetailPill>
+                  }
+                />
+              </li>
+            )}
             {finishedLabor.map((session) => (
               <li key={session.id} className={LI_SEP}>
                 <DetailItem
@@ -210,7 +211,7 @@ export function TechnicianProgressPanel({
             ))}
           </ul>
         ) : (
-          !activeLabor && <DetailEmpty>Henüz işçilik kaydı yok</DetailEmpty>
+          <DetailEmpty>Henüz işçilik kaydı yok</DetailEmpty>
         )}
       </DetailPanel>
 

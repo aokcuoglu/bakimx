@@ -70,9 +70,9 @@ a.item:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
 .groupCount { font-size:13px; line-height:18px; font-variant-numeric:tabular-nums; color:var(--muted-foreground); }
 .emptyText { padding:16px 18px; font-size:15px; line-height:20px; color:var(--muted-foreground); }
 .footnote { margin:0 4px; font-size:13px; line-height:18px; color:var(--muted-foreground); }
-/* Zaten konumlu (absolute) 36px ikon düğmesine telefonda 44px dokunma katmanı.
+/* Zaten konumlu (absolute) 32px (icon-sm) ikon düğmesine telefonda 44px dokunma katmanı.
    `position` YAZMA: modül CSS'i katmansızdır, Tailwind `absolute`ı ezer. */
-.tap::before { content:""; position:absolute; inset:-4px; }
+.tap::before { content:""; position:absolute; inset:-6px; }
 @media (min-width:768px) { .tap::before { display:none; } }
 /* Kilitli sekme yükseltme kutusu — yalnız bu sayfada */
 .page :global([data-slot="feature-upsell"]) { border:0; border-radius:22px; padding:18px; }

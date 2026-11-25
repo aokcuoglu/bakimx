@@ -409,6 +409,23 @@ export function WorkOrderDetail({
   const [deliveryOtpCode, setDeliveryOtpCode] = useState("")
   const [deliverySentCode, setDeliverySentCode] = useState<string | null>(null)
 
+  // Etkin sekme taşan şeridin dışında kalmasın: yalnız şeridi yatay kaydır
+  // (scrollIntoView sayfayı dikey de kaydırır ve foto/fiyat kaydırmasıyla çakışır).
+  const tabListRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const list = tabListRef.current
+    const trigger = list?.querySelector<HTMLElement>('[data-state="active"]')
+    if (!list || !trigger) return
+    const l = list.getBoundingClientRect()
+    const t = trigger.getBoundingClientRect()
+    const pad = 16
+    if (t.left < l.left + pad) {
+      list.scrollTo({ left: list.scrollLeft + (t.left - l.left) - pad, behavior: "smooth" })
+    } else if (t.right > l.right - pad) {
+      list.scrollTo({ left: list.scrollLeft + (t.right - l.right) + pad, behavior: "smooth" })
+    }
+  }, [activeTab])
+
   // Kanıt sekmesi aktif olunca (panel mount olduktan sonra) foto bölümüne kaydır.
   // Base UI Tabs pasif paneli unmount ettiği için scroll senkron yapılamaz; ref
   // ile bekleyen istek işaretlenir (state değil → cascading render/lint yok).
@@ -958,7 +975,7 @@ export function WorkOrderDetail({
       )}
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList variant="line" className={cn(detail.tabList, "flex w-full flex-nowrap overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden")}>
+        <TabsList ref={tabListRef} variant="line" className={cn(detail.tabList, "flex w-full flex-nowrap overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden")}>
           {TABS.map((t) => {
             const Icon = t.icon
             const locked = Boolean(t.feature && !enabledFeatures.includes(t.feature))
@@ -1336,7 +1353,7 @@ export function WorkOrderDetail({
               ) : vehiclePhotos.length > 0 ? (
                 <PhotoGalleryGrid photos={vehiclePhotos} canDelete={!orderLocked} onDeleted={() => router.refresh()} />
               ) : (
-                <p className="text-sm text-muted-foreground">Henüz araç fotoğrafı eklenmedi</p>
+                <p className="text-[15px] leading-5 text-muted-foreground">Henüz araç fotoğrafı eklenmedi</p>
               )}
 
               {/* Ekleme diyaloğu: boş kutucuk (tür + aşama kilitli) ya da "Fotoğraf ekle" kutusu açar */}

@@ -444,18 +444,6 @@ export function PaymentHistoryCard({
         {collections.length === 0 ? (
           <div className={detail.group}>
             <DetailEmpty>Henüz tahsilat kaydı yok</DetailEmpty>
-            {!collectionsLocked && (
-              <div className="px-[18px] pb-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full text-primary hover:text-primary"
-                  onClick={() => setCollectionModalOpen(true)}
-                >
-                  <Plus className="size-3.5" /> İlk tahsilatı ekle
-                </Button>
-              </div>
-            )}
           </div>
         ) : (
           <div className={detail.group}>
