@@ -6,7 +6,7 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
-import { getPlanState } from "@/lib/plan"
+import { resolveIntakeEntitlements } from "@/lib/intake/entitlements"
 import { parseEntryMethod } from "@/lib/intake/entry-wizard"
 import { parseIntakeBack } from "@/lib/intake/entry-links"
 import { displayCustomerName } from "@/lib/search/unified-results"
@@ -89,7 +89,7 @@ export default async function NewOrderPage({
           prefillVehicleId={params.vehicleId}
           source={params.source}
           initialEntryMethod={initialEntryMethod}
-          planTier={workshop ? getPlanState(workshop).accessTier : "pro"}
+          entitlements={resolveIntakeEntitlements(workshop, user.role)}
         />
       </div>
     </AppShell>

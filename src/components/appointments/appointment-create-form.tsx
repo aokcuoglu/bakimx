@@ -25,6 +25,7 @@ import { typedResolver } from "@/lib/validations/resolver"
 import { appointmentCreateFormSchema, type AppointmentCreateFormValues } from "@/lib/validations/appointment"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import { InlineCreateModal, type InlineCreateResult } from "@/components/intake/inline-create-modal"
+import type { VehicleCaptureEntitlements } from "@/lib/intake/entitlements"
 import {
   fetchCustomerVehicles,
   reconcileVehicleId,
@@ -40,7 +41,12 @@ type ActionState = {
   appointmentNo?: string
 }
 
-export function AppointmentCreateForm() {
+export function AppointmentCreateForm({
+  entitlements,
+}: {
+  /** Satır içi araç diyaloğunun ruhsat OCR / şase girişleri için (#828). */
+  entitlements: VehicleCaptureEntitlements
+}) {
   const router = useRouter()
   async function wrappedAction(_prev: ActionState | null, formData: FormData): Promise<ActionState | null> {
     return createAppointmentAction(formData) as unknown as Promise<ActionState | null>
@@ -252,6 +258,7 @@ export function AppointmentCreateForm() {
                 onOpenChange={setVehicleModalOpen}
                 fixedCustomer={{ id: customer.id, label: customer.label }}
                 onCreated={onVehicleCreated}
+                entitlements={entitlements}
               />
             )}
           </CardContent>

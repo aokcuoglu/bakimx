@@ -25,6 +25,8 @@ import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS, ocrVehicleTyp
 import { vehicleSchema, type VehicleFormValues } from "@/lib/validations/vehicle"
 import { VehicleBrandModelPicker } from "@/components/vehicles/vehicle-brand-model-picker"
 import { RuhsattanOku } from "@/components/vehicles/ruhsattan-oku"
+import { AddonGate, AddonLockedNote } from "@/components/billing/addon-gate"
+import type { VehicleCaptureEntitlements } from "@/lib/intake/entitlements"
 import { VinResolveButton, VinCandidateList, VinLockedNotice, VinResolveNotice, useVinResolve } from "@/components/vehicles/vin-resolve"
 import { isValidVin, type VinCandidate } from "@/lib/vin/types"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -65,6 +67,11 @@ type VehicleFormProps = {
   }
   mode?: "create" | "edit"
   prefillCustomerId?: string
+  /**
+   * Sunucuda çözülen yetkiler (#828): ruhsat OCR ve "Şaseden getir" ek
+   * özellik; kapalıysa giriş çizilmez, yerine "Ek özellik" notu gelir.
+   */
+  entitlements: VehicleCaptureEntitlements
 }
 
 function toValues(initial?: VehicleFormProps["initial"], prefillCustomerId?: string): VehicleFormValues {
@@ -93,7 +100,7 @@ function toValues(initial?: VehicleFormProps["initial"], prefillCustomerId?: str
   }
 }
 
-export function VehicleCreateForm({ customers, initial, mode = "create", prefillCustomerId }: VehicleFormProps) {
+export function VehicleCreateForm({ customers, initial, mode = "create", prefillCustomerId, entitlements }: VehicleFormProps) {
   const router = useRouter()
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -403,24 +410,27 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                         <FormControl>
                           <Input {...field} placeholder="1HGBH41JXMN109186" />
                         </FormControl>
-                        <VinResolveButton
-                          loading={vinResolve.loading}
-                          disabled={!isValidVin(field.value)}
-                          onClick={() =>
-                            vinResolve.resolve(form.getValues("vin") || "", {
-                              engineDisplacement: form.getValues("engineDisplacement") || undefined,
-                              enginePower: form.getValues("enginePower") || undefined,
-                              fuelType: form.getValues("fuelType") || undefined,
-                              firstRegistrationDate: form.getValues("firstRegistrationDate") || undefined,
-                              modelYear: form.getValues("modelYear") ?? undefined,
-                            })
-                          }
-                        />
+                        {entitlements.vinLookup && (
+                          <VinResolveButton
+                            loading={vinResolve.loading}
+                            disabled={!isValidVin(field.value)}
+                            onClick={() =>
+                              vinResolve.resolve(form.getValues("vin") || "", {
+                                engineDisplacement: form.getValues("engineDisplacement") || undefined,
+                                enginePower: form.getValues("enginePower") || undefined,
+                                fuelType: form.getValues("fuelType") || undefined,
+                                firstRegistrationDate: form.getValues("firstRegistrationDate") || undefined,
+                                modelYear: form.getValues("modelYear") ?? undefined,
+                              })
+                            }
+                          />
+                        )}
                       </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                {!entitlements.vinLookup && entitlements.showAddonUpsell && <AddonLockedNote feature="vinLookup" />}
 
                 {vinResolve.loading && (
                   <p className="text-sm text-muted-foreground flex items-center gap-2">
@@ -506,42 +516,46 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                   )}
                 />
 
-                <RuhsattanOku
-                  title="Ruhsattan Oku"
-                  description="Araç ruhsat fotoğrafını yükleyerek alanları otomatik doldurun."
-                  onResult={({ values }) => {
-                    const setStr = (name: keyof VehicleFormValues, val: string) => {
-                      if (val) form.setValue(name, val, { shouldValidate: true, shouldDirty: true })
-                    }
-                    setStr("plate", values.plate)
-                    setStr("brand", values.brand)
-                    setStr("model", values.model)
-                    setStr("vin", values.vin)
-                    setStr("engineNo", values.engineNo)
-                    setStr("firstRegistrationDate", values.registrationDate)
-                    setStr("commercialName", values.commercialName)
-                    // OCR returns free text ("BENZİNLİ - LPG", "OTOMOBİL") → map to the
-                    // fixed Select slugs; unmapped values are left for the user to pick.
-                    setStr("fuelType", ocrFuelToSlug(values.fuelType))
-                    setStr("vehicleType", ocrVehicleTypeToSlug(values.vehicleType))
-                    setStr("engineDisplacement", values.engineDisplacement)
-                    setStr("enginePower", values.enginePower)
-                    setStr("inspectionValidUntil", values.inspectionValidUntil)
-                    const year = Number(values.modelYear)
-                    if (values.modelYear && !Number.isNaN(year)) {
-                      form.setValue("modelYear", year, { shouldValidate: true, shouldDirty: true })
-                    }
-                    // Valid VIN on the ruhsat → resolve brand/model/engine variant from the
-                    // TecDoc catalog. Fire-and-forget: the OCR fill above is never blocked.
-                    void vinResolve.resolve(values.vin || "", {
-                      engineDisplacement: values.engineDisplacement || undefined,
-                      enginePower: values.enginePower || undefined,
-                      fuelType: values.fuelType || undefined,
-                      firstRegistrationDate: values.registrationDate || undefined,
-                      modelYear: values.modelYear ? Number(values.modelYear) || undefined : undefined,
-                    })
-                  }}
-                />
+                <AddonGate feature="ocrIntake" enabled={entitlements.ocrIntake} showUpsell={entitlements.showAddonUpsell}>
+                  <RuhsattanOku
+                    title="Ruhsattan Oku"
+                    description="Araç ruhsat fotoğrafını yükleyerek alanları otomatik doldurun."
+                    onResult={({ values }) => {
+                      const setStr = (name: keyof VehicleFormValues, val: string) => {
+                        if (val) form.setValue(name, val, { shouldValidate: true, shouldDirty: true })
+                      }
+                      setStr("plate", values.plate)
+                      setStr("brand", values.brand)
+                      setStr("model", values.model)
+                      setStr("vin", values.vin)
+                      setStr("engineNo", values.engineNo)
+                      setStr("firstRegistrationDate", values.registrationDate)
+                      setStr("commercialName", values.commercialName)
+                      // OCR returns free text ("BENZİNLİ - LPG", "OTOMOBİL") → map to the
+                      // fixed Select slugs; unmapped values are left for the user to pick.
+                      setStr("fuelType", ocrFuelToSlug(values.fuelType))
+                      setStr("vehicleType", ocrVehicleTypeToSlug(values.vehicleType))
+                      setStr("engineDisplacement", values.engineDisplacement)
+                      setStr("enginePower", values.enginePower)
+                      setStr("inspectionValidUntil", values.inspectionValidUntil)
+                      const year = Number(values.modelYear)
+                      if (values.modelYear && !Number.isNaN(year)) {
+                        form.setValue("modelYear", year, { shouldValidate: true, shouldDirty: true })
+                      }
+                      // Valid VIN on the ruhsat → resolve brand/model/engine variant from the
+                      // TecDoc catalog. Fire-and-forget: the OCR fill above is never blocked.
+                      // Şaseden tanıma ayrı ek özellik: kapalıysa sorgu hiç gönderilmez (#828).
+                      if (!entitlements.vinLookup) return
+                      void vinResolve.resolve(values.vin || "", {
+                        engineDisplacement: values.engineDisplacement || undefined,
+                        enginePower: values.enginePower || undefined,
+                        fuelType: values.fuelType || undefined,
+                        firstRegistrationDate: values.registrationDate || undefined,
+                        modelYear: values.modelYear ? Number(values.modelYear) || undefined : undefined,
+                      })
+                    }}
+                  />
+                </AddonGate>
               </CardContent>
             </Card>
 
@@ -676,7 +690,11 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                 </div>
                 <div className="flex items-start gap-2">
                   <ScanLine className="size-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <span>Şase numarası ruhsattan otomatik okunabilir veya elle girilebilir.</span>
+                  <span>
+                    {entitlements.ocrIntake
+                      ? "Şase numarası ruhsattan otomatik okunabilir veya elle girilebilir."
+                      : "Şase numarasını ruhsattan elle girebilirsiniz."}
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="size-4 text-muted-foreground mt-0.5 shrink-0 flex items-center justify-center text-xs font-bold">i</span>
