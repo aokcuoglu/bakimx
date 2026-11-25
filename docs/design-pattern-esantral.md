@@ -100,6 +100,21 @@ caption 12).
 | Input | 12px |
 | Düğme, hap, avatar | 999px / 50% |
 
+Yukarıdaki tablo kaynak ölçümdür; değiştirilmez.
+
+**BakımX uygulama içi (25-11, #878).** Kullanıcı kararıyla ("Bir kademe")
+uygulama köşeleri kaynağın bir kademe altındadır. Pazarlama yüzeyi (§7) kaynak
+değerlerde kalır.
+
+| Öğe | Köşe | Token |
+|---|---|---|
+| Kart, Popover | 12px | `--radius` |
+| Panel, KPI kutusu | 14px | `--radius-panel` |
+| Renkli ikon kutusu | 10px | — |
+| Modal; mobil sheet üst köşesi | 18px | `--radius-dialog` |
+| Input, Select, Textarea, Alert | 10px (md+ 8px) | `--control-radius` |
+| Düğme, hap, avatar | 999px / 50% (değişmedi) | — |
+
 Boşluk ritmi: kart içi 10–12px, kartlar arası 8px, bölümler arası 14px, ekran
 yatay kenarı 16–18px. Taban birim ~4px.
 
@@ -170,14 +185,14 @@ saygılı.
 | Bugün (Attio) | e-santral kalıbı | Etki |
 |---|---|---|
 | `--background` `#FBFBFB` | `#f2f2f7` | içerik alanı grouped zemin |
-| Kart: beyaz + `#EEEFF1` çizgi | beyaz, **çizgisiz**, 16px köşe | `Card` varyantı |
+| Kart: beyaz + `#EEEFF1` çizgi | beyaz, **çizgisiz**, 16px köşe | `Card` varyantı; uygulamada 12px (#878) |
 | `--primary` `#266DF0` | `#0071e3` | kontrast testleri yeniden ölçülmeli (`theme-tokens.test.ts`) |
 | Düğme 28px / 8px köşe | 44px hap (mobil), masaüstünde 36–40px hap | `control-sizing.test.ts` ölçeği değişir |
-| `--radius` 10px | kart 16, input 12, hap 999 | `Rounded` skalası |
+| `--radius` 10px | kart 16, input 12, hap 999 | `Rounded` skalası; uygulamada kart 12, panel 14, input 10 / md+ 8, hap 999 (#878) |
 | Tablo satırı 36px | gruplu liste satırı, plaka rozeti + durum hapı | iş emri / araç listeleri |
 | Sol sidebar | mobilde alt sekme çubuğu (4 sekme), masaüstünde sidebar kalabilir | kabuk |
 | Etiket alan üstünde | yüzen etiket | `Form` bileşenleri |
-| Dialog 16px | 30px, mobil bottom sheet | `Dialog`/`Sheet` |
+| Dialog 16px | 30px, mobil bottom sheet | `Dialog`/`Sheet`; uygulamada 18px, mobil sheet de 18px (#878) |
 
 Önerilen ilk dilim (küçük, gözden geçirilebilir): **Dashboard** ekranı — büyük
 başlık + bağlam satırı, KPI şeridi, "Serviste" gruplu listesi (plaka rozeti +

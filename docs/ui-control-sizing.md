@@ -15,11 +15,11 @@ kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (76
 | Button `xs` / `compact` | 32px | 28px | yoğun tablo ve araç çubuğu |
 | Button `icon` / `icon-sm` / `icon-lg` | 44 / 36 / 50px | 36 / 32 / 44px | daire |
 | Button `icon-xs` / `icon-compact` | 32px | 28px | |
-| Input / InputGroup | 44px | 36px | 12px köşe (md+ 10px), 17px / 15px metin |
+| Input / InputGroup | 44px | 36px | 10px köşe (md+ 8px, `--control-radius`), 17px / 15px metin |
 | Select `default` / `sm` / `compact` | 44 / 36 / 32px | 36 / 32 / 28px | |
 | `ToggleGroup` / `Toggle` `size="control"` | 44px | 36px | öğe yüksekliği; ray kendi dolgusunu ekler |
 | `Tabs` — `TabsList size="control"` (segment) | 44px | 36px | trigger yüksekliği; şerit `h-auto` |
-| Textarea | `min-h-16` | `min-h-16` | 12px köşe |
+| Textarea | `min-h-16` | `min-h-16` | 10px köşe (md+ 8px, `--control-radius`) |
 
 `default/sm/lg` Toggle (32px) ve `line` sekme (28px) upstream nova ölçeğidir;
 yalnız masaüstü yoğun araç çubuğu ve tablo başlığı içindir. Telefonda görünen
@@ -45,8 +45,28 @@ telefonda 13 / 16 / 17px, masaüstünde 12 / 15 / 16px. Gövde `text-base`.
 
 ## Köşe yarıçapı
 
-`--radius: 1rem` (16px, kart ve yüzey). Diyalog `--radius-dialog: 1.75rem`.
-Düğmeler hap. `--radius-sm/md/xl` sabit değerlerdir.
+Uygulama içi köşeler e-santral kalıbının bir kademe altıdır (karar 25-11, #878).
+Dört token, hepsi `globals.css`:
+
+| Token | Değer | Nerede |
+| --- | --- | --- |
+| `--radius` | 12px (`0.75rem`) | Card, Popover; `rounded-lg` buna bağlıdır |
+| `--radius-panel` | 14px (`0.875rem`) | Panel, KPI kartı (`var(--radius-panel)` / `rounded-(--radius-panel)`) |
+| `--radius-dialog` | 18px (`1.125rem`) | Dialog, AlertDialog, mobil BottomSheet üst köşesi |
+| `--control-radius` | 10px telefon / 8px md+ | Input, Select tetikleyicisi, Textarea, InputGroup, Alert |
+
+Köşe md'de değişen tek token `--control-radius`'tur; `--control-*` ailesi gibi
+`@media (min-width: 768px)` bloğunda kırılır, bileşende `md:rounded-` yazılmaz.
+Düğmeler hap (`rounded-full` / telefon yüksekliğinin yarısı), durum hapları ve
+avatarlar daire kalır. `--radius-sm/md/xl` sabit değerlerdir (6 / 8 / 12px).
+
+**Bilinçli istisna — InputGroup içindeki düğme.** `InputGroupButton`'ın `xs`
+(varsayılan) ve `icon-xs` boyutları hap değildir: grubun köşesini eş merkezli
+izler, `calc(var(--control-radius) - 3px)` = telefonda 7px, md+ 5px (kbd
+rozeti `- 5px` = 5 / 3px). Kutunun içinde duran düğme kutudan yuvarlak olursa
+köşesi çerçeveye çarpar; iç köşe her zaman dış köşeden küçüktür (#878).
+`sm` / `icon-sm` boyutları `Button`'ın kendi köşesini taşır.
+Pazarlama yüzeyi bu token'lara bağlı değildir; `--mk-r-*` ölçeğini kullanır.
 
 ## Kurallar
 

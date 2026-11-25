@@ -161,7 +161,7 @@ export function CookieConsent() {
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6">
             <div className="flex min-w-0 items-start gap-3">
               <div
-                className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground"
+                className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground"
                 aria-hidden
               >
                 <Cookie className="size-4" />
