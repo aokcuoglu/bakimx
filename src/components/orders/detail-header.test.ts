@@ -25,7 +25,14 @@ test("detay sayfası başlığa dönüş adresi, durum ve ödeme hapını geçir
 })
 
 test("BÜYÜK HARF etiket kalıbı geri dönmez", () => {
-  for (const f of ["work-order-detail.tsx", "order-info-card.tsx", "order-record-rail.tsx"]) {
+  for (const f of [
+    "work-order-detail.tsx",
+    "order-info-card.tsx",
+    "order-record-rail.tsx",
+    "technician-progress-panel.tsx",
+    "order-activity-log.tsx",
+    "order-management-panel.tsx",
+  ]) {
     expect(read(f)).not.toContain("uppercase tracking-wider")
   }
 })
