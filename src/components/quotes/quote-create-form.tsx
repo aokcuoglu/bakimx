@@ -26,6 +26,7 @@ import {
 import { Loader2, Calculator, Plus, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import { InlineCreateModal, type InlineCreateResult } from "@/components/intake/inline-create-modal"
+import type { VehicleCaptureEntitlements } from "@/lib/intake/entitlements"
 import { QuoteItemsEditor } from "@/components/quotes/quote-items-editor"
 import { cn } from "@/lib/utils"
 import { createQuoteAction } from "@/app/(app)/quotes/actions"
@@ -63,7 +64,14 @@ type ActionState = {
   id?: string
 }
 
-export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRow[] }) {
+export function QuoteCreateForm({
+  laborCatalog,
+  entitlements,
+}: {
+  laborCatalog: LaborCatalogRow[]
+  /** Satır içi araç diyaloğunun ruhsat OCR / şase girişleri için (#828). */
+  entitlements: VehicleCaptureEntitlements
+}) {
   const router = useRouter()
   const wrappedAction = async (
     _prev: ActionState | null,
@@ -326,6 +334,7 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                     onOpenChange={setVehicleModalOpen}
                     fixedCustomer={{ id: customerId, label: customerLabel }}
                     onCreated={onVehicleCreated}
+                    entitlements={entitlements}
                   />
                 )}
               </CardContent>
