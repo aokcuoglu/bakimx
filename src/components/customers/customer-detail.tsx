@@ -206,7 +206,7 @@ export function CustomerDetail({
           </div>
         </div>
         {customer.riskNote ? (
-          <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive/10 text-foreground px-3 py-2 text-sm flex items-start gap-2">
+          <div className="mt-3 rounded-md border border-destructive/20 bg-destructive/10 text-foreground px-3 py-2 text-sm flex items-start gap-2">
             <AlertTriangle className="size-4 mt-0.5 shrink-0" />
             <div>
               <p className="font-medium">Risk / Uyarı Notu</p>
@@ -475,7 +475,7 @@ export function CustomerDetail({
               <ConsentRow icon={<MessageCircle className="size-4 text-success-strong" />} label="WhatsApp izni" granted={customer.whatsappConsent} />
               <ConsentRow icon={<Smartphone className="size-4 text-primary" />} label="SMS izni" granted={customer.smsConsent} />
               <ConsentRow icon={<Mail className="size-4 text-primary" />} label="E-posta izni" granted={customer.emailConsent} />
-              <li className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2">
+              <li className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/60 px-3 py-2">
                 <div className="flex items-center gap-2 text-foreground">
                   <ShieldCheck className="size-4 text-muted-foreground" />
                   <span>KVKK Onay Tarihi</span>
@@ -601,7 +601,7 @@ function BalanceCard({ balance, totalPaid, customerId }: { balance: ReturnType<t
 
 function Stat({ label, value, accent }: { label: string; value: string; accent: string }) {
   return (
-    <div className={cn("rounded-lg px-3 py-2.5 border border-border/60", accent)}>
+    <div className={cn("rounded-md px-3 py-2.5 border border-border/60", accent)}>
       <p className="text-[11px] font-medium uppercase tracking-wider">{label}</p>
       <p className="text-base font-bold mt-0.5 truncate">{value}</p>
     </div>
@@ -619,7 +619,7 @@ function DefinitionRow({ label, value }: { label: string; value: React.ReactNode
 
 function ConsentRow({ icon, label, granted }: { icon: React.ReactNode; label: string; granted: boolean }) {
   return (
-    <li className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2">
+    <li className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/60 px-3 py-2">
       <div className="flex items-center gap-2 text-foreground">
         {icon}
         <span>{label}</span>

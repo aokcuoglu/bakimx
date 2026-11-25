@@ -18,7 +18,9 @@ Attio bölümleri karar geçmişi olarak duruyor ve ekranlar taşındıkça buda
   (md+ 8px, `--control-radius`; karar 25-11, #878).
   Matris: [`docs/ui-control-sizing.md`](./docs/ui-control-sizing.md).
 - **Yüzey:** kart 12px köşe (`--radius`), panel / KPI kartı 14px
-  (`--radius-panel`); çerçeve yok ya da çok hafif; gölge yok. Diyalog ve mobil
+  (`--radius-panel`); çerçeve yok ya da çok hafif; gölge yok. Kart/panel içindeki
+  iç kutu 8px (`rounded-md`), onun içindeki 6px — iç köşe her zaman dıştan küçük.
+  Diyalog ve mobil
   sheet 18px (`--radius-dialog`). Uygulama içi köşeler e-santral'in bir kademe
   altıdır (karar 25-11, #878); pazarlama yüzeyi `--mk-r-*` ölçeğinde kalır.
 - **Birincil eylem:** mavi dolgu hap (`default`); ikincil düz bağlantı ya da
@@ -74,13 +76,13 @@ Kaynak, 27 Eylül 2026 öğleden sonra `app.attio.com/bakimx` Home, Companies li
 
 ### Komut paleti
 
-- Beyaz panel 740×540px, köşe 12px, gölge `0 0 0 1px rgba(0,0,0,0.07)`.
+- Beyaz panel 740×540px, köşe 12px (geçersiz — bkz. üst bölüm), gölge `0 0 0 1px rgba(0,0,0,0.07)`.
 - Satır 36px, köşe 12px, metin 14px / 500 / `#101112`. Seçili satır zemini `#F6F7F7`.
 - Alt eylem `Search records` 28px, köşe 8px, dolgu `#266DF0`, padding 4px 6px 4px 8px, birincil gölge.
 
 ### Diyalog
 
-- Görev diyaloğu `role=dialog`, ölçülen dış kutu 808px genişlik, köşe 16px. Gölge: `0 8px 28px -6px rgba(28,40,64,0.12), 0 18px 88px -4px rgba(28,40,64,0.16), 0 0 1px rgba(28,40,64,0.16)`.
+- Görev diyaloğu `role=dialog`, ölçülen dış kutu 808px genişlik, köşe 16px (geçersiz — bkz. üst bölüm). Gölge: `0 8px 28px -6px rgba(28,40,64,0.12), 0 18px 88px -4px rgba(28,40,64,0.16), 0 0 1px rgba(28,40,64,0.16)`.
 - Başlık (`Edit task`) 15px / 700. Kapat, tarih, atama ve “Add record” 28px, köşe 8px, şeffaf, metin `rgba(0,0,0,0.55)`.
 - `Cancel` beyaz 28px / 8px. `Save` 28px / 8px / `#266DF0` ve birincil gölge.
 
@@ -179,6 +181,8 @@ Hex değerleri yaklaşıkdır; kaynak `src/app/globals.css` (oklch + marka sabit
 
 ### Rounded (zorunlu skala)
 
+> **Karar geçmişi — geçersiz (#878, #898).** Güncel ölçek: bu dosyanın başındaki "Güncel kaynak" bölümü ve `docs/ui-control-sizing.md` → "Köşe yarıçapı" / "İç içe köşe". Aşağıdaki tablo (sm=6 kontrol, lg=10 yüzey) artık uygulanmaz; yalnız `rounded-2xl/3xl` yasağı sürüyor (`design-system.test.ts`).
+
 Kontrol yüzeyi ile kart/panel köşeleri bilerek ayrılır. Yeni işte bu skala dışına çıkılmaz.
 
 | Token | px | Tailwind | Kullanım |
@@ -191,7 +195,7 @@ Kontrol yüzeyi ile kart/panel köşeleri bilerek ayrılır. Yeni işte bu skala
 | `xl` | 12 | `rounded-xl` | Büyük panel üst sınırı |
 | `full` | 9999 | `rounded-full` | Avatar, pill Badge — yalnız bilinçli |
 
-- Shared `Button` köşesi yüzeye göre 6px (kompakt) veya 8px (standart).
+- Shared `Button` köşesi yüzeye göre 6px (kompakt) veya 8px (standart). *(geçersiz — bkz. üst bölüm)*
 - `rounded-2xl` / `rounded-3xl` / `rounded-4xl` yeni işte yasaktır (FAB / özel şekil hariç, gerekçeli).
 - CSS Module’ler (kayıt, public) kendi sınıflarında aynı px değerlerini kullanır; paralel “gölge palet” üretmez.
 
@@ -205,7 +209,7 @@ Kontrol yüzeyi ile kart/panel köşeleri bilerek ayrılır. Yeni işte bu skala
 
 Palette sözleşmesi public / auth / billing / app / admin yüzeylerine uygulandı:
 
-- Panel/kart `rounded-2xl` / `3xl` / `rounded-[20px]` → `rounded-xl` veya `rounded-lg` (üst sınır 12px). İstisna: `Badge` pill, avatar/`rounded-full`, bilinçli chip.
+- Panel/kart `rounded-2xl` / `3xl` / `rounded-[20px]` → `rounded-xl` veya `rounded-lg` (üst sınır 12px — geçersiz, bkz. üst bölüm). İstisna: `Badge` pill, avatar/`rounded-full`, bilinçli chip.
 - Marketing SEO + rehber sayfalarında `shadow-primary/*` ve `hover:border-primary/40` kaldırıldı; gölge `shadow-md`, hover `hover:bg-muted/60`.
 - Public hero figure 18px → 12px; mac-window 14px → 12px; fiyat kartları 20px → `xl`.
 - Auth Input `rounded-md` override → `rounded-sm`; force/set-password ve register başarı kutuları `<Alert>`.
@@ -242,8 +246,8 @@ Ek kurallar:
 
 - Metinli standart düğme: Inter 14px / 500 / satır 20px / letter-spacing −0.07px. Yazı ortalanır; mavi dolguda yazı beyazdır.
 - İkon birincil 28×28, köşe 8px, aynı mavi ve birincil gölge.
-- Panel başlığı açık karttır. Diyalog köşesi 16px, gölge kabuk bölümündeki diyalog ölçüsüdür.
-- Köşe: kompakt kontrol 6px, standart kontrol 8px, menü satırı 9px, palet paneli 12px, diyalog 16px. `rounded-2xl` ve üzeri yeni işte yok (pill avatar/rozet hariç).
+- Panel başlığı açık karttır. Diyalog köşesi 16px (geçersiz — bkz. üst bölüm), gölge kabuk bölümündeki diyalog ölçüsüdür.
+- Köşe (geçersiz — bkz. üst bölüm): kompakt kontrol 6px, standart kontrol 8px, menü satırı 9px, palet paneli 12px, diyalog 16px. `rounded-2xl` ve üzeri yeni işte yok (pill avatar/rozet hariç).
 - Radix `asChild`, disabled, odak halkası ve hata durumları korunur. Boyut `size` ile verilir; call-site’a `h-*` kopyalanmaz.
 - Mevcut `Button` varyantları bu sözleşmeye göre güncellenene kadar yeni ekran Attio ölçüsünü kullanır. Eski `variant="navy"` çağrıları revizyonda birincil maviye çekilir.
 
@@ -254,7 +258,7 @@ Ek kurallar:
 - Uygulama ve ayarlar sidebar'ında Attio'nun yayımlanan Inter tipografi ölçeği kullanılır: çalışma alanı adı ve header 16/20 semibold, ana satırlar ile menü/arama sonuçları 14/20 medium, bölüm etiketleri 12/16 medium. Sidebar genişliği yazı boyutunu değiştirmez. Search tıklaması ve ⌘/Ctrl+K aynı komut penceresini açar. Pencere sayfa/özellik ve hızlı işlem aramasını, ayrıca mevcut müşteri, araç ve iş emri kayıtlarını bir araya getirir; kayıt sonuçları atölye ve rol sınırlarını korur.
 - Açık `card` yüzey, `border` ile 1px ayraçlar ve `foreground` başlıklar temel düzeni oluşturur. Yardımcı metin `muted-foreground` kullanır. Dekoratif renkli kart yığınları ve büyük koyu arka plan panelleri yerine hizalama ve boşlukla hiyerarşi kurulur.
 - Inter kullanılır. Form ve uygulama başlıkları yaklaşık 28–36px, alan etiketleri ve gövde 14–16px, yardımcı metin en az 12px olur. Pazarlama başlık ölçeği bu ekranlara uygulanmaz.
-- Boşluklar 4/8px ritminde; alan araları 16–24px, mantıksal bölüm araları 24–32px. Form kontrolleri 28px (select 32px), köşe 8px. Tablo satırı 36px. Diyalog köşesi 16px.
+- Boşluklar 4/8px ritminde; alan araları 16–24px, mantıksal bölüm araları 24–32px. Form kontrolleri 28px (select 32px), köşe 8px. Tablo satırı 36px. Diyalog köşesi 16px. (Köşe değerleri geçersiz — bkz. üst bölüm.)
 - Birincil / ikincil / üçüncül eylem ayrımı yukarıdaki **Eylemler ve butonlar** tablosuna uyar. Hata, başarı ve uyarı renkleri yalnız gerçek durumu anlatır; kontrast kuralları korunur.
 - Kayıtta yalnız sağdaki form alanı kayar; Header, sol açıklama sütunu ve alt footer görünüm alanında sabit kalır. Kayıt mevcut public `Header` bileşenini kullanır; açıklama sütununda logo tekrar edilmez. Kayıt masaüstünde sakin bir açıklama sütunu ve hesap formundan oluşur; mobilde form önceliklidir. Firma, iletişim ve giriş bilgileri ince ayraçlarla gruplanır. E-posta doğrulaması, KVKK, danışman/referans ve paket sözleşmeleri korunur.
 - Sektör, iş detayları, ekip ve modül seçimleri üyelik sonrası dört adımlı kurulumda gösterilir. Seçenekler düzenli nötr yüzeylerde, seçili durum açık ve klavyeyle erişilebilir sunulur. 16 Eylül 2026 URL tabanlı kurulum kararı aşağıda bu ekranın kabuğunu ayrıca tanımlar.
