@@ -3,6 +3,8 @@
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react/autocomplete"
 
 import { cn } from "@/lib/utils"
+import type { InputSize } from "@/components/ui/input"
+import { InputGroup } from "@/components/ui/input-group"
 
 /**
  * Serbest-form arama için shadcn-stili Autocomplete (Base UI). Combobox'tan farkı:
@@ -30,6 +32,29 @@ function AutocompleteInput({ onKeyDown, ...props }: AutocompletePrimitive.Input.
           event.preventBaseUIHandler()
         }
       }}
+      {...props}
+    />
+  )
+}
+
+/**
+ * Autocomplete'in `InputGroup` kabı. Girdi eklentili bir grupta duruyorsa
+ * (🔍 / X düğmesi, SKU çipi) `InputGroup` yerine bu kullanılır: Base UI grubu
+ * popup'ın çapası olarak kaydeder, liste girdinin değil kutunun tam genişliğinde
+ * ve hizasında açılır (#888 — eklenti genişliği kadar dar kalıyordu). Gruba
+ * basmak da girdiyi odaklar. Ölçü `InputGroup` ile aynı `size` prop'undan.
+ */
+function AutocompleteInputGroup({
+  size = "default",
+  className,
+  ...props
+}: Omit<AutocompletePrimitive.InputGroup.Props, "render" | "className"> & {
+  size?: InputSize
+  className?: string
+}) {
+  return (
+    <AutocompletePrimitive.InputGroup
+      render={<InputGroup size={size} className={className} />}
       {...props}
     />
   )
@@ -108,6 +133,7 @@ function AutocompleteEmpty({ className, ...props }: AutocompletePrimitive.Empty.
 export {
   Autocomplete,
   AutocompleteInput,
+  AutocompleteInputGroup,
   AutocompleteContent,
   AutocompleteList,
   AutocompleteItem,

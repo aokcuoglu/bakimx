@@ -10,6 +10,7 @@ import {
 import {
   Autocomplete,
   AutocompleteInput,
+  AutocompleteInputGroup,
   AutocompleteContent,
   AutocompleteList,
   AutocompleteItem,
@@ -435,7 +436,7 @@ export function PartSearchInput({
       }}
     >
       {plain ? (
-        <InputGroup size={size}>
+        <AutocompleteInputGroup size={size}>
           <AutocompleteInput
             onKeyDown={(e) => {
               if (e.key === "Enter" && suggestions.length === 0 && query.trim()) {
@@ -446,9 +447,9 @@ export function PartSearchInput({
             render={<InputGroupInput placeholder={placeholder} disabled={disabled} title={value || undefined} />}
           />
           {plainActions(query)}
-        </InputGroup>
+        </AutocompleteInputGroup>
       ) : (
-      <InputGroup size={size}>
+      <AutocompleteInputGroup size={size}>
         {skuChip}
         <AutocompleteInput
           onKeyDown={(e) => {
@@ -464,7 +465,7 @@ export function PartSearchInput({
           }
         />
         {trailing}
-      </InputGroup>
+      </AutocompleteInputGroup>
       )}
       {((showCreate ? query.trim().length >= 1 : query.trim().length >= 2) ||
         supplierId != null ||

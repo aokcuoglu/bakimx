@@ -4,13 +4,13 @@ import { useEffect, useState } from "react"
 import {
   Autocomplete,
   AutocompleteInput,
+  AutocompleteInputGroup,
   AutocompleteContent,
   AutocompleteList,
   AutocompleteItem,
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
 import {
-  InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
@@ -87,7 +87,7 @@ export function PartAttributeField({
       itemToStringValue={(o: AttrOption) => o.label}
       onValueChange={(v: string) => { setQuery(v); onQueryChange?.(v) }}
     >
-      <InputGroup size={size}>
+      <AutocompleteInputGroup size={size}>
         <AutocompleteInput
           render={
             <InputGroupInput placeholder={placeholder} disabled={disabled} title={value || undefined} />
@@ -106,7 +106,7 @@ export function PartAttributeField({
             </InputGroupButton>
           </InputGroupAddon>
         )}
-      </InputGroup>
+      </AutocompleteInputGroup>
       <AutocompleteContent>
         <AutocompleteEmpty>{loaded ? "Bulunamadı" : "Yükleniyor…"}</AutocompleteEmpty>
         <AutocompleteList>
