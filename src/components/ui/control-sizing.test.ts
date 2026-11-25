@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
-import { readdirSync, readFileSync } from "node:fs"
-import { join } from "node:path"
+import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
+import { eachTsx, jsxOpeningTags } from "./jsx-source-scan"
 
 const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8")
 
@@ -61,6 +61,30 @@ describe("kontrol ölçeği — e-santral (mobil 44px / masaüstü 36px)", () =>
     expect(read("./input-group.tsx")).toContain("relative flex h-(--control-h) w-full min-w-0")
   })
 
+  test("Input / InputGroup size varyantı değişkenleri yeniden bağlar (#888)", () => {
+    const input = read("./input.tsx")
+    expect(input).toContain('type InputSize = "default" | "sm" | "compact" | "lg"')
+    expect(input).toContain('Omit<React.ComponentProps<"input">, "size">')
+    expect(input).toContain("data-size={size}")
+    expect(input).toContain("data-[size=sm]:[--control-h:var(--control-h-sm)]")
+    expect(input).toContain("data-[size=compact]:[--control-h:var(--control-h-xs)]")
+    expect(input).toContain("data-[size=compact]:[--control-fs:var(--control-fs-field-xs)]")
+    expect(input).toContain("data-[size=lg]:[--control-h:var(--control-h-lg)]")
+    const group = read("./input-group.tsx")
+    expect(group).toContain("data-size={size}")
+    expect(group).toContain("inputSizeClasses,")
+    // InputGroupInput ölçüyü gruptan miras alır; kendi size'ı yok.
+    expect(group).toContain('}: Omit<React.ComponentProps<"input">, "size">) {')
+    expect(read("./combobox.tsx")).toContain("<InputGroup size={size}")
+  })
+
+  test("compact metin girdisi telefonda 16px altına inmez (iOS odak yakınlaştırması)", () => {
+    const [mobile, desktop] = globals.split("@media (min-width: 768px)")
+    const px = (block: string) => Number(block.match(/--control-fs-field-xs: (\d+)px;/)?.[1])
+    expect(px(mobile)).toBeGreaterThanOrEqual(16)
+    expect(px(desktop)).toBe(14)
+  })
+
   test("kalem düzenleyicisi kontrol ölçeğini yerelde ezmez", () => {
     const partsLaborGrid = read("../orders/parts-labor-grid.tsx")
 
@@ -81,40 +105,15 @@ describe("dokunma ölçülü seçiciler — size=\"control\" (#846)", () => {
 
   /**
    * Çağrı yeri mandalı: açılış etiketinde `h-7!` / `!h-7` / `md:h-7!` /
-   * `size-7!` (ve `min-h`) yasak. Etiket, süslü parantez dışındaki ilk `>`'a
-   * kadar taranır (ok fonksiyonlu prop'lar ve `[&>svg]` etiketi bölmez).
+   * `size-7!` (ve `min-h`) yasak. Etiket TypeScript ayrıştırıcısıyla sınırlanır
+   * (ok fonksiyonlu prop'lar ve `[&>svg]` etiketi bölmez).
    * Sınırı: sabite çıkarılmış sınıfları (`const cls = "h-7!"`) görmez.
    */
-  const OPENING = /<(?:ToggleGroupItem|ToggleGroup|Toggle|TabsList|TabsTrigger)(?=[\s>/])/g
+  const TOGGLE_TABS = ["ToggleGroupItem", "ToggleGroup", "Toggle", "TabsList", "TabsTrigger"]
   const IMPORTANT = /(?:^|[\s"'`:])(?:h|min-h|size)-[^\s"'`]+!|!(?:h|min-h|size)-[^\s"'`]+/
 
-  function openingTags(source: string) {
-    const tags: string[] = []
-    for (const match of source.matchAll(OPENING)) {
-      let depth = 0
-      let i = match.index
-      let quote = ""
-      for (; i < source.length; i++) {
-        const ch = source[i]
-        if (quote) {
-          if (ch === quote) quote = ""
-        } else if (ch === '"' || ch === "'" || ch === "`") quote = ch
-        else if (ch === "{") depth++
-        else if (ch === "}") depth--
-        else if (ch === ">" && depth === 0 && source[i - 1] !== "=") break
-      }
-      tags.push(source.slice(match.index, i + 1))
-    }
-    return tags
-  }
-
-  function eachTsx(dir: string, visit: (path: string, source: string) => void) {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const path = join(dir, entry.name)
-      if (entry.isDirectory()) eachTsx(path, visit)
-      else if (entry.name.endsWith(".tsx")) visit(path, readFileSync(path, "utf8"))
-    }
-  }
+  /** Açılış etiketlerinin metni (ortak ayrıştırıcı: jsx-source-scan.ts). */
+  const openingTags = (source: string) => jsxOpeningTags(source, TOGGLE_TABS).map((tag) => tag.text)
 
   const srcRoot = fileURLToPath(new URL("../../", import.meta.url))
 
