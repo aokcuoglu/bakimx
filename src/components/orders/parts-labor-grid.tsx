@@ -1490,6 +1490,7 @@ function PartIdentity({ row, oneLine, hint = "Araç kabulü kilitli — parça t
           "min-w-0 text-sm font-medium text-foreground",
           oneLine ? "truncate" : "whitespace-normal break-words",
         )}
+        data-pl="name"
       >
         {row.name}
       </span>
@@ -1578,6 +1579,7 @@ function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
           placeholder="İşçilik adı"
           disabled={!ed.editable || row.__saving}
           className="text-sm"
+          data-pl="name"
         />
       )}
       {row.__saving && <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />}

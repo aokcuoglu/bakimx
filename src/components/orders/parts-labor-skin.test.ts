@@ -48,4 +48,25 @@ describe("Parça & İşçilik kabuğu (#849)", () => {
     const rule = css.match(/\[data-slot="alert"\]\s*\{([^}]*)\}/)
     expect(rule?.[1]).toContain("width: auto")
   })
+
+  test("liste yüksekliği: telefonda tavan kalkar, md+'da ekran oranlı tavan (#873)", () => {
+    const base = css.match(/\.skin \[data-pl="cards"\] \{([^}]*)\}/)
+    expect(base?.[1]).toContain("max-height: none")
+    expect(base?.[1]).toContain("overflow-y: visible")
+    expect(base?.[1]).not.toContain("display")
+    const md = css.match(/@media \(min-width: 768px\) \{([\s\S]*?)\n\}/)
+    expect(md?.[1]).toContain("min(70vh, 56rem)")
+    expect(md?.[1]).toContain('[data-pl="table"] [data-slot="table-container"]')
+    expect(md?.[1]).not.toContain("display")
+  })
+
+  test("kalem adı kuralı yalnız data-pl=name kancasını ve :disabled'ı hedefler (#873)", () => {
+    expect(css).toMatch(/\.skin \[data-pl="name"\]:disabled \{/)
+    const bare = css.replace(/\[data-pl="name"\]:disabled/g, "")
+    expect(bare).not.toMatch(/:disabled/)
+    expect(bare).not.toMatch(/input/)
+    const rule = css.match(/\[data-pl="name"\]:disabled \{([^}]*)\}/)
+    expect(rule?.[1]).toContain("opacity: 1")
+    expect(rule?.[1]).not.toContain("height")
+  })
 })
