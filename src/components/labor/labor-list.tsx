@@ -86,18 +86,14 @@ export function LaborList({
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
 
-
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-          <Wrench className="size-5 text-primary" />
-          Stok / Parçalar
-        </h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 sm:flex-1">
+          <PartsTabsNav active="labor" />
+        </div>
         <Button variant="foreground" size="sm" className="w-full sm:w-auto" onClick={openCreate}>
           <Plus className="size-3.5 mr-1" /> Yeni İşçilik
         </Button>
       </div>
-
-      <PartsTabsNav active="labor" />
 
       <div className="grid grid-cols-3 gap-3">
         <KpiStat label="Toplam İşçilik" value={kpis.total} icon={Wrench} accent="text-primary-strong" accentBg="bg-primary/10" />

@@ -148,6 +148,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
   `text-<token>/<opacity>` gate; both live in `src/lib/theme-tokens.test.ts`.
 - **Toast:** ephemeral success/error → `toast.success()` / `toast.error()` (sonner). Persistent alerts → `<Alert>` component
 - **Tooltip:** wrap with `<TooltipProvider>` (in root layout), use `<Tooltip>` for hover hints (not native `title=` attribute)
+- **Menü sayfalarının başlığı `PageFrame`'den gelir (#823).** Breadcrumb,
+  başlık ve standart düğmeler `src/lib/navigation/page-headers.ts` kaydından
+  çizilir (yükleme ekranı dahil). Kayıtlı bir sayfa kendi `h1`/hero'sunu,
+  `pageTitle`/`pageActions`'ını vermez; yalnız `subtitle` verir. Yeni menü
+  sayfası = kayda bir satır. Kapı: `src/lib/ui-contract.test.ts`.
 
 ## Form Rules
 - **All forms use react-hook-form + zod + shadcn Form component** (NOT useState)

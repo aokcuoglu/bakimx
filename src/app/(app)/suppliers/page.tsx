@@ -66,7 +66,7 @@ export default async function SuppliersPage(props: {
   }))
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Tedarikçiler">
+    <AppShell workshopName={workshop?.name}>
       <SuppliersList
         suppliers={serialized}
         kpis={kpis}

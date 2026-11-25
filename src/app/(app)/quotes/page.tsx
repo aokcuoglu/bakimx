@@ -26,33 +26,8 @@ export default async function QuotesPage({ searchParams }: { searchParams: Promi
   ])
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Teklifler">
+    <AppShell workshopName={workshop?.name} subtitle={`${quotes.length} teklif`}>
       <div className="space-y-5 sm:space-y-6">
-
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground mt-0.5">{quotes.length} teklif</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="foreground" size="default" className="hidden sm:inline-flex" asChild>
-              <Link href="/quotes/new">
-                <Plus className="size-4" />
-                Yeni Teklif
-              </Link>
-            </Button>
-            <Button variant="foreground"
-              size="icon"
-              className="sm:hidden"
-              asChild
-              aria-label="Yeni teklif"
-            >
-              <Link href="/quotes/new">
-                <Plus className="size-5" />
-              </Link>
-            </Button>
-          </div>
-        </div>
 
         <form method="GET" action="/quotes" className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />

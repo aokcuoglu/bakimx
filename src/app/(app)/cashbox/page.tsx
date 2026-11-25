@@ -22,7 +22,6 @@ import {
   CircleDot,
   ArrowRight,
   Download,
-  BarChart3,
 } from "lucide-react"
 
 export const metadata = { title: "Kasa" }
@@ -41,29 +40,8 @@ export default async function CashboxPage() {
   ])
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Kasa">
+    <AppShell workshopName={workshop?.name}>
       <div className="space-y-5 sm:space-y-6 max-w-full">
-
-
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <p className="text-sm text-muted-foreground mt-0.5">Tahsilat ve alacak takibi</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="lg" asChild>
-              <Link href="/cashbox/aging">
-                <BarChart3 className="size-4" />
-                Yaşlandırma
-              </Link>
-            </Button>
-            <Button variant="foreground" size="lg" className="touch-manipulation" asChild>
-              <Link href="/cashbox/payments/new">
-                <Plus className="size-4" />
-                Yeni Tahsilat
-              </Link>
-            </Button>
-          </div>
-        </div>
 
         <div className="rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
           <Info className="size-3.5 mt-0.5 shrink-0" />
