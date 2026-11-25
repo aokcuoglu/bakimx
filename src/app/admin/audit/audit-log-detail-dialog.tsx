@@ -49,7 +49,10 @@ export function AuditLogDetailDialog({
       <DialogTrigger asChild>
         <Button
           variant="ghost"
-          className="-m-1 h-auto w-full min-w-72 justify-between gap-3 whitespace-normal p-1 text-left"
+          size="row"
+          // Satır dolgusu hücre içeriğiyle hizalı kalsın: negatif kenar boşluğu
+          // dolguyu dengeler, genişlik iki yandaki 12px kadar büyür.
+          className="-mx-3 -my-2.5 w-[calc(100%+1.5rem)] min-w-72 justify-between"
           aria-label={`${actionLabel} kaydının ayrıntılarını görüntüle`}
         >
           <span className="min-w-0">

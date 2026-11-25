@@ -175,8 +175,8 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="ghost" asChild>
-              <Link href="/admin/catalog">
+            <Button size="icon-sm" variant="ghost" asChild>
+              <Link href="/admin/catalog" aria-label="Kataloğa dön">
                 <ArrowLeft className="size-3.5" />
               </Link>
             </Button>
@@ -280,7 +280,9 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
                 ref={fileInputRef}
                 type="file"
                 accept=".csv,.json,text/csv,text/plain,application/json"
-                className="sr-only"
+                // Görünmez: "Dosya seçin" düğmesi ve sürükle-bırak tetikler.
+                // `sr-only` Input'un `w-full`'üyle ezilip sayfayı yana taşırıyordu.
+                className="hidden"
                 disabled={pending}
                 onChange={(event) => onPickFile(event.target.files?.[0] ?? null)}
               />
@@ -296,8 +298,7 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
                   <Button
                     type="button"
                     variant="ghost"
-                    size="icon"
-                    className="size-8"
+                    size="icon-sm"
                     disabled={pending}
                     aria-label="Seçilen dosyayı kaldır"
                     onClick={() => {
@@ -313,8 +314,8 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
                   <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary-strong">
                     <Upload className="size-5" />
                   </div>
-                  <div>
-                    <Button type="button" variant="link" className="h-auto p-0" disabled={pending} onClick={() => fileInputRef.current?.click()}>
+                  <div className="text-sm">
+                    <Button type="button" variant="link" size="inline" disabled={pending} onClick={() => fileInputRef.current?.click()}>
                       Dosya seçin
                     </Button>
                     <span className="text-sm text-muted-foreground"> veya buraya sürükleyin</span>

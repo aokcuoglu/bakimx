@@ -8,7 +8,6 @@ import { ResetPasswordForm } from "@/components/auth/reset-password-form"
 import styles from "@/components/auth/register-design.module.css"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 import { hashResetToken, isResetExpired } from "@/lib/password-reset"
 
 export const metadata: Metadata = {
@@ -53,7 +52,7 @@ export default async function ResetPasswordPage({
                   asChild
                   variant="foreground"
                   size="xl"
-                  className={cn("mt-6", styles.submit)}
+                  className="mt-6 w-full sm:w-auto"
                 >
                   <Link href="/forgot-password">Yeni bağlantı talep et</Link>
                 </Button>

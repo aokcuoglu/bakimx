@@ -136,10 +136,10 @@ export function AssistantPanel({
           </div>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             onClick={onClose}
             aria-label="Kapat"
-            className="-mr-1 size-8 shrink-0 text-muted-foreground hover:text-foreground"
+            className="-mr-1 shrink-0 text-muted-foreground hover:text-foreground"
           >
             <X className="size-4" />
           </Button>

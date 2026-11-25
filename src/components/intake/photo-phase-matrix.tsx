@@ -132,9 +132,10 @@ export function PhotoPhaseMatrix({
                 <li className="min-w-0 space-y-1">
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="secondary"
+                    size="tile"
                     onClick={() => onAddOther(key)}
-                    className={cn(TILE, "flex-col gap-1.5 bg-muted text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring")}
+                    className={cn(TILE, "text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring")}
                   >
                     <Plus className="size-4" />
                     <span className="text-xs font-medium">Fotoğraf ekle</span>
@@ -181,8 +182,11 @@ export function PhotoPhaseMatrix({
   )
 }
 
-/** Telefonda kare ve iki sütun; kap genişleyince 4:3 ve dört sütun. Çerçevesiz, gri zeminli. */
-const TILE = "aspect-square h-auto w-full rounded-md p-0 @xl:aspect-[4/3]"
+/**
+ * Telefonda kare ve iki sütun; kap genişleyince 4:3 ve dört sütun. Çerçevesiz,
+ * gri zeminli: `variant="secondary" size="tile"` (#889) — ölçü ve köşe düğmeden.
+ */
+const TILE = "aspect-square w-full @xl:aspect-[4/3]"
 
 const cellOf = (row: PhaseMatrixRow, phase: PhotoPhaseKey) => row.cells.find((c) => c.phase === phase)!
 
@@ -199,11 +203,12 @@ function EmptyTile({ label, disabled, onAdd }: { label: string; disabled?: boole
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="secondary"
+      size="tile"
       disabled={disabled}
       onClick={onAdd}
       aria-label={`${label} fotoğrafı ekle`}
-      className={cn(TILE, "bg-muted text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring")}
+      className={cn(TILE, "text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring")}
     >
       <Camera className="size-5" />
     </Button>
@@ -214,9 +219,10 @@ function FilledTile({ photo, label, onOpen }: { photo: PhaseMatrixPhoto; label: 
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="secondary"
+      size="tile"
       onClick={onOpen}
-      className={cn(TILE, "relative overflow-hidden bg-muted hover:ring-2 hover:ring-ring")}
+      className={cn(TILE, "relative hover:ring-2 hover:ring-ring")}
       aria-label={`${label} — aşamaları karşılaştır`}
     >
       {photo.fileUrl ? (
@@ -306,8 +312,9 @@ function PhaseCompareDialog({
                     ) : null}
                     <Button
                       type="button"
-                      variant="ghost"
-                      className="relative block h-auto w-full overflow-hidden rounded-md bg-muted p-0 aspect-square hover:ring-2 hover:ring-ring"
+                      variant="secondary"
+                      size="tile"
+                      className="relative w-full aspect-square hover:ring-2 hover:ring-ring"
                       onClick={() => onZoom(phase)}
                       aria-label={`${row.label} · ${PHOTO_PHASE_SHORT_LABELS[phase]} — büyüt`}
                     >
@@ -315,16 +322,17 @@ function PhaseCompareDialog({
                     </Button>
                   </div>
                 ) : cover ? (
-                  <div className="flex aspect-square items-center justify-center rounded-md bg-muted">
+                  <div className="flex aspect-square items-center justify-center rounded-md bg-secondary">
                     <span className="text-xs text-muted-foreground">Dosya yok</span>
                   </div>
                 ) : (
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="secondary"
+                    size="tile"
                     disabled={!onAdd}
                     onClick={() => onAdd?.(phase)}
-                    className="h-auto w-full aspect-square flex-col gap-0.5 rounded-md bg-muted text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring"
+                    className="w-full aspect-square gap-0.5 text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring"
                   >
                     <Plus className="size-3.5" />
                     <span className="text-xs">Ekle</span>

@@ -643,7 +643,8 @@ export function SalesLocationPicker({
                   variant="ghost"
                   role="option"
                   aria-selected="false"
-                  className="h-auto w-full justify-start whitespace-normal px-3 py-2 text-left"
+                  size="row"
+                  className="w-full"
                   onClick={() => void selectPrediction(prediction)}
                 >
                   <MapPin className="size-4 shrink-0 text-primary" />

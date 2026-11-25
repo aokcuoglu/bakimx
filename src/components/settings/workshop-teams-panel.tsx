@@ -81,7 +81,7 @@ export function WorkshopTeamsPanel({
           />
         </div>
         {canManage ? (
-          <Button ref={createButtonRef} type="button" variant="foreground" size="toolbar" onClick={() => setOpen(true)}>
+          <Button ref={createButtonRef} type="button" variant="foreground" onClick={() => setOpen(true)}>
             <Plus className="size-4" />
             Yeni ekip
           </Button>
@@ -122,7 +122,7 @@ export function WorkshopTeamsPanel({
             {canManage ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="ghost" size="icon" className="col-start-2 row-start-1 size-7 sm:col-auto sm:row-auto" aria-label="Ekip işlemleri">
+                  <Button type="button" variant="ghost" size="icon-sm" className="col-start-2 row-start-1 sm:col-auto sm:row-auto" aria-label="Ekip işlemleri">
                     <MoreHorizontal className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>

@@ -212,14 +212,13 @@ export function VinCandidateList({
           <Button
             key={c.vehicleTypeId}
             type="button"
-            variant="outline"
+            // Seçim listesi (#889): seçili aday dolu nötr satır + onay; tüm
+            // satırlar aynı çerçeve kutusunda (size="row"), basılı durum okunur.
+            variant={selected ? "secondary" : "outline"}
+            size="row"
+            aria-pressed={selected}
             onClick={() => onSelect(c)}
-            className={cn(
-              "h-auto min-h-7 w-full justify-start gap-2 px-3 py-2 text-left whitespace-normal",
-              selected
-                ? "border-primary bg-primary/5 text-foreground"
-                : "border-transparent bg-background hover:border-border"
-            )}
+            className="w-full gap-2"
           >
             <span className={cn("size-4 shrink-0", selected ? "text-primary" : "text-transparent")}>
               <Check className="size-4" />

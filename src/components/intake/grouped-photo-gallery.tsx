@@ -136,7 +136,7 @@ function PhotoCard({
 
   if (loading) {
     return (
-      <div className={`aspect-square bg-muted rounded-lg flex items-center justify-center ${compact ? "rounded" : "rounded-lg"}`}>
+      <div className="aspect-square bg-muted rounded-md flex items-center justify-center">
         <BrandSpinner size={20} />
       </div>
     )
@@ -144,7 +144,7 @@ function PhotoCard({
 
   if (failed || !src) {
     return (
-      <div className={`aspect-square bg-muted/50 rounded-lg flex items-center justify-center border border-muted ${compact ? "rounded" : "rounded-lg"}`}>
+      <div className="aspect-square bg-muted/50 rounded-md flex items-center justify-center border border-muted">
         <div className="text-center p-1">
           <ImageOff className={`${compact ? "size-3" : "size-4"} text-muted-foreground/30 mx-auto`} />
           <span className={`${compact ? "text-[9px]" : "text-[10px]"} text-muted-foreground mt-0.5 block truncate px-1`}>
@@ -159,15 +159,16 @@ function PhotoCard({
     <Button
       type="button"
       variant="ghost"
+      size="tile"
       onClick={onOpen}
       aria-label={`${typeLabel} — büyüt`}
-      className={`group relative h-auto w-full aspect-square overflow-hidden bg-muted p-0 touch-manipulation ${compact ? "rounded" : "rounded-lg"}`}
+      className="group relative w-full aspect-square touch-manipulation"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={typeLabel}
-        className="w-full h-full object-cover transition-transform group-active:scale-95"
+        className="w-full h-full bg-muted object-cover transition-transform group-active:scale-95"
       />
     </Button>
   )

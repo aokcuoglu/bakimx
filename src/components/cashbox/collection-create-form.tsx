@@ -165,7 +165,8 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
         <div className="flex items-center text-sm text-muted-foreground">
           <Button
             variant="link"
-            className="p-0 h-auto text-muted-foreground hover:text-foreground inline-flex items-center gap-1 touch-manipulation"
+            size="inline"
+            className="text-muted-foreground hover:text-foreground touch-manipulation"
             asChild
           >
             <Link href="/cashbox/payments">
@@ -208,7 +209,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                         />
                       </div>
                       {customerSearch && !customerId && (
-                        <div className="mt-1.5 max-h-48 overflow-y-auto rounded-lg border border-border bg-background shadow-sm">
+                        <div className="mt-1.5 max-h-48 overflow-y-auto rounded-lg border border-border bg-background p-1 shadow-sm">
                           {filteredCustomers.length === 0 ? (
                             <div className="px-3 py-3 text-sm text-muted-foreground">Sonuç bulunamadı</div>
                           ) : (
@@ -217,7 +218,8 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                                 key={c.id}
                                 type="button"
                                 variant="ghost"
-                                className="w-full justify-start px-3 py-2.5 h-auto text-sm hover:bg-muted border-b border-border last:border-0 rounded-none"
+                                size="row"
+                                className="w-full"
                                 onClick={() => { field.onChange(c.id); setCustomerSearch(""); form.setValue("serviceOrderId", "") }}
                               >
                                 <span className="font-medium text-foreground">{nameFor(c)}</span>
@@ -234,10 +236,11 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                           <Button
                             type="button"
                             variant="link"
-                            className="ml-auto p-0 h-auto text-xs text-muted-foreground hover:text-foreground"
+                            size="inline"
+                            className="ml-auto text-muted-foreground hover:text-foreground"
                             onClick={() => { field.onChange(""); form.setValue("serviceOrderId", "") }}
                           >
-                            Değiştir
+                            <span className="text-xs">Değiştir</span>
                           </Button>
                         </div>
                       )}

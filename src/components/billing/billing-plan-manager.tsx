@@ -385,8 +385,8 @@ export function BillingPlanManager({
                       {ownedTier && ownedTier !== tier && <p className="text-xs text-muted-foreground">Kalan dönem kredisi uygulanır; kesin ödeme tutarı sipariş oluşturulduktan sonra gösterilir.</p>}
                       {canPurchase && !hasPendingOrder && <div className="space-y-2 border-t pt-4"><p className="text-sm font-medium">Ödeme yöntemi</p>
                         <ToggleGroup type="single" size="control" value={method} onValueChange={(value) => { if (value) form.setValue("method", value as "card" | "havale") }} className="grid grid-cols-2 gap-2" aria-label="Ödeme yöntemi">
-                          <ToggleGroupItem value="card" variant="outline" className="gap-2 data-[state=on]:border-foreground data-[state=on]:bg-card data-[state=on]:text-foreground"><CreditCard className="size-4" />Kart</ToggleGroupItem>
-                          <ToggleGroupItem value="havale" variant="outline" className="gap-2 data-[state=on]:border-foreground data-[state=on]:bg-card data-[state=on]:text-foreground"><Landmark className="size-4" />Havale/EFT</ToggleGroupItem>
+                          <ToggleGroupItem value="card" variant="outline" className="gap-2"><CreditCard className="size-4" />Kart</ToggleGroupItem>
+                          <ToggleGroupItem value="havale" variant="outline" className="gap-2"><Landmark className="size-4" />Havale/EFT</ToggleGroupItem>
                         </ToggleGroup>
                       </div>}
                       {canPurchase && !hasPendingOrder && <><p className="text-xs leading-5 text-muted-foreground">{method === "card" ? "Siparişten sonra kart bilgilerinizi girip bankanızın 3D Secure ekranına geçersiniz." : "Siparişten sonra havale talimatı ve referans kodu gösterilir. Paket, ödeme teyidinde etkinleşir."}</p>

@@ -173,7 +173,7 @@ function PreChatForm({
         {errors.message && <p className="text-xs text-destructive-strong">{errors.message}</p>}
       </div>
 
-      <Button type="submit" size="lg" variant="navy" className="w-full rounded-lg" disabled={sending}>
+      <Button type="submit" size="lg" variant="navy" className="w-full" disabled={sending}>
         {sending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Bağlanıyor...
@@ -292,14 +292,14 @@ export function LiveChatView({ onBack }: LiveChatViewProps) {
           variant="navy"
           aria-label="Gönder"
           disabled={sending || draft.trim().length === 0}
-          className="size-9 shrink-0 rounded-(--control-radius)"
+          className="shrink-0"
         >
           {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
         </Button>
       </form>
 
       <div className="border-t px-3 py-1.5">
-        <Button type="button" variant="ghost" size="sm" className="text-xs" onClick={reset}>
+        <Button type="button" variant="ghost" size="sm" onClick={reset}>
           <RefreshCw className="mr-1 size-3" /> Yeni sohbet başlat
         </Button>
       </div>

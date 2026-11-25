@@ -63,7 +63,7 @@ export default async function NewOrderPage({
           <div>
             {/* Etiket müşteri adı olabilir (uzun firma adı): telefonda sayfayı
                 yana taşırmasın, üç noktayla kısalsın (#842). */}
-            <Button variant="ghost" asChild className="-ml-3 max-w-[calc(100%+0.75rem)] text-base">
+            <Button variant="ghost" asChild className="-ml-3 max-w-[calc(100%+0.75rem)]">
               <Link href={back.href}>
                 <ArrowLeft aria-hidden="true" />
                 <span className="min-w-0 truncate">{back.label}</span>

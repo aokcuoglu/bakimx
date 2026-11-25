@@ -82,7 +82,7 @@ export function SalesTaskAgenda({ tasks, canManage }: { tasks: AgendaTask[]; can
                 <article key={task.id} className="rounded-lg border bg-background p-3">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <Button asChild variant="link" className="h-auto justify-start p-0 font-semibold">
+                      <Button asChild variant="link" size="inline">
                         <Link href={`${salesLeadAdminHref(task.lead.id)}?task=${encodeURIComponent(task.id)}#activity-form`}>
                           {task.lead.businessName}
                         </Link>

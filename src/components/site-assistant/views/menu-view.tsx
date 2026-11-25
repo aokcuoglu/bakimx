@@ -52,10 +52,6 @@ function ActionInner({ action, trailing }: { action: MenuAction; trailing?: Reac
   );
 }
 
-const ROW_CLASS =
-  "h-auto w-full justify-start gap-3 whitespace-normal rounded-lg border-border p-3 text-left " +
-  "hover:bg-muted/60";
-
 export function MenuView({ onNavigate }: MenuViewProps) {
   const badge = useLiveChatBadge();
 
@@ -71,7 +67,8 @@ export function MenuView({ onNavigate }: MenuViewProps) {
           <Button
             type="button"
             variant="outline"
-            className={ROW_CLASS}
+            size="row"
+            className="w-full"
             onClick={() => onNavigate("chat")}
           >
             <ActionInner
@@ -94,7 +91,8 @@ export function MenuView({ onNavigate }: MenuViewProps) {
             <Button
               key={action.key}
               variant="outline"
-              className={ROW_CLASS}
+              size="row"
+              className="w-full"
               asChild
             >
               <a href={action.href}>
@@ -106,7 +104,8 @@ export function MenuView({ onNavigate }: MenuViewProps) {
               key={action.key}
               type="button"
               variant="outline"
-              className={ROW_CLASS}
+              size="row"
+              className="w-full"
               onClick={() => action.view && onNavigate(action.view)}
             >
               <ActionInner action={action} />

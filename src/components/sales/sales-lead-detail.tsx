@@ -281,7 +281,7 @@ export function SalesLeadDetail({
   return (
     <div className="space-y-6">
       <div>
-        <Button asChild variant="link" className="mb-1 h-auto p-0 text-muted-foreground">
+        <Button asChild variant="link" size="inline" className="mb-1 text-muted-foreground">
           <Link href="/admin/sales/leads"><ArrowLeft className="size-4" /> Satış adayları</Link>
         </Button>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -449,7 +449,7 @@ export function SalesLeadDetail({
       {canManage && !lead.attributionFrozenAt && (
         <section id="activity-form" className="scroll-m-24 rounded-xl border bg-card p-4">
           <h2 className="font-semibold text-foreground">Görüşme sonucu ekle</h2>
-          {selectedTaskId && <Alert variant="info" className="mt-3"><Clock3 /><AlertTitle>Görev tamamlanacak</AlertTitle><AlertDescription>Bu görüşme seçili görevi tamamlayacak. <Button type="button" variant="link" className="h-auto p-0" onClick={() => activityForm.setValue("taskId", undefined)}>Görev bağını kaldır</Button></AlertDescription></Alert>}
+          {selectedTaskId && <Alert variant="info" className="mt-3"><Clock3 /><AlertTitle>Görev tamamlanacak</AlertTitle><AlertDescription>Bu görüşme seçili görevi tamamlayacak. <Button type="button" variant="link" size="inline" onClick={() => activityForm.setValue("taskId", undefined)}>Görev bağını kaldır</Button></AlertDescription></Alert>}
           <Form {...activityForm}>
             <form className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" onSubmit={activityForm.handleSubmit((values) => startTransition(async () => {
               const result = await addSalesActivity(lead.id, { ...values, occurredAt: toIso(values.occurredAt), nextActionAt: toIso(values.nextActionAt) })

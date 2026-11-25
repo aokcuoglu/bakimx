@@ -62,7 +62,7 @@ export function VehicleFitToggle({
         onPressedChange={onPressedChange}
         onMouseDown={onMouseDown}
         aria-label="Yalnız bu araca uyan parçaları göster"
-        className="shrink-0 data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong"
+        className="shrink-0"
       >
         {pressed ? <Check data-icon="inline-start" /> : <CarFront data-icon="inline-start" />}
         Yalnız bu araca uyanlar

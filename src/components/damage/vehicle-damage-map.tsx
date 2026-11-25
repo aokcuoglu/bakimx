@@ -56,7 +56,7 @@ export function VehicleDamageMap({ damageMarks, bodyType = "sedan", photos = [],
                 const damaged = damageMarks.some(m => m.zone === p.id)
                 const shape = <path d={p.path} strokeWidth={1.2} className={cn("transition-colors", damaged ? "fill-warning/40 stroke-warning-strong" : cn("stroke-foreground/55", p.tire ? "fill-foreground/80" : p.glass ? "fill-muted" : "fill-card"), onZoneClick && cn("cursor-pointer group-focus-visible/button:stroke-ring group-focus-visible/button:stroke-[3]", p.tire ? "hover:fill-foreground/60" : "hover:fill-primary/15"))} />
                 if (!onZoneClick) return <g key={p.id}>{shape}</g>
-                return <Button asChild variant="ghost" key={p.id} className="p-0"><g role="button" tabIndex={0} aria-label={`${VEHICLE_ZONES[p.id as keyof typeof VEHICLE_ZONES]} — hasar ekle`} onClick={()=>onZoneClick(p.id)} onKeyDown={event=>{if(event.key === "Enter" || event.key === " "){event.preventDefault();onZoneClick(p.id)}}}>{shape}</g></Button>
+                return <Button asChild variant="ghost" size="inline" key={p.id}><g role="button" tabIndex={0} aria-label={`${VEHICLE_ZONES[p.id as keyof typeof VEHICLE_ZONES]} — hasar ekle`} onClick={()=>onZoneClick(p.id)} onKeyDown={event=>{if(event.key === "Enter" || event.key === " "){event.preventDefault();onZoneClick(p.id)}}}>{shape}</g></Button>
               })}
               {geometry.details.map((d,i)=><path key={i} d={d} strokeWidth={1} className="fill-muted stroke-foreground/45" pointerEvents="none" />)}
               {geometry.panels.map(p => {
@@ -93,7 +93,7 @@ export function VehicleDamageMap({ damageMarks, bodyType = "sedan", photos = [],
                 </div>}
               </div>
               {m.note && <p className="pl-9 text-sm whitespace-pre-wrap">{m.note}</p>}
-              {linked.length ? <div className="flex flex-wrap gap-2 pl-9">{linked.map((p,i)=><Button key={p.id} type="button" variant="outline" className="size-16 overflow-hidden p-0 print:h-36 print:w-44" aria-label={`Hasar ${number}, ${p.label} fotoğrafını aç`} onClick={()=>{setActivePhotos(linked);setPhotoIndex(i)}}>{p.fileUrl ? <Image unoptimized width={64} height={64} src={p.fileUrl} alt={p.label} className="h-full w-full object-cover" /> : p.label}</Button>)}</div> : <p className="pl-9 text-xs text-muted-foreground">{photosVisible ? "Fotoğraf eklenmedi" : "Fotoğraflar bu paylaşımda gösterilmiyor"}</p>}
+              {linked.length ? <div className="flex flex-wrap gap-2 pl-9">{linked.map((p,i)=><Button key={p.id} type="button" variant="outline" size="tile" className="aspect-square w-16 print:aspect-[11/9] print:w-44" aria-label={`Hasar ${number}, ${p.label} fotoğrafını aç`} onClick={()=>{setActivePhotos(linked);setPhotoIndex(i)}}>{p.fileUrl ? <Image unoptimized width={64} height={64} src={p.fileUrl} alt={p.label} className="h-full w-full object-cover" /> : p.label}</Button>)}</div> : <p className="pl-9 text-xs text-muted-foreground">{photosVisible ? "Fotoğraf eklenmedi" : "Fotoğraflar bu paylaşımda gösterilmiyor"}</p>}
             </li>})}
           </ul>
         )}

@@ -157,13 +157,16 @@ export function TecdocSearchResults({
       {categories.length > 0 && (
         <section>
           <SectionHeading>Kategoriler ({categories.length + categoryOverflow})</SectionHeading>
+          {/* Satır hover'ı köşeli kabuğa değmesin: liste 4px içeride (#889). */}
+          <div className="px-1">
           {categories.map((c) => (
             <Button
               key={`${c.node.id}-${c.path}`}
               type="button"
               variant="ghost"
+              size="row"
               onClick={() => onCategorySelect(c)}
-              className="h-auto min-h-7 w-full justify-between gap-2 rounded-none border-b border-border/60 px-4 py-2 text-left whitespace-normal"
+              className="w-full justify-between gap-2"
             >
               <span className="min-w-0 flex-1">
                 <span className="block text-sm truncate">{c.node.name}</span>
@@ -174,6 +177,7 @@ export function TecdocSearchResults({
               <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
             </Button>
           ))}
+          </div>
           {categoryOverflow > 0 && (
             <p className="px-4 py-2 text-xs text-muted-foreground">
               +{categoryOverflow} kategori daha — aramayı daraltın.
@@ -304,15 +308,13 @@ function BrandChip({
   return (
     <Button
       type="button"
-      variant="outline"
+      // Seçili çip dolu birincil (#889: durum variant'la, zemin className'le
+      // boyanmaz); sayaç gibi alt öğeler de dolgu üstünde okunur.
+      variant={active ? "foreground" : "outline"}
+      size="xs"
       onClick={onClick}
       aria-pressed={active}
-      className={cn(
-        "h-auto min-h-7 max-w-[12rem] gap-1 truncate rounded-full px-2.5 text-xs",
-        active
-          ? "border-primary bg-primary text-primary-foreground [&_span]:text-primary-foreground"
-          : "border-border bg-background text-foreground hover:bg-muted",
-      )}
+      className={cn("max-w-[12rem] truncate", active && "[&_span]:text-primary-foreground")}
     >
       {children}
     </Button>

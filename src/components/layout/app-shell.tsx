@@ -306,7 +306,8 @@ function AppHeader({
         ) : (
           <SidebarTrigger
             data-tour="sidebar-trigger"
-            className="-ml-2 size-11 lg:size-8 [&_svg:not([class*='size-'])]:size-[22px] lg:[&_svg:not([class*='size-'])]:size-4 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden"
+            size="icon"
+            className="-ml-2 [&_svg:not([class*='size-'])]:size-[22px] md:[&_svg:not([class*='size-'])]:size-4 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden"
           />
         )}
 
@@ -348,9 +349,9 @@ function SidebarlessAccountActions() {
     <>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-11 lg:size-8" asChild>
+          <Button variant="ghost" size="icon" asChild>
             <Link href="/settings/account" aria-label="Hesap ayarları">
-              <UserCircle className="size-[22px] lg:size-4" aria-hidden="true" />
+              <UserCircle className="size-[22px] md:size-4" aria-hidden="true" />
             </Link>
           </Button>
         </TooltipTrigger>
@@ -359,8 +360,8 @@ function SidebarlessAccountActions() {
       <form action="/api/auth/logout" method="POST">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button type="submit" variant="ghost" size="icon" className="size-11 lg:size-8" aria-label="Çıkış Yap">
-              <LogOut className="size-[22px] lg:size-4" aria-hidden="true" />
+            <Button type="submit" variant="ghost" size="icon" aria-label="Çıkış Yap">
+              <LogOut className="size-[22px] md:size-4" aria-hidden="true" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">Çıkış Yap</TooltipContent>
@@ -447,7 +448,7 @@ function AppSidebar({
                   if (isMobile) setOpenMobile(false)
                   onOpenSearch()
                 }}
-                className={cn("h-7 w-full justify-start gap-2 truncate px-2 text-sm font-medium leading-5 tracking-[-0.005em]", shellStyles.search)}
+                className={cn("w-full justify-start truncate", shellStyles.search)}
                 aria-label="Genel arama"
               >
                 <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -461,7 +462,7 @@ function AppSidebar({
           ) : (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0" aria-label="Bildirimler">
+                <Button type="button" variant="ghost" size="icon-sm" className="shrink-0" aria-label="Bildirimler">
                   <Bell className="size-4" />
                 </Button>
               </TooltipTrigger>

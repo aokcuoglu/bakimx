@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
-import { cn } from "@/lib/utils"
 import styles from "@/components/auth/register-design.module.css"
 
 export function ResetPasswordForm({ token }: { token: string }) {
@@ -71,7 +70,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           asChild
           variant="outline"
           size="xl"
-          className={cn("mt-6 w-full", styles.submit)}
+          className="mt-6 w-full"
         >
           <Link href="/login">Giriş sayfasına git</Link>
         </Button>
@@ -148,7 +147,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           variant="foreground"
           size="xl"
           disabled={loading}
-          className={cn("w-full", styles.submit)}
+          className="w-full"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">

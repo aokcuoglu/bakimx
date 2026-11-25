@@ -162,7 +162,7 @@ export function OrderItemsChecklist({
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">
           Yapılacak İşler
           <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">
@@ -244,11 +244,12 @@ function ItemGroup({
               key={item.id}
               type="button"
               variant="ghost"
+              size="row"
               disabled={isBusy || locked}
               aria-pressed={isDone}
               onClick={() => onToggle(item)}
               className={cn(
-                "group h-auto min-h-7 w-full justify-start gap-2.5 px-2 py-1.5 text-left whitespace-normal",
+                "group w-full gap-2.5",
                 // Sunucu yanıtı beklenirken satır kilitli ama SOLUK DEĞİL:
                 // iyimser tik zaten göründüğü için soluklaştırmak "işlem geri
                 // alındı" gibi okunuyordu.

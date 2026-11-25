@@ -24,10 +24,11 @@ export function DemoRequestButton({
   return (
     <Dialog>
       <DialogTrigger asChild>
+        {/* Çağrı yerlerinde yanındaki "Ücretsiz deneyin" CTA'sıyla aynı boy (#889;
+            eski `size="xl"` + `h-7` Attio dönemi 28px kalıntısıydı). */}
         <Button
           variant="outline"
-          size="xl"
-          className="h-7 px-2"
+          size="lg"
           onClick={() => {
             if (onClick) onClick();
             else
@@ -49,7 +50,7 @@ export function DemoRequestButton({
           <Button
             variant="outline"
             size="icon"
-            className="absolute right-5 top-5 rounded-xl"
+            className="absolute right-5 top-5"
             aria-label="Kapat"
           >
             <X />

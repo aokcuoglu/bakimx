@@ -195,11 +195,11 @@ function CopyMono({ value }: { value: string }) {
         })
       }}
       variant="link"
-      size="sm"
+      size="inline"
       aria-label="İşlem kimliğini kopyala"
-      className="h-auto p-0 font-mono text-[11px] text-muted-foreground"
+      className="font-mono text-muted-foreground"
     >
-      {copied ? "Kopyalandı" : value}
+      <span className="text-[11px]">{copied ? "Kopyalandı" : value}</span>
     </Button>
   )
 }
@@ -216,12 +216,11 @@ function PaymentAttempts({ txns }: { txns: AdminTxnRow[] }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         variant="link"
-        size="sm"
-        className="h-auto p-0 text-xs"
+        size="inline"
         aria-expanded={open}
       >
         {open ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-        Ödeme denemeleri ({txns.length})
+        <span className="text-xs">Ödeme denemeleri ({txns.length})</span>
       </Button>
       {open && (
         <div className="mt-2">

@@ -7,6 +7,21 @@ import { cn } from "@/lib/utils"
 // e-santral kalıbı (docs/design-pattern-esantral.md): düz mavi dolgu, gölge yok.
 const primaryFill = "bg-primary text-primary-foreground hover:bg-primary/90"
 
+// Kendi kenarlığı olmayan variant'lar (row satırına şeffaf 1px çerçeve alır).
+const NO_BORDER_VARIANTS = [
+  "default",
+  "inverse",
+  "foreground",
+  "navy",
+  "whatsapp",
+  "secondary",
+  "ghost",
+  "destructive",
+  "success",
+  "warning",
+  "link",
+] as const
+
 // Basılma efekti `translate` değil `transform` yazar (#819): call-site'lar
 // düğmeyi `-translate-y-1/2` ile ortalıyor ve upstream'in 1px'lik translate'i
 // aynı `--tw-translate-y`'yi ezip düğmeyi basılıyken yarı boyu aşağı
@@ -35,6 +50,11 @@ const buttonVariants = cva(
         warning:
           "bg-warning text-warning-foreground hover:bg-warning/90 focus-visible:ring-warning/20",
         link: "text-primary underline-offset-4 hover:underline",
+        // Değer seçen Popover tetikleyicisi (birim, tarih) alan gibi görünür:
+        // Input / SelectTrigger ile aynı çerçeve, zemin, ağırlık ve odak halkası;
+        // köşe aşağıdaki compoundVariants'ta (#889).
+        field:
+          "border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:ring-4 aria-invalid:ring-destructive/10 dark:bg-input/30 dark:aria-invalid:ring-destructive/20",
       },
       size: {
         // Ölçüler --control-* değişkenlerinden: telefonda 44px, md+ 36px
@@ -52,12 +72,36 @@ const buttonVariants = cva(
         "icon-sm": "size-(--control-h-sm) rounded-full",
         "icon-lg": "size-(--control-h-lg) rounded-full",
         "icon-compact": "size-(--control-h-xs) rounded-full",
+        // Düğme olmayan kalıplar (#889) — çağrı yerinde h-auto / p-0 / rounded-*
+        // yazılmasın diye. Köşe kart içindeki iç kutu adımıdır (rounded-md,
+        // docs/ui-control-sizing.md → İç içe köşe).
+        // Metin içindeki bağlantı/eylem: yazı boyutunu ve satırı çevreden alır.
+        inline: "gap-1 rounded-sm p-0 text-[length:inherit] leading-[inherit]",
+        // Çok satırlı liste satırı, seçenek kartı, bırakma alanı: en az kontrol
+        // yüksekliği, sola hizalı, metin kırılır. Genişliği çağrı yeri verir.
+        row: "min-h-(--control-h) justify-start gap-3 rounded-md px-3 py-2.5 text-left text-(length:--control-fs-sm) leading-5 whitespace-normal",
+        // Görsel küçük resmi / fotoğraf ekle karosu: dolgusuz, taşanı kırpar.
+        tile: "flex-col gap-1.5 overflow-hidden rounded-md p-0 text-(length:--control-fs-xs) leading-4 whitespace-normal",
       },
     },
     defaultVariants: {
       variant: "default",
       size: "default",
     },
+    // compoundVariants size ve variant sınıflarından sonra gelir, onları ezer.
+    compoundVariants: [
+      // Alan görünümlü tetikleyici her boyutta girdinin köşesini taşır; compact
+      // metni compact girdiyle aynı (telefonda 16px — iOS odak yakınlaştırması).
+      { variant: "field", className: "rounded-(--control-radius)" },
+      { variant: "field", size: "compact", className: "text-(length:--control-fs-field-xs)" },
+      // Liste satırları variant'tan bağımsız aynı çerçeve kutusunda durur:
+      // seçili (secondary) satır outline komşularından 2px kısa kalmaz,
+      // seçim değişince satır kaymaz. Çerçeveli variant'lar (outline, field)
+      // kendi kenarlık rengini korur.
+      { size: "row", variant: [...NO_BORDER_VARIANTS], className: "border border-transparent" },
+      // Hayalet liste satırı soluk (devre dışı gibi) okunmaz.
+      { size: "row", variant: "ghost", className: "text-foreground dark:text-foreground" },
+    ],
   }
 )
 

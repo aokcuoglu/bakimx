@@ -79,10 +79,9 @@ export function AddPurchaseButton(props: {
     <>
       <Button
         type="button"
-        variant="ghost"
-        size="sm"
+        variant="link"
         onClick={() => setOpen(true)}
-        className="mt-2 px-0 text-sm font-medium text-primary hover:bg-transparent hover:underline"
+        className="mt-2 px-0"
       >
         <Plus className="size-4" />
         Parça Aldım
@@ -417,9 +416,9 @@ export function PurchaseFormSheet({
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
+                size="xs"
                 onClick={clearLink}
-                className="-my-1 h-7 text-xs text-muted-foreground"
+                className="-my-1 text-muted-foreground"
               >
                 <Link2Off className="size-3.5" />
                 Bağı kaldır
@@ -530,8 +529,9 @@ export function PurchaseFormSheet({
                   <Button
                     type="button"
                     variant="outline"
+                    size="row"
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex h-auto w-full flex-col items-center justify-center gap-1.5 border-dashed bg-muted/40 py-6 text-sm font-normal text-muted-foreground touch-manipulation"
+                    className="w-full flex-col justify-center gap-1.5 border-dashed text-center text-muted-foreground touch-manipulation"
                   >
                     <Camera className="size-6" />
                     Fotoğraf çek / seç
@@ -564,7 +564,7 @@ export function PurchaseFormSheet({
                           variant="outline"
                           size="sm"
                           onClick={() => setName(ocrResult.partName.value)}
-                          className="rounded-full text-xs font-normal touch-manipulation"
+                          className="touch-manipulation"
                         >
                           {ocrResult.partName.value}
                         </Button>
@@ -577,7 +577,7 @@ export function PurchaseFormSheet({
                               setName(partNameWithBrand(ocrResult.partName.value, ocrResult.brand.value))
                               setBrand(ocrResult.brand.value)
                             }}
-                            className="rounded-full text-xs font-normal touch-manipulation"
+                            className="touch-manipulation"
                           >
                             {partNameWithBrand(ocrResult.partName.value, ocrResult.brand.value)}
                           </Button>
@@ -601,7 +601,7 @@ export function PurchaseFormSheet({
                               onClick={() => onSkuChange(pn.value)}
                               title={low ? "Düşük okuma güveni — kontrol edin" : undefined}
                               className={
-                                "rounded-full text-xs font-normal touch-manipulation " +
+                                "touch-manipulation " +
                                 (low ? "border-warning/40 bg-warning/10 text-warning-strong" : "")
                               }
                             >

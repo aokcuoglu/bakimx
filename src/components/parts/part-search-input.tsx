@@ -155,7 +155,7 @@ export function PartSearchInput({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-7 justify-start gap-2 font-normal"
+            className="justify-start gap-2"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => onCreate(t)}
           >
@@ -168,7 +168,7 @@ export function PartSearchInput({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-7 justify-start gap-2 font-normal text-muted-foreground"
+            className="justify-start gap-2 text-muted-foreground"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => onCreateEdit(t)}
           >

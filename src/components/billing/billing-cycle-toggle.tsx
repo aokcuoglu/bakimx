@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { cn } from "@/lib/utils"
 
 export type BillingCycleValue = "monthly" | "yearly"
 
@@ -31,13 +30,11 @@ export function BillingCycleToggle({
   return (
     <ToggleGroup
       type="single"
+      // iOS segment: gri ray + seçili beyaz kart primitive'den (#889).
+      variant="segment"
       size="control"
-      spacing={1}
       aria-label={label}
-      className={cn(
-        "gap-0.5 rounded-lg bg-muted p-0.5",
-        fullWidth ? "grid w-full grid-cols-2" : "inline-grid grid-cols-[auto_auto]"
-      )}
+      className={fullWidth ? "grid w-full grid-cols-2" : "inline-grid grid-cols-[auto_auto]"}
       value={value}
       onValueChange={(next) => {
         if (next) onChange(next as BillingCycleValue)
@@ -47,7 +44,7 @@ export function BillingCycleToggle({
         <ToggleGroupItem
           key={cycle}
           value={cycle}
-          className="min-w-0 rounded-lg text-sm font-medium tracking-[-0.07px] text-muted-foreground hover:bg-transparent hover:text-foreground data-[state=on]:!bg-card data-[state=on]:!text-foreground data-[state=on]:shadow-[inset_0_0_0_1px_var(--border),0_1px_2px_-1px_rgba(0,0,0,0.12)]"
+          className="min-w-0 tracking-[-0.07px]"
         >
           {cycle === "monthly" ? "Aylık" : "Yıllık"}
           {cycle === "yearly" && yearlyHint && (

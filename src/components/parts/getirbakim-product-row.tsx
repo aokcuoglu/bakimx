@@ -103,16 +103,14 @@ export function GetirbakimProductRow({
     </>
   )
 
-  const rowClass = cn(
-    "flex min-w-0 items-center gap-3 border-b border-border/60 px-3 py-2 text-left",
-    nested && "bg-primary/5 pl-8",
-    !nested && "border-l-2 border-l-primary/40",
-    selectable && "hover:bg-muted",
-  )
+  const rowTone = cn(nested && "bg-primary/5 pl-8", !nested && "border-l-2 border-l-primary/40")
+  const rowClass = cn("flex min-w-0 items-center gap-3 border-b border-border/60 px-3 py-2 text-left", rowTone)
 
   if (selectable) {
+    // Seçilebilir satır `size="row"` düğmesidir (#889): ölçü, köşe ve hover
+    // düğmeden; yalnız ton ve iç içe girinti burada.
     return (
-      <Button type="button" variant="ghost" onClick={onSelect} className={cn(rowClass, "h-auto w-full justify-start whitespace-normal")}>
+      <Button type="button" variant="ghost" onClick={onSelect} size="row" className={cn("w-full min-w-0", rowTone)}>
         {body}
       </Button>
     )

@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { TECHNICIAN_ROLES } from "@/lib/constants"
@@ -45,7 +46,6 @@ export function TechnicianAssign({
   assignedTechnicianName,
   technicians,
   locked = false,
-  size = "md",
   variant = "pill",
   className,
 }: {
@@ -54,9 +54,11 @@ export function TechnicianAssign({
   assignedTechnicianName: string | null
   technicians: AssignableTechnician[]
   locked?: boolean
-  size?: "sm" | "md"
   /**
-   * `pill` — rozet görünümü (liste kartı, "İş Emri Bilgileri" kartı).
+   * Görünüm ölçüsü ve şekli Button `size` / `variant`'tan gelir (#889);
+   * telefonda dokunma alanı şeffaf `::before` ile 44px'e açılır.
+   * `pill` — `outline` `xs` hap (liste kartı, "İş Emri Bilgileri" kartı);
+   *          usta yokken kesik çizgili, soluk.
    * `meta` — başlığın kimlik satırı; araç/müşteri satırlarıyla aynı dil,
    *          rozet ağırlığı taşımaz ki durum rozetleriyle yarışmasın.
    * `cta`  — usta henüz atanmadıysa beklenen adım budur (#866): birincil
@@ -78,37 +80,26 @@ export function TechnicianAssign({
   const isMeta = variant === "meta"
   const isCta = variant === "cta"
 
-  const trigger = isMeta || isCta
-    ? cn(
-        "relative inline-flex max-w-[12rem] items-center gap-1 min-w-0 text-sm before:absolute before:inset-x-0 before:-inset-y-2 md:before:hidden text-muted-foreground transition-colors touch-manipulation disabled:opacity-60",
-        !locked && "hover:text-primary",
-        // Noktalı alt çizgi "buraya dokunulabilir" demek; kilitli emirde
-        // hiçbir şey yapılamadığı için vaat edilmemeli.
-        !locked && !assignedTechnicianName && "underline decoration-dotted underline-offset-4",
-        className
-      )
-    : cn(
-        "inline-flex max-w-[12rem] items-center gap-1.5 rounded-full border font-medium transition-colors touch-manipulation disabled:opacity-60",
-        size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs",
-        assignedTechnicianName
-          ? "border-primary/20 bg-primary/10 text-foreground"
-          : "border-dashed border-border bg-transparent text-muted-foreground",
-        !locked && "hover:bg-muted/60 hover:bg-primary/15",
-        className
-      )
-
   const label = assignedTechnicianName ?? "Usta ata"
   const Icon = assignedTechnicianName ? HardHat : UserPlus
-  const iconSize = isCta ? "size-4" : isMeta ? "size-3.5" : size === "sm" ? "size-3" : "size-3.5"
+  const iconSize = isCta ? "size-4" : "size-3.5"
 
   if (locked) {
-    return (
-      <span className={cn(trigger, "cursor-default")}>
+    // Salt okunur: düğme değil, düz bilgi (meta satırı metni / hap rozeti).
+    return isMeta ? (
+      <span className={cn("inline-flex min-w-0 max-w-[12rem] items-center gap-1 text-sm text-muted-foreground", className)}>
         <Icon className={cn("shrink-0", iconSize)} />
         <span className="truncate">{assignedTechnicianName ?? "Usta atanmadı"}</span>
       </span>
+    ) : (
+      <Badge variant="outline" className={cn("max-w-[12rem] gap-1 text-muted-foreground", className)}>
+        <Icon className={cn("shrink-0", iconSize)} />
+        <span className="truncate">{assignedTechnicianName ?? "Usta atanmadı"}</span>
+      </Badge>
     )
   }
+
+
 
   function runAssign(action: () => Promise<{ error?: string } | undefined>, successMessage: string) {
     startTransition(async () => {
@@ -145,14 +136,23 @@ export function TechnicianAssign({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
+        {/* Ölçü ve şekil size / variant'tan (#889): hap `outline xs` (32/28px),
+            meta satır içi bağlantı, CTA standart düğme. Telefonda şeffaf
+            `::before` dokunma alanını 44px'e açar; md+ fareyle gerekmez. */}
         <Button
           type="button"
-          variant={isCta ? "outline" : "ghost"}
-          className={
-            isCta
-              ? cn("border-primary/40 text-primary-strong hover:bg-primary/10 hover:text-primary-strong", className)
-              : cn("h-auto min-h-7 justify-start whitespace-normal", trigger)
-          }
+          variant={isMeta ? "link" : "outline"}
+          size={isCta ? "default" : isMeta ? "inline" : "xs"}
+          className={cn(
+            isCta && "border-primary/40 text-primary-strong hover:bg-primary/10 hover:text-primary-strong",
+            isMeta && "relative min-w-0 max-w-[12rem] text-muted-foreground before:absolute before:inset-x-0 before:-inset-y-3 hover:text-primary md:before:hidden",
+            // Noktalı alt çizgi "buraya dokunulabilir" der.
+            isMeta && !assignedTechnicianName && "underline decoration-dotted",
+            !isCta && !isMeta && "relative max-w-[12rem] before:absolute before:inset-x-0 before:-inset-y-1.5 md:before:hidden",
+            !isCta && !isMeta && !assignedTechnicianName && "border-dashed text-muted-foreground",
+            !isCta && "touch-manipulation",
+            className
+          )}
           aria-label={
             assignedTechnicianName
               ? `Atanan usta: ${assignedTechnicianName} — değiştir`
@@ -160,7 +160,8 @@ export function TechnicianAssign({
           }
         >
           <Icon className={cn("shrink-0", iconSize)} />
-          <span className="truncate">{label}</span>
+          {/* Meta satırı çevresiyle aynı metin boyunda (satır içi bağlantı). */}
+          <span className={cn("truncate", isMeta && "text-sm")}>{label}</span>
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -210,15 +211,11 @@ export function TechnicianAssign({
                   <Button
                     key={t.id}
                     type="button"
-                    variant="outline"
+                    variant={isAssigned ? "secondary" : "outline"}
+                    size="row"
                     onClick={() => handleAssign(t)}
                     disabled={isPending}
-                    className={cn(
-                      "h-auto w-full justify-start gap-3 p-3 text-left whitespace-normal",
-                      isAssigned
-                        ? "border-primary/30 bg-primary/10"
-                        : "border-border bg-card hover:bg-muted"
-                    )}
+                    className="w-full"
                   >
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
                       <HardHat className="size-4" />

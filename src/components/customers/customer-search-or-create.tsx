@@ -207,8 +207,9 @@ export function CustomerSearchOrCreate({
         <Button
           type="button"
           variant="outline"
+          size="row"
           onClick={() => setShowExtra((s) => !s)}
-          className="h-auto w-full justify-between px-3 py-2 text-foreground"
+          className="w-full justify-between text-foreground"
         >
           <span>Ek bilgiler (opsiyonel)</span>
           <ChevronDown className={`size-4 transition-transform ${showExtra ? "rotate-180" : ""}`} />

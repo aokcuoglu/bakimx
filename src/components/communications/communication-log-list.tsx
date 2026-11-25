@@ -89,16 +89,16 @@ export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats:
         {/* flex-wrap şart: ToggleGroup varsayılanda `w-fit flex-row` ve içeride
             sarmıyor — beşinci durum butonu eklenince 390px ekranda grup 456px'e
             çıkıp taşıyordu (buton erişilemez hâle geliyordu). */}
-        <ToggleGroup type="single" className="flex-wrap" value={filter} onValueChange={(v) => { if (v) setFilter(v as "all" | "sms" | "whatsapp" | "email") }} variant="outline">
+        <ToggleGroup type="single" className="flex-wrap" value={filter} onValueChange={(v) => { if (v) setFilter(v as "all" | "sms" | "whatsapp" | "email") }} variant="outline" size="sm" aria-label="Kanal">
           {(["all", "sms", "whatsapp", "email"] as const).map((f) => (
-            <ToggleGroupItem key={f} value={f} className="px-3 py-1.5 text-xs">
+            <ToggleGroupItem key={f} value={f}>
               {f === "all" ? "Tümü" : TYPE_LABELS[f] || f}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
-        <ToggleGroup type="single" className="flex-wrap" value={statusFilter} onValueChange={(v) => { if (v) setStatusFilter(v as "all" | StatusKey) }} variant="outline">
+        <ToggleGroup type="single" className="flex-wrap" value={statusFilter} onValueChange={(v) => { if (v) setStatusFilter(v as "all" | StatusKey) }} variant="outline" size="sm" aria-label="Durum">
           {(["all", ...STATUSES] as const).map((s) => (
-            <ToggleGroupItem key={s} value={s} className="px-3 py-1.5 text-xs">
+            <ToggleGroupItem key={s} value={s}>
               {s === "all" ? "Tüm Durum" : communicationStatusLabel(s)}
             </ToggleGroupItem>
           ))}

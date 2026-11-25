@@ -24,13 +24,17 @@ test("destek talebi tetikleyicisi doğal kart yüksekliğini korur", () => {
   const className = trigger.match(/className="([^"]+)"/)?.[1]
 
   expect(trigger).toContain('variant="ghost"')
+  // Çok satırlı kart başlığı `size="row"` ile ölçülür (#889): sabit yükseklik
+  // yok, en az kontrol yüksekliği var.
+  expect(trigger).toContain('size="row"')
   expect(trigger).toContain("aria-expanded={expanded}")
   expect(className).toBeDefined()
 
-  const merged = cn(buttonVariants({ variant: "ghost", className }))
+  const merged = cn(buttonVariants({ variant: "ghost", size: "row", className }))
   const classes = merged.split(/\s+/)
 
-  expect(classes).toContain("h-auto")
+  expect(classes.some((cls) => /^h-/.test(cls))).toBe(false)
+  expect(classes).toContain("min-h-(--control-h)")
   expect(classes).toContain("justify-start")
   expect(classes).toContain("whitespace-normal")
   expect(classes).not.toContain("h-8")

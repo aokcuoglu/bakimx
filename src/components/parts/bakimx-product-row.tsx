@@ -76,8 +76,9 @@ export function BakimxProductRow({
         <Button
           type="button"
           variant="ghost"
+          size="row"
           onClick={onSelect}
-          className="h-auto min-h-7 min-w-0 flex-1 justify-start gap-3 px-3 py-2 text-left whitespace-normal"
+          className="min-w-0 flex-1"
         >
           {product.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -120,7 +121,7 @@ export function BakimxProductRow({
           // Etiket dar ekranda gizleniyor; erişilebilir ad `aria-label` ile
           // KALIYOR — aksi hâlde mobilde düğme ekran okuyucuya isimsiz görünür.
           aria-label="Sipariş ver"
-          className="mr-2 shrink-0 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          className="mr-2 shrink-0 gap-1.5 text-muted-foreground hover:text-foreground"
         >
           <ShoppingCart className="size-3.5" />
           <span className="hidden sm:inline">Sipariş ver</span>

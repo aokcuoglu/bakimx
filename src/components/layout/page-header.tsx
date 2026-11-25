@@ -33,12 +33,14 @@ function ActionButton({ action, primary }: { action: PageAction; primary: boolea
       {action.label}
     </Link>
   )
+  // e-santral `.d-blue.big` = `size="lg"` (50px telefon / 44px md+). Birincil
+  // DOM'da ikincillerden sonra gelir; telefonda tam genişlik ve ilk satırda.
   return primary ? (
-    <Button variant="default" className={cn(styles.cta, styles.primary)} data-tour={action.tourId} asChild>
+    <Button variant="default" size="lg" className="order-first w-full sm:order-none sm:w-auto" data-tour={action.tourId} asChild>
       {content}
     </Button>
   ) : (
-    <Button variant="outline" className={styles.cta} data-tour={action.tourId} asChild>
+    <Button variant="outline" size="lg" data-tour={action.tourId} asChild>
       {content}
     </Button>
   )

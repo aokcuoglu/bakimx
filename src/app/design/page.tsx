@@ -491,6 +491,7 @@ export default function DesignSystemPage() {
                 ["destructive", "Destructive"],
                 ["success", "Success"],
                 ["warning", "Warning"],
+                ["field", "Field — alan görünümlü seçici (birim, tarih)"],
               ] as const
             ).map(([variant, label]) => (
               <div
@@ -507,25 +508,50 @@ export default function DesignSystemPage() {
               </div>
             ))}
           </div>
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-4">
-            <p className="mr-2 font-mono text-[11px] text-muted-foreground">
-              sizes
+          <div className="space-y-3 rounded-lg border border-border bg-card p-4" data-testid="button-sizes">
+            <p className="font-mono text-[11px] text-muted-foreground">
+              sizes · telefon / md+ (docs/ui-control-sizing.md)
             </p>
-            <Button variant="navy" size="xs">
-              xs
-            </Button>
-            <Button variant="navy" size="sm">
-              sm · 28px
-            </Button>
-            <Button variant="navy" size="lg">
-              lg · 28px
-            </Button>
-            <Button variant="navy" size="compact">
-              compact · 20px
-            </Button>
-            <Badge variant="outline">status</Badge>
-            <Badge>default</Badge>
-            <Badge variant="secondary">secondary</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              {(
+                [
+                  ["xl", "52 / 48"],
+                  ["lg", "50 / 44"],
+                  ["default", "44 / 36"],
+                  ["sm", "36 / 32"],
+                  ["toolbar", "36 / 32"],
+                  ["xs", "32 / 28"],
+                  ["compact", "32 / 28"],
+                ] as const
+              ).map(([size, px]) => (
+                <Button key={size} variant="navy" size={size}>
+                  {size} · {px}
+                </Button>
+              ))}
+            </div>
+            <div className="grid items-start gap-3 sm:grid-cols-3">
+              <p className="text-sm text-muted-foreground">
+                inline — metin içinde{" "}
+                <Button variant="link" size="inline">
+                  bağlantı
+                </Button>
+                , boyu çevreden
+              </p>
+              <Button variant="outline" size="row" className="w-full">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-foreground">row</span>
+                  <span className="block text-xs text-muted-foreground">liste satırı, seçenek kartı, bırakma alanı</span>
+                </span>
+              </Button>
+              <Button variant="secondary" size="tile" className="aspect-[4/3] w-full justify-center text-muted-foreground">
+                tile · görsel karosu
+              </Button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">status</Badge>
+              <Badge>default</Badge>
+              <Badge variant="secondary">secondary</Badge>
+            </div>
           </div>
         </Section>
 

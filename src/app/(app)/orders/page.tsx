@@ -216,7 +216,7 @@ export default async function OrdersPage({
                 />
                 </div>
                 {hasAnyFilter && (
-                  <Button variant="ghost" size="sm" className="rounded-full" asChild>
+                  <Button variant="ghost" size="sm" asChild>
                     <Link href="/orders"><X className="size-3.5" />Temizle</Link>
                   </Button>
                 )}

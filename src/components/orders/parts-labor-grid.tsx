@@ -1606,19 +1606,22 @@ function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
 }
 
 // Yükseklik kontrol ölçeğinden: satırda compact (32 / 28px), composer'da
-// yanındaki varsayılan alanlarla aynı hizada default (44 / 36px).
+// yanındaki varsayılan alanlarla aynı hizada default (44 / 36px). Çerçeve
+// `border` değil içe dönük `outline`: yer kaplamaz, `icon-xs` (32 / 28px)
+// düğmeler compact kutuya taşmadan sığar ve çerçeve düğmenin üstünde çizilir
+// (#889 — 1px'lik kenarlık 30px'lik iç alan bırakıyor, düğme taşıyordu).
 function QtyStepper({ row, editable, onCell, size = "compact" }: {
   row: Row; editable: boolean; onCell: OnCell; size?: "default" | "compact"
 }) {
   return (
-    <div data-slot="qty-stepper" className={cn("inline-flex items-center rounded-(--control-radius) border border-input bg-card transition-colors dark:bg-input/30", size === "default" ? "h-(--control-h)" : "h-(--control-h-xs)")}>
-      <Button type="button" variant="ghost" size="icon-xs" className="rounded-r-none" aria-label="Azalt"
+    <div data-slot="qty-stepper" className={cn("inline-flex items-center rounded-(--control-radius) bg-card outline-1 -outline-offset-1 outline-input transition-colors dark:bg-input/30", size === "default" ? "h-(--control-h)" : "h-(--control-h-xs)")}>
+      <Button type="button" variant="ghost" size="icon-xs" aria-label="Azalt"
         disabled={!editable || row.quantity <= 1}
         onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })}>
         <Minus />
       </Button>
       <span className="min-w-6 px-1 text-center text-xs font-medium tabular-nums">{row.quantity}</span>
-      <Button type="button" variant="ghost" size="icon-xs" className="rounded-l-none" aria-label="Arttır"
+      <Button type="button" variant="ghost" size="icon-xs" aria-label="Arttır"
         disabled={!editable}
         onClick={() => onCell(row, { quantity: row.quantity + 1 }, { debounce: true })}>
         <Plus />
@@ -1670,7 +1673,8 @@ function UnitField({ row, editable, onCell }: { row: Row; editable: boolean; onC
     <OrderItemUnitCombobox
       value={unit}
       ariaLabel={`${row.name || "Parça"} birimi`}
-      className="h-7 w-24"
+      size="compact"
+      className="w-24"
       isOptionDisabled={(candidate) =>
         (row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}
       onValueChange={(next) => {
@@ -2026,7 +2030,7 @@ function ProcurementBadge({ procurement }: { procurement?: OrderItem["externalPr
     finally { setBusy(null) }
   }
   return (
-    <span className="mt-1.5 flex flex-wrap items-center gap-2" data-pl="procurement">
+    <span className="mt-1.5 flex flex-wrap items-center gap-2 text-sm" data-pl="procurement">
       <span className={cn(surface.pill, surface[`tone-${procurementPillTone(procurement)}`])}>{label}</span>
       {procurement.grossKurus != null ? (
         <span className="text-xs tabular-nums text-muted-foreground">
@@ -2034,8 +2038,8 @@ function ProcurementBadge({ procurement }: { procurement?: OrderItem["externalPr
           {procurement.shippingKurus ? ` · kargo ${formatTRY(procurement.shippingKurus)} dahil` : ""}
         </span>
       ) : null}
-      {procurementCanRefresh(procurement) ? <Button type="button" variant="link" size="sm" className="h-auto px-0" disabled={busy !== null} onClick={() => void refresh()}>{busy === "refresh" ? "Güncelleniyor…" : "Durumu güncelle"}</Button> : null}
-      {cancelAction ? <Button type="button" variant="link" size="sm" className="h-auto px-0 text-destructive-strong" disabled={busy !== null} onClick={() => void cancel()}>{busy === "cancel" ? "İletiliyor…" : cancelAction === "cancel" ? "Siparişi iptal et" : "İptal talep et"}</Button> : null}
+      {procurementCanRefresh(procurement) ? <Button type="button" variant="link" size="inline" disabled={busy !== null} onClick={() => void refresh()}>{busy === "refresh" ? "Güncelleniyor…" : "Durumu güncelle"}</Button> : null}
+      {cancelAction ? <Button type="button" variant="link" size="inline" className="text-destructive-strong" disabled={busy !== null} onClick={() => void cancel()}>{busy === "cancel" ? "İletiliyor…" : cancelAction === "cancel" ? "Siparişi iptal et" : "İptal talep et"}</Button> : null}
     </span>
   )
 }
@@ -2434,10 +2438,10 @@ const GHOST_ROW = cn(
   "group transition-colors hover:bg-muted/40",
   "[&_[data-slot=input-group]]:border-transparent [&_[data-slot=input-group]]:bg-transparent dark:[&_[data-slot=input-group]]:bg-transparent",
   "[&_[data-slot=input]]:border-transparent [&_[data-slot=input]]:bg-transparent dark:[&_[data-slot=input]]:bg-transparent",
-  "[&_[data-slot=qty-stepper]]:border-transparent [&_[data-slot=qty-stepper]]:bg-transparent",
+  "[&_[data-slot=qty-stepper]]:outline-transparent [&_[data-slot=qty-stepper]]:bg-transparent",
   "[&_[data-slot=price-field]]:border-transparent",
-  "hover:[&_[data-slot=input-group]]:border-input hover:[&_[data-slot=input]]:border-input hover:[&_[data-slot=qty-stepper]]:border-input hover:[&_[data-slot=price-field]]:border-input",
-  "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=qty-stepper]]:border-input focus-within:[&_[data-slot=price-field]]:border-input",
+  "hover:[&_[data-slot=input-group]]:border-input hover:[&_[data-slot=input]]:border-input hover:[&_[data-slot=qty-stepper]]:outline-input hover:[&_[data-slot=price-field]]:border-input",
+  "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=qty-stepper]]:outline-input focus-within:[&_[data-slot=price-field]]:border-input",
 )
 
 // Marka/Kategori alanları: ölçü, köşe ve yazı boyutu `PartAttributeField

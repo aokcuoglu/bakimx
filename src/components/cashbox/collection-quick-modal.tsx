@@ -181,13 +181,13 @@ export function CollectionQuickModal({
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between text-xs">
                     <FormLabel className="text-xs font-medium text-muted-foreground">Tutar (₺) *</FormLabel>
                     {remainingAmount > 0 && (
                       <Button
                         type="button"
                         variant="link"
-                        className="h-auto p-0 text-xs"
+                        size="inline"
                         onClick={() => field.onChange(kurusToLira(remainingAmount))}
                       >
                         Kalanı öde ({formatTRY(remainingAmount)})

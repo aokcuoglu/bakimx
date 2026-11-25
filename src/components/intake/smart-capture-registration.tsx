@@ -500,7 +500,7 @@ export function SmartCaptureRegistration() {
             <Button variant="foreground"
               type="button"
               size="lg"
-              className="w-full max-w-md gap-2 text-base"
+              className="w-full max-w-md gap-2"
               onClick={() => setScannerOpen(true)}
             >
               <Camera className="size-5" />

@@ -61,23 +61,25 @@ export function PhotoDeleteButton({
       {variant === "overlay" ? (
         <Button
           type="button"
-          variant="ghost"
-          size="icon"
+          // Fotoğrafın üstünde opak nötr daire (#889: yüzey variant'tan, yarı
+          // saydam zemin ezmesi yok).
+          variant="secondary"
+          size="icon-xs"
           aria-label={photoLabel ? `${photoLabel} fotoğrafını sil` : "Fotoğrafı sil"}
           // Kart tıklaması lightbox açıyor; sil butonu onu tetiklememeli.
           onClick={(e) => { e.stopPropagation(); setOpen(true) }}
           onKeyDown={(e) => e.stopPropagation()}
           className={cn(
-            "absolute top-1.5 right-1.5 z-10 inline-flex size-8 items-center justify-center rounded-full",
+            "absolute top-1.5 right-1.5 z-10",
             // Telefonda görsel 32px kalır; dokunma alanı şeffaf ::before ile 44px'e açılır (köşe 6px içeride, komşu kutuya taşmaz).
             "before:absolute before:-inset-1.5 before:content-[''] md:before:hidden",
-            "bg-background/85 text-destructive-strong ring-1 ring-border backdrop-blur-sm",
+            "text-destructive-strong",
             // Ters kontrast: dolu kırmızı zemin + `destructive-foreground` ikon.
             // Bu token temaya sonradan eklendi (globals.css); yoksa Tailwind
             // `text-destructive-foreground` için kural üretmez ve ikon kırmızı
             // zeminde kırmızı kalıp kaybolur.
-            "transition-colors hover:bg-destructive hover:text-destructive-foreground hover:ring-destructive",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-manipulation",
+            "transition-colors hover:bg-destructive hover:text-destructive-foreground",
+            "touch-manipulation",
             className
           )}
         >

@@ -661,12 +661,12 @@ function ChecklistReminder({ message, onReveal }: { message: string; onReveal: (
     <div className="flex justify-center">
       <Button
         variant="ghost"
-        size="sm"
+        size="row"
         onClick={onReveal}
-        className="h-auto max-w-full gap-1.5 py-1 text-xs font-normal text-muted-foreground whitespace-normal"
+        className="max-w-full justify-center gap-1.5 text-muted-foreground"
       >
         <ListChecks className="size-3.5 shrink-0" />
-        <span className="min-w-0 text-left">{message} — kontrol listesini aç</span>
+        <span className="min-w-0 text-left text-xs">{message} — kontrol listesini aç</span>
       </Button>
     </div>
   )
@@ -824,11 +824,12 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="secondary"
+      size="tile"
       onClick={onOpen}
       disabled={state === "failed"}
       aria-label={`${label} — büyüt`}
-      className="relative h-auto w-full aspect-square overflow-hidden rounded-lg border border-border bg-muted p-0"
+      className="relative w-full aspect-square border border-border"
     >
       {state !== "ready" && (
         <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-muted-foreground">

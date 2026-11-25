@@ -186,8 +186,9 @@ export function TechnicianNotificationsBell() {
                 <Button
                   type="button"
                   variant="ghost"
+                  size="row"
                   onClick={() => goToOrder(notification.orderId)}
-                  className="h-auto min-h-7 w-full flex-col items-start justify-start gap-0.5 whitespace-normal rounded-md p-2 text-left"
+                  className="w-full flex-col items-start gap-0.5"
                 >
                   <span className="text-sm font-medium">{notification.title}</span>
                   {notification.description && (

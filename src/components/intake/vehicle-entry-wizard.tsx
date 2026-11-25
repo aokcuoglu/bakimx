@@ -1074,7 +1074,8 @@ export function VehicleEntryWizard({
             <>
               <Button variant="foreground"
                 type="button"
-                className="h-14 w-full gap-2 text-lg md:h-14"
+                size="xl"
+                className="w-full gap-2"
                 disabled={!query.trim()}
                 onClick={() => goToVehicleStep({ plate: query.trim() })}
               >
@@ -1603,7 +1604,7 @@ function SearchHits({
         />
       ))}
       {onPickCustomer && customers.map((c) => (
-        <Button key={c.customerId} type="button" variant="outline" className={HIT_CARD_CLASS} onClick={() => onPickCustomer(c)}>
+        <Button key={c.customerId} type="button" variant="outline" size="row" className={HIT_CARD_CLASS} onClick={() => onPickCustomer(c)}>
           <Item className="w-full p-0">
             <ItemContent>
               <ItemTitle className="flex items-center gap-2 text-base font-semibold">
@@ -1632,8 +1633,9 @@ function SearchHits({
  * technician-dashboard.tsx) aynı kalıp: Item outline yüzeyi, hover'da mavi ton.
  * Kart bir eylem (seçim) olduğu için kabuk `Link` değil `Button`.
  */
+// Ölçü ve köşe `size="row"`dan (#889); burada yalnız yüzey tonu ve hover vurgusu.
 const HIT_CARD_CLASS =
-  "h-auto w-full justify-start whitespace-normal rounded-lg bg-card/80 px-3 py-2.5 text-left font-normal tracking-normal shadow-xs hover:bg-primary/10 hover:ring-2 hover:ring-primary/20"
+  "w-full tracking-normal shadow-xs hover:bg-primary/10 hover:ring-2 hover:ring-primary/20"
 
 /** Araç kartı: üstte mavi bantlı plaka, altında araç ve (varsa) sahip satırı. */
 function VehicleHitCard({
@@ -1651,7 +1653,7 @@ function VehicleHitCard({
   onClick: () => void
 }) {
   return (
-    <Button type="button" variant="outline" className={HIT_CARD_CLASS} onClick={onClick}>
+    <Button type="button" variant="outline" size="row" className={HIT_CARD_CLASS} onClick={onClick}>
       <Item className="w-full p-0">
         <ItemContent>
           <ItemHeader>

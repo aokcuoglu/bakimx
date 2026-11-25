@@ -134,7 +134,7 @@ export default function AracKabulFormuPage() {
                   Yazdırıp elle işaretleyebilir ya da her adımı dijital araç kabul akışında tamamlayabilirsiniz.
                 </p>
               </div>
-              <PrintButton label="Listeyi yazdır" className="shrink-0 border-border bg-transparent text-foreground hover:bg-muted print:hidden" />
+              <PrintButton label="Listeyi yazdır" className="shrink-0 print:hidden" />
             </div>
             <ol className="mt-10 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 print:mt-4 print:grid-cols-1 print:gap-2 print:rounded-none print:border-0 print:bg-transparent">
               {ARAC_KABUL_FORMU_CHECKLIST.map((step, index) => (
