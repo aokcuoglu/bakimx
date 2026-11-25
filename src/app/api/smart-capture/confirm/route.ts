@@ -319,6 +319,7 @@ export async function POST(request: Request) {
             trialEndsAt: true,
       liteFreeGrantedAt: true,
             currentPeriodEnd: true,
+            addons: true,
             extraVinQuota: true,
           },
         })
