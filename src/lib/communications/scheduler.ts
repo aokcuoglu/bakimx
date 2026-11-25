@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 import { formatTrDate, formatTrTime } from "@/lib/format-date"
 import { notifyAppointmentReminder, notifyMaintenanceReminder } from "@/lib/communications/triggers"
+import { appointmentDayWord } from "@/lib/communications/reminder-day"
 import { formatReminderType } from "@/lib/reminders/format"
 import { getPlanState, hasWorkshopFeature, type GatedFeature } from "@/lib/plan"
 
@@ -91,6 +92,7 @@ export async function processAppointmentReminders(workshopId?: string): Promise<
         appointmentDate,
         appointmentTime,
         hoursBefore,
+        appointmentDayWord(appointment.appointmentAt, now),
         appointment.id,
       )
 
