@@ -14,6 +14,7 @@ import { AuditLogAction } from "@/lib/audit"
 import { notifyAppointmentCreated } from "@/lib/communications/triggers"
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync"
 import { parseIstanbulLocalDateTime } from "@/lib/istanbul-time"
+import { appointmentTodayBounds, resolveAppointmentDateWindow } from "@/lib/appointments/date-filter"
 
 async function requireAuth() {
   return (await requireFeatureWorkshop("appointments")).user
@@ -202,24 +203,9 @@ export async function getAppointmentsAction(search?: string, status?: string, da
 
   if (status && status !== "all") where.status = status
 
-  if (dateFilter && dateFilter !== "all") {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-
-    if (dateFilter === "today") {
-      where.appointmentAt = { gte: today, lt: tomorrow }
-    } else if (dateFilter === "tomorrow") {
-      const dayAfter = new Date(tomorrow)
-      dayAfter.setDate(dayAfter.getDate() + 1)
-      where.appointmentAt = { gte: tomorrow, lt: dayAfter }
-    } else if (dateFilter === "week") {
-      const weekEnd = new Date(today)
-      weekEnd.setDate(weekEnd.getDate() + 7)
-      where.appointmentAt = { gte: today, lt: weekEnd }
-    }
-  }
+  // Gün sınırları Türkiye takvimine göre (#874).
+  const dateWindow = dateFilter ? resolveAppointmentDateWindow(dateFilter) : null
+  if (dateWindow) where.appointmentAt = dateWindow
 
   if (search) {
     where.OR = [
@@ -253,10 +239,7 @@ export async function getAppointmentCountsByStatus() {
   const user = await requireAuth()
   const workshopId = user.workshopId
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
+  const { today, tomorrow } = appointmentTodayBounds()
 
   const [todayCount, upcoming, confirmed, arrived, noShow, cancelled] = await Promise.all([
     prisma.appointment.count({

@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/db"
 import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
+import { istanbulDayKey, istanbulMonthStart, istanbulRecentDays, istanbulRecentMonths } from "@/lib/istanbul-time"
 
-function monthStart(): Date {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
-}
+// Gün ve ay sınırları ile günlük grafik kovaları Türkiye takvimine göredir,
+// sunucunun saat diliminden bağımsız (#874).
 
 // ─── Orders Report ──────────────────────────────────────────────
 
@@ -77,9 +76,9 @@ export async function getDailyOrderCounts(
   workshopId: string,
   days = 30
 ): Promise<DailyOrderCount[]> {
-  const start = new Date()
-  start.setDate(start.getDate() - (days - 1))
-  start.setHours(0, 0, 0, 0)
+  const buckets = istanbulRecentDays(days)
+  if (buckets.length === 0) return []
+  const start = buckets[0].start
 
   const orders = await prisma.serviceOrder.findMany({
     where: { workshopId, createdAt: { gte: start } },
@@ -88,30 +87,22 @@ export async function getDailyOrderCounts(
 
   const dayNames = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"]
   const dayMap = new Map<string, number>()
-  for (let i = 0; i < days; i++) {
-    const d = new Date(start.getTime() + i * 86400000)
-    const key = d.toISOString().slice(0, 10)
-    dayMap.set(key, 0)
+  for (const bucket of buckets) {
+    dayMap.set(bucket.key, 0)
   }
 
   for (const o of orders) {
-    const key = o.createdAt.toISOString().slice(0, 10)
+    const key = istanbulDayKey(o.createdAt)
     if (dayMap.has(key)) {
       dayMap.set(key, (dayMap.get(key) || 0) + 1)
     }
   }
 
-  const result: DailyOrderCount[] = []
-  for (let i = 0; i < days; i++) {
-    const d = new Date(start.getTime() + i * 86400000)
-    const key = d.toISOString().slice(0, 10)
-    result.push({
-      date: key,
-      label: dayNames[d.getDay()],
-      count: dayMap.get(key) || 0,
-    })
-  }
-  return result
+  return buckets.map((bucket) => ({
+    date: bucket.key,
+    label: dayNames[bucket.weekday],
+    count: dayMap.get(bucket.key) || 0,
+  }))
 }
 
 export async function getMonthlyOrderCounts(
@@ -123,24 +114,19 @@ export async function getMonthlyOrderCounts(
     "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara",
   ]
 
-  const now = new Date()
   const results: MonthlyOrderCount[] = []
 
-  for (let i = months - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const monthStart = new Date(d.getFullYear(), d.getMonth(), 1)
-    const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1)
-
+  for (const bucket of istanbulRecentMonths(months)) {
     const count = await prisma.serviceOrder.count({
       where: {
         workshopId,
-        createdAt: { gte: monthStart, lt: monthEnd },
+        createdAt: { gte: bucket.start, lt: bucket.end },
       },
     })
 
     results.push({
-      month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
-      label: `${monthNames[d.getMonth()]} ${d.getFullYear()}`,
+      month: bucket.key,
+      label: `${monthNames[bucket.month]} ${bucket.year}`,
       count,
     })
   }
@@ -340,7 +326,7 @@ export async function getCustomerReportStats(
   dateFrom?: Date,
   dateTo?: Date
 ): Promise<CustomerReportStats> {
-  const monthD = monthStart()
+  const monthD = istanbulMonthStart()
 
   const [total, newThisMonth] = await Promise.all([
     prisma.customer.count({ where: { workshopId } }),
@@ -548,9 +534,9 @@ export async function getDailyCollectionAmounts(
   workshopId: string,
   days = 30
 ): Promise<DailyCollectionCount[]> {
-  const start = new Date()
-  start.setDate(start.getDate() - (days - 1))
-  start.setHours(0, 0, 0, 0)
+  const buckets = istanbulRecentDays(days)
+  if (buckets.length === 0) return []
+  const start = buckets[0].start
 
   const collections = await prisma.collectionPayment.findMany({
     where: {
@@ -563,30 +549,22 @@ export async function getDailyCollectionAmounts(
 
   const dayNames = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"]
   const dayMap = new Map<string, number>()
-  for (let i = 0; i < days; i++) {
-    const d = new Date(start.getTime() + i * 86400000)
-    const key = d.toISOString().slice(0, 10)
-    dayMap.set(key, 0)
+  for (const bucket of buckets) {
+    dayMap.set(bucket.key, 0)
   }
 
   for (const c of collections) {
-    const key = c.paymentDate.toISOString().slice(0, 10)
+    const key = istanbulDayKey(c.paymentDate)
     if (dayMap.has(key)) {
       dayMap.set(key, (dayMap.get(key) || 0) + c.amount)
     }
   }
 
-  const result: DailyCollectionCount[] = []
-  for (let i = 0; i < days; i++) {
-    const d = new Date(start.getTime() + i * 86400000)
-    const key = d.toISOString().slice(0, 10)
-    result.push({
-      date: key,
-      label: dayNames[d.getDay()],
-      amount: dayMap.get(key) || 0,
-    })
-  }
-  return result
+  return buckets.map((bucket) => ({
+    date: bucket.key,
+    label: dayNames[bucket.weekday],
+    amount: dayMap.get(bucket.key) || 0,
+  }))
 }
 
 export async function getMonthlyCollectionAmounts(
@@ -598,26 +576,21 @@ export async function getMonthlyCollectionAmounts(
     "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara",
   ]
 
-  const now = new Date()
   const results: MonthlyCollectionCount[] = []
 
-  for (let i = months - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const ms = new Date(d.getFullYear(), d.getMonth(), 1)
-    const me = new Date(d.getFullYear(), d.getMonth() + 1, 1)
-
+  for (const bucket of istanbulRecentMonths(months)) {
     const agg = await prisma.collectionPayment.aggregate({
       where: {
         workshopId,
         status: "completed",
-        paymentDate: { gte: ms, lt: me },
+        paymentDate: { gte: bucket.start, lt: bucket.end },
       },
       _sum: { amount: true },
     })
 
     results.push({
-      month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
-      label: `${monthNames[d.getMonth()]} ${d.getFullYear()}`,
+      month: bucket.key,
+      label: `${monthNames[bucket.month]} ${bucket.year}`,
       amount: agg._sum.amount || 0,
     })
   }

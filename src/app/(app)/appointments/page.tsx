@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { AppointmentList } from "@/components/appointments/appointment-list"
 import { formatAppointmentNo } from "@/lib/work-order-number"
+import { appointmentTodayBounds, resolveAppointmentDateWindow } from "@/lib/appointments/date-filter"
 import { cn } from "@/lib/utils"
 
 export const metadata = { title: "Randevular" }
@@ -27,14 +28,9 @@ export default async function AppointmentsPage({
   const activeDate = date || "today"
   const activeStatus = status
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const dayAfter = new Date(tomorrow)
-  dayAfter.setDate(dayAfter.getDate() + 1)
-  const weekEnd = new Date(today)
-  weekEnd.setDate(weekEnd.getDate() + 7)
+  // Gün sınırları Türkiye takvimine göre (#874).
+  const now = new Date()
+  const { today, tomorrow } = appointmentTodayBounds(now)
 
   const where: Record<string, unknown> = { workshopId: user.workshopId }
 
@@ -42,12 +38,9 @@ export default async function AppointmentsPage({
     where.status = activeStatus
   }
 
-  if (activeDate === "today") {
-    where.appointmentAt = { gte: today, lt: tomorrow }
-  } else if (activeDate === "tomorrow") {
-    where.appointmentAt = { gte: tomorrow, lt: dayAfter }
-  } else if (activeDate === "week") {
-    where.appointmentAt = { gte: today, lt: weekEnd }
+  const dateWindow = resolveAppointmentDateWindow(activeDate, now)
+  if (dateWindow) {
+    where.appointmentAt = dateWindow
   }
 
   if (q) {
