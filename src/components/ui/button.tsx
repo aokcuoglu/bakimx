@@ -35,6 +35,11 @@ const buttonVariants = cva(
         warning:
           "bg-warning text-warning-foreground hover:bg-warning/90 focus-visible:ring-warning/20",
         link: "text-primary underline-offset-4 hover:underline",
+        // Değer seçen Popover tetikleyicisi (birim, tarih) alan gibi görünür:
+        // Input / SelectTrigger ile aynı çerçeve, zemin, ağırlık ve odak halkası;
+        // köşe aşağıdaki compoundVariants'ta (#889).
+        field:
+          "border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20 dark:bg-input/30",
       },
       size: {
         // Ölçüler --control-* değişkenlerinden: telefonda 44px, md+ 36px
@@ -52,12 +57,25 @@ const buttonVariants = cva(
         "icon-sm": "size-(--control-h-sm) rounded-full",
         "icon-lg": "size-(--control-h-lg) rounded-full",
         "icon-compact": "size-(--control-h-xs) rounded-full",
+        // Düğme olmayan kalıplar (#889) — çağrı yerinde h-auto / p-0 / rounded-*
+        // yazılmasın diye. Köşe kart içindeki iç kutu adımıdır (rounded-md,
+        // docs/ui-control-sizing.md → İç içe köşe).
+        // Metin içindeki bağlantı/eylem: yazı boyutunu ve satırı çevreden alır.
+        inline: "gap-1 rounded-sm p-0 text-[length:inherit] leading-[inherit]",
+        // Çok satırlı liste satırı, seçenek kartı, bırakma alanı: en az kontrol
+        // yüksekliği, sola hizalı, metin kırılır. Genişliği çağrı yeri verir.
+        row: "min-h-(--control-h) justify-start gap-3 rounded-md px-3 py-2.5 text-left text-(length:--control-fs-sm) leading-5 whitespace-normal",
+        // Görsel küçük resmi / fotoğraf ekle karosu: dolgusuz, taşanı kırpar.
+        tile: "flex-col gap-1.5 overflow-hidden rounded-md p-0 text-(length:--control-fs-xs) leading-4 whitespace-normal",
       },
     },
     defaultVariants: {
       variant: "default",
       size: "default",
     },
+    // Alan görünümlü tetikleyici her boyutta girdinin köşesini taşır (size'ın
+    // hap köşesinden sonra gelir, onu ezer).
+    compoundVariants: [{ variant: "field", className: "rounded-(--control-radius)" }],
   }
 )
 
