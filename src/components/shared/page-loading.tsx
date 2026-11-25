@@ -1,3 +1,4 @@
+import { PageFrame } from "@/components/layout/page-header"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 
 /**
@@ -8,8 +9,10 @@ import { BrandSpinner } from "@/components/shared/brand-spinner"
  */
 export function PageLoading() {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center">
-      <BrandSpinner size={56} label="Yükleniyor…" />
-    </div>
+    <PageFrame>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <BrandSpinner size={56} label="Yükleniyor…" />
+      </div>
+    </PageFrame>
   )
 }

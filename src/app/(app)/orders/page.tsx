@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { OrderList } from "@/components/orders/order-list"
 import { FilterSelect } from "@/components/shared/filter-select"
 import { OrderFiltersDisclosure } from "@/components/orders/order-filters-disclosure"
-import { surface } from "@/components/dashboard/surface"
 import { NEW_INTAKE_HREF } from "@/lib/intake/entry-links"
 import {
   buildOrderListWhere,
@@ -102,23 +101,8 @@ export default async function OrdersPage({
   const serializedOrders = orders.map(toOrderListRow)
 
   return (
-    <AppShell
-      workshopName={workshop?.name}
-      pageTitle="Araç Kabulleri"
-    >
+    <AppShell workshopName={workshop?.name}>
       <div className="space-y-5 sm:space-y-6">
-        {/* Genel Bakış kalıbı: başlık + birincil eylem aynı satırda (dashboard
-            hero'sunun aynı sınıfları). Kabuk bu sayfada başlık çizmez
-            (app-shell CONTENT_H1_PATHS). */}
-        <section className={surface.hero}>
-          <h1 className={surface.heroTitle}>Araç Kabulleri</h1>
-          <Button variant="default" className={surface.heroCta} asChild>
-            <Link href={NEW_INTAKE_HREF}>
-              <Plus className="size-4" />
-              Yeni Araç Kabul
-            </Link>
-          </Button>
-        </section>
         <OrderList
           orders={serializedOrders}
           totalCount={totalCount}

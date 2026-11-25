@@ -1,0 +1,125 @@
+/*
+ * Ortak sayfa başlığı çerçevesi (#823). Ölçüler dashboard hero'sundan
+ * (surface.module.css) türetildi; orası ayrı bir dalda değişiyor, o yüzden
+ * kopyalanır, içe aktarılmaz.
+ */
+.frame {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.crumbs {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.title {
+  min-width: 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: var(--foreground);
+}
+
+.subline {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.35;
+  /* Ayrılmış satır metin boşken de yüksekliğini korur. */
+  min-height: calc(1em * 1.35);
+  min-height: 1lh;
+  color: var(--muted-foreground);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.secondary > * {
+  flex: 1;
+}
+
+.cta {
+  height: 50px;
+  padding-inline: 28px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.primary {
+  width: 100%;
+  /* DOM'da ikincillerden sonra gelir; telefonda ilk satırda görünür. */
+  order: -1;
+}
+
+@media (min-width: 640px) {
+  .frame {
+    gap: 32px;
+  }
+
+  .row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    /* Düğmesiz sayfada da satır düğme boyunda kalır: başlık sayfalar arası kaymaz. */
+    min-height: 44px;
+  }
+
+  .title {
+    font-size: 36px;
+  }
+
+  .subline {
+    font-size: 19px;
+  }
+
+  .actions {
+    flex-direction: row;
+    align-items: center;
+    margin-left: auto;
+  }
+
+  .secondary > * {
+    flex: none;
+  }
+
+  .primary {
+    width: auto;
+    order: 0;
+  }
+
+  .cta {
+    height: 44px;
+    padding-inline: 22px;
+  }
+}

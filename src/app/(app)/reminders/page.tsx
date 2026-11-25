@@ -26,7 +26,7 @@ export default async function RemindersPage() {
   }
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Bakım Hatırlatmaları">
+    <AppShell workshopName={workshop?.name}>
       <ReminderList
         initialReminders={reminders}
         stats={statMap}

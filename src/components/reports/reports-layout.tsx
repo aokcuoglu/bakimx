@@ -26,12 +26,14 @@ export function ReportsLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="size-5 text-primary" />
-          <h2 className="text-lg font-bold text-foreground">Raporlar</h2>
+      {pathname !== "/reports" && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="size-5 text-primary" />
+            <h2 className="text-lg font-bold text-foreground">Raporlar</h2>
+          </div>
         </div>
-      </div>
+      )}
 
       <nav className="flex gap-1.5 overflow-x-auto pb-3 mb-4 border-b border-border scrollbar-hide">
         {REPORT_NAV.map((item) => {

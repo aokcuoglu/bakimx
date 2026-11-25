@@ -23,20 +23,28 @@ describe("ofisin Yeni Araç Kabul hedefi (#813)", () => {
     expect(CREATE_OPTIONS.find((option) => option.id === "order")?.href).toBe(NEW_INTAKE_HREF)
   })
 
+  // Sayfa başlığındaki "Yeni Araç Kabul" düğmesi #823'ten beri kayıttan gelir
+  // (page-headers.ts); sayfada yalnız boş durum düğmeleri kalır.
   // Genel Bakış ve Araç Kabulleri sunucu bileşenleri; render etmeden ancak
   // kaynaktan bakılabilir. Çıplak "/orders/new" geri gelirse o düğme kamerasız
   // eski sihirbaza döner.
-  test("Araç Kabulleri düğmeleri ortak hedefi kullanır", () => {
+  test("Araç Kabulleri boş durum düğmesi ortak hedefi kullanır", () => {
     const source = readFileSync(join(process.cwd(), "src/app/(app)/orders/page.tsx"), "utf8")
     expect(source).not.toContain('"/orders/new"')
-    expect(source.match(/NEW_INTAKE_HREF\b/g)?.length ?? 0).toBeGreaterThanOrEqual(3)
+    expect(source).toContain("href={hasAnyFilter ? \"/orders\" : NEW_INTAKE_HREF}")
   })
 
-  test("Genel Bakış düğmeleri kamerayla açar ve Genel Bakış'a döner (#842)", () => {
+  test("Genel Bakış boş durum düğmesi kamerayla açar ve Genel Bakış'a döner (#842)", () => {
     const source = readFileSync(join(process.cwd(), "src/app/(app)/dashboard/page.tsx"), "utf8")
     expect(source).not.toContain('"/orders/new"')
-    expect(source).toContain('newIntakeHref({ back: "/dashboard" })')
-    expect(source.match(/DASHBOARD_INTAKE_HREF\b/g)?.length ?? 0).toBeGreaterThanOrEqual(3)
+    expect(source).toContain('const DASHBOARD_INTAKE_HREF = newIntakeHref({ back: "/dashboard" })')
+    expect(source).toContain("<Link href={DASHBOARD_INTAKE_HREF}>İlk araç kabulünü oluştur</Link>")
+  })
+
+  test("sayfa başlığı kaydı çıplak /orders/new yazmaz, newIntakeHref kullanır", () => {
+    const source = readFileSync(join(process.cwd(), "src/lib/navigation/page-headers.ts"), "utf8")
+    expect(source).not.toContain('"/orders/new"')
+    expect(source).toContain("newIntakeHref({ back })")
   })
 })
 

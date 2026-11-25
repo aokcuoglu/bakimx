@@ -148,12 +148,6 @@ export function ReminderList({ initialReminders, stats }: Props) {
             Hatırlatmalar
             <span className="text-xs text-muted-foreground font-normal">({filtered.length})</span>
           </CardTitle>
-          <Button variant="foreground" size="sm" className="gap-1.5" asChild>
-            <Link href="/reminders/new">
-              <Plus className="size-4" />
-              Yeni Hatırlatma
-            </Link>
-          </Button>
         </CardHeader>
         <CardContent className="pt-0 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">

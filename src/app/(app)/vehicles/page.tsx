@@ -1,8 +1,7 @@
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
-import Link from "next/link"
-import { Plus, ScanLine } from "lucide-react"
+import { ScanLine } from "lucide-react"
 import { VehicleList } from "@/components/vehicles/vehicle-list"
 import { customerDisplayName } from "@/lib/format"
 import { countVehiclesWithServiceDue } from "@/lib/reminders/queries"
@@ -94,48 +93,18 @@ export default async function VehiclesPage({
   }))
 
   return (
-    <AppShell
-      workshopName={workshop?.name}
-      pageTitle="Araçlar"
-      pageActions={
-        <Button variant="foreground" size="icon" asChild aria-label="Yeni araç">
-          <Link href="/vehicles/new">
-            <Plus className="size-5" />
-          </Link>
-        </Button>
-      }
-    >
+    <AppShell workshopName={workshop?.name} subtitle={`${vehicles.length} araç kayıtlı`}>
       <div className="space-y-5 sm:space-y-6">
-        <div className="hidden sm:flex items-center justify-between">
-
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <p className="text-sm text-muted-foreground mt-0.5">{vehicles.length} araç kayıtlı</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="default" disabled>
-                  <ScanLine className="size-4" />
-                  <span className="hidden sm:inline">Plaka Tara</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">Plaka tanıma entegrasyonu yakında</TooltipContent>
-            </Tooltip>
-            <Button
-              variant="foreground"
-              size="default"
-              className="hidden sm:inline-flex"
-              asChild
-            >
-              <Link href="/vehicles/new">
-                <Plus className="size-4" />
-                Yeni Araç
-              </Link>
-            </Button>
-          </div>
+        <div className="flex items-center justify-end">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="default" disabled>
+                <ScanLine className="size-4" />
+                <span className="hidden sm:inline">Plaka Tara</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Plaka tanıma entegrasyonu yakında</TooltipContent>
+          </Tooltip>
         </div>
 
         <div className="hidden sm:block text-xs text-muted-foreground -mt-2">
