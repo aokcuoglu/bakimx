@@ -463,13 +463,13 @@ export function OrderList({
       </DashStatGrid>
 
       {toolbar && (
-        <div className="rounded-[22px] bg-card p-4 sm:p-5">
+        <div className="rounded-(--radius-panel) bg-card p-4 sm:p-5">
           {view && <input type="hidden" name="view" value={view} form="order-list-filters" />}
           {toolbar}
         </div>
       )}
 
-      <div className="relative overflow-hidden rounded-[22px] bg-card" aria-label="Araç kabul sonuçları" aria-busy={isPending}>
+      <div className="relative overflow-hidden rounded-(--radius-panel) bg-card" aria-label="Araç kabul sonuçları" aria-busy={isPending}>
         {isPending && (
           <div className="absolute inset-0 z-30 flex min-h-32 items-start justify-center bg-card/90">
             <BrandSpinner size={32} label="Araç kabulleri yükleniyor…" className="sticky top-0 py-8" />

@@ -175,7 +175,7 @@ export function CustomerDetail({
       <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-lg font-semibold shrink-0">
+            <div className="size-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-lg font-semibold shrink-0">
               {customer.type === "corporate" ? <Building2 className="size-5" /> : initials(displayName)}
             </div>
             <div className="min-w-0">

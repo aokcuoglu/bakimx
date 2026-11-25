@@ -379,7 +379,7 @@ export function PartSearchInput({
             placeholder={placeholder}
             disabled={disabled}
             title={value || undefined}
-            className={cn("h-7 rounded-lg pr-16 text-sm", inputClassName)}
+            className={cn("h-7 pr-16 text-sm", inputClassName)}
           />
           {plainActions(value)}
         </div>
@@ -443,7 +443,7 @@ export function PartSearchInput({
                 onCommit?.()
               }
             }}
-            render={<Input placeholder={placeholder} disabled={disabled} title={value || undefined} className={cn("h-7 rounded-lg pr-16 text-sm", inputClassName)} />}
+            render={<Input placeholder={placeholder} disabled={disabled} title={value || undefined} className={cn("h-7 pr-16 text-sm", inputClassName)} />}
           />
           {plainActions(query)}
         </div>

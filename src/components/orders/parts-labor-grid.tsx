@@ -850,7 +850,7 @@ function LaborAutocompleteField({ draft, onCell, disabled, catalog }: {
             placeholder="İşçilik ara veya kendi kalemini yaz"
             disabled={disabled}
             title={draft.name || undefined}
-            className="h-7 rounded-lg bg-background text-sm"
+            className="h-7 bg-background text-sm"
           />
         }
       />
@@ -939,7 +939,7 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog, modalLayou
           placeholder="Dış işçilik adı (ör. dış atölye kaporta)"
           title={draft.name || undefined}
           disabled={disabled}
-          className="h-7 rounded-lg bg-background text-sm"
+          className="h-7 bg-background text-sm"
         />
       ) : (
         <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} catalog={catalog} />

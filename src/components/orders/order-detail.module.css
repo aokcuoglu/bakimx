@@ -43,7 +43,7 @@
 .fieldLabel { margin-bottom:4px; font-size:13px; line-height:18px; color:var(--muted-foreground); }
 .block { padding:16px 18px; }
 .block + .block { border-top:1px solid var(--dash-sep); }
-.shell { border-radius:22px; background:var(--card); }
+.shell { border-radius:var(--radius-panel); background:var(--card); }
 .tabList { justify-content:flex-start; height:auto; gap:4px; border-bottom:1px solid var(--dash-sep); }
 .tab { height:var(--control-h); padding-inline:12px; border-radius:0; border-color:transparent; background:transparent; font-size:15px; }
 .tab:hover { background:transparent; color:var(--foreground); }
@@ -75,6 +75,6 @@ a.item:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
 .tap::before { content:""; position:absolute; inset:-6px; }
 @media (min-width:768px) { .tap::before { display:none; } }
 /* Kilitli sekme yükseltme kutusu — yalnız bu sayfada */
-.page :global([data-slot="feature-upsell"]) { border:0; border-radius:22px; padding:18px; }
-.page :global([data-slot="feature-upsell-icon"]) { border:0; border-radius:12px; }
+.page :global([data-slot="feature-upsell"]) { border:0; border-radius:var(--radius-panel); padding:18px; }
+.page :global([data-slot="feature-upsell-icon"]) { border:0; border-radius:10px; }
 .block :global([data-slot="feature-upsell"]) { padding:0; border-radius:0; background:transparent; }

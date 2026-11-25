@@ -41,7 +41,8 @@ export function MarketingKitShowcase() {
   const [done, setDone] = useState(false)
 
   return (
-    <div className={`${landing.page} space-y-8 rounded-lg`}>
+    // Vitrin çerçeveleri pazarlama ölçeğinde kalır: uygulama --radius'u 12px'e indi (#878).
+    <div className={`${landing.page} space-y-8 rounded-lg [--radius:1rem]`}>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {TOKENS.map(([token, value, role]) => (
           <div key={token} className="overflow-hidden rounded-lg border border-border">
