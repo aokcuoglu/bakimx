@@ -3,7 +3,8 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, ChevronLeft, ChevronRight, Handshake } from "lucide-react"
 import { can, getAdminContext } from "@/lib/admin"
 import { prisma } from "@/lib/db"
-import { getEffectiveSeatLimit, getPlanState } from "@/lib/plan"
+import { ADDON_VIN_LOOKUP_QUOTA, getEffectiveSeatLimit, getPlanState, normalizeAddons } from "@/lib/plan"
+import { FEATURE_CATALOG } from "@/lib/feature-catalog"
 import { formatMinor } from "@/lib/billing/pricing"
 import { cn } from "@/lib/utils"
 import { ROLE_LABELS } from "@/lib/roles"
@@ -13,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { WorkshopActions } from "@/app/admin/workshop-actions"
 import { ImpersonateButton } from "@/app/admin/impersonate-button"
 import { BakimxDiscountForm } from "@/app/admin/bakimx-discount-form"
+import { WorkshopAddonsForm } from "@/app/admin/workshop-addons-form"
 import { WorkshopUserActions } from "@/app/admin/workshop-user-actions"
 import { DeleteWorkshopButton } from "@/app/admin/delete-workshop-button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -126,6 +128,10 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
   const plan = getPlanState(workshop)
   const activeUsers = workshop.users.filter((u) => u.isActive).length
   const seatLimit = getEffectiveSeatLimit(workshop)
+  const enabledAddons = normalizeAddons(workshop.addons)
+  // Erişim profili ek özelliklerin hepsini zaten açıyorsa admin'e nedenini söyle (#827).
+  const allUnlockedReason =
+    plan.accessTier === "premium" ? (plan.isTrialing ? ("trial" as const) : ("premium" as const)) : undefined
   const ownerEmail = workshop.users.find((u) => u.role === "owner")?.email ?? workshop.users[0]?.email ?? null
   const acquisitionAdvisorName = workshop.acquisitionAdvisor
     ? salesAdvisorDisplayName(workshop.acquisitionAdvisor.user)
@@ -295,6 +301,27 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
               ))}</TableBody>
             </Table>
           </div>
+        </Section>
+
+        <Section title="Ek Özellikler & Katalog Kotası">
+          {can(ctx, "manageWorkshops") ? (
+            <WorkshopAddonsForm
+              key={`${enabledAddons.join(",")}-${workshop.extraVinQuota}`}
+              workshopId={workshop.id}
+              addons={enabledAddons}
+              extraVinQuota={workshop.extraVinQuota}
+              addonBaseQuota={ADDON_VIN_LOOKUP_QUOTA}
+              allUnlockedReason={allUnlockedReason}
+            />
+          ) : (
+            <>
+              <Field
+                label="Ek özellikler"
+                value={enabledAddons.length > 0 ? enabledAddons.map((addon) => FEATURE_CATALOG[addon].name).join(", ") : "Yok"}
+              />
+              <Field label="Ek katalog kotası" value={`${workshop.extraVinQuota.toLocaleString("tr-TR")} sorgu/ay`} />
+            </>
+          )}
         </Section>
 
         {can(ctx, "manageWorkshops") && (
