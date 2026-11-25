@@ -323,7 +323,7 @@ export function InlineCreateModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           {/* Ruhsat scan — ek özellik; kapalıysa "Ek özellik" notu (#828). */}
           <AddonGate feature="ocrIntake" enabled={entitlements.ocrIntake} showUpsell={entitlements.showAddonUpsell}>
             <RuhsattanOku
@@ -334,7 +334,7 @@ export function InlineCreateModal({
           </AddonGate>
 
           {/* Customer */}
-          <div className="min-w-0 space-y-1">
+          <div className="space-y-1">
             <Label>Müşteri (sahip) *</Label>
             {owner ? (
               <div className="flex items-center justify-between rounded-lg border border-border p-2.5">
@@ -397,10 +397,10 @@ export function InlineCreateModal({
             type="button"
             variant="outline"
             onClick={() => setShowDetails((s) => !s)}
-            className="h-auto w-full justify-between px-3 py-2 text-foreground"
+            className="h-auto min-h-(--control-h) w-full min-w-0 justify-between gap-2 whitespace-normal px-3 py-2 text-left text-foreground"
           >
-            <span>Ruhsat / teknik bilgiler (opsiyonel)</span>
-            <ChevronDown className={`size-4 transition-transform ${showDetails ? "rotate-180" : ""}`} />
+            <span className="min-w-0">Ruhsat / teknik bilgiler (opsiyonel)</span>
+            <ChevronDown className={`size-4 shrink-0 transition-transform ${showDetails ? "rotate-180" : ""}`} />
           </Button>
 
           {showDetails && (
@@ -498,7 +498,7 @@ export function InlineCreateModal({
 
           {error && <p className="text-sm text-destructive-strong">{error}</p>}
 
-          <div className="flex items-center justify-end gap-2 pt-1">
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
             <Button type="button" variant="outline" onClick={() => handleCreate(true)} disabled={loading}>{loading ? <Loader2 className="size-4 animate-spin" /> : "Oluştur ve Düzenle"}</Button>
             <Button variant="foreground" type="button" onClick={() => handleCreate(false)} disabled={loading}>{loading ? <Loader2 className="size-4 animate-spin" /> : "Oluştur"}</Button>
           </div>
