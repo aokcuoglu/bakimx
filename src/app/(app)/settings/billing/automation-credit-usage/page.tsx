@@ -1,8 +1,6 @@
-import Link from "next/link"
-import { ArrowLeft, Coins } from "lucide-react"
+import { Coins } from "lucide-react"
 import { AppShell } from "@/components/layout/app-shell"
 import { SettingsPageHeader } from "@/components/settings/settings-page-header"
-import { Button } from "@/components/ui/button"
 import { CreditPeriodSelect } from "@/components/billing/credit-period-select"
 import { CreditQuotaDialog } from "@/components/billing/credit-quota-dialog"
 import { getAccountBillingContext } from "@/lib/billing/account-context"
@@ -41,7 +39,6 @@ export default async function CreditUsagePage({ searchParams }: { searchParams: 
 
   return <AppShell pageTitle="Krediler" workshopName={workshop.name}>
     <div className="mx-auto max-w-3xl">
-    <Button asChild variant="ghost" size="sm" className="mb-3"><Link href="/settings/billing"><ArrowLeft className="size-4" /> Faturalandırmaya dön</Link></Button>
     <div className="flex flex-wrap items-start justify-between gap-3"><SettingsPageHeader title="Krediler" description="VIN ve TecDoc katalog sorgularınızı dönem bazında izleyin." /><CreditPeriodSelect value={selected.value} periods={periods.map(({ value, label }) => ({ value, label }))} /></div>
     <div className="overflow-hidden rounded-xl border bg-card">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b p-4 sm:p-5"><div><p className="flex items-center gap-2 text-xs text-muted-foreground"><Coins className="size-4" aria-hidden="true" /> Kullanılan kredi</p><p className="mt-1 text-lg font-semibold">{used.toLocaleString("tr-TR")}{current && <span className="text-sm font-normal text-muted-foreground"> / {cap.toLocaleString("tr-TR")}</span>}</p><p className="mt-1 text-xs text-muted-foreground">{new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium", timeZone: "UTC" }).format(monthStart)} – {new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(renewsAt.getTime() - 86_400_000))}</p></div><CreditQuotaDialog included={currentUsage.baseQuota} extra={currentUsage.extraQuota} canPurchase={canPurchase} /></div>
