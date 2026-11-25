@@ -27,6 +27,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
           trialEndsAt: true,
       liteFreeGrantedAt: true,
           currentPeriodEnd: true,
+          addons: true,
         },
       },
     },

@@ -1,5 +1,5 @@
 import type { UserRole } from "@prisma/client"
-import { hasFeature, hasWorkshopFeature, type GatedFeature, type WorkshopPlanFields } from "@/lib/plan"
+import { hasFeature, hasWorkshopFeature, type GatedFeature, type WorkshopEntitlementFields } from "@/lib/plan"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 
 /**
@@ -10,9 +10,9 @@ import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
  * (bileşenler paket adını ya da `hasFeature`'ı bilmez). Böylece 403'e giden bir
  * düğme hiç render edilmez.
  *
- * #827 (ek özelliklerin ayrıca satın alınması) geldiğinde değişecek tek yer
- * {@link resolveIntakeEntitlements}'tır: bugün ek özellikler yalnız `premium`
- * erişim profiliyle (deneme / elle verilen) açılır.
+ * Ek özellikler (ruhsat OCR, şaseden araç tanıma) paketten (`premium` profili,
+ * aktif deneme) ya da atölyenin kendi `addons` listesinden açılır (#827); karar
+ * tek yerde, `hasWorkshopFeature`'da verilir — burada ayrı bir kural yok.
  */
 export type IntakeEntitlements = {
   /** Ruhsat OCR (ek özellik): ruhsat kartı, ruhsat kamerası. */
@@ -36,11 +36,12 @@ export type VehicleCaptureEntitlements = Pick<IntakeEntitlements, "ocrIntake" | 
 
 /**
  * Atölye (deneme dahil — `getPlanState` aktif denemeyi `TRIAL_ACCESS_TIER`'a
- * çözer) ve rolden yetki nesnesini üretir. Atölye satırı yoksa varsayılan
- * Servis Paketi haklarıdır: paket özellikleri açık, ek özellikler kapalı.
+ * çözer; atölye bazında açılmış ek özellikler `addons`'tan gelir) ve rolden
+ * yetki nesnesini üretir. Atölye satırı yoksa varsayılan Servis Paketi
+ * haklarıdır: paket özellikleri açık, ek özellikler kapalı.
  */
 export function resolveIntakeEntitlements(
-  workshop: WorkshopPlanFields | null,
+  workshop: WorkshopEntitlementFields | null,
   role: UserRole,
 ): IntakeEntitlements {
   const has = (feature: GatedFeature) =>
