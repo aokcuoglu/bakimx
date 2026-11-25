@@ -24,8 +24,6 @@
   flex-direction: column;
   gap: 36px;
   width: 100%;
-  max-width: 1440px;
-  margin-inline: auto;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
 }
