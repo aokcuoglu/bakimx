@@ -19,25 +19,31 @@ function walkSrc(dir = join(root, "src"), out: string[] = []) {
 }
 
 describe("design system radius contract", () => {
-  // e-santral kalıbı (docs/design-pattern-esantral.md, kullanıcı kararı 22-11):
-  // düğme hap, girdi 12px, yüzey 16px, diyalog 28px.
-  test("globals.css locks surface=16px dialog=28px", () => {
+  // e-santral kalıbının bir kademe altı (karar 25-11, #878; kaynak kalıp
+  // docs/design-pattern-esantral.md): düğme hap, girdi 10px (md+ 8px),
+  // kart 12px, panel/KPI 14px, diyalog ve mobil sheet 18px.
+  test("globals.css locks surface=12px panel=14px dialog=18px", () => {
     const css = read("src/app/globals.css")
     expect(css).toContain("--radius-sm: 0.375rem")
     expect(css).toContain("--radius-md: 0.5rem")
     expect(css).toContain("--radius-xl: 0.75rem")
-    expect(css).toContain("--radius: 1rem;")
-    expect(css).toContain("--radius-dialog: 1.75rem;")
+    expect(css).toContain("--radius: 0.75rem;")
+    expect(css).toContain("--radius-panel: 0.875rem;")
+    expect(css).toContain("--radius-dialog: 1.125rem;")
   })
 
   test("shared controls and surfaces keep their measured radii", () => {
     // Düğme köşesi = telefon yüksekliğinin yarısı (hap); ikon düğmeleri daire.
     expect(read("src/components/ui/button.tsx")).toContain("rounded-[22px]")
     expect(read("src/components/ui/button.tsx")).toContain("rounded-full")
-    expect(read("src/components/ui/input.tsx")).toContain("rounded-[12px]")
-    expect(read("src/components/ui/textarea.tsx")).toContain("rounded-[12px]")
+    expect(read("src/components/ui/input.tsx")).toContain("rounded-(--control-radius)")
+    expect(read("src/components/ui/textarea.tsx")).toContain("rounded-(--control-radius)")
     expect(read("src/components/ui/select.tsx")).toContain(
-      "gap-1.5 rounded-[12px] border border-input"
+      "gap-1.5 rounded-(--control-radius) border border-input"
+    )
+    expect(read("src/components/ui/alert.tsx")).toContain("rounded-(--control-radius)")
+    expect(read("src/components/shared/bottom-sheet.tsx")).toContain(
+      "rounded-t-(--radius-dialog)"
     )
 
     const card = read("src/components/ui/card.tsx")
@@ -69,6 +75,34 @@ describe("design system radius contract", () => {
     expect(page).toContain("Brand & Accent")
   })
 
+  test("panel yarıçapı tek kaynaktan: --radius-panel (#878)", () => {
+    expect(read("src/components/dashboard/surface.module.css")).toContain("var(--radius-panel)")
+    expect(read("src/components/orders/order-detail.module.css")).toContain("var(--radius-panel)")
+
+    // Uygulama panelleri 14px'in üstüne literal köşe yazmaz; yeni panel token'ı kullanır.
+    for (const rel of [
+      "src/components/dashboard/surface.module.css",
+      "src/components/orders/order-detail.module.css",
+      "src/components/orders/parts-labor.module.css",
+      "src/components/layout/app-shell.module.css",
+    ]) {
+      expect({ rel, offenders: read(rel).match(/border-radius:\s*(?:1[4-9]|[2-9]\d)px/g) ?? [] }).toEqual({
+        rel,
+        offenders: [],
+      })
+    }
+
+    // 22px yalnız düğme hap köşesidir (telefon yüksekliğinin yarısı); pazarlama kendi ölçeğinde.
+    const hint = "rounded-[22px] yerine düğmede rounded-full, panelde rounded-(--radius-panel) kullan"
+    const offenders: string[] = []
+    for (const file of walkSrc()) {
+      const rel = file.replace(root + "/", "")
+      if (rel === "src/components/ui/button.tsx" || rel.startsWith("src/components/marketing/")) continue
+      if (readFileSync(file, "utf8").includes("rounded-[22px]")) offenders.push(`${rel}: ${hint}`)
+    }
+    expect(offenders).toEqual([])
+  })
+
   test("src has no panel-scale rounded-2xl/3xl outside Badge pills", () => {
     const offenders: string[] = []
     for (const file of walkSrc()) {
@@ -84,6 +118,27 @@ describe("design system radius contract", () => {
       }
     }
     expect(offenders).toEqual([])
+  })
+})
+
+describe("pazarlama köşeleri değişmedi (#878)", () => {
+  // Uygulama ölçeği bir kademe indi; landing ve pazarlama kiti piksel piksel aynı kalır.
+  test("--mk-r-* değerleri e-santral kaynağında", () => {
+    const css = read("src/app/globals.css")
+    expect(css).toContain("--mk-r-input: 12px;")
+    expect(css).toContain("--mk-r-card: 24px;")
+    expect(css).toContain("--mk-r-tile: 28px;")
+    expect(css).toContain("--mk-r-box: 32px;")
+    expect(css).toContain("--mk-r-modal: 30px;")
+  })
+
+  test("/design pazarlama vitrini --radius'u 16px'e sabitler", () => {
+    expect(read("src/app/design/marketing-kit.tsx")).toContain("[--radius:1rem]")
+  })
+
+  test("çerez bandı ikon kutusu daire kalır (32px kutuda eski 16px köşe)", () => {
+    const cookie = read("src/components/cookie-consent/cookie-consent.tsx")
+    expect(cookie).toContain("size-8 shrink-0 items-center justify-center rounded-full border")
   })
 })
 

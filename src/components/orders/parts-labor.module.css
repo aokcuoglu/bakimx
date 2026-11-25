@@ -24,7 +24,6 @@
   width: auto;
   margin: 14px 18px;
   border: 0;
-  border-radius: 14px;
 }
 
 /* table ve cards: display YAZMA (hidden / @min-[52rem]:block geçişi bozulur) */
