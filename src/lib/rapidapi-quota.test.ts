@@ -3,6 +3,7 @@ import {
   WorkshopQuotaExceededError,
   quotaMonthWindow,
   reserveWorkshopQuota,
+  getWorkshopQuotaContext,
   summarizeWorkshopQuotaUsage,
   type QuotaReservationClient,
   type QuotaReservationDatabase,
@@ -63,7 +64,7 @@ const NOW = new Date("2026-09-07T12:00:00.000Z")
 
 test("VIN ve TecDoc rezervasyonları doğru kaynak kırılımıyla yazılır", async () => {
   const db = new FakeQuotaDatabase(NOW)
-  const context: WorkshopQuotaContext = { workshopId: "w1", tier: "lite", extraVinQuota: 2 }
+  const context: WorkshopQuotaContext = { workshopId: "w1", baseQuota: 0, extraVinQuota: 2 }
 
   await reserveWorkshopQuota(context, "vin", db, NOW)
   await reserveWorkshopQuota(context, "tecdoc", db, NOW)
@@ -74,7 +75,7 @@ test("VIN ve TecDoc rezervasyonları doğru kaynak kırılımıyla yazılır", a
 
 test("eşzamanlı rezervasyonlar tenant aylık limitini aşamaz", async () => {
   const db = new FakeQuotaDatabase(NOW)
-  const context: WorkshopQuotaContext = { workshopId: "w1", tier: "lite", extraVinQuota: 2 }
+  const context: WorkshopQuotaContext = { workshopId: "w1", baseQuota: 0, extraVinQuota: 2 }
 
   const results = await Promise.allSettled([
     reserveWorkshopQuota(context, "tecdoc", db, NOW),
@@ -90,23 +91,40 @@ test("eşzamanlı rezervasyonlar tenant aylık limitini aşamaz", async () => {
 
 test("Lite ek kotasız rezervasyonu mevcut quota_exceeded sözleşmesini korur", async () => {
   const db = new FakeQuotaDatabase(NOW)
-  const context: WorkshopQuotaContext = { workshopId: "w-lite", tier: "lite", extraVinQuota: 0 }
+  const context: WorkshopQuotaContext = { workshopId: "w-lite", baseQuota: 0, extraVinQuota: 0 }
   await expect(reserveWorkshopQuota(context, "vin", db, NOW)).rejects.toMatchObject({ code: "quota_exceeded" })
   expect(db.rows).toHaveLength(0)
 })
 
 test("Servis Paketi'nde şaseden parça kotası yok — ek özellik metniyle reddedilir (#782)", async () => {
   const db = new FakeQuotaDatabase(NOW)
-  const context: WorkshopQuotaContext = { workshopId: "w-pro", tier: "pro", extraVinQuota: 0 }
+  const context: WorkshopQuotaContext = { workshopId: "w-pro", baseQuota: 0, extraVinQuota: 0 }
   await expect(reserveWorkshopQuota(context, "vin", db, NOW)).rejects.toMatchObject({ code: "quota_exceeded", cap: 0 })
   expect(db.rows).toHaveLength(0)
   expect(new WorkshopQuotaExceededError(0).message).toBe(ADDON_LOCKED_MESSAGE)
   expect(new WorkshopQuotaExceededError(100).message).toContain("Aylık katalog sorgu limitiniz doldu")
 })
 
+test("pro + ek özellik rezervasyonu geçer (#827)", async () => {
+  const db = new FakeQuotaDatabase(NOW)
+  const context = getWorkshopQuotaContext({
+    id: "w-addon",
+    planTier: "pro",
+    subscriptionStatus: "active",
+    approvalStatus: "approved",
+    trialEndsAt: null,
+    currentPeriodEnd: new Date("2027-01-01T00:00:00.000Z"),
+    extraVinQuota: 0,
+    addons: ["vinLookup"],
+  })
+  expect(context.baseQuota).toBe(15_000)
+  await expect(reserveWorkshopQuota(context, "vin", db, NOW)).resolves.toBeUndefined()
+  expect(db.rows).toHaveLength(1)
+})
+
 test("kullanım özeti ay sınırını, ek kotayı ve VIN/TecDoc kırılımını taşır", () => {
   const usage = summarizeWorkshopQuotaUsage(
-    { workshopId: "w1", tier: "premium", extraVinQuota: 250 },
+    { workshopId: "w1", baseQuota: 15_000, extraVinQuota: 250 },
     [
       { source: "vin", count: 125 },
       { source: "tecdoc", count: 375 },
