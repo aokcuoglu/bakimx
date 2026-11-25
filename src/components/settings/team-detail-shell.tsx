@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { ArrowLeft, Link2, Settings, Users } from "lucide-react"
+import { Link2, Settings, Users } from "lucide-react"
+import { SettingsRecordTitle } from "@/components/settings/settings-trail"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const listClass =
@@ -20,16 +21,13 @@ export function TeamDetailShell({
 
   return (
     <div className="mx-auto min-w-0 max-w-3xl">
-      <Link href="/settings/members-and-teams/teams" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="size-3.5" />
-        Geri
-      </Link>
-      <div className="mt-4 flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-lg bg-warning/15 text-base font-semibold text-warning-strong">
+      <SettingsRecordTitle title={team.name} />
+      <div className="flex items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-warning/15 text-base font-semibold text-warning-strong">
           {team.name.slice(0, 1).toLocaleUpperCase("tr")}
         </span>
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">{team.name}</h1>
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-semibold text-foreground">{team.name}</h1>
           <p className="text-sm text-muted-foreground">Ekip üyelerini ve yetkilerini yönetin.</p>
         </div>
       </div>
