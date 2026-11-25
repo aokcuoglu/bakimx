@@ -287,7 +287,7 @@ export function NotificationSettings({
                             </Button>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Kullanılabilir değişkenler: {"{customerName}"}, {"{workshopName}"}, {"{vehiclePlate}"}, {"{appointmentDate}"}, {"{approvalLink}"}, {"{portalLink}"}, {"{quoteNo}"}, {"{workOrderNo}"}, {"{totalAmount}"}, {"{maintenanceType}"}, {"{dueDate}"}, {"{customMessage}"}
+                            Kullanılabilir değişkenler: {"{customerName}"}, {"{workshopName}"}, {"{vehiclePlate}"}, {"{appointmentDay}"}, {"{appointmentDate}"}, {"{appointmentTime}"},{"{approvalLink}"}, {"{portalLink}"}, {"{quoteNo}"}, {"{workOrderNo}"}, {"{totalAmount}"}, {"{maintenanceType}"}, {"{dueDate}"}, {"{customMessage}"}
                           </p>
                         </div>
                       ) : (

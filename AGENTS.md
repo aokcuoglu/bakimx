@@ -162,6 +162,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
   (`/customers/[id]`, `/vehicles/new` …) `SUB_PAGE_HEADERS`'a kaydolur ve
   `recordTitle` verir; telefonda breadcrumb yerine `PageTrail`'in `‹ <üst>`
   geri bağlantısı çıkar, içerikte ayrıca geri bağlantısı/breadcrumb çizilmez (#855).
+  Ayarlar sayfalarının yol satırı (#856) AppShell'in Ayarlar dalında ve
+  `settings/loading.tsx`te `SettingsTrail` ile bir kez çizilir (`settings-nav`
+  kaydından türer); ayar sayfaları `PageTrail`/`Breadcrumb` içe aktarmaz.
 
 ## Form Rules
 - **All forms use react-hook-form + zod + shadcn Form component** (NOT useState)

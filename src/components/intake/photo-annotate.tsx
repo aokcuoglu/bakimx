@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic"
 import { useEffect, useRef, useState } from "react"
-import { Camera, Images } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -11,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { photoAnnotationDocumentSchema, type PhotoAnnotationDocument } from "@/lib/image/photo-annotation"
 import { MAX_BATCH_PHOTOS } from "@/lib/photos/limits"
 import type { PhotoEditorProps } from "./photo-editor"
+import { PhotoSourceButtons } from "./photo-source-buttons"
 
 /** Konva is fetched only when a source is selected or a saved editor is opened. */
 export const PhotoEditor = dynamic<PhotoEditorProps>(() => import("./photo-editor"), { ssr: false, loading: () => <p>Fotoğraf editörü yükleniyor…</p> })
@@ -101,10 +101,7 @@ export function PhotoAnnotate({ intakeFormId, label = "Hasar", phase = "intake",
   return <div className="space-y-3">
     <Input ref={camera} type="file" accept="image/*" capture="environment" className="hidden" onChange={choose} />
     <Input ref={gallery} type="file" accept="image/*" multiple className="hidden" onChange={choose} />
-    {!source && <div className="grid grid-cols-2 gap-2">
-      <Button type="button" variant="outline" disabled={preparing} onClick={() => camera.current?.click()}><Camera />Kamera</Button>
-      <Button type="button" variant="outline" disabled={preparing} onClick={() => gallery.current?.click()}><Images />Galeri</Button>
-    </div>}
+    {!source && <PhotoSourceButtons disabled={preparing} onCamera={() => camera.current?.click()} onFiles={() => gallery.current?.click()} />}
     {preparing && <p className="text-sm text-muted-foreground">Fotoğraf hazırlanıyor…</p>}
     {source && <PhotoEditor key={source.requestId} sourceUrl={source.url} onSave={save} onCancel={() => { setSource(null); setQueue([]) }} />}
     {!source && !preparing && queue.length > 0 && <Button type="button" variant="outline" onClick={advance}>Sıradaki fotoğrafla devam et</Button>}

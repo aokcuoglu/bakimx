@@ -1,8 +1,7 @@
 import Link from "next/link"
-import { ArrowLeft, Camera } from "lucide-react"
+import { Camera } from "lucide-react"
 import { AppShell } from "@/components/layout/app-shell"
 import { SettingsPageHeader } from "@/components/settings/settings-page-header"
-import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { PhotoQuotaDialog } from "@/components/billing/photo-quota-dialog"
 import { getAccountBillingContext } from "@/lib/billing/account-context"
@@ -34,7 +33,6 @@ export default async function RecordUsagePage() {
   return (
     <AppShell pageTitle="Kullanımlar" workshopName={workshop.name}>
       <div className="mx-auto max-w-3xl">
-      <Button asChild variant="ghost" size="sm" className="mb-3"><Link href="/settings/billing"><ArrowLeft className="size-4" /> Faturalandırmaya dön</Link></Button>
       <SettingsPageHeader title="Kullanımlar" description="Araç kabullerinizdeki aktif fotoğraf hakkını ve kullanımını izleyin." />
       <div className="overflow-hidden rounded-xl border bg-card">
         <div className="border-b p-4 sm:p-5">
