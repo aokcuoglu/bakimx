@@ -10,19 +10,17 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DashOrderStatus, surface } from "@/components/dashboard/surface"
-import { DetailPanel, OrderPaymentPill, detail } from "@/components/orders/order-detail-surface"
+import { DetailPanel, DetailRow, DetailPill, DetailEmpty, OrderPaymentPill, detail } from "@/components/orders/order-detail-surface"
 import { orderListReturnHref } from "@/lib/orders/list-state"
 import { isUnassignedListHref } from "@/lib/orders/unassigned-in-service"
 import { DetailHeader, type DetailHeaderAction } from "@/components/orders/detail-header"
 import { OrderRecordRail } from "@/components/orders/order-record-rail"
 import {
   Camera,
-  AlertTriangle,
   Share2,
   CheckCircle2,
   Pencil,
@@ -420,6 +418,23 @@ export function WorkOrderDetail({
   const [deliveryOtpMode, setDeliveryOtpMode] = useState(false)
   const [deliveryOtpCode, setDeliveryOtpCode] = useState("")
   const [deliverySentCode, setDeliverySentCode] = useState<string | null>(null)
+
+  // Etkin sekme taşan şeridin dışında kalmasın: yalnız şeridi yatay kaydır
+  // (scrollIntoView sayfayı dikey de kaydırır ve foto/fiyat kaydırmasıyla çakışır).
+  const tabListRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const list = tabListRef.current
+    const trigger = list?.querySelector<HTMLElement>('[data-state="active"]')
+    if (!list || !trigger) return
+    const l = list.getBoundingClientRect()
+    const t = trigger.getBoundingClientRect()
+    const pad = 16
+    if (t.left < l.left + pad) {
+      list.scrollTo({ left: list.scrollLeft + (t.left - l.left) - pad, behavior: "smooth" })
+    } else if (t.right > l.right - pad) {
+      list.scrollTo({ left: list.scrollLeft + (t.right - l.right) + pad, behavior: "smooth" })
+    }
+  }, [activeTab])
 
   function focusPricingSummary() {
     if (activeTab !== "ozet") handleTabChange("ozet")
@@ -973,7 +988,7 @@ export function WorkOrderDetail({
       )}
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList variant="line" className={cn(detail.tabList, "flex w-full flex-nowrap overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden")}>
+        <TabsList ref={tabListRef} variant="line" className={cn(detail.tabList, "flex w-full flex-nowrap overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden")}>
           {TABS.map((t) => {
             const Icon = t.icon
             const locked = Boolean(t.feature && !enabledFeatures.includes(t.feature))
@@ -1279,37 +1294,29 @@ export function WorkOrderDetail({
         </TabsContent>
 
         {/* TAHSİLAT */}
-        <TabsContent value="tahsilat" className="space-y-5">
+        <TabsContent value="tahsilat" className={detail.stack}>
           {!canCashbox ? (
             <InlineFeatureUpsell feature="cashbox" currentTier={currentTier} />
           ) : (
           <>
           {/* Kompakt ödeme özeti */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2"><Wallet className="size-4" /> Ödeme Özeti</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              {order.totals.hasAnyPrice ? (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Genel Toplam</span>
-                    <span className="font-semibold">{formatTRY(order.totals.grandTotal)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Ödenen</span>
-                    <span className="font-semibold text-success-strong">{formatTRY(order.paidAmount)}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-t pt-2">
-                    <span className="text-muted-foreground">Kalan</span>
-                    <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>{formatTRY(order.remainingAmount)}</span>
-                  </div>
-                </>
-              ) : (
-                <p className="text-muted-foreground text-center py-2">Henüz tutar girilmedi</p>
-              )}
-            </CardContent>
-          </Card>
+          <DetailPanel title="Ödeme Özeti" aside={<OrderPaymentPill status={order.paymentStatus} />}>
+            {order.totals.hasAnyPrice ? (
+              <>
+                <DetailRow label="Genel Toplam">
+                  <span className="font-semibold tabular-nums">{formatTRY(order.totals.grandTotal)}</span>
+                </DetailRow>
+                <DetailRow label="Ödenen">
+                  <span className="font-semibold tabular-nums text-success-strong">{formatTRY(order.paidAmount)}</span>
+                </DetailRow>
+                <DetailRow label="Kalan">
+                  <span className={`font-semibold tabular-nums ${order.remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>{formatTRY(order.remainingAmount)}</span>
+                </DetailRow>
+              </>
+            ) : (
+              <DetailEmpty>Henüz tutar girilmedi</DetailEmpty>
+            )}
+          </DetailPanel>
 
           <PaymentHistoryCard
             orderId={order.id}
@@ -1326,25 +1333,21 @@ export function WorkOrderDetail({
         </TabsContent>
 
         {/* KANIT (Foto & Hasar) */}
-        <TabsContent value="kanit" className="space-y-5">
+        <TabsContent value="kanit" className={detail.stack}>
           {/* Fotoğraflar */}
           <div ref={attachPhotos} className="scroll-mt-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2"><Camera className="size-4 text-muted-foreground" /> Fotoğraflar</span>
-                {canUsePhotoChecklist && (
-                  <span className={cn(
-                    "flex items-center gap-1 text-sm font-medium tabular-nums",
-                    missingRequired.length ? "text-warning-strong" : "text-success-strong",
-                  )}>
-                    {missingRequired.length === 0 && <CheckCircle2 className="size-4" />}
-                    {photoCompletion.requiredCompleted}/{photoCompletion.required} zorunlu
-                  </span>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <DetailPanel
+            title="Fotoğraflar"
+            aside={
+              canUsePhotoChecklist && (
+                <DetailPill tone={missingRequired.length ? "warning" : "success"}>
+                  {missingRequired.length === 0 && <CheckCircle2 className="size-3.5" />}
+                  {photoCompletion.requiredCompleted}/{photoCompletion.required} zorunlu
+                </DetailPill>
+              )
+            }
+          >
+            <div className={cn(detail.block, "space-y-3")}>
               {/* Aşama seçici + açı kutucukları — hasar detayı alt kartta, burada yok */}
               {canUsePhotoChecklist ? (
                 <PhotoPhaseMatrix
@@ -1363,11 +1366,7 @@ export function WorkOrderDetail({
               ) : vehiclePhotos.length > 0 ? (
                 <PhotoGalleryGrid photos={vehiclePhotos} canDelete={!orderLocked} onDeleted={() => router.refresh()} />
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-3">Henüz araç fotoğrafı eklenmedi</p>
-              )}
-
-              {!canUsePhotoChecklist && (
-                <InlineFeatureUpsell feature="photoChecklist" currentTier={currentTier} />
+                <p className="text-[15px] leading-5 text-muted-foreground">Henüz araç fotoğrafı eklenmedi</p>
               )}
 
               {/* Ekleme diyaloğu: boş kutucuk (tür + aşama kilitli) ya da "Fotoğraf ekle" kutusu açar */}
@@ -1461,7 +1460,7 @@ export function WorkOrderDetail({
                       </p>
                       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                         {pendingPhotos.map((p, i) => (
-                          <div key={p.key} className="relative aspect-square overflow-hidden rounded-lg border bg-muted">
+                          <div key={p.key} className="relative aspect-square overflow-hidden rounded-xl bg-muted">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={p.previewUrl} alt={`Seçilen fotoğraf ${i + 1}`} className="size-full object-cover" />
                             <Button
@@ -1471,7 +1470,7 @@ export function WorkOrderDetail({
                               aria-label={`Fotoğraf ${i + 1} — seçimden çıkar`}
                               disabled={loading}
                               onClick={() => removePendingPhoto(p.key)}
-                              className="absolute top-1 right-1 rounded-full"
+                              className={cn("absolute top-1 right-1 rounded-full", detail.tap)}
                             >
                               <X className="size-3.5" />
                             </Button>
@@ -1502,30 +1501,36 @@ export function WorkOrderDetail({
                 </DialogContent>
               </Dialog>
               </>)}
-            </CardContent>
-          </Card>
+            </div>
+            {!canUsePhotoChecklist && (
+              <div className={detail.block}>
+                <InlineFeatureUpsell feature="photoChecklist" currentTier={currentTier} />
+              </div>
+            )}
+          </DetailPanel>
           </div>
 
           {/* Hasar */}
-          {canUseDamageMap ? <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-muted-foreground" /> Hasar</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <DamageCapture reloadKey={JSON.stringify([intake.damageMarks,intake.photos])} intakeFormId={intake.id} vehicle={intake.vehicle} readOnly={orderLocked} modalMetadata />
+          {canUseDamageMap ? (
+            <DetailPanel title="Hasar">
+              <div className={detail.block}>
+                <DamageCapture reloadKey={JSON.stringify([intake.damageMarks,intake.photos])} intakeFormId={intake.id} vehicle={intake.vehicle} readOnly={orderLocked} modalMetadata />
+              </div>
 
               {damagePhotos.length > 0 && (
-                <div className="pt-3 border-t">
-                  <p className="mb-2 text-sm font-medium">Hasar fotoğrafları <span className="font-normal text-muted-foreground">· {damagePhotos.length}</span></p>
+                <div className={detail.block}>
+                  <p className={detail.fieldLabel}>Hasar fotoğrafları · {damagePhotos.length}</p>
                   <PhotoGalleryGrid photos={damagePhotos} canDelete={!orderLocked} onDeleted={() => router.refresh()} />
                 </div>
               )}
-            </CardContent>
-          </Card> : <InlineFeatureUpsell feature="damageMap" currentTier={currentTier} />}
+            </DetailPanel>
+          ) : (
+            <InlineFeatureUpsell feature="damageMap" currentTier={currentTier} />
+          )}
         </TabsContent>
 
         {/* TEKNİSYEN — teknisyen panelindeki ilerleme, salt okunur */}
-        <TabsContent value="teknisyen" className="space-y-4">
+        <TabsContent value="teknisyen" className={detail.stack}>
           {!canTeam ? (
             <InlineFeatureUpsell feature="team" currentTier={currentTier} />
           ) : (
@@ -1535,7 +1540,7 @@ export function WorkOrderDetail({
               dışında, sekmenin başında durur (BAK-23). */}
           {canOpenTechnicianView(order.assignedTechnicianId) && (
             <div className="flex justify-end">
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" asChild>
                 <Link href={technicianOrderPath(order.id)}>
                   <HardHat />
                   Teknisyen Panelinde Aç

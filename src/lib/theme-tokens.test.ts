@@ -455,7 +455,6 @@ const OPACITY_EXCEPTIONS: OpacityException[] = [
   { file: "components/cashbox/collection-create-form.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "components/customers/customer-detail.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "components/labor/labor-list.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
-  { file: "components/orders/order-management-panel.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "components/orders/technician-assign.tsx", className: "text-muted-foreground/40", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "components/orders/parts-labor-grid.tsx", className: "text-muted-foreground/40", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "components/parts/part-detail.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
@@ -618,11 +617,6 @@ const OPACITY_UTILITY_EXCEPTIONS: OpacityUtilityException[] = [
   },
   {
     file: "components/intake/approval-timeline.tsx",
-    className: "opacity-30",
-    reason: EMPTY_STATE_ICON,
-  },
-  {
-    file: "components/orders/order-activity-log.tsx",
     className: "opacity-30",
     reason: EMPTY_STATE_ICON,
   },
