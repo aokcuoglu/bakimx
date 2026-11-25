@@ -412,7 +412,7 @@ export function InlineCreateModal({
               <div className="min-w-0 space-y-1">
                 <Label className="flex items-center gap-1">Tipi {lowConf("vehicleType") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <Select value={fields.vehicleType} onValueChange={(v) => setField("vehicleType", v)}>
-                  <SelectTrigger className={`w-full ${fieldClass("vehicleType")}`}>
+                  <SelectTrigger className={`w-full min-w-0 ${fieldClass("vehicleType")}`}>
                     <SelectValue placeholder="Seçiniz" />
                   </SelectTrigger>
                   <SelectContent>
@@ -425,7 +425,7 @@ export function InlineCreateModal({
               <div className="min-w-0 space-y-1">
                 <Label>Yakıt Cinsi</Label>
                 <Select value={fields.fuelType} onValueChange={(v) => setField("fuelType", v)}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full min-w-0">
                     <SelectValue placeholder="Seçiniz" />
                   </SelectTrigger>
                   <SelectContent>
@@ -437,8 +437,8 @@ export function InlineCreateModal({
               </div>
               <div className="min-w-0 space-y-1 col-span-2">
                 <Label className="flex items-center gap-1">Şase no {lowConf("vin") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-                <div className="flex gap-2">
-                  <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className={fieldClass("vin")} />
+                <div className="flex flex-wrap gap-2">
+                  <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className={`min-w-40 flex-1 ${fieldClass("vin")}`} />
                   {entitlements.vinLookup && (
                     <VinResolveButton
                       loading={vinResolve.loading}
