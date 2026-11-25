@@ -14,6 +14,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { BillingCycleToggle } from "./billing-cycle-toggle"
 import { PlanPackages } from "@/components/billing/plan-packages"
 import { ManagePlanDialog } from "@/components/billing/manage-plan-dialog"
 import { BillingUsagePanel } from "@/components/billing/billing-usage-panel"
@@ -191,14 +192,14 @@ export function BillingPlanManager({
             </div>
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            {explorePlansHref && <Button asChild variant="outline" size="sm"><Link href={explorePlansHref}>Paketleri incele</Link></Button>}
-            {saleOwned && canPurchase && <Button type="button" variant="outline" size="sm" onClick={() => openManage()}>Paketi yönet</Button>}
+            {explorePlansHref && <Button asChild variant="outline"><Link href={explorePlansHref}>Paketleri incele</Link></Button>}
+            {saleOwned && canPurchase && <Button type="button" variant="outline" onClick={() => openManage()}>Paketi yönet</Button>}
           </div>
         </div>
       )}
       {showComparison && explorePlansHref && (
         <div className="flex justify-end">
-          <Button asChild variant="outline" size="sm"><Link href={explorePlansHref}>Paketleri incele</Link></Button>
+          <Button asChild variant="outline"><Link href={explorePlansHref}>Paketleri incele</Link></Button>
         </div>
       )}
 
@@ -354,7 +355,7 @@ export function BillingPlanManager({
                       <section className="rounded-xl border p-4 sm:p-5">
                         <div className="flex items-center justify-between gap-3"><div><p className="text-xs text-muted-foreground">Seçilen paket</p><h3 className="mt-1 text-lg font-semibold">{pkg?.name}</h3></div><Badge variant="outline">{pkg?.seats} kullanıcı dahil</Badge></div>
                         <p className="mt-2 text-sm text-muted-foreground">{pkg?.tagline}</p>
-                        <div className="mt-5"><BillingCycleSwitch cycle={cycle} onChange={(value) => form.setValue("cycle", value)} /></div>
+                        <div className="mt-5"><BillingCycleToggle value={cycle} onChange={(value) => form.setValue("cycle", value)} yearlyHint="2 ay bedava" /></div>
                         <p className="mt-4 text-2xl font-semibold">{formatMinor(discountedAmount)} <span className="text-xs font-normal text-muted-foreground">/{cycle === "yearly" ? "yıl" : "ay"} · KDV dahil</span></p>
                         {referralDiscountBps > 0 && <p className="text-xs text-muted-foreground"><s>{formatMinor(catalogAmount)}</s> · İlk yıl referans indirimi %10</p>}
                       </section>
@@ -383,9 +384,9 @@ export function BillingPlanManager({
                       <div className="flex items-center justify-between gap-3 font-semibold"><span>{ownedTier && ownedTier !== tier ? "Kredi öncesi tutar" : "Ödenecek"}</span><span>{formatMinor(discountedAmount)}</span></div>
                       {ownedTier && ownedTier !== tier && <p className="text-xs text-muted-foreground">Kalan dönem kredisi uygulanır; kesin ödeme tutarı sipariş oluşturulduktan sonra gösterilir.</p>}
                       {canPurchase && !hasPendingOrder && <div className="space-y-2 border-t pt-4"><p className="text-sm font-medium">Ödeme yöntemi</p>
-                        <ToggleGroup type="single" value={method} onValueChange={(value) => { if (value) form.setValue("method", value as "card" | "havale") }} className="grid grid-cols-2 gap-2" aria-label="Ödeme yöntemi">
-                          <ToggleGroupItem value="card" variant="outline" className="h-auto min-h-9 flex-col gap-1 data-[state=on]:border-foreground data-[state=on]:bg-card data-[state=on]:text-foreground"><CreditCard className="size-4" />Kart</ToggleGroupItem>
-                          <ToggleGroupItem value="havale" variant="outline" className="h-auto min-h-9 flex-col gap-1 data-[state=on]:border-foreground data-[state=on]:bg-card data-[state=on]:text-foreground"><Landmark className="size-4" />Havale/EFT</ToggleGroupItem>
+                        <ToggleGroup type="single" size="control" value={method} onValueChange={(value) => { if (value) form.setValue("method", value as "card" | "havale") }} className="grid grid-cols-2 gap-2" aria-label="Ödeme yöntemi">
+                          <ToggleGroupItem value="card" variant="outline" className="gap-2 data-[state=on]:border-foreground data-[state=on]:bg-card data-[state=on]:text-foreground"><CreditCard className="size-4" />Kart</ToggleGroupItem>
+                          <ToggleGroupItem value="havale" variant="outline" className="gap-2 data-[state=on]:border-foreground data-[state=on]:bg-card data-[state=on]:text-foreground"><Landmark className="size-4" />Havale/EFT</ToggleGroupItem>
                         </ToggleGroup>
                       </div>}
                       {canPurchase && !hasPendingOrder && <><p className="text-xs leading-5 text-muted-foreground">{method === "card" ? "Siparişten sonra kart bilgilerinizi girip bankanızın 3D Secure ekranına geçersiniz." : "Siparişten sonra havale talimatı ve referans kodu gösterilir. Paket, ödeme teyidinde etkinleşir."}</p>
@@ -402,14 +403,5 @@ export function BillingPlanManager({
         </DialogContent>
       </Dialog>
     </>
-  )
-}
-
-function BillingCycleSwitch({ cycle, onChange }: { cycle: Cycle; onChange: (value: Cycle) => void }) {
-  return (
-    <ToggleGroup type="single" value={cycle} onValueChange={(value) => { if (value) onChange(value as Cycle) }} className="inline-grid grid-cols-2 gap-1 rounded-lg border bg-muted/40 p-1" aria-label="Faturalama dönemi">
-      <ToggleGroupItem value="monthly" className="min-w-24 data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm">Aylık</ToggleGroupItem>
-      <ToggleGroupItem value="yearly" className="min-w-24 data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm">Yıllık · 2 ay bedava</ToggleGroupItem>
-    </ToggleGroup>
   )
 }

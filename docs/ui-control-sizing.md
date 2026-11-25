@@ -17,7 +17,15 @@ kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (76
 | Button `icon-xs` / `icon-compact` | 32px | 28px | |
 | Input / InputGroup | 44px | 36px | 12px köşe (md+ 10px), 17px / 15px metin |
 | Select `default` / `sm` / `compact` | 44 / 36 / 32px | 36 / 32 / 28px | |
+| `ToggleGroup` / `Toggle` `size="control"` | 44px | 36px | öğe yüksekliği; ray kendi dolgusunu ekler |
+| `Tabs` — `TabsList size="control"` (segment) | 44px | 36px | trigger yüksekliği; şerit `h-auto` |
 | Textarea | `min-h-16` | `min-h-16` | 12px köşe |
+
+`default/sm/lg` Toggle (32px) ve `line` sekme (28px) upstream nova ölçeğidir;
+yalnız masaüstü yoğun araç çubuğu ve tablo başlığı içindir. Telefonda görünen
+seçici `size="control"` alır; sekmede `size="control"` yalnız `default` (segment)
+variant içindir, telefonda görünen `line` sekmenin ölçeğe bağlanması #854'te. İlke: etkileşimli öğe `--control-h`,
+şerit/ray `auto` — `order-detail.module.css` `.tab` aynı ilkenin mevcut örneğidir.
 
 Button: sistem fontu, ağırlık 500, harf aralığı −0.01em, düz dolgu (gölge yok).
 Renk variant'ları ve Radix `asChild` sözleşmesi korunur.
@@ -44,6 +52,9 @@ Düğmeler hap. `--radius-sm/md/xl` sabit değerlerdir.
 
 - Boyut sınıfları **çağrı yerinde ezilmez**. İhtiyacın olan ölçek yoksa varyant
   ekle, `className` yazma. `md` dışındaki kırılımla boyut değiştirme.
+- `ToggleGroupItem` / `TabsTrigger` / `TabsList` üzerinde `!` ile yükseklik
+  ezilmez (`h-7!`). Telefonda tek başına duran eylem düğmesi `default` ya da
+  üstüdür; `sm/xs/compact` yoğun satır ve araç çubuğu içindir.
 - `compact` yalnız yoğun yönetim tabloları ve araç çubukları içindir.
 - Dekoratif kareler (avatar, ikon rozeti, görsel küçük resmi, tam ekran
   fotoğraf görüntüleyicinin kendi kontrolleri) kontrol değildir; bu matrisin

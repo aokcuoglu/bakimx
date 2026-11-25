@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { PriceRoll } from "./price-roll"
+import { BillingCycleToggle } from "./billing-cycle-toggle"
 import Link from "next/link"
 import { ArrowUpRight, Check, CircleCheck, Hexagon, MessageCircle, Minus, Pencil, PlusCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   ADDON_CATALOG,
   PHOTO_UPLOAD_POLICY,
@@ -36,42 +36,6 @@ const PACKAGE = SERVICE_PACKAGE
 
 function planBillingCaption(cycle: BillingCycle): string {
   return `Atölye başına · ${cycle === "yearly" ? "yıllık" : "aylık"} faturalandırılır`
-}
-
-function BillingPeriod({
-  billing,
-  onChange,
-  label = "Faturalama dönemi",
-}: {
-  billing: BillingCycle
-  onChange: (value: BillingCycle) => void
-  label?: string
-}) {
-  return (
-    <ToggleGroup
-      type="single"
-      spacing={1}
-      aria-label={label}
-      className="inline-flex w-auto gap-0.5 rounded-lg bg-muted p-0.5"
-      value={billing}
-      onValueChange={(value) => {
-        if (value) onChange(value as BillingCycle)
-      }}
-    >
-      {(["monthly", "yearly"] as const).map((cycle) => (
-        <ToggleGroupItem
-          key={cycle}
-          value={cycle}
-          className="h-7! min-w-0 w-auto rounded-lg px-2 py-1 text-sm font-medium tracking-[-0.07px] text-muted-foreground hover:bg-transparent hover:text-foreground data-[state=on]:!bg-card data-[state=on]:!text-foreground data-[state=on]:shadow-[inset_0_0_0_1px_var(--border),0_1px_2px_-1px_rgba(0,0,0,0.12)]"
-        >
-          {cycle === "monthly" ? "Aylık" : "Yıllık"}
-          {cycle === "yearly" && (
-            <span className="rounded-md bg-primary/10 px-1 text-[11px] font-medium leading-4 text-primary-strong">%17</span>
-          )}
-        </ToggleGroupItem>
-      ))}
-    </ToggleGroup>
-  )
 }
 
 function ComparisonValue({ value, minimal = false }: { value: PlanComparisonValue; minimal?: boolean }) {
@@ -281,6 +245,11 @@ export function PlanPackages({
   if (!isPublic) {
     const currentPkg = isTrialing ? PACKAGE : ownedTier ? getPlanPackage(ownedTier) : undefined
     const stripCycle = currentCycle ?? "yearly"
+    // Denemede seçilmiş bir dönem yoktur; dönem ifadesi ve geçiş eylemi yalnız
+    // dönemi belli ücretli aboneliklerde gösterilir.
+    const hasCommittedCycle = !isTrialing && currentCycle !== null
+    // Dönem belli değilken aylık liste fiyatı gösterilir (landing / fiyatlar ile aynı).
+    const stripPriceCycle: BillingCycle = hasCommittedCycle ? stripCycle : "monthly"
     const monthlyEquivalent = (tier: PlanTier, cycle: BillingCycle) => {
       const discounted = getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps) / 100
       return cycle === "monthly" ? discounted : Math.round(discounted / 12)
@@ -325,32 +294,33 @@ export function PlanPackages({
                         )}
                       </div>
                       <p className="text-xs font-medium leading-4 text-muted-foreground">
-                        ₺{monthlyEquivalent(currentPkg.tier, stripCycle).toLocaleString("tr-TR")} / ay
-                        {" · "}
-                        {stripCycle === "yearly" ? "yıllık faturalandırılır" : "aylık faturalandırılır"}
-                        {" · "}
-                        <Button
-                          type="button"
-                          variant="link"
-                          size="compact"
-                          className="px-0 text-xs font-medium text-primary"
-                          onClick={() => {
-                            const next = stripCycle === "yearly" ? "monthly" : "yearly"
-                            if (onRequestCycleChange) onRequestCycleChange(next)
-                            else setBilling(next)
-                          }}
-                        >
-                          {stripCycle === "yearly" ? "Aylığa geç" : "Yıllığa geç"}
-                        </Button>
+                        ₺{monthlyEquivalent(currentPkg.tier, stripPriceCycle).toLocaleString("tr-TR")} / ay
+                        {hasCommittedCycle && (stripCycle === "yearly" ? " · yıllık faturalandırılır" : " · aylık faturalandırılır")}
                       </p>
                     </div>
                   </div>
-                  {onManagePlan && (
-                    <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={onManagePlan}>
-                      <Pencil className="size-3.5" aria-hidden="true" />
-                      Paketi yönet
-                    </Button>
-                  )}
+                  <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
+                    {onManagePlan && (
+                      <Button type="button" variant="outline" className="shrink-0" onClick={onManagePlan}>
+                        <Pencil className="size-4" aria-hidden="true" />
+                        Paketi yönet
+                      </Button>
+                    )}
+                    {hasCommittedCycle && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="shrink-0 text-primary"
+                        onClick={() => {
+                          const next = stripCycle === "yearly" ? "monthly" : "yearly"
+                          if (onRequestCycleChange) onRequestCycleChange(next)
+                          else setBilling(next)
+                        }}
+                      >
+                        {stripCycle === "yearly" ? "Aylığa geç" : "Yıllığa geç"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -365,7 +335,7 @@ export function PlanPackages({
                   <p className="text-sm font-semibold leading-5 text-foreground">{PACKAGE.name}</p>
                   <p className="mt-0.5 text-xs leading-4 text-muted-foreground">{PACKAGE.tagline}</p>
                 </div>
-                <BillingPeriod billing={billing} onChange={setBilling} />
+                <BillingCycleToggle value={billing} onChange={setBilling} yearlyHint="%17" yearlyHintSrSuffix=" indirim" />
               </div>
               <p className="mt-3 text-[24px] font-semibold leading-7 tracking-[-0.48px] text-foreground">
                 ₺{packageAmount.toLocaleString("tr-TR")}
@@ -399,7 +369,7 @@ export function PlanPackages({
   return (
     <section aria-label="Servis Paketi" className="space-y-5">
       <div className="flex justify-center pt-2">
-        <BillingPeriod billing={billing} onChange={setBilling} />
+        <BillingCycleToggle value={billing} onChange={setBilling} yearlyHint="%17" yearlyHintSrSuffix=" indirim" />
       </div>
       <div className="mx-auto grid max-w-4xl gap-6 !mt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Card
@@ -460,7 +430,7 @@ export function PlanPackages({
       </div>
 
       <Tabs defaultValue="included" className="lg:hidden">
-        <TabsList className="grid h-auto w-full grid-cols-2 border-b bg-card">
+        <TabsList size="control" className="grid w-full grid-cols-2 border-b bg-card">
           <TabsTrigger value="included">Pakete dahil</TabsTrigger>
           <TabsTrigger value="addons">Ek özellikler</TabsTrigger>
         </TabsList>
