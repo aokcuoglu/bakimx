@@ -49,7 +49,7 @@
   border-color: var(--pl-sep);
 }
 
-.skin [data-pl="table"] tbody tr:hover {
+.skin [data-pl="table"] tbody tr:has([data-pl="type"]):hover {
   background: var(--pl-hover);
 }
 

@@ -34,4 +34,9 @@ describe("Parça & İşçilik kabuğu (#849)", () => {
     expect(read("../technician/technician-parts-labor-section.tsx")).not.toContain("parts-labor.module.css")
     expect(read("../quotes/quote-items-editor.tsx")).not.toContain("parts-labor.module.css")
   })
+
+  test("hover yalnız kalem satırlarında (boş durum satırı vurgulanmaz)", () => {
+    expect(css).toContain('tbody tr:has([data-pl="type"]):hover')
+    expect(css).not.toMatch(/tbody tr:hover/)
+  })
 })
