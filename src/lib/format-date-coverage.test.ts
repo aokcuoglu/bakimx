@@ -46,7 +46,6 @@ const EXEMPT = new Set(["lib/format-date.ts"])
  */
 const INTENTIONAL: Record<string, string> = {
   "components/ui/calendar.tsx": "takvim ilkeli; günleri ve ay adlarını kullanıcının yerel saatinde çizer",
-  "components/appointments/calendar-view.tsx": "randevu ızgarası tarayıcı saatinde kurulu, biçimleme ona bağlı; ızgarayla birlikte taşınır (#876)",
 }
 
 /** Henüz `@/lib/format-date`'e geçmemiş çağrılar. Boşaldıkça silinir. */
