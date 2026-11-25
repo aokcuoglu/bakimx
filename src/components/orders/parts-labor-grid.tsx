@@ -368,7 +368,7 @@ export function PartsLaborEditor({
           aşağıdaki kart düzeni devreye girer.
           Satır alanı kendi içinde kayar; listenin sonunda `overscroll` sayfaya
           devredildiği için kullanıcı aynı hareketle ana sayfayı sürdürür. */}
-      <div className="hidden overflow-hidden rounded-lg border border-border @min-[52rem]:block" data-pl="table">
+      <div className="hidden overflow-hidden rounded-md border border-border @min-[52rem]:block" data-pl="table">
         <Table className="min-w-[52rem] table-fixed" containerClassName={ITEM_LIST_SCROLL}>
           <colgroup>
             <col className="w-40" />{/* Tür */}
@@ -763,7 +763,7 @@ export function PartsLaborGrid({
 // ── Composer ekleme kartı: composer'ı listeden görsel olarak ayıran hafif marka tonu.
 function ComposerCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-gradient-to-b from-primary/[0.06] to-transparent p-4">
+    <div className="rounded-md border border-border bg-gradient-to-b from-primary/[0.06] to-transparent p-4">
       {children}
     </div>
   )
@@ -803,7 +803,7 @@ function LaborModeToggle({ mode, onChange, disabled }: {
     { value: "external_labor", label: "Dış İşçilik", Icon: ExternalLink },
   ]
   return (
-    <div className="inline-flex rounded-lg border border-input bg-muted/40 p-0.5">
+    <div className="inline-flex rounded-md border border-input bg-muted/40 p-0.5">
       {opts.map(({ value, label, Icon }) => (
         <Button
           key={value}
@@ -1209,7 +1209,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         // Bağlama yolu burada da dursun: aksi hâlde katalogsuz araçta kullanıcı
         // "sınırlı" uyarısıyla baş başa kalıyor (VinLinkPrompt yalnız
         // TecdocPartPicker içinde ve o da `linked` iken basılıyordu).
-        <div className="space-y-2 rounded-lg bg-muted/60 px-3 py-2">
+        <div className="space-y-2 rounded-md bg-muted/60 px-3 py-2">
           <p className="text-xs text-muted-foreground">
             Araç katalogla eşleşmediği için araca özel parça araması sınırlı — BakımX ürünleri ve
             kendi stok kartlarınız yine aranabilir, ya da parçayı{" "}
@@ -1606,7 +1606,7 @@ function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
 
 function QtyStepper({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
   return (
-    <div data-slot="qty-stepper" className="inline-flex h-7 items-center rounded-lg border border-input bg-background transition-colors">
+    <div data-slot="qty-stepper" className="inline-flex h-7 items-center rounded-md border border-input bg-background transition-colors">
       <Button type="button" variant="ghost" size="icon-xs" className="rounded-r-none" aria-label="Azalt"
         disabled={!editable || row.quantity <= 1}
         onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })}>
@@ -1817,7 +1817,7 @@ function CostPriceInput({ row, onCell, id }: { row: Row; onCell: OnCell; id?: st
 function CostPriceField({ row, onCell }: { row: Row; onCell: OnCell }) {
   const id = `cost-${row.id}`
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-border px-3 py-2">
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md border border-border px-3 py-2">
       <div className="min-w-0">
         <Label htmlFor={id} className="text-sm font-medium">Alış fiyatı</Label>
         <p className="text-xs text-muted-foreground">Dışarıya ödenen tutar, KDV hariç. Müşteri görmez.</p>
@@ -2626,7 +2626,7 @@ function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, s
   const showMeta = showAttributes && ed.isPart && (ed.editable || !!row.brand || !!row.category)
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-2.5 pl-3.5 shadow-sm" data-pl="card">
+    <div className="relative overflow-hidden rounded-md border border-border bg-card p-2.5 pl-3.5 shadow-sm" data-pl="card">
       {/* Sol tür aksanı */}
       <span className={cn("absolute inset-y-3 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} data-pl="accent" />
 
