@@ -6,24 +6,39 @@ import { eachTsx, jsxOpeningTags, utilityCore, type JsxOpeningTag } from "./jsx-
 /**
  * #888 — form kontrolleri çağrı yerinde ezilmez (docs/ui-control-sizing.md).
  *
- * Ölçü (yükseklik, köşe, yazı boyutu, dolgu) ve görünüm (zemin, kenarlık
- * kaldırma, gölge, ağırlık) yalnız bileşenden ve `size` varyantından gelir.
- * Yoğun yer `size="sm"` / `size="compact"` seçer, `className` yazmaz.
- * `className` yerleşim içindir: genişlik (`w-*`, `max-w-*`, `min-w-*`),
- * flex/grid (`flex-1`, `grow`, `col-span-*`), dış boşluk, yatay dolgu (ikon
- * yeri için `pl-9`), hizalama (`text-right`), `tabular-nums`, `font-mono`,
- * `uppercase`, `tracking-*`, metin rengi.
+ * Ölçü (yükseklik, köşe, yazı boyutu, satır yüksekliği, dolgu) ve görünüm
+ * (zemin, kenarlık kaldırma/kalınlığı, gölge, halka, outline, ağırlık) yalnız
+ * bileşenden ve `size` varyantından gelir. Yoğun yer `size="sm"` /
+ * `size="compact"` seçer, `className` yazmaz. `className` yerleşim içindir:
+ * genişlik (`w-*`, `max-w-*`, `min-w-*`), flex/grid (`flex-1`, `grow`,
+ * `col-span-*`), dış boşluk, yatay dolgu (ikon yeri için `pl-9`), hizalama
+ * (`text-right`), `tabular-nums`, `font-mono`, `uppercase`, `tracking-*`,
+ * metin rengi. CSS modülü sınıfı (`className={styles.x}`) içini göremediğimiz
+ * için ihlal sayılır; gerekçeli istisna ister.
  *
  * Tarama, açılış etiketinin kendi `className` ifadesindeki dizge sabitlerini
  * okur (`cn(...)`, koşul ve şablon dizgileri dahil; ayrıştırıcı:
  * `jsx-source-scan.ts`). `!` önek/soneki ve `md:` / `data-[…]:` önekleri
- * sınıfı gizlemez. Sabite çıkarılmış ya da prop'tan gelen sınıfı görmez.
+ * sınıfı gizlemez. `className`'i bir kontrole ileten sarmalayıcı
+ * (`FilterSelect`, `CitySelect`) kendisi `CONTROLS`'ta olmak zorundadır,
+ * böylece çağrı yeri ezmesi sarmalayıcı üzerinden de yakalanır.
+ *
+ * Bilinen kör noktalar (taranmaz; gerekçeleri yerinde yazılı):
+ * - Sabite ya da fonksiyona çıkarılmış sınıf: `fieldClass("plate")`
+ *   (entry-vehicle-fields, inline-create-modal — OCR düşük güven uyarı tonu).
+ * - Ata öğeden torun kontrolü biçimleyen seçiciler: parts-labor-grid
+ *   `GHOST_ROW` / `META_FIELD_*` ve mobil kart ad alanı
+ *   (`[&_[data-slot=input]]:border-transparent`, `[&_input]:!text-muted-foreground`,
+ *   ad alanının `px-0` + `font-medium`'u). Bunlar hayalet satır görünümüdür:
+ *   kenarlık/zemin şeffaf, odakta geri gelir. Ölçü, köşe ve yazı boyutu bu
+ *   seçicilerle ezilmez (#888'de 11px ve `rounded-md` kaldırıldı); yenisi
+ *   eklenmez.
  *
  * #889 aynı kapıyı `Button` / `InputGroupButton` için genişletecek: bileşeni
  * `CONTROLS`'a, gerekiyorsa yasak aileyi `FORBIDDEN`'a eklemek yeterli.
  */
 
-/** Kapsamdaki kontroller. */
+/** Kapsamdaki kontroller ve onlara `className` ileten sarmalayıcılar. */
 export const CONTROLS = [
   "Input",
   "InputGroup",
@@ -32,8 +47,16 @@ export const CONTROLS = [
   "Textarea",
   "SelectTrigger",
   "AutocompleteInput",
+  "AutocompleteInputGroup",
   "ComboboxInput",
   "ComboboxChips",
+  // Sarmalayıcılar: className'i SelectTrigger / ComboboxInput'a iletir.
+  // CitySelect / DistrictSelect onu `...props` ile LocationCombobox'a geçirir
+  // (yayılımla iletim otomatik tespit edilmez, elle listelenir).
+  "FilterSelect",
+  "LocationCombobox",
+  "CitySelect",
+  "DistrictSelect",
 ] as const
 
 type Control = (typeof CONTROLS)[number]
@@ -61,17 +84,23 @@ export const FORBIDDEN: readonly Family[] = [
   },
   { name: "kare ölçü", pattern: /^size-/ },
   { name: "köşe", pattern: /^rounded(?:-|$)/ },
-  { name: "yazı boyutu", pattern: /^text-(?:xs|sm|base|lg|\d?xl|\[.*\]|\(length:.*\))$/ },
+  // Keyfi değerde yalnız uzunluk: `text-[17px]`, `text-(length:--x)`; renk
+  // (`text-[color:…]`, `text-(--x)`) yerleşim/renk serbestliği içinde kalır.
+  { name: "yazı boyutu", pattern: /^text-(?:xs|sm|base|lg|\d?xl|\[(?:length:|[\d.])[^\]]*\]|\(length:[^)]*\))$/ },
+  { name: "satır yüksekliği", pattern: /^leading-/ },
   { name: "dolgu", pattern: /^p[ytb]?-/ },
   { name: "kenarlık kaldırma", pattern: /^border(?:-[trblxy])?-(?:0|none|transparent)$/ },
+  { name: "kenarlık kalınlığı", pattern: /^border(?:-[trblxy])?-(?:2|4|8|\[[^\]]*px\])$/ },
   { name: "zemin", pattern: /^bg-/ },
   { name: "gölge", pattern: /^shadow(?:-|$)/ },
+  { name: "odak halkası", pattern: /^ring(?:-|$)/ },
+  { name: "outline", pattern: /^outline(?:-|$)/ },
   { name: "yazı ağırlığı", pattern: /^font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/ },
-  { name: "keyfi özellik", pattern: /^\[(?:height|min-height|border-radius|font-size|font-weight|background|box-shadow|padding)/ },
+  { name: "keyfi özellik", pattern: /^\[(?:height|min-height|border-radius|font-size|font-weight|line-height|background|box-shadow|padding|outline)/ },
 ]
 
-/** Etiketin yasak sınıfları: `["h-7 (yükseklik)", …]`. */
-export function violations(tag: Pick<JsxOpeningTag, "name" | "classLiterals">): string[] {
+/** Etiketin yasak sınıfları: `["h-7 (yükseklik)", "styles.input (CSS modülü)", …]`. */
+export function violations(tag: Pick<JsxOpeningTag, "name" | "classLiterals" | "cssModuleRefs">): string[] {
   const found: string[] = []
   for (const literal of tag.classLiterals) {
     for (const token of literal.split(/\s+/).filter(Boolean)) {
@@ -83,6 +112,7 @@ export function violations(tag: Pick<JsxOpeningTag, "name" | "classLiterals">): 
       }
     }
   }
+  for (const ref of tag.cssModuleRefs) found.push(`${ref} (CSS modülü)`)
   return found
 }
 
@@ -114,6 +144,13 @@ export const EXCEPTIONS: readonly Exception[] = [
     reason:
       "OCR düşük güven durumu: uyarı tonu bir durum rengi, ölçü değil (entry-vehicle-fields ve inline-create-modal aynı tonu fieldClass ile verir).",
   },
+  {
+    file: "components/layout/global-search-box.tsx",
+    tag: "Input",
+    allow: ["styles.input"],
+    reason:
+      "Genel arama paletinin başlık girdisi: paletin kendi 53px başlık bandında kenarlıksız, dolgusuz satır (design-pattern-esantral §6, #712 ölçümü). Kutu değil, paletin parçası.",
+  },
 ]
 
 const SRC = fileURLToPath(new URL("../../", import.meta.url))
@@ -125,25 +162,36 @@ const OUT_OF_SCOPE = [
   `components${sep}marketing${sep}`,
 ]
 
-type Row = { file: string; tag: string; line: number; hits: string[] }
+type ScannedTag = JsxOpeningTag & { file: string }
 
-function scan(visit: (file: string, source: string, path: string) => void) {
+/** Ağaç bir kez ayrıştırılır; testler aynı sonucu paylaşır. */
+let scanned: { controls: ScannedTag[]; rawInputs: ScannedTag[] } | null = null
+
+function scan() {
+  if (scanned) return scanned
+  const controls: ScannedTag[] = []
+  const rawInputs: ScannedTag[] = []
   eachTsx(
     SRC,
-    (path, source) => visit(relative(SRC, path).split(sep).join("/"), source, path),
+    (path, source) => {
+      const file = relative(SRC, path).split(sep).join("/")
+      for (const tag of jsxOpeningTags(source, [...CONTROLS, "input"], path)) {
+        ;(tag.name === "input" ? rawInputs : controls).push({ ...tag, file })
+      }
+    },
     (path) => OUT_OF_SCOPE.some((dir) => `${relative(SRC, path)}${sep}`.startsWith(dir))
   )
+  scanned = { controls, rawInputs }
+  return scanned
 }
 
-function callSiteViolations() {
-  const rows: Row[] = []
-  scan((file, source, path) => {
-    for (const tag of jsxOpeningTags(source, CONTROLS, path)) {
-      const hits = violations(tag)
-      if (hits.length) rows.push({ file, tag: tag.name, line: tag.line, hits })
-    }
+type Row = { file: string; tag: string; line: number; hits: string[] }
+
+function callSiteViolations(): Row[] {
+  return scan().controls.flatMap((tag) => {
+    const hits = violations(tag)
+    return hits.length ? [{ file: tag.file, tag: tag.name, line: tag.line, hits }] : []
   })
-  return rows
 }
 
 /** `"h-7 (yükseklik)"` → `"h-7"` */
@@ -165,9 +213,16 @@ describe("form kontrolleri çağrı yerinde ezilmez (#888)", () => {
       `<Input className="${"data-[size=sm]:" + "h-7!"}" />`,
       '<Input className="border-0 p-0" />',
       '<ComboboxChips className="w-full min-h-7" />',
+      `<Textarea className="${"focus-visible:" + "ring-destructive/30"}" />`,
+      '<Input className="focus-visible:ring-0" />',
+      `<Input className="${"outline-" + "none"}" />`,
+      '<Input className="leading-5" />',
+      '<Input className="border-2" />',
+      `<FilterSelect className="${"text-" + "[15px]"} w-full" />`,
+      '<Input className={styles.input} />',
     ]
     for (const source of bad) {
-      const tags = jsxOpeningTags(source, CONTROLS)
+      const tags = jsxOpeningTags(`import styles from "./x.module.css"\n${source}`, CONTROLS)
       expect(tags.length).toBeGreaterThan(0)
       expect(violations(tags[0])).not.toEqual([])
     }
@@ -178,6 +233,8 @@ describe("form kontrolleri çağrı yerinde ezilmez (#888)", () => {
       '<Textarea className="min-h-20 resize-none" />',
       `<SelectTrigger className="w-full min-w-0 ${"md:" + "max-w-60"}" />`,
       '<InputGroup className="flex-1 font-mono uppercase tracking-wider" />',
+      '<Input className="text-muted-foreground" />',
+      `<Input className="${"text-[color:var(--" + "primary)]"}" />`,
       // İç içe öğe kendi etiketi olarak taranır; dıştakini kirletmez.
       '<AutocompleteInput render={<Input className="w-full" />} />',
     ]
@@ -210,21 +267,30 @@ describe("form kontrolleri çağrı yerinde ezilmez (#888)", () => {
   })
 
   /**
+   * `className`'i bir kontrole ileten bileşen (`<SelectTrigger className={className}>`)
+   * çağrı yerinin ezmesini kapıdan saklar; sarmalayıcının kendisi taranmalı.
+   */
+  test("className ileten sarmalayıcılar kapının kapsamında", () => {
+    const missing = scan()
+      .controls.filter((tag) => tag.forwardsClassName && !CONTROLS.includes(tag.owner as Control))
+      .map((tag) => `${tag.file}:${tag.line} <${tag.name}> sahibi ${tag.owner ?? "(adsız)"}`)
+    expect(missing).toEqual([])
+  })
+
+  /**
    * Ham `<input>` yalnız iki biçimde kalır (ui-contract.test.ts tipi sınırlar):
    * form gönderimi için `type="hidden"` ve bir `Button`'un tetiklediği gizli
    * dosya seçici (`type="file"` + `className="hidden"`). Görünen her alan
    * `Input` / `Checkbox` / `Switch`'tir.
    */
   test("ham dosya seçiciler görünmez, düğmeyle tetiklenir", () => {
-    const offenders: string[] = []
-    scan((file, source, path) => {
-      for (const tag of jsxOpeningTags(source, ["input"], path)) {
+    const offenders = scan()
+      .rawInputs.filter((tag) => {
         const type = tag.attributes.get("type")
-        if (type === '"hidden"') continue
-        if (type === '"file"' && tag.classLiterals.some((l) => l.split(/\s+/).includes("hidden"))) continue
-        offenders.push(`${file}:${tag.line} type=${type ?? "(yok)"}`)
-      }
-    })
+        if (type === '"hidden"') return false
+        return !(type === '"file"' && tag.classLiterals.some((l) => l.split(/\s+/).includes("hidden")))
+      })
+      .map((tag) => `${tag.file}:${tag.line} type=${tag.attributes.get("type") ?? "(yok)"}`)
     expect(offenders).toEqual([])
   })
 })
