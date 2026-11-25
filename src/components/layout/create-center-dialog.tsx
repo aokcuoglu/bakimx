@@ -114,8 +114,8 @@ export function CreateCenterDialog({
                 <Button
                   asChild
                   variant="outline"
-                  size="lg"
-                  className="h-auto min-h-24 w-full items-start justify-start gap-3 whitespace-normal border-border bg-card p-4 text-left shadow-none hover:bg-muted/60 focus-visible:border-ring"
+                  size="row"
+                  className="h-full w-full items-start hover:bg-muted/60"
                 >
                   <Link href={option.id === "order" ? orderHref : option.href} onClick={() => setOpen(false)}>
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-sm border border-border bg-muted text-foreground">

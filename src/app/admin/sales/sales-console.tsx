@@ -428,8 +428,9 @@ export function SalesConsole({
                   key={lead.id}
                   type="button"
                   variant="ghost"
+                  size="row"
                   onClick={() => focusLead(lead)}
-                  className="h-auto w-full justify-start gap-3 rounded-xl border border-transparent px-2.5 py-2.5 text-left hover:border-border"
+                  className="w-full"
                 >
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold text-muted-foreground-strong">
                     {String(index + 1).padStart(2, "0")}
@@ -858,12 +859,13 @@ function LeadCard({
       )}
 
       {/* Activity Summary */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between text-xs">
         <Button
           type="button"
           onClick={() => setShowActivities(!showActivities)}
-          variant="ghost"
-          className="h-auto p-0 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          variant="link"
+          size="inline"
+          className="gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
         >
           <FileText className="h-3 w-3" />
           {lead.activities.length} görüşme
@@ -1239,7 +1241,7 @@ function DiscountCodeSection({
             <p className="text-sm text-muted-foreground">{editingCode?.code} kodunun son geçerlilik tarihini seçin.</p>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start gap-2 font-normal">
+                <Button variant="outline" className="w-full justify-start gap-2">
                   <CalendarDays className="size-4 text-muted-foreground" />
                   {expiryDate
                     ? format(new Date(`${expiryDate}T00:00:00`), "dd MMMM yyyy", { locale: tr })

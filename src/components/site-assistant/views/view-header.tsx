@@ -14,9 +14,9 @@ export function ViewHeader({ title, onBack }: ViewHeaderProps) {
       <Button
         type="button"
         variant="ghost"
-        size="sm"
+        size="xs"
         onClick={onBack}
-        className="-ml-1.5 gap-1 px-2 text-xs text-muted-foreground"
+        className="-ml-1.5 gap-1 px-2 text-muted-foreground"
       >
         <ArrowLeft className="size-3.5" /> Geri
       </Button>

@@ -96,8 +96,8 @@ export default async function DashboardPage() {
               <h2 className="text-[22px] font-bold leading-7 tracking-[-0.025em]">İlk işinize başlayın</h2>
               <p className="mt-2 text-[17px] leading-6 text-muted-foreground">Kurulum tercihleriniz kaydedildi. İlk müşterinizi ve aracınızı kaydedin, ardından araç kabulünüzü açın. Araç kabul ekranında da müşteri ve araç ekleyebilirsiniz.</p>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                <Button asChild variant="outline" className="rounded-full"><Link href="/customers/new">İlk müşteriyi ekle</Link></Button>
-                <Button variant="default" asChild className="rounded-full"><Link href={DASHBOARD_INTAKE_HREF}>İlk araç kabulünü oluştur</Link></Button>
+                <Button asChild variant="outline"><Link href="/customers/new">İlk müşteriyi ekle</Link></Button>
+                <Button variant="default" asChild><Link href={DASHBOARD_INTAKE_HREF}>İlk araç kabulünü oluştur</Link></Button>
               </div>
             </div>
           </DashPanel>

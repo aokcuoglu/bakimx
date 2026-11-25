@@ -277,7 +277,7 @@ export function GlobalSearch({
             <span>Gezin<span className={styles.desktopHint}> · Esc kapat</span></span>
           </span>
           {selectedIndex >= 0 ? (
-            <Button type="button" variant="foreground" onClick={() => navigate(allItems[selectedIndex]!)} className={styles.action}>
+            <Button type="button" variant="foreground" onClick={() => navigate(allItems[selectedIndex]!)} className="min-w-0 max-w-[60%] gap-1.5 pr-1.5 pl-2">
               <span className="truncate">{allItems[selectedIndex]!.label}</span>
               <span className={styles.enterKey} aria-hidden><CornerDownLeft className="size-3" /></span>
             </Button>

@@ -123,7 +123,7 @@ export default async function SalesLeadsPage({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Button asChild variant="link" className="mb-1 h-auto p-0 text-muted-foreground">
+          <Button asChild variant="link" size="inline" className="mb-1 text-muted-foreground">
             <Link href="/admin/sales"><ArrowLeft className="size-4" /> Bugünüm</Link>
           </Button>
           <h1 className="text-page-title text-foreground">Satış Adayları</h1>
@@ -147,8 +147,8 @@ export default async function SalesLeadsPage({
           {leads.map((lead) => (
             <article key={lead.id} className="rounded-xl border bg-card p-4">
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <Button asChild variant="link" className="h-auto justify-start p-0 text-base font-semibold">
+                <div className="text-base">
+                  <Button asChild variant="link" size="inline">
                     <Link href={salesLeadAdminHref(lead.id)}>{salesLeadDisplayName(lead)}</Link>
                   </Button>
                   <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><UserRound className="size-3.5" />{lead.contactName}</p>

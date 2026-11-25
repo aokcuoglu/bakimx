@@ -37,9 +37,10 @@ export function ColorCard({
     <Button
       type="button"
       variant="outline"
+      size="tile"
       onClick={copy}
       className={cn(
-        "group h-auto w-full flex-col items-stretch overflow-hidden rounded-lg p-0 text-left whitespace-normal transition-colors hover:bg-muted/40",
+        "group w-full items-stretch text-left transition-colors hover:bg-muted/40",
         className
       )}
       aria-label={`${name} ${hex} kopyala`}

@@ -174,10 +174,6 @@ export function AnswersView({ query, aiEnabled, onBack, onNavigate }: AnswersVie
   );
 }
 
-const ROW_CLASS =
-  "h-auto w-full justify-start gap-3 whitespace-normal rounded-lg border-border p-3 text-left " +
-  "hover:bg-muted/60";
-
 function FallbackAction({
   icon: Icon,
   label,
@@ -197,8 +193,9 @@ function FallbackAction({
   return (
     <Button
       type="button"
-      variant="outline"
-      className={cn(ROW_CLASS, emphasis && "border-foreground/15 bg-muted")}
+      variant={emphasis ? "secondary" : "outline"}
+      size="row"
+      className="w-full"
       onClick={onClick}
     >
       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted text-foreground">

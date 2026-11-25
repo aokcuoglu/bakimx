@@ -467,7 +467,7 @@ export function RegisterForm({
             Kart bilgisi gerekmez. Süre sonunda paket satın alınmazsa hesabınız ve verileriniz korunarak erişim dondurulur.
           </p>
         </div>
-        <Button asChild variant="ghost" className="mt-6 min-h-7 text-muted-foreground">
+        <Button asChild variant="ghost" className="mt-6 text-muted-foreground">
           <Link href="/login"><ArrowLeft aria-hidden="true" className="size-4" />Giriş sayfasına dön</Link>
         </Button>
       </section>
@@ -546,7 +546,7 @@ export function RegisterForm({
                 <ArrowRight data-icon="inline-end" />
               </Button>
             ) : (
-              <Button key="submit-form" type="submit" variant="foreground" disabled={loading || !hydrated} className={cn(styles.submit, onboarding && "order-1 w-full")}>
+              <Button key="submit-form" type="submit" variant="foreground" disabled={loading || !hydrated} className={cn("max-sm:w-full", onboarding && "order-1 w-full")}>
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <BrandSpinner size={18} />
@@ -677,8 +677,9 @@ function SectorStep({ form }: { form: WizardForm }) {
                         key={sector.id}
                         type="button"
                         variant="outline"
+                        size="row"
                         onClick={() => setInterestSector(sector)}
-                        className="h-auto min-h-24 w-full items-start justify-start border-dashed p-3 text-left whitespace-normal hover:bg-muted/60"
+                        className="w-full items-start border-dashed hover:bg-muted/60"
                       >
                         <span className="flex w-full items-start gap-3">
                           <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground">

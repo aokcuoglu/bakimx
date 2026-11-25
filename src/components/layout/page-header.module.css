@@ -83,20 +83,6 @@
   flex: 1;
 }
 
-.cta {
-  height: 50px;
-  padding-inline: 28px;
-  border-radius: 999px;
-  font-size: 17px;
-  font-weight: 500;
-}
-
-.primary {
-  width: 100%;
-  /* DOM'da ikincillerden sonra gelir; telefonda ilk satırda görünür. */
-  order: -1;
-}
-
 @media (min-width: 640px) {
   .frame {
     gap: 32px;
@@ -107,8 +93,9 @@
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    /* Düğmesiz sayfada da satır düğme boyunda kalır: başlık sayfalar arası kaymaz. */
-    min-height: 44px;
+    /* Düğmesiz sayfada da satır düğme (`size="lg"`) boyunda kalır: başlık
+       sayfalar arası kaymaz. */
+    min-height: var(--control-h-lg);
   }
 
   .title {
@@ -141,15 +128,5 @@
 
   .secondary > * {
     flex: none;
-  }
-
-  .primary {
-    width: auto;
-    order: 0;
-  }
-
-  .cta {
-    height: 44px;
-    padding-inline: 22px;
   }
 }

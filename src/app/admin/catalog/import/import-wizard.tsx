@@ -296,8 +296,7 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
                   <Button
                     type="button"
                     variant="ghost"
-                    size="icon"
-                    className="size-8"
+                    size="icon-sm"
                     disabled={pending}
                     aria-label="Seçilen dosyayı kaldır"
                     onClick={() => {
@@ -313,8 +312,8 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
                   <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary-strong">
                     <Upload className="size-5" />
                   </div>
-                  <div>
-                    <Button type="button" variant="link" className="h-auto p-0" disabled={pending} onClick={() => fileInputRef.current?.click()}>
+                  <div className="text-sm">
+                    <Button type="button" variant="link" size="inline" disabled={pending} onClick={() => fileInputRef.current?.click()}>
                       Dosya seçin
                     </Button>
                     <span className="text-sm text-muted-foreground"> veya buraya sürükleyin</span>

@@ -24,10 +24,10 @@ export function ScrollToTopButton() {
     <Button
       type="button"
       variant="outline"
-      size="icon"
+      size="icon-lg"
       aria-label="Sayfanın başına dön"
       onClick={scrollToPageTop}
-      className="fixed bottom-4 right-[4.75rem] z-40 size-12 rounded-full border bg-card p-0 shadow-md transition-transform hover:scale-105 active:scale-95 motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100 sm:bottom-6 sm:right-[5.25rem] [&_svg]:size-5"
+      className="fixed bottom-4 right-[4.75rem] z-40 shadow-md transition-transform hover:scale-105 active:scale-95 motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100 sm:bottom-6 sm:right-[5.25rem] [&_svg]:size-5"
       style={{ marginBottom: "env(safe-area-inset-bottom)" }}
     >
       <ArrowUp className="size-6" />

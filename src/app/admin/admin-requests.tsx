@@ -218,11 +218,10 @@ function DemoRequestRow({ r, canManage }: { r: AdminDemoRequestRow; canManage: b
                   key={s.value}
                   type="button"
                   variant={r.status === s.value ? "secondary" : "outline"}
-                  size="sm"
+                  size="xs"
                   disabled={pending}
                   aria-pressed={r.status === s.value}
                   onClick={() => run(s.value)}
-                  className="h-7 text-xs"
                 >
                   {s.label}
                 </Button>
@@ -361,15 +360,16 @@ function SupportRequestRow({
   return (
     <div
       className={cn(
-        "rounded-xl border bg-card transition-all",
+        "overflow-hidden rounded-xl border bg-card transition-all",
         isNew ? "border-warning/30" : "border-border/60"
       )}
     >
       <Button
         type="button"
         variant="ghost"
+        size="row"
         aria-expanded={expanded}
-        className="h-auto w-full items-start justify-start gap-3 whitespace-normal rounded-xl p-4 text-left transition-colors hover:bg-muted/30"
+        className="w-full items-start px-4 transition-colors hover:bg-muted/30"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="min-w-0 flex-1 space-y-1">

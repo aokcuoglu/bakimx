@@ -18,7 +18,7 @@ export function ImpersonationBanner({ workshopName }: { workshopName: string }) 
           type="submit"
           variant="ghost"
           size="xs"
-          className="bg-warning-foreground/10 font-semibold text-warning-foreground underline-offset-2 hover:bg-warning-foreground/20 hover:text-warning-foreground"
+          className="bg-warning-foreground/10 text-warning-foreground underline-offset-2 hover:bg-warning-foreground/20 hover:text-warning-foreground"
         >
           Çık
         </Button>

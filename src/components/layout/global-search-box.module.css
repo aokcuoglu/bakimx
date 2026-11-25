@@ -130,13 +130,6 @@
   border-radius: 6px;
 }
 
-.action {
-  min-width: 0;
-  max-width: 60%;
-  gap: 6px;
-  padding: 4px 6px 4px 8px;
-}
-
 .enterKey {
   display: flex;
   align-items: center;
