@@ -108,6 +108,9 @@ import { lockedFeatureLabels } from "@/lib/feature-catalog"
 import { compressImagesForUpload } from "@/lib/image/compress-image"
 import { cn } from "@/lib/utils"
 import { usePendingScroll } from "@/hooks/use-pending-scroll"
+import { OrderQuickActions } from "@/components/orders/order-quick-actions"
+import { orderQuickActions, type OrderQuickAction } from "@/lib/orders/quick-actions"
+import type { PartsAddType } from "@/components/orders/parts-labor-grid"
 
 // Header aksiyon ikonları (eski orders ekranıyla aynı görünüm).
 const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
@@ -809,6 +812,39 @@ export function WorkOrderDetail({
     scrollToPhotos()
   }
 
+  // Hızlı butonlar (#881): pencereler ilgili sekmenin içinde yaşar, bu yüzden
+  // önce o sekmeye geçilir; pencere sekme bağlanınca açık gelir.
+  const collectionsLocked =
+    order.status === "cancelled" ||
+    isCollectionLockedForOrder(order.status as OrderStatus, order.paymentStatus as PaymentStatus)
+  const quickActions = orderQuickActions({ orderLocked, canCashbox, collectionsLocked })
+  const [partsAddType, setPartsAddType] = useState<PartsAddType | null>(null)
+  const [collectionModalOpen, setCollectionModalOpen] = useState(false)
+
+  function handleQuickAction(action: OrderQuickAction) {
+    if (action === "foto") {
+      // Lite: focusPhoto yükseltme alanına götürür. Diğerlerinde "Fotoğraf
+      // ekle" kutusuyla aynı serbest akış: tür seçilebilir, aşama duruma göre.
+      if (!canUsePhotoChecklist) {
+        focusPhoto()
+        return
+      }
+      setPhotoType("")
+      setPhotoPhase(photoPhaseForStatus(order.status))
+      setPhotoContextLocked(false)
+      setAddingPhoto(true)
+      if (activeTab !== "kanit") handleTabChange("kanit")
+      return
+    }
+    if (action === "tahsilat") {
+      if (activeTab !== "tahsilat") handleTabChange("tahsilat")
+      setCollectionModalOpen(true)
+      return
+    }
+    if (activeTab !== "parca") handleTabChange("parca")
+    setPartsAddType(action)
+  }
+
   return (
     <div className={cn(surface.root, detail.page, "pb-24 lg:pb-6")}>
       <div className={detail.top}>
@@ -841,6 +877,8 @@ export function WorkOrderDetail({
         actions={headerActions}
         loading={loading}
       />
+
+      <OrderQuickActions actions={quickActions} onAction={handleQuickAction} />
 
       {error && (
         <Alert variant="destructive">
@@ -1281,7 +1319,7 @@ export function WorkOrderDetail({
               listede ekranın çok altında kalıyor, banner viewport dışında kalıp
               görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
               Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
-          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} />
+          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} addingType={partsAddType} onAddingTypeChange={setPartsAddType} />
 
           {/* Mobil yapışkan toplam: kalem eklerken genel toplam hep görünür;
               dokununca Fiyatlandırma kartına kaydırır. Alt navigasyonun (fixed,
@@ -1320,13 +1358,15 @@ export function WorkOrderDetail({
 
           <PaymentHistoryCard
             orderId={order.id}
-            collectionsLocked={order.status === "cancelled" || isCollectionLockedForOrder(order.status as OrderStatus, order.paymentStatus as PaymentStatus)}
+            collectionsLocked={collectionsLocked}
             totals={order.totals}
             paidAmount={order.paidAmount}
             remainingAmount={order.remainingAmount}
             collections={order.collectionHistory}
             customerId={order.customer.id}
             customerName={customerName}
+            collectionModalOpen={collectionModalOpen}
+            onCollectionModalOpenChange={setCollectionModalOpen}
           />
           </>
           )}
