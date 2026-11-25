@@ -59,7 +59,8 @@ export function PageHeaderView({
   subtitle?: ReactNode
 }) {
   const { crumbs, primaryAction, secondaryActions } = header
-  const subText = subtitle ?? header.description
+  const rawSub = subtitle ?? header.description
+  const subText = rawSub === "" ? undefined : rawSub
   const reserveSub = subText === undefined && header.dynamicSubtitle
   const hasSub = subText !== undefined || reserveSub
 
@@ -89,7 +90,6 @@ export function PageHeaderView({
         <h1 className={styles.title}>{header.title}</h1>
         {(primaryAction || secondaryActions.length > 0) && (
           <div className={styles.actions}>
-            {primaryAction && <ActionButton action={primaryAction} primary />}
             {secondaryActions.length > 0 && (
               <div className={styles.secondary}>
                 {secondaryActions.map((action) => (
@@ -97,12 +97,13 @@ export function PageHeaderView({
                 ))}
               </div>
             )}
+            {primaryAction && <ActionButton action={primaryAction} primary />}
           </div>
         )}
       </div>
       {hasSub && (
         <p data-slot="page-subtitle" className={styles.subline} aria-hidden={reserveSub || undefined}>
-          {reserveSub ? " " : subText}
+          {reserveSub ? "\u00a0" : subText}
         </p>
       )}
     </header>

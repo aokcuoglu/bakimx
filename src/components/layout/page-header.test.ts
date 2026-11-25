@@ -34,11 +34,17 @@ describe("PageHeaderView", () => {
     const empty = render({ dynamicSubtitle: true })
     expect(empty).toContain('data-slot="page-subtitle"')
     expect(empty).toMatch(/data-slot="page-subtitle"[^>]*aria-hidden="true"|aria-hidden="true"[^>]*data-slot="page-subtitle"/)
+    const reserved = empty.match(/<p[^>]*data-slot="page-subtitle"[^>]*>([^<]*)<\/p>/)?.[1]
+    expect(reserved).toBe("\u00a0")
     const filled = render({ dynamicSubtitle: true }, "3 kayıt")
     expect(filled).toContain("3 kayıt")
     const tag = filled.match(/<p[^>]*data-slot="page-subtitle"[^>]*>/)?.[0] ?? ""
     expect(tag).not.toBe("")
     expect(tag).not.toContain("aria-hidden")
+  })
+
+  test("empty-string subtitle counts as absent", () => {
+    expect(render({}, "")).not.toContain("page-subtitle")
   })
 
   test("static description renders inside the subtitle slot", () => {
@@ -50,13 +56,13 @@ describe("PageHeaderView", () => {
     expect(render({})).not.toContain("page-subtitle")
   })
 
-  test("primary action comes before secondary actions", () => {
+  test("secondary actions come before the primary in DOM (focus order matches visual order at >=640)", () => {
     const html = render({
       primaryAction: { label: "Yeni Müşteri", href: "/customers/new", icon: Plus, primary: true },
       secondaryActions: [{ label: "Bakiye Özeti", href: "/customers/balances", icon: Wallet }],
     })
     expect(html.indexOf("Yeni Müşteri")).toBeGreaterThan(-1)
-    expect(html.indexOf("Yeni Müşteri")).toBeLessThan(html.indexOf("Bakiye Özeti"))
+    expect(html.indexOf("Bakiye Özeti")).toBeLessThan(html.indexOf("Yeni Müşteri"))
   })
 
   test("tour anchors are emitted", () => {
