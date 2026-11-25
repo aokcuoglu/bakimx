@@ -191,6 +191,9 @@ function emptyDraft(type: ItemType, source: DraftSource, includeVat: boolean): R
 /** Kalem satırı — kalıcılık katmanından bağımsız (bkz. PartsLaborEditor). */
 export type PartsLaborRow = Row
 
+/** Ekleme modalının türü: parça mı, işçilik mi. */
+export type PartsAddType = "parca" | "iscilik"
+
 /**
  * Kalem düzenleyicinin SUNUM çekirdeği: composer'lar (katalog araması, TecDoc
  * picker'ı, manuel parça diyalogu, işçilik autocomplete'i), masaüstü tablosu,
@@ -210,6 +213,7 @@ export function PartsLaborEditor({
   taxRateBps, onApplyStandardTax, vatPerLine = true, defaultVatLiable = false,
   flash, onAdd, onCell, onRemove,
   onSaveRow,
+  addingType: addingTypeProp, onAddingTypeChange,
 }: {
   rows: Row[]
   vehicle?: PickerVehicle
@@ -241,10 +245,18 @@ export function PartsLaborEditor({
   onRemove: (row: Row) => void
   /** İş emri satırları bir taslak modalında düzenlenir; teklif editörü inline kalır. */
   onSaveRow?: (draft: Row, original: Row) => Promise<boolean>
+  /**
+   * Ekleme modalını dışarıdan yönetmek için (iş emri hızlı butonları, #881).
+   * Verilmezse modal kendi durumunu tutar.
+   */
+  addingType?: PartsAddType | null
+  onAddingTypeChange?: (type: PartsAddType | null) => void
 }) {
   // Parça detay modalı (tek örnek) — arama, katalog picker'ı ve kalem satırları besler.
   const [detail, setDetail] = useState<DetailRequest | null>(null)
-  const [addingType, setAddingType] = useState<"parca" | "iscilik" | null>(null)
+  const [ownAddingType, setOwnAddingType] = useState<PartsAddType | null>(null)
+  const addingType = addingTypeProp !== undefined ? addingTypeProp : ownAddingType
+  const setAddingType = onAddingTypeChange ?? setOwnAddingType
   const [editingRow, setEditingRow] = useState<Row | null>(null)
   const [savingRow, setSavingRow] = useState(false)
   const originalRow = editingRow ? rows.find((row) => row.id === editingRow.id) : undefined
@@ -519,7 +531,7 @@ function PurchaseMarginNotice({ rows }: { rows: Row[] }) {
  */
 export function PartsLaborGrid({
   orderId, status, items, vehicle, onError, loading, laborCatalog, taxRateBps, onApplyStandardTax,
-  allowExternalLabor = true,
+  allowExternalLabor = true, addingType, onAddingTypeChange,
 }: {
   orderId: string
   status: string
@@ -539,6 +551,9 @@ export function PartsLaborGrid({
    * (true) değişmeden devam eder.
    */
   allowExternalLabor?: boolean
+  /** Ekleme modalı dışarıdan yönetilir (bkz. `PartsLaborEditor`). */
+  addingType?: PartsAddType | null
+  onAddingTypeChange?: (type: PartsAddType | null) => void
 }) {
   const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
@@ -739,6 +754,8 @@ export function PartsLaborGrid({
       onCell={onCell}
       onRemove={removeRow}
       onSaveRow={saveRow}
+      addingType={addingType}
+      onAddingTypeChange={onAddingTypeChange}
     />
   )
 }
