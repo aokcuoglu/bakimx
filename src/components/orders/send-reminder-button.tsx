@@ -61,7 +61,7 @@ export function SendReminderButton({
       </Button>
 
       {result && (
-        <div className="rounded-lg border border-success/20 bg-success/10 p-3 space-y-1">
+        <div className="rounded-md border border-success/20 bg-success/10 p-3 space-y-1">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="size-4 text-success-strong" />
             {/* `text-success-foreground` DEĞİL: o token dolu yeşil zemin için

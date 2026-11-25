@@ -1,4 +1,5 @@
 import type { OrderStatus } from "@prisma/client"
+import { istanbulDayBounds } from "@/lib/istanbul-time"
 import { IN_SERVICE_ORDER_STATUSES } from "@/lib/orders/status-filter"
 
 /**
@@ -11,8 +12,9 @@ import { IN_SERVICE_ORDER_STATUSES } from "@/lib/orders/status-filter"
  *   "today"   → tahmini teslimi bugün olan, hâlâ açık (teslim/iptal edilmemiş) emirler
  *   "overdue" → tahmini teslimi bugünden önce kalmış, hâlâ açık emirler
  *
- * "Bugün" sunucu saatine göre gün başıdır — Genel Bakış'taki diğer günlük
- * sayımlarla aynı. Tanınmayan değer sessizce filtresiz hâle düşer.
+ * "Bugün" Türkiye günüdür (Europe/Istanbul 00:00–24:00), sunucunun saat
+ * diliminden bağımsız — Genel Bakış'taki diğer günlük sayımlarla aynı (#874).
+ * Tanınmayan değer sessizce filtresiz hâle düşer.
  */
 
 export const DELIVERY_TODAY = "today"
@@ -32,19 +34,14 @@ export type ResolvedDeliveryFilter = {
   where: DeliveryFilterWhere
 }
 
-export function startOfLocalDay(now: Date): Date {
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate())
-}
-
 export function resolveDeliveryFilter(
   raw: string | null | undefined,
   now: Date = new Date()
 ): ResolvedDeliveryFilter {
   const value = (raw || "").trim()
-  const today = startOfLocalDay(now)
+  const { start: today, end: tomorrow } = istanbulDayBounds(now)
 
   if (value === DELIVERY_TODAY) {
-    const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
     return {
       value,
       where: {

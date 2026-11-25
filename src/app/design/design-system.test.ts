@@ -59,6 +59,8 @@ describe("design system radius contract", () => {
     const designMd = read("DESIGN.md")
     expect(designMd).toContain("## Design Palette")
     expect(designMd).toContain("`/design`")
+    expect(designMd).toContain("Karar geçmişi — geçersiz (#878, #898)")
+    expect(read("docs/ui-control-sizing.md")).toContain("İç içe köşe")
 
     const page = read("src/app/design/page.tsx")
     expect(page).toContain("Design System Analysis of BakımX")

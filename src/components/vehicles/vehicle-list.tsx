@@ -386,19 +386,19 @@ function MobileCards({
             />
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
-            <div className="rounded-lg bg-muted px-2 py-1.5">
+            <div className="rounded-md bg-muted px-2 py-1.5">
               <p className="text-muted-foreground">Kilometre</p>
               <p className="text-sm font-semibold text-foreground tabular-nums">
                 {row.mileage ? `${row.mileage.toLocaleString("tr-TR")} km` : "—"}
               </p>
             </div>
-            <div className="rounded-lg bg-muted px-2 py-1.5">
+            <div className="rounded-md bg-muted px-2 py-1.5">
               <p className="text-muted-foreground">Araç Kabul</p>
               <p className="text-sm font-semibold text-foreground tabular-nums">
                 {row.workOrdersCount}
               </p>
             </div>
-            <div className="rounded-lg bg-muted px-2 py-1.5">
+            <div className="rounded-md bg-muted px-2 py-1.5">
               <p className="text-muted-foreground">Son İşlem</p>
               <p className="text-sm font-semibold text-foreground">
                 {row.lastServiceDate ? formatDate(row.lastServiceDate) : "—"}

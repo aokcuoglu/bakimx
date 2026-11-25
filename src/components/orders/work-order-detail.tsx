@@ -1152,7 +1152,7 @@ export function WorkOrderDetail({
                     <Label>Yakıt seviyesi (kabul anı)</Label>
                     <FuelLevelPicker value={editFuelLevel} onChange={setEditFuelLevel} />
                   </div>
-                  <div className="space-y-3 rounded-lg border border-border p-3">
+                  <div className="space-y-3 rounded-md border border-border p-3">
                     <p className="text-sm font-medium text-foreground">Aracı getiren kişi</p>
                     <p className="text-xs text-muted-foreground">Aracı müşterinin kendisi getirdiyse boş bırakın.</p>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -1166,7 +1166,7 @@ export function WorkOrderDetail({
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-3 rounded-lg border border-border p-3">
+                  <div className="space-y-3 rounded-md border border-border p-3">
                     <p className="text-sm font-medium text-foreground">Aracı teslim alacak kişi</p>
                     <p className="text-xs text-muted-foreground">Aracı müşterinin kendisi teslim alacaksa boş bırakın.</p>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -1500,7 +1500,7 @@ export function WorkOrderDetail({
                       </p>
                       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                         {pendingPhotos.map((p, i) => (
-                          <div key={p.key} className="relative aspect-square overflow-hidden rounded-xl bg-muted">
+                          <div key={p.key} className="relative aspect-square overflow-hidden rounded-md bg-muted">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={p.previewUrl} alt={`Seçilen fotoğraf ${i + 1}`} className="size-full object-cover" />
                             <Button

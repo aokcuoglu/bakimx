@@ -129,7 +129,7 @@ export function RuhsattanOku({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
-            <span className="flex size-16 items-center justify-center rounded-lg border border-border bg-muted text-foreground">
+            <span className="flex size-16 items-center justify-center rounded-md border border-border bg-muted text-foreground">
               <ScanLine className="size-8" />
             </span>
             <div className="space-y-1">
@@ -156,7 +156,7 @@ export function RuhsattanOku({
   }
 
   return (
-    <div className={`rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2 ${className}`.trim()}>
+    <div className={`rounded-md border border-primary/20 bg-primary/5 p-3 space-y-2 ${className}`.trim()}>
       {scannerOpen && (
         <RegistrationScanner
           onCapture={(file) => { openScanner(false); runOcr(file) }}

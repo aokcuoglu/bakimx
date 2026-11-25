@@ -3,25 +3,13 @@ import { calculateMinimalTotal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { quantityToNumber } from "@/lib/orders/quantity"
 import { applyTaxBps, addKurus } from "@/lib/money"
 import { customerDisplayName } from "@/lib/format"
+import { istanbulDayKey, istanbulDayStart, istanbulMonthStart, istanbulRecentMonths } from "@/lib/istanbul-time"
 
 type OStat = import("@prisma/client").OrderStatus
 const NOT_DELIVERED_CANCELLED: OStat[] = ["delivered", "cancelled"]
 
-function todayStart(): Date {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-}
-
-function daysAgo(n: number): Date {
-  const d = new Date()
-  d.setDate(d.getDate() - n)
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)
-}
-
-function monthStart(): Date {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
-}
+// Gün ve ay sınırları Türkiye takvimine göredir, sunucunun saat diliminden
+// bağımsız (#874).
 
 // ─── 1. Operations Health Dashboard ──────────────────────────
 
@@ -37,7 +25,7 @@ export interface OperationsHealth {
 }
 
 export async function getOperationsHealth(workshopId: string): Promise<OperationsHealth> {
-  const today = todayStart()
+  const today = istanbulDayStart()
 
   const [
     activeJobs,
@@ -140,7 +128,7 @@ export async function getDelayedJobs(
   workshopId: string,
   limit = 20
 ): Promise<DelayedJobRow[]> {
-  const today = todayStart()
+  const today = istanbulDayStart()
 
   const orders = await prisma.serviceOrder.findMany({
     where: {
@@ -289,8 +277,9 @@ export interface HighValueCustomer {
 }
 
 export async function getCustomerAnalytics(workshopId: string): Promise<CustomerAnalytics> {
-  const monthD = monthStart()
-  const ninetyDaysAgo = daysAgo(90)
+  const now = new Date()
+  const monthD = istanbulMonthStart(now)
+  const ninetyDaysAgo = istanbulDayStart(now, -90)
 
   const [totalCustomers, newThisMonth, allCustomers] = await Promise.all([
     prisma.customer.count({ where: { workshopId } }),
@@ -560,30 +549,24 @@ export async function getRevenueAnalytics(workshopId: string): Promise<RevenueAn
   const averageTicketSize = orderCount > 0 ? Math.round((totalRevenue / orderCount) * 100) / 100 : 0
   const revenuePerWorkOrder = totalOrders > 0 ? Math.round((totalRevenue / totalOrders) * 100) / 100 : 0
 
+  const trendMonths = istanbulRecentMonths(6, now)
   const collectionMap = new Map<string, number>()
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-    collectionMap.set(key, 0)
+  for (const bucket of trendMonths) {
+    collectionMap.set(bucket.key, 0)
   }
 
   for (const c of completedCollections) {
-    const key = c.paymentDate.toISOString().slice(0, 7)
+    const key = istanbulDayKey(c.paymentDate).slice(0, 7)
     if (collectionMap.has(key)) {
       collectionMap.set(key, (collectionMap.get(key) || 0) + c.amount)
     }
   }
 
-  const collectionTrend: MonthlyCollectionEntry[] = []
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-    collectionTrend.push({
-      month: key,
-      label: `${monthNames[d.getMonth()]} ${d.getFullYear()}`,
-      amount: collectionMap.get(key) || 0,
-    })
-  }
+  const collectionTrend: MonthlyCollectionEntry[] = trendMonths.map((bucket) => ({
+    month: bucket.key,
+    label: `${monthNames[bucket.month]} ${bucket.year}`,
+    amount: collectionMap.get(bucket.key) || 0,
+  }))
 
   return {
     totalCollected,

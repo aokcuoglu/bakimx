@@ -5,6 +5,7 @@ import { applyTaxBps, addKurus } from "@/lib/money"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { IN_SERVICE_ORDER_STATUSES } from "@/lib/orders/status-filter"
 import { DELIVERY_OVERDUE, DELIVERY_TODAY, resolveDeliveryFilter } from "@/lib/orders/delivery-filter"
+import { istanbulDayBounds, istanbulDayStart } from "@/lib/istanbul-time"
 
 type OStat = import("@prisma/client").OrderStatus
 type IStat = import("@prisma/client").IntakeStatus
@@ -12,11 +13,6 @@ type VPT = import("@prisma/client").VehiclePhotoType
 
 const NOT_DELIVERED_CANCELLED_INTAKE: IStat[] = ["delivered", "cancelled"]
 const REQUIRED_PHOTO_TYPES: VPT[] = ["front", "rear", "left_side", "right_side", "dashboard_mileage"]
-
-function todayStart(): Date {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-}
 
 const CUSTOMER_NAME_SELECT = {
   type: true,
@@ -59,7 +55,8 @@ export async function getDashboardStats(
     cashbox: true,
   }
 ): Promise<DashboardStats> {
-  const today = todayStart()
+  // Bugün = Türkiye günü, sunucunun saat diliminden bağımsız (#874).
+  const today = istanbulDayStart()
   // KPI kartları tıklanınca /orders'ı aynı filtreyle açar; sayım ile liste
   // aynı tanımdan beslensin diye where parçaları liste filtresinden alınır.
   const todayDeliveryWhere = resolveDeliveryFilter(DELIVERY_TODAY).where
@@ -303,8 +300,7 @@ export interface TodayAppointmentRow {
 }
 
 export async function getTodayAppointmentRows(workshopId: string): Promise<TodayAppointmentRow[]> {
-  const today = todayStart()
-  const tomorrow = new Date(today.getTime() + 86400000)
+  const { start: today, end: tomorrow } = istanbulDayBounds()
 
   const appointments = await prisma.appointment.findMany({
     where: {

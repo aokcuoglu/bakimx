@@ -117,7 +117,7 @@ export function OrderTableColumnHeader<TData, TValue>({
             <ToggleGroupItem
               value="asc"
               size="sm"
-              className="h-8 w-full justify-start gap-1.5 rounded-lg px-2 text-[13px] data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong"
+              className="h-8 w-full justify-start gap-1.5 rounded-md px-2 text-[13px] data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong"
             >
               <ArrowUp aria-hidden="true" />
               {labels.asc}
@@ -125,7 +125,7 @@ export function OrderTableColumnHeader<TData, TValue>({
             <ToggleGroupItem
               value="desc"
               size="sm"
-              className="h-8 w-full justify-start gap-1.5 rounded-lg px-2 text-[13px] data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong"
+              className="h-8 w-full justify-start gap-1.5 rounded-md px-2 text-[13px] data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong"
             >
               <ArrowDown aria-hidden="true" />
               {labels.desc}
@@ -138,7 +138,7 @@ export function OrderTableColumnHeader<TData, TValue>({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 w-full justify-start gap-1.5 rounded-lg px-2 text-[13px] text-muted-foreground"
+            className="h-8 w-full justify-start gap-1.5 rounded-md px-2 text-[13px] text-muted-foreground"
             onClick={() => column.toggleVisibility(false)}
           >
             <EyeOff aria-hidden="true" />
