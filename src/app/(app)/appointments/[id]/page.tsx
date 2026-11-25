@@ -48,10 +48,7 @@ export default async function AppointmentDetailPage({ params }: { params: Promis
   }
 
   return (
-    <AppShell
-      workshopName={workshop?.name}
-      pageTitle={`Randevu ${safeAppointment.appointmentNo}`}
-    >
+    <AppShell workshopName={workshop?.name} recordTitle={safeAppointment.appointmentNo}>
       <AppointmentDetail appointment={safeAppointment} />
     </AppShell>
   )

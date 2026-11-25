@@ -2,8 +2,6 @@ import { getAppData } from "@/app/(app)/data"
 import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
 import { ReminderCreateForm } from "@/components/reminders/reminder-create-form"
 
 export const metadata = { title: "Yeni Bakım Hatırlatması" }
@@ -31,24 +29,8 @@ export default async function NewReminderPage({
   })
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Yeni Hatırlatma">
+    <AppShell workshopName={workshop?.name}>
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/reminders" className="hover:text-foreground inline-flex items-center gap-1">
-            <ArrowLeft className="size-3.5" />
-            Bakım Hatırlatmaları
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Yeni</span>
-        </div>
-
-        <div>
-          <h2 className="text-page-title text-foreground">Yeni Hatırlatma</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Müşteriniz için yeni bir bakım hatırlatması oluşturun.
-          </p>
-        </div>
-
         <ReminderCreateForm
           customers={customers.map((c) => ({
             id: c.id,

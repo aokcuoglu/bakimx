@@ -13,7 +13,7 @@ export default async function NewQuotePage() {
   const laborCatalog = await getLaborCatalog(user.workshopId, { activeOnly: true })
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Yeni Teklif">
+    <AppShell workshopName={workshop?.name}>
       <div className="space-y-5 sm:space-y-6">
         <QuoteCreateForm laborCatalog={laborCatalog} />
       </div>

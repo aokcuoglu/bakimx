@@ -3,8 +3,6 @@ import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
 import { ReminderCreateForm } from "@/components/reminders/reminder-create-form"
 
 export const metadata = { title: "Bakım Hatırlatmasını Düzenle" }
@@ -34,24 +32,8 @@ export default async function EditReminderPage({ params }: { params: Promise<{ i
   })
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle={`Düzenle: ${reminder.title}`}>
+    <AppShell workshopName={workshop?.name} recordTitle={reminder.title} subtitle={reminder.title}>
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/reminders" className="hover:text-foreground inline-flex items-center gap-1">
-            <ArrowLeft className="size-3.5" />
-            Bakım Hatırlatmaları
-          </Link>
-          <span className="mx-2">/</span>
-          <Link href={`/reminders/${id}`} className="hover:text-foreground">{reminder.title}</Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Düzenle</span>
-        </div>
-
-        <div>
-          <h2 className="text-page-title text-foreground">Hatırlatma Düzenle</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">{reminder.title}</p>
-        </div>
-
         <ReminderCreateForm
           customers={customers.map((c) => ({
             id: c.id,
