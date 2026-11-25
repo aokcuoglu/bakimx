@@ -58,6 +58,7 @@ export async function POST(request: Request) {
         bakimxDiscountBps: true,
         extraSeats: true,
         extraVinQuota: true,
+        addons: true,
         email: true,
         settings: {
           select: {
@@ -109,6 +110,9 @@ export async function POST(request: Request) {
               bakimxDiscountBps: source.bakimxDiscountBps,
               extraSeats: 0,
               extraVinQuota: 0,
+              // Ek özellikler atölye bazında tutulur (#827); yeni şube kaynağın
+              // açık ek özelliklerini devralır — paket alanları gibi.
+              addons: source.addons,
               onboardingProfile: {
                 status: "completed",
                 sector: data.sector,

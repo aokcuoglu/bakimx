@@ -3,7 +3,8 @@ import { getTecdocProvider } from "./provider"
 import { getVehicleCategories, getArticlesByCategory } from "./catalog"
 import { TecdocError } from "./types"
 import type { CategoryNode } from "./types"
-import type { WorkshopQuotaContext } from "@/lib/rapidapi-quota"
+import { getWorkshopQuotaContext, type WorkshopQuotaContext, type WorkshopQuotaFields } from "@/lib/rapidapi-quota"
+import { hasWorkshopFeature } from "@/lib/plan"
 
 /**
  * Teyit anında öncelikli indirilecek yaygın bakım kategorileri — küçük-harf isim
@@ -83,6 +84,20 @@ export function eagerPrefetchTarget(v: {
 }
 
 /**
+ * Ön yükleme bağlamı: yalnız parça kataloğu (`partsCatalog`) yetkisi olan
+ * atölye için. Kota tek başına kapı değildir (#827): yalnız `vinLookup` açık
+ * atölyede taban kota 15.000, admin'in `extraVinQuota` verdiği düz Servis
+ * Paketi atölyede de cap > 0 olur — ama `tecdocRouteGuard` o katalogu kilitli
+ * tutar; ücretli TecDoc çağrısı yapılmamalı. Yetki yoksa null. SAF.
+ */
+export function prefetchQuotaContext(
+  workshop: WorkshopQuotaFields,
+): WorkshopQuotaContext | null {
+  if (!hasWorkshopFeature(workshop, "partsCatalog")) return null
+  return getWorkshopQuotaContext(workshop)
+}
+
+/**
  * Teyit sonrası arka planda (after()) çağrılır: aracın yaygın bakım kategorilerinin
  * parçalarını TecdocArticle cache'ine doldurur, böylece parça-ekleme UI'ı (ad
  * arama + marka/kategori) dolu cache'ten beslenir. HİÇBİR ZAMAN throw ETMEZ.
@@ -93,10 +108,12 @@ export function eagerPrefetchTarget(v: {
  */
 export async function prefetchCommonVehicleParts(
   vehicleTypeId: number,
-  quotaContext: WorkshopQuotaContext,
+  workshop: WorkshopQuotaFields,
 ): Promise<void> {
   try {
     if (!Number.isInteger(vehicleTypeId) || vehicleTypeId <= 0) return
+    const quotaContext = prefetchQuotaContext(workshop)
+    if (!quotaContext) return
     if (getTecdocProvider().name === "mock") return
 
     const tree = await getVehicleCategories(vehicleTypeId, quotaContext)

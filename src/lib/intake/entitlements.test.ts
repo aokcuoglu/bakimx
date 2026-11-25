@@ -2,17 +2,18 @@ import { expect, test } from "bun:test"
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
 import { resolveIntakeEntitlements, type IntakeEntitlements } from "@/lib/intake/entitlements"
-import { hasWorkshopFeature, type WorkshopPlanFields } from "@/lib/plan"
+import { hasWorkshopFeature, type WorkshopEntitlementFields } from "@/lib/plan"
 
 const DAY_MS = 86_400_000
 
-function wsFields(over: Partial<WorkshopPlanFields> = {}): WorkshopPlanFields {
+function wsFields(over: Partial<WorkshopEntitlementFields> = {}): WorkshopEntitlementFields {
   return {
     planTier: "pro",
     subscriptionStatus: "active",
     approvalStatus: "approved",
     trialEndsAt: null,
     currentPeriodEnd: null,
+    addons: [],
     ...over,
   }
 }
@@ -100,10 +101,17 @@ test("premium + past_due: özellik kapısı sunucuyla aynı; erişim kilidi ayr�
   })
 })
 
+test("atölye bazında açılmış ek özellik yalnız onu açar (#827)", () => {
+  const e = resolveIntakeEntitlements(wsFields({ addons: ["ocrIntake"] }), "owner")
+  expect(e.ocrIntake).toBe(true)
+  expect(e.vinLookup).toBe(false)
+  expect(resolveIntakeEntitlements(wsFields({ addons: ["vinLookup"] }), "owner").vinLookup).toBe(true)
+})
+
 test("istemci yetkisi her profilde sunucu özellik kapısıyla birebir aynı", () => {
   const future = new Date(Date.now() + 3 * DAY_MS)
   const past = new Date(Date.now() - DAY_MS)
-  const cases: WorkshopPlanFields[] = [
+  const cases: WorkshopEntitlementFields[] = [
     wsFields(),
     wsFields({ planTier: "lite" }),
     wsFields({ planTier: "starter" }),
@@ -112,6 +120,11 @@ test("istemci yetkisi her profilde sunucu özellik kapısıyla birebir aynı", (
     wsFields({ subscriptionStatus: "trialing", trialEndsAt: future }),
     wsFields({ subscriptionStatus: "trialing", trialEndsAt: past }),
     wsFields({ currentPeriodEnd: past }),
+    wsFields({ addons: ["ocrIntake"] }),
+    wsFields({ addons: ["vinLookup", "partsCatalog"] }),
+    wsFields({ planTier: "lite", addons: ["vinLookup"] }),
+    wsFields({ subscriptionStatus: "trialing", trialEndsAt: past, addons: ["ocrIntake"] }),
+    wsFields({ addons: ["bilinmeyen"] }),
   ]
   const features = ["ocrIntake", "vinLookup", "photoChecklist", "damageMap"] as const satisfies readonly (keyof IntakeEntitlements)[]
   for (const ws of cases) {

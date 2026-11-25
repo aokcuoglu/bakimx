@@ -257,6 +257,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
           trialEndsAt: true,
       liteFreeGrantedAt: true,
           currentPeriodEnd: true,
+          addons: true,
         },
       },
     },

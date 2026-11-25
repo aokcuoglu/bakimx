@@ -6,6 +6,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   admin_workshop_rejected: "İş yeri reddedildi",
   admin_plan_activated: "Plan etkinleştirildi",
   admin_extra_seats_set: "Ek koltuk ayarlandı",
+  admin_addons_set: "Ek özellikler güncellendi",
+  admin_extra_vin_quota_set: "Ek katalog kotası ayarlandı",
   admin_support_request_status: "Destek talebi durumu güncellendi",
   admin_support_request_linked: "Destek talebi iş yerine bağlandı",
   admin_support_request_assigned: "Destek talebi sorumlusu güncellendi",
