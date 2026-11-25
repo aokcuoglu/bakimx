@@ -560,7 +560,7 @@ export function TecdocPartPicker({
                     size="icon-xs"
                     onClick={clearScope}
                     aria-label="Kategori kapsamını kaldır, tüm araçta ara"
-                    className="size-6 shrink-0 rounded-full"
+                    className="shrink-0"
                   >
                     <X className="size-3" />
                   </Button>
@@ -638,8 +638,9 @@ export function TecdocPartPicker({
                     key={node.id}
                     type="button"
                     variant="ghost"
+                    size="row"
                     onClick={() => (node.children.length > 0 ? setStack((s) => [...s, node]) : void openLeaf(node))}
-                    className="h-auto min-h-7 w-full justify-between gap-2 rounded-none border-b border-border/60 px-4 py-2 text-left whitespace-normal"
+                    className="w-full justify-between gap-2 px-4"
                   >
                     <span className="flex min-w-0 flex-1 items-center gap-2">
                       {isBakimxNode(node) && <Store className="size-3.5 shrink-0 text-primary" />}

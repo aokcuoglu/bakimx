@@ -30,7 +30,6 @@ export function DashboardPagination({
         type="button"
         variant="ghost"
         size="icon"
-        className="size-9 rounded-full"
         disabled={page === 0}
         onClick={() => onPageChange(page - 1)}
         aria-label="Önceki sayfa"
@@ -44,7 +43,6 @@ export function DashboardPagination({
         type="button"
         variant="ghost"
         size="icon"
-        className="size-9 rounded-full"
         disabled={page >= pageCount - 1}
         onClick={() => onPageChange(page + 1)}
         aria-label="Sonraki sayfa"

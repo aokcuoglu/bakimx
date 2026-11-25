@@ -13,12 +13,15 @@ export function OrderItemUnitCombobox({
   onValueChange,
   isOptionDisabled,
   ariaLabel = "Birim",
+  size = "default",
   className,
 }: {
   value: OrderItemUnit
   onValueChange: (value: OrderItemUnit) => void
   isOptionDisabled?: (value: OrderItemUnit) => boolean
   ariaLabel?: string
+  /** Yanındaki girdinin boyu: kalem satırında `compact`, formda `default`. */
+  size?: "default" | "compact"
   className?: string
 }) {
   const [open, setOpen] = useState(false)
@@ -40,14 +43,14 @@ export function OrderItemUnitCombobox({
       <PopoverTrigger asChild>
         <Button
           type="button"
-          variant="outline"
+          // Alan görünümlü tetikleyici (#889): yanındaki girdiyle aynı boy,
+          // çerçeve ve köşe.
+          variant="field"
+          size={size}
           role="combobox"
           aria-label={ariaLabel}
           aria-expanded={open}
-          className={cn(
-            "h-7 justify-between gap-1.5 rounded-lg bg-transparent px-2.5 text-sm font-normal whitespace-nowrap hover:bg-transparent dark:bg-input/30 dark:hover:bg-input/50",
-            className,
-          )}
+          className={cn("justify-between gap-1.5", className)}
         >
           <span className="truncate">{ORDER_ITEM_UNIT_LABELS[value]}</span>
           <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
@@ -76,11 +79,11 @@ export function OrderItemUnitCombobox({
                 key={unit}
                 type="button"
                 variant="ghost"
-                size="default"
+                size="sm"
                 role="option"
                 aria-selected={unit === value}
                 disabled={disabled}
-                className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-left"
+                className="w-full justify-start gap-2 text-left"
                 onClick={() => {
                   onValueChange(unit)
                   changeOpen(false)

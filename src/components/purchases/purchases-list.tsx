@@ -128,9 +128,10 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
           <Button
             type="button"
             variant="outline"
+            size="row"
             key={r.id}
             onClick={() => setSelected(r)}
-            className="h-auto w-full justify-start whitespace-normal p-3.5 text-left"
+            className="w-full"
           >
             <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
               <div className="min-w-0 flex-1">

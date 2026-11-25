@@ -148,10 +148,13 @@ export function TechnicianAssign({
         <Button
           type="button"
           variant={isCta ? "outline" : "ghost"}
+          // Hap / meta tetikleyici kilitli `<span>` ile aynı `trigger` görünümünü
+          // taşır; düğme ölçüsü getirmesin diye `inline` (#889).
+          size={isCta ? "default" : "inline"}
           className={
             isCta
               ? cn("border-primary/40 text-primary-strong hover:bg-primary/10 hover:text-primary-strong", className)
-              : cn("h-auto min-h-7 justify-start whitespace-normal", trigger)
+              : cn("justify-start whitespace-normal", trigger)
           }
           aria-label={
             assignedTechnicianName
@@ -210,15 +213,11 @@ export function TechnicianAssign({
                   <Button
                     key={t.id}
                     type="button"
-                    variant="outline"
+                    variant={isAssigned ? "secondary" : "outline"}
+                    size="row"
                     onClick={() => handleAssign(t)}
                     disabled={isPending}
-                    className={cn(
-                      "h-auto w-full justify-start gap-3 p-3 text-left whitespace-normal",
-                      isAssigned
-                        ? "border-primary/30 bg-primary/10"
-                        : "border-border bg-card hover:bg-muted"
-                    )}
+                    className="w-full"
                   >
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
                       <HardHat className="size-4" />

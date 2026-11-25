@@ -33,15 +33,14 @@ export function OrderFiltersDisclosure({
         {search}
         <Button
           type="button"
-          variant="ghost"
-          size="sm"
+          // Beyaz arama kutusunun içindeki nötr dolgulu çip (#889): `xs` kutudan
+          // (44/36px) her iki yanda boşluk bırakır; açık durum aria-expanded ile.
+          variant="secondary"
+          size="xs"
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen((value) => !value)}
-          className={cn(
-            "absolute right-1.5 top-1/2 h-8 -translate-y-1/2 gap-1.5 rounded-full bg-card px-3 text-[13px] font-medium text-foreground hover:bg-card",
-            open && "text-primary-strong",
-          )}
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 gap-1.5"
         >
           <ListFilter aria-hidden="true" />
           Filtreler

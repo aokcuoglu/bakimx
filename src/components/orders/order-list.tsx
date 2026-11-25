@@ -421,7 +421,7 @@ export function OrderList({
       <Button
         type="button"
         variant="outline"
-        className="w-full rounded-full aria-disabled:pointer-events-none aria-disabled:text-muted-foreground sm:w-auto"
+        className="w-full aria-disabled:pointer-events-none aria-disabled:text-muted-foreground sm:w-auto"
         aria-disabled={isLoadingMore}
         aria-busy={isLoadingMore}
         onClick={() => {
@@ -490,7 +490,7 @@ export function OrderList({
           </div>
           <div className="flex items-center gap-2">
             {view && (
-              <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => {
+              <Button type="button" variant="ghost" size="sm" onClick={() => {
                 const params = new URLSearchParams(window.location.search)
                 params.delete("view")
                 window.history.replaceState(null, "", `/orders${params.size ? `?${params}` : ""}`)
@@ -500,7 +500,7 @@ export function OrderList({
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="outline" size="sm" className="hidden rounded-full lg:inline-flex">
+                <Button type="button" variant="outline" size="sm" className="hidden lg:inline-flex">
                   Kolonlar
                   <ChevronDown />
                 </Button>

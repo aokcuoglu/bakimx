@@ -58,7 +58,7 @@ export function OrderTableColumnHeader<TData, TValue>({
           size="sm"
           aria-label={state ? `${title} — ${state}` : `${title}: sırala veya filtrele`}
           className={cn(
-            "-ml-1.5 h-8 gap-1 rounded-full px-1.5 text-[13px] font-medium text-muted-foreground",
+            "-ml-1.5 gap-1 px-1.5 text-muted-foreground",
             align === "right" && "ml-auto",
             (sorted || filterValue) && "text-foreground",
           )}
@@ -138,7 +138,7 @@ export function OrderTableColumnHeader<TData, TValue>({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 w-full justify-start gap-1.5 rounded-md px-2 text-[13px] text-muted-foreground"
+            className="w-full justify-start gap-1.5 px-2 text-muted-foreground"
             onClick={() => column.toggleVisibility(false)}
           >
             <EyeOff aria-hidden="true" />

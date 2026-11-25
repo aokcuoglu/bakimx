@@ -14,8 +14,10 @@ test("devre dışı stok seçeneklerini arama sonuçlarında da korur", () => {
   expect(SOURCE).toContain("const disabled = isOptionDisabled?.(unit)")
 })
 
-test("kapalı durumda eski select görünümünü, açılınca ayrı arama alanını kullanır", () => {
+test("kapalı durumda alan (select) görünümünü, açılınca ayrı arama alanını kullanır", () => {
   expect(SOURCE).toContain('<PopoverTrigger asChild>')
-  expect(SOURCE).toContain('variant="outline"')
+  // Tetikleyici yanındaki girdiyle aynı çerçeve/köşe/boy: Button `field` + `size` (#889).
+  expect(SOURCE).toContain('variant="field"')
+  expect(SOURCE).toContain("size={size}")
   expect(SOURCE).toContain('<PopoverContent align="start" className="w-56 gap-1.5 p-1.5">')
 })

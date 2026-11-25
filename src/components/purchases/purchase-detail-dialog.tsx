@@ -229,8 +229,9 @@ export function PurchaseDetailDialog({
                 <Button
                   type="button"
                   variant="outline"
+                  size="row"
                   onClick={() => fileInputRef.current?.click()}
-                  className="h-auto w-full flex-col gap-1.5 border-dashed bg-muted/40 py-5 text-muted-foreground"
+                  className="w-full flex-col justify-center gap-1.5 border-dashed text-center text-muted-foreground"
                 >
                   <Camera className="size-5" />
                   {item.purchasePhotoId ? "Fotoğrafı değiştir" : "Fotoğraf ekle"}

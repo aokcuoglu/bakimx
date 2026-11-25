@@ -216,7 +216,7 @@ export function ManualPartDialog({
               <span className="block text-xs font-medium text-muted-foreground">Birim</span>
               <OrderItemUnitCombobox
                 value={unit}
-                className="h-7 w-full"
+                className="w-full"
                 onValueChange={(next) => {
                   setUnit(next)
                   if (!isDivisibleOrderItemUnit(next)) setQuantity((q) => Math.max(1, Math.round(q)))

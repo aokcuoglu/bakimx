@@ -212,14 +212,11 @@ export function VinCandidateList({
           <Button
             key={c.vehicleTypeId}
             type="button"
-            variant="outline"
+            // Seçili aday çerçeveli, diğerleri sade satır (#889: durum variant'la).
+            variant={selected ? "outline" : "ghost"}
+            size="row"
             onClick={() => onSelect(c)}
-            className={cn(
-              "h-auto min-h-7 w-full justify-start gap-2 px-3 py-2 text-left whitespace-normal",
-              selected
-                ? "border-primary bg-primary/5 text-foreground"
-                : "border-transparent bg-background hover:border-border"
-            )}
+            className={cn("w-full gap-2", selected && "border-primary bg-primary/5 text-foreground")}
           >
             <span className={cn("size-4 shrink-0", selected ? "text-primary" : "text-transparent")}>
               <Check className="size-4" />

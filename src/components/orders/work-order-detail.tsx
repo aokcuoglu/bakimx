@@ -1510,7 +1510,7 @@ export function WorkOrderDetail({
                               aria-label={`Fotoğraf ${i + 1} — seçimden çıkar`}
                               disabled={loading}
                               onClick={() => removePendingPhoto(p.key)}
-                              className={cn("absolute top-1 right-1 rounded-full", detail.tap)}
+                              className={cn("absolute top-1 right-1", detail.tap)}
                             >
                               <X className="size-3.5" />
                             </Button>
@@ -1663,9 +1663,10 @@ function MobileTotalsBar({
     <Button
       type="button"
       variant="outline"
+      size="row"
       onClick={onJump}
       aria-label="Fiyatlandırma özetine git"
-      className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 h-auto w-full justify-between rounded-xl bg-background/95 px-4 py-3 text-left whitespace-normal shadow-lg backdrop-blur md:hidden"
+      className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 w-full justify-between bg-background/95 px-4 shadow-lg backdrop-blur md:hidden"
     >
       <span className="flex min-w-0 flex-col items-start gap-0.5">
         <span className="flex items-center gap-2 text-sm text-muted-foreground">

@@ -43,13 +43,14 @@ export function VehiclePhotoGrid({ photos }: { photos: VehicleHistoryPhoto[] }) 
               key={photo.id}
               type="button"
               variant="outline"
+              size="tile"
               disabled={!src}
               aria-label={src ? `${label} — büyüt` : label}
               onClick={() => {
                 const next = viewable.findIndex((item) => item.id === photo.id)
                 if (next >= 0) setOpenIndex(next)
               }}
-              className="h-auto w-full flex-col items-stretch overflow-hidden p-0"
+              className="w-full items-stretch"
             >
               <div className="aspect-[4/3] bg-muted flex items-center justify-center">
                 {src ? (

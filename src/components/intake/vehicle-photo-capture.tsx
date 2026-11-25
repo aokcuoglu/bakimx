@@ -66,7 +66,8 @@ export function VehiclePhotoCapture({
             <Button
               type="button"
               variant="ghost"
-              className="block h-auto w-full rounded-none p-0 md:h-auto"
+              size="tile"
+              className="w-full"
               aria-label="Araç fotoğrafını büyüt"
               onClick={() => setZoomOpen(true)}
             >

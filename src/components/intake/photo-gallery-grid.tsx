@@ -105,7 +105,9 @@ function PhotoGalleryCard({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
-  const frame = "block aspect-square h-auto w-full overflow-hidden rounded-md bg-muted p-0"
+  // Fotoğraf karosu `variant="secondary" size="tile"` düğmesidir (#889); dosyası
+  // olmayan yer tutucu aynı ölçü ve tonda.
+  const frame = "aspect-square w-full"
 
   const metaLine = [photo.sizeBytes != null ? formatSize(photo.sizeBytes) : null, photo.fileName]
     .filter(Boolean)
@@ -117,7 +119,8 @@ function PhotoGalleryCard({
         {photo.fileUrl && onOpen ? (
           <Button
             type="button"
-            variant="ghost"
+            variant="secondary"
+            size="tile"
             onClick={onOpen}
             aria-label={`${typeLabel} fotoğrafını büyüt`}
             className={cn(frame, "hover:ring-2 hover:ring-ring")}
@@ -125,7 +128,7 @@ function PhotoGalleryCard({
             <PhotoThumbnail photoId={photo.id} fileUrl={photo.fileUrl} />
           </Button>
         ) : (
-          <div className={cn(frame, "flex items-center justify-center")}>
+          <div className={cn(frame, "flex items-center justify-center overflow-hidden rounded-md bg-secondary")}>
             <div className="text-center p-2">
               <ImageOff className="size-6 text-muted-foreground/30 mx-auto mb-1" />
               <span className="text-xs text-muted-foreground">Dosya yok</span>

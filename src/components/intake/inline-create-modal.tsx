@@ -396,8 +396,9 @@ export function InlineCreateModal({
           <Button
             type="button"
             variant="outline"
+            size="row"
             onClick={() => setShowDetails((s) => !s)}
-            className="h-auto min-h-(--control-h) w-full min-w-0 justify-between gap-2 whitespace-normal px-3 py-2 text-left text-foreground"
+            className="w-full min-w-0 justify-between gap-2 text-foreground"
           >
             <span className="min-w-0">Ruhsat / teknik bilgiler (opsiyonel)</span>
             <ChevronDown className={`size-4 shrink-0 transition-transform ${showDetails ? "rotate-180" : ""}`} />
