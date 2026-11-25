@@ -226,7 +226,7 @@ export function VehicleDetail({
                 <CompactDetail label="Motor No" value={v.engineNo || "—"} mono />
               </dl>
               {v.vin ? (
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted px-3 py-2 text-sm">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm">
                   <span className={v.vinConfirmed ? "inline-flex items-center gap-1.5 text-success-strong" : "inline-flex items-center gap-1.5 text-warning-strong"}>
                     <ShieldCheck className="size-4" />
                     {v.vinConfirmed ? "Şase numarası teyit edildi" : "Şase numarası teyit bekliyor"}
@@ -245,9 +245,9 @@ export function VehicleDetail({
             <div className="flex items-start gap-3">
               <Link
                 href={`/customers/${v.customer.id}`}
-                className="flex items-center gap-3 hover:bg-muted rounded-lg p-2 -m-2 transition-colors flex-1"
+                className="flex items-center gap-3 hover:bg-muted rounded-md p-2 -m-2 transition-colors flex-1"
               >
-                <div className="size-10 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
+                <div className="size-10 rounded-sm bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
                   <User className="size-4" />
                 </div>
                 <div className="min-w-0">
@@ -525,7 +525,7 @@ function OwnWorkOrderCard({ intake, workshopName }: { intake: OwnWorkOrderIntake
   return (
     <Link
       href={`/orders/${order.id}`}
-      className="group rounded-lg border border-border p-3 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
+      className="group rounded-md border border-border p-3 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
@@ -554,7 +554,7 @@ function OwnWorkOrderCard({ intake, workshopName }: { intake: OwnWorkOrderIntake
 
 function OtherWorkOrderCard({ order }: { order: CrossWorkshopHistory["orders"][number] }) {
   return (
-    <article className="rounded-lg border border-border p-3 sm:p-4">
+    <article className="rounded-md border border-border p-3 sm:p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={order.status} />
@@ -593,12 +593,12 @@ function ChangedParts({ labels }: { labels: string[] }) {
 }
 
 function OrderHistoryEmpty({ message }: { message: string }) {
-  return <div className="rounded-lg border border-dashed border-border py-7 text-center text-muted-foreground"><Wrench className="mx-auto mb-2 size-7" /><p className="text-sm">{message}</p></div>
+  return <div className="rounded-md border border-dashed border-border py-7 text-center text-muted-foreground"><Wrench className="mx-auto mb-2 size-7" /><p className="text-sm">{message}</p></div>
 }
 
 function VehicleMetric({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
   return (
-    <div className="flex min-w-0 items-center gap-3 rounded-lg bg-muted px-3 py-2.5">
+    <div className="flex min-w-0 items-center gap-3 rounded-md bg-muted px-3 py-2.5">
       <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-background text-muted-foreground"><Icon className="size-4" /></span>
       <div className="min-w-0"><p className="text-[11px] font-medium text-muted-foreground">{label}</p><p className="truncate text-sm font-semibold text-foreground">{value}</p></div>
     </div>
@@ -611,7 +611,7 @@ function CompactDetail({ label, value, mono }: { label: string; value: string; m
 
 function StatusIndicator({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className={cn("flex items-center justify-between rounded-lg border px-3 py-2 text-sm", color)}>
+    <div className={cn("flex items-center justify-between rounded-md border px-3 py-2 text-sm", color)}>
       <span className="font-medium">{label}</span>
       <span className="font-semibold text-xs">{value}</span>
     </div>
