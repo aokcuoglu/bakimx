@@ -69,6 +69,8 @@ export function PhotoDeleteButton({
           onKeyDown={(e) => e.stopPropagation()}
           className={cn(
             "absolute top-1.5 right-1.5 z-10 inline-flex size-8 items-center justify-center rounded-full",
+            // Telefonda görsel 32px kalır; dokunma alanı şeffaf ::before ile 44px'e açılır (köşe 6px içeride, komşu kutuya taşmaz).
+            "before:absolute before:-inset-1.5 before:content-[''] md:before:hidden",
             "bg-background/85 text-destructive-strong ring-1 ring-border backdrop-blur-sm",
             // Ters kontrast: dolu kırmızı zemin + `destructive-foreground` ikon.
             // Bu token temaya sonradan eklendi (globals.css); yoksa Tailwind

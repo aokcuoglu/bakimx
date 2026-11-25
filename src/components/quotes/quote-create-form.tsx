@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/incompatible-library */
 "use client"
 
+import { listThenSelect } from "@/lib/ui/list-then-select"
 import { useState, useCallback, useEffect, useActionState, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -164,11 +165,16 @@ export function QuoteCreateForm({
       fuelType: null,
       firstRegistrationDate: null,
     }
-    setVehicles((current) =>
-      current.some((vehicle) => vehicle.id === created.id) ? current : [created, ...current]
+    listThenSelect(
+      () =>
+        setVehicles((current) =>
+          current.some((vehicle) => vehicle.id === created.id) ? current : [created, ...current]
+        ),
+      () => {
+        form.setValue("vehicleId", created.id, { shouldDirty: true, shouldValidate: true })
+        setVehicleError("")
+      }
     )
-    form.setValue("vehicleId", created.id, { shouldDirty: true, shouldValidate: true })
-    setVehicleError("")
   }
 
   // PREVIEW ONLY — the server recomputes the authoritative totals from the line
