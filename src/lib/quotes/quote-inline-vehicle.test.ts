@@ -25,3 +25,12 @@ test("araç ekleme aksiyonu vurgulu bir buton olarak kalır", () => {
   expect(FORM).toContain('className="text-primary"')
   expect(FORM).toContain("Bu müşteriye yeni araç ekle")
 })
+
+test("yeni araç seçeneği önce listeye işlenir, sonra seçilir (#884)", () => {
+  const appointmentForm = readFileSync(
+    join(import.meta.dir, "..", "..", "components", "appointments", "appointment-create-form.tsx"),
+    "utf8"
+  )
+  expect(FORM).toContain("listThenSelect(")
+  expect(appointmentForm).toContain("listThenSelect(")
+})
