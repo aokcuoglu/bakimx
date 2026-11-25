@@ -11,7 +11,6 @@ import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
 import { normalizeSupplierPriceRows, derivePartPricing, shouldPreserveDerivedPricing, type SupplierPriceRow } from "@/lib/parts/supplier-prices"
 import type { QuickPartCreateResult } from "@/lib/parts/quick-part-draft"
-import { getWorkshopQuotaContext } from "@/lib/rapidapi-quota"
 
 async function requireAuth() {
   return (await requireFeatureWorkshop("partsInventory")).user
@@ -563,6 +562,6 @@ export async function ensureVehiclePartsPrefetched(
   })
   if (existing) return { status: "cached" }
 
-  after(() => prefetchCommonVehicleParts(vehicleTypeId, getWorkshopQuotaContext(workshop)))
+  after(() => prefetchCommonVehicleParts(vehicleTypeId, workshop))
   return { status: "started" }
 }

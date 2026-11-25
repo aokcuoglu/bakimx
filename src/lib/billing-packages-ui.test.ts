@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { existsSync, readFileSync } from "node:fs"
+import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
 const root = process.cwd()
@@ -18,20 +18,18 @@ test("paket karşılaştırması masaüstü semantik tablo ve mobil shadcn Tabs 
 test("uygulama içi paket CTA etkin billing.manage izninden gelir", () => {
   const page = read("src/app/(app)/settings/plans/page.tsx")
   const context = read("src/lib/billing/account-context.ts")
-  const purchasePage = read("src/app/(app)/billing/quota/purchase/page.tsx")
   const comparison = read("src/components/billing/plan-packages.tsx")
   expect(context).toContain('actorCan(user, "billing.manage")')
   expect(context).toContain('isTechnicianRestrictedRole(user.role)')
   expect(page).toContain("canPurchase={canPurchase}")
-  expect(purchasePage).toContain('actorCan(user, "billing.manage")')
   expect(comparison).toContain("Paket değişikliği için yöneticinizle görüşün.")
-  expect(purchasePage).toContain("Paket değişikliği için yöneticinizle görüşün.")
 })
 
-test("eski kota sayfası kullanıma yönlenir ve ek kota rotası korunur", () => {
+test("eski kota sayfası ve ek kota satın alma rotası kullanıma yönlenir (#827)", () => {
   const redirectPage = read("src/app/(app)/billing/quota/page.tsx")
   expect(redirectPage).toContain('redirect("/settings/billing#kullanim")')
-  expect(existsSync(join(root, "src/app/(app)/billing/quota/purchase/page.tsx"))).toBe(true)
+  const purchasePage = read("src/app/(app)/billing/quota/purchase/page.tsx")
+  expect(purchasePage).toContain('redirect("/settings/billing#kullanim")')
 })
 
 test("faturalandırma kullanımı gerçek hakları ve Lite boş durumunu gösterir", () => {

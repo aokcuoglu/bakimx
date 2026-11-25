@@ -11,7 +11,6 @@ import { isValidVin } from "@/lib/vin/types"
 import { deriveVinConfirmed } from "@/lib/vin/confirm"
 import { prefetchCommonVehicleParts, eagerPrefetchTarget } from "@/lib/tecdoc/prefetch"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
-import { getWorkshopQuotaContext } from "@/lib/rapidapi-quota"
 
 /**
  * The catalog id columns have no DB foreign keys (the catalog is re-importable
@@ -140,7 +139,7 @@ export async function createVehicleAction(formData: FormData) {
       vinConfirmed,
     })
     if (prefetchId != null) {
-      after(() => prefetchCommonVehicleParts(prefetchId, getWorkshopQuotaContext(workshop)))
+      after(() => prefetchCommonVehicleParts(prefetchId, workshop))
     }
 
     revalidatePath("/vehicles")
@@ -281,7 +280,7 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
     vinConfirmed,
   })
   if (prefetchId != null) {
-    after(() => prefetchCommonVehicleParts(prefetchId, getWorkshopQuotaContext(workshop)))
+    after(() => prefetchCommonVehicleParts(prefetchId, workshop))
   }
 
   revalidatePath("/vehicles")
@@ -333,7 +332,7 @@ export async function linkVehicleCatalogAction(
   }
 
   // Arka planda yaygın bakım parçalarını cache'e doldur (response'u bloklamaz).
-  after(() => prefetchCommonVehicleParts(data.catalogVehicleTypeId, getWorkshopQuotaContext(workshop)))
+  after(() => prefetchCommonVehicleParts(data.catalogVehicleTypeId, workshop))
 
   revalidatePath("/vehicles")
   revalidatePath(`/vehicles/${vehicleId}`)
@@ -360,7 +359,7 @@ export async function confirmVehicleVinAction(vehicleId: string) {
   // Araç zaten kataloğa bağlıysa, teyit anında yaygın parçaları arka planda doldur.
   if (vehicle.catalogVehicleTypeId) {
     const vehicleTypeId = vehicle.catalogVehicleTypeId
-    after(() => prefetchCommonVehicleParts(vehicleTypeId, getWorkshopQuotaContext(workshop)))
+    after(() => prefetchCommonVehicleParts(vehicleTypeId, workshop))
   }
 
   revalidatePath("/vehicles")

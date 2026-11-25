@@ -58,7 +58,15 @@ model Workshop {
   // (paid overage / custom deals — charged offline until usage billing lands).
   extraSeats         Int                    @default(0)
   // Extra monthly VIN/katalog kotası (satın alınan ek kota — base tier kotasının üzerine eklenir).
+  // Yazan tek yer admin `setWorkshopExtraVinQuota` (#827).
   extraVinQuota      Int                    @default(0)
+  // Atölye bazında açılmış ek özellikler (#827). Geçerli değerler
+  // `ADDON_FEATURES` (src/lib/plan.ts); bütünlük kodda tutulur — okuma
+  // `normalizeAddons()` ile yapılır, bilinmeyen dize yok sayılır. Bugün yazan
+  // tek yer admin `setWorkshopAddons`; uygulama içi satın alma (#829) da
+  // buraya yazacak. Self-serve paket yenilemesi (`activate.ts`) bu alana
+  // dokunmaz.
+  addons             String[]               @default([])
 
   acquisitionSource    AcquisitionSource @default(unknown)
   acquisitionAdvisorId String?

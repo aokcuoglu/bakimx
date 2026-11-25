@@ -28,6 +28,9 @@ import {
   isAddonFeature,
   isSalePlanTier,
   featureLockedMessage,
+  normalizeAddons,
+  getEnabledFeatures,
+  getVinLookupBaseQuota,
   type PlanTier,
 } from "@/lib/plan"
 
@@ -38,6 +41,7 @@ function wsFields(over: Partial<Parameters<typeof getPlanState>[0]> = {}) {
     approvalStatus: "approved" as const,
     trialEndsAt: null,
     currentPeriodEnd: null,
+    addons: [] as string[],
     ...over,
   }
 }
@@ -401,4 +405,70 @@ test("eski satırda kapalı paket özelliği 'paketinizde bulunmuyor' der", () =
 test("şaseden parça ek özellik olduğu için Servis Paketi'nin VIN kotası 0", () => {
   const quotas: Record<PlanTier, number> = { lite: 0, starter: 0, pro: 0, premium: 15_000 }
   expect(VIN_LOOKUP_QUOTA).toEqual(quotas)
+})
+
+// ——— Atölye bazında ek özellik (#827) ———
+
+test("normalizeAddons bilinmeyeni atar, tekilleştirir ve ADDON_FEATURES sırasına dizer", () => {
+  expect(normalizeAddons(["multiBranch", "bilinmeyen", "vinLookup", "multiBranch"])).toEqual(["vinLookup", "multiBranch"])
+  expect(normalizeAddons([])).toEqual([])
+  expect(normalizeAddons(null)).toEqual([])
+  expect(normalizeAddons(undefined)).toEqual([])
+})
+
+test("pro + ['ocrIntake'] yalnız OCR'ı açar", () => {
+  const ws = wsFields({ addons: ["ocrIntake"] })
+  for (const feature of ADDON_FEATURES) {
+    expect(hasWorkshopFeature(ws, feature)).toBe(feature === "ocrIntake")
+  }
+  expect(hasWorkshopFeature(ws, "appointments")).toBe(true)
+})
+
+test("bilinmeyen addons dizesi yok sayılır", () => {
+  const ws = wsFields({ addons: ["uydurma"] })
+  expect(ADDON_FEATURES.some((feature) => hasWorkshopFeature(ws, feature))).toBe(false)
+})
+
+test("premium + [] ek özelliklerin hepsini açar", () => {
+  const ws = wsFields({ planTier: "premium" })
+  expect(ADDON_FEATURES.every((feature) => hasWorkshopFeature(ws, feature))).toBe(true)
+})
+
+test("aktif deneme + [] hepsini açar; biten deneme yalnız addons'ı", () => {
+  const future = new Date(Date.now() + 3 * 86_400_000)
+  const past = new Date(Date.now() - 86_400_000)
+  const active = wsFields({ subscriptionStatus: "trialing", trialEndsAt: future })
+  expect(ADDON_FEATURES.every((feature) => hasWorkshopFeature(active, feature))).toBe(true)
+
+  const ended = wsFields({ subscriptionStatus: "trialing", trialEndsAt: past, addons: ["eInvoice"] })
+  expect(hasWorkshopFeature(ended, "eInvoice")).toBe(true)
+  expect(hasWorkshopFeature(ended, "ocrIntake")).toBe(false)
+})
+
+test("eski lite/starter satırında da addons geçerlidir", () => {
+  expect(hasWorkshopFeature(wsFields({ planTier: "lite", addons: ["vinLookup"] }), "vinLookup")).toBe(true)
+  expect(hasWorkshopFeature(wsFields({ planTier: "starter", addons: ["multiBranch"] }), "multiBranch")).toBe(true)
+})
+
+test("assertFeature ek özellik açıkken geçer, kapalıyken fırlatır", () => {
+  expect(() => assertFeature(wsFields({ addons: ["vinLookup"] }), "vinLookup")).not.toThrow()
+  expect(() => assertFeature(wsFields(), "vinLookup")).toThrow(PlanFeatureLockedError)
+})
+
+test("getEnabledFeatures paket özellikleri + açık ek özellikleri verir", () => {
+  const pro = getEnabledFeatures(wsFields())
+  expect(ADDON_FEATURES.some((feature) => pro.includes(feature))).toBe(false)
+  expect(pro).toContain("appointments")
+  const withOcr = getEnabledFeatures(wsFields({ addons: ["ocrIntake"] }))
+  expect(withOcr).toContain("ocrIntake")
+  expect(withOcr).not.toContain("vinLookup")
+  expect(getEnabledFeatures(wsFields({ planTier: "premium" }))).toEqual([...GATED_FEATURES])
+})
+
+test("getVinLookupBaseQuota: pro 0, vinLookup ya da partsCatalog 15.000, premium 15.000", () => {
+  expect(getVinLookupBaseQuota(wsFields())).toBe(0)
+  expect(getVinLookupBaseQuota(wsFields({ addons: ["vinLookup"] }))).toBe(15_000)
+  expect(getVinLookupBaseQuota(wsFields({ addons: ["partsCatalog"] }))).toBe(15_000)
+  expect(getVinLookupBaseQuota(wsFields({ addons: ["ocrIntake"] }))).toBe(0)
+  expect(getVinLookupBaseQuota(wsFields({ planTier: "premium" }))).toBe(15_000)
 })

@@ -70,6 +70,7 @@ export async function runDeliveryReminderJob(workshopId: string): Promise<Schedu
       trialEndsAt: true,
       liteFreeGrantedAt: true,
       currentPeriodEnd: true,
+      addons: true,
     },
   })
   if (!workshop || !getPlanState(workshop).hasAccess || !hasWorkshopFeature(workshop, "communications")) {
