@@ -26,6 +26,7 @@ import { assertFeature, hasWorkshopFeature } from "@/lib/plan"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
 import { assertIntakePhotoQuota } from "@/lib/photos/quota"
 import { trDateToDate } from "@/lib/format"
+import { parseIstanbulLocalDateTime } from "@/lib/istanbul-time"
 import { nanoid } from "nanoid"
 import { computeStockDelta } from "@/lib/parts/stock-delta"
 import { ORDER_ITEM_UNITS, quantityToNumber, validateQuantityForUnit } from "@/lib/orders/quantity"
@@ -1211,9 +1212,13 @@ export async function updateOrderMetaAction(orderId: string, formData: FormData)
   if (!order) return { error: "Servis emri bulunamadı" }
   if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş araç kabulü düzenlenemez" }
 
+  // `datetime-local` değeri Türkiye duvar saatidir; sunucunun TZ'si değil (#861).
   const estimatedDeliveryAt = parsed.data.estimatedDeliveryAt
-    ? new Date(parsed.data.estimatedDeliveryAt)
+    ? parseIstanbulLocalDateTime(parsed.data.estimatedDeliveryAt)
     : null
+  if (parsed.data.estimatedDeliveryAt && !estimatedDeliveryAt) {
+    return { error: "Geçersiz tahmini teslim tarihi" }
+  }
 
   // Discount (kuruş) and taxRate (bps) move the order's grandTotal, so re-derive
   // payment fields in the same transaction (server authority).

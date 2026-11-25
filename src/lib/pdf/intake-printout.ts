@@ -1,6 +1,7 @@
 import { renderDamageReport } from "@/lib/pdf/damage-report"
 import { PHOTO_PHASES } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
+import { formatTrDate } from "@/lib/format-date"
 import { fuelGaugeSvgMarkup, formatFuelLevel } from "@/lib/fuel-level"
 import type { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
@@ -40,8 +41,6 @@ type IntakePrintoutData = {
     missingLabels: string[]
   }
 }
-
-const fmtDate = (d: Date | string) => new Date(d).toLocaleDateString("tr-TR")
 
 const lineTotalOf = (item: { quantity: number; unitPrice: number | null; totalPrice: number | null }) => {
   if (item.totalPrice != null && item.totalPrice > 0) return item.totalPrice
@@ -165,7 +164,7 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
       tone: isApproved ? "ok" : "warn",
       value: isApproved ? "Onaylı" : "Bekliyor",
       label: "Müşteri onayı",
-      hint: approval?.approvedAt ? fmtDate(approval.approvedAt) : "Onay tarihi yok",
+      hint: approval?.approvedAt ? formatTrDate(approval.approvedAt) : "Onay tarihi yok",
     },
   ]
     .filter((_, index) => index === 0 ? intakeForm.photosVisible !== false : index === 1 ? intakeForm.inspectionStatus !== undefined : true)
@@ -218,8 +217,8 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
     `<div class="field-label">Müşteri şikayeti</div>
      <div class="complaint">${intakeForm.customerComplaint}</div>
      <div class="meta-row">
-       <span>Kayıt: ${fmtDate(intakeForm.createdAt)}</span>
-       ${intakeForm.approvedAt ? `<span>Onay: ${fmtDate(intakeForm.approvedAt)}</span>` : ""}
+       <span>Kayıt: ${formatTrDate(intakeForm.createdAt)}</span>
+       ${intakeForm.approvedAt ? `<span>Onay: ${formatTrDate(intakeForm.approvedAt)}</span>` : ""}
      </div>`
   )
 
@@ -293,7 +292,7 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
           `<div class="approval ${isApproved ? "tone-ok" : "tone-warn"}">
             ${isApproved ? "✓ Müşteri onayı verildi" : "⏳ Onay bekliyor"}
           </div>
-          ${approval?.approvedAt ? `<div class="meta-row"><span>Onay tarihi: ${fmtDate(approval.approvedAt)}</span></div>` : ""}`
+          ${approval?.approvedAt ? `<div class="meta-row"><span>Onay tarihi: ${formatTrDate(approval.approvedAt)}</span></div>` : ""}`
         )
       : ""
 
@@ -604,7 +603,7 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
       <div class="doc-head-right">
         <span class="plate">${intakeForm.vehicle.plate}</span>
         <div><span class="status-pill">${statusLabel}</span></div>
-        <div class="doc-date">${fmtDate(intakeForm.createdAt)}</div>
+        <div class="doc-date">${formatTrDate(intakeForm.createdAt)}</div>
       </div>
     </header>
 
