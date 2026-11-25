@@ -114,14 +114,8 @@ export default async function PurchasesPage({
   const hasFilters = !!(q || from || to)
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Dış Alımlar" wide>
+    <AppShell workshopName={workshop?.name} wide>
       <div className="space-y-5 sm:space-y-6">
-
-
-        <div>
-          <p className="text-sm text-muted-foreground mt-0.5">Teknisyenlerin araç kabulüne dışarıdan aldığı parçalar</p>
-        </div>
-
         {!canCreate && (
           <InlineFeatureUpsell feature="procurement" currentTier={currentTier} />
         )}

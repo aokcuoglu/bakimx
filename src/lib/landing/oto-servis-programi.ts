@@ -34,6 +34,6 @@ export const OTO_SERVIS_PROGRAMI_FAQS = [
   {
     question: "Oto servis programında kasa, tahsilat veya cari hesap takibi var mı?",
     answer:
-      "Evet. Profesyonel pakette kasa, tahsilat ve müşteri alacak yaşlandırma takibi yer alır; bu kayıtlar servis operasyonuyla aynı yerde tutulur. e-Fatura/e-Arşiv entegrasyonu ayrı bir yol haritası maddesidir ve şu an aktif değildir.",
+      "Evet. Servis Paketi'nde kasa, tahsilat ve müşteri alacak yaşlandırma takibi yer alır; bu kayıtlar servis operasyonuyla aynı yerde tutulur. e-Fatura/e-Arşiv entegrasyonu ek özellik olarak planlanıyor ve şu an aktif değildir.",
   },
 ] as const

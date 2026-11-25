@@ -69,7 +69,12 @@ export function BillingUsagePanel({ plan, seatUsage, extraSeats, quota, canPurch
           <div className="mt-4">
             {quota.totalCap > 0 ? (
               <><p className="text-sm font-semibold tabular-nums">{quota.used.toLocaleString("tr-TR")} <span className="font-normal text-muted-foreground">/ {quota.totalCap.toLocaleString("tr-TR")}</span></p><Meter label="Aylık katalog kredisi kullanımı" used={quota.used} limit={quota.totalCap} /></>
-            ) : <p className="text-sm text-muted-foreground">Paketinizde bulunmuyor</p>}
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">Paketinizde bulunmuyor</p>
+                <p className="mt-1.5 text-xs text-muted-foreground">Şaseden parça ek özelliktir; yakında uygulama içinden satın alınabilecek.</p>
+              </>
+            )}
           </div>
           <div className="mt-auto pt-5"><Button asChild variant="outline" size="sm"><Link href="/settings/billing/automation-credit-usage">Kullanım <ChevronRight className="size-3.5" /></Link></Button></div>
         </div>

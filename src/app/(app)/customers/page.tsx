@@ -2,9 +2,7 @@ import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Plus, Wallet, Info } from "lucide-react"
+import { Info } from "lucide-react"
 import { CustomerListWithDelete } from "@/components/customers/customer-list-with-delete"
 import { type CustomerRow } from "@/components/customers/customer-list"
 import { summarizeCustomerOrders } from "@/lib/customer-totals"
@@ -104,31 +102,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   }
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Müşteriler">
+    <AppShell workshopName={workshop?.name} subtitle={`${rows.length} müşteri kayıtlı`}>
       <div className="space-y-5 sm:space-y-6">
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {rows.length} müşteri{rows.length === 1 ? "" : ""} kayıtlı
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" asChild>
-              <Link href="/customers/balances">
-                <Wallet className="size-4" />
-                Bakiye Özeti
-              </Link>
-            </Button>
-            <Button variant="foreground" size="default" asChild>
-              <Link href="/customers/new">
-                <Plus className="size-4" />
-                Yeni Müşteri
-              </Link>
-            </Button>
-          </div>
-        </div>
-
         <div className="rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
           <Info className="size-3.5 mt-0.5 shrink-0" />
           <span>Bakiye Özeti sayfası henüz temel düzeydedir ve ödeme/tahsilat modülü aktifleştiğinde gerçek değerlere geçecektir.</span>

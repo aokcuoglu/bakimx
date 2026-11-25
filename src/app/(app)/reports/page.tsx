@@ -12,7 +12,7 @@ export default async function ReportsPage() {
   const { workshop } = await getAppData()
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Raporlar">
+    <AppShell workshopName={workshop?.name}>
       <ReportsLayout>
         <div className="min-h-[40vh] flex items-center justify-center">
           <div className="text-center space-y-4">

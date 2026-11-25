@@ -11,8 +11,9 @@ test("referral offer applies from registration until, but not including, the fir
   expect(getReferralDiscountBps({ referredByWorkshopId: null, createdAt }, createdAt)).toBe(0)
 })
 
-test("discount is applied to VAT-included paid prices and leaves Lite free", () => {
-  expect(getDiscountedPlanPriceMinor("pro", "monthly", 1000)).toBe(161910)
+test("discount is applied to VAT-included paid prices and leaves legacy Lite free", () => {
+  expect(getDiscountedPlanPriceMinor("pro", "monthly", 1000)).toBe(134910)
+  expect(getDiscountedPlanPriceMinor("pro", "yearly", 1000)).toBe(1349100)
   expect(getDiscountedPlanPriceMinor("premium", "yearly", 1000)).toBe(2699100)
   expect(getDiscountedPlanPriceMinor("lite", "monthly", 1000)).toBe(0)
   expect(applyDiscountMinor(101, 1000)).toBe(91)

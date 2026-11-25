@@ -48,12 +48,8 @@ export default async function AnalyticsPage() {
   ])
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Operasyonel Analiz">
+    <AppShell workshopName={workshop?.name}>
       <div className="min-w-0 space-y-6">
-        <p className="text-sm text-muted-foreground">
-          Atölyenizin operasyonel sağlığını ve performans metriklerini izleyin.
-        </p>
-
         <div className="space-y-3">
           <RecommendationsList recommendations={recommendations} />
         </div>

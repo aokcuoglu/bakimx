@@ -8,7 +8,7 @@ import { parseOcrImageRequest } from "@/lib/ocr/parse-image-request"
 import { parseVinFromText } from "@/lib/ocr/vin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
-import { hasWorkshopFeature } from "@/lib/plan"
+import { featureLockedMessage, hasWorkshopFeature } from "@/lib/plan"
 
 // Vision çağrısı birkaç saniye sürebilir; Next'in varsayılan süresini gevşet
 // (proxy timeout ~60s'in altında kalır).
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     if (locked) return locked
     if (!hasWorkshopFeature(workshop, "vinLookup")) {
       return NextResponse.json(
-        { error: "VIN okuma bu çalışma alanında kapalı.", code: "feature_locked" },
+        { error: featureLockedMessage("vinLookup"), code: "feature_locked" },
         { status: 403 },
       )
     }

@@ -1,6 +1,6 @@
 import { Prisma, type Workshop } from "@prisma/client"
 import { prisma } from "@/lib/db"
-import { getPlanState, VIN_LOOKUP_QUOTA, type PlanTier } from "@/lib/plan"
+import { ADDON_LOCKED_MESSAGE, getPlanState, VIN_LOOKUP_QUOTA, type PlanTier } from "@/lib/plan"
 
 const DEFAULT_MONTHLY_CAP = 18_000 // headroom under the 20k RapidAPI plan
 
@@ -39,7 +39,7 @@ export class WorkshopQuotaExceededError extends Error {
   constructor(cap: number) {
     super(
       cap <= 0
-        ? "Bu pakette şase/parça sorgusu bulunmuyor. Paketinizi yükseltin."
+        ? ADDON_LOCKED_MESSAGE
         : "Aylık katalog sorgu limitiniz doldu. Ek kota satın almak için Faturalandırma sayfasını kullanın.",
     )
     this.name = "WorkshopQuotaExceededError"
