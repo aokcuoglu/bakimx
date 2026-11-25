@@ -58,3 +58,12 @@ test("geçersiz JSON ham kayıt olarak korunur", () => {
   expect(parseAuditMetadata("{bozuk")).toEqual({ changes: [], details: [], raw: "{bozuk" })
   expect(formatAuditFieldLabel("profile.displayName")).toBe("Profile · Display Name")
 })
+
+test("admin_addons_set listeleri anahtar yerine okunur ek özellik adıyla görünür (#827)", () => {
+  const metadata = parseAuditMetadata(
+    JSON.stringify({ before: [], after: ["vinLookup", "multiBranch"], added: ["vinLookup", "multiBranch"], removed: [] }),
+  )
+  expect(metadata.changes[0]).toMatchObject({ before: "Yok", after: "VIN ile araç tanıma, Çoklu şube" })
+  expect(metadata.details.find((detail) => detail.key === "added")?.value).toBe("VIN ile araç tanıma, Çoklu şube")
+  expect(metadata.details.find((detail) => detail.key === "removed")?.value).toBe("Yok")
+})

@@ -1,6 +1,6 @@
 import { Prisma, type Workshop } from "@prisma/client"
 import { prisma } from "@/lib/db"
-import { ADDON_LOCKED_MESSAGE, getPlanState, VIN_LOOKUP_QUOTA, type PlanTier } from "@/lib/plan"
+import { ADDON_LOCKED_MESSAGE, getVinLookupBaseQuota } from "@/lib/plan"
 
 const DEFAULT_MONTHLY_CAP = 18_000 // headroom under the 20k RapidAPI plan
 
@@ -9,11 +9,15 @@ export type WorkshopQuotaSource = "vin" | "tecdoc"
 /** Tenant entitlement snapshot carried all the way to a billable provider miss. */
 export interface WorkshopQuotaContext {
   workshopId: string
-  tier: PlanTier
+  /**
+   * Aylık taban kota — paket ya da atölyenin şaseden parça ek özelliği
+   * (`getVinLookupBaseQuota`, #827). Ek kota (`extraVinQuota`) HARİÇ.
+   */
+  baseQuota: number
   extraVinQuota: number
 }
 
-type WorkshopQuotaFields = Pick<
+export type WorkshopQuotaFields = Pick<
   Workshop,
   | "id"
   | "planTier"
@@ -22,12 +26,13 @@ type WorkshopQuotaFields = Pick<
   | "trialEndsAt"
   | "currentPeriodEnd"
   | "extraVinQuota"
+  | "addons"
 >
 
 export function getWorkshopQuotaContext(workshop: WorkshopQuotaFields): WorkshopQuotaContext {
   return {
     workshopId: workshop.id,
-    tier: getPlanState(workshop).accessTier,
+    baseQuota: getVinLookupBaseQuota(workshop),
     extraVinQuota: Math.max(0, workshop.extraVinQuota ?? 0),
   }
 }
@@ -40,7 +45,7 @@ export class WorkshopQuotaExceededError extends Error {
     super(
       cap <= 0
         ? ADDON_LOCKED_MESSAGE
-        : "Aylık katalog sorgu limitiniz doldu. Ek kota satın almak için Faturalandırma sayfasını kullanın.",
+        : "Aylık katalog sorgu limitiniz doldu. Ek kota için bizimle iletişime geçin.",
     )
     this.name = "WorkshopQuotaExceededError"
     this.cap = cap
@@ -55,9 +60,9 @@ export function rapidApiMonthlyCap(): number {
   return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_MONTHLY_CAP
 }
 
-/** Atölyenin teorik aylık kotası = tier kotası + ek kota (UI gösterimi için). */
-export function workshopMonthlyCap(tier: PlanTier, extraVinQuota: number): number {
-  return (VIN_LOOKUP_QUOTA[tier] ?? 0) + Math.max(0, extraVinQuota)
+/** Atölyenin aylık kotası = taban kota + ek kota. */
+export function workshopMonthlyCap(baseQuota: number, extraVinQuota: number): number {
+  return Math.max(0, baseQuota) + Math.max(0, extraVinQuota)
 }
 
 export function quotaMonthWindow(now: Date = new Date()): { monthStart: Date; renewsAt: Date } {
@@ -111,7 +116,7 @@ export async function reserveWorkshopQuota(
   database: QuotaReservationDatabase = prisma as unknown as QuotaReservationDatabase,
   now: Date = new Date(),
 ): Promise<void> {
-  const cap = workshopMonthlyCap(context.tier, context.extraVinQuota)
+  const cap = workshopMonthlyCap(context.baseQuota, context.extraVinQuota)
   const { monthStart, renewsAt } = quotaMonthWindow(now)
   const lockKey = `workshop-quota:${context.workshopId}:${monthStart.toISOString().slice(0, 7)}`
 
@@ -159,9 +164,9 @@ export function summarizeWorkshopQuotaUsage(
   now: Date = new Date(),
 ): WorkshopQuotaUsage {
   const { monthStart, renewsAt } = quotaMonthWindow(now)
-  const baseQuota = VIN_LOOKUP_QUOTA[context.tier] ?? 0
+  const baseQuota = Math.max(0, context.baseQuota)
   const extraQuota = Math.max(0, context.extraVinQuota)
-  const totalCap = baseQuota + extraQuota
+  const totalCap = workshopMonthlyCap(baseQuota, extraQuota)
   const vinUsed = rows.filter((row) => row.source === "vin").reduce((sum, row) => sum + row.count, 0)
   const tecdocUsed = rows.filter((row) => row.source === "tecdoc").reduce((sum, row) => sum + row.count, 0)
   const used = vinUsed + tecdocUsed

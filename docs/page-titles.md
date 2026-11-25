@@ -26,7 +26,7 @@ Yönlendirme sayfaları hedefin başlığını alır. Filtre, sıralama, modal v
 | `/bakimx-orders` | Parça Siparişlerim \| BakımX |
 | `/billing` | Paketler ve Kullanım \| BakımX |
 | `/billing/quota` | Yönlendirme hedefinin başlığı |
-| `/billing/quota/purchase` | Ek Kota Satın Al \| BakımX |
+| `/billing/quota/purchase` | Yönlendirme hedefinin başlığı |
 | `/calendar` | Takvim \| BakımX |
 | `/cash` | Yönlendirme hedefinin başlığı |
 | `/cashbox/aging` | Alacak Yaşlandırma \| BakımX |
