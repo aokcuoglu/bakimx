@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Form } from "@/components/ui/form"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { BillingCycleToggle } from "./billing-cycle-toggle"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { typedResolver } from "@/lib/validations/resolver"
@@ -247,23 +248,7 @@ export function PurchaseWizard({
                   {step === 0 && (
                     <div className="space-y-4">
                       <h2 className="text-lg font-bold text-foreground">Dönem seçin</h2>
-                      <ToggleGroup
-                        type="single"
-                        value={cycle}
-                        onValueChange={(value) => { if (value) setCycle(value as Cycle) }}
-                        className="grid w-full grid-cols-2 gap-1 rounded-lg border bg-muted/40 p-1"
-                        aria-label="Faturalama dönemi"
-                      >
-                        {(["monthly", "yearly"] as const).map((c) => (
-                          <ToggleGroupItem
-                            key={c}
-                            value={c}
-                            className="w-full text-muted-foreground hover:text-foreground data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm"
-                          >
-                            {c === "monthly" ? "Aylık" : "Yıllık (2 ay bedava)"}
-                          </ToggleGroupItem>
-                        ))}
-                      </ToggleGroup>
+                      <BillingCycleToggle fullWidth value={cycle} onChange={setCycle} yearlyHint="2 ay bedava" />
                       <section aria-label={pkg.name} className="flex items-start justify-between gap-3 rounded-xl border border-primary bg-primary/5 p-4">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
