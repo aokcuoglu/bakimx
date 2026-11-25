@@ -117,7 +117,7 @@ export function OrderTableColumnHeader<TData, TValue>({
             <ToggleGroupItem
               value="asc"
               size="sm"
-              className="h-8 w-full justify-start gap-1.5 rounded-md px-2 text-[13px] data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong"
+              className="w-full justify-start gap-1.5 px-2 data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong"
             >
               <ArrowUp aria-hidden="true" />
               {labels.asc}
@@ -125,7 +125,7 @@ export function OrderTableColumnHeader<TData, TValue>({
             <ToggleGroupItem
               value="desc"
               size="sm"
-              className="h-8 w-full justify-start gap-1.5 rounded-md px-2 text-[13px] data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong"
+              className="w-full justify-start gap-1.5 px-2 data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong"
             >
               <ArrowDown aria-hidden="true" />
               {labels.desc}

@@ -378,17 +378,15 @@ export function PurchaseWizard({
                               return (
                                 <ToggleGroup
                                   type="multiple"
+                                  variant="outline"
+                                  size="control"
                                   value={selectedDays}
                                   onValueChange={(vals) => field.onChange(vals.join(","))}
+                                  aria-label="Çalışma günleri"
                                   className="flex-wrap"
                                 >
                                   {DAY_LABELS.map((day) => (
-                                    <ToggleGroupItem
-                                      key={day.value}
-                                      value={day.value}
-                                      variant="outline"
-                                      className="rounded-lg px-3 py-1.5 text-sm font-medium data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong hover:bg-muted/60"
-                                    >
+                                    <ToggleGroupItem key={day.value} value={day.value}>
                                       {day.short}
                                     </ToggleGroupItem>
                                   ))}

@@ -647,10 +647,11 @@ function SectorStep({ form }: { form: WizardForm }) {
                       key={sector.id}
                       value={sector.id}
                       variant="outline"
-                      className="relative h-auto min-h-20 w-full items-start justify-start rounded-lg p-3 text-left whitespace-normal data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                      size="row"
+                      className="relative w-full items-start"
                     >
                       <span className="flex w-full items-start gap-3">
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-foreground group-data-[state=on]/toggle:text-card">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground group-data-[state=on]/toggle:border-primary group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
                           <Icon className="size-4" />
                         </span>
                         <span className="min-w-0 flex-1">
@@ -965,9 +966,10 @@ function TeamSizeStep({ form }: { form: WizardForm }) {
                   key={option.id}
                   value={option.id}
                   variant="outline"
-                  className="h-auto min-h-32 w-full flex-col rounded-lg p-4 text-center data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                  size="row"
+                  className="w-full flex-col justify-center gap-0 text-center"
                 >
-                  <span className="flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-foreground group-data-[state=on]/toggle:text-card">
+                  <span className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
                     <Users className="size-5" />
                   </span>
                   <span className="mt-3 text-sm font-semibold">{option.label}</span>
@@ -1012,16 +1014,17 @@ function ModulesStep({ form }: { form: WizardForm }) {
                     key={module.id}
                     value={module.id}
                     variant="outline"
-                    className="h-auto min-h-18 w-full justify-start rounded-lg p-2.5 text-left whitespace-normal data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                    size="row"
+                    className="w-full"
                   >
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-foreground group-data-[state=on]/toggle:text-card">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
                       <Icon className="size-4" />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-xs font-semibold">{module.label}</span>
                       <span className="mt-0.5 block text-[10px] font-normal leading-3 text-muted-foreground">{module.description}</span>
                     </span>
-                    {selected ? <CircleCheck className="size-4 shrink-0 text-foreground" /> : <span className="size-4 shrink-0 rounded-full border border-border" />}
+                    {selected ? <CircleCheck className="size-4 shrink-0 text-primary-strong" /> : <span className="size-4 shrink-0 rounded-full border border-border" />}
                   </ToggleGroupItem>
                 )
               })}
@@ -1203,7 +1206,7 @@ function SetupStep({ form }: { form: WizardForm }) {
                 {SETUP_OPTIONS.map((option) => {
                   const Icon = option.icon
                   return (
-                    <ToggleGroupItem key={option.id} value={option.id} variant="outline" className="h-auto min-h-20 w-full justify-start rounded-lg bg-background p-3 text-left whitespace-normal data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground">
+                    <ToggleGroupItem key={option.id} value={option.id} variant="outline" size="row" className="w-full">
                       <Icon className="size-4 shrink-0 text-muted-foreground" />
                       <span><span className="block text-xs font-semibold">{option.label}</span><span className="mt-0.5 block text-[10px] font-normal leading-3 text-muted-foreground-strong">{option.description}</span></span>
                     </ToggleGroupItem>

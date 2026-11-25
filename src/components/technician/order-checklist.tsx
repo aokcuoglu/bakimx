@@ -390,7 +390,9 @@ function ChecklistSection({
 
   return (
     <div className="mb-4 last:mb-0">
-      <div className="mb-1.5 flex items-center gap-2">
+      {/* Dar ekranda toplu işlem düğmeleri alt satıra sarar; kart kenarından
+          taşmaz (390px'te "Tümünü işaretle" kırpılıyordu, #889). */}
+      <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className={cn("inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-medium", info.color)}>
           {info.label}
         </span>
@@ -649,15 +651,13 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
           type="single"
           value={category}
           onValueChange={(v) => { if (v) setCategory(v as ChecklistCategoryKey) }}
+          variant="outline"
+          size="control"
+          aria-label="Hangi aşamada?"
           className="grid w-full grid-cols-3"
         >
           {CATEGORY_ORDER.map((cat) => (
-            <ToggleGroupItem
-              key={cat}
-              value={cat}
-              variant="outline"
-              className="w-full gap-1 text-xs font-medium text-muted-foreground hover:bg-muted/60 hover:bg-primary/5 hover:text-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:font-semibold data-[state=on]:text-primary-strong"
-            >
+            <ToggleGroupItem key={cat} value={cat} className="w-full gap-1 text-muted-foreground">
               {category === cat && <Check className="size-3.5" />}
               {CHECKLIST_CATEGORIES[cat].label}
             </ToggleGroupItem>

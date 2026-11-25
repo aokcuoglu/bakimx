@@ -236,9 +236,8 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                   render={({ field }) => (
                     <ToggleGroup
                       type="single"
-                      variant="outline"
+                      variant="segment"
                       size="control"
-                      spacing={0}
                       value={field.value}
                       onValueChange={(value) => { if (value) field.onChange(value) }}
                       aria-label="Müşteri tipi"
@@ -502,6 +501,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                           size="control"
                           value={field.value}
                           onValueChange={(value) => { if (value) field.onChange(value) }}
+                          aria-label="Etiket"
                           className="flex-wrap"
                         >
                           {[
@@ -562,6 +562,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                           size="control"
                           value={field.value}
                           onValueChange={(value) => { if (value) field.onChange(value) }}
+                          aria-label="Fiyat grubu"
                           className="flex-wrap"
                         >
                           {[

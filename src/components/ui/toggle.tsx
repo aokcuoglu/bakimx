@@ -12,7 +12,16 @@ const toggleVariants = cva(
     variants: {
       variant: {
         default: "bg-transparent",
-        outline: "border border-input bg-transparent hover:bg-muted",
+        // Seçili seçenek birincil tonla okunur (e-santral: mavi = eylem ve
+        // seçim, #889): çerçeve, ton ve metin birlikte değişir; ton üstünde
+        // `-strong` metin (theme-tokens.test.ts).
+        outline:
+          "border border-input bg-transparent hover:bg-muted aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:text-primary-strong data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong",
+        // iOS segment denetimi: gri ray (ToggleGroup `variant="segment"`) içinde
+        // seçili öğe beyaz kart. Ray dolgusunu kendisi ekler; öğe köşesi
+        // raydan bir kademe küçük (İç içe köşe). Tabs `default` şeridiyle aynı dil.
+        segment:
+          "rounded-md text-muted-foreground hover:bg-transparent hover:text-foreground aria-pressed:bg-card aria-pressed:text-foreground data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-[inset_0_0_0_1px_var(--border),0_1px_2px_-1px_rgba(0,0,0,0.12)] dark:data-[state=on]:bg-input/30",
       },
       size: {
         default:
@@ -22,6 +31,9 @@ const toggleVariants = cva(
         // Dokunma ölçüsü: telefonda 44px, md+ 36px (--control-h). Telefonda
         // görünen seçiciler bunu alır; default/sm/lg masaüstü araç çubuğu içindir.
         control: "h-(--control-h) min-w-(--control-h) px-3",
+        // Seçenek kartı (ikon + başlık + açıklama): Button `row` ile aynı ölçü —
+        // en az kontrol yüksekliği, sola hizalı, metin kırılır (#889).
+        row: "min-h-(--control-h) justify-start gap-3 rounded-md px-3 py-2.5 text-left text-(length:--control-fs-sm) leading-5 whitespace-normal",
       },
     },
     defaultVariants: {
