@@ -517,5 +517,13 @@ test("kayıtlı sayfalar başlığı PageFrame'e bırakır — alt sayfalar dahi
     const found = ["ArrowLeft", ">/</span>"].filter((token) => source.includes(token))
     if (found.length > 0) offenders.push(`${file}: ${found.join(", ")}`)
   }
+  // Kayıt adı başlıkta (sabit başlık yok) ya da üst halkada (üst dinamik) →
+  // sayfa `recordTitle` vermezse başlık boş kalır / zincir hiç tamamlanmaz.
+  for (const [pattern, config] of Object.entries(SUB_PAGE_HEADERS)) {
+    const needsRecord = !config.title || Object.hasOwn(SUB_PAGE_HEADERS, config.parent)
+    if (!needsRecord) continue
+    const source = readFileSync(join(SRC, "app", "(app)", pattern, "page.tsx"), "utf8")
+    if (!source.includes("recordTitle=")) offenders.push(`${pattern}: recordTitle= yok`)
+  }
   expect(offenders).toEqual([])
 })
