@@ -342,7 +342,7 @@ export async function POST(request: Request) {
             catalogLinked = true
             // Tip daralmasını (autoSelected != null) closure'a taşımak için yakala.
             const linkedVehicleTypeId = resolution.autoSelected
-            after(() => prefetchCommonVehicleParts(linkedVehicleTypeId, quotaContext))
+            after(() => prefetchCommonVehicleParts(linkedVehicleTypeId, workshop))
             await AuditLogAction(
               user.workshopId,
               user.id,

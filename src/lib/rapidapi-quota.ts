@@ -17,7 +17,7 @@ export interface WorkshopQuotaContext {
   extraVinQuota: number
 }
 
-type WorkshopQuotaFields = Pick<
+export type WorkshopQuotaFields = Pick<
   Workshop,
   | "id"
   | "planTier"
