@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { SupplierStatusBadge } from "@/components/suppliers/supplier-status-badge"
 import type { SupplierKPIs } from "@/lib/suppliers/queries"
-import { Plus, Search, X, Truck, Users, Eye, Edit3, Archive, Trash2, RotateCcw, AlertCircle } from "lucide-react"
+import { Search, X, Truck, Users, Eye, Edit3, Archive, Trash2, RotateCcw, AlertCircle } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
@@ -107,19 +107,6 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
-
-
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
-          <Truck className="size-5 text-primary" />
-          Tedarikçiler
-        </h2>
-        <Button variant="foreground" size="sm" className="w-full sm:w-auto" asChild>
-          <Link href="/suppliers/new">
-            <Plus className="size-3.5 mr-1" /> Yeni Tedarikçi
-          </Link>
-        </Button>
-      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiStat label="Toplam Tedarikçi" value={kpis.total} icon={Truck} accent="text-primary-strong" accentBg="bg-primary/10" />

@@ -26,7 +26,7 @@ export default async function PartsPage(props: {
       getLaborCategories(user.workshopId),
     ])
     return (
-      <AppShell workshopName={workshop?.name} pageTitle="Stok / Parçalar">
+      <AppShell workshopName={workshop?.name}>
         <LaborList
           items={laborItems}
           kpis={laborKpis}
@@ -98,7 +98,7 @@ export default async function PartsPage(props: {
   }))
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Stok / Parçalar">
+    <AppShell workshopName={workshop?.name}>
       <PartsList
         parts={serialized}
         kpis={kpis}
