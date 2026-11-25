@@ -25,6 +25,7 @@ kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (76
 | Input / InputGroup `lg` | 50px | 44px | köşe ve metin `default` ile aynı — tek başına duran büyük giriş (plaka, teslim kodu) |
 | Select `default` / `sm` / `compact` | 44 / 36 / 32px | 36 / 32 / 28px | |
 | `ToggleGroup` / `Toggle` `size="control"` | 44px | 36px | öğe yüksekliği; ray kendi dolgusunu ekler |
+| `ToggleGroupItem` `size="row"` | en az 44px | en az 36px | seçenek kartı (ikon + başlık + açıklama, #889): Button `row` ile aynı ölçü |
 | `Tabs` — `TabsList size="control"` (segment) | 44px | 36px | trigger yüksekliği; şerit `h-auto` |
 | Textarea | `min-h-16` | `min-h-16` | 10px köşe (md+ 8px, `--control-radius`) |
 
@@ -67,14 +68,32 @@ Renk variant'ları ve Radix `asChild` sözleşmesi korunur.
 **Button `variant="field"`** (#889): değer seçen Popover tetikleyicisi (birim,
 tarih) girdi gibi görünür — `border-input`, `bg-card`, ağırlık 400, girdinin
 köşesi (`--control-radius`, `compoundVariants` ile her boyutta) ve form
-kontrollerinin odak halkası (`ring-4 ring-ring/20`). Boyu yanındaki girdiyle
-aynı `size`'dır: kalem satırında `compact`, formda `default`
-(`OrderItemUnitCombobox`).
+kontrollerinin odak / geçersiz halkası (`ring-4 ring-ring/20`,
+`ring-4 ring-destructive/10`). Boyu yanındaki girdiyle aynı `size`'dır: kalem
+satırında `compact` (metni compact girdiyle aynı `--control-fs-field-xs`,
+telefonda 16px), formda `default` (`OrderItemUnitCombobox`).
+
+**Button `row`** satırları variant'tan bağımsız aynı çerçeve kutusundadır
+(kenarlıksız variant'lar şeffaf 1px çerçeve alır): seçili `secondary` satır
+`outline` komşularından kısa kalmaz, seçim değişince satır kaymaz. Hayalet
+(`ghost`) satırın metni `foreground`'dur — soluk satır devre dışı gibi okunur.
+Satır listesi kenardan kenara uzanıyorsa kabı `p-1` / `px-1` alır, yuvarlak
+hover kabuk kenarına değmez.
 
 **Seçili durum** `className` ile boyanmaz, `variant` değişir:
-`variant={selected ? "secondary" : "outline"}`. Tek/çok seçimli segment
-(`Bireysel / Kurumsal`, modül listesi, ödeme yöntemi) `ToggleGroup` +
-`ToggleGroupItem` `size="control"`dır.
+`variant={selected ? "secondary" : "outline"}` (seçim listesinde
+`aria-pressed`). Tek/çok seçim `ToggleGroup` + `ToggleGroupItem`'dır:
+- `variant="outline"` — seçili öğe birincil ton (`border-primary`,
+  `bg-primary/10`, `text-primary-strong`; e-santral: mavi = eylem ve seçim).
+  Etiket, fiyat grubu, modüller, ödeme yöntemi, çalışma günleri.
+- `variant="segment"` — iOS segment denetimi: gri ray (`bg-muted`, 2px dolgu)
+  içinde seçili öğe beyaz kart; öğe köşesi raydan bir kademe küçük. Birbirini
+  dışlayan iki-üç görünüm/tip (`Bireysel / Kurumsal`, `Aylık / Yıllık`).
+  `Tabs` `default` şeridiyle aynı dil, ama form değeri olduğu için `tablist`
+  değil `radiogroup`.
+- Öğe boyu `size="control"` (telefonda görünen seçici), seçenek kartı
+  `size="row"`; yoğun filtre çip satırı `sm` (32px). Grup erişilebilir ad taşır
+  (`aria-label`).
 
 **Mobil alt navigasyon** bu matrisin dışındadır: `MobileNavLink` bir `Button`
 değil, `Link` (`src/components/layout/app-shell.tsx`).
@@ -164,28 +183,35 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
   (`min-h-20`, `min-h-[80px]` değil). Bilinçli istisna gerekçesiyle
   `src/components/ui/control-call-sites.test.ts` listesine yazılır; artık
   eşleşmeyen istisna testi düşürür.
-- Düğmeler (#889): `Button`, `InputGroupButton` ve onlara `className` ileten
-  sarmalayıcılar (`PrintButton`, `PhotoDeleteButton`, `OrderItemUnitCombobox`,
-  `TechnicianAssign`…) açılış etiketinde yükseklik (`h-*` — `h-full` hariç,
+- Düğmeler ve seçiciler (#889): `Button`, `InputGroupButton`, onlara
+  `className` / `*ClassName` ileten sarmalayıcılar (`PrintButton`,
+  `PhotoDeleteButton`, `OrderItemUnitCombobox`, `TechnicianAssign`,
+  `SidebarTrigger`, `FilterSheet` `triggerClassName`…) ve `ToggleGroup` /
+  `ToggleGroupItem` / `Toggle` açılış etiketinde yükseklik (`h-*` — `h-full` hariç,
   `min-h-*`, `max-h-*`, `size-*` — `size-full` hariç), köşe (`rounded*`), yazı
   boyutu, satır yüksekliği, dikey dolgu (`p-*`, `py-*`, `pt-*`, `pb-*`), yazı
   ağırlığı ve `focus*:` önekli `ring-*` / `outline-*` taşımaz. Öneksiz ya da
-  yalnız kırılım / koyu tema önekli (`md:`, `dark:`) `bg-background|card|transparent|muted`,
-  `border-0|none|transparent` ve `shadow-none` de yasaktır: düğmeyi başka bir
-  variant'a benzetir. CSS modülü sınıfı ihlaldir. Serbest olanlar: genişlik,
+  yalnız ekran / kap genişliği veya tema önekli (`md:`, `max-md:`,
+  `min-[…]:`, `@xl:`, `dark:`) `bg-background|card|transparent|muted` (yarı
+  saydam `/95` dahil), `border-0|none|transparent` ve `shadow-none` de
+  yasaktır: düğmeyi başka bir variant'a benzetir. CSS modülü sınıfı ihlaldir. Serbest olanlar: genişlik,
   flex/grid, hizalama, dış boşluk, yatay dolgu (`px-*`, `pl-*`), `text-left`,
   `whitespace-normal`, metin rengi, `hover:` / `disabled:` / `aria-*:` durum
   renkleri, durum tonu (`bg-destructive/10`), yüzen düğme gölgesi
   (`shadow-md`), `border-dashed`, `font-mono`, kart vurgu halkası
-  (`hover:ring-2`), `before:` / `after:` dokunma alanı katmanı ve `[&_svg]:`
-  ikon boyutu. Satır içi bağlantı `size="inline"`, liste satırı / seçenek
+  (`hover:ring-2`), `before:` / `after:` dokunma alanı katmanı ve torun /
+  kardeş seçicisi (`[&_svg]:`, `[&>svg]:`, `*:`) ile ikon boyutu. Öğenin
+  kendisini seçen `[&]:` / `[&:not(:disabled)]:` sayılır. Satır içi bağlantı `size="inline"`, liste satırı / seçenek
   kartı / bırakma alanı `size="row"`, görsel karosu `size="tile"`. İstisna
   (tam ekran kamera deklanşörü, fotoğraf görüntüleyici şeridi, genel arama
   paleti satırı, kabuk arama alanı, pazarlama kiti alanı içindeki göster/gizle)
   gerekçesiyle `control-call-sites.test.ts` `EXCEPTIONS` listesindedir; `match`
-  istisnayı dosyadaki tek etikete bağlar. Kör nokta: sabite çıkarılmış sınıf
-  (`TILE`, `technician-assign` `trigger`) ve `buttonVariants({ className })`
-  çağrısı taranmaz — sabite boyut sınıfı yazılmaz.
+  istisnayı dosyadaki tek etikete bağlar. `components/sections/` açılış
+  sayfası bölümleri kapsam dışıdır; genel sayfaların ortak altbilgisi
+  `sections/Footer.tsx` taranır. `TabsList` / `TabsTrigger` #854'te. Kör nokta:
+  sabite çıkarılmış sınıf (`TILE`), `className`'i nesneden yayan
+  `{...props}` ve `buttonVariants({ className })` çağrısı taranmaz — sabite
+  boyut sınıfı yazılmaz, `className` JSX'te `cn(...)` ile verilir.
 - `ToggleGroupItem` / `TabsTrigger` / `TabsList` üzerinde `!` ile yükseklik
   ezilmez (`h-7!`). Telefonda tek başına duran eylem düğmesi `default` ya da
   üstüdür; `sm/xs/compact` yoğun satır ve araç çubuğu içindir.
