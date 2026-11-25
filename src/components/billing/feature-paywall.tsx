@@ -17,7 +17,7 @@ export function FeaturePaywall({
   itemCount: number
 }) {
   const definition = FEATURE_CATALOG[feature]
-  const targetLabel = definition.targetTier === "premium" ? "Premium" : "Profesyonel"
+  const addon = definition.kind === "addon"
 
   return (
     <AppShell pageTitle={definition.name} showGlobalSearch={false} wide>
@@ -28,7 +28,7 @@ export function FeaturePaywall({
               <LockKeyhole className="size-7" />
             </div>
             <Badge variant="secondary" className="mb-2">
-              <Sparkles className="size-3" /> {targetLabel} özelliği
+              <Sparkles className="size-3" /> {addon ? "Ek özellik" : "Servis Paketi özelliği"}
             </Badge>
             <CardTitle className="max-w-2xl text-2xl font-bold tracking-tight sm:text-3xl">
               {definition.title}
@@ -43,7 +43,9 @@ export function FeaturePaywall({
                 <ShieldCheck />
                 <AlertTitle>{itemCount} {definition.countLabel}</AlertTitle>
                 <AlertDescription>
-                  Verileriniz silinmedi; yükselttiğinizde yeniden erişebilirsiniz.
+                  {addon
+                    ? "Verileriniz silinmedi; bu ek özellik açıldığında yeniden erişebilirsiniz."
+                    : "Verileriniz silinmedi; paketi aldığınızda yeniden erişebilirsiniz."}
                 </AlertDescription>
               </Alert>
             )}
@@ -58,12 +60,14 @@ export function FeaturePaywall({
             <FeatureUpgradeActions
               feature={feature}
               currentTier={currentTier}
-              targetTier={definition.targetTier}
+              kind={definition.kind}
               placement="page"
             />
-            <p className="mt-4 text-center text-xs text-muted-foreground">
-              Paket değişikliğinden sonra bu özellik otomatik olarak açılır.
-            </p>
+            {!addon && (
+              <p className="mt-4 text-center text-xs text-muted-foreground">
+                Paket etkinleşince bu özellik otomatik olarak açılır.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

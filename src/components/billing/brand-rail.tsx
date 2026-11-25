@@ -59,9 +59,9 @@ export function BrandRail({
             </>
           ) : (
             <>
-              <h2 className="text-xl font-bold leading-snug">Paketini yükselt</h2>
+              <h2 className="text-xl font-bold leading-snug">{pkg?.name ?? "Paket"} ile devam edin</h2>
               <p className="mt-1.5 text-sm text-navy-foreground/60">
-                İhtiyacınıza uygun paketi seçin, istediğiniz zaman değiştirin.
+                Servis yönetimi için gereken her şey tek pakette.
               </p>
             </>
           )}

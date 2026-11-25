@@ -29,19 +29,19 @@ test("expired current period → full new price (no credit)", () => {
   ).toBe(299900)
 })
 
-test("half a monthly pro period remaining credits ~half of pro's price", () => {
-  // 15 of 30 days left → credit = round(179900 * 0.5) = 89950; charge = 299900 - 89950
+test("half a monthly legacy starter period remaining credits ~half of its price toward Servis Paketi", () => {
+  // 15 of 30 days left → credit = round(74900 * 0.5) = 37450; charge = 149900 - 37450
   const currentPeriodEnd = new Date(now.getTime() + 15 * 86_400_000)
   expect(
     computeUpgradeAmountMinor({
-      currentTier: "pro",
+      currentTier: "starter",
       currentCycle: "monthly",
       currentPeriodEnd,
-      newTier: "premium",
+      newTier: "pro",
       newCycle: "monthly",
       now,
     })
-  ).toBe(209950)
+  ).toBe(112450)
 })
 
 test("credit is capped at one cycle and the charge is floored at 0", () => {

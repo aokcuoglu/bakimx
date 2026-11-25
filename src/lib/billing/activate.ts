@@ -39,20 +39,21 @@ export async function activateBillingOrder(
   const order = await prisma.billingOrder.findUnique({ where: { id: orderId } })
   if (!order) return { ok: false, error: "Sipariş bulunamadı." }
   if (order.status !== "pending_payment") return { ok: false, error: "Bu sipariş zaten işlenmiş." }
+  // #782: ücretsiz paket yok. Kampanyadan kalmış bekleyen bir Lite siparişi
+  // onaylanarak yeni bir süresiz Lite hesabı açılamaz. Etkin eski Lite
+  // atölyelerinin hakkı (liteFreeGrantedAt) bu yoldan değişmez.
+  if (order.planTier === "lite") return { ok: false, error: "Lite paketi artık satışta değil; bu sipariş etkinleştirilemez." }
 
   const workshop = await prisma.workshop.findUnique({
     where: { id: order.workshopId },
-    select: { currentPeriodEnd: true, planTier: true, extraSeats: true, liteFreeGrantedAt: true },
+    select: { currentPeriodEnd: true, planTier: true, extraSeats: true },
   })
   const now = new Date()
   // Renewal extends from the current period end (no lost days); package changes
   // and new purchases start a fresh period now (changes were proration-credited).
   const periodStart =
     order.type === "renewal" ? periodStartFrom(workshop?.currentPeriodEnd ?? null, now) : now
-  // The zero-price accepted order is the durable admission evidence, even if
-  // campaign admissions close before this activation retry.
-  const lifetimeLite = order.planTier === "lite" && order.amountMinor === 0
-  const periodEnd = lifetimeLite ? null : addPeriod(periodStart, order.billingCycle)
+  const periodEnd = addPeriod(periodStart, order.billingCycle)
 
   let seatAdjustment: SeatAdjustmentResult = {
     limit: getSeatLimit(order.planTier, workshop?.extraSeats ?? 0),
@@ -131,7 +132,6 @@ export async function activateBillingOrder(
           subscriptionStatus: "active",
           approvalStatus: "approved",
           currentPeriodEnd: periodEnd,
-          ...(lifetimeLite ? { liteFreeGrantedAt: workshop?.liteFreeGrantedAt ?? now, trialStartedAt: null, trialEndsAt: null } : {}),
           requestedPlanTier: null,
           planRequestedAt: null,
         },

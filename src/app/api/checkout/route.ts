@@ -1,19 +1,16 @@
-import { recordMarketingConversion } from "@/lib/marketing-conversion-outbox"
 import { NextResponse } from "next/server"
-import { assertLiteRegistrationOpen, LiteRegistrationClosedError } from "@/lib/lite-campaign"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/db"
 import { checkoutPublicSchema } from "@/lib/validations/billing"
 import { normalizeAcquisitionAdvisorId } from "@/lib/acquisition-sources"
 import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
-import { getPlanPriceMinor, isComplimentaryPlan } from "@/lib/billing/pricing"
+import { getPlanPriceMinor } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
 import { createBillingTaxSnapshot } from "@/lib/billing/tax"
 import { workshopCodeCandidate } from "@/lib/workshop-code"
 import type { BillingCycle } from "@prisma/client"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
-import { activateBillingOrder } from "@/lib/billing/activate"
 
 const MAX_ATTEMPTS = 5
 const MAX_REF_RETRIES = 5
@@ -100,8 +97,7 @@ export async function POST(request: Request) {
       // P2002-yeniden-dene döngüsünü paylaşır.
       const loginCode = workshopCodeCandidate(data.workshopName, attempt)
       try {
-        const order = await prisma.$transaction(async (tx) => {
-          assertLiteRegistrationOpen(tier)
+        await prisma.$transaction(async (tx) => {
           const organization = await tx.organization.create({
             data: { name: data.workshopName },
             select: { id: true },
@@ -122,11 +118,10 @@ export async function POST(request: Request) {
               // Instant activation: the owner can sign in right away on the
               // trial. The pending havale only gates the paid plan upgrade.
               approvalStatus: "approved",
-              subscriptionStatus: tier === "lite" ? "active" : "trialing",
-              liteFreeGrantedAt: tier === "lite" ? now : null,
-              trialStartedAt: tier === "lite" ? null : now,
-              trialEndsAt: tier === "lite" ? null : computeTrialEnd(now),
-              planTier: tier === "lite" ? "lite" : "pro",
+              subscriptionStatus: "trialing",
+              trialStartedAt: now,
+              trialEndsAt: computeTrialEnd(now),
+              planTier: "pro",
               acquisitionSource: data.acquisitionSource,
               acquisitionAdvisorId,
               requestedPlanTier: tier,
@@ -171,9 +166,6 @@ export async function POST(request: Request) {
               isActive: true,
             },
           })
-          if (tier === "lite") {
-            await recordMarketingConversion(tx, { name: "lite_registered", workshopId: workshop.id, key: workshop.id, payload: { plan_tier: "lite" }, attribution: raw.marketingAttribution })
-          }
           return tx.billingOrder.create({
             data: {
               workshopId: workshop.id,
@@ -189,17 +181,7 @@ export async function POST(request: Request) {
             },
           })
         })
-        const complimentary = isComplimentaryPlan(tier, cycle)
-        if (complimentary) {
-          const activation = await activateBillingOrder(order.id, {
-            actor: "payment",
-            confirmedByEmail: "opening-promotion",
-          })
-          if (!activation.ok) {
-            return NextResponse.json({ error: activation.error }, { status: 500 })
-          }
-        }
-        return NextResponse.json({ success: true, reference, amountMinor, method: data.method, complimentary })
+        return NextResponse.json({ success: true, reference, amountMinor, method: data.method })
       } catch (err) {
         const e = err as { code?: string; meta?: { target?: string[] | string } }
         if (e.code === "P2002") {
@@ -212,9 +194,6 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 })
   } catch (err) {
-    if (err instanceof LiteRegistrationClosedError) {
-      return NextResponse.json({ error: err.message, code: "lite_registration_closed" }, { status: 409 })
-    }
     const code = (err as { code?: string })?.code
     if (code === "P2002") {
       return NextResponse.json({ error: "Bu e-posta adresi ile zaten bir hesap mevcut. Giriş yapmayı deneyin." }, { status: 409 })
