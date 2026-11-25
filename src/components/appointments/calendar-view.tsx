@@ -6,8 +6,23 @@ import { cn } from "@/lib/utils"
 import { CalendarDays, ChevronLeft, ChevronRight, Clock, Truck, BellRing, RefreshCw, CheckCircle2, XCircle, Loader2 } from "lucide-react"
 import { checkRemindersAction } from "@/app/(app)/calendar/actions"
 import { Button } from "@/components/ui/button"
-
-type ViewMode = "day" | "week" | "month"
+import { formatTrTime } from "@/lib/format-date"
+import {
+  addDays,
+  addMonths,
+  dayKeysInView,
+  dayOfMonth,
+  formatDayHeading,
+  formatDayTitle,
+  formatMonthTitle,
+  formatWeekdayName,
+  groupByIstanbulDay,
+  istanbulTodayKey,
+  monthLeadingBlanks,
+  parseCalendarViewMode,
+  resolveDayKey,
+  type CalendarViewMode,
+} from "@/lib/calendar/calendar-grid"
 
 interface CalendarViewItem {
   id: string
@@ -43,24 +58,6 @@ const STATUS_LABELS: Record<string, string> = {
   overdue: "Gecikmiş",
 }
 
-function formatDate(date: Date): string {
-  return date.toISOString().split("T")[0]
-}
-
-function formatTime(isoString: string): string {
-  const d = new Date(isoString)
-  return d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
-}
-
-function formatDayHeader(date: Date): string {
-  const days = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"]
-  return days[date.getDay()]
-}
-
-function formatMonthHeader(date: Date): string {
-  return date.toLocaleDateString("tr-TR", { month: "long", year: "numeric" })
-}
-
 export function CalendarView({
   initialEvents,
   initialView,
@@ -70,28 +67,21 @@ export function CalendarView({
   initialView: string
   initialDate: string
 }) {
-  const [view, setView] = useState<ViewMode>((initialView as ViewMode) || "week")
-  const [currentDate, setCurrentDate] = useState(initialDate)
+  const [view, setView] = useState<CalendarViewMode>(parseCalendarViewMode(initialView))
+  const [currentDate, setCurrentDate] = useState(resolveDayKey(initialDate))
   const [checking, setChecking] = useState(false)
   const [checkResult, setCheckResult] = useState<{ jobType: string; processed: number; sent: number; failed: number }[] | null>(null)
   const [, startTransition] = useTransition()
 
-  const baseDate = new Date(currentDate + "T00:00:00")
-
   function navigate(direction: "prev" | "next") {
-    const d = new Date(currentDate + "T00:00:00")
-    if (view === "day") {
-      d.setDate(d.getDate() + (direction === "next" ? 1 : -1))
-    } else if (view === "week") {
-      d.setDate(d.getDate() + (direction === "next" ? 7 : -7))
-    } else {
-      d.setMonth(d.getMonth() + (direction === "next" ? 1 : -1))
-    }
-    setCurrentDate(formatDate(d))
+    const sign = direction === "next" ? 1 : -1
+    if (view === "day") setCurrentDate(addDays(currentDate, sign))
+    else if (view === "week") setCurrentDate(addDays(currentDate, sign * 7))
+    else setCurrentDate(addMonths(currentDate, sign))
   }
 
   function goToToday() {
-    setCurrentDate(formatDate(new Date()))
+    setCurrentDate(istanbulTodayKey())
   }
 
   async function handleCheckReminders() {
@@ -109,40 +99,9 @@ export function CalendarView({
     })
   }
 
-  const eventsByDate: Record<string, CalendarViewItem[]> = {}
-  for (const event of initialEvents) {
-    const dateKey = new Date(event.startAt).toISOString().split("T")[0]
-    if (!eventsByDate[dateKey]) eventsByDate[dateKey] = []
-    eventsByDate[dateKey].push(event)
-  }
-
-  function getDatesInView(): Date[] {
-    const dates: Date[] = []
-    if (view === "day") {
-      dates.push(baseDate)
-    } else if (view === "week") {
-      const dayOfWeek = baseDate.getDay()
-      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-      const monday = new Date(baseDate)
-      monday.setDate(baseDate.getDate() + mondayOffset)
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(monday)
-        d.setDate(monday.getDate() + i)
-        dates.push(d)
-      }
-    } else {
-      const year = baseDate.getFullYear()
-      const month = baseDate.getMonth()
-      const daysInMonth = new Date(year, month + 1, 0).getDate()
-      for (let i = 1; i <= daysInMonth; i++) {
-        dates.push(new Date(year, month, i))
-      }
-    }
-    return dates
-  }
-
-  const dates = getDatesInView()
-  const isToday = (d: Date) => formatDate(d) === formatDate(new Date())
+  const eventsByDate = groupByIstanbulDay(initialEvents)
+  const dayKeys = dayKeysInView(view, currentDate)
+  const todayKey = istanbulTodayKey()
 
   return (
     <div className="space-y-4">
@@ -158,14 +117,14 @@ export function CalendarView({
             <ChevronRight className="size-5" />
           </Button>
           <span className="text-base font-semibold text-foreground ml-2">
-            {view === "month" ? formatMonthHeader(baseDate) : `${formatDayHeader(baseDate)}, ${baseDate.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}`}
+            {view === "month" ? formatMonthTitle(currentDate) : formatDayTitle(currentDate)}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           <div className="flex items-center rounded-lg border border-border overflow-hidden">
-            {(["day", "week", "month"] as ViewMode[]).map((v) => {
-              const labels: Record<ViewMode, string> = { day: "Günlük", week: "Haftalık", month: "Aylık" }
+            {(["day", "week", "month"] as CalendarViewMode[]).map((v) => {
+              const labels: Record<CalendarViewMode, string> = { day: "Günlük", week: "Haftalık", month: "Aylık" }
               return (
                 <Button
                   key={v}
@@ -221,20 +180,18 @@ export function CalendarView({
           </div>
           <div className="grid grid-cols-7">
             {(() => {
-              const firstDay = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1)
-              const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1
+              const startDay = monthLeadingBlanks(currentDate)
               const cells: React.ReactNode[] = []
               for (let i = 0; i < startDay; i++) {
                 cells.push(<div key={`empty-${i}`} className="min-h-24 border-b border-r border-border bg-muted/50" />)
               }
-              for (const date of dates) {
-                const dateKey = formatDate(date)
-                const dayEvents = eventsByDate[dateKey] || []
-                const today = isToday(date)
+              for (const dayKey of dayKeys) {
+                const dayEvents = eventsByDate[dayKey] || []
+                const today = dayKey === todayKey
                 cells.push(
-                  <div key={dateKey} className={cn("min-h-24 border-b border-r border-border p-1.5", today && "bg-primary/5")}>
+                  <div key={dayKey} className={cn("min-h-24 border-b border-r border-border p-1.5", today && "bg-primary/5")}>
                     <div className={cn("text-xs font-medium mb-1", today ? "text-primary" : "text-muted-foreground")}>
-                      {date.getDate()}
+                      {dayOfMonth(dayKey)}
                     </div>
                     <div className="space-y-0.5">
                       {dayEvents.slice(0, 3).map((event) => {
@@ -245,7 +202,7 @@ export function CalendarView({
                             href={getEventLink(event)}
                             className={cn("block text-[10px] leading-tight px-1 py-0.5 rounded truncate", config.bgColor, config.color)}
                           >
-                            {formatTime(event.startAt)} {event.title}
+                            {formatTrTime(event.startAt)} {event.title}
                           </Link>
                         )
                       })}
@@ -263,22 +220,21 @@ export function CalendarView({
       ) : view === "week" ? (
         <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="grid grid-cols-7 border-b border-border">
-            {dates.map((date) => {
-              const today = isToday(date)
+            {dayKeys.map((dayKey) => {
+              const today = dayKey === todayKey
               return (
-                <div key={formatDate(date)} className={cn("px-2 py-2 text-center border-r border-border last:border-r-0", today && "bg-primary/5")}>
-                  <div className="text-[10px] uppercase font-semibold text-muted-foreground">{formatDayHeader(date)}</div>
-                  <div className={cn("text-lg font-bold", today ? "text-primary" : "text-foreground")}>{date.getDate()}</div>
+                <div key={dayKey} className={cn("px-2 py-2 text-center border-r border-border last:border-r-0", today && "bg-primary/5")}>
+                  <div className="text-[10px] uppercase font-semibold text-muted-foreground">{formatWeekdayName(dayKey)}</div>
+                  <div className={cn("text-lg font-bold", today ? "text-primary" : "text-foreground")}>{dayOfMonth(dayKey)}</div>
                 </div>
               )
             })}
           </div>
           <div className="grid grid-cols-7 min-h-64">
-            {dates.map((date) => {
-              const dateKey = formatDate(date)
-              const dayEvents = eventsByDate[dateKey] || []
+            {dayKeys.map((dayKey) => {
+              const dayEvents = eventsByDate[dayKey] || []
               return (
-                <div key={dateKey} className="border-r border-border last:border-r-0 p-1.5 space-y-1.5 min-h-48">
+                <div key={dayKey} className="border-r border-border last:border-r-0 p-1.5 space-y-1.5 min-h-48">
                   {dayEvents.length === 0 && (
                     <div className="text-xs text-muted-foreground text-center py-4">—</div>
                   )}
@@ -293,7 +249,7 @@ export function CalendarView({
                       >
                         <div className="flex items-center gap-1 mb-0.5">
                           <Icon className={cn("size-3 shrink-0", config.color)} />
-                          <span className={cn("font-semibold truncate", config.color)}>{formatTime(event.startAt)}</span>
+                          <span className={cn("font-semibold truncate", config.color)}>{formatTrTime(event.startAt)}</span>
                         </div>
                         <div className="font-medium text-foreground truncate">{event.title}</div>
                         {event.vehiclePlate && (
@@ -316,13 +272,12 @@ export function CalendarView({
         <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border bg-muted">
             <div className="text-sm font-semibold text-foreground">
-              {baseDate.toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+              {formatDayHeading(currentDate)}
             </div>
           </div>
           <div className="p-4 space-y-2">
             {(() => {
-              const dateKey = formatDate(baseDate)
-              const dayEvents = eventsByDate[dateKey] || []
+              const dayEvents = eventsByDate[currentDate] || []
               if (dayEvents.length === 0) {
                 return (
                   <div className="text-center py-12 text-muted-foreground">
@@ -350,8 +305,8 @@ export function CalendarView({
                       </div>
                       <div className="flex items-center gap-1 mt-0.5 text-sm text-muted-foreground">
                         <Clock className="size-3.5" />
-                        <span>{formatTime(event.startAt)}</span>
-                        {event.endAt && <span> — {formatTime(event.endAt)}</span>}
+                        <span>{formatTrTime(event.startAt)}</span>
+                        {event.endAt && <span> — {formatTrTime(event.endAt)}</span>}
                       </div>
                       {event.vehiclePlate && (
                         <span className="inline-block mt-1 text-xs font-mono bg-card text-foreground px-1.5 py-0.5 rounded">

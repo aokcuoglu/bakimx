@@ -3,6 +3,7 @@ import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { CalendarView } from "@/components/appointments/calendar-view"
 import { getCalendarEvents } from "@/lib/calendar/queries"
+import { calendarViewRange, parseCalendarViewMode, resolveDayKey } from "@/lib/calendar/calendar-grid"
 
 export const metadata = { title: "Takvim" }
 
@@ -15,30 +16,11 @@ export default async function CalendarPage({
   if (paywall) return paywall
   const { user, workshop } = await getAppData()
   const params = await searchParams
-  const view = params.view || "week"
-  const dateStr = params.date || new Date().toISOString().split("T")[0]
+  const view = parseCalendarViewMode(params.view)
+  const dateStr = resolveDayKey(params.date)
+  const { start, end } = calendarViewRange(view, dateStr)
 
-  const baseDate = new Date(dateStr + "T00:00:00")
-  let startDate: Date
-  let endDate: Date
-
-  if (view === "day") {
-    startDate = new Date(baseDate)
-    endDate = new Date(baseDate)
-    endDate.setDate(endDate.getDate() + 1)
-  } else if (view === "month") {
-    startDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1)
-    endDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 1)
-  } else {
-    const dayOfWeek = baseDate.getDay()
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-    startDate = new Date(baseDate)
-    startDate.setDate(baseDate.getDate() + mondayOffset)
-    endDate = new Date(startDate)
-    endDate.setDate(startDate.getDate() + 7)
-  }
-
-  const events = await getCalendarEvents(user.workshopId, startDate, endDate)
+  const events = await getCalendarEvents(user.workshopId, start, end)
 
   const serializedEvents = events.map((e) => ({
     ...e,
