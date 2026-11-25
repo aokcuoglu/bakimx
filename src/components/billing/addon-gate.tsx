@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import Link from "next/link"
-import { LockKeyhole } from "lucide-react"
+import { ChevronRight, LockKeyhole } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { FEATURE_CATALOG, addonContactMessage, lockedFeatureLabels } from "@/lib/feature-catalog"
@@ -10,34 +10,34 @@ import { cn } from "@/lib/utils"
 
 /**
  * Kilitli ek özelliğin satır içi notu (#828): giriş (kamera, "Şaseden getir",
- * ruhsat kartı) 403'e gitmek yerine burada durur. Satın alma akışı gelene kadar
- * (#827) tek eylem destek hattıdır; sayfa kilidiyle aynı mesajı taşır.
+ * ruhsat kartı) 403'e gitmek yerine burada durur.
+ *
+ * Form içinde yer kaplamasın diye tek satır ve çerçevesiz (e-santral: gölge
+ * yok, çerçeve yok); telefonda sarılır. Açıklama cümlesi yok — "yakında satın
+ * alınabilir" vaadi sayfa düzeyindeki kilitte (`FeaturePaywall`) kalır.
+ *
+ * "Bilgi alın" e-santral'ın ikincil eylemi gibi metin bağlantısıdır; satırı
+ * şişirmemek için görünür boyu küçüktür, dokunma alanı ise şeffaf bir
+ * `::before` katmanıyla telefonda 44px'e çıkar (#810 `PillButton size="nav"`
+ * emsali, docs/ui-control-sizing.md). Masaüstünde (md+) katman kapanır.
  */
 export function AddonLockedNote({ feature, className }: { feature: AddonFeature; className?: string }) {
   const { name } = FEATURE_CATALOG[feature]
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-3 rounded-lg border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between",
-        className,
-      )}
-    >
-      <div className="flex min-w-0 items-start gap-2">
-        <LockKeyhole className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-        <div className="min-w-0 space-y-0.5">
-          <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
-            {name}
-            <Badge variant="secondary">{lockedFeatureLabels(feature).label}</Badge>
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Pakete dahil değil; yakında uygulama içinden satın alınabilecek.
-          </p>
-        </div>
-      </div>
-      <Button asChild variant="outline" size="sm" className="self-start sm:self-auto">
+    <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-1 text-sm", className)}>
+      <LockKeyhole className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <span className="font-medium text-foreground">{name}</span>
+      <Badge variant="secondary">{lockedFeatureLabels(feature).label}</Badge>
+      <Button
+        asChild
+        variant="link"
+        size="sm"
+        className="relative ml-auto gap-0.5 before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:min-h-full before:-translate-y-1/2 md:before:hidden"
+      >
         <Link href={getSupportWhatsAppUrl(addonContactMessage(feature))} target="_blank" rel="noopener noreferrer">
           Bilgi alın
-          <span className="sr-only">: {name}</span>
+          <ChevronRight aria-hidden="true" />
+          <span className="sr-only">: {name}, yeni sekmede açılır</span>
         </Link>
       </Button>
     </div>

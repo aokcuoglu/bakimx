@@ -97,6 +97,8 @@ export function EntryVehicleFields({
 
   /** VIN'i katalogda sorgular; ruhsat alanları ipucu olarak gider. */
   function resolveVin(vin: string) {
+    // Tek sorgu yolu; şaseden tanıma kapalıysa 403'e gitmesin (#828).
+    if (!vinLookup) return
     void vinResolve.resolve(vin, {
       engineDisplacement: fields.engineDisplacement || undefined,
       enginePower: fields.enginePower || undefined,

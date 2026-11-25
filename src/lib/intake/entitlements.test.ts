@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
-import { resolveIntakeEntitlements } from "@/lib/intake/entitlements"
-import type { WorkshopPlanFields } from "@/lib/plan"
+import { resolveIntakeEntitlements, type IntakeEntitlements } from "@/lib/intake/entitlements"
+import { hasWorkshopFeature, type WorkshopPlanFields } from "@/lib/plan"
 
 const DAY_MS = 86_400_000
 
@@ -77,6 +77,49 @@ test("atölye satırı yoksa Servis Paketi hakları: paket açık, ek özellik k
   })
 })
 
+test("eski Lite satırı: ek özellikler de paket özellikleri de kapalı", () => {
+  expect(resolveIntakeEntitlements(wsFields({ planTier: "lite" }), "owner")).toEqual({
+    ocrIntake: false,
+    vinLookup: false,
+    photoChecklist: false,
+    damageMap: false,
+    showAddonUpsell: true,
+  })
+})
+
+test("premium + past_due: özellik kapısı sunucuyla aynı; erişim kilidi ayrı katman", () => {
+  // Ödemesi gecikmiş atölye (app)/layout'taki ödeme duvarına düşer ve her
+  // yazma/OCR/şase isteği önce `assertWritableOr403` ile reddedilir. Özellik
+  // kapısı (`hasWorkshopFeature`) ise kayıtlı profile bakar — burada da aynısı.
+  const ws = wsFields({ planTier: "premium", subscriptionStatus: "past_due" })
+  expect(resolveIntakeEntitlements(ws, "owner")).toMatchObject({
+    ocrIntake: true,
+    vinLookup: true,
+    photoChecklist: true,
+    damageMap: true,
+  })
+})
+
+test("istemci yetkisi her profilde sunucu özellik kapısıyla birebir aynı", () => {
+  const future = new Date(Date.now() + 3 * DAY_MS)
+  const past = new Date(Date.now() - DAY_MS)
+  const cases: WorkshopPlanFields[] = [
+    wsFields(),
+    wsFields({ planTier: "lite" }),
+    wsFields({ planTier: "starter" }),
+    wsFields({ planTier: "premium" }),
+    wsFields({ planTier: "premium", subscriptionStatus: "past_due" }),
+    wsFields({ subscriptionStatus: "trialing", trialEndsAt: future }),
+    wsFields({ subscriptionStatus: "trialing", trialEndsAt: past }),
+    wsFields({ currentPeriodEnd: past }),
+  ]
+  const features = ["ocrIntake", "vinLookup", "photoChecklist", "damageMap"] as const satisfies readonly (keyof IntakeEntitlements)[]
+  for (const ws of cases) {
+    const e = resolveIntakeEntitlements(ws, "owner")
+    for (const feature of features) expect(e[feature]).toBe(hasWorkshopFeature(ws, feature))
+  }
+})
+
 // ——— Kaynak kapısı: kilitli ek özelliğin girişi 403'e gitmesin (#828) ———
 
 const SRC = join(import.meta.dir, "..", "..")
@@ -86,7 +129,7 @@ function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry)
     if (statSync(full).isDirectory()) walk(full, out)
-    else if (full.endsWith(".tsx")) out.push(full)
+    else if (full.endsWith(".tsx") || (full.endsWith(".ts") && !full.endsWith(".test.ts"))) out.push(full)
   }
   return out
 }
@@ -100,40 +143,86 @@ test("kabul sihirbazı paket adı değil yetki nesnesi alır", () => {
   }
 })
 
+type Entitlement = "ocrIntake" | "vinLookup"
+
 /**
- * Ek özelliğe giden giriş bileşenleri ve onları koşullayan yetki alanı. Bu
- * bileşenleri çizen her dosya ilgili yetkiyi okumak zorunda; okumuyorsa giriş
- * ücretli atölyede de görünür ve dokununca 403 metni gelir.
+ * Çağrı yeri kapısı: ek özelliğe giden giriş (bileşen ya da otomatik sorgu)
+ * her geçtiği yerde, üstündeki `window` satır içinde yetkiyi okumalı.
+ * Dosyanın başka bir yerinde yetkinin geçmesi yetmez — en kolay gerileme,
+ * korumalı bir dosyaya korumasız yeni bir `vinResolve.resolve(` eklemektir;
+ * bu yüzden otomatik sorguda pencere dar. Koruma uzaksa onu çağrıya yaklaştır
+ * (ya da çağrıyı yetkiyi okuyan küçük bir fonksiyona al, bkz. `resolveVin`).
+ * JSX'te koşul ile etiket arasına kardeş öğeler girebildiği için pencere geniş.
  */
-const GATED_ENTRIES: { tag: string; entitlement: "ocrIntake" | "vinLookup" }[] = [
-  { tag: "<RuhsattanOku", entitlement: "ocrIntake" },
-  { tag: "<RegistrationCameraScanner", entitlement: "ocrIntake" },
-  { tag: "<VinScanner", entitlement: "vinLookup" },
-  { tag: "<VinResolveButton", entitlement: "vinLookup" },
+const CALL_SITES: { token: string; entitlement: Entitlement; window: number }[] = [
+  { token: "<RuhsattanOku", entitlement: "ocrIntake", window: 15 },
+  { token: "<RegistrationCameraScanner", entitlement: "ocrIntake", window: 15 },
+  { token: "<VinScanner", entitlement: "vinLookup", window: 15 },
+  { token: "<VinResolveButton", entitlement: "vinLookup", window: 15 },
+  { token: "vinResolve.resolve(", entitlement: "vinLookup", window: 6 },
 ]
 
-/** Bileşenlerin kendi tanım dosyaları — onları çizmezler, tanımlarlar. */
-const DEFINITION_FILES = new Set([
-  "components/vehicles/ruhsattan-oku.tsx",
-  "components/vehicles/vin-resolve.tsx",
-  "components/intake/vin-scanner.tsx",
-  "components/intake/registration-camera-scanner.tsx",
-])
+/** Dosya kapısı: bu girdiyi içeren dosya yetkiyi okumak zorunda. */
+const FILE_LEVEL: { token: string; entitlement: Entitlement }[] = [
+  { token: "useVinResolve(", entitlement: "vinLookup" },
+  { token: "/api/vin/resolve", entitlement: "vinLookup" },
+  { token: "/api/vin/scan", entitlement: "vinLookup" },
+  { token: "/api/smart-capture/ocr", entitlement: "ocrIntake" },
+]
 
-test("ruhsat OCR ve şase girişlerini çizen her bileşen yetkiyi okur", () => {
+/** Bilinçli istisnalar — gerekçesiz ekleme yapma; kapıyı gevşetmek yerine çağıranı koru. */
+const ALLOWLIST: Record<string, string> = {
+  "components/vehicles/ruhsattan-oku.tsx": "RuhsattanOku'nun tanımı; çizen her yer ocrIntake ile korunuyor",
+  "components/vehicles/vin-resolve.tsx": "useVinResolve / performVinResolve / VinResolveButton tanımı",
+  "components/intake/vin-scanner.tsx": "VinScanner'ın tanımı; çizen her yer vinLookup ile korunuyor",
+  "components/intake/registration-camera-scanner.tsx": "RegistrationCameraScanner'ın tanımı",
+  "components/intake/smart-capture-registration.tsx":
+    "yalnız /smart-capture/registration'da çizilir; sayfa getFeaturePaywall(\"ocrIntake\") ile kilitli",
+  "components/parts/vin-link-prompt.tsx": "parça sekmesi bu PR'ın kapsamı dışında — #853",
+}
+
+test("istisna listesindeki her dosya hâlâ var (bayat istisna kalmasın)", () => {
+  for (const rel of Object.keys(ALLOWLIST)) {
+    expect(statSync(join(SRC, rel)).isFile()).toBe(true)
+  }
+})
+
+test("ruhsat OCR ve şase girişleri her çağrı yerinde yetkiyi okur", () => {
   const offenders: string[] = []
-  let renderers = 0
+  let hits = 0
   for (const file of walk(COMPONENTS)) {
     const rel = relative(SRC, file)
-    if (DEFINITION_FILES.has(rel)) continue
-    const source = readFileSync(file, "utf8")
-    for (const { tag, entitlement } of GATED_ENTRIES) {
-      if (!source.includes(tag)) continue
-      renderers += 1
-      if (!source.includes(entitlement)) offenders.push(`${rel}: ${tag} → ${entitlement}`)
-    }
+    if (rel in ALLOWLIST) continue
+    const lines = readFileSync(file, "utf8").split("\n")
+    lines.forEach((line, i) => {
+      for (const { token, entitlement, window } of CALL_SITES) {
+        if (!line.includes(token)) continue
+        hits += 1
+        const above = lines.slice(Math.max(0, i - window), i + 1).join("\n")
+        if (!above.includes(entitlement)) {
+          offenders.push(`${rel}:${i + 1} ${token} — üstteki ${window} satırda ${entitlement} okunmuyor`)
+        }
+      }
+    })
   }
   // Tarama gerçekten bir şey buluyor mu? (Yol bozulursa test boşa yeşil kalmasın.)
-  expect(renderers).toBeGreaterThanOrEqual(6)
+  expect(hits).toBeGreaterThanOrEqual(12)
+  expect(offenders).toEqual([])
+})
+
+test("ek özellik uç noktasına giden ya da sorgu kancasını kuran dosya yetkiyi okur", () => {
+  const offenders: string[] = []
+  let hits = 0
+  for (const file of walk(COMPONENTS)) {
+    const rel = relative(SRC, file)
+    if (rel in ALLOWLIST) continue
+    const source = readFileSync(file, "utf8")
+    for (const { token, entitlement } of FILE_LEVEL) {
+      if (!source.includes(token)) continue
+      hits += 1
+      if (!source.includes(entitlement)) offenders.push(`${rel}: ${token} → ${entitlement}`)
+    }
+  }
+  expect(hits).toBeGreaterThanOrEqual(3)
   expect(offenders).toEqual([])
 })

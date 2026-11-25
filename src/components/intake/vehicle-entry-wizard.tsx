@@ -30,7 +30,7 @@ import { CustomerSearchOrCreate } from "@/components/customers/customer-search-o
 import { PlateScanner } from "@/components/intake/plate-scanner"
 import { RegistrationCameraScanner } from "@/components/intake/registration-camera-scanner"
 import { RuhsattanOku, type RuhsattanOkuResult } from "@/components/vehicles/ruhsattan-oku"
-import { AddonGate, AddonLockedNote } from "@/components/billing/addon-gate"
+import { AddonGate } from "@/components/billing/addon-gate"
 import { IntakeDuplicatePhoneNotice, IntakeOwnerCard } from "@/components/intake/intake-owner-card"
 import { VehiclePhotoCapture, createPendingVehiclePhoto, type PendingVehiclePhoto } from "@/components/intake/vehicle-photo-capture"
 import { updateCustomerContactAction } from "@/app/(app)/customers/actions"
@@ -793,7 +793,7 @@ export function VehicleEntryWizard({
     if (!duplicate && !fields.brand.trim()) {
       return entitlements.ocrIntake
         ? "Marka fotoğraftan okunamadı. Fotoğrafı tekrar çekin ya da ruhsattan doldurun."
-        : "Marka fotoğraftan okunamadı. Fotoğrafı tekrar çekin ya da markayı ruhsat bilgilerinden girin."
+        : "Marka fotoğraftan okunamadı. Fotoğrafı tekrar çekin ya da markayı \"Ruhsat bilgileri\"nden girin."
     }
     if (!duplicate) return vehicleFieldError(fields, { modelOptional: true })
     return null
@@ -1232,7 +1232,8 @@ export function VehicleEntryWizard({
           "Ruhsattan doldur" kamerasından gelinir: okunan alanlar burada kontrol
           edilir (düşük güvenli olanlar sarı), "El ile gir" ile boş açılır.
           Ruhsat OCR kapalıysa (#828) "Ruhsat bilgileri" düğmesiyle doğrudan
-          açılır: kamera yok, alanlar elle girilir. */}
+          açılır: kamera yok, alanlar elle girilir. OCR için ayrı not yok —
+          başlık ve düğme zaten anlatıyor; ilk alan telefonda üst yarıda kalsın. */}
       {step === "vehicle" && plateFirst && ruhsatView && (
         <div className="space-y-5">
           <div className="flex items-center justify-between gap-2">
@@ -1254,7 +1255,6 @@ export function VehicleEntryWizard({
               </Button>
             )}
           </div>
-          {!entitlements.ocrIntake && entitlements.showAddonUpsell && <AddonLockedNote feature="ocrIntake" />}
           {conflictsBox}
           <EntryVehicleFields
             hidePlate
@@ -1305,11 +1305,12 @@ export function VehicleEntryWizard({
                 <ScanLine className="size-4" /> Ruhsattan doldur
               </Button>
             ) : (
+              // Ruhsat verisine tek giriş yolu: keşfedilsin diye çerçeveli.
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="gap-1.5 text-primary"
+                className="gap-1.5"
                 onClick={() => { setShowDetails(true); setRuhsatView(true) }}
               >
                 <FileText className="size-4" /> Ruhsat bilgileri
