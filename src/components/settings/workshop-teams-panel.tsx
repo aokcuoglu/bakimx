@@ -81,7 +81,7 @@ export function WorkshopTeamsPanel({
           />
         </div>
         {canManage ? (
-          <Button ref={createButtonRef} type="button" variant="foreground" size="toolbar" onClick={() => setOpen(true)}>
+          <Button ref={createButtonRef} type="button" variant="foreground" onClick={() => setOpen(true)}>
             <Plus className="size-4" />
             Yeni ekip
           </Button>

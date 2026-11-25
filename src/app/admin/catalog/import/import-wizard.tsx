@@ -175,8 +175,8 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="ghost" asChild>
-              <Link href="/admin/catalog">
+            <Button size="icon-sm" variant="ghost" asChild>
+              <Link href="/admin/catalog" aria-label="Kataloğa dön">
                 <ArrowLeft className="size-3.5" />
               </Link>
             </Button>
@@ -280,7 +280,9 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
                 ref={fileInputRef}
                 type="file"
                 accept=".csv,.json,text/csv,text/plain,application/json"
-                className="sr-only"
+                // Görünmez: "Dosya seçin" düğmesi ve sürükle-bırak tetikler.
+                // `sr-only` Input'un `w-full`'üyle ezilip sayfayı yana taşırıyordu.
+                className="hidden"
                 disabled={pending}
                 onChange={(event) => onPickFile(event.target.files?.[0] ?? null)}
               />

@@ -162,7 +162,7 @@ export function OrderItemsChecklist({
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">
           Yapılacak İşler
           <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">

@@ -367,7 +367,6 @@ export function OrderList({
             assignedTechnicianName={row.original.assignedTechnicianName}
             technicians={technicians}
             locked={isOrderLocked(row.original.status as OrderStatus)}
-            size="sm"
             variant="meta"
             className="max-w-[7rem] px-0"
           />
@@ -629,7 +628,6 @@ export function OrderList({
                     assignedTechnicianName={order.assignedTechnicianName}
                     technicians={technicians}
                     locked={isOrderLocked(order.status as OrderStatus)}
-                    size="sm"
                   />
                   <PaymentText status={order.paymentStatus} />
                   {showInvoice && <InvoiceCell invoiceNo={order.invoiceNo} missing={order.invoiceMissing} />}

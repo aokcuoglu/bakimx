@@ -154,7 +154,7 @@ export function Footer() {
                 Serviste işler yolunda.<br />
                 Kontrol sizde.
               </p>
-              <Button asChild variant="outline" size="xl" className={styles.demoButton}>
+              <Button asChild variant="outline" className="shrink-0">
                 <Link href="/demo">
                   Demo talep et <ArrowRight aria-hidden="true" />
                 </Link>
@@ -187,9 +187,9 @@ export function Footer() {
                 autoComplete="email"
                 placeholder="E-posta adresiniz"
                 required
-                className={styles.emailInput}
+                className="min-w-0 flex-1"
               />
-              <Button type="submit" variant="ghost" size="xl" className={styles.signupButton}>
+              <Button type="submit" variant="outline">
                 Abone ol <ArrowRight aria-hidden="true" />
               </Button>
             </form>
@@ -250,8 +250,13 @@ export function Footer() {
                   <FooterNavLink {...link} />
                 </li>
               ))}
-              <li>
-                <CookiePreferencesButton className={`${styles.link} ${styles.cookieButton} h-auto rounded-none`} />
+              {/* Komşu altbilgi bağlantılarıyla aynı metin: satır içi bağlantı düğmesi (#889). */}
+              <li className="text-sm">
+                <CookiePreferencesButton
+                  variant="link"
+                  size="inline"
+                  className="text-muted-foreground hover:text-foreground"
+                />
               </li>
             </ul>
           </Reveal>

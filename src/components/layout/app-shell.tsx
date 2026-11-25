@@ -306,7 +306,8 @@ function AppHeader({
         ) : (
           <SidebarTrigger
             data-tour="sidebar-trigger"
-            className="-ml-2 size-11 lg:size-8 [&_svg:not([class*='size-'])]:size-[22px] lg:[&_svg:not([class*='size-'])]:size-4 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden"
+            size="icon"
+            className="-ml-2 [&_svg:not([class*='size-'])]:size-[22px] md:[&_svg:not([class*='size-'])]:size-4 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden"
           />
         )}
 

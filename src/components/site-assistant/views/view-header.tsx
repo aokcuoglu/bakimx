@@ -14,7 +14,7 @@ export function ViewHeader({ title, onBack }: ViewHeaderProps) {
       <Button
         type="button"
         variant="ghost"
-        size="xs"
+        size="sm"
         onClick={onBack}
         className="-ml-1.5 gap-1 px-2 text-muted-foreground"
       >

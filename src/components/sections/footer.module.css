@@ -138,39 +138,9 @@
   }
 }
 
-.demoButton {
-  width: auto;
-  min-width: 131px;
-  flex-shrink: 0;
-  height: 28px;
-  min-height: 28px;
-  padding: 0 8px;
-  gap: 8px;
-  border: 1px solid var(--muted-foreground);
-  background: var(--card);
-  box-shadow: none;
-  border-radius: 8px;
-  font-size: 14px;
-  line-height: 20px;
-  transition: background-color 150ms ease, border-color 150ms ease;
-}
 
-.demoButton:hover {
-  background: color-mix(in srgb, var(--muted) 60%, var(--card));
-  border-color: var(--foreground);
-  color: var(--foreground);
-}
 
-.demoButton:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 3px;
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .demoButton {
-    transition: none;
-  }
-}
 
 .updatesBlock {
   max-width: 48rem;
@@ -187,36 +157,12 @@
 .signupForm {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  border-bottom: 1px solid var(--muted-foreground);
+  gap: 0.75rem;
 }
 
-.emailInput {
-  min-width: 0;
-  flex: 1;
-  height: 3.25rem;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  padding-inline: 0;
-  font-size: 1rem;
-  box-shadow: none;
-}
 
-.emailInput:focus-visible {
-  box-shadow: none;
-}
 
-.signupButton {
-  height: 3.25rem;
-  padding-inline: 0;
-  color: var(--muted-foreground);
-}
 
-.signupButton:hover {
-  background: transparent;
-  color: var(--foreground);
-}
 
 .consentText {
   max-width: 46rem;
@@ -286,28 +232,8 @@
   border-radius: 2px;
 }
 
-.cookieButton {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  font-size: 0.875rem;
-  color: var(--muted-foreground);
-  transition: color 150ms ease;
-}
 
-.cookieButton:hover {
-  color: var(--foreground);
-}
 
-.cookieButton:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
 
 .bottomBar {
   display: flex;
