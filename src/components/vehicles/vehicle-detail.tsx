@@ -191,7 +191,7 @@ export function VehicleDetail({
           <VehicleIdentity plate={v.plate} brand={v.brand} model={v.model} />
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="foreground" asChild>
-              <Link href={newIntakeHref({ vehicleId: v.id })} aria-label="Yeni araç kabulü oluştur">
+              <Link href={newIntakeHref({ vehicleId: v.id, back: `/vehicles/${v.id}` })} aria-label="Yeni araç kabulü oluştur">
                 <Wrench className="size-4" />
                 <span className="hidden sm:inline">Yeni Araç Kabul</span>
               </Link>
@@ -285,7 +285,7 @@ export function VehicleDetail({
             count={workOrders.length + crossWorkshop.orders.length}
             action={
               <Link
-                href={newIntakeHref({ vehicleId: v.id })}
+                href={newIntakeHref({ vehicleId: v.id, back: `/vehicles/${v.id}` })}
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
@@ -494,7 +494,7 @@ export function VehicleDetail({
                 Aracı Düzenle
               </Button>
             </Link>
-            <Link href={newIntakeHref({ vehicleId: v.id })}>
+            <Link href={newIntakeHref({ vehicleId: v.id, back: `/vehicles/${v.id}` })}>
               <Button variant="outline" className="w-full gap-2">
                 <ClipboardList className="size-4" />
                 Yeni Araç Kabul

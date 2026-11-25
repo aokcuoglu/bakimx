@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useRef, useState } from "react"
 import { ArrowRight, BellRing, CalendarClock, FileText, LockKeyhole, Plus, Wrench, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -15,6 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { CREATE_OPTIONS } from "@/components/layout/create-center"
+import { newIntakeHref } from "@/lib/intake/entry-links"
 import type { GatedFeature } from "@/lib/plan"
 import { lockedFeatureLabels } from "@/lib/feature-catalog"
 
@@ -41,6 +43,8 @@ export function CreateCenterDialog({
   enabledFeatures?: GatedFeature[]
 } = {}) {
   const [internalOpen, setInternalOpen] = useState(false)
+  // Araç kabulü menünün açıldığı sayfaya geri döner (#842).
+  const orderHref = newIntakeHref({ back: usePathname() })
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const returnFocusRef = useRef<HTMLElement | null>(null)
   const isControlled = open !== undefined
@@ -113,7 +117,7 @@ export function CreateCenterDialog({
                   size="lg"
                   className="h-auto min-h-24 w-full items-start justify-start gap-3 whitespace-normal border-border bg-card p-4 text-left shadow-none hover:bg-muted/60 focus-visible:border-ring"
                 >
-                  <Link href={option.href} onClick={() => setOpen(false)}>
+                  <Link href={option.id === "order" ? orderHref : option.href} onClick={() => setOpen(false)}>
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-sm border border-border bg-muted text-foreground">
                       <Icon className="size-4" aria-hidden />
                     </span>
