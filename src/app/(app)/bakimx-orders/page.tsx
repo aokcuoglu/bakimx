@@ -48,12 +48,8 @@ export default async function BakimxOrdersPage() {
   }
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="BakımX Siparişleri" wide>
+    <AppShell workshopName={workshop?.name} wide>
       <div className="space-y-5 sm:space-y-6">
-        <p className="text-sm text-muted-foreground">
-          BakımX kataloğundan istediğiniz ürünler ve talebin durumu
-        </p>
-
         {!canCreate && (
           <InlineFeatureUpsell feature="procurement" currentTier={currentTier} />
         )}

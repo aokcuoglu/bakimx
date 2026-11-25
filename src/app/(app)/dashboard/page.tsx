@@ -4,7 +4,6 @@ import Link from "next/link"
 import { prisma } from "@/lib/db"
 import { Button } from "@/components/ui/button"
 import styles from "@/components/dashboard/dashboard-layout.module.css"
-import { Plus } from "lucide-react"
 import { getPlanState, hasFeature } from "@/lib/plan"
 import { newIntakeHref } from "@/lib/intake/entry-links"
 
@@ -84,31 +83,16 @@ export default async function DashboardPage() {
   const needsFirstOrder = accessTier === "lite" && !firstOrder
 
   const greetingName = user.firstName || null
+  const today = new Date().toLocaleDateString("tr-TR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  })
+  const subtitle = `${workshop?.name ?? "Genel Bakış"} · ${today}${greetingName ? ` · Hoş geldiniz, ${greetingName}` : ""}`
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Genel Bakış">
+    <AppShell workshopName={workshop?.name} subtitle={subtitle}>
       <div className={surface.root}>
-        <section data-tour="welcome-banner" className={surface.hero}>
-          <div className="min-w-0">
-            <h1 className={surface.heroTitle}>{workshop?.name || "Genel Bakış"}</h1>
-            <p className={surface.heroSub}>
-              Bugün ·{" "}
-              {new Date().toLocaleDateString("tr-TR", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              })}
-              {greetingName ? ` · Hoş geldiniz, ${greetingName}` : ""}
-            </p>
-          </div>
-          <Button variant="default" className={surface.heroCta} asChild>
-            <Link href={DASHBOARD_INTAKE_HREF} data-tour="welcome-cta">
-              <Plus className="size-4" />
-              Yeni Araç Kabul
-            </Link>
-          </Button>
-        </section>
-
         {needsFirstOrder && (
           <DashPanel title="İlk adım" data-tour="first-order">
             <div className={surface.cardBody}>

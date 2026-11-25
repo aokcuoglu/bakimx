@@ -28,14 +28,8 @@ export default async function CommunicationsPage() {
   ])
 
   return (
-    <AppShell workshopName={workshop.name} pageTitle="İletişim Kayıtları">
+    <AppShell workshopName={workshop.name}>
       <div className="space-y-5 sm:space-y-6">
-
-        <div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Müşterilerinize ve hesabınıza gönderilen SMS, WhatsApp ve e-posta kayıtları
-          </p>
-        </div>
         <CommunicationLogList logs={logs} stats={stats} />
       </div>
     </AppShell>
