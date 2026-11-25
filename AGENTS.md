@@ -128,6 +128,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **`<Link>` as button:** use `<Button asChild><Link href={...}>…</Link></Button>` — the link is the
   child and carries the children (NOT `<Link><Button>…</Button></Link>`)
 - **Variants over custom CSS:** use `variant`, `size`, `color` props instead of custom className strings
+- **Button size/shape/type only via `size` / `variant`** (#889): no `h-*`, `size-*`, `rounded-*`, `text-xs…`, `py-*`, `font-*` or neutral `bg-*` on `Button` / `InputGroupButton` — inline link `size="inline"`, list row / option card / dropzone `size="row"`, image tile `size="tile"`, field-looking picker trigger `variant="field"`, selected state = switch `variant`, segmented choice = `ToggleGroup`. Gate: `src/components/ui/control-call-sites.test.ts`.
 - **No hardcoded colors:** use theme tokens (`primary`, `destructive`, `muted`, `border`, `ring`) — avoid `blue-600`, `rose-50`, `green-50` etc.
 - **Semantic colors have three roles — pick the right token:**
   - fill / bar / dot / tinted bg → `bg-success`, `bg-warning/10`, `border-destructive/20` (vivid tone; warning must stay amber)

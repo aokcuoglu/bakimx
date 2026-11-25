@@ -15,6 +15,10 @@ kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (76
 | Button `xs` / `compact` | 32px | 28px | yoğun tablo ve araç çubuğu |
 | Button `icon` / `icon-sm` / `icon-lg` | 44 / 36 / 50px | 36 / 32 / 44px | daire |
 | Button `icon-xs` / `icon-compact` | 32px | 28px | |
+| Button `toolbar` | 36px | 32px | `sm` boyu, ikon-metin arası 8px — araç çubuğu |
+| Button `inline` | metin boyu | metin boyu | satır içi bağlantı / eylem (#889): dolgu ve yükseklik yok, yazı boyutu ve satır yüksekliği çevreden (`text-[length:inherit]`); boyutu ata öğe ya da çocuk `<span>` verir |
+| Button `row` | en az 44px | en az 36px | çok satırlı liste satırı, seçenek kartı, bırakma alanı (#889): sola hizalı, metin kırılır, `px-3 py-2.5`, 8px köşe (`rounded-md`), 15 / 14px metin; genişliği çağrı yeri verir (`w-full`, `flex-1 min-w-0`) |
+| Button `tile` | içerik | içerik | görsel küçük resmi / fotoğraf ekle karosu (#889): dolgusuz, `flex-col`, taşanı kırpar, 8px köşe; oranı çağrı yeri verir (`aspect-square w-full`) |
 | Input / InputGroup `default` | 44px | 36px | 10px köşe (md+ 8px, `--control-radius`), 17px / 15px metin — her form, diyalog ve arama alanı |
 | Input / InputGroup `sm` | 36px | 32px | köşe ve metin `default` ile aynı — yoğun filtre araç çubuğu, tablo başlığı süzgeci |
 | Input / InputGroup `compact` | 32px | 28px | 16px / 14px metin (`--control-fs-field-xs`) — tablo satırı içi düzenleyici |
@@ -59,6 +63,18 @@ variant içindir, telefonda görünen `line` sekmenin ölçeğe bağlanması #85
 
 Button: sistem fontu, ağırlık 500, harf aralığı −0.01em, düz dolgu (gölge yok).
 Renk variant'ları ve Radix `asChild` sözleşmesi korunur.
+
+**Button `variant="field"`** (#889): değer seçen Popover tetikleyicisi (birim,
+tarih) girdi gibi görünür — `border-input`, `bg-card`, ağırlık 400, girdinin
+köşesi (`--control-radius`, `compoundVariants` ile her boyutta) ve form
+kontrollerinin odak halkası (`ring-4 ring-ring/20`). Boyu yanındaki girdiyle
+aynı `size`'dır: kalem satırında `compact`, formda `default`
+(`OrderItemUnitCombobox`).
+
+**Seçili durum** `className` ile boyanmaz, `variant` değişir:
+`variant={selected ? "secondary" : "outline"}`. Tek/çok seçimli segment
+(`Bireysel / Kurumsal`, modül listesi, ödeme yöntemi) `ToggleGroup` +
+`ToggleGroupItem` `size="control"`dır.
 
 **Mobil alt navigasyon** bu matrisin dışındadır: `MobileNavLink` bir `Button`
 değil, `Link` (`src/components/layout/app-shell.tsx`).
@@ -148,6 +164,28 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
   (`min-h-20`, `min-h-[80px]` değil). Bilinçli istisna gerekçesiyle
   `src/components/ui/control-call-sites.test.ts` listesine yazılır; artık
   eşleşmeyen istisna testi düşürür.
+- Düğmeler (#889): `Button`, `InputGroupButton` ve onlara `className` ileten
+  sarmalayıcılar (`PrintButton`, `PhotoDeleteButton`, `OrderItemUnitCombobox`,
+  `TechnicianAssign`…) açılış etiketinde yükseklik (`h-*` — `h-full` hariç,
+  `min-h-*`, `max-h-*`, `size-*` — `size-full` hariç), köşe (`rounded*`), yazı
+  boyutu, satır yüksekliği, dikey dolgu (`p-*`, `py-*`, `pt-*`, `pb-*`), yazı
+  ağırlığı ve `focus*:` önekli `ring-*` / `outline-*` taşımaz. Öneksiz ya da
+  yalnız kırılım / koyu tema önekli (`md:`, `dark:`) `bg-background|card|transparent|muted`,
+  `border-0|none|transparent` ve `shadow-none` de yasaktır: düğmeyi başka bir
+  variant'a benzetir. CSS modülü sınıfı ihlaldir. Serbest olanlar: genişlik,
+  flex/grid, hizalama, dış boşluk, yatay dolgu (`px-*`, `pl-*`), `text-left`,
+  `whitespace-normal`, metin rengi, `hover:` / `disabled:` / `aria-*:` durum
+  renkleri, durum tonu (`bg-destructive/10`), yüzen düğme gölgesi
+  (`shadow-md`), `border-dashed`, `font-mono`, kart vurgu halkası
+  (`hover:ring-2`), `before:` / `after:` dokunma alanı katmanı ve `[&_svg]:`
+  ikon boyutu. Satır içi bağlantı `size="inline"`, liste satırı / seçenek
+  kartı / bırakma alanı `size="row"`, görsel karosu `size="tile"`. İstisna
+  (tam ekran kamera deklanşörü, fotoğraf görüntüleyici şeridi, genel arama
+  paleti satırı, kabuk arama alanı, pazarlama kiti alanı içindeki göster/gizle)
+  gerekçesiyle `control-call-sites.test.ts` `EXCEPTIONS` listesindedir; `match`
+  istisnayı dosyadaki tek etikete bağlar. Kör nokta: sabite çıkarılmış sınıf
+  (`TILE`, `technician-assign` `trigger`) ve `buttonVariants({ className })`
+  çağrısı taranmaz — sabite boyut sınıfı yazılmaz.
 - `ToggleGroupItem` / `TabsTrigger` / `TabsList` üzerinde `!` ile yükseklik
   ezilmez (`h-7!`). Telefonda tek başına duran eylem düğmesi `default` ya da
   üstüdür; `sm/xs/compact` yoğun satır ve araç çubuğu içindir.
