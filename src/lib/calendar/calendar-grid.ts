@@ -10,6 +10,9 @@ import { ISTANBUL_UTC_OFFSET_MS } from "@/lib/istanbul-time"
 export type CalendarViewMode = "day" | "week" | "month"
 
 const DAY_MS = 24 * 60 * 60 * 1000
+// Uç yıllar Date.UTC/toISOString taşmasına (0–99 → 19xx, 9999+ → "+010000") girer.
+const MIN_YEAR = 1970
+const MAX_YEAR = 2100
 const DAY_KEY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
 
 export function parseCalendarViewMode(value?: string): CalendarViewMode {
@@ -37,6 +40,7 @@ export function isDayKey(value: string): boolean {
   const y = Number(match[1])
   const m = Number(match[2]) - 1
   const d = Number(match[3])
+  if (y < MIN_YEAR || y > MAX_YEAR) return false
   const date = new Date(Date.UTC(y, m, d))
   return date.getUTCFullYear() === y && date.getUTCMonth() === m && date.getUTCDate() === d
 }

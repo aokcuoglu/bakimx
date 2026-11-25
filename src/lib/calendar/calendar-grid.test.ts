@@ -108,11 +108,22 @@ describe("calendarViewRange", () => {
   })
 })
 
+describe("uç yıllar", () => {
+  test("geçerli sınır anahtarı aralık hesabında patlamaz", () => {
+    for (const view of ["day", "week", "month"] as const) {
+      expect(() => calendarViewRange(view, "2100-12-31")).not.toThrow()
+      expect(() => calendarViewRange(view, "1970-01-01")).not.toThrow()
+    }
+  })
+})
+
 describe("girdi çözümleme", () => {
   test("isDayKey", () => {
     expect(isDayKey("2026-11-25")).toBe(true)
     expect(isDayKey("2026-02-31")).toBe(false)
     expect(isDayKey("abc")).toBe(false)
+    expect(isDayKey("9999-12-31")).toBe(false)
+    expect(isDayKey("0100-01-01")).toBe(false)
   })
   test("resolveDayKey geçersizde İstanbul bugününe döner", () => {
     const now = new Date("2026-11-24T21:30:00.000Z")
@@ -120,6 +131,8 @@ describe("girdi çözümleme", () => {
     expect(resolveDayKey("2026-02-31", now)).toBe("2026-11-25")
     expect(resolveDayKey("abc", now)).toBe("2026-11-25")
     expect(resolveDayKey(undefined, now)).toBe("2026-11-25")
+    expect(resolveDayKey("9999-12-31", now)).toBe("2026-11-25")
+    expect(resolveDayKey("0100-01-01", now)).toBe("2026-11-25")
   })
   test("parseCalendarViewMode", () => {
     expect(parseCalendarViewMode("x")).toBe("week")
