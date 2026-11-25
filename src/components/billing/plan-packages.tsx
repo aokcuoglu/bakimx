@@ -295,11 +295,17 @@ export function PlanPackages({
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
+                    {onManagePlan && (
+                      <Button type="button" variant="outline" className="shrink-0" onClick={onManagePlan}>
+                        <Pencil className="size-4" aria-hidden="true" />
+                        Paketi yönet
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant="ghost"
-                      className="shrink-0"
+                      className="shrink-0 text-primary"
                       onClick={() => {
                         const next = stripCycle === "yearly" ? "monthly" : "yearly"
                         if (onRequestCycleChange) onRequestCycleChange(next)
@@ -308,12 +314,6 @@ export function PlanPackages({
                     >
                       {stripCycle === "yearly" ? "Aylığa geç" : "Yıllığa geç"}
                     </Button>
-                    {onManagePlan && (
-                      <Button type="button" variant="outline" className="shrink-0" onClick={onManagePlan}>
-                        <Pencil className="size-4" aria-hidden="true" />
-                        Paketi yönet
-                      </Button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -329,7 +329,7 @@ export function PlanPackages({
                   <p className="text-sm font-semibold leading-5 text-foreground">{PACKAGE.name}</p>
                   <p className="mt-0.5 text-xs leading-4 text-muted-foreground">{PACKAGE.tagline}</p>
                 </div>
-                <BillingCycleToggle value={billing} onChange={setBilling} yearlyHint="%17" />
+                <BillingCycleToggle value={billing} onChange={setBilling} yearlyHint="%17" yearlyHintSrSuffix=" indirim" />
               </div>
               <p className="mt-3 text-[24px] font-semibold leading-7 tracking-[-0.48px] text-foreground">
                 ₺{packageAmount.toLocaleString("tr-TR")}
@@ -363,7 +363,7 @@ export function PlanPackages({
   return (
     <section aria-label="Servis Paketi" className="space-y-5">
       <div className="flex justify-center pt-2">
-        <BillingCycleToggle value={billing} onChange={setBilling} yearlyHint="%17" />
+        <BillingCycleToggle value={billing} onChange={setBilling} yearlyHint="%17" yearlyHintSrSuffix=" indirim" />
       </div>
       <div className="mx-auto grid max-w-4xl gap-6 !mt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Card

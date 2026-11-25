@@ -23,7 +23,8 @@ kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (76
 
 `default/sm/lg` Toggle (32px) ve `line` sekme (28px) upstream nova ölçeğidir;
 yalnız masaüstü yoğun araç çubuğu ve tablo başlığı içindir. Telefonda görünen
-seçici ve sekme `size="control"` alır. İlke: etkileşimli öğe `--control-h`,
+seçici `size="control"` alır; sekmede `size="control"` yalnız `default` (segment)
+variant içindir, telefonda görünen `line` sekmenin ölçeğe bağlanması #854'te. İlke: etkileşimli öğe `--control-h`,
 şerit/ray `auto` — `order-detail.module.css` `.tab` aynı ilkenin mevcut örneğidir.
 
 Button: sistem fontu, ağırlık 500, harf aralığı −0.01em, düz dolgu (gölge yok).

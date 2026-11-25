@@ -16,6 +16,7 @@ export function BillingCycleToggle({
   onChange,
   yearlyHint,
   fullWidth = false,
+  yearlyHintSrSuffix,
   label = "Faturalama dönemi",
 }: {
   value: BillingCycleValue
@@ -23,6 +24,8 @@ export function BillingCycleToggle({
   /** "Yıllık" etiketinin yanındaki çip (örn. %17, 2 ay bedava). */
   yearlyHint?: ReactNode
   fullWidth?: boolean
+  /** Çipin ekran okuyucu eki (örn. " indirim"); görünür metni değiştirmez. */
+  yearlyHintSrSuffix?: string
   label?: string
 }) {
   return (
@@ -33,7 +36,7 @@ export function BillingCycleToggle({
       aria-label={label}
       className={cn(
         "gap-0.5 rounded-lg bg-muted p-0.5",
-        fullWidth ? "grid w-full grid-cols-2" : "inline-flex w-auto"
+        fullWidth ? "grid w-full grid-cols-2" : "inline-grid grid-cols-2"
       )}
       value={value}
       onValueChange={(next) => {
@@ -44,11 +47,11 @@ export function BillingCycleToggle({
         <ToggleGroupItem
           key={cycle}
           value={cycle}
-          className="w-full min-w-0 rounded-lg text-sm font-medium tracking-[-0.07px] text-muted-foreground hover:bg-transparent hover:text-foreground data-[state=on]:!bg-card data-[state=on]:!text-foreground data-[state=on]:shadow-[inset_0_0_0_1px_var(--border),0_1px_2px_-1px_rgba(0,0,0,0.12)]"
+          className="min-w-0 rounded-lg text-sm font-medium tracking-[-0.07px] text-muted-foreground hover:bg-transparent hover:text-foreground data-[state=on]:!bg-card data-[state=on]:!text-foreground data-[state=on]:shadow-[inset_0_0_0_1px_var(--border),0_1px_2px_-1px_rgba(0,0,0,0.12)]"
         >
           {cycle === "monthly" ? "Aylık" : "Yıllık"}
           {cycle === "yearly" && yearlyHint && (
-            <span className="rounded-md bg-primary/10 px-1 text-[11px] font-medium leading-4 text-primary-strong">{yearlyHint}</span>
+            <span className="rounded-md bg-primary/10 px-1 text-[11px] font-medium leading-4 text-primary-strong">{yearlyHint}{yearlyHintSrSuffix && <span className="sr-only">{yearlyHintSrSuffix}</span>}</span>
           )}
         </ToggleGroupItem>
       ))}

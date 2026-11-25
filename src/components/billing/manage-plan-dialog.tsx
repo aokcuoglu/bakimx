@@ -186,7 +186,7 @@ export function ManagePlanDialog({
                   <ToggleGroupItem
                     key={option}
                     value={option}
-                    className="w-full justify-between gap-3 rounded-xl border bg-card text-left font-normal data-[state=on]:border-primary data-[state=on]:bg-primary/5 data-[state=on]:ring-2 data-[state=on]:ring-primary/10"
+                    className="h-auto min-h-(--control-h) w-full justify-between gap-3 rounded-xl border bg-card py-1.5 text-left font-normal whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/5 data-[state=on]:ring-2 data-[state=on]:ring-primary/10"
                   >
                     <span className="flex items-center gap-2">
                       <span className={cn("size-4 rounded-full border", cycle === option ? "border-primary bg-primary shadow-[inset_0_0_0_3px_var(--card)]" : "border-input")} aria-hidden="true" />
