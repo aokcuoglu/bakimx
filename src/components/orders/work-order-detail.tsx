@@ -106,6 +106,7 @@ import type { GatedFeature, PlanTier } from "@/lib/plan"
 import { lockedFeatureLabels } from "@/lib/feature-catalog"
 import { compressImagesForUpload } from "@/lib/image/compress-image"
 import { cn } from "@/lib/utils"
+import { usePendingScroll } from "@/hooks/use-pending-scroll"
 
 // Header aksiyon ikonları (eski orders ekranıyla aynı görünüm).
 const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
@@ -379,7 +380,9 @@ export function WorkOrderDetail({
   const [editPickPhone, setEditPickPhone] = useState(openInfoEditor ? order.intake.pickedUpByPhone ?? "" : "")
 
   // Photos
-  const photosRef = useRef<HTMLDivElement>(null)
+  // Fotoğraflar bölümüne kaydırma: Kanıt paneli başka sekmedeyken DOM'da
+  // yoktur, kaydırma panel bağlandığında yapılır (#838, lib/pending-scroll).
+  const [attachPhotos, scrollToPhotos] = usePendingScroll()
   const [addingPhoto, setAddingPhoto] = useState(false)
   const [photoType, setPhotoType] = useState("")
   const [photoPhase, setPhotoPhase] = useState("intake")
@@ -391,9 +394,9 @@ export function WorkOrderDetail({
   // blob URL'i her kare için tutulur ve listeden çıkınca serbest bırakılır.
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
   const [uploadedCount, setUploadedCount] = useState(0)
-  const pendingPhotoScrollRef = useRef(false)
-  const pendingPricingScrollRef = useRef(false)
-  const pricingRef = useRef<HTMLDivElement>(null)
+  // Fiyatlandırma kartı Özet sekmesinde; Parça sekmesindeki mobil toplam
+  // çubuğu Özet'i açar, kart bağlanınca kaydırılır (#838).
+  const [attachPricing, scrollToPricing] = usePendingScroll()
   // Mobilde `capture` girdisi galeri seçicisini baypas edip doğrudan kamerayı
   // açtığı için çoklu seçim ayrı bir girdide (capture'sız, `multiple`) duruyor.
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -411,33 +414,9 @@ export function WorkOrderDetail({
   const [deliveryOtpCode, setDeliveryOtpCode] = useState("")
   const [deliverySentCode, setDeliverySentCode] = useState<string | null>(null)
 
-  // Kanıt sekmesi aktif olunca (panel mount olduktan sonra) foto bölümüne kaydır.
-  // Base UI Tabs pasif paneli unmount ettiği için scroll senkron yapılamaz; ref
-  // ile bekleyen istek işaretlenir (state değil → cascading render/lint yok).
-  useEffect(() => {
-    if (activeTab === "kanit" && pendingPhotoScrollRef.current) {
-      pendingPhotoScrollRef.current = false
-      photosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-    }
-  }, [activeTab])
-
-  // Fiyatlandırma artık Özet sekmesinde. Parça sekmesindeki mobil toplam çubuğu
-  // önce sekmeyi açar; panel mount edildikten sonra karta kaydırma tamamlanır.
-  useEffect(() => {
-    if (activeTab === "ozet" && pendingPricingScrollRef.current) {
-      pendingPricingScrollRef.current = false
-      pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-    }
-  }, [activeTab])
-
   function focusPricingSummary() {
-    if (activeTab === "ozet") {
-      pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-      return
-    }
-
-    pendingPricingScrollRef.current = true
-    handleTabChange("ozet")
+    if (activeTab !== "ozet") handleTabChange("ozet")
+    scrollToPricing()
   }
 
   async function changeStatus(newStatus: string) {
@@ -792,12 +771,8 @@ export function WorkOrderDetail({
     // Lite'ta eksik-fotoğraf kısayolları diyaloğu açamaz; kullanıcıyı ortak
     // yükseltme kartının bulunduğu Fotoğraflar bölümüne taşır.
     if (!canUsePhotoChecklist) {
-      if (activeTab === "kanit") {
-        photosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-      } else {
-        pendingPhotoScrollRef.current = true
-        handleTabChange("kanit")
-      }
+      if (activeTab !== "kanit") handleTabChange("kanit")
+      scrollToPhotos()
       return
     }
 
@@ -807,14 +782,9 @@ export function WorkOrderDetail({
     // → tür ve aşama diyaloğda kilitli gelir.
     setPhotoContextLocked(Boolean(typeKey && phase))
     setAddingPhoto(true)
-    if (activeTab === "kanit") {
-      // Panel zaten mount; doğrudan kaydır.
-      photosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-    } else {
-      // Sekmeye geç; scroll panel mount olunca useEffect'te yapılır.
-      pendingPhotoScrollRef.current = true
-      handleTabChange("kanit")
-    }
+    // Kanıt paneli zaten açıksa hemen, değilse panel bağlanınca kaydırılır.
+    if (activeTab !== "kanit") handleTabChange("kanit")
+    scrollToPhotos()
   }
 
   return (
@@ -1132,7 +1102,7 @@ export function WorkOrderDetail({
             </div>
           </DetailPanel>
 
-          <div ref={pricingRef} className="scroll-mt-20">
+          <div ref={attachPricing} className="scroll-mt-20">
             <PricingSummaryCard
               totals={order.totals}
               paymentStatus={order.paymentStatus}
@@ -1313,7 +1283,7 @@ export function WorkOrderDetail({
         {/* KANIT (Foto & Hasar) */}
         <TabsContent value="kanit" className="space-y-5">
           {/* Fotoğraflar */}
-          <div ref={photosRef} className="scroll-mt-4">
+          <div ref={attachPhotos} className="scroll-mt-4">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center justify-between gap-3">
