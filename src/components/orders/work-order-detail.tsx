@@ -801,7 +801,7 @@ export function WorkOrderDetail({
         plate={order.vehicle.plate}
         title={`${order.vehicle.brand} ${order.vehicle.model}`}
         subline={`${customerName}${order.vehicle.modelYear ? ` · ${order.vehicle.modelYear}` : ""}`}
-        backHref={listHref}
+        backHref={orderListReturnHref(returnTo)}
         pills={
           <>
             <DashOrderStatus status={order.status} />
