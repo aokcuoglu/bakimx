@@ -1,0 +1,90 @@
+/*
+ * Başlığın üstündeki yol satırı (#855). Breadcrumb tek satırdır, uzun halka üç
+ * noktayla kısalır. Alt sayfada telefonda (<640px) aynı satırı `‹ <üst>` geri
+ * bağlantısı alır. İki görünümün satır yüksekliği aynıdır (13px × 1.4): başlık
+ * liste ve alt sayfada aynı Y konumunda durur.
+ */
+.trail {
+  min-width: 0;
+}
+
+.crumbs {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+
+.crumbs [data-slot="breadcrumb-list"] {
+  flex-wrap: nowrap;
+}
+
+.crumbs [data-slot="breadcrumb-item"] {
+  min-width: 0;
+}
+
+.crumbs [data-slot="breadcrumb-separator"] {
+  flex-shrink: 0;
+}
+
+.crumbs [data-slot="breadcrumb-item"] > a,
+.crumbs [data-slot="breadcrumb-item"] > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.back {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  font-size: 15px;
+  font-weight: 500;
+  /* Breadcrumb satırıyla aynı yükseklik. */
+  line-height: calc(13px * 1.4);
+  white-space: nowrap;
+  /* Düz --primary #f2f2f7 zeminde AA'nın altında kalır (≈4.2:1). */
+  color: var(--primary-strong);
+  border-radius: 4px;
+}
+
+.back svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  /* Okun çizgisi başlığın sol kenarıyla hizalanır. */
+  margin-inline-start: -6px;
+}
+
+/* Görsel 18px, dokunma alanı 44px (#810 `.pillNav` emsali). */
+.back::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.trail[data-has-back] > .crumbs {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .trail[data-has-back] > .crumbs {
+    display: block;
+  }
+
+  .back {
+    display: none;
+  }
+}

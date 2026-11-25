@@ -19,13 +19,6 @@
   min-width: 0;
 }
 
-.crumbs {
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.4;
-  color: var(--muted-foreground);
-}
-
 .row {
   display: flex;
   flex-direction: column;
@@ -39,6 +32,14 @@
   line-height: 1.08;
   letter-spacing: -0.035em;
   color: var(--foreground);
+}
+
+/* Kayıt adı başlığı (#855): tek satır, taşarsa üç nokta. */
+.titleRecord {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .subline {

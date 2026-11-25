@@ -1,17 +1,10 @@
 "use client"
 
-import { createContext, Fragment, useContext, type ReactNode } from "react"
+import { createContext, useContext, type ReactNode } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import { PageTrail } from "@/components/layout/page-trail"
 import type { GatedFeature } from "@/lib/plan"
 import {
   resolvePageHeader,
@@ -63,31 +56,21 @@ export function PageHeaderView({
   const subText = rawSub === "" ? undefined : rawSub
   const reserveSub = subText === undefined && header.dynamicSubtitle
   const hasSub = subText !== undefined || reserveSub
+  const recordMode = header.titleMode === "record"
+  // Kayıt adı yüklenirken başlık satırı boş ayrılır; gelince dolar (#855).
+  const reserveTitle = header.title === ""
 
   return (
     <header data-slot="page-header" data-tour={header.tourId} className={styles.header}>
-      <Breadcrumb aria-label="Sayfa yolu" className={styles.crumbs}>
-        <BreadcrumbList className="text-[length:inherit]">
-          {crumbs.map((crumb, i) => (
-            <Fragment key={`${i}-${crumb.label}`}>
-              {i > 0 && <BreadcrumbSeparator />}
-              <BreadcrumbItem>
-                {i === crumbs.length - 1 ? (
-                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                ) : crumb.href ? (
-                  <BreadcrumbLink asChild>
-                    <Link href={crumb.href}>{crumb.label}</Link>
-                  </BreadcrumbLink>
-                ) : (
-                  <span>{crumb.label}</span>
-                )}
-              </BreadcrumbItem>
-            </Fragment>
-          ))}
-        </BreadcrumbList>
-      </Breadcrumb>
+      <PageTrail crumbs={crumbs} back={header.back} />
       <div className={styles.row}>
-        <h1 className={styles.title}>{header.title}</h1>
+        <h1
+          data-slot="page-title"
+          className={recordMode ? cn(styles.title, styles.titleRecord) : styles.title}
+          aria-hidden={reserveTitle || undefined}
+        >
+          {reserveTitle ? "\u00a0" : header.title}
+        </h1>
         {(primaryAction || secondaryActions.length > 0) && (
           <div className={styles.actions}>
             {secondaryActions.length > 0 && (
@@ -110,11 +93,22 @@ export function PageHeaderView({
   )
 }
 
-/** Kayıtlı yolda çerçeve + başlık + children; kayıtsız yolda yalnız children. */
-export function PageFrame({ subtitle, children }: { subtitle?: ReactNode; children: ReactNode }) {
+/**
+ * Kayıtlı yolda çerçeve + başlık + children; kayıtsız yolda yalnız children.
+ * Detay sayfası `recordTitle` verir; yükleme ekranı vermez (zincir kısa, başlık boş).
+ */
+export function PageFrame({
+  subtitle,
+  recordTitle,
+  children,
+}: {
+  subtitle?: ReactNode
+  recordTitle?: string
+  children: ReactNode
+}) {
   const pathname = usePathname()
   const access = useContext(PageHeaderAccessContext)
-  const header = resolvePageHeader(pathname, access)
+  const header = resolvePageHeader(pathname, access, { recordTitle })
   if (!header) return <>{children}</>
   return (
     <div className={styles.frame}>

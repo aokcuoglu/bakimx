@@ -30,6 +30,37 @@ describe("PageHeaderView", () => {
     expect(render({})).toMatch(/<h1[^>]*>Tahsilatlar<\/h1>/)
   })
 
+  test("menu page: breadcrumb at every width, no back link (#855)", () => {
+    const html = render({ back: null })
+    expect(html).toContain('data-slot="page-trail"')
+    expect(html).not.toContain('data-slot="page-back"')
+    expect(html).not.toContain("data-has-back")
+  })
+
+  test("sub-page: back link rendered next to the breadcrumb (#855)", () => {
+    const html = render({ back: { label: "Müşteriler", href: "/customers" } })
+    expect(html).toContain("data-has-back")
+    expect(html).toMatch(/data-slot="page-back"[^>]*>.*Müşteriler<\/a>/)
+  })
+
+  test("record title loading: h1 keeps its row with an aria-hidden NBSP (#855)", () => {
+    const html = render({ title: "", titleMode: "record" })
+    const tag = html.match(/<h1[^>]*>([^<]*)<\/h1>/)
+    expect(tag?.[1]).toBe("\u00a0")
+    expect(tag?.[0]).toContain('aria-hidden="true"')
+    expect(tag?.[0]).toContain('data-slot="page-title"')
+  })
+
+  test("record title loaded: no aria-hidden, single-line ellipsis class (#855)", () => {
+    const html = render({ title: "Ahmet Yılmaz", titleMode: "record" })
+    const tag = html.match(/<h1[^>]*>/)?.[0] ?? ""
+    expect(html).toMatch(/<h1[^>]*>Ahmet Yılmaz<\/h1>/)
+    expect(tag).not.toContain("aria-hidden")
+    const staticTag = render({}).match(/<h1[^>]*>/)?.[0] ?? ""
+    const classes = (t: string) => new Set(t.match(/class="([^"]*)"/)?.[1].split(" "))
+    expect([...classes(tag)].filter((c) => !classes(staticTag).has(c))).toHaveLength(1)
+  })
+
   test("dynamic subtitle reserves an empty aria-hidden row until the page supplies text", () => {
     const empty = render({ dynamicSubtitle: true })
     expect(empty).toContain('data-slot="page-subtitle"')

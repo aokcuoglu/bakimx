@@ -88,10 +88,7 @@ const APP_NAV_TEXT = "h-7 text-sm leading-5 font-medium tracking-[-0.005em]"
 // keeps the brand mark there; list and utility pages use the bar for context.
 const MOBILE_CONTENT_HEADING_PATHS = new Set([
   "/orders/new",
-  "/customers/new",
-  "/vehicles/new",
   "/technician",
-  "/appointments/new",
 ])
 
 // Masaüstünde (lg+) üst bar yoktur: sayfa başlığı içerikte durur. Bar yalnız
@@ -99,7 +96,7 @@ const MOBILE_CONTENT_HEADING_PATHS = new Set([
 // logo için, sidebar'sız teknisyen ekranlarında da hesap/çıkış için kalır.
 
 // Menü sayfası olmadığı hâlde görünür başlığı yalnız bardaydı.
-const BAR_TITLE_ONLY_PATHS = new Set(["/quotes/new", "/cashbox/payments/new", "/customers/balances"])
+const BAR_TITLE_ONLY_PATHS = new Set(["/cashbox/payments/new", "/customers/balances"])
 
 /**
  * Kayıtlı sayfalarda başlığı `PageFrame` çizer; burası yalnız kayıtsız yollar
@@ -128,6 +125,7 @@ export function AppShell({
   children,
   pageTitle,
   subtitle,
+  recordTitle,
   showGlobalSearch = true,
   constrained = false,
   wide = false,
@@ -136,6 +134,8 @@ export function AppShell({
   workshopName?: string
   pageTitle?: string
   subtitle?: React.ReactNode
+  /** Alt sayfa (#855): kaydın adı — başlık ve son breadcrumb halkası. */
+  recordTitle?: string
   showGlobalSearch?: boolean
   constrained?: boolean
   wide?: boolean
@@ -154,7 +154,7 @@ export function AppShell({
     return <>{body}</>
   }
   if (hasPageHeader(pathname)) {
-    return <PageFrame subtitle={subtitle}>{inner(children)}</PageFrame>
+    return <PageFrame subtitle={subtitle} recordTitle={recordTitle}>{inner(children)}</PageFrame>
   }
   const titleMode = pageTitle && !isSidebarlessRoute(pathname) ? desktopTitleMode(pathname) : "none"
   // Yalnız masaüstünde (lg+) çizilir; altında başlık bardadır.

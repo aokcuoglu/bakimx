@@ -1,6 +1,16 @@
 import { describe, expect, test } from "bun:test"
+import { existsSync, readdirSync, statSync } from "node:fs"
+import { join } from "node:path"
+import { isSidebarlessRoute } from "@/lib/sidebarless-route"
 import { NAV_GROUPS } from "./app-nav"
-import { PAGE_HEADERS, hasPageHeader, resolvePageHeader } from "./page-headers"
+import {
+  PAGE_HEADERS,
+  SUB_PAGE_HEADERS,
+  UNFRAMED_STATIC_ROUTES,
+  hasPageHeader,
+  matchSubPage,
+  resolvePageHeader,
+} from "./page-headers"
 
 const ALL = { enabledFeatures: ["quotes", "appointments", "automatedReminders", "ocrIntake", "partsInventory", "procurement", "cashbox", "analytics", "reports", "communications", "team"] as const, actor: { role: "owner" as const } }
 
@@ -51,9 +61,16 @@ describe("page-headers (#823)", () => {
     expect(resolvePageHeader("/orders", { ...ALL, actor: { role: "manager", teamPermissions: [] } })!.primaryAction).toBeUndefined()
     expect(resolvePageHeader("/orders", { ...ALL, actor: null })!.primaryAction).toBeUndefined()
   })
-  test("kayıtsız yollar null: alt sayfalar, teknisyen, ayarlar", () => {
-    for (const p of ["/orders/new", "/customers/abc", "/technician", "/settings/general", "/reports/orders"]) {
+  test("kayıtsız yollar null: kabul akışı, teknisyen, ayarlar", () => {
+    for (const p of ["/orders/new", "/technician", "/settings/general", "/reports/orders"]) {
       expect(resolvePageHeader(p, ALL)).toBeNull()
+    }
+  })
+  test("menü sayfalarında telefon geri bağlantısı yok", () => {
+    for (const href of Object.keys(PAGE_HEADERS)) {
+      const h = resolvePageHeader(href, ALL)!
+      expect(h.back).toBeNull()
+      expect(h.titleMode).toBe("static")
     }
   })
   test("Genel Bakış tur çapaları korunur", () => {
@@ -62,5 +79,155 @@ describe("page-headers (#823)", () => {
     expect(h.tourId).toBe("welcome-banner")
     expect(h.primaryAction?.tourId).toBe("welcome-cta")
     expect(h.dynamicSubtitle).toBe(true)
+  })
+})
+
+const APP_DIR = join(import.meta.dir, "..", "..", "app", "(app)")
+
+/** `src/app/(app)` altındaki her `page.tsx`'in yolu, Next klasör sözdizimiyle. */
+function appRoutes(dir = APP_DIR, prefix = ""): string[] {
+  const routes: string[] = []
+  for (const name of readdirSync(dir)) {
+    const full = join(dir, name)
+    if (!statSync(full).isDirectory()) {
+      if (name === "page.tsx") routes.push(prefix || "/")
+      continue
+    }
+    if (name.startsWith("@") || name.startsWith("_")) continue
+    const segment = name.startsWith("(") && name.endsWith(")") ? "" : `/${name}`
+    routes.push(...appRoutes(full, `${prefix}${segment}`))
+  }
+  return routes
+}
+
+describe("alt sayfa başlıkları (#855)", () => {
+  test("detay yükleniyor: zincir bilinen son bağlantıda biter, başlık boş, geri hazır", () => {
+    const h = resolvePageHeader("/customers/c1", ALL)!
+    expect(h.crumbs).toEqual([{ label: "Servis" }, { label: "Müşteriler", href: "/customers" }])
+    expect(h.title).toBe("")
+    expect(h.titleMode).toBe("record")
+    expect(h.back).toEqual({ label: "Müşteriler", href: "/customers" })
+    expect(h.description).toBeUndefined()
+    expect(h.dynamicSubtitle).toBe(false)
+  })
+  test("detay yüklendi: kayıt adı son halka ve başlık", () => {
+    const h = resolvePageHeader("/customers/c1", ALL, { recordTitle: "Ahmet Yılmaz" })!
+    expect(h.crumbs).toEqual([
+      { label: "Servis" },
+      { label: "Müşteriler", href: "/customers" },
+      { label: "Ahmet Yılmaz" },
+    ])
+    expect(h.title).toBe("Ahmet Yılmaz")
+    expect(h.titleMode).toBe("record")
+    expect(h.back).toEqual({ label: "Müşteriler", href: "/customers" })
+  })
+  test("boş kayıt adı bilinmiyor sayılır", () => {
+    const h = resolvePageHeader("/quotes/q1", ALL, { recordTitle: "" })!
+    expect(h.crumbs).toEqual([{ label: "Servis" }, { label: "Teklifler", href: "/quotes" }])
+    expect(h.title).toBe("")
+  })
+  test("düzenleme yükleniyor: kayıt halkası ve yaprak yok, sabit başlık, geri kayda", () => {
+    const h = resolvePageHeader("/vehicles/v1/edit", ALL)!
+    expect(h.crumbs).toEqual([{ label: "Servis" }, { label: "Araçlar", href: "/vehicles" }])
+    expect(h.title).toBe("Aracı Düzenle")
+    expect(h.titleMode).toBe("static")
+    expect(h.back).toEqual({ label: "Araç", href: "/vehicles/v1" })
+  })
+  test("düzenleme yüklendi: kayıt halkası bağlantı, yaprak Düzenle, geri değişmez", () => {
+    const h = resolvePageHeader("/vehicles/v1/edit", ALL, { recordTitle: "34 ABC 123" })!
+    expect(h.crumbs).toEqual([
+      { label: "Servis" },
+      { label: "Araçlar", href: "/vehicles" },
+      { label: "34 ABC 123", href: "/vehicles/v1" },
+      { label: "Düzenle" },
+    ])
+    expect(h.title).toBe("Aracı Düzenle")
+    expect(h.back).toEqual({ label: "Araç", href: "/vehicles/v1" })
+  })
+  test("hatırlatma düzenleme: menü başlığı üst halka, alt satır sayfadan", () => {
+    const h = resolvePageHeader("/reminders/r1/edit", ALL, { recordTitle: "Yağ bakımı" })!
+    expect(h.crumbs).toEqual([
+      { label: "Servis" },
+      { label: "Bakım Hatırlatmaları", href: "/reminders" },
+      { label: "Yağ bakımı", href: "/reminders/r1" },
+      { label: "Düzenle" },
+    ])
+    expect(h.title).toBe("Hatırlatmayı Düzenle")
+    expect(h.dynamicSubtitle).toBe(true)
+    expect(h.back).toEqual({ label: "Hatırlatma", href: "/reminders/r1" })
+    expect(resolvePageHeader("/reminders/r1", ALL)!.back).toEqual({
+      label: "Bakım Hatırlatmaları",
+      href: "/reminders",
+    })
+  })
+  test("yeni kayıt sayfaları: sabit halka ve açıklama, kayıt adı yok sayılır", () => {
+    const h = resolvePageHeader("/customers/new", ALL, { recordTitle: "yok sayılır" })!
+    expect(h.crumbs).toEqual([
+      { label: "Servis" },
+      { label: "Müşteriler", href: "/customers" },
+      { label: "Yeni Müşteri" },
+    ])
+    expect(h.title).toBe("Yeni Müşteri")
+    expect(h.titleMode).toBe("static")
+    expect(h.description).toBe("Bireysel veya kurumsal müşteri bilgilerini girin")
+    expect(h.back).toEqual({ label: "Müşteriler", href: "/customers" })
+    expect(resolvePageHeader("/vehicles/new", ALL)!.crumbs.at(-1)).toEqual({ label: "Yeni Araç" })
+    expect(resolvePageHeader("/quotes/new", ALL)!.description).toBeUndefined()
+  })
+  test("alt sayfalar düğme taşımaz (tüm paketler açıkken bile)", () => {
+    for (const pattern of Object.keys(SUB_PAGE_HEADERS)) {
+      const h = resolvePageHeader(pattern.replaceAll("[id]", "x1"), ALL, { recordTitle: "Kayıt" })!
+      expect(h.primaryAction).toBeUndefined()
+      expect(h.secondaryActions).toEqual([])
+    }
+  })
+  test("statik yol dinamik desenden önce gelir; kayıtsız alt yollar null", () => {
+    expect(matchSubPage("/vehicles/new")).toEqual({ pattern: "/vehicles/new" })
+    expect(matchSubPage("/vehicles/v1")).toEqual({ pattern: "/vehicles/[id]" })
+    expect(matchSubPage("/vehicles/v1/edit")).toEqual({ pattern: "/vehicles/[id]/edit" })
+    for (const p of [
+      "/customers/balances",
+      "/vehicles/v1/passport",
+      "/orders/new",
+      "/orders/o1",
+      "/technician/orders/x",
+      "/customers/a/b",
+      "/customers/",
+    ]) {
+      expect(matchSubPage(p)).toBeNull()
+      expect(hasPageHeader(p)).toBe(false)
+      expect(resolvePageHeader(p, ALL)).toBeNull()
+    }
+  })
+  test("kayıt bütünlüğü: üst var, dinamik üstün geri etiketi var, sayfa dosyası var", () => {
+    const problems: string[] = []
+    for (const [pattern, config] of Object.entries(SUB_PAGE_HEADERS)) {
+      const parentIsMenu = Object.hasOwn(PAGE_HEADERS, config.parent)
+      const parentSub = SUB_PAGE_HEADERS[config.parent]
+      if (!parentIsMenu && !parentSub) problems.push(`${pattern}: üst ${config.parent} kayıtlı değil`)
+      if (parentSub && !parentSub.backLabel) problems.push(`${pattern}: üst ${config.parent} backLabel vermiyor`)
+      if (parentSub && !pattern.startsWith(`${config.parent}/`)) problems.push(`${pattern}: üstünün altında değil`)
+      if (parentSub && !parentSub.title && !config.title) problems.push(`${pattern}: iki kayıt adı gerekir`)
+      if (!existsSync(join(APP_DIR, pattern, "page.tsx"))) problems.push(`${pattern}: page.tsx yok`)
+      if (Object.hasOwn(PAGE_HEADERS, pattern)) problems.push(`${pattern}: menü kaydıyla çakışıyor`)
+    }
+    for (const route of UNFRAMED_STATIC_ROUTES) {
+      if (!existsSync(join(APP_DIR, route, "page.tsx"))) problems.push(`${route}: page.tsx yok`)
+    }
+    expect(problems).toEqual([])
+  })
+  test("her sayfa yalnız kendi desenine düşer (dinamik desen statik kardeşi yutmaz)", () => {
+    const routes = appRoutes()
+    expect(routes).toContain("/customers/[id]")
+    expect(routes).toContain("/customers/balances")
+    const captured = routes
+      .map((route) => [route, matchSubPage(route)?.pattern] as const)
+      .filter(([route, pattern]) => pattern !== undefined && pattern !== route)
+    expect(captured).toEqual([])
+  })
+  test("kayıtlı hiçbir yol sidebar'sız değil (?from=technician dahil)", () => {
+    const fromTechnician = new URLSearchParams("from=technician")
+    const paths = [...Object.keys(PAGE_HEADERS), ...Object.keys(SUB_PAGE_HEADERS)].map((p) => p.replaceAll("[id]", "x1"))
+    expect(paths.filter((p) => isSidebarlessRoute(p, fromTechnician))).toEqual([])
   })
 })
