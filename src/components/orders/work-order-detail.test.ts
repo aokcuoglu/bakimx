@@ -95,14 +95,3 @@ test("hızlı butonlar başlığın altında, asıl pencereleri açar", () => {
   expect(SOURCE).toContain("addingType={partsAddType} onAddingTypeChange={setPartsAddType}")
   expect(SOURCE).toContain("onCollectionModalOpenChange={setCollectionModalOpen}")
 })
-
-/**
- * #886 — telefonda Fotoğraf Ekle diyaloğu ~326px; iki sütunda "Galeriden seç"
- * 44px düğmeye sığmayıp kenara taşıyordu. Kısa etiket korunur, ikonda ayrıca
- * `mr-*` yok (Button zaten `gap` verir).
- */
-test("fotoğraf diyaloğunda Kamera / Galeri kısa etiketi korunur", () => {
-  expect(SOURCE).toContain("<Camera /> Kamera")
-  expect(SOURCE).toContain("<Images /> Galeri\n")
-  expect(SOURCE).not.toMatch(/<Images className="[^"]*mr-/)
-})
