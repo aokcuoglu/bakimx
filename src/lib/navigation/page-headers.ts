@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react"
 import { BarChart3, Plus, Wallet } from "lucide-react"
 import type { UserRole } from "@prisma/client"
-import { NEW_INTAKE_HREF } from "@/lib/intake/entry-links"
+import { newIntakeHref } from "@/lib/intake/entry-links"
 import type { GatedFeature } from "@/lib/plan"
 import { actorCan, type Permission } from "@/lib/roles"
 import { NAV_GROUPS } from "./app-nav"
@@ -44,13 +44,14 @@ export type ResolvedPageHeader = {
   tourId?: string
 }
 
-const newIntake: PageAction = {
+/** Kabul, açıldığı sayfaya döner (#842): `back` geri bağlantısını belirler. */
+const newIntakeFrom = (back: string): PageAction => ({
   label: "Yeni Araç Kabul",
-  href: NEW_INTAKE_HREF,
+  href: newIntakeHref({ back }),
   icon: Plus,
   primary: true,
   permission: "records.create",
-}
+})
 
 const newPayment: PageAction = {
   label: "Yeni Tahsilat",
@@ -64,9 +65,9 @@ export const PAGE_HEADERS: Readonly<Record<string, PageHeaderConfig>> = {
   "/dashboard": {
     dynamicSubtitle: true,
     tourId: "welcome-banner",
-    actions: [{ ...newIntake, tourId: "welcome-cta" }],
+    actions: [{ ...newIntakeFrom("/dashboard"), tourId: "welcome-cta" }],
   },
-  "/orders": { actions: [newIntake] },
+  "/orders": { actions: [newIntakeFrom("/orders")] },
   "/customers": {
     dynamicSubtitle: true,
     actions: [

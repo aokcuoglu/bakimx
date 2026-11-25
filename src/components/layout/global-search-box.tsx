@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, type ComponentType, type KeyboardEvent as ReactKeyboardEvent } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import type { UserRole } from "@prisma/client"
 import { ArrowDown, ArrowLeft, ArrowUp, BellRing, CornerDownLeft, CalendarClock, Car, FileText, Search, Settings2, UserRound, Users, Wrench, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { useSidebar } from "@/components/ui/sidebar"
 import { CREATE_OPTIONS } from "@/components/layout/create-center"
+import { newIntakeHref } from "@/lib/intake/entry-links"
 import { fetchGlobalSearchResults, fetchOrderSearchResults, resultHref, type OrderSearchResult } from "@/components/layout/global-search"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import type { UnifiedResult } from "@/lib/search/unified-results"
@@ -53,6 +54,7 @@ export function GlobalSearch({
   role?: UserRole
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const { setOpenMobile } = useSidebar()
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState("")
@@ -132,7 +134,8 @@ export function GlobalSearch({
       return !feature || enabledFeatures.includes(feature)
     }).map((option) => ({
       id: `create-${option.id}`,
-      href: option.href,
+      // Araç kabulü açıldığı sayfaya geri döner (#842).
+      href: option.id === "order" ? newIntakeHref({ back: pathname }) : option.href,
       label: `Yeni ${option.title.toLocaleLowerCase("tr")}`,
       sublabel: option.description,
       icon: CREATE_ICONS[option.id],

@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { NAV_GROUPS } from "./app-nav"
 import { PAGE_HEADERS, hasPageHeader, resolvePageHeader } from "./page-headers"
-import { NEW_INTAKE_HREF } from "@/lib/intake/entry-links"
 
 const ALL = { enabledFeatures: ["quotes", "appointments", "automatedReminders", "ocrIntake", "partsInventory", "procurement", "cashbox", "analytics", "reports", "communications", "team"] as const, actor: { role: "owner" as const } }
 
@@ -16,7 +15,16 @@ describe("page-headers (#823)", () => {
     const h = resolvePageHeader("/orders", ALL)!
     expect(h.crumbs).toEqual([{ label: "Servis" }, { label: "Araç Kabulleri" }])
     expect(h.title).toBe("Araç Kabulleri")
-    expect(h.primaryAction?.href).toBe(NEW_INTAKE_HREF)
+    const link = new URL(h.primaryAction!.href, "http://x")
+    expect(link.pathname).toBe("/orders/new")
+    expect(link.searchParams.get("entry")).toBe("plate")
+    expect(link.searchParams.get("back")).toBe("/orders")
+  })
+  test("Genel Bakış Yeni Araç Kabul düğmesi Genel Bakış'a döner (#842)", () => {
+    const link = new URL(resolvePageHeader("/dashboard", ALL)!.primaryAction!.href, "http://x")
+    expect(link.pathname).toBe("/orders/new")
+    expect(link.searchParams.get("entry")).toBe("plate")
+    expect(link.searchParams.get("back")).toBe("/dashboard")
   })
   test("menü alt öğesi: üç halka, ara halka bağlantı", () => {
     expect(resolvePageHeader("/cashbox/payments", ALL)!.crumbs).toEqual([

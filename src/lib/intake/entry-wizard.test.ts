@@ -14,6 +14,7 @@ import {
   ownerFieldsFromCustomer,
   ownerLabel,
   parseEntryMethod,
+  isForeignPlate,
   photoPlateStatus,
   splitPersonName,
   previousEntryStep,
@@ -186,6 +187,28 @@ test("photoPlateStatus: tam ve farklı plaka uyuşmaz, yarım plaka 'typing'", (
   expect(photoPlateStatus("34KCK628", "")).toBe("typing")
   // Geçersiz il kodu tam plaka sayılmaz.
   expect(photoPlateStatus("34KCK628", "99KCK628")).toBe("typing")
+})
+
+/**
+ * Yabancı plakanın "tam" olduğunu bilemeyiz (biçimi ülkeye göre değişir); tanınan
+ * bir yabancı plaka (#818 `detectPlate`) tam sayılır, yoksa yabancı araç bu
+ * ekranda "Plakayı eksiksiz girin" engelinde sonsuza dek kalıyordu (#840).
+ */
+test("photoPlateStatus: fotoğraftakinden farklı, tanınan yabancı plaka onay ister", () => {
+  expect(photoPlateStatus("34KCK628", "KL-123-F")).toBe("mismatch")
+  expect(photoPlateStatus("34KCK628", "MAB 1234")).toBe("mismatch")
+  // Yarım TR plakası hâlâ yazılıyor sayılır.
+  expect(photoPlateStatus("34KCK628", "12-ABC-3")).toBe("typing")
+})
+
+test("isForeignPlate: yalnız tanınan yabancı plaka", () => {
+  expect(isForeignPlate("KL-123-F")).toBe(true)
+  expect(isForeignPlate("MAB1234")).toBe(true)
+  expect(isForeignPlate("CA 1234 AB")).toBe(true)
+  expect(isForeignPlate("34ABC123")).toBe(false)
+  expect(isForeignPlate("")).toBe(false)
+  // Tanınmayan (Avusturya) plaka TR yedeğine düşer — yabancı sayılmaz.
+  expect(isForeignPlate("W12345A")).toBe(false)
 })
 
 test("hasOwnerInput: herhangi bir alan doluysa true", () => {
