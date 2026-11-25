@@ -354,7 +354,7 @@ export function CreateBranchWizard({
                           className="w-full flex-col items-stretch sm:flex-row sm:flex-wrap"
                         >
                           {SETUP_PREFERENCE_IDS.map((id) => (
-                            <ToggleGroupItem key={id} value={id} className="flex-1">
+                            <ToggleGroupItem key={id} value={id} className="sm:flex-1">
                               {SETUP_LABELS[id]}
                             </ToggleGroupItem>
                           ))}
