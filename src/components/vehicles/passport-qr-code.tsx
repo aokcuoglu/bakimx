@@ -21,7 +21,7 @@ export function PassportQRCode({ url, size = 128 }: { url: string; size?: number
   return (
     <div className="inline-flex flex-col items-center gap-2">
       <div
-        className="bg-white p-3 rounded-md border border-border"
+        className="bg-white p-3 rounded-sm border border-border"
         style={{ width: size + 24, height: size + 24 }}
       >
         {mounted ? (

@@ -32,10 +32,15 @@ const CONTAINER_TAGS = new Set([
   "DropdownMenuContent",
   "SelectContent",
   "DetailPanel",
+  // Dosya-yerel Card sarmalayıcısı (customer-detail.tsx)
+  "SectionCard",
 ])
+// Diyalog kabuğu (18px) önceki kapları sıfırlar ve kendisi tek kap olur; içindeki kutu iç kutudur.
 const RESET_TAGS = new Set(["DialogContent", "AlertDialogContent", "SheetContent"])
+// Yüzen/kap öğenin kendi köşesi kontrol edilmez (kabuk olarak köşesi serbest).
+const FLOATING_TAGS = new Set(["PopoverContent", "DropdownMenuContent", "SelectContent"])
 
-const OFFENDER = /(?<![:\w-])rounded(?:-[trbl]{1,2})?-(?:lg|xl)(?![\w-])/
+const OFFENDER = /(?<![\w-])rounded(?:-(?:[trbl]|s|e|tl|tr|bl|br|ss|se|es|ee))?-(?:lg|xl)(?![\w-])/
 const CONTAINER_CLASS = /(?<![:\w-])rounded-(?:lg|xl|\(--radius-panel\))(?![\w-])/
 
 function tsxFiles(dir: string, files: string[] = []): string[] {
@@ -64,9 +69,11 @@ function classText(attributes: ts.JsxAttributes): string {
 export function findNestedRadiusOffenders(source: string, fileName = "x.tsx"): number[] {
   const parsed = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
   const lines: number[] = []
-  let depth = 0 // açık 12-14px kap sayısı (diyalog kabuğunda sıfırlanır)
+  let depth = 0 // açık 12-18px kap sayısı (diyalog kabuğunda 1'e sıfırlanır)
 
   const check = (opening: ts.JsxOpeningElement | ts.JsxSelfClosingElement) => {
+    const tag = opening.tagName.getText(parsed)
+    if (FLOATING_TAGS.has(tag) || RESET_TAGS.has(tag)) return
     if (depth > 0 && OFFENDER.test(classText(opening.attributes))) {
       lines.push(parsed.getLineAndCharacterOfPosition(opening.getStart(parsed)).line + 1)
     }
@@ -79,7 +86,7 @@ export function findNestedRadiusOffenders(source: string, fileName = "x.tsx"): n
       const opening = node.openingElement
       check(opening)
       const saved = depth
-      if (RESET_TAGS.has(opening.tagName.getText(parsed))) depth = 0
+      if (RESET_TAGS.has(opening.tagName.getText(parsed))) depth = 1
       else if (isContainer(opening)) depth += 1
       for (const child of node.children) visit(child)
       // Öznitelikler içindeki JSX (render prop vb.) da taransın
@@ -89,7 +96,11 @@ export function findNestedRadiusOffenders(source: string, fileName = "x.tsx"): n
     }
     if (ts.isJsxSelfClosingElement(node)) {
       check(node)
+      const saved = depth
+      if (RESET_TAGS.has(node.tagName.getText(parsed))) depth = 1
+      else if (isContainer(node)) depth += 1
       node.attributes.properties.forEach(visit)
+      depth = saved
       return
     }
     ts.forEachChild(node, visit)
@@ -138,9 +149,43 @@ test("kapı yapay bir ihlali yakalar, doğru iç köşeyi ve bağımsız kutuyu 
 export const D = () => <div className="rounded-lg border bg-card" />
 export const E = () => (
   <Card>
-    <DialogContent><div className="rounded-lg border" /></DialogContent>
-    <div className="md:rounded-lg" />
+    <PopoverContent className="rounded-xl"><div className="rounded-md" /></PopoverContent>
+    <div className="md:rounded-md" />
   </Card>
 )`
   expect(findNestedRadiusOffenders(ok)).toEqual([])
+
+  // Diyalog kabuğu içindeki kutu iç kutudur (18px kap)
+  const inDialog = `export const F = () => (
+  <DialogContent>
+    <div className="rounded-lg border p-3" />
+  </DialogContent>
+)`
+  expect(findNestedRadiusOffenders(inDialog)).toEqual([3])
+
+  const variants = `export const G = ({ on, tone }: { on: boolean; tone: string }) => (
+  <Card>
+    <div className={\`flex \${tone} rounded-xl\`} />
+    <div className={on ? "rounded-lg" : "rounded-md"} />
+    <div className={cn({ "rounded-lg": on })} />
+    <div className="sm:rounded-lg" />
+    <div className="hover:rounded-xl" />
+    <div className="rounded-s-lg" />
+    <div className="rounded-ee-xl" />
+  </Card>
+)`
+  expect(findNestedRadiusOffenders(variants)).toEqual([3, 4, 5, 6, 7, 8, 9])
+
+  const selfClosing = `export const H = () => (
+  <Card>
+    <Foo icon={<div className="rounded-lg" />} />
+  </Card>
+)
+export const I = () => <Card header={<div className="rounded-lg" />} />`
+  expect(findNestedRadiusOffenders(selfClosing)).toEqual([3, 6])
+
+  const sectionCard = `export const J = () => (
+  <SectionCard><div className="rounded-lg" /></SectionCard>
+)`
+  expect(findNestedRadiusOffenders(sectionCard)).toEqual([2])
 })

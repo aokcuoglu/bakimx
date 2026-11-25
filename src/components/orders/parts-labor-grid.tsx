@@ -1606,7 +1606,7 @@ function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
 
 function QtyStepper({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
   return (
-    <div data-slot="qty-stepper" className="inline-flex h-7 items-center rounded-md border border-input bg-background transition-colors">
+    <div data-slot="qty-stepper" className="inline-flex h-7 items-center rounded-lg border border-input bg-background transition-colors">
       <Button type="button" variant="ghost" size="icon-xs" className="rounded-r-none" aria-label="Azalt"
         disabled={!editable || row.quantity <= 1}
         onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })}>

@@ -87,9 +87,13 @@ kutuyu "aynı yarıçap" gibi gösterir ve çerçeve köşeye çarpar (#898).
 - Küçük resim ve ikon karoları aynı adımı izler (kartın içinde `rounded-md`).
   Avatar ve durum hapları `rounded-full` kalır.
 
-Kapı: `src/lib/nested-radius.test.ts` (`harness:gates`). Sınırı: yalnız AYNI
-dosyadaki sözcüksel iç içeliği görür; başka dosyada Card içine render edilen
-bileşenin kök köşesini yakalamaz. Kapsam dilim dilim genişler; bilinçli
+Kapı: `src/lib/nested-radius.test.ts` (`harness:gates`). Card, panel, Popover
+ve benzeri kapların (diyalog kabuğu dahil) içindeki `rounded-lg/xl` iç kutuyu
+yakalar; `sm:` gibi önek ve `rounded-s-lg` gibi mantıksal kenarlar da sayılır,
+`className` içindeki şablon metni, üçlü ifade ve `cn({...})` anahtarları taranır.
+Sınırı: yalnız AYNI dosyadaki sözcüksel iç içeliği görür; başka dosyada Card
+içine render edilen bileşenin kök köşesini ve değişkenden/prop'tan gelen
+`className`i yakalamaz. Kapsam dilim dilim genişler; bilinçli
 istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
 
 ## Kurallar
