@@ -265,7 +265,7 @@ function DesktopBalanceTable({ rows }: { rows: Array<{ id: string; type: string;
               <tr key={row.id} className="hover:bg-muted/60 transition-colors">
                 <td className="px-4 py-3">
                   <Link href={`/customers/${row.id}`} className="flex items-center gap-2.5 min-w-0 hover:text-primary">
-                    <div className="size-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-xs font-semibold shrink-0">
+                    <div className="size-8 rounded-md bg-muted text-muted-foreground flex items-center justify-center text-xs font-semibold shrink-0">
                       {row.type === "corporate" ? <Building2 className="size-4" /> : nameFor(row).slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0">
@@ -315,7 +315,7 @@ function MobileBalanceCards({ rows }: { rows: Array<{ id: string; type: string; 
           className="block rounded-lg border border-border bg-card p-3.5 active:bg-muted touch-manipulation"
         >
           <div className="flex items-start gap-3">
-            <div className="size-10 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
+            <div className="size-10 rounded-md bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
               {row.type === "corporate" ? <Building2 className="size-4" /> : nameFor(row).slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
@@ -351,7 +351,7 @@ function MiniStat({ label, value, tone = "slate" }: { label: string; value: stri
       ? "text-destructive-strong"
       : "text-foreground"
   return (
-    <div className="rounded-lg bg-muted px-2 py-1.5">
+    <div className="rounded-md bg-muted px-2 py-1.5">
       <p className="text-muted-foreground">{label}</p>
       <p className={cn("text-sm font-semibold tabular-nums truncate", color)}>{value}</p>
     </div>

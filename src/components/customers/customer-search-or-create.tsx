@@ -190,7 +190,7 @@ export function CustomerSearchOrCreate({
 
   if (creating) {
     return (
-      <div className="space-y-3 rounded-lg border border-border p-3">
+      <div className="space-y-3 rounded-md border border-border p-3">
         <div className="flex gap-2">
           <Button type="button" size="sm" variant={type === "individual" ? "secondary" : "outline"} className="flex-1" onClick={() => setType("individual")}>Bireysel</Button>
           <Button type="button" size="sm" variant={type === "corporate" ? "secondary" : "outline"} className="flex-1" onClick={() => setType("corporate")}>Kurumsal</Button>
@@ -215,7 +215,7 @@ export function CustomerSearchOrCreate({
         </Button>
 
         {showExtra && (
-          <div className="space-y-3 rounded-lg border border-border p-3">
+          <div className="space-y-3 rounded-sm border border-border p-3">
             <TaxIdentityFields
               identityNumber={identityNumber}
               taxNumber={taxNumber}
@@ -237,7 +237,7 @@ export function CustomerSearchOrCreate({
           </div>
         )}
         {duplicates.length > 0 ? (
-          <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-2.5">
+          <div className="space-y-2 rounded-sm border border-warning/40 bg-warning/10 p-2.5">
             <p className="text-sm text-foreground">
               {duplicates.length === 1 ? (
                 <>Bu telefon <span className="font-medium">{duplicates[0].label}</span> adlı müşteriye ait. Mevcut kaydı seçebilir veya yine de yeni müşteri oluşturabilirsiniz.</>

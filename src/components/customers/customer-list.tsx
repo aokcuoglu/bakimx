@@ -468,7 +468,7 @@ function MobileCards({ rows }: { rows: CustomerRow[]; onDelete?: (id: string, la
             />
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
-            <div className="rounded-lg bg-muted px-2 py-1.5">
+            <div className="rounded-md bg-muted px-2 py-1.5">
               <p className="text-muted-foreground flex items-center gap-1">
                 Araç
               </p>
@@ -476,13 +476,13 @@ function MobileCards({ rows }: { rows: CustomerRow[]; onDelete?: (id: string, la
                 {row.vehiclesCount}
               </p>
             </div>
-            <div className="rounded-lg bg-muted px-2 py-1.5">
+            <div className="rounded-md bg-muted px-2 py-1.5">
               <p className="text-muted-foreground">Araç Kabul</p>
               <p className="text-sm font-semibold text-foreground tabular-nums">
                 {row.workOrdersCount}
               </p>
             </div>
-            <div className="rounded-lg bg-muted px-2 py-1.5">
+            <div className="rounded-md bg-muted px-2 py-1.5">
               <p className="text-muted-foreground">Toplam</p>
               <p className="text-sm font-semibold text-foreground truncate">
                 {row.grandTotal > 0 ? formatTRY(row.grandTotal) : "—"}

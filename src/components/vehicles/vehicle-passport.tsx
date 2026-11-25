@@ -257,7 +257,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
       <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-navy-foreground shrink-0">
+            <div className="size-12 rounded-md bg-navy flex items-center justify-center text-navy-foreground shrink-0">
               <Car className="size-5" />
             </div>
             <div className="min-w-0">
@@ -431,8 +431,8 @@ export function VehiclePassport({ data }: { data: PassportData }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <Link href={`/customers/${customer.id}`} className="flex items-center gap-3 hover:bg-muted rounded-lg p-2 -m-2 transition-colors">
-                <div className="size-10 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
+              <Link href={`/customers/${customer.id}`} className="flex items-center gap-3 hover:bg-muted rounded-md p-2 -m-2 transition-colors">
+                <div className="size-10 rounded-sm bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
                   <User className="size-4" />
                 </div>
                 <div className="min-w-0">
@@ -475,7 +475,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
               {tokens.length > 0 && (
                 <div className="space-y-3">
                   {tokens.map((t) => (
-                    <div key={t.id} className="border border-border rounded-lg p-3 space-y-2">
+                    <div key={t.id} className="border border-border rounded-md p-3 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-foreground truncate">
@@ -574,7 +574,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                   Yeni Pasaport Linki Oluştur
                 </Button>
               ) : (
-                <div className="border border-border rounded-lg p-3 space-y-3">
+                <div className="border border-border rounded-md p-3 space-y-3">
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Etiket (opsiyonel)</label>
                     <Input

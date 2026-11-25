@@ -33,7 +33,7 @@
     "workshop": "bun scripts/workshop-admin.ts",
     "test": "bun test",
     "test:e2e": "playwright test",
-    "harness:gates": "bun test ./src/lib/ui-contract.test.ts ./src/lib/theme-tokens.test.ts ./src/components/ui/control-sizing.test.ts ./src/components/ui/tabs-overflow.test.ts ./src/lib/rbac-coverage.test.ts ./src/lib/intake/photo-visibility.test.ts ./src/lib/test-mock-isolation.test.ts ./src/lib/format-date-coverage.test.ts",
+    "harness:gates": "bun test ./src/lib/ui-contract.test.ts ./src/lib/theme-tokens.test.ts ./src/components/ui/control-sizing.test.ts ./src/components/ui/tabs-overflow.test.ts ./src/lib/rbac-coverage.test.ts ./src/lib/intake/photo-visibility.test.ts ./src/lib/test-mock-isolation.test.ts ./src/lib/format-date-coverage.test.ts ./src/lib/nested-radius.test.ts",
     "harness:brief": "CLAUDE_PROJECT_DIR=$PWD bun scripts/flow/claude-brief.ts",
     "worktree:env": "bash scripts/setup-worktree-env.sh",
     "release": "node scripts/release.mjs",

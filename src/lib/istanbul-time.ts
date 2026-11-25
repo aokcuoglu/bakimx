@@ -6,11 +6,18 @@
  * saatinde ayrıştırır: TR saatli sunucuda 06:00Z, UTC sunucuda 09:00Z. Bu
  * yardımcılar ikisini de TR sunucusundaki bugünkü davranışa (06:00Z) sabitler.
  *
+ * Gün ve ay sınırları da buradan gelir (#874): "bugün", "bu ay", "son 30 gün"
+ * Türkiye takvimine göredir. `setHours(0, 0, 0, 0)` ya da `new Date(y, m, d)`
+ * sürecin saat diliminde gece yarısı üretir; prod konteyneri UTC'de koşarsa
+ * TR 00:00–03:00 arasındaki kayıtlar önceki güne düşer.
+ *
  * Europe/Istanbul 2016'dan beri yıl boyu UTC+03:00'tır (yaz saati yok).
  * İstemci güvenlidir; import yoktur.
  */
 
 export const ISTANBUL_UTC_OFFSET_MS = 3 * 60 * 60 * 1000
+
+const DAY_MS = 24 * 60 * 60 * 1000
 
 /** Europe/Istanbul `datetime-local` değerini sunucu timezone'undan bağımsız UTC'ye çevirir. */
 export function parseIstanbulLocalDateTime(value: string): Date | null {
@@ -42,4 +49,138 @@ export function parseIstanbulLocalDateTime(value: string): Date | null {
 /** UTC zamanı `datetime-local` bileşeninin beklediği İstanbul duvar saatine yazar. */
 export function istanbulDateTimeInputValue(date: Date): string {
   return new Date(date.getTime() + ISTANBUL_UTC_OFFSET_MS).toISOString().slice(0, 16)
+}
+
+export type IstanbulMonthBounds = {
+  key: string
+  label: string
+  start: Date
+  end: Date
+  previousKey: string
+  nextKey: string
+  dayCount: number
+}
+
+function monthKey(year: number, zeroBasedMonth: number): string {
+  return `${year}-${String(zeroBasedMonth + 1).padStart(2, "0")}`
+}
+
+/** Europe/Istanbul has remained UTC+03:00 year-round since 2016. These bounds
+ * keep the sales agenda independent from the server/container timezone. */
+export function istanbulDayBounds(now = new Date()): { start: Date; end: Date } {
+  const shifted = new Date(now.getTime() + ISTANBUL_UTC_OFFSET_MS)
+  const localMidnightAsUtc = Date.UTC(
+    shifted.getUTCFullYear(),
+    shifted.getUTCMonth(),
+    shifted.getUTCDate(),
+  )
+  const start = new Date(localMidnightAsUtc - ISTANBUL_UTC_OFFSET_MS)
+  return { start, end: new Date(start.getTime() + DAY_MS) }
+}
+
+/** `YYYY-MM` değerini Europe/Istanbul takvim ayının [start, end) UTC sınırlarına
+ * çevirir. Geçersiz değerlerde içinde bulunulan İstanbul ayına döner. */
+export function istanbulMonthBounds(value?: string | null, now = new Date()): IstanbulMonthBounds {
+  const shiftedNow = new Date(now.getTime() + ISTANBUL_UTC_OFFSET_MS)
+  const match = value ? /^(\d{4})-(\d{2})$/.exec(value) : null
+  const requestedYear = match ? Number(match[1]) : Number.NaN
+  const requestedMonth = match ? Number(match[2]) - 1 : Number.NaN
+  const valid = Number.isInteger(requestedYear)
+    && requestedYear >= 2000
+    && requestedYear <= 2200
+    && requestedMonth >= 0
+    && requestedMonth <= 11
+  const year = valid ? requestedYear : shiftedNow.getUTCFullYear()
+  const month = valid ? requestedMonth : shiftedNow.getUTCMonth()
+  const localStartAsUtc = Date.UTC(year, month, 1)
+  const localEndAsUtc = Date.UTC(year, month + 1, 1)
+  const previous = new Date(Date.UTC(year, month - 1, 1))
+  const next = new Date(Date.UTC(year, month + 1, 1))
+
+  return {
+    key: monthKey(year, month),
+    label: new Intl.DateTimeFormat("tr-TR", { month: "long", year: "numeric", timeZone: "UTC" })
+      .format(new Date(localStartAsUtc)),
+    start: new Date(localStartAsUtc - ISTANBUL_UTC_OFFSET_MS),
+    end: new Date(localEndAsUtc - ISTANBUL_UTC_OFFSET_MS),
+    previousKey: monthKey(previous.getUTCFullYear(), previous.getUTCMonth()),
+    nextKey: monthKey(next.getUTCFullYear(), next.getUTCMonth()),
+    dayCount: Math.round((localEndAsUtc - localStartAsUtc) / DAY_MS),
+  }
+}
+
+/** `now`'ın düştüğü İstanbul gününün 00:00'ı (UTC an olarak), `offsetDays` gün
+ * kaydırılmış: `-90` = 90 gün önceki günün başı, `1` = yarının başı. */
+export function istanbulDayStart(now: Date = new Date(), offsetDays = 0): Date {
+  const shifted = new Date(now.getTime() + ISTANBUL_UTC_OFFSET_MS)
+  const localMidnightAsUtc = Date.UTC(
+    shifted.getUTCFullYear(),
+    shifted.getUTCMonth(),
+    shifted.getUTCDate() + offsetDays,
+  )
+  return new Date(localMidnightAsUtc - ISTANBUL_UTC_OFFSET_MS)
+}
+
+/** `now`'ın düştüğü İstanbul ayının 1'i 00:00'ı, `offsetMonths` ay kaydırılmış. */
+export function istanbulMonthStart(now: Date = new Date(), offsetMonths = 0): Date {
+  const shifted = new Date(now.getTime() + ISTANBUL_UTC_OFFSET_MS)
+  return new Date(
+    Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth() + offsetMonths, 1) - ISTANBUL_UTC_OFFSET_MS,
+  )
+}
+
+/** Anın düştüğü İstanbul gününün `YYYY-MM-DD` anahtarı — günlük grafik kovaları
+ * için. `toISOString().slice(0, 10)` UTC gününü verir, TR 00:00–03:00 kaçar. */
+export function istanbulDayKey(date: Date): string {
+  return new Date(date.getTime() + ISTANBUL_UTC_OFFSET_MS).toISOString().slice(0, 10)
+}
+
+export type IstanbulDayBucket = {
+  /** `YYYY-MM-DD` (İstanbul günü). */
+  key: string
+  /** Günün 00:00'ı, UTC an olarak. */
+  start: Date
+  /** 0 = Pazar … 6 = Cumartesi (`Date#getDay` düzeni). */
+  weekday: number
+}
+
+/** Son `days` İstanbul günü, eskiden yeniye; son öğe bugündür. */
+export function istanbulRecentDays(days: number, now: Date = new Date()): IstanbulDayBucket[] {
+  const buckets: IstanbulDayBucket[] = []
+  for (let offset = days - 1; offset >= 0; offset--) {
+    const start = istanbulDayStart(now, -offset)
+    const local = new Date(start.getTime() + ISTANBUL_UTC_OFFSET_MS)
+    buckets.push({ key: istanbulDayKey(start), start, weekday: local.getUTCDay() })
+  }
+  return buckets
+}
+
+export type IstanbulMonthBucket = {
+  /** `YYYY-MM` (İstanbul ayı). */
+  key: string
+  start: Date
+  /** Bir sonraki ayın başı — aralık [start, end). */
+  end: Date
+  year: number
+  /** 0 tabanlı ay (0 = Ocak). */
+  month: number
+}
+
+/** Son `months` İstanbul ayı, eskiden yeniye; son öğe içinde bulunulan aydır. */
+export function istanbulRecentMonths(months: number, now: Date = new Date()): IstanbulMonthBucket[] {
+  const buckets: IstanbulMonthBucket[] = []
+  for (let offset = months - 1; offset >= 0; offset--) {
+    const start = istanbulMonthStart(now, -offset)
+    const local = new Date(start.getTime() + ISTANBUL_UTC_OFFSET_MS)
+    const year = local.getUTCFullYear()
+    const month = local.getUTCMonth()
+    buckets.push({
+      key: monthKey(year, month),
+      start,
+      end: istanbulMonthStart(now, -offset + 1),
+      year,
+      month,
+    })
+  }
+  return buckets
 }

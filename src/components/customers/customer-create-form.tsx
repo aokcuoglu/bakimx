@@ -234,7 +234,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                   control={form.control}
                   name="type"
                   render={({ field }) => (
-                    <div className="inline-flex rounded-lg border border-border bg-muted p-0.5 text-xs font-medium">
+                    <div className="inline-flex rounded-md border border-border bg-muted p-0.5 text-xs font-medium">
                       <Button
                         type="button"
                         onClick={() => field.onChange("individual")}
@@ -656,7 +656,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                   name="whatsappConsent"
                   render={({ field }) => (
                     <FormItem>
-                      <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2 cursor-pointer touch-manipulation">
+                      <label className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/60 px-3 py-2 cursor-pointer touch-manipulation">
                         <div className="flex items-center gap-2 text-sm text-foreground">
                           <MessageCircle className="size-4 text-success-strong" />
                           <span>WhatsApp izni var</span>
@@ -676,7 +676,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                   name="smsConsent"
                   render={({ field }) => (
                     <FormItem>
-                      <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2 cursor-pointer touch-manipulation">
+                      <label className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/60 px-3 py-2 cursor-pointer touch-manipulation">
                         <div className="flex items-center gap-2 text-sm text-foreground">
                           <Smartphone className="size-4 text-primary" />
                           <span>SMS izni var</span>
@@ -696,7 +696,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                   name="emailConsent"
                   render={({ field }) => (
                     <FormItem>
-                      <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2 cursor-pointer touch-manipulation">
+                      <label className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/60 px-3 py-2 cursor-pointer touch-manipulation">
                         <div className="flex items-center gap-2 text-sm text-foreground">
                           <Mail className="size-4 text-primary" />
                           <span>E-posta izni var</span>
