@@ -25,3 +25,7 @@ test("araç ekleme aksiyonu vurgulu bir buton olarak kalır", () => {
   expect(FORM).toContain('className="text-primary"')
   expect(FORM).toContain("Bu müşteriye yeni araç ekle")
 })
+
+test("yeni araç seçeneği önce listeye işlenir, sonra seçilir (#884)", () => {
+  expect(FORM).toContain("listThenSelect(")
+})

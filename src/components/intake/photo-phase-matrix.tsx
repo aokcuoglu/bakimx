@@ -85,7 +85,7 @@ export function PhotoPhaseMatrix({
   return (
     <>
       <Tabs value={phase} onValueChange={(v) => setPhase(v as PhotoPhaseKey)} className="gap-3">
-        <TabsList className="w-full sm:w-fit" aria-label="Fotoğraf aşaması">
+        <TabsList size="control" className="w-full sm:w-fit" aria-label="Fotoğraf aşaması">
           {PHOTO_PHASE_ORDER.map((key) => {
             const filled = requiredRows.filter((row) => cellOf(row, key).photos.length > 0).length
             const extra = rows.filter((row) => !row.required && cellOf(row, key).photos.length > 0).length
@@ -101,8 +101,8 @@ export function PhotoPhaseMatrix({
         </TabsList>
 
         {PHOTO_PHASE_ORDER.map((key) => (
-          <TabsContent key={key} value={key}>
-            <ul className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3">
+          <TabsContent key={key} value={key} className="@container">
+            <ul className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
               {rows.map((row) => {
                 const cell = cellOf(row, key)
                 const cover = cell.photos.find((p) => p.fileUrl) ?? cell.photos[0]
@@ -134,7 +134,7 @@ export function PhotoPhaseMatrix({
                     type="button"
                     variant="ghost"
                     onClick={() => onAddOther(key)}
-                    className={cn(TILE, "flex-col gap-1.5 border border-dashed border-foreground/20 text-muted-foreground hover:bg-muted hover:text-foreground")}
+                    className={cn(TILE, "flex-col gap-1.5 bg-muted text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring")}
                   >
                     <Plus className="size-4" />
                     <span className="text-xs font-medium">Fotoğraf ekle</span>
@@ -181,8 +181,8 @@ export function PhotoPhaseMatrix({
   )
 }
 
-/** 4:3 kutucuk; telefonda iki, geniş ekranda üç sütun. */
-const TILE = "aspect-[4/3] h-auto w-full rounded-lg p-0"
+/** Telefonda kare ve iki sütun; kap genişleyince 4:3 ve dört sütun. Çerçevesiz, gri zeminli. */
+const TILE = "aspect-square h-auto w-full rounded-md p-0 @xl:aspect-[4/3]"
 
 const cellOf = (row: PhaseMatrixRow, phase: PhotoPhaseKey) => row.cells.find((c) => c.phase === phase)!
 
@@ -203,7 +203,7 @@ function EmptyTile({ label, disabled, onAdd }: { label: string; disabled?: boole
       disabled={disabled}
       onClick={onAdd}
       aria-label={`${label} fotoğrafı ekle`}
-      className={cn(TILE, "border border-dashed border-foreground/20 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground")}
+      className={cn(TILE, "bg-muted text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring")}
     >
       <Camera className="size-5" />
     </Button>
@@ -216,7 +216,7 @@ function FilledTile({ photo, label, onOpen }: { photo: PhaseMatrixPhoto; label: 
       type="button"
       variant="ghost"
       onClick={onOpen}
-      className={cn(TILE, "relative overflow-hidden border bg-muted hover:ring-2 hover:ring-ring")}
+      className={cn(TILE, "relative overflow-hidden bg-muted hover:ring-2 hover:ring-ring")}
       aria-label={`${label} — aşamaları karşılaştır`}
     >
       {photo.fileUrl ? (
@@ -315,18 +315,16 @@ function PhaseCompareDialog({
                     </Button>
                   </div>
                 ) : cover ? (
-                  <div className="flex aspect-square items-center justify-center rounded-md border border-dashed bg-muted/40">
+                  <div className="flex aspect-square items-center justify-center rounded-md bg-muted">
                     <span className="text-xs text-muted-foreground">Dosya yok</span>
                   </div>
                 ) : (
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     disabled={!onAdd}
                     onClick={() => onAdd?.(phase)}
-                    className={cn(
-                      "h-auto w-full aspect-square flex-col gap-0.5 border-dashed text-muted-foreground"
-                    )}
+                    className="h-auto w-full aspect-square flex-col gap-0.5 rounded-md bg-muted text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring"
                   >
                     <Plus className="size-3.5" />
                     <span className="text-xs">Ekle</span>
