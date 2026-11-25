@@ -25,7 +25,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SendReminderButton } from "@/components/orders/send-reminder-button"
-import { PartsLaborGrid } from "@/components/orders/parts-labor-grid"
+import { PartsLaborGrid, type PartsAddType } from "@/components/orders/parts-labor-grid"
 import pl from "./parts-labor.module.css"
 import type { LaborCatalogRow } from "@/lib/labor/types"
 import type { PartsRequestRow } from "@/components/orders/parts-request-panel"
@@ -210,6 +210,8 @@ export function PartsLaborCard({
   laborCatalog,
   taxRateBps,
   onApplyStandardTax,
+  addingType,
+  onAddingTypeChange,
 }: {
   orderId: string
   status: string
@@ -223,6 +225,9 @@ export function PartsLaborCard({
   taxRateBps?: number | null
   /** Bir satırın KDV tick'i açılırken oran tanımsızsa standart %20'yi iş emrine yazar. */
   onApplyStandardTax?: () => void
+  /** Ekleme modalı hızlı butonlardan açılır (#881). */
+  addingType?: PartsAddType | null
+  onAddingTypeChange?: (type: PartsAddType | null) => void
 }) {
   return (
     <DetailPanel
@@ -241,6 +246,8 @@ export function PartsLaborCard({
           laborCatalog={laborCatalog}
           taxRateBps={taxRateBps}
           onApplyStandardTax={onApplyStandardTax}
+          addingType={addingType}
+          onAddingTypeChange={onAddingTypeChange}
         />
       </div>
     </DetailPanel>
@@ -408,6 +415,8 @@ export function PaymentHistoryCard({
   collections,
   customerId,
   customerName,
+  collectionModalOpen: collectionModalOpenProp,
+  onCollectionModalOpenChange,
 }: {
   orderId: string
   collectionsLocked: boolean
@@ -417,9 +426,14 @@ export function PaymentHistoryCard({
   collections: Array<{ id: string; amount: number; method: string; status: string; paymentDate: string; referenceNo: string | null; note: string | null; cancellationReason: string | null }>
   customerId: string
   customerName: string
+  /** Tahsilat modalı hızlı butondan açılır (#881). Verilmezse kendi durumunu tutar. */
+  collectionModalOpen?: boolean
+  onCollectionModalOpenChange?: (open: boolean) => void
 }) {
   const cancelledCollections = collections.filter((c) => c.status === "cancelled")
-  const [collectionModalOpen, setCollectionModalOpen] = useState(false)
+  const [ownCollectionModalOpen, setOwnCollectionModalOpen] = useState(false)
+  const collectionModalOpen = collectionModalOpenProp ?? ownCollectionModalOpen
+  const setCollectionModalOpen = onCollectionModalOpenChange ?? setOwnCollectionModalOpen
 
   return (
     <>
