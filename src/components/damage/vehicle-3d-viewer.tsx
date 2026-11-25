@@ -203,7 +203,7 @@ export default function Vehicle3DViewer(props: Vehicle3DViewerProps) {
   }, [hovered, props.onZoneClick])
 
   return <div className="space-y-1.5">
-    <div ref={wrapper} className="relative h-[320px] w-full touch-none overflow-hidden rounded-xl border bg-card sm:h-[400px]">
+    <div ref={wrapper} className="relative h-[320px] w-full touch-none overflow-hidden rounded-md bg-muted sm:h-[400px]">
       <Canvas dpr={[1, 2]} camera={{ position: [6, 2.6, 6.7], fov: 30, near: 0.1, far: 50 }} gl={{ antialias: true, preserveDrawingBuffer: false }} aria-label="3B araç hasar modeli">
         <ambientLight intensity={0.35} />
         <directionalLight position={[5, 8, 4]} intensity={1.1} />
@@ -229,7 +229,7 @@ export default function Vehicle3DViewer(props: Vehicle3DViewerProps) {
       <div className="pointer-events-none absolute bottom-3 left-3 min-h-6 text-sm font-medium" aria-live="polite">
         {hovered && <span className="rounded-md bg-background/90 px-2 py-1 shadow-sm">{VEHICLE_ZONES[hovered]}</span>}
       </div>
-      <Button type="button" variant="outline" size="icon-sm" className="absolute right-3 top-3" aria-label="Görünümü sıfırla" onClick={() => setReset((n) => n + 1)}><RotateCcw /></Button>
+      <Button type="button" variant="outline" size="icon" className="absolute right-3 top-3" aria-label="Görünümü sıfırla" onClick={() => setReset((n) => n + 1)}><RotateCcw /></Button>
     </div>
     <p className="text-xs text-muted-foreground">
       Döndürmek için sürükleyin, yakınlaştırmak için kaydırın; hasar eklemek için panele dokunun.{" "}
