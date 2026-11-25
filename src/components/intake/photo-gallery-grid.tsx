@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { ImageOff, Loader2 } from "lucide-react"
 import { PHOTO_TYPES } from "@/lib/constants"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
 import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
 import { resolvePhotoSrc } from "@/lib/photos/photo-src"
@@ -30,7 +31,7 @@ export type GalleryPhoto = {
  */
 export function PhotoGalleryGrid({
   photos,
-  gridClassName = "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5",
+  gridClassName = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4",
   canDelete = false,
   onDeleted,
 }: {
@@ -104,53 +105,43 @@ function PhotoGalleryCard({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
+  const frame = "block aspect-square h-auto w-full overflow-hidden rounded-md bg-muted p-0"
+
+  const metaLine = [photo.fileName, photo.sizeBytes != null ? formatSize(photo.sizeBytes) : null]
+    .filter(Boolean)
+    .join(" · ")
+
   return (
-    <div
-      className={cn(
-        "rounded-lg border overflow-hidden bg-card",
-        onOpen && "cursor-pointer transition hover:bg-muted/60 hover:shadow-sm"
-      )}
-      onClick={onOpen}
-      role={onOpen ? "button" : undefined}
-      tabIndex={onOpen ? 0 : undefined}
-      onKeyDown={
-        onOpen
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault()
-                onOpen()
-              }
-            }
-          : undefined
-      }
-    >
-      <div className="relative aspect-[4/3] bg-muted flex items-center justify-center">
+    <div className="min-w-0 space-y-1">
+      <div className="relative">
         {canDelete && (
           <PhotoDeleteButton photoId={photo.id} photoLabel={typeLabel} onDeleted={onDeleted} />
         )}
-        {photo.fileUrl ? (
-          <PhotoThumbnail photoId={photo.id} fileUrl={photo.fileUrl} />
+        {photo.fileUrl && onOpen ? (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onOpen}
+            aria-label={`${typeLabel} fotoğrafını büyüt`}
+            className={cn(frame, "hover:ring-2 hover:ring-ring")}
+          >
+            <PhotoThumbnail photoId={photo.id} fileUrl={photo.fileUrl} />
+          </Button>
         ) : (
-          <div className="text-center p-2">
-            <ImageOff className="size-6 text-muted-foreground/30 mx-auto mb-1" />
-            <span className="text-[11px] text-muted-foreground">Dosya yok</span>
+          <div className={cn(frame, "flex items-center justify-center")}>
+            <div className="text-center p-2">
+              <ImageOff className="size-6 text-muted-foreground/30 mx-auto mb-1" />
+              <span className="text-xs text-muted-foreground">Dosya yok</span>
+            </div>
           </div>
         )}
       </div>
-      <div className="p-2 space-y-1">
-        <span className="block text-xs font-medium truncate">{typeLabel}</span>
+      <div className="min-w-0 space-y-0.5">
+        <span className="block text-sm font-medium truncate">{typeLabel}</span>
         {photo.note && (
           <p className="text-xs text-foreground whitespace-pre-wrap break-words line-clamp-2">{photo.note}</p>
         )}
-        {photo.fileName && (
-          <p className="text-[11px] text-muted-foreground truncate">{photo.fileName}</p>
-        )}
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          {photo.sizeBytes != null && <span>{formatSize(photo.sizeBytes)}</span>}
-          {photo.mimeType && (
-            <span className="uppercase">{photo.mimeType.split("/")[1]}</span>
-          )}
-        </div>
+        {metaLine ? <p className="text-xs text-muted-foreground truncate">{metaLine}</p> : null}
       </div>
     </div>
   )
@@ -200,7 +191,7 @@ function PhotoThumbnail({ photoId, fileUrl }: { photoId: string; fileUrl: string
     return (
       <div className="text-center p-2">
         <ImageOff className="size-6 text-muted-foreground/30 mx-auto mb-1" />
-        <span className="text-[11px] text-muted-foreground">Yüklenemedi</span>
+        <span className="text-xs text-muted-foreground">Yüklenemedi</span>
       </div>
     )
   }
