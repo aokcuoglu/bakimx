@@ -1,5 +1,6 @@
 import type { GatedFeature } from "@/lib/plan"
 import type { LucideIcon } from "lucide-react"
+import type { Crumb, LinkCrumb } from "@/lib/navigation/page-headers"
 import {
   Bell,
   Building2,
@@ -87,4 +88,44 @@ export function isTechnicianAllowedSettingsPath(pathname: string): boolean {
   return TECHNICIAN_SETTINGS_ALLOWED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   )
+}
+
+type SettingsSubPage = {
+  prefix: string
+  parent: LinkCrumb
+  /** Yoksa sayfa bir kayıttır (ekip): yaprak `recordTitle` ile gelir. */
+  label?: string
+}
+
+/** Menüde olmayan Ayarlar alt sayfaları; üst halka menü öğesidir. */
+const SETTINGS_SUBPAGES: SettingsSubPage[] = [
+  { prefix: "/settings/billing/record-usage", label: "Kullanımlar", parent: { label: "Faturalandırma", href: "/settings/billing" } },
+  { prefix: "/settings/billing/automation-credit-usage", label: "Krediler", parent: { label: "Faturalandırma", href: "/settings/billing" } },
+  { prefix: "/settings/members-and-teams/teams/", parent: { label: "Üyeler ve ekipler", href: "/settings/members-and-teams/teams" } },
+]
+
+/**
+ * Ayarlar sayfa yolu (#856): `Ayarlar › <grup> › <sayfa>`. Grup ve sayfa adı
+ * `SETTINGS_NAV_GROUPS`tan türetilir. `/settings` bir hub değildir (yönlendirir),
+ * bu yüzden "Ayarlar" ve grup halkaları bağlantısızdır. Bilinmeyen yol → boş zincir.
+ */
+export function buildSettingsTrail(
+  pathname: string,
+  opts: { recordTitle?: string } = {},
+): { crumbs: Crumb[]; back: LinkCrumb | null } {
+  const sub = SETTINGS_SUBPAGES.find((s) => pathname === s.prefix || pathname.startsWith(s.prefix.endsWith("/") ? s.prefix : `${s.prefix}/`))
+  for (const group of SETTINGS_NAV_GROUPS) {
+    const item = group.items.find((candidate) => matchesSettingsNavItem(candidate, pathname))
+    if (!item) continue
+    const head: Crumb[] = [{ label: "Ayarlar" }, { label: group.label }]
+    if (!sub) return { crumbs: [...head, { label: item.label }], back: null }
+    const tail: Crumb[] = sub.label ? [{ label: sub.label }] : opts.recordTitle ? [{ label: opts.recordTitle }] : []
+    // Üst halka bir menü öğesidir: ekip kaydında bir üst "Üyeler ve ekipler" tek halkadır.
+    const parentIsItem = item.label === sub.parent.label
+    const middle: Crumb[] = parentIsItem ? [sub.parent] : [{ label: item.label, href: item.href }, sub.parent]
+    const crumbs = [...head, ...middle, ...tail]
+    // Yaprak yokken (kayıt adı gelmedi) zincir üst bağlantıda biter.
+    return { crumbs, back: sub.parent }
+  }
+  return { crumbs: [], back: null }
 }
