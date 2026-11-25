@@ -55,12 +55,14 @@ export async function notifyAppointmentReminder(
   appointmentDate: string,
   appointmentTime: string,
   hoursBefore: number,
+  appointmentDay: string,
   entityId?: string,
 ) {
   const workshopName = await getWorkshopName(workshopId)
   const variables: TemplateVariables = {
     workshopName,
     vehiclePlate: vehiclePlate || "",
+    appointmentDay,
     appointmentDate,
     appointmentTime,
     portalLink: buildPortalLink(workshopId),
