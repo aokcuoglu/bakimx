@@ -144,7 +144,7 @@ export default async function OrdersPage({
                   name="status"
                   autoSubmit
                   singleLine
-                  className="h-11 w-full rounded-full border-0 bg-foreground/[0.06] px-4 text-[15px] shadow-none hover:bg-foreground/[0.09] sm:w-auto md:h-9"
+                  className="w-full sm:w-auto"
                   defaultValue={status}
                   placeholder="Tüm Durumlar"
                   options={[
@@ -165,7 +165,7 @@ export default async function OrdersPage({
                   name="payment"
                   autoSubmit
                   singleLine
-                  className="h-11 w-full rounded-full border-0 bg-foreground/[0.06] px-4 text-[15px] shadow-none hover:bg-foreground/[0.09] sm:w-auto md:h-9"
+                  className="w-full sm:w-auto"
                   defaultValue={payment}
                   placeholder="Tüm Ödemeler"
                   options={[
@@ -179,7 +179,7 @@ export default async function OrdersPage({
                   name="technician"
                   autoSubmit
                   singleLine
-                  className="h-11 w-full rounded-full border-0 bg-foreground/[0.06] px-4 text-[15px] shadow-none hover:bg-foreground/[0.09] sm:w-auto md:h-9"
+                  className="w-full sm:w-auto"
                   defaultValue={technicianFilter.value}
                   placeholder="Tüm Ustalar"
                   options={[
@@ -192,7 +192,7 @@ export default async function OrdersPage({
                   name="invoice"
                   autoSubmit
                   singleLine
-                  className="h-11 w-full rounded-full border-0 bg-foreground/[0.06] px-4 text-[15px] shadow-none hover:bg-foreground/[0.09] sm:w-auto md:h-9"
+                  className="w-full sm:w-auto"
                   defaultValue={invoiceFilter.value}
                   placeholder="Tüm Faturalar"
                   options={[
@@ -205,7 +205,7 @@ export default async function OrdersPage({
                   name="delivery"
                   autoSubmit
                   singleLine
-                  className="col-span-2 sm:col-span-1 h-11 w-full rounded-full border-0 bg-foreground/[0.06] px-4 text-[15px] shadow-none hover:bg-foreground/[0.09] sm:w-auto md:h-9"
+                  className="col-span-2 w-full sm:col-span-1 sm:w-auto"
                   defaultValue={deliveryFilter.value}
                   placeholder="Tüm Teslimler"
                   options={[
