@@ -13,7 +13,11 @@ function actionBody(source: string, name: string): string {
 }
 
 test("self-serve paket etkinleştirmesi atölyenin addons alanına yazmaz (#827)", () => {
-  expect(read("src/lib/billing/activate.ts")).not.toMatch(/^\s*addons\s*:/m)
+  const code = read("src/lib/billing/activate.ts")
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("//"))
+    .join("\n")
+  expect(code).not.toMatch(/\baddons\b\s*[:,]/)
 })
 
 test("admin ek özellik ve ek kota eylemleri yetki kapısı ve denetim kaydı taşır (#827)", () => {

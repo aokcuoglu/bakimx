@@ -22,6 +22,12 @@ test("extraVinQuotaSchema tam sayı, 0..100.000 aralığı ve sayı dizgesini ka
   expect(extraVinQuotaSchema.safeParse(1.5).success).toBe(false)
   expect(extraVinQuotaSchema.safeParse(100_001).success).toBe(false)
   expect(extraVinQuotaSchema.safeParse("abc").success).toBe(false)
+  // boş girdi sessizce 0'a çevrilmez
+  for (const empty of [null, undefined, "", "  ", []]) {
+    expect(extraVinQuotaSchema.safeParse(empty).success).toBe(false)
+  }
+  const blank = extraVinQuotaSchema.safeParse("")
+  expect(blank.success ? "" : blank.error.issues[0]?.message).toBe("Ek kota boş bırakılamaz.")
 })
 
 test("diffAddons önce/sonra, eklenen ve kaldırılanı normalize ederek verir", () => {

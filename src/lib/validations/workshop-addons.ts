@@ -16,11 +16,18 @@ export const workshopAddonsSchema = z
  * Admin'in elle verdiği aylık ek katalog kotası (`Workshop.extraVinQuota`).
  * Taban kotanın ÜZERİNE eklenir; 0 = ek kota yok.
  */
-export const extraVinQuotaSchema = z.coerce
-  .number({ error: "Ek kota sayı olmalıdır." })
-  .int("Ek kota tam sayı olmalıdır.")
-  .min(0, "Ek kota negatif olamaz.")
-  .max(100_000, "Ek kota en fazla 100.000 olabilir.")
+export const extraVinQuotaSchema = z
+  .union([z.number(), z.string().trim().min(1, "Ek kota boş bırakılamaz.")], {
+    error: "Ek kota sayı olmalıdır.",
+  })
+  .transform((value) => Number(value))
+  .pipe(
+    z
+      .number({ error: "Ek kota sayı olmalıdır." })
+      .int("Ek kota tam sayı olmalıdır.")
+      .min(0, "Ek kota negatif olamaz.")
+      .max(100_000, "Ek kota en fazla 100.000 olabilir."),
+  )
 
 /** Admin formunun değerleri: anahtar başına aç/kapa + ek kota. */
 export const workshopAddonsFormSchema = z.object({

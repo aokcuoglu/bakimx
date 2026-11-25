@@ -1,4 +1,6 @@
 import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisition-sources"
+import { FEATURE_CATALOG } from "@/lib/feature-catalog"
+import type { GatedFeature } from "@/lib/plan"
 
 type JsonRecord = Record<string, unknown>
 
@@ -86,6 +88,11 @@ export function formatAuditValue(value: unknown, key = ""): string {
         timeZone: "Europe/Istanbul",
       })
     }
+  }
+
+  // Ek özellik listeleri (`admin_addons_set`): anahtarlar okunur adla gösterilir (#827).
+  if (Array.isArray(value) && value.every((item): item is GatedFeature => typeof item === "string" && item in FEATURE_CATALOG)) {
+    return value.length === 0 ? "Yok" : value.map((item) => FEATURE_CATALOG[item].name).join(", ")
   }
 
   if (typeof value === "object") return JSON.stringify(value, null, 2)

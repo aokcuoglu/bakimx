@@ -46,7 +46,7 @@ const UNLOCKED_NOTES: Record<NonNullable<WorkshopAddonsFormProps["allUnlockedRea
   trial:
     "Atölye denemede; deneme süresince ek özelliklerin hepsi zaten açık. Burada açtıklarınız deneme bittikten sonra da açık kalır.",
   premium:
-    "Atölye \"Paket + ek özellikler\" profilinde; ek özelliklerin hepsi zaten açık. Burada açtıklarınız paket Servis Paketi'ne dönerse de açık kalır.",
+    "Atölye \"Paket + ek özellikler\" profilinde; ek özelliklerin hepsi zaten açık. Burada açtıklarınız profil Servis Paketi'ne dönerse de açık kalır.",
 }
 
 /**
@@ -86,6 +86,7 @@ export function WorkshopAddonsForm({
     }
 
     startTransition(async () => {
+      let addonsSaved = false
       if (addonsChanged) {
         const result = await setWorkshopAddons(workshopId, nextAddons)
         if (!result.ok) {
@@ -93,12 +94,24 @@ export function WorkshopAddonsForm({
           toast.error(result.error)
           return
         }
+        addonsSaved = true
       }
       if (quotaChanged) {
         const result = await setWorkshopExtraVinQuota(workshopId, values.extraVinQuota)
         if (!result.ok) {
-          setServerError(result.error)
-          toast.error(result.error)
+          // Ek özellikler yazıldı: yerel varsayılanı ilerlet ki yeniden denemede
+          // aynı liste tekrar gönderilip mükerrer denetim kaydı oluşmasın.
+          if (addonsSaved) {
+            form.reset(
+              { addons: values.addons, extraVinQuota: defaultValues?.extraVinQuota ?? extraVinQuota },
+              { keepValues: true },
+            )
+          }
+          const message = addonsSaved
+            ? `Ek özellikler kaydedildi, kota kaydedilemedi. ${result.error}`
+            : result.error
+          setServerError(message)
+          toast.error(message)
           return
         }
       }
@@ -146,7 +159,7 @@ export function WorkshopAddonsForm({
               <FormItem>
                 <FormLabel>Ek katalog kotası (sorgu/ay)</FormLabel>
                 <FormControl>
-                  <Input {...field} type="number" inputMode="numeric" step="1" placeholder="0" disabled={isPending} />
+                  <Input {...field} type="number" inputMode="numeric" step="1" min={0} max={100000} placeholder="0" disabled={isPending} />
                 </FormControl>
                 <FormDescription className="text-xs">
                   Taban kotanın üzerine eklenir; 0 = ek kota yok. VIN ile araç tanıma ya da parça kataloğu
