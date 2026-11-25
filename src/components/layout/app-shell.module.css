@@ -115,7 +115,7 @@
 .plan {
   height: auto;
   padding: 12px;
-  border-radius: 14px;
+  border-radius: var(--radius);
   background: color-mix(in oklab, var(--foreground) 4%, transparent);
 }
 
