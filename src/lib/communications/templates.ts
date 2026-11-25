@@ -66,7 +66,7 @@ const TEMPLATE_DEFAULTS: Record<CommunicationTemplateKey, Record<TemplateChannel
     email: `<h2>Merhaba {customerName},</h2><p>{workshopName} tarafından <strong>{appointmentDate} {appointmentTime}</strong> tarihinde randevunuz oluşturulmuştur.</p><p>Araç: {vehiclePlate}</p><p><a href="{portalLink}">Detayları Görüntüle</a></p>`,
   },
   appointment_reminder: {
-    sms: "Sayın {customerName}, {workshopName} - yarın ({appointmentDate} {appointmentTime}) randevunuz bulunmaktadır.",
+    sms: "Sayın {customerName}, {workshopName} - {appointmentDay} ({appointmentDate} {appointmentTime}) randevunuz bulunmaktadır.",
     email: `<h2>Randevu Hatırlatması</h2><p>Sayın {customerName},</p><p><strong>{appointmentDate} {appointmentTime}</strong> tarihindeki randevunuzu hatırlatmak isteriz.</p><p>Araç: {vehiclePlate}</p><p>{customMessage}</p>`,
   },
   intake_approval: {
