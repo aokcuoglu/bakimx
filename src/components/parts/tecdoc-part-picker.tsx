@@ -683,7 +683,7 @@ export function TecdocPartPicker({
                 {supplierOptions.length > 1 && (
                   <div className="sticky top-0 z-10 bg-popover px-3 py-2 border-b">
                     <Select value={supplierFilter || "all"} onValueChange={(v) => setSupplierFilter(v && v !== "all" ? v : "")}>
-                      <SelectTrigger className="h-8">
+                      <SelectTrigger size="sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

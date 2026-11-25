@@ -84,7 +84,8 @@ export function OrderTableColumnHeader<TData, TValue>({
               onChange={(event) => column.setFilterValue(event.target.value)}
               placeholder={`${title} içinde ara`}
               aria-label={`${title} kolonunda ara`}
-              className="h-9 pl-8 pr-8"
+              size="sm"
+              className="pl-8 pr-8"
             />
             {filterValue ? (
               <Button

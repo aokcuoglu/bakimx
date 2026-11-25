@@ -637,6 +637,9 @@
   --control-px-xs: 0.75rem;
   --control-fs: 17px;
   --control-fs-sm: 15px;
+  /* compact metin girdisi (Input/InputGroup size="compact"): iOS Safari 16px
+     altı girdide odakta sayfayı yakınlaştırır, telefonda 16px'in altına inmez. */
+  --control-fs-field-xs: 16px;
   --control-fs-xs: 14px;
   --field-px: 0.875rem;
   /* Girdi köşesi (Input, Select, Textarea, InputGroup, Alert) — #878. */
@@ -805,6 +808,7 @@
     --control-px-xs: 0.625rem;
     --control-fs: 15px;
     --control-fs-sm: 14px;
+    --control-fs-field-xs: 14px;
     --control-fs-xs: 12px;
     --field-px: 0.75rem;
     --control-radius: 0.5rem; /* 8 */

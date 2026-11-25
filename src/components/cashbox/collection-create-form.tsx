@@ -323,7 +323,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                           value={field.value ?? ""}
                           onChange={(e) => field.onChange(e.target.value)}
                           placeholder="0.00"
-                          className="mt-1.5 text-lg font-semibold"
+                          className="mt-1.5"
                         />
                       </FormControl>
                       <FormMessage />

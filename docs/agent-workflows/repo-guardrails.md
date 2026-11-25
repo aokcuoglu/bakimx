@@ -225,6 +225,7 @@ kod yazmadan önce hangisinin kapsamına girdiğine bak:
 | `src/lib/ui-contract.test.ts` (BAK-189) | `shadcn/tailwind.css`teki `@custom-variant data-open/data-checked/…` köprüsünün kaybolması — kaybolursa kısayolu kullanan her sınıf tek seferde ve sessizce ölür; ayrıca `data-open:`in Tooltip'te tutmaması |
 | `src/lib/ui-contract.test.ts` (BAK-190) | Base UI Escape guard'larının paylaşılan bileşenlerden düşmesi ya da call-site'lara geri kopyalanması — düşerse Combobox seçimi / Autocomplete serbest metni Escape'te sessizce siliniyor, diyalog içindeki popup'ta tek Escape ikisini birden kapatıyor |
 | `src/components/ui/control-sizing.test.ts` | Upstream shadcn `nova` kontrol ölçeğinin (tek ölçek, breakpoint yok) ve `--radius`'un bozulması — bkz. [ui-control-sizing.md](../ui-control-sizing.md) |
+| `src/components/ui/control-call-sites.test.ts` | Form kontrollerinin (`Input`, `InputGroup`, `Textarea`, `SelectTrigger`, `AutocompleteInput`, `ComboboxInput`…) çağrı yerinde ölçü/görünüm ezmesi (`h-7`, `rounded-*`, `text-sm`, `bg-*`, `shadow-*`…) ve görünür ham dosya seçici — yoğun yer `size="sm"`/`"compact"` seçer (#888) |
 | `src/components/ui/tabs-overflow.test.ts` | Kaydırılabilir sekme şeridinde düz `justify-center` (taşan şeritte ilk sekme erişilemez oluyor — #277) |
 | `src/lib/nested-radius.test.ts` (#898) | Kart/panel/popover (12-14px) içinde aynı dosyada kapla aynı köşeyi (`rounded-lg/xl`) taşıyan iç kutu — iç köşe `rounded-md`, onun içindeki `rounded-sm` olmalı ([ui-control-sizing.md](../ui-control-sizing.md) → İç içe köşe). Yalnız aynı dosyadaki sözcüksel iç içeliği görür; kapsam şimdilik siparişler/panel/müşteriler/araçlar |
 | `src/lib/rbac-coverage.test.ts` | Yetki kapısını hiç çağırmayan yeni mutasyon action'ı (#183) |
@@ -232,8 +233,8 @@ kod yazmadan önce hangisinin kapsamına girdiğine bak:
 | `src/lib/test-mock-isolation.test.ts` | Kendi test dosyası olan bir modülün `mock.module` ile sahtelenmesi — sahte süreç geneli kalıcıdır ve asıl testi dosya sırasına göre düşürür (§7) |
 | `src/lib/format-date-coverage.test.ts` | `timeZone` vermeyen tarih/saat biçimlemesi (`toLocaleDateString`/`toLocaleTimeString`/`Intl.DateTimeFormat`, tarih seçenekli `toLocaleString`) ve sunucu dosyasında `date-fns` — prod konteyneri UTC'de koşarsa 09:00 randevu 06:00 görünür (#861). Biçimleme `@/lib/format-date` ile |
 
-`rbac-coverage`, `photo-visibility`, `test-mock-isolation` ve `format-date-coverage` bilinçli
-istisnalar için gerekçeli bir allowlist tutar. İstisna gerekiyorsa oraya **gerekçesiyle** ekle; testi gevşetme
+`rbac-coverage`, `photo-visibility`, `test-mock-isolation`, `format-date-coverage` ve `control-call-sites`
+bilinçli istisnalar için gerekçeli bir allowlist tutar. İstisna gerekiyorsa oraya **gerekçesiyle** ekle; testi gevşetme
 ya da taramayı daraltma.
 
 ## 6. `dev`'e merge app-dev'e deploy ETMEZ — `[deploy-dev]` yaz

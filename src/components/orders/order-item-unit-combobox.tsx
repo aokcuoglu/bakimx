@@ -61,7 +61,8 @@ export function OrderItemUnitCombobox({
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Birim ara..."
             aria-label="Birim ara"
-            className="h-7 pl-8"
+            size="sm"
+            className="pl-8"
             autoFocus
           />
         </div>

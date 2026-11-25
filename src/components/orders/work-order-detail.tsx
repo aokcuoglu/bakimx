@@ -984,7 +984,8 @@ export function WorkOrderDetail({
             onChange={(e) => setDeliveryOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
             placeholder="6 haneli teslim kodu"
             inputMode="numeric"
-            className="text-center text-xl tracking-widest"
+            size="lg"
+            className="text-center tracking-widest"
           />
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button variant="foreground" onClick={handleVerifyDeliveryOtp} disabled={loading || deliveryOtpCode.length < 6} size="lg" className="sm:flex-1">
@@ -1137,11 +1138,11 @@ export function WorkOrderDetail({
                 {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
                   <div className="space-y-1.5">
                     <Label htmlFor="edit-complaint">Müşteri Şikayeti</Label>
-                    <Textarea id="edit-complaint" value={editComplaint} onChange={(e) => setEditComplaint(e.target.value)} placeholder="Müşterinin bildirdiği arıza/şikayet..." className="min-h-[80px]" />
+                    <Textarea id="edit-complaint" value={editComplaint} onChange={(e) => setEditComplaint(e.target.value)} placeholder="Müşterinin bildirdiği arıza/şikayet..." className="min-h-20" />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="edit-note">Teknisyen İç Notu</Label>
-                    <Textarea id="edit-note" value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Servis içi notlar (opsiyonel)..." className="min-h-[60px]" />
+                    <Textarea id="edit-note" value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Servis içi notlar (opsiyonel)..." className="min-h-15" />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="edit-mileage">Kilometre (kabul anı)</Label>
@@ -1630,7 +1631,7 @@ export function WorkOrderDetail({
               value={reopenReason}
               onChange={(e) => setReopenReason(e.target.value)}
               placeholder="Örn. Müşteri aynı arızayla geri geldi"
-              className="min-h-[70px]"
+              className="min-h-18"
             />
           </div>
           <AlertDialogFooter>

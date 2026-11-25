@@ -15,11 +15,41 @@ kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (76
 | Button `xs` / `compact` | 32px | 28px | yoğun tablo ve araç çubuğu |
 | Button `icon` / `icon-sm` / `icon-lg` | 44 / 36 / 50px | 36 / 32 / 44px | daire |
 | Button `icon-xs` / `icon-compact` | 32px | 28px | |
-| Input / InputGroup | 44px | 36px | 10px köşe (md+ 8px, `--control-radius`), 17px / 15px metin |
+| Input / InputGroup `default` | 44px | 36px | 10px köşe (md+ 8px, `--control-radius`), 17px / 15px metin — her form, diyalog ve arama alanı |
+| Input / InputGroup `sm` | 36px | 32px | köşe ve metin `default` ile aynı — yoğun filtre araç çubuğu, tablo başlığı süzgeci |
+| Input / InputGroup `compact` | 32px | 28px | 16px / 14px metin (`--control-fs-field-xs`) — tablo satırı içi düzenleyici |
+| Input / InputGroup `lg` | 50px | 44px | köşe ve metin `default` ile aynı — tek başına duran büyük giriş (plaka, teslim kodu) |
 | Select `default` / `sm` / `compact` | 44 / 36 / 32px | 36 / 32 / 28px | |
 | `ToggleGroup` / `Toggle` `size="control"` | 44px | 36px | öğe yüksekliği; ray kendi dolgusunu ekler |
 | `Tabs` — `TabsList size="control"` (segment) | 44px | 36px | trigger yüksekliği; şerit `h-auto` |
 | Textarea | `min-h-16` | `min-h-16` | 10px köşe (md+ 8px, `--control-radius`) |
+
+**Input / InputGroup `size`** `--control-h`, `--control-fs` ve `--field-px`
+değişkenlerini öğenin kendisinde yeniden bağlar; taban sınıflar aynı kalır.
+`InputGroup` bağlamayı grup üzerinde yaptığı için içindeki `InputGroupInput`
+yüksekliği, metni ve dolguyu gruptan miras alır (kendi `size` prop'u yoktur);
+`sm` / `compact` grupta `InputGroupButton` kutudan taşmayacak kadar küçülür.
+`ComboboxInput` aynı `size`'ı `InputGroup`'a geçirir. `PartSearchInput`,
+`PartAttributeField` ve `FilterSelect` da `size` alır (kalem satırında
+`compact`, yoğun filtre çubuğunda `sm`).
+
+**Autocomplete eklentili grupta:** `AutocompleteInput` bir `InputGroup` içinde
+eklentiyle (🔍 / X, SKU çipi) duruyorsa kap `AutocompleteInputGroup`'tur
+(Base UI `Autocomplete.InputGroup` + `InputGroup`). Popup girdiye değil kutuya
+çapalanır, liste kutunun tam genişliğinde ve hizasında açılır; düz
+`InputGroup`'ta eklenti genişliği kadar dar kalıyordu.
+`src/components/ui/input-group-contract.test.ts` bekçiliyor.
+
+**Odak halkası** tüm form kontrollerinde aynıdır: `ring-4 ring-ring/20`,
+geçersizde `ring-4 ring-destructive/10` (koyu temada `/20`). `InputGroup`
+halkayı grupta çizer ve iç denetimin `data-slot`'una bağlı değildir
+(`has-[input:focus-visible]`); `InputGroupInput` slot'unu props'tan sonra
+yazar.
+
+**iOS yakınlaştırması:** iOS Safari 16px altındaki metin girdisine odaklanınca
+sayfayı yakınlaştırır. Bu yüzden `compact` girdinin metni telefonda 16px'te
+kalır, yalnız md+ 14px'e iner (`--control-fs-field-xs`). `--control-fs-xs`
+(telefonda 14px) metin girdisinde kullanılmaz; yalnız Select ve düğme içindir.
 
 `default/sm/lg` Toggle (32px) ve `line` sekme (28px) upstream nova ölçeğidir;
 yalnız masaüstü yoğun araç çubuğu ve tablo başlığı içindir. Telefonda görünen
@@ -100,6 +130,24 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
 
 - Boyut sınıfları **çağrı yerinde ezilmez**. İhtiyacın olan ölçek yoksa varyant
   ekle, `className` yazma. `md` dışındaki kırılımla boyut değiştirme.
+- Form kontrolleri (`Input`, `InputGroup`, `InputGroupInput`,
+  `InputGroupTextarea`, `Textarea`, `SelectTrigger`, `AutocompleteInput`,
+  `ComboboxInput`, `ComboboxChips`, `AutocompleteInputGroup`) ve onlara
+  `className` ileten sarmalayıcılar (`FilterSelect`, `CitySelect`,
+  `DistrictSelect`) açılış etiketinde yükseklik (`h-*`, `min-h-*`, `size-*`),
+  köşe (`rounded*`), yazı boyutu (`text-xs…xl`, keyfi uzunluk), satır
+  yüksekliği (`leading-*`), dolgu (`p-*`, `py-*`, `pt-*`, `pb-*`), kenarlık
+  kaldırma/kalınlığı (`border-0|none|transparent`, `border-2|4|8`), zemin
+  (`bg-*`), gölge (`shadow-*`), halka (`ring-*`), `outline-*` ve yazı
+  ağırlığı (`font-medium…`) taşımaz; `!` ve `md:` / `data-[…]:` önekleri de
+  sayılır. CSS modülü sınıfı (`className={styles.x}`) da ihlaldir. Yeni bir
+  sarmalayıcı `className`'i kontrole iletiyorsa kapının listesine eklenir
+  (test bunu ister). `className` yerleşim içindir: genişlik, flex/grid, dış boşluk, ikon
+  yeri için yatay dolgu (`pl-9`), `text-right`, `tabular-nums`, `font-mono`,
+  `uppercase`, `tracking-*`. Textarea içerik yüksekliği yalnız ölçekten
+  (`min-h-20`, `min-h-[80px]` değil). Bilinçli istisna gerekçesiyle
+  `src/components/ui/control-call-sites.test.ts` listesine yazılır; artık
+  eşleşmeyen istisna testi düşürür.
 - `ToggleGroupItem` / `TabsTrigger` / `TabsList` üzerinde `!` ile yükseklik
   ezilmez (`h-7!`). Telefonda tek başına duran eylem düğmesi `default` ya da
   üstüdür; `sm/xs/compact` yoğun satır ve araç çubuğu içindir.
@@ -108,7 +156,9 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
   fotoğraf görüntüleyicinin kendi kontrolleri) kontrol değildir; bu matrisin
   kapsamı dışındadır.
 - Ham HTML etkileşimli kontrol kullanılmaz. Form gönderimi için kullanıcıya
-  görünmeyen `input[type="hidden"]` alanları istisnadır.
+  görünmeyen `input[type="hidden"]` alanları ve bir `Button`'un tetiklediği
+  gizli dosya seçici (`type="file"` + `className="hidden"`) istisnadır.
 
-Matrisi `src/components/ui/control-sizing.test.ts` ve
+Matrisi `src/components/ui/control-sizing.test.ts`,
+`src/components/ui/control-call-sites.test.ts` ve
 `src/app/design/design-system.test.ts` CI'da bekçiliyor.

@@ -77,7 +77,7 @@ export function WorkshopTeamsPanel({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Ara"
-            className="h-8 pl-8 font-medium tracking-[-0.07px]"
+            className="pl-8"
           />
         </div>
         {canManage ? (
@@ -182,7 +182,7 @@ export function WorkshopTeamsPanel({
                       <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-warning-strong">
                         <Settings2 className="size-4" />
                       </span>
-                      <FormControl><Input {...field} className="h-8" placeholder="Ekip adını girin" maxLength={40} /></FormControl>
+                      <FormControl><Input {...field} placeholder="Ekip adını girin" maxLength={40} /></FormControl>
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -190,7 +190,7 @@ export function WorkshopTeamsPanel({
                 <FormField control={form.control} name="description" render={({ field }) => (
                   <FormItem className="min-w-0 gap-1">
                     <FormLabel className="text-xs font-medium text-muted-foreground">Ekip açıklaması</FormLabel>
-                    <FormControl><Input {...field} className="h-8" placeholder="Ekip açıklamasını girin" maxLength={160} /></FormControl>
+                    <FormControl><Input {...field} placeholder="Ekip açıklamasını girin" maxLength={160} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

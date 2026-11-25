@@ -12,9 +12,10 @@ test("kalem listesi yükseklik sınırında sayfa kaydırmasını serbest bırak
   expect(grid).toContain('containerClassName={ITEM_LIST_SCROLL}')
   expect(grid).toContain('rows.length > 0 && ITEM_LIST_SCROLL')
   expect(grid).not.toContain("Yeni kalem ekle")
-  expect(grid).toContain('inputClassName="bg-background"')
   expect(grid).toContain("plain")
-  expect(grid).toContain('className="h-7 bg-background text-sm"')
+  // #888: arama ve işçilik alanları ölçüyü/görünümü Input'tan alır, ezmez.
+  expect(grid).not.toContain("inputClassName")
+  expect(grid).not.toContain("bg-background text-sm")
 })
 
 test("ortak diyalog viewport dışına taşmadan açılır", () => {

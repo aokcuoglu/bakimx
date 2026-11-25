@@ -135,7 +135,7 @@ export default async function AdminAuditPage({
                 name="workshopId"
                 defaultValue={sp.workshopId ?? ""}
                 placeholder="Tüm iş yerleri"
-                className="h-8 w-44 bg-background"
+                size="sm" className="w-44"
                 autoSubmit
                 options={[{ value: "", label: "Tüm iş yerleri" }, ...workshops.map((w) => ({ value: w.id, label: w.name }))]}
               />
@@ -146,7 +146,7 @@ export default async function AdminAuditPage({
                 name="action"
                 defaultValue={sp.action ?? ""}
                 placeholder="Tüm işlemler"
-                className="h-8 w-44 bg-background"
+                size="sm" className="w-44"
                 autoSubmit
                 options={[{ value: "", label: "Tüm işlemler" }, ...knownActions.map((action) => ({ value: action, label: displayActionLabel(action) }))]}
               />

@@ -475,7 +475,6 @@ export function QuoteCreateForm({
                               step="0.01"
                               {...field}
                               placeholder="0"
-                              className="h-7 text-sm"
                             />
                           </FormControl>
                         </FormItem>
@@ -495,7 +494,6 @@ export function QuoteCreateForm({
                               step="0.1"
                               {...field}
                               placeholder="20"
-                              className="h-7 text-sm"
                             />
                           </FormControl>
                         </FormItem>

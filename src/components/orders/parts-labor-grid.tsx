@@ -770,9 +770,12 @@ function ComposerCard({ children }: { children: React.ReactNode }) {
 }
 
 // ── Composer: küçük alan etiketi ─────────────────────────────────────────────
+// flex + gap, space-y DEĞİL: Base UI Autocomplete kökü alanın sonuna gizli bir
+// input öğesi ekliyor; space-y görünür girdiye 4px alt boşluk verip items-end
+// satırda adı Miktar/Fiyat'tan 4px yukarı itiyordu (#888).
 function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("min-w-0 space-y-1", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-1", className)}>
       <span className="block text-xs font-medium text-muted-foreground">{label}</span>
       {children}
     </div>
@@ -850,7 +853,6 @@ function LaborAutocompleteField({ draft, onCell, disabled, catalog }: {
             placeholder="İşçilik ara veya kendi kalemini yaz"
             disabled={disabled}
             title={draft.name || undefined}
-            className="h-7 bg-background text-sm"
           />
         }
       />
@@ -939,7 +941,6 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog, modalLayou
           placeholder="Dış işçilik adı (ör. dış atölye kaporta)"
           title={draft.name || undefined}
           disabled={disabled}
-          className="h-7 bg-background text-sm"
         />
       ) : (
         <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} catalog={catalog} />
@@ -948,14 +949,14 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog, modalLayou
   )
   const detailFields = (
     <>
-      <Field label="Miktar"><QtyStepper row={draft} editable onCell={onCell} /></Field>
+      <Field label="Miktar"><QtyStepper row={draft} editable onCell={onCell} size="default" /></Field>
       {vat.perLine && (
-        <Field label="KDV"><div className="flex h-7 items-center"><VatCell row={draft} ed={ed} onCell={onCell} /></div></Field>
+        <Field label="KDV"><div className="flex h-(--control-h) items-center"><VatCell row={draft} ed={ed} onCell={onCell} /></div></Field>
       )}
       {isExternal && (
         <Field label="Alış Fiyatı"><CostPriceInput row={draft} onCell={onCell} /></Field>
       )}
-      <Field label={isExternal ? "Satış Fiyatı" : "Birim Fiyat"}><PriceField row={draft} ed={ed} wide /></Field>
+      <Field label={isExternal ? "Satış Fiyatı" : "Birim Fiyat"}><PriceField row={draft} ed={ed} wide size="default" /></Field>
     </>
   )
   const actions = (
@@ -1227,7 +1228,6 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         categoryId={filter.categoryId ?? null}
         disabled={disabled}
         placeholder="Parça no, adı, marka veya OEM ara…"
-        inputClassName="bg-background"
         plain
         onNameChange={setName}
         onSelectArticle={(a) => void add(catalogDraft(a))}
@@ -1563,7 +1563,8 @@ function PartNameField({ row, onCell, oneLine }: { row: Row; onCell: OnCell; one
         placeholder="Parça tanımı"
         aria-label="Parça tanımı"
         title={hint}
-        className="h-7 min-w-0 flex-1 text-sm font-medium"
+        size="compact"
+        className="min-w-0 flex-1"
       />
     </div>
   )
@@ -1595,7 +1596,7 @@ function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
           onChange={(e) => onCell(row, { name: e.target.value }, { debounce: true })}
           placeholder="İşçilik adı"
           disabled={!ed.editable || row.__saving}
-          className="text-sm"
+          size="compact"
           data-pl="name"
         />
       )}
@@ -1604,9 +1605,13 @@ function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
   )
 }
 
-function QtyStepper({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
+// Yükseklik kontrol ölçeğinden: satırda compact (32 / 28px), composer'da
+// yanındaki varsayılan alanlarla aynı hizada default (44 / 36px).
+function QtyStepper({ row, editable, onCell, size = "compact" }: {
+  row: Row; editable: boolean; onCell: OnCell; size?: "default" | "compact"
+}) {
   return (
-    <div data-slot="qty-stepper" className="inline-flex h-7 items-center rounded-lg border border-input bg-background transition-colors">
+    <div data-slot="qty-stepper" className={cn("inline-flex items-center rounded-(--control-radius) border border-input bg-card transition-colors dark:bg-input/30", size === "default" ? "h-(--control-h)" : "h-(--control-h-xs)")}>
       <Button type="button" variant="ghost" size="icon-xs" className="rounded-r-none" aria-label="Azalt"
         disabled={!editable || row.quantity <= 1}
         onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })}>
@@ -1648,7 +1653,8 @@ function QuantityField({ row, editable, onCell }: { row: Row; editable: boolean;
       inputMode="decimal"
       value={draft}
       aria-label={`${row.name || "Satır"} miktarı`}
-      className="h-7 w-24 text-center text-sm tabular-nums"
+      size="compact"
+      className="w-24 text-center tabular-nums"
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur() }}
@@ -1708,7 +1714,10 @@ const MARGIN_TONE: Record<PurchaseMarginState, string> = {
   "marked-up": "",
 }
 
-function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean }) {
+// size: satır hücresinde compact; composer'da (form alanı) default.
+function PriceField({ row, ed, wide, size = "compact" }: {
+  row: Row; ed: RowEditor; wide?: boolean; size?: "default" | "compact"
+}) {
   const tone = MARGIN_TONE[ed.marginState]
   if (!ed.editable) {
     return (
@@ -1725,7 +1734,8 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
       autoComplete="off"
       placeholder="₺0,00"
       aria-label="Birim fiyat"
-      className={cn("h-7 px-2.5 text-right text-sm tabular-nums", tone, wide ? "w-32" : "w-28")}
+      size={size}
+      className={cn("text-right tabular-nums", tone, wide ? "w-32" : "w-28")}
       value={ed.editingPrice ? ed.priceDraft : row.unitPrice != null ? formatTRY(row.unitPrice) : ""}
       onFocus={(e) => { if (!ed.editingPrice) ed.startPrice(); e.currentTarget.select() }}
       onChange={(e) => { if (!ed.editingPrice) ed.startPrice(); ed.setPriceDraft(e.target.value) }}
@@ -1757,7 +1767,8 @@ function ModalPriceField({ row, onCell }: { row: Row; onCell: OnCell }) {
       autoComplete="off"
       placeholder="₺0,00"
       aria-label="Birim fiyat"
-      className="h-7 w-28 px-2.5 text-right text-sm tabular-nums"
+      size="compact"
+      className="w-28 text-right tabular-nums"
       value={draft}
       onFocus={(event) => event.currentTarget.select()}
       onChange={(event) => setDraft(event.target.value)}
@@ -1775,7 +1786,11 @@ function ModalPriceField({ row, onCell }: { row: Row; onCell: OnCell }) {
  * kuralı uygular (external-labor-cost.ts) — burada yalnız anında görünsün diye.
  * Boş bırakmak "değiştirme" demektir: alış silinip satış 0'a inmesin.
  */
-function CostPriceInput({ row, onCell, id }: { row: Row; onCell: OnCell; id?: string }) {
+// size: composer'da (form alanı) default; düzenleme modalında yanındaki FİYAT
+// ile aynı compact.
+function CostPriceInput({ row, onCell, id, size = "default" }: {
+  row: Row; onCell: OnCell; id?: string; size?: "default" | "compact"
+}) {
   const [draft, setDraft] = useState(() => toPriceDraft(row.purchasePriceKurus ?? null))
   function commit() {
     if (!draft.trim()) {
@@ -1803,7 +1818,8 @@ function CostPriceInput({ row, onCell, id }: { row: Row; onCell: OnCell; id?: st
       autoComplete="off"
       placeholder="₺0,00"
       aria-label="Alış fiyatı (KDV hariç)"
-      className="h-7 w-32 px-2.5 text-right text-sm tabular-nums"
+      size={size}
+      className="w-32 text-right tabular-nums"
       value={draft}
       onFocus={(event) => event.currentTarget.select()}
       onChange={(event) => setDraft(event.target.value)}
@@ -1822,7 +1838,7 @@ function CostPriceField({ row, onCell }: { row: Row; onCell: OnCell }) {
         <Label htmlFor={id} className="text-sm font-medium">Alış fiyatı</Label>
         <p className="text-xs text-muted-foreground">Dışarıya ödenen tutar, KDV hariç. Müşteri görmez.</p>
       </div>
-      <CostPriceInput id={id} row={row} onCell={onCell} />
+      <CostPriceInput id={id} row={row} onCell={onCell} size="compact" />
     </div>
   )
 }
@@ -2366,6 +2382,7 @@ function AttrCell({ kind, row, ed, vehicle, onCell, bare, oneLine }: {
   return (
     <PartAttributeField
       kind={kind}
+      size="compact"
       vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
       value={value ?? ""}
       disabled={row.__saving}
@@ -2423,15 +2440,14 @@ const GHOST_ROW = cn(
   "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=qty-stepper]]:border-input focus-within:[&_[data-slot=price-field]]:border-input",
 )
 
-// Marka/Kategori alanlarının ortak kompakt ölçüsü/tipografisi: ad satırının
-// altında ikincil meta olarak okunmalı → 11px, muted. !important → GHOST_ROW'un
-// genel input-group kurallarını bu alanlarda ezer.
-// NOT: alan-içi input `[&_input]` ile hedeflenir. `[data-slot=input-group-control]`
-// seçicisiyle yazılan kurallar Tailwind çıktısında hiç üretilmiyordu (tipografi
-// sessizce uygulanmıyordu) — bu yüzden bilerek input etiketi kullanılıyor.
+// Marka/Kategori alanları: ölçü, köşe ve yazı boyutu `PartAttributeField
+// size="compact"`tan gelir (telefonda 16px — 11px'lik eski ezme iOS'ta odakta
+// sayfayı yakınlaştırıyordu, #888). Burada yalnız hayalet görünüm kalır: ikincil
+// meta olarak muted renk. !important → GHOST_ROW'un genel kurallarını ezer.
+// NOT: eski not "[data-slot=input-group-control] seçicisi üretilmiyor" diyordu;
+// asıl neden AutocompleteInput'un slot'u ezmesiydi (#888'de düzeldi).
 const META_FIELD_BASE = cn(
-  "[&_[data-slot=input-group]]:!rounded-md",
-  "[&_input]:!text-[11px] [&_input]:!text-muted-foreground",
+  "[&_input]:!text-muted-foreground",
   "focus-within:[&_input]:!text-foreground",
 )
 
@@ -2440,7 +2456,6 @@ const META_FIELD_BASE = cn(
 // düzenlenebilir olduğu anlaşılır, ama boştayken satırı şişirmez.
 const META_FIELD_DESKTOP = cn(
   META_FIELD_BASE,
-  "[&_[data-slot=input-group]]:!h-7",
   "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-transparent",
   // Zemin ANINDA gelsin: input ve input-group'un kendi `transition-colors`ı
   // (150 ms) hover'da "geç beliriyor" hissi veriyordu. Dolgu zaten her durumda
@@ -2454,7 +2469,6 @@ const META_FIELD_DESKTOP = cn(
 // bu yüzden kart içinde hafif gri çip görünümü korunur.
 const META_FIELD_MOBILE = cn(
   META_FIELD_BASE,
-  "[&_[data-slot=input-group]]:!h-7",
   "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-muted/60",
   "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background",
 )
@@ -2654,7 +2668,7 @@ function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, s
         "mt-1.5",
         "[&_[data-slot=input-group]]:border-transparent [&_[data-slot=input-group]]:bg-transparent [&_[data-slot=input]]:border-transparent [&_[data-slot=input]]:bg-transparent",
         "[&_[data-slot=input-group]]:px-0 [&_[data-slot=input]]:!px-0 [&_[data-slot=input]]:font-medium",
-        "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-2.5",
+        "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-(--field-px)",
       )}>
         <PartField row={row} ed={ed} onCell={onCell} readOnlyHint={readOnlyFields && !locked ? "Kalemi düzenle ile değiştirin" : undefined} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
@@ -2674,7 +2688,9 @@ function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, s
           etiketi üstünde olduğu için rakamın anlamı kart genişliğinden bağımsız;
           sabit ilk iki kolon + esnek fiyat kolonu 360px ekranda taşmaz. */}
       <div className="mt-2 border-t border-border pt-2" data-pl="finance">
-        <div className="grid grid-cols-[4rem_minmax(0,1fr)_6.5rem] items-start gap-1.5">
+        {/* İşçilik satırında miktar adımlayıcısı (~82px) 4rem'e sığmıyor, BİRİM
+            "—"nin üstüne taşıyordu: o kolon içeriği kadar açılır (#888). */}
+        <div className={cn("grid items-start gap-1.5", ed.isPart ? "grid-cols-[4rem_minmax(0,1fr)_6.5rem]" : "grid-cols-[auto_minmax(0,1fr)_6.5rem]")}>
           <div className="min-w-0 space-y-1 [&_input]:!w-full">
             <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground" data-pl="label">Miktar</span>
             {ed.isPart

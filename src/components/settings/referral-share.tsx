@@ -24,7 +24,7 @@ export function ReferralShare({ referralUrl, referralCode }: { referralUrl: stri
   return (
     <div className="mt-4">
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Input aria-label="Davet bağlantısı" value={referralUrl} readOnly onFocus={(event) => event.currentTarget.select()} className="min-w-0 flex-1 bg-muted/40 text-sm" />
+        <Input aria-label="Davet bağlantısı" value={referralUrl} readOnly onFocus={(event) => event.currentTarget.select()} className="min-w-0 flex-1" />
         <Button type="button" variant="default" size="sm" onClick={() => copy(referralUrl, "link")}>
           {copied === "link" ? <Check aria-hidden="true" /> : <Link2 aria-hidden="true" />}
           Bağlantıyı kopyala
@@ -37,7 +37,7 @@ export function ReferralShare({ referralUrl, referralCode }: { referralUrl: stri
         <span className="h-px flex-1 bg-border" />
       </div>
 
-      <Textarea aria-label="Davet mesajı" value={message} readOnly onFocus={(event) => event.currentTarget.select()} className="min-h-16 resize-none bg-muted/40 text-sm" />
+      <Textarea aria-label="Davet mesajı" value={message} readOnly onFocus={(event) => event.currentTarget.select()} className="min-h-16 resize-none" />
       <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => copy(message, "message")}>
         {copied === "message" ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
         Mesajı kopyala

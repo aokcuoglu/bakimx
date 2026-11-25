@@ -156,7 +156,6 @@ export function ManualPartDialog({
                 value={sku}
                 onChange={(e) => { setSku(e.target.value); setError(null) }}
                 placeholder="BLK-1234"
-                className="text-sm"
                 maxLength={60}
                 aria-invalid={!!error}
                 aria-describedby={error ? "manual-part-sku-error" : undefined}
@@ -169,7 +168,6 @@ export function ManualPartDialog({
                 value={name}
                 onChange={(e) => { setName(e.target.value); setError(null) }}
                 placeholder="Parça adı (ör. ön fren balatası)"
-                className="text-sm"
               />
             </div>
           </div>
@@ -228,13 +226,13 @@ export function ManualPartDialog({
             </div>
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">Birim Fiyat</span>
-              <InputGroup className="h-7 w-32">
+              <InputGroup className="w-32">
                 <InputGroupAddon className="text-muted-foreground">₺</InputGroupAddon>
                 <InputGroupInput
                   type="text"
                   inputMode="text"
                   placeholder="100 veya 2×100"
-                  className="text-sm tabular-nums"
+                  className="tabular-nums"
                   value={priceDraft}
                   onChange={(e) => setPriceDraft(e.target.value)}
                   onBlur={() => { const value = evaluateMoneyExpression(priceDraft); if (value != null) setPriceDraft(String(value / 100).replace(".", ",")) }}

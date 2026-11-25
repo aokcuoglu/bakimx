@@ -69,6 +69,9 @@ describe("design system radius contract", () => {
     expect(page).toContain('id="components"')
     expect(page).toContain('id="cards"')
     expect(page).toContain('id="forms"')
+    // #888: Input ölçek varyantları galeride görünür.
+    expect(page).toContain('data-testid="input-sizes"')
+    for (const size of ["lg", "default", "sm", "compact"]) expect(page).toContain(`["${size}", "`)
     expect(page).toContain('id="spacing"')
     expect(page).toContain('id="elevation"')
     expect(page).toContain('id="responsive"')

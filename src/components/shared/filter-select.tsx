@@ -17,7 +17,13 @@ type FilterSelectProps = {
   placeholder?: string
   ariaLabel?: string
   options: Option[]
+  /**
+   * Yalnız yerleşim (genişlik, grid kolonu). Ölçü ve görünüm `SelectTrigger`'dan
+   * gelir; çağrı yeri ezmez (#888 — control-call-sites kapısı bu prop'u da tarar).
+   */
   className?: string
+  /** SelectTrigger ölçeği (docs/ui-control-sizing.md): yoğun filtre çubuğunda `sm`. */
+  size?: "default" | "sm" | "compact"
   /**
    * Seçim değişince bağlı GET formunu kendiliğinden gönderir ("Filtrele"
    * düğmesine basmaya gerek kalmaz). Varsayılan kapalı: bileşen beş sayfada
@@ -35,6 +41,7 @@ export function FilterSelect({
   ariaLabel,
   options,
   className,
+  size = "default",
   autoSubmit = false,
   singleLine = false,
 }: FilterSelectProps) {
@@ -67,7 +74,7 @@ export function FilterSelect({
           setValue(next)
         }}
       >
-        <SelectTrigger className={className} aria-label={ariaLabel ?? placeholder ?? name}>
+        <SelectTrigger size={size} className={className} aria-label={ariaLabel ?? placeholder ?? name}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent className={singleLine ? "w-max min-w-(--radix-select-trigger-width) max-w-(--radix-select-content-available-width)" : undefined}>

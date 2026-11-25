@@ -4,6 +4,7 @@ import { useId, useState } from "react"
 import { CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -13,7 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
-import { cn } from "@/lib/utils"
 import {
   stripNonDigits,
   luhnValid,
@@ -129,13 +129,12 @@ export function CardFormFields({
                 onChange={(ev) => setHolderName(ev.target.value)}
                 placeholder="Ad Soyad"
                 disabled={submitting}
-                className="h-9"
                 aria-invalid={!!errors.holderName}
               />
               {errors.holderName && <p className="text-xs text-destructive-strong">{errors.holderName}</p>}
-              <div role="group" aria-label="Kart bilgileri" aria-describedby={cardError ? cardErrorId : undefined} className={cn("flex h-9 min-w-0 items-center overflow-hidden rounded-md border border-input bg-card focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30", cardError && "border-destructive/50 focus-within:border-destructive/50 focus-within:ring-destructive/20")}>
-                <CreditCard className="ml-2.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <Input
+              <InputGroup aria-label="Kart bilgileri" aria-describedby={cardError ? cardErrorId : undefined}>
+                <InputGroupAddon><CreditCard aria-hidden="true" /></InputGroupAddon>
+                <InputGroupInput
                   aria-label="Kart numarası"
                   inputMode="numeric"
                   autoComplete="cc-number"
@@ -143,11 +142,10 @@ export function CardFormFields({
                   onChange={(ev) => setCardDisplay(formatCardNumber(ev.target.value))}
                   placeholder="Kart numarası"
                   disabled={submitting}
-                  className="h-full min-w-0 flex-1 rounded-none border-0 px-2 shadow-none focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0"
                   aria-invalid={!!cardError}
                   aria-describedby={cardError ? cardErrorId : undefined}
                 />
-                <Input
+                <InputGroupInput
                   aria-label="Son kullanma tarihi"
                   inputMode="numeric"
                   autoComplete="cc-exp"
@@ -158,10 +156,10 @@ export function CardFormFields({
                   }}
                   placeholder="AA / YY"
                   disabled={submitting}
-                  className="h-full w-20 shrink-0 rounded-none border-0 px-1 text-center shadow-none focus-visible:ring-0"
+                  className="w-20 flex-none px-1 text-center"
                   aria-describedby={cardError ? cardErrorId : undefined}
                 />
-                <Input
+                <InputGroupInput
                   aria-label="CVV"
                   inputMode="numeric"
                   autoComplete="cc-csc"
@@ -170,10 +168,10 @@ export function CardFormFields({
                   onChange={(ev) => setCvv(stripNonDigits(ev.target.value).slice(0, 4))}
                   placeholder="CVV"
                   disabled={submitting}
-                  className="h-full w-14 shrink-0 rounded-none border-0 px-1 text-center shadow-none focus-visible:ring-0"
+                  className="w-14 flex-none px-1 text-center"
                   aria-describedby={cardError ? cardErrorId : undefined}
                 />
-              </div>
+              </InputGroup>
               {cardError && (
                 <p id={cardErrorId} className="text-xs text-destructive-strong">{cardError}</p>
               )}

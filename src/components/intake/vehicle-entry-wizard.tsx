@@ -1029,7 +1029,7 @@ export function VehicleEntryWizard({
           />
           {focused ? (
             // Kamera düğmesi kutunun içinde: dar telefonda yazı alanı daralmasın.
-            <InputGroup className="h-14">
+            <InputGroup size="lg">
               <InputGroupInput
                 value={query}
                 onChange={(e) => onQueryChange(e.target.value)}
@@ -1041,10 +1041,10 @@ export function VehicleEntryWizard({
                 spellCheck={false}
                 enterKeyHint="search"
                 ref={plateQueryRef}
-                className="h-full px-3 text-xl font-semibold tracking-wide placeholder:text-[15px] placeholder:font-normal placeholder:tracking-normal min-[380px]:placeholder:text-base md:h-full md:text-xl"
+                className="tracking-wide placeholder:tracking-normal"
               />
               <InputGroupAddon align="inline-end">
-                <InputGroupButton size="icon-sm" aria-label="Plakayı kamerayla tara" onClick={() => setScanner("plate")} className="size-11">
+                <InputGroupButton size="icon-sm" aria-label="Plakayı kamerayla tara" onClick={() => setScanner("plate")}>
                   <ScanLine className="size-6" />
                 </InputGroupButton>
               </InputGroupAddon>
@@ -1061,7 +1061,7 @@ export function VehicleEntryWizard({
                 autoCorrect="off"
                 spellCheck={false}
                 enterKeyHint="search"
-                className="flex-1 font-semibold tracking-wide"
+                className="flex-1 tracking-wide"
               />
               <Button type="button" variant="outline" size="icon" aria-label="Plakayı kamerayla tara" onClick={() => setScanner("plate")}>
                 <ScanLine className="size-4" />
@@ -1328,7 +1328,8 @@ export function VehicleEntryWizard({
               autoCapitalize="characters"
               autoCorrect="off"
               spellCheck={false}
-              className="h-12 text-lg font-semibold tracking-wide md:h-12 md:text-lg"
+              size="lg"
+              className="tracking-wide"
             />
           </div>
           {/* Kabul için aracın fotoğrafı zorunlu. Plaka ekranında çekilen kare

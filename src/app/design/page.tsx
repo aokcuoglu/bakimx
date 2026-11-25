@@ -604,6 +604,26 @@ export default function DesignSystemPage() {
                 rows={3}
               />
             </div>
+            <div className="space-y-2" data-testid="input-sizes">
+              <p className="font-mono text-[11px] text-muted-foreground">
+                input sizes · telefon / md+
+              </p>
+              {(
+                [
+                  ["lg", "50 / 44px — plaka, teslim kodu"],
+                  ["default", "44 / 36px — form, diyalog, arama"],
+                  ["sm", "36 / 32px — filtre araç çubuğu"],
+                  ["compact", "32 / 28px — tablo satırı düzenleyici"],
+                ] as const
+              ).map(([size, use]) => (
+                <Input
+                  key={size}
+                  size={size}
+                  aria-label={`Input size ${size}`}
+                  placeholder={`size="${size}" · ${use}`}
+                />
+              ))}
+            </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="foreground" size="sm">
                 Kaydet
@@ -616,8 +636,10 @@ export default function DesignSystemPage() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Kontrol köşesi <code className="font-mono">rounded-sm</code>{" "}
-              (6px). Yükseklik size prop&apos;undan gelir.
+              Köşe, yükseklik ve metin bileşenden ve{" "}
+              <code className="font-mono">size</code> prop&apos;undan gelir;
+              çağrı yerinde <code className="font-mono">className</code> ile
+              ezilmez (docs/ui-control-sizing.md).
             </p>
           </div>
         </Section>
