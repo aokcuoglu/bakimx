@@ -81,3 +81,17 @@ test("düzenleme aksiyonu order.edit yetkisine bağlıdır", () => {
   expect(SOURCE).toContain("canEditInfo = false")
   expect(PAGE).toContain('canEditInfo={actorCan(user, "order.edit")}')
 })
+
+/**
+ * #881 — hızlı butonlar başlığın hemen altında durur ve asıl düğmelerle aynı
+ * kapıdan geçer: tahsilat kilidi hızlı buton ile "Tahsilat Ekle" arasında tek
+ * değişkendir, pencereler kendi bileşenlerinde kalır (yalnız dışarıdan açılır).
+ */
+test("hızlı butonlar başlığın altında, asıl pencereleri açar", () => {
+  const afterHeader = SOURCE.slice(SOURCE.indexOf("actions={headerActions}"))
+  expect(afterHeader.indexOf("<OrderQuickActions")).toBeLessThan(afterHeader.indexOf("{error && ("))
+  expect(SOURCE).toContain("orderQuickActions({ orderLocked, canCashbox, collectionsLocked })")
+  expect(SOURCE).toContain("collectionsLocked={collectionsLocked}")
+  expect(SOURCE).toContain("addingType={partsAddType} onAddingTypeChange={setPartsAddType}")
+  expect(SOURCE).toContain("onCollectionModalOpenChange={setCollectionModalOpen}")
+})

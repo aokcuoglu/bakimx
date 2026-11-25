@@ -103,6 +103,37 @@
   border-top: 1px solid var(--pl-sep);
 }
 
+/* Liste yüksekliği: telefonda iç kaydırma yok (liste sayfayla akar); md+'da
+   26rem tavanı ekran oranlı tavana çıkar. Modül kuralı katmansız olduğu için
+   max-h-[26rem] yardımcısını yener. Tablo kabı = Table'ın kaydırma kabı
+   (sticky thead onun içinde yapışır). */
+.skin [data-pl="cards"] {
+  max-height: none;
+  overflow-y: visible;
+}
+
+@media (min-width: 768px) {
+  .skin [data-pl="table"] [data-slot="table-container"],
+  .skin [data-pl="cards"] {
+    max-height: min(70vh, 56rem);
+    overflow-y: auto;
+  }
+}
+
+/* Salt-okunur kalem adı: devre dışı Input tarayıcıda opacity .5 boyanıyordu;
+   okunur metin gibi görünür (alan hâlâ disabled). Yalnız ad kancası. */
+.skin [data-pl="name"]:disabled {
+  opacity: 1;
+  color: var(--foreground);
+  -webkit-text-fill-color: var(--foreground);
+  font-weight: 600;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  cursor: default;
+  padding-inline: 0;
+}
+
 .skin [data-pl="finance"],
 .skin [data-pl="total"] {
   border-color: var(--pl-sep);
