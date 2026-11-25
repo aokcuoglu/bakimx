@@ -157,11 +157,22 @@ describe("dokunma ölçülü seçiciler — size=\"control\" (#846)", () => {
 })
 
 describe("köşe yarıçapı", () => {
-  test("--radius e-santral yüzey değerinde (16px)", () => {
-    const globals = readFileSync(
-      new URL("../../app/globals.css", import.meta.url),
-      "utf8"
-    )
-    expect(globals).toContain("--radius: 1rem;")
+  const globals = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8")
+
+  test("--radius uygulama kart değerinde (12px, #878)", () => {
+    expect(globals).toContain("--radius: 0.75rem;")
+  })
+
+  test("--control-radius telefonda 10px, md+ 8px (#878)", () => {
+    const [mobile, desktop] = globals.split("@media (min-width: 768px)")
+    expect(mobile).toContain("--control-radius: 0.625rem;")
+    expect(desktop).toContain("--control-radius: 0.5rem;")
+  })
+
+  test("Input, Select, Textarea, InputGroup ve Alert köşeyi değişkenden alır", () => {
+    for (const file of ["./input.tsx", "./select.tsx", "./textarea.tsx", "./input-group.tsx", "./alert.tsx"]) {
+      expect(read(file)).toContain("rounded-(--control-radius)")
+      expect(read(file)).not.toContain("rounded-[12px]")
+    }
   })
 })

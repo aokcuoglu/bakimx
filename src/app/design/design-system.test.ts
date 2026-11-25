@@ -19,25 +19,31 @@ function walkSrc(dir = join(root, "src"), out: string[] = []) {
 }
 
 describe("design system radius contract", () => {
-  // e-santral kalıbı (docs/design-pattern-esantral.md, kullanıcı kararı 22-11):
-  // düğme hap, girdi 12px, yüzey 16px, diyalog 28px.
-  test("globals.css locks surface=16px dialog=28px", () => {
+  // e-santral kalıbının bir kademe altı (karar 25-11, #878; kaynak kalıp
+  // docs/design-pattern-esantral.md): düğme hap, girdi 10px (md+ 8px),
+  // kart 12px, panel/KPI 14px, diyalog ve mobil sheet 18px.
+  test("globals.css locks surface=12px panel=14px dialog=18px", () => {
     const css = read("src/app/globals.css")
     expect(css).toContain("--radius-sm: 0.375rem")
     expect(css).toContain("--radius-md: 0.5rem")
     expect(css).toContain("--radius-xl: 0.75rem")
-    expect(css).toContain("--radius: 1rem;")
-    expect(css).toContain("--radius-dialog: 1.75rem;")
+    expect(css).toContain("--radius: 0.75rem;")
+    expect(css).toContain("--radius-panel: 0.875rem;")
+    expect(css).toContain("--radius-dialog: 1.125rem;")
   })
 
   test("shared controls and surfaces keep their measured radii", () => {
     // Düğme köşesi = telefon yüksekliğinin yarısı (hap); ikon düğmeleri daire.
     expect(read("src/components/ui/button.tsx")).toContain("rounded-[22px]")
     expect(read("src/components/ui/button.tsx")).toContain("rounded-full")
-    expect(read("src/components/ui/input.tsx")).toContain("rounded-[12px]")
-    expect(read("src/components/ui/textarea.tsx")).toContain("rounded-[12px]")
+    expect(read("src/components/ui/input.tsx")).toContain("rounded-(--control-radius)")
+    expect(read("src/components/ui/textarea.tsx")).toContain("rounded-(--control-radius)")
     expect(read("src/components/ui/select.tsx")).toContain(
-      "gap-1.5 rounded-[12px] border border-input"
+      "gap-1.5 rounded-(--control-radius) border border-input"
+    )
+    expect(read("src/components/ui/alert.tsx")).toContain("rounded-(--control-radius)")
+    expect(read("src/components/shared/bottom-sheet.tsx")).toContain(
+      "rounded-t-(--radius-dialog)"
     )
 
     const card = read("src/components/ui/card.tsx")
