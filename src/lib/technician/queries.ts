@@ -5,6 +5,7 @@ import {
   technicianOrderDetailWhere,
   technicianOrderListWhere,
 } from "@/lib/technician/order-visibility"
+import { UNASSIGNED_IN_SERVICE_WHERE } from "@/lib/orders/unassigned-in-service"
 
 type OStat = import("@prisma/client").OrderStatus
 
@@ -299,14 +300,13 @@ export async function getAssignableTechnicians(workshopId: string): Promise<Assi
   }))
 }
 
-/** Ustası olmayan aktif iş emri sayısı — dağıtım görünürlüğü için. */
+/**
+ * Ustası olmayan serviste iş emri sayısı — dağıtım görünürlüğü için. Genel
+ * Bakış uyarısının bağlantısıyla aynı tanımı kullanır (#833).
+ */
 export async function getUnassignedOrderCount(workshopId: string): Promise<number> {
   return prisma.serviceOrder.count({
-    where: {
-      workshopId,
-      assignedTechnicianId: null,
-      status: { notIn: NOT_DELIVERED_CANCELLED },
-    },
+    where: { workshopId, ...UNASSIGNED_IN_SERVICE_WHERE },
   })
 }
 

@@ -3,6 +3,7 @@ import type { DashboardStats } from "@/lib/dashboard/queries"
 import { AlertTriangle, Bell, Camera, MessageCircle, Check, ChevronRight, Package, UserRoundX } from "lucide-react"
 import { DashPanel, DashTile, surface, type Tone } from "@/components/dashboard/surface"
 import { DELIVERY_OVERDUE } from "@/lib/orders/delivery-filter"
+import { UNASSIGNED_IN_SERVICE_HREF } from "@/lib/orders/unassigned-in-service"
 
 interface AlertItem {
   title: string
@@ -51,7 +52,7 @@ export function AlertBanner({
     alerts.push({
       title: `${unassignedCount} araç kabulü usta bekliyor`,
       sub: "Serviste ama henüz kimseye atanmadı",
-      href: "/orders?technician=none",
+      href: UNASSIGNED_IN_SERVICE_HREF,
       icon: UserRoundX,
       tone: "warning",
     })
