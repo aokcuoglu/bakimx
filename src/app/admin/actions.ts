@@ -5,7 +5,8 @@ import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { hasLifetimeLite } from "@/lib/lite-campaign"
-import { computeTrialEnd, type PlanTier } from "@/lib/plan"
+import { computeTrialEnd, normalizeAddons, type PlanTier } from "@/lib/plan"
+import { diffAddons, extraVinQuotaSchema, workshopAddonsSchema } from "@/lib/validations/workshop-addons"
 import { activateBillingOrder } from "@/lib/billing/activate"
 import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
 import { verifiedRegistrationTrialData } from "@/lib/billing/registration-trial"
@@ -237,6 +238,71 @@ export async function setWorkshopExtraSeats(workshopId: string, extraSeats: numb
     JSON.stringify({ extraSeats })
   )
   revalidatePath("/admin", "layout")
+  return { ok: true }
+}
+
+/**
+ * Atölyenin ek özelliklerini (add-on) tek tek aç/kapa (#827). Tam liste gönderilir;
+ * gelmeyen anahtar kapanır. Paket (`planTier`) ve self-serve yenileme bu alana
+ * dokunmaz — burası `Workshop.addons`'ın bugünkü tek yazım yolu.
+ */
+export async function setWorkshopAddons(workshopId: string, addons: unknown): Promise<Result> {
+  const ctx = await requireAdminCapability("manageWorkshops")
+  if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
+  const parsed = workshopAddonsSchema.safeParse(addons)
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz ek özellik." }
+
+  const workshop = await prisma.workshop.findFirst({
+    where: { id: workshopId, kind: "customer" },
+    select: { addons: true },
+  })
+  if (!workshop) return { ok: false, error: "İş yeri bulunamadı." }
+
+  const next = normalizeAddons(parsed.data)
+  const diff = diffAddons(workshop.addons, next)
+  if (diff.added.length === 0 && diff.removed.length === 0) return { ok: true }
+
+  await prisma.workshop.update({ where: { id: workshopId }, data: { addons: next } })
+  await AuditLogAction(
+    workshopId,
+    ctx.user.id,
+    "Workshop",
+    workshopId,
+    "admin_addons_set",
+    JSON.stringify(diff),
+  )
+  revalidatePath(`/admin/workshops/${workshopId}`, "page")
+  return { ok: true }
+}
+
+/**
+ * Atölyenin aylık ek katalog kotasını (`Workshop.extraVinQuota`) ayarla (#827).
+ * Taban kotanın üzerine eklenir; bağımsız ek kota satışı açılana kadar tek
+ * yazım yolu budur.
+ */
+export async function setWorkshopExtraVinQuota(workshopId: string, extraVinQuota: unknown): Promise<Result> {
+  const ctx = await requireAdminCapability("manageWorkshops")
+  if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
+  const parsed = extraVinQuotaSchema.safeParse(extraVinQuota)
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz ek kota." }
+
+  const workshop = await prisma.workshop.findFirst({
+    where: { id: workshopId, kind: "customer" },
+    select: { extraVinQuota: true },
+  })
+  if (!workshop) return { ok: false, error: "İş yeri bulunamadı." }
+  if (workshop.extraVinQuota === parsed.data) return { ok: true }
+
+  await prisma.workshop.update({ where: { id: workshopId }, data: { extraVinQuota: parsed.data } })
+  await AuditLogAction(
+    workshopId,
+    ctx.user.id,
+    "Workshop",
+    workshopId,
+    "admin_extra_vin_quota_set",
+    JSON.stringify({ before: workshop.extraVinQuota, after: parsed.data }),
+  )
+  revalidatePath(`/admin/workshops/${workshopId}`, "page")
   return { ok: true }
 }
 
