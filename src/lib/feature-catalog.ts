@@ -209,3 +209,13 @@ export function lockedFeatureLabels(feature: GatedFeature): LockedFeatureLabels 
     ? { badge: "Ek", badgeSrSuffix: " özellik", label: "Ek özellik", description: "Ek özellik" }
     : { badge: "Pakette", badgeSrSuffix: "", label: "Pakette", description: "Servis Paketi özelliği" }
 }
+
+/**
+ * Ek özellik için destek hattına giden hazır WhatsApp mesajı. Satın alma akışı
+ * gelene kadar (#827) kilitli ek özelliğin tek eylemi bu iletişimdir; sayfa
+ * kilidi (`FeatureUpgradeActions`) ve satır içi not (`AddonLockedNote`) aynı
+ * cümleyi kullanır.
+ */
+export function addonContactMessage(feature: GatedFeature): string {
+  return `Merhaba, BakımX ${FEATURE_CATALOG[feature].name} ek özelliği hakkında bilgi almak istiyorum.`
+}

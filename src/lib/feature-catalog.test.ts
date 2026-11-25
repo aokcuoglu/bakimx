@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { FEATURE_CATALOG, lockedFeatureLabels } from "@/lib/feature-catalog"
+import { FEATURE_CATALOG, addonContactMessage, lockedFeatureLabels } from "@/lib/feature-catalog"
 import { GATED_FEATURES, isAddonFeature } from "@/lib/plan"
 
 test("özellik kataloğunun türü plan kapısıyla aynı: ek özellik ↔ ADDON_FEATURES (#782)", () => {
@@ -32,4 +32,11 @@ test("kilit rozetleri: ek özellik ekran okuyucuda tam adıyla, paket özelliği
   // rbac ek özellik DEĞİL; açıklaması bugün çalışan rol bazlı yetkileri anlatır.
   expect(FEATURE_CATALOG.rbac.kind).toBe("package")
   expect(FEATURE_CATALOG.rbac.description).not.toContain("ürünleştiğinde")
+})
+
+test("ek özellik iletişim mesajı özelliğin katalog adını taşır (#828)", () => {
+  expect(addonContactMessage("ocrIntake")).toBe(
+    "Merhaba, BakımX Ruhsat OCR ek özelliği hakkında bilgi almak istiyorum.",
+  )
+  expect(addonContactMessage("vinLookup")).toContain(FEATURE_CATALOG.vinLookup.name)
 })
