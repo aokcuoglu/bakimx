@@ -473,7 +473,7 @@ export function InlineCreateModal({
                   />
                 )}
               </div>
-              <div className="min-w-0 space-y-1">
+              <div className="min-w-0 space-y-1 col-span-2 sm:col-span-1">
                 <Label className="flex items-center gap-1">Motor No {lowConf("engineNo") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <Input value={fields.engineNo} onChange={(e) => setField("engineNo", e.target.value.toUpperCase())} className={fieldClass("engineNo")} />
               </div>
@@ -485,7 +485,7 @@ export function InlineCreateModal({
                 <Label>Motor Gücü</Label>
                 <Input value={fields.enginePower} onChange={(e) => setField("enginePower", e.target.value)} placeholder="85 kW" />
               </div>
-              <div className="min-w-0 space-y-1">
+              <div className="min-w-0 space-y-1 col-span-2 sm:col-span-1">
                 <Label className="flex items-center gap-1">İlk Tescil Tarihi {lowConf("firstRegistrationDate") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <DatePicker value={fields.firstRegistrationDate} onChange={(v) => setField("firstRegistrationDate", v)} className={fieldClass("firstRegistrationDate")} />
               </div>
