@@ -11,6 +11,7 @@ import {
   type WorkspaceSwitcherItem,
 } from "@/components/layout/workspace-switcher"
 import { SettingsNav } from "@/components/settings/settings-nav"
+import { SettingsTrail, SettingsTrailProvider } from "@/components/settings/settings-trail"
 import settingsSidebarStyles from "@/components/settings/settings-sidebar.module.css"
 import shellStyles from "@/components/layout/app-shell.module.css"
 import { DashboardProductTour } from "@/components/dashboard/dashboard-product-tour"
@@ -146,7 +147,14 @@ export function AppShell({
     setPageHeader({ pageTitle, showGlobalSearch })
   }, [setPageHeader, pageTitle, showGlobalSearch])
   if (isSettingsPath(pathname)) {
-    return <div data-settings-content className="mx-auto w-full min-w-0 max-w-3xl pt-6 sm:pt-12">{children}</div>
+    return (
+      <SettingsTrailProvider>
+        <div data-settings-content className="mx-auto w-full min-w-0 max-w-3xl pt-6 sm:pt-12">
+          <SettingsTrail />
+          {children}
+        </div>
+      </SettingsTrailProvider>
+    )
   }
   const inner = (body: React.ReactNode) => {
     if (wide) return <div className={WIDE_WIDTH_CLASS}>{body}</div>

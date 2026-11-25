@@ -527,3 +527,25 @@ test("kayıtlı sayfalar başlığı PageFrame'e bırakır — alt sayfalar dahi
   }
   expect(offenders).toEqual([])
 })
+
+/*
+ * Ayarlar yol satırı (#856) AppShell'in Ayarlar dalında ve `settings/loading.tsx`te
+ * bir kez çizilir. Sayfalar PageTrail/Breadcrumb çağırmaz, kendi "geri" bağlantısını
+ * çizmez (aksi halde iki yol satırı ya da iki geri bağlantısı görünür).
+ */
+test("Ayarlar yol satırı tek yerden çizilir, sayfalar kendi geri bağlantısını çizmez (#856)", () => {
+  const settingsFiles = [
+    ...tsxFiles(join(SRC, "app", "(app)", "settings")),
+    join(SRC, "components", "settings", "team-detail-shell.tsx"),
+  ]
+  const offenders: string[] = []
+  for (const file of settingsFiles) {
+    const path = relative(SRC, file)
+    const source = readFileSync(file, "utf8")
+    if (/\b(PageTrail|Breadcrumb)\b/.test(source)) offenders.push(`${path}: PageTrail/Breadcrumb`)
+    if (/\bArrowLeft\b/.test(source) && /(Geri\b|dön\b)/.test(source)) offenders.push(`${path}: geri bağlantısı`)
+  }
+  expect(offenders).toEqual([])
+  expect(readFileSync(join(SRC, "components", "layout", "app-shell.tsx"), "utf8")).toContain("<SettingsTrail />")
+  expect(readFileSync(join(SRC, "app", "(app)", "settings", "loading.tsx"), "utf8")).toContain("<SettingsTrail />")
+})

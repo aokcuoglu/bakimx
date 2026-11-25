@@ -47,6 +47,7 @@ import {
   X,
   Wrench,
   HardHat,
+  ChevronRight,
   UserPlus,
   ArrowLeft,
   LockKeyhole,
@@ -1026,7 +1027,7 @@ export function WorkOrderDetail({
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className={detail.pageTabs}>
         <TabsList ref={tabListRef} variant="line" className={cn(detail.tabList, "flex w-full flex-nowrap overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden")}>
           {TABS.map((t) => {
             const Icon = t.icon
@@ -1575,22 +1576,31 @@ export function WorkOrderDetail({
           <>
           {/* Panelin kendisi bilinçli olarak aksiyonsuz (bkz. technician-progress-panel).
               İşaretleme teknisyen panelinde yapıldığı için geçiş linki panelin
-              dışında, sekmenin başında durur (BAK-23). */}
-          {canOpenTechnicianView(order.assignedTechnicianId) && (
-            <div className="flex justify-end">
-              <Button variant="outline" asChild>
+              dışında, sekmenin başındaki bağlam kartında durur (BAK-23, #897). */}
+          <section aria-label="Teknisyen" className={cn(surface.card, detail.context)}>
+            <span aria-hidden className={cn(surface.tile, surface["tone-info"])}>
+              <HardHat />
+            </span>
+            <div className={detail.contextMain}>
+              <p className={detail.itemTitle}>{order.assignedTechnicianName || "Henüz usta atanmadı"}</p>
+              <p className={detail.itemSub}>
+                {order.assignedTechnicianName ? "" : "Atama yapıldığında kontrol listesi otomatik oluşur. "}
+                Kontrol listesi ve işçilik teknisyen panelinde işaretlenir; burada salt okunur görünür.
+              </p>
+            </div>
+            {canOpenTechnicianView(order.assignedTechnicianId) && (
+              <Button variant="outline" asChild className={detail.contextAction}>
                 <Link href={technicianOrderPath(order.id)}>
-                  <HardHat />
                   Teknisyen Panelinde Aç
+                  <ChevronRight />
                 </Link>
               </Button>
-            </div>
-          )}
+            )}
+          </section>
           <TechnicianProgressPanel
             checklistItems={order.checklistItems}
             laborSessions={order.laborSessions}
             internalNotes={order.internalNotes}
-            technicianName={order.assignedTechnicianName}
           />
           </>
           )}
