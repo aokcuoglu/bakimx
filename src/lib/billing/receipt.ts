@@ -1,4 +1,5 @@
 import { formatTRY } from "@/lib/format"
+import { formatTrDate } from "@/lib/format-date"
 import { escapeHtml } from "@/lib/html-escape"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
 import { renderWorkshopContactHtml } from "@/lib/pdf/workshop-contact"
@@ -23,7 +24,7 @@ interface ReceiptData {
  *  is issued offline. VAT-included amount. */
 export function generateReceiptHtml(d: ReceiptData): string {
   const tl = formatTRY(d.amountMinor / 100)
-  const date = (d.confirmedAt ?? new Date()).toLocaleDateString("tr-TR")
+  const date = formatTrDate(d.confirmedAt ?? new Date())
   return `<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Makbuz ${escapeHtml(d.reference)}</title>

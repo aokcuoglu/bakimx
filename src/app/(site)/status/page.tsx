@@ -2,6 +2,7 @@ import { PublicSite } from "@/components/public/PublicSite";
 import { AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Footer } from "@/components/sections/Footer"
 import { prisma } from "@/lib/db"
+import { formatTrDateTime } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
 import { deriveOverallStatus, OVERALL_STATUS_LABELS, SEVERITY_LABELS } from "@/lib/status-page"
 import { publicPageMetadata } from "@/lib/seo"
@@ -103,8 +104,8 @@ export default async function StatusPage() {
                   <p className="text-sm text-muted-foreground">{incident.resolutionNote}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {incident.createdAt.toLocaleString("tr-TR")}
-                  {incident.resolvedAt && ` · Çözüldü: ${incident.resolvedAt.toLocaleString("tr-TR")}`}
+                  {formatTrDateTime(incident.createdAt)}
+                  {incident.resolvedAt && ` · Çözüldü: ${formatTrDateTime(incident.resolvedAt)}`}
                 </p>
               </div>
             ))

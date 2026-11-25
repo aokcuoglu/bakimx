@@ -1,4 +1,4 @@
-import { formatTodayTr } from "@/lib/format-today"
+import { formatTodayTr } from "@/lib/format-date"
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import Link from "next/link"
