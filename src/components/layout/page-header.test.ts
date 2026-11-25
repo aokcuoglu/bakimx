@@ -40,7 +40,7 @@ describe("PageHeaderView", () => {
   test("sub-page: back link rendered next to the breadcrumb (#855)", () => {
     const html = render({ back: { label: "Müşteriler", href: "/customers" } })
     expect(html).toContain("data-has-back")
-    expect(html).toMatch(/data-slot="page-back"[^>]*>.*Müşteriler<\/a>/)
+    expect(html).toMatch(/data-slot="page-back"[^>]*>.*Geri: .*Müşteriler<\/span><\/a>/)
   })
 
   test("record title loading: h1 keeps its row with an aria-hidden NBSP (#855)", () => {
@@ -51,11 +51,14 @@ describe("PageHeaderView", () => {
     expect(tag?.[0]).toContain('data-slot="page-title"')
   })
 
-  test("record title loaded: no aria-hidden, single-line ellipsis class (#855)", () => {
+  test("record title loaded: no aria-hidden, full name in title attr, clamp class (#855)", () => {
     const html = render({ title: "Ahmet Yılmaz", titleMode: "record" })
     const tag = html.match(/<h1[^>]*>/)?.[0] ?? ""
     expect(html).toMatch(/<h1[^>]*>Ahmet Yılmaz<\/h1>/)
     expect(tag).not.toContain("aria-hidden")
+    expect(tag).toContain('title="Ahmet Yılmaz"')
+    expect(render({ title: "", titleMode: "record" }).match(/<h1[^>]*>/)?.[0]).not.toContain("title=")
+    expect(render({}).match(/<h1[^>]*>/)?.[0]).not.toContain("title=")
     const staticTag = render({}).match(/<h1[^>]*>/)?.[0] ?? ""
     const classes = (t: string) => new Set(t.match(/class="([^"]*)"/)?.[1].split(" "))
     expect([...classes(tag)].filter((c) => !classes(staticTag).has(c))).toHaveLength(1)

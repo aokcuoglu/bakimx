@@ -156,7 +156,7 @@ export const SUB_PAGE_HEADERS: Readonly<Record<string, SubPageHeaderConfig>> = {
   },
   "/customers/[id]": { parent: "/customers" },
   "/vehicles/new": { parent: "/vehicles", title: "Yeni Araç", description: "Araç bilgilerini eksiksiz girin" },
-  "/vehicles/[id]": { parent: "/vehicles", backLabel: "Araç" },
+  "/vehicles/[id]": { parent: "/vehicles", backLabel: "Araç Detayı" },
   "/vehicles/[id]/edit": { parent: "/vehicles/[id]", title: "Aracı Düzenle", crumb: "Düzenle" },
   "/quotes/new": { parent: "/quotes", title: "Yeni Teklif" },
   "/quotes/[id]": { parent: "/quotes" },
@@ -171,7 +171,7 @@ export const SUB_PAGE_HEADERS: Readonly<Record<string, SubPageHeaderConfig>> = {
     title: "Yeni Hatırlatma",
     description: "Müşteriniz için yeni bir bakım hatırlatması oluşturun.",
   },
-  "/reminders/[id]": { parent: "/reminders", backLabel: "Hatırlatma" },
+  "/reminders/[id]": { parent: "/reminders", backLabel: "Hatırlatma Detayı" },
   "/reminders/[id]/edit": {
     parent: "/reminders/[id]",
     title: "Hatırlatmayı Düzenle",

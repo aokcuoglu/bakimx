@@ -34,12 +34,24 @@
   color: var(--foreground);
 }
 
-/* Kayıt adı başlığı (#855): tek satır, taşarsa üç nokta. */
+/*
+ * Kayıt adı başlığı (#855): telefonda en çok iki satır, ≥640px tek satır;
+ * taşarsa üç nokta. Uzun ad telefonda alttaki içeriği iter, başlığın üst
+ * kenarı yerinde kalır.
+ */
 .titleRecord {
   flex: 1 1 auto;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+  /*
+   * lh 1.08'de iniş çizgileri (Ş, Ç, ğ, y) satır kutusunun altına taşar;
+   * kesme kutusu dikeyde genişler, negatif kenar boşluğu konumu korur.
+   */
+  padding-block: 0.12em;
+  margin-block: -0.12em;
 }
 
 .subline {
@@ -98,6 +110,13 @@
 
   .title {
     font-size: 36px;
+  }
+
+  .titleRecord {
+    display: block;
+    -webkit-line-clamp: none;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .subline {

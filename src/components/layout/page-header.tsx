@@ -67,6 +67,8 @@ export function PageHeaderView({
         <h1
           data-slot="page-title"
           className={recordMode ? cn(styles.title, styles.titleRecord) : styles.title}
+          // Kısalan kayıt adının tamamı (#855).
+          title={recordMode && !reserveTitle ? header.title : undefined}
           aria-hidden={reserveTitle || undefined}
         >
           {reserveTitle ? "\u00a0" : header.title}

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { existsSync, readdirSync, statSync } from "node:fs"
 import { join } from "node:path"
+import { FEATURE_CATALOG } from "@/lib/feature-catalog"
 import { isSidebarlessRoute } from "@/lib/sidebarless-route"
 import { NAV_GROUPS } from "./app-nav"
 import {
@@ -131,7 +132,7 @@ describe("alt sayfa başlıkları (#855)", () => {
     expect(h.crumbs).toEqual([{ label: "Servis" }, { label: "Araçlar", href: "/vehicles" }])
     expect(h.title).toBe("Aracı Düzenle")
     expect(h.titleMode).toBe("static")
-    expect(h.back).toEqual({ label: "Araç", href: "/vehicles/v1" })
+    expect(h.back).toEqual({ label: "Araç Detayı", href: "/vehicles/v1" })
   })
   test("düzenleme yüklendi: kayıt halkası bağlantı, yaprak Düzenle, geri değişmez", () => {
     const h = resolvePageHeader("/vehicles/v1/edit", ALL, { recordTitle: "34 ABC 123" })!
@@ -142,7 +143,7 @@ describe("alt sayfa başlıkları (#855)", () => {
       { label: "Düzenle" },
     ])
     expect(h.title).toBe("Aracı Düzenle")
-    expect(h.back).toEqual({ label: "Araç", href: "/vehicles/v1" })
+    expect(h.back).toEqual({ label: "Araç Detayı", href: "/vehicles/v1" })
   })
   test("hatırlatma düzenleme: menü başlığı üst halka, alt satır sayfadan", () => {
     const h = resolvePageHeader("/reminders/r1/edit", ALL, { recordTitle: "Yağ bakımı" })!
@@ -154,7 +155,7 @@ describe("alt sayfa başlıkları (#855)", () => {
     ])
     expect(h.title).toBe("Hatırlatmayı Düzenle")
     expect(h.dynamicSubtitle).toBe(true)
-    expect(h.back).toEqual({ label: "Hatırlatma", href: "/reminders/r1" })
+    expect(h.back).toEqual({ label: "Hatırlatma Detayı", href: "/reminders/r1" })
     expect(resolvePageHeader("/reminders/r1", ALL)!.back).toEqual({
       label: "Bakım Hatırlatmaları",
       href: "/reminders",
@@ -173,6 +174,20 @@ describe("alt sayfa başlıkları (#855)", () => {
     expect(h.back).toEqual({ label: "Müşteriler", href: "/customers" })
     expect(resolvePageHeader("/vehicles/new", ALL)!.crumbs.at(-1)).toEqual({ label: "Yeni Araç" })
     expect(resolvePageHeader("/quotes/new", ALL)!.description).toBeUndefined()
+  })
+  test("kilitli özelliğin detay bağlantısı: ödeme duvarı özellik adını başlık yapar", () => {
+    const locked = { enabledFeatures: [] as const, actor: { role: "owner" as const } }
+    for (const [path, feature] of [
+      ["/quotes/q1", "quotes"],
+      ["/appointments/a1", "appointments"],
+      ["/reminders/r1", "automatedReminders"],
+    ] as const) {
+      const name = FEATURE_CATALOG[feature].name
+      const h = resolvePageHeader(path, locked, { recordTitle: name })!
+      expect(h.title).toBe(name)
+      expect(h.crumbs.at(-1)).toEqual({ label: name })
+      expect(h.primaryAction).toBeUndefined()
+    }
   })
   test("alt sayfalar düğme taşımaz (tüm paketler açıkken bile)", () => {
     for (const pattern of Object.keys(SUB_PAGE_HEADERS)) {

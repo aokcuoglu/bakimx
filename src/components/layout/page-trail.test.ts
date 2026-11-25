@@ -30,7 +30,11 @@ describe("PageTrail (#855)", () => {
     expect(back).not.toBeNull()
     expect(back![0]).toContain('href="/customers"')
     expect(back![1]).toContain('aria-hidden="true"')
-    expect(back![1]).toEndWith("Müşteriler")
+    // Erişilebilir ad "Geri: Müşteriler": önek yalnız ekran okuyucuya.
+    const text = back![1].replace(/<svg.*?<\/svg>/, "").replace(/<[^>]+>/g, "")
+    expect(text).toBe("Geri: Müşteriler")
+    expect(back![1]).toMatch(/<span class="sr-only">Geri: <\/span>/)
+    expect(back![1]).toMatch(/<span[^>]*>Müşteriler<\/span>$/)
   })
 
   test("yükleniyor: son halka bağlantıysa aria-current almaz", () => {

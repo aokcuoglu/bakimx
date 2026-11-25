@@ -56,7 +56,9 @@ export function PageTrail({ crumbs, back, className }: PageTrailProps) {
       {back ? (
         <Link href={back.href} data-slot="page-back" className={styles.back}>
           <ChevronLeft aria-hidden="true" />
-          {back.label}
+          {/* Erişilebilir ad "Geri: Müşteriler"; görünen metin yalnız etiket. */}
+          <span className="sr-only">Geri: </span>
+          <span className={styles.backLabel}>{back.label}</span>
         </Link>
       ) : null}
     </div>

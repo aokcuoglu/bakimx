@@ -70,6 +70,13 @@
   margin-inline-start: -6px;
 }
 
+/* Uzun üst etiketi tek satırda üç noktayla kısalır. */
+.backLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Görsel 18px, dokunma alanı 44px (#810 `.pillNav` emsali). */
 .back::before {
   content: "";
