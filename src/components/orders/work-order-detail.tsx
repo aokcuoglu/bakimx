@@ -1584,7 +1584,7 @@ export function WorkOrderDetail({
                     Kasa'da yalnız tahsilat kaydı gerekçeyle iptal edilebilir. */}
                 {canCashbox && order.paidAmount > 0 && (
                   <p>
-                    Tahsil edilen {formatTRY(order.paidAmount)} kayıtlı kalır; tahsilat kayıtları
+                    {`Tahsil edilen ${formatTRY(order.paidAmount)} kayıtlı kalır; tahsilat kayıtları`}{" "}
                     silinmez. Para geri verilecekse ilgili tahsilatı Kasa&apos;dan ayrıca iptal edin.
                   </p>
                 )}
