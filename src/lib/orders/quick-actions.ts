@@ -1,7 +1,7 @@
 /**
- * Araç kabulü detayındaki hızlı butonlar (#881): başlığın altında, hangi
- * sekmede olunursa olunsun en sık işleri tek dokunuşla açar. Telefonda ustanın
- * sekme değiştirip sayfayı kaydırması gerçekçi değil.
+ * Araç kabulü detayındaki hızlı butonlar (#881): başlığın altında, en sık
+ * işleri tek dokunuşla açar ve sayfayı ilgili bölüme kaydırır (#911). Telefonda
+ * ustanın uzun sayfada bölümü arayıp düğmeyi bulması gerçekçi değil.
  *
  * Görünürlük, butonun açtığı asıl düğmeyle BİREBİR aynıdır — hızlı buton yeni
  * bir yetki yolu açmaz:

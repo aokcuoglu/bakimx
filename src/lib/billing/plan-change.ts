@@ -43,5 +43,10 @@ export function isDowngradeBlocked(input: {
   return new Date(input.currentPeriodEnd).getTime() > now.getTime()
 }
 
+/**
+ * {@link isDowngradeBlocked} engellediğinde kullanıcının gördüğü metin. Satışta
+ * tek paket olduğu için "daha düşük paket" demez: engel yalnız dönemi süren
+ * eski bir satırdan (ör. `premium`) Servis Paketi'ne geçişte çıkar (#830).
+ */
 export const DOWNGRADE_BLOCKED_MESSAGE =
-  "Aktif abonelik döneminde daha düşük pakete geçiş yapılamaz. Para iadesi olmadığı için mevcut paket dönem sonuna kadar devam eder."
+  "Ödenmiş dönem sürerken paket değiştirilemez. Mevcut paketiniz dönem sonuna kadar devam eder; dönem bittiğinde Servis Paketi'ni alabilirsiniz. Ücret iadesi yapılmaz."

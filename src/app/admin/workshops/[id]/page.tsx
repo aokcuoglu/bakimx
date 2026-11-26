@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, ChevronLeft, ChevronRight, Handshake } from "lucide-react"
 import { can, getAdminContext } from "@/lib/admin"
 import { prisma } from "@/lib/db"
-import { ADDON_VIN_LOOKUP_QUOTA, getEffectiveSeatLimit, getPlanState, normalizeAddons } from "@/lib/plan"
+import { ADDON_VIN_LOOKUP_QUOTA, getEffectiveSeatLimit, getPlanState, hasLifetimeLite, normalizeAddons, planLabel } from "@/lib/plan"
 import { FEATURE_CATALOG } from "@/lib/feature-catalog"
 import { formatMinor } from "@/lib/billing/pricing"
 import { cn } from "@/lib/utils"
@@ -36,7 +36,6 @@ export const metadata = { title: "İş Yeri Detayı · Yönetim" }
 
 export const dynamic = "force-dynamic"
 
-const TIER_LABELS: Record<string, string> = { lite: "Lite", starter: "Başlangıç", pro: "Profesyonel", premium: "Premium" }
 const CYCLE_LABELS: Record<string, string> = { monthly: "Aylık", yearly: "Yıllık" }
 const ORDER_STATUS_LABELS: Record<string, string> = {
   pending_payment: "Ödeme bekliyor",
@@ -172,7 +171,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
                 {SUB_LABELS[workshop.subscriptionStatus] ?? workshop.subscriptionStatus}
               </Badge>
               <Badge variant="outline" className="text-[11px] bg-muted text-muted-foreground">
-                {TIER_LABELS[workshop.planTier] ?? workshop.planTier}
+                {planLabel(workshop.planTier)}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
@@ -219,6 +218,8 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
               approvalStatus: workshop.approvalStatus,
               requestedPlanTier: workshop.requestedPlanTier,
               extraSeats: workshop.extraSeats,
+              includedSeats: seatLimit - workshop.extraSeats,
+              lifetimeLite: hasLifetimeLite(workshop),
               planTier: workshop.planTier,
               subscriptionStatus: workshop.subscriptionStatus,
               currentPeriodEnd: workshop.currentPeriodEnd?.toISOString() ?? null,
@@ -231,7 +232,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
 
       <div className="grid gap-4 md:grid-cols-2">
         <Section title="Abonelik & Fatura">
-          <Field label="Paket" value={TIER_LABELS[workshop.planTier] ?? workshop.planTier} />
+          <Field label="Paket" value={planLabel(workshop.planTier)} />
           <Field label="Döngü" value={workshop.billingCycle ? CYCLE_LABELS[workshop.billingCycle] : null} />
           <Field
             label="Dönem bitişi"
@@ -239,7 +240,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
           />
           <Field
             label="Talep edilen paket"
-            value={workshop.requestedPlanTier ? TIER_LABELS[workshop.requestedPlanTier] : null}
+            value={workshop.requestedPlanTier ? planLabel(workshop.requestedPlanTier) : null}
           />
           <Field label="Fatura ünvanı" value={workshop.invoiceTitle} />
           <Field label="VKN" value={workshop.taxNumber} />
@@ -368,7 +369,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
                   {orders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell>{order.createdAt.toLocaleDateString("tr-TR")}</TableCell>
-                      <TableCell className="font-medium">{TIER_LABELS[order.planTier] ?? order.planTier}</TableCell>
+                      <TableCell className="font-medium">{planLabel(order.planTier)}</TableCell>
                       <TableCell>{CYCLE_LABELS[order.billingCycle] ?? order.billingCycle}</TableCell>
                       <TableCell className="text-right font-medium">{formatMinor(order.amountMinor)}</TableCell>
                       <TableCell>

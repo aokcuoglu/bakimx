@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto"
 import type { Prisma } from "@prisma/client"
-import { sanitizeMarketingAttribution, sanitizeMarketingPayload, type MarketingEventDetail, type MarketingEventPayloads } from "@/lib/marketing-analytics"
+import { isMarketingEventName, sanitizeMarketingAttribution, sanitizeMarketingPayload, type MarketingEventDetail, type MarketingEventPayloads } from "@/lib/marketing-analytics"
 
-export type ConversionName = "lite_registered" | "first_work_order_created" | "paid_subscription_confirmed"
+export type ConversionName = "first_work_order_created" | "paid_subscription_confirmed"
 export const CONVERSION_ENTITY = "MarketingConversion"
 export function conversionId(name: ConversionName, key: string) {
   return `marketing_${createHash("sha256").update(`${name}:${key}`).digest("hex")}`
@@ -17,7 +17,7 @@ export async function recordMarketingConversion<N extends ConversionName>(
   const attribution = sanitizeMarketingAttribution(input.attribution)
   const id = conversionId(input.name, input.key)
   const params = sanitizeMarketingPayload(input.name, {
-    source_page: input.name === "lite_registered" ? "/register" : input.name === "first_work_order_created" ? "/orders" : "/settings/plans",
+    source_page: input.name === "first_work_order_created" ? "/orders" : "/settings/plans",
     ...input.payload,
     event_id: id,
     ...(attribution.campaignSource ? { campaign_source: attribution.campaignSource } : {}),
@@ -53,6 +53,10 @@ export async function claimRecordedMarketingConversions(tx: Prisma.TransactionCl
   for (const record of records) {
     if (!record.metadataJson) continue
     const detail = JSON.parse(record.metadataJson) as MarketingEventDetail
+    // Sözlükten çıkmış bir adla yazılmış eski kayıt (#830) tarayıcıda
+    // `sanitizeMarketingPayload`'ı düşürür ve aynı partideki olayları da
+    // kaybettirir. Atlanır: olay üretilmez, claim satırı da yazılmaz.
+    if (!isMarketingEventName(detail?.name)) continue
     const claim = await tx.auditLog.createMany({ data: [{ id: `${record.id}_claimed`, workshopId: user.workshopId, entityType: "MarketingConversionClaim", entityId: record.id, action: "claimed" }], skipDuplicates: true })
     if (claim.count === 1) events.push(detail)
   }

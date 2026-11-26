@@ -10,7 +10,7 @@ import {
   hasPerformanceConsent,
   type CookieConsentRecord,
 } from "@/lib/cookie-consent"
-import { captureMarketingAttribution, trackMarketingEvent, type MarketingEventDetail } from "@/lib/marketing-analytics"
+import { captureMarketingAttribution, isMarketingEventName, trackMarketingEvent, type MarketingEventDetail } from "@/lib/marketing-analytics"
 
 declare global { interface Window { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void } }
 
@@ -58,7 +58,12 @@ export function MarketingAnalytics() {
     if (pathname === "/dashboard" || pathname.startsWith("/orders") || pathname.startsWith("/settings") || pathname.startsWith("/account") || pathname.startsWith("/billing")) {
       const deliver = () => {
         void claimMarketingConversions().then((events) => {
-          for (const event of events) trackMarketingEvent(event.name, event.params)
+          for (const event of events) {
+            // Kademeli deploy'da eski bir sunucu emekli bir adı hâlâ teslim
+            // edebilir; sözlükte olmayan ad partinin geri kalanını düşürmesin (#830).
+            if (!isMarketingEventName(event.name)) continue
+            trackMarketingEvent(event.name, event.params)
+          }
         }).catch(() => { /* Analytics must never block product use. */ })
       }
       deliver()

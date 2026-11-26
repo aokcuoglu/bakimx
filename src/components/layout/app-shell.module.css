@@ -170,3 +170,31 @@
     font-size: 17px;
   }
 }
+
+/* ── Sayfa içi yapışkan ofset ───────────────────────────── */
+/* `--app-sticky-top`: içerikteki yapışkan öğelerin (araç kabulü bölüm çipleri,
+   yan ray) üst barın ve deneme şeridinin hemen altında durması için. Değerler
+   `AppHeader` ve `(app)/layout.tsx` şeridinin sınıflarını izler; görünümü
+   değiştirmez, yalnız ölçüyü taşır:
+   - üst bar <lg 58px, lg+ 48px; lg+ sidebar açıkken bar gizli (0) — sidebarsız
+     teknisyen rotalarında bar gizlenmez;
+   - deneme şeridi (32px) yalnız lg+ yapışkan, altında sayfayla kayar. */
+.inset {
+  --app-bar-h: 58px;
+  --app-banner-h: 0px;
+  --app-sticky-top: calc(var(--app-bar-h) + var(--app-banner-h));
+}
+
+@media (min-width: 64rem) {
+  .inset {
+    --app-bar-h: 48px;
+  }
+
+  :global([data-sidebar-state="expanded"]) .inset:not([data-sidebarless]) {
+    --app-bar-h: 0px;
+  }
+
+  .inset[data-top-banner] {
+    --app-banner-h: 32px;
+  }
+}

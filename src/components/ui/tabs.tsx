@@ -66,8 +66,11 @@ const tabsListVariants = cva(
 )
 
 /**
- * `size="control"` yalnız `variant="default"` (segment) içindir: şerit `h-auto`
- * olur, yükseklik tetikleyicilere (`--control-h`: telefonda 44px, md+ 36px) geçer.
+ * `size="control"` telefonda dokunulan sekme şeridi içindir: şerit `h-auto`
+ * olur, yükseklik tetikleyicilere (`--control-h`: telefonda 44px, md+ 36px)
+ * geçer. `default` (segment) ve `line` ile çalışır; `line` + `control` e-santral
+ * sayfa sekmesidir (TabsTrigger'daki not). Varsayılan `line` (28px) masaüstü
+ * yoğun yüzey içindir (docs/ui-control-sizing.md, #854).
  */
 function TabsList({
   className,
@@ -98,8 +101,25 @@ function TabsTrigger({
         "relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-1.5 py-0.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors motion-reduce:transition-none group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-1 has-data-[icon=inline-start]:pl-1 dark:text-muted-foreground dark:hover:text-foreground group-data-[variant=default]/tabs-list:data-[state=active]:shadow-sm group-data-[variant=line]/tabs-list:data-[state=active]:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         "group-data-[variant=line]/tabs-list:h-7 group-data-[variant=line]/tabs-list:flex-none group-data-[variant=line]/tabs-list:px-2 group-data-[variant=line]/tabs-list:py-1 group-data-[variant=line]/tabs-list:leading-5 group-data-[variant=line]/tabs-list:tracking-[-0.005em] group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:hover:bg-muted group-data-[variant=line]/tabs-list:data-[state=active]:border-border group-data-[variant=line]/tabs-list:data-[state=active]:bg-muted dark:group-data-[variant=line]/tabs-list:data-[state=active]:bg-muted",
         "group-data-[size=control]/tabs-list:h-(--control-h)",
-        "data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground",
+        // Segment (`default`) seçili tetikleyici gri ray üstünde beyaz kart —
+        // Toggle `variant="segment"` ile aynı token'lar (#854): açıkta `bg-card`,
+        // koyuda `bg-input/30`. `bg-background` (#f2f2f7) `bg-muted` rayda
+        // (#f5f5f7) kayboluyordu. `line` kendi seçili zeminini daha özgül verir.
+        "data-[state=active]:bg-card data-[state=active]:text-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground",
         "after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[-7px] group-data-horizontal/tabs:after:h-px group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-1 group-data-vertical/tabs:after:w-px group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100",
+        // `line` + `size="control"` (#854): e-santral sayfa sekmesi —
+        // order-detail.module.css `.tab` kalıbı. Yükseklik `--control-h`
+        // (telefonda 44px, md+ 36px), metin kontrol ölçeğinde (`--control-fs`),
+        // dolgu yok; seçili sekme mavi metin + 2px mavi alt çizgi
+        // (design-pattern-esantral: "mavi = seçili sekme"). Alt çizgi
+        // tetikleyicinin şeffaf 1px kenarlığının üstüne oturur (`-bottom-px`;
+        // `bottom-0` dolgu kutusunda kalıp şeridin `border-b` çizgisiyle arada
+        // 1px boşluk bırakıyordu) ama kenarlık kutusunun İÇİNDE kalır: yatay
+        // kaydırmalı şerit (`overflow-y-hidden`) dışarı taşanı keser. Odak
+        // halkası da aynı nedenle içeride. İki grup öneki birlikte seçiciyi
+        // `line` kurallarından özgül kılar; CSS sırasına bağlı değil.
+        "group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:h-(--control-h) group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:px-3 group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:text-(length:--control-fs) group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:hover:bg-transparent group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:focus-visible:ring-inset group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:data-[state=active]:border-transparent group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:data-[state=active]:bg-transparent group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:data-[state=active]:text-primary-strong dark:group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:data-[state=active]:bg-transparent",
+        "group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:after:bg-primary group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-horizontal/tabs:after:-bottom-px group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-horizontal/tabs:after:h-0.5 group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-vertical/tabs:after:-right-px group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-vertical/tabs:after:w-0.5",
         className
       )}
       {...props}

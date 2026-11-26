@@ -15,6 +15,14 @@ test("fiyat metni tek paket ve ek ücret vaadi yok (spec §6.1)", () => {
   expect(PRICE.items[1]).toBe("Plaka okuma ile hızlı araç kabul")
   expect(JSON.stringify(PRICE.items).toLocaleLowerCase("tr-TR")).not.toContain("ruhsat")
   expect(DAY_CARDS[0].text).not.toContain("ruhsat")
+  // #830: parça sorgulama pakete dahil değil; kart stoktan parça eklemeyi
+  // anlatır, şaseden sorgulamayı ek özellik olarak söyler, OEM araması vaat
+  // etmez. Etiket "Stok ve tedarikçiler" kutucuğuyla çakışmaz.
+  expect(DAY_CARDS[1].label).toBe("Parça Ekleme")
+  expect(DAY_CARDS[1].text).toBe("Parçayı stoğunuzdan seçip iş emrine ekleyin, stok kendiliğinden düşsün. Şaseden parça sorgulama ek özelliktir.")
+  expect(DAY_CARDS[1].text).toContain("ek özellik")
+  expect(DAY_CARDS[1].text).not.toContain("OEM")
+  expect(FEATURE_TILES.map((tile) => tile.title)).not.toContain(DAY_CARDS[1].label)
   expect(PRICE.monthlyPriceTry).toBe(SERVICE_PACKAGE.monthlyPrice)
   expect(PRICE.amount).toBe(`₺${SERVICE_PACKAGE.monthlyPrice.toLocaleString("tr-TR")}`)
   const all = JSON.stringify({ PRICE, LANDING_FAQ })

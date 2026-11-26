@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { confirmBillingOrder, cancelBillingOrder, retryStuckActivation } from "@/app/admin/actions"
+import { planLabel } from "@/lib/plan"
 
 /** Bir kartlı ödeme denemesinin (PaymentTransaction) admin'e görünen özeti —
  *  TAMI destek talebi için correlationId dahil. Kart verisi (PAN/CVV) asla
@@ -83,7 +84,6 @@ export interface AdminSubRow {
   daysLeft: number | null
 }
 
-const TIER_LABELS: Record<string, string> = { starter: "Başlangıç", pro: "Profesyonel", premium: "Premium" }
 const CYCLE_LABELS: Record<string, string> = { monthly: "Aylık", yearly: "Yıllık" }
 const METHOD_LABELS: Record<string, string> = { card: "Kart", havale: "Havale", manual: "Manuel" }
 const ORDER_STATUS_LABELS: Record<string, string> = {
@@ -147,7 +147,7 @@ export function AdminBilling({
               <div key={s.id} className="flex items-center justify-between rounded-lg border bg-card px-4 py-2.5 text-sm">
                 <span className="font-medium text-foreground">{s.name}</span>
                 <span className="text-muted-foreground">
-                  {TIER_LABELS[s.planTier] ?? s.planTier}
+                  {planLabel(s.planTier)}
                   {s.billingCycle && ` · ${CYCLE_LABELS[s.billingCycle] ?? s.billingCycle}`}
                   {s.periodEnd && ` · bitiş ${s.periodEnd}`}
                   {s.daysLeft != null && (
@@ -311,7 +311,7 @@ function OrderRow({ o, canConfirm }: { o: AdminOrderRow; canConfirm: boolean }) 
         <div className="min-w-0 text-sm">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-foreground">{o.workshopName}</span>
-            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px]">{TIER_LABELS[o.planTier] ?? o.planTier} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}</span>
+            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px]">{planLabel(o.planTier)} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}</span>
             <MethodBadge method={o.method} />
             <span className="font-semibold text-foreground">{o.amountLabel}</span>
           </div>
@@ -442,7 +442,7 @@ function RecentOrderRow({ o }: { o: AdminOrderRow }) {
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-foreground">{o.workshopName}</span>
             <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-              {TIER_LABELS[o.planTier] ?? o.planTier} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}
+              {planLabel(o.planTier)} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}
             </span>
             <Badge variant="outline" className={cn("text-[11px]", statusTone)}>
               {ORDER_STATUS_LABELS[o.status] ?? o.status}

@@ -8,12 +8,13 @@ import { formatDate } from "@/lib/utils-client"
 import type { OrderDetailData } from "@/components/orders/order-management-panel"
 
 /**
- * Özet sekmesinin ilk paneli: müşteri ve araç kaydı. Eskiden masaüstünde sol
- * sütundu (#860 ile kalktı); artık her genişlikte Özet'te durur ve geniş
- * ekranda "Araç Kabul Bilgileri" gibi kart içinde iki sütuna bölünür.
+ * Müşteri ve araç kaydı. #911'den beri iki kolonda sağdaki yapışkan rayda,
+ * tek kolonda (telefon) Özet bölümünde şikâyetin hemen altında durur. Kart
+ * geniş kapsayıcıda "Araç Kabul Bilgileri" gibi iki sütuna bölünür (rayda tek
+ * sütun).
  *
  * İş no, kabul tarihi, usta, geliş nedeni ve tutarlar burada YOK: ilk dördü
- * "Araç Kabul Bilgileri"nde, tutarlar sekmelerin üstündeki şeritte. Durum ve
+ * "Araç Kabul Bilgileri"nde, tutarlar başlığın altındaki şeritte. Durum ve
  * ödeme başlıktaki haplarda.
  */
 export function OrderRecordRail({
