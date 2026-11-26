@@ -1,6 +1,6 @@
 import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisition-sources"
 import { FEATURE_CATALOG } from "@/lib/feature-catalog"
-import type { GatedFeature } from "@/lib/plan"
+import { planLabel, type GatedFeature } from "@/lib/plan"
 
 type JsonRecord = Record<string, unknown>
 
@@ -38,6 +38,11 @@ const FIELD_LABELS: Record<string, string> = {
   added: "Eklenen",
   removed: "Kaldırılan",
   status: "Durum",
+  // Elle paket etkinleştirme (`admin_plan_activated`, #830).
+  tier: "Paket",
+  previousTier: "Önceki paket",
+  previousStatus: "Önceki durum",
+  hadLifetimeLite: "Süresiz Lite hakkı vardı",
   workshopId: "İş yeri",
   storageProvider: "Depolama sağlayıcısı",
   sizeBytes: "Dosya boyutu",
@@ -78,6 +83,9 @@ export function formatAuditValue(value: unknown, key = ""): string {
   }
 
   if (key.endsWith("sizeBytes") && typeof value === "number") return formatBytes(value)
+
+  // Paket alanları (`tier`, `previousTier`, `planTier`…) okunur adla gösterilir.
+  if (/(?:^|\.)tier$|Tier$/.test(key) && typeof value === "string") return planLabel(value)
 
   if (key.endsWith("At") && typeof value === "string") {
     const date = new Date(value)

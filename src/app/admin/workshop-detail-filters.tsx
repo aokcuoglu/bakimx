@@ -16,6 +16,7 @@ import {
   USAGE_FILTER_PARAMS,
   WORKSHOP_PLAN_TIERS,
 } from "@/lib/admin/workshop-detail-query"
+import { PLAN_LABELS } from "@/lib/plan"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
   usageDateFilterSchema,
@@ -28,13 +29,6 @@ const STATUS_LABELS: Record<(typeof BILLING_ORDER_STATUSES)[number], string> = {
   pending_payment: "Ödeme bekliyor",
   confirmed: "Teyit edildi",
   cancelled: "İptal",
-}
-
-const PLAN_LABELS: Record<(typeof WORKSHOP_PLAN_TIERS)[number], string> = {
-  lite: "Lite",
-  starter: "Başlangıç",
-  pro: "Profesyonel",
-  premium: "Premium",
 }
 
 const CYCLE_LABELS: Record<(typeof BILLING_CYCLES)[number], string> = {

@@ -31,6 +31,8 @@ import {
   normalizeAddons,
   getEnabledFeatures,
   getVinLookupBaseQuota,
+  hasLifetimeLite,
+  planLabel,
   type PlanTier,
 } from "@/lib/plan"
 
@@ -301,6 +303,46 @@ test("eski lite/starter/premium satırları getPlanState'te patlamaz", () => {
   const lifetimeLite = getPlanState(wsFields({ planTier: "lite", liteFreeGrantedAt: new Date() }))
   expect(lifetimeLite.hasAccess).toBe(true)
   expect(lifetimeLite.accessTier).toBe("lite")
+})
+
+// Eski Lite kampanyasının süresiz hakkı (lite-campaign.ts'ten taşındı, #830).
+const lifetimeLiteFields = {
+  planTier: "lite" as const,
+  liteFreeGrantedAt: new Date(),
+  approvalStatus: "approved" as const,
+  subscriptionStatus: "active" as const,
+  trialEndsAt: null,
+  currentPeriodEnd: null,
+}
+
+test("süresiz eski Lite hakkı bayat abonelik durumuyla sona ermez", () => {
+  for (const subscriptionStatus of ["active", "trialing", "past_due", "canceled"] as const) {
+    const state = getPlanState({ ...lifetimeLiteFields, subscriptionStatus, trialEndsAt: new Date(0), currentPeriodEnd: new Date(0) })
+    expect(state).toMatchObject({ hasAccess: true, canWrite: true, isTrialing: false, accessTier: "lite", trialDaysLeft: null, subscriptionDaysLeft: null, currentPeriodEnd: null })
+  }
+})
+
+test("süresiz Lite hakkı doğrulama/askı kapısını aşmaz ve ücretli pakete yetki vermez", () => {
+  for (const approvalStatus of ["pending", "rejected"] as const) {
+    expect(getPlanState({ ...lifetimeLiteFields, approvalStatus }).hasAccess).toBe(false)
+  }
+  expect(hasLifetimeLite(lifetimeLiteFields)).toBe(true)
+  expect(hasLifetimeLite({ ...lifetimeLiteFields, planTier: "pro" })).toBe(false)
+  expect(hasLifetimeLite({ ...lifetimeLiteFields, liteFreeGrantedAt: null })).toBe(false)
+  expect(getPlanState({ ...lifetimeLiteFields, planTier: "pro", currentPeriodEnd: new Date(0) }).hasAccess).toBe(false)
+  expect(getPlanState({ ...lifetimeLiteFields, liteFreeGrantedAt: null, currentPeriodEnd: new Date(0) }).hasAccess).toBe(false)
+})
+
+test("planLabel dört paketi tek kaynaktan adlandırır, bilinmeyeni ham bırakır", () => {
+  expect(planLabel("lite")).toBe("Lite (eski)")
+  expect(planLabel("starter")).toBe("Başlangıç (eski)")
+  expect(planLabel("pro")).toBe("Servis Paketi")
+  expect(planLabel("premium")).toBe("Paket + ek özellikler")
+  for (const tier of PLAN_TIERS) expect(planLabel(tier)).toBe(PLAN_LABELS[tier])
+  expect(planLabel("enterprise")).toBe("enterprise")
+  expect(planLabel(null)).toBe("—")
+  expect(planLabel(undefined)).toBe("—")
+  expect(planLabel("")).toBe("—")
 })
 
 test("photoChecklist is gated to starter tier and above", () => {
