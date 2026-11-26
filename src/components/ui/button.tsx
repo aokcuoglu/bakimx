@@ -3,6 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { fieldToneClasses } from "./field-tone"
 
 // e-santral kalıbı (docs/design-pattern-esantral.md): düz mavi dolgu, gölge yok.
 const primaryFill = "bg-primary text-primary-foreground hover:bg-primary/90"
@@ -55,8 +56,7 @@ const buttonVariants = cva(
         // Değer seçen Popover tetikleyicisi (tarih seçiciler) alan gibi görünür:
         // Input / SelectTrigger ile aynı çerçeve, zemin, ağırlık ve odak halkası;
         // köşe aşağıdaki compoundVariants'ta (#889).
-        field:
-          "border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:ring-4 aria-invalid:ring-destructive/10 dark:bg-input/30 dark:aria-invalid:ring-destructive/20",
+        field: `border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:ring-4 aria-invalid:ring-destructive/10 dark:bg-input/30 dark:aria-invalid:ring-destructive/20 ${fieldToneClasses}`,
         // Ton variant'ları (#925): çağrı yerinde `border-destructive/*`,
         // `bg-primary/N` ya da `bg-white/*` yazılmasın diye ton buradan gelir,
         // className'den değil.
