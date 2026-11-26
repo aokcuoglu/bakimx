@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test"
-import { parsePaidPeriodFlags, resolvePaidPeriod } from "./workshop-admin"
+import { parsePaidPeriodFlags, parseSetAddonsArgs, planAddonsChange, resolvePaidPeriod } from "./workshop-admin"
 
 /**
  * `set-plan` ücretli dönem yazabildiğinden beri bu script erişim kapısını
@@ -78,5 +78,39 @@ describe("resolvePaidPeriod", () => {
   test("negatif gün geçmişte bir dönem sonu üretir (kilit testi)", () => {
     const r = resolvePaidPeriod(NOW, { endsInDays: -1 })
     expect(r!.currentPeriodEnd.getTime()).toBeLessThan(NOW.getTime())
+  })
+})
+
+describe("parseSetAddonsArgs", () => {
+  test("--apply yoksa kuru çalıştırma (apply=false)", () => {
+    expect(parseSetAddonsArgs("vinLookup", []).args).toEqual({ addons: ["vinLookup"], apply: false })
+  })
+
+  test("--apply yazımı açar; liste tekilleştirilir ve katalog sırasına girer", () => {
+    const r = parseSetAddonsArgs("eInvoice,vinLookup,eInvoice", ["--apply"])
+    expect(r.args).toEqual({ addons: ["vinLookup", "eInvoice"], apply: true })
+  })
+
+  test("none tüm ek özellikleri kapatır", () => {
+    expect(parseSetAddonsArgs("none", ["--apply"]).args).toEqual({ addons: [], apply: true })
+  })
+
+  test("bilinmeyen özellik, bilinmeyen bayrak ve eksik liste reddedilir", () => {
+    expect(parseSetAddonsArgs("foo", []).args).toBeNull()
+    expect(parseSetAddonsArgs("vinLookup", ["--yes"]).error).toContain("--yes")
+    expect(parseSetAddonsArgs(undefined, []).args).toBeNull()
+  })
+})
+
+describe("planAddonsChange", () => {
+  test("eklenen ve kaldırılanı ayırır", () => {
+    const p = planAddonsChange(["vinLookup", "ocrIntake"], ["ocrIntake", "eInvoice"])
+    expect(p.added).toEqual(["eInvoice"])
+    expect(p.removed).toEqual(["vinLookup"])
+    expect(p.noop).toBe(false)
+  })
+
+  test("aynı küme (sıra/bilinmeyen değer fark etmez) = noop", () => {
+    expect(planAddonsChange(["eInvoice", "vinLookup", "legacy"], ["vinLookup", "eInvoice"]).noop).toBe(true)
   })
 })
