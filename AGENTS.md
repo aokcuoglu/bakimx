@@ -44,7 +44,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
   "radix-nova"`, BAK-152…BAK-156). Radix'e taşınanlar (`radix-ui` paketi,
   `asChild`): çekirdek (Button, Badge, Label, Separator — BAK-152), overlay
   (Dialog, AlertDialog, Sheet, Popover, Tooltip, DropdownMenu — BAK-153), form
-  (Select, Checkbox, Switch, Toggle, ToggleGroup, Tabs, Accordion, Form,
+  (Select, Checkbox, Switch, Toggle, ToggleGroup, Tabs, Accordion, Collapsible, Form,
   InputGroup — BAK-154), Item ailesi (BAK-155).
   `@base-ui/react` **bilinçli olarak** İKİ yüzeyde kalır — Radix'te dengi yok
   (`radix-ui@1.6.7` içinde combobox/autocomplete girdisi yoktur, upstream
@@ -129,6 +129,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
   child and carries the children (NOT `<Link><Button>…</Button></Link>`)
 - **Variants over custom CSS:** use `variant`, `size`, `color` props instead of custom className strings
 - **Button size/shape/type only via `size` / `variant`** (#889): no `h-*`, `size-*`, `rounded-*`, `text-xs…`, `py-*`, `font-*` or neutral `bg-*` on `Button` / `InputGroupButton` — inline link `size="inline"`, list row / option card / dropzone `size="row"`, image tile `size="tile"`, field-looking picker trigger `variant="field"`, selected state = switch `variant`, single/multi choice = `ToggleGroup` (`variant="outline"` = primary-tinted selection, `variant="segment"` = iOS rail + white card; option cards `size="row"`), no `data-[state=on]:` recolouring or size classes on toggles. Gate: `src/components/ui/control-call-sites.test.ts`.
+- **Aç/kapa bölüm:** `<Collapsible>` + `<CollapsibleTrigger asChild><Button …>` + `<CollapsibleContent>`; elle `aria-expanded` / `<details>` yok; kapalıyken DOM'da kalması gereken alanlar (form) `keepMounted` (gate: `src/components/ui/collapsible.test.ts`)
 - **No hardcoded colors:** use theme tokens (`primary`, `destructive`, `muted`, `border`, `ring`) — avoid `blue-600`, `rose-50`, `green-50` etc.
 - **Semantic colors have three roles — pick the right token:**
   - fill / bar / dot / tinted bg → `bg-success`, `bg-warning/10`, `border-destructive/20` (vivid tone; warning must stay amber)
