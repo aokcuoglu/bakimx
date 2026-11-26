@@ -98,7 +98,8 @@ export function FuelLevelPicker({
       value={value != null ? String(value) : ""}
       onValueChange={(v) => onChange(v ? Number(v) : null)}
       variant="outline"
-      size="lg"
+      // Kabulde telefonda dokunulur: 44px (md+ 36px), #854.
+      size="control"
       // Bölmeler bitişik olsun ki beş ayrı buton değil tek bir çubuk okunsun.
       spacing={0}
       disabled={disabled}
