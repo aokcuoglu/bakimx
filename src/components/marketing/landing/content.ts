@@ -77,8 +77,8 @@ export const DAY_CARDS = [
   {
     img: "/landing/esantral/parca.webp",
     alt: "Usta, parça rafından yağ filtresi kutusu alıyor",
-    label: "Parça Sorgulama",
-    text: "OEM numarası ile hızlıca araca uygun parça listesine ulaşırsınız. Hataların önüne geçilir.",
+    label: "Parça Ekleme",
+    text: "Parçayı stoğunuzdan seçip iş emrine ekleyin, stok kendiliğinden düşsün. Şaseden parça sorgulama ek özelliktir.",
   },
   {
     img: "/landing/esantral/teslim.webp",
