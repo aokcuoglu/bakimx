@@ -1,15 +1,15 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useOptimistic, useState, useTransition } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { CalendarDays, ChevronLeft, ChevronRight, Clock, Truck, BellRing, RefreshCw, CheckCircle2, XCircle, Loader2 } from "lucide-react"
 import { checkRemindersAction } from "@/app/(app)/calendar/actions"
 import { Button } from "@/components/ui/button"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { formatTrTime } from "@/lib/format-date"
 import {
-  addDays,
-  addMonths,
   dayKeysInView,
   dayOfMonth,
   formatDayHeading,
@@ -19,10 +19,9 @@ import {
   groupByIstanbulDay,
   istanbulTodayKey,
   monthLeadingBlanks,
-  parseCalendarViewMode,
-  resolveDayKey,
   type CalendarViewMode,
 } from "@/lib/calendar/calendar-grid"
+import { calendarHref, shiftCalendarDay } from "@/lib/calendar/calendar-navigation"
 
 interface CalendarViewItem {
   id: string
@@ -59,29 +58,29 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 export function CalendarView({
-  initialEvents,
-  initialView,
-  initialDate,
+  events,
+  view,
+  date,
 }: {
-  initialEvents: CalendarViewItem[]
-  initialView: string
-  initialDate: string
+  events: CalendarViewItem[]
+  view: CalendarViewMode
+  date: string
 }) {
-  const [view, setView] = useState<CalendarViewMode>(parseCalendarViewMode(initialView))
-  const [currentDate, setCurrentDate] = useState(resolveDayKey(initialDate))
+  const currentDate = date
+  const router = useRouter()
+  const [isNavigating, startNavigation] = useTransition()
   const [checking, setChecking] = useState(false)
   const [checkResult, setCheckResult] = useState<{ jobType: string; processed: number; sent: number; failed: number }[] | null>(null)
   const [, startTransition] = useTransition()
 
-  function navigate(direction: "prev" | "next") {
-    const sign = direction === "next" ? 1 : -1
-    if (view === "day") setCurrentDate(addDays(currentDate, sign))
-    else if (view === "week") setCurrentDate(addDays(currentDate, sign * 7))
-    else setCurrentDate(addMonths(currentDate, sign))
-  }
+  const [optimistic, setOptimistic] = useOptimistic({ view, date })
 
-  function goToToday() {
-    setCurrentDate(istanbulTodayKey())
+  function go(nextView: CalendarViewMode, nextDate: string) {
+    if (nextView === optimistic.view && nextDate === optimistic.date) return
+    startNavigation(() => {
+      setOptimistic({ view: nextView, date: nextDate })
+      router.push(calendarHref(nextView, nextDate), { scroll: false })
+    })
   }
 
   async function handleCheckReminders() {
@@ -99,7 +98,7 @@ export function CalendarView({
     })
   }
 
-  const eventsByDate = groupByIstanbulDay(initialEvents)
+  const eventsByDate = groupByIstanbulDay(events)
   const dayKeys = dayKeysInView(view, currentDate)
   const todayKey = istanbulTodayKey()
 
@@ -107,17 +106,17 @@ export function CalendarView({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Button type="button" variant="ghost" size="icon" onClick={() => navigate("prev")} aria-label="Önceki">
+          <Button type="button" variant="ghost" size="icon" onClick={() => go(optimistic.view, shiftCalendarDay(optimistic.view, optimistic.date, "prev"))} aria-label="Önceki">
             <ChevronLeft className="size-5" />
           </Button>
-          <Button variant="outline" size="sm" onClick={goToToday}>
+          <Button variant="outline" size="sm" onClick={() => go(optimistic.view, istanbulTodayKey())}>
             Bugün
           </Button>
-          <Button type="button" variant="ghost" size="icon" onClick={() => navigate("next")} aria-label="Sonraki">
+          <Button type="button" variant="ghost" size="icon" onClick={() => go(optimistic.view, shiftCalendarDay(optimistic.view, optimistic.date, "next"))} aria-label="Sonraki">
             <ChevronRight className="size-5" />
           </Button>
           <span className="text-base font-semibold text-foreground ml-2">
-            {view === "month" ? formatMonthTitle(currentDate) : formatDayTitle(currentDate)}
+            {optimistic.view === "month" ? formatMonthTitle(optimistic.date) : formatDayTitle(optimistic.date)}
           </span>
         </div>
 
@@ -130,8 +129,8 @@ export function CalendarView({
                   key={v}
                   type="button"
                   size="sm"
-                  variant={view === v ? "secondary" : "ghost"}
-                  onClick={() => setView(v)}
+                  variant={optimistic.view === v ? "secondary" : "ghost"}
+                  onClick={() => go(v, optimistic.date)}
                 >
                   {labels[v]}
                 </Button>
@@ -171,6 +170,12 @@ export function CalendarView({
         <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-warning" /> Bakım</span>
       </div>
 
+      <div className="relative" role="region" aria-label="Takvim" aria-busy={isNavigating}>
+        {isNavigating && (
+          <div className="absolute inset-0 z-10 flex items-start justify-center rounded-lg bg-card/90">
+            <BrandSpinner size={32} label="Takvim yükleniyor…" className="py-8" />
+          </div>
+        )}
       {view === "month" ? (
         <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="grid grid-cols-7 border-b border-border bg-muted">
@@ -327,13 +332,14 @@ export function CalendarView({
         </div>
       )}
 
-      {initialEvents.length === 0 && (
+      {events.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
           <CalendarDays className="size-12 mx-auto mb-3 text-muted-foreground/50" />
           <p className="text-sm font-medium">Bu dönemde etkinlik bulunamadı</p>
           <p className="text-xs mt-1">Randevu, teslimat veya bakım hatırlatması oluşturarak başlayın</p>
         </div>
       )}
+      </div>
     </div>
   )
 }
