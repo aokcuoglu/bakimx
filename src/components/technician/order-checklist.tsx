@@ -512,12 +512,12 @@ function ChecklistRow({
       {!locked && (
         <Button
           type="button"
-          variant="ghost"
+          variant="destructive-ghost"
           size="icon"
           aria-label={`"${item.description}" maddesini bu araç kabulünden sil`}
           onClick={() => state.remove(item)}
           disabled={isBusy}
-          className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+          className="shrink-0 text-muted-foreground md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
         >
           <Trash2 className="size-4" />
         </Button>

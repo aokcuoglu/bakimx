@@ -141,10 +141,9 @@ export function TechnicianAssign({
             `::before` dokunma alanını 44px'e açar; md+ fareyle gerekmez. */}
         <Button
           type="button"
-          variant={isMeta ? "link" : "outline"}
+          variant={isMeta ? "link" : isCta ? "tint" : "outline"}
           size={isCta ? "default" : isMeta ? "inline" : "xs"}
           className={cn(
-            isCta && "border-primary/40 text-primary-strong hover:bg-primary/10 hover:text-primary-strong",
             isMeta && "relative min-w-0 max-w-[12rem] text-muted-foreground before:absolute before:inset-x-0 before:-inset-y-3 hover:text-primary md:before:hidden",
             // Noktalı alt çizgi "buraya dokunulabilir" der.
             isMeta && !assignedTechnicianName && "underline decoration-dotted",
