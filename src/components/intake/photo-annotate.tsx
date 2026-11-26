@@ -144,7 +144,7 @@ export function PersistedPhotoEditor({ photoId, onSaved, onDirtyChange, disabled
     setOpen(false); onSaved?.()
   }
   return <>
-    <Button type="button" variant="outline" size="sm" disabled={disabled || loading} onClick={launch}>{loading ? "Yükleniyor…" : "Çizimleri düzenle"}</Button>
+    <Button type="button" variant="outline" size="default" className="max-w-full w-full md:w-auto" disabled={disabled || loading} onClick={launch}>{loading ? "Yükleniyor…" : "Çizimleri düzenle"}</Button>
     {error && <p role="alert" className="text-sm text-destructive-strong">{error}</p>}
     <Dialog open={open} onOpenChange={next => { if (!next && window.confirm("Editörü kaydetmeden kapatmak istiyor musunuz?")) setOpen(false) }}>
       <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-4xl" onInteractOutside={event => event.preventDefault()}>
