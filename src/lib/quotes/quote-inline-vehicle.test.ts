@@ -15,6 +15,9 @@ test("teklif formu yeni araç için sayfadan ayrılmaz", () => {
 
 test("oluşturulan araç listeye eklenip teklifte seçilir", () => {
   expect(FORM).toContain("resolveInlineVehicleOwner(")
+  expect(FORM).toContain('form.setValue("customerId", next.switchCustomer.id')
+  expect(FORM).toContain("fetchVehicles(next.switchCustomer.id, created.id)")
+  expect(FORM).toContain("ownerSwitchMessage(")
   expect(FORM).toContain('form.setValue("vehicleId", created.id')
 })
 

@@ -4,7 +4,8 @@
 import { listThenSelect } from "@/lib/ui/list-then-select"
 import { resolveInlineVehicleOwner } from "@/lib/quotes/inline-vehicle-owner"
 import { toast } from "sonner"
-import { useState, useCallback, useEffect, useActionState, startTransition } from "react"
+import { ownerSwitchMessage } from "@/lib/vehicles/owner-switch-message"
+import { useState, useCallback, useEffect, useRef, useActionState, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -120,21 +121,37 @@ export function QuoteCreateForm({
     }
   }, [state, router])
 
-  const fetchVehicles = useCallback(async (custId: string) => {
+  // Yalnız son istek uygulanır: yavaş dönen önceki müşteri yanıtı listeyi ezmesin.
+  const vehicleRequestSeq = useRef(0)
+
+  const fetchVehicles = useCallback(async (custId: string, selectId?: string) => {
+    const seq = ++vehicleRequestSeq.current
     setVehicleLoading(true)
     setVehicleError("")
-    form.setValue("vehicleId", "")
+    if (!selectId) form.setValue("vehicleId", "")
     try {
       const res = await fetch(`/api/customers/${custId}/vehicles`)
       if (!res.ok) throw new Error("Araç listesi yüklenemedi")
       const data = await res.json()
-      if (data.vehicles) setVehicles(data.vehicles)
-      else setVehicles([])
+      if (seq !== vehicleRequestSeq.current) return
+      const list: Vehicle[] = data.vehicles ?? []
+      if (selectId && list.some((v) => v.id === selectId)) {
+        listThenSelect(
+          () => setVehicles(list),
+          () => form.setValue("vehicleId", selectId, { shouldDirty: true, shouldValidate: true })
+        )
+      } else if (selectId) {
+        // Beklenmedik: sahibin listesinde yok — kısmi kayıt listede kalsın.
+        setVehicles((current) => (current.some((v) => v.id === selectId) ? current : list))
+      } else {
+        setVehicles(list)
+      }
     } catch {
-      setVehicles([])
+      if (seq !== vehicleRequestSeq.current) return
+      if (!selectId) setVehicles([])
       setVehicleError("Araçlar yüklenemedi. Lütfen tekrar deneyin.")
     } finally {
-      setVehicleLoading(false)
+      if (seq === vehicleRequestSeq.current) setVehicleLoading(false)
     }
   }, [form])
 
@@ -145,6 +162,8 @@ export function QuoteCreateForm({
   }
 
   function clearCustomer() {
+    vehicleRequestSeq.current++
+    setVehicleLoading(false)
     form.setValue("customerId", "")
     form.setValue("vehicleId", "")
     setCustomerLabel("")
@@ -186,7 +205,9 @@ export function QuoteCreateForm({
         form.setValue("vehicleId", created.id, { shouldDirty: true, shouldValidate: true })
         setVehicleError("")
         if (next.switchCustomer) {
-          toast.info(`Bu araç ${next.switchCustomer.label} adına kayıtlı; müşteri güncellendi.`)
+          toast.info(ownerSwitchMessage(result.customerName))
+          // Taslak kaydın katalog/motor alanları boş; sahibin tam listesini yükle.
+          void fetchVehicles(next.switchCustomer.id, created.id)
         }
       }
     )
