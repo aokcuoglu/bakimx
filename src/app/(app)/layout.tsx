@@ -170,7 +170,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       : "Bu iş yerinin aboneliği sona erdi — plan kilidi nedeniyle salt-okunur."
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    // `data-impersonating`: taklit bandı (40px, yapışkan) kabuğun yapışkan
+    // ofsetine girer — üst bar, çipler ve ray bandın altında kalmaz (#913).
+    <div className="min-h-screen bg-background flex flex-col" data-impersonating={impersonation ? "" : undefined}>
       {/* Bu belgeyi render eden build'in imzası — açık sekme eskidiğinde
           engellemeyen "yenile" bildirimi için (bkz. version-update-notice.tsx). */}
       <VersionUpdateNotice loadedSignature={getBuildSignature()} />
