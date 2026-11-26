@@ -238,8 +238,8 @@ export function InlineCreateModal({
     return c !== undefined && c !== null && c < LOW_CONFIDENCE_THRESHOLD
   }
 
-  function fieldClass(key: string): string {
-    return lowConf(key) ? "border-warning/40 bg-warning/10 focus-visible:border-warning" : ""
+  function tone(key: string): "warning" | "default" {
+    return lowConf(key) ? "warning" : "default"
   }
 
   // Kart: mevcut aracı, DB'deki gerçek sahibiyle seç. onCreated picker'a araç
@@ -363,11 +363,11 @@ export function InlineCreateModal({
           <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
             <div className="min-w-0 space-y-1">
               <Label className="flex items-center gap-1">Plaka * {lowConf("plate") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-              <Input value={fields.plate} onChange={(e) => setField("plate", e.target.value.toUpperCase())} className={fieldClass("plate")} />
+              <Input value={fields.plate} onChange={(e) => setField("plate", e.target.value.toUpperCase())} tone={tone("plate")} />
             </div>
             <div className="min-w-0 space-y-1">
               <Label className="flex items-center gap-1">Yıl {lowConf("modelYear") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-              <Input value={fields.modelYear} onChange={(e) => setField("modelYear", e.target.value)} inputMode="numeric" className={fieldClass("modelYear")} />
+              <Input value={fields.modelYear} onChange={(e) => setField("modelYear", e.target.value)} inputMode="numeric" tone={tone("modelYear")} />
             </div>
             <VehicleBrandModelPicker
               brand={fields.brand}
@@ -416,7 +416,7 @@ export function InlineCreateModal({
                 <div className="min-w-0 space-y-1">
                   <Label className="flex items-center gap-1">Tipi {lowConf("vehicleType") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                   <Select value={fields.vehicleType} onValueChange={(v) => setField("vehicleType", v)}>
-                    <SelectTrigger className={`w-full min-w-0 ${fieldClass("vehicleType")}`}>
+                    <SelectTrigger className="w-full min-w-0" tone={tone("vehicleType")}>
                       <SelectValue placeholder="Seçiniz" />
                     </SelectTrigger>
                     <SelectContent>
@@ -442,7 +442,7 @@ export function InlineCreateModal({
                 <div className="min-w-0 space-y-1 col-span-2">
                   <Label className="flex items-center gap-1">Şase no {lowConf("vin") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                   <div className="flex flex-wrap gap-2">
-                    <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className={`min-w-40 flex-1 ${fieldClass("vin")}`} />
+                    <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className="min-w-40 flex-1" tone={tone("vin")} />
                     {entitlements.vinLookup && (
                       <VinResolveButton
                         loading={vinResolve.loading}
@@ -479,7 +479,7 @@ export function InlineCreateModal({
                 </div>
                 <div className="min-w-0 space-y-1 col-span-2 sm:col-span-1">
                   <Label className="flex items-center gap-1">Motor No {lowConf("engineNo") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-                  <Input value={fields.engineNo} onChange={(e) => setField("engineNo", e.target.value.toUpperCase())} className={fieldClass("engineNo")} />
+                  <Input value={fields.engineNo} onChange={(e) => setField("engineNo", e.target.value.toUpperCase())} tone={tone("engineNo")} />
                 </div>
                 <div className="min-w-0 space-y-1">
                   <Label>Silindir Hacmi</Label>
@@ -491,7 +491,7 @@ export function InlineCreateModal({
                 </div>
                 <div className="min-w-0 space-y-1 col-span-2 sm:col-span-1">
                   <Label className="flex items-center gap-1">İlk Tescil Tarihi {lowConf("firstRegistrationDate") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-                  <DatePicker value={fields.firstRegistrationDate} onChange={(v) => setField("firstRegistrationDate", v)} className={fieldClass("firstRegistrationDate")} />
+                  <DatePicker value={fields.firstRegistrationDate} onChange={(v) => setField("firstRegistrationDate", v)} tone={tone("firstRegistrationDate")} />
                 </div>
                 <div className="min-w-0 space-y-1 col-span-2">
                   <Label>Muayene Geçerlilik Tarihi</Label>
