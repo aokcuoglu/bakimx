@@ -5,6 +5,7 @@ import { AlertDialog as AlertDialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { yieldEscapeToBaseUIPopup } from "@/components/ui/base-ui-popup"
+import { useOpenerFocus } from "@/hooks/use-opener-focus"
 import { Button } from "@/components/ui/button"
 
 function AlertDialog({
@@ -49,16 +50,20 @@ function AlertDialogContent({
   className,
   size = "default",
   onEscapeKeyDown,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
   size?: "default" | "sm"
 }) {
+  const returnFocusToOpener = useOpenerFocus(onCloseAutoFocus)
+
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         onEscapeKeyDown={(event) => yieldEscapeToBaseUIPopup(event, onEscapeKeyDown)}
+        onCloseAutoFocus={returnFocusToOpener}
         data-size={size}
         className={cn(
           "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] overflow-y-auto -translate-x-1/2 -translate-y-1/2 gap-4 rounded-[var(--radius-dialog)] bg-popover p-4 text-popover-foreground border border-border shadow-[var(--shadow-dialog)] ring-[3px] ring-popover/60 duration-150 motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
