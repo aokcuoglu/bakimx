@@ -13,7 +13,13 @@ import { join } from "node:path"
  * denetimi ne de göz yakalar. Sınırlar `@/lib/istanbul-time` ile kurulur
  * (`istanbulDayBounds`, `istanbulDayStart`, `istanbulMonthStart` …).
  *
- * Kurallar (yorumlar taranmaz, `*.test.ts(x)` ve `*.e2e.ts` taranmaz):
+ * Kapsam: `src/` altındaki tüm `.ts`/`.tsx` — `"use client"` dosyaları dahil;
+ * `*.test.ts(x)` ve `*.e2e.ts` taranmaz. Yorumlar tek geçişte silinir: dize,
+ * şablon dizesi ve düzenli ifade içi olduğu gibi kopyalanır, yani
+ * `accept="image/*"` bir yorum açmaz, `"https://…"` satırı kesmez; satır ve blok
+ * yorumları (satır sonundakiler dahil) satır numarası korunarak boşaltılır.
+ *
+ * Kurallar:
  *   1. `new Date(` İKİ ya da daha fazla üst düzey argümanla — `new Date(y, m, d)`.
  *      Argümanlar `()[]{}` derinliği izlenerek, dize/şablon dizesi içi atlanarak
  *      ayrılır; yani `new Date(Date.UTC(y, m, d))`, `new Date(a.getTime() + DAY)`
@@ -22,13 +28,17 @@ import { join } from "node:path"
  *   3. `.toDateString(` — çıktısı yeniden ayrıştırılınca süreç gece yarısıdır.
  *
  * Bilinen sınırlar — bu bir sezgisel tarama, ayrıştırıcı değil; şunları GÖRMEZ:
+ *   - `new Date(...parts)` — yayılan (spread) tek argümanın kaç değer taşıdığı
+ *     kaynaktan okunamaz.
  *   - `.setDate(` / `.setMonth(` ile göreli kaydırma (yerel takvimde gün/ay atlar).
  *   - `getDate()` / `getDay()` / `getMonth()` ile yapılan takvim aritmetiği.
  *   - Saat dilimi eki olmayan dize ayrıştırma (`new Date("2026-11-25T00:00:00")`
  *     süreç saatinde okunur — kullanıcı girdisi `parseIstanbulLocalDateTime` ile).
  *   - Sunucuda date-fns `startOfDay` / `startOfMonth` — `"use client"` olmayan
  *     dosyada date-fns importunu `format-date-coverage.test.ts` zaten engeller.
- *   - Satır sonundaki `// …` yorumu taranır (yalnız satır başı yorumlar silinir).
+ *   - Düzenli ifade başlangıcı önceki simgeden tahmin edilir; JSX metnindeki tek
+ *     bir kesme işareti (`Atölye'nin`) o satırın geri kalanını dize sanar — etkisi
+ *     satırla sınırlıdır ve yalnız o satırdaki yorumun taranmasına yol açar.
  *
  * Yeni bir ihlal görürsen `@/lib/istanbul-time`'taki yardımcıyı kullan. Bilinçli
  * bir istisnaysa `INTENTIONAL`a gerekçesiyle ekle; taramayı gevşetme.
@@ -37,8 +47,9 @@ import { join } from "node:path"
 const SRC = join(import.meta.dir, "..")
 
 /**
- * Kalıcı, bilinçli istisnalar — her biri gerekçeli. Bunlar istemci bileşenidir
- * ve tarayıcının yerel takvimiyle çalışan takvim ilkelini besler.
+ * Kalıcı, bilinçli istisnalar — her biri en az 15 karakterlik bir gerekçeyle.
+ * Bunlar istemci bileşenidir ve tarayıcının yerel takvimiyle çalışan takvim
+ * ilkelini besler.
  */
 const INTENTIONAL: Record<string, string> = {
   "components/ui/date-picker.tsx":
@@ -50,8 +61,9 @@ const INTENTIONAL: Record<string, string> = {
 }
 
 /**
- * Henüz `@/lib/istanbul-time`'a geçmemiş dosyalar. Boşaldıkça silinir — paralel
- * PR'lardan hangisi ikinci merge olursa kaydı o siler.
+ * Henüz `@/lib/istanbul-time`'a geçmemiş dosyalar; gerekçe geçişi taşıyan
+ * issue'yu (`#123`) anar. Boşaldıkça silinir — paralel PR'lardan hangisi ikinci
+ * merge olursa kaydı o siler.
  */
 const PENDING_MIGRATION: Record<string, string> = {
   "app/(app)/cashbox/payments/page.tsx": "#905/#906",
@@ -130,12 +142,77 @@ function callArguments(source: string, openIndex: number): string[] {
   return args.map((arg) => arg.trim()).filter(Boolean)
 }
 
-/** Yorumları aynı uzunlukta boşlukla değiştirir; satır numaraları korunur. */
+/** Bu karakterlerden sonra gelen `/` bölme değil, düzenli ifade başlangıcıdır. */
+const REGEX_AFTER_CHAR = new Set([..."(,=:[!&|?{};+-*%>~^"])
+/** Bu anahtar sözcüklerden sonra gelen `/` düzenli ifade başlangıcıdır. */
+const REGEX_AFTER_WORD = new Set(["return", "typeof", "case", "void", "delete", "throw", "in", "of", "new", "yield", "await", "else", "do"])
+
+/** `prev` indeksindeki son anlamlı karakterden sonra gelen `/` bir düzenli ifade açar mı? */
+function startsRegex(source: string, prev: number): boolean {
+  if (prev < 0) return true
+  const ch = source[prev]
+  if (REGEX_AFTER_CHAR.has(ch)) return true
+  if (!/[\w$]/.test(ch)) return false
+  let start = prev
+  while (start > 0 && /[\w$]/.test(source[start - 1])) start--
+  return REGEX_AFTER_WORD.has(source.slice(start, prev + 1))
+}
+
+/** `slashIndex`'teki düzenli ifadenin (karakter sınıfı ve kaçış dahil) kapanışından sonraki indeksi verir. */
+function skipRegex(source: string, slashIndex: number): number {
+  let inClass = false
+  for (let i = slashIndex + 1; i < source.length; i++) {
+    const ch = source[i]
+    if (ch === "\\") i++
+    else if (ch === "\n") return i
+    else if (inClass) inClass = ch !== "]"
+    else if (ch === "[") inClass = true
+    else if (ch === "/") return i + 1
+  }
+  return source.length
+}
+
+/**
+ * Yorumları aynı uzunlukta boşlukla değiştirir; satır numaraları korunur. Tek
+ * geçiştir: dize, şablon dizesi ve düzenli ifade olduğu gibi kopyalanır, yani
+ * içlerindeki `/*` ya da `//` yorum sayılmaz.
+ */
 function stripComments(source: string): string {
-  const blank = (text: string) => text.replace(/[^\n]/g, " ")
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, blank)
-    .replace(/^([ \t]*)\/\/[^\n]*/gm, (match) => blank(match))
+  const parts: string[] = []
+  const special = /["'`/]/g
+  let prev = -1
+  let i = 0
+  while (i < source.length) {
+    special.lastIndex = i
+    const found = special.exec(source)
+    const at = found ? found.index : source.length
+    if (at > i) {
+      parts.push(source.slice(i, at))
+      let last = at - 1
+      while (last >= i && /\s/.test(source[last])) last--
+      if (last >= i) prev = last
+    }
+    if (!found) break
+
+    const ch = source[at]
+    const next = source[at + 1]
+    let stop: number
+    if (ch === "/" && (next === "/" || next === "*")) {
+      const close = next === "/" ? source.indexOf("\n", at) : source.indexOf("*/", at + 2)
+      stop = close === -1 ? source.length : next === "/" ? close : close + 2
+      parts.push(source.slice(at, stop).replace(/[^\n]/g, " "))
+      i = stop
+      continue
+    }
+    if (ch === '"' || ch === "'") stop = skipString(source, at)
+    else if (ch === "`") stop = skipTemplate(source, at)
+    else if (startsRegex(source, prev)) stop = skipRegex(source, at)
+    else stop = at + 1
+    parts.push(source.slice(at, stop))
+    prev = stop - 1
+    i = stop
+  }
+  return parts.join("")
 }
 
 /** Kaynak metindeki süreç-saati gece yarısı ihlallerini `satır → kod` olarak döndürür. */
@@ -221,6 +298,25 @@ describe("findLocalMidnightViolations", () => {
       findLocalMidnightViolations(`const a = 1\n\nconst b = new Date(y, m, d)\nb.setHours(0, 0, 0, 0)`)
     ).toEqual(["3 → new Date(y, m, d)", "4 → .setHours(0, 0, 0, 0)"])
   })
+
+  test("dize, şablon ve düzenli ifade içindeki /* ya da // yorum açmaz", () => {
+    expect(
+      findLocalMidnightViolations(`<Input accept="image/*" />\nconst a = new Date(y, m, d)\nx.setHours(0,0,0,0)\n{/* c */}`)
+    ).toEqual(["2 → new Date(y, m, d)", "3 → .setHours(0,0,0,0)"])
+    expect(findLocalMidnightViolations("const g = `src/*`\nconst a = new Date(y, m)")).toEqual(["2 → new Date(y, m)"])
+    expect(findLocalMidnightViolations(`const u = "https://x"; d.setHours(0)`)).toHaveLength(1)
+    expect(findLocalMidnightViolations(`const r = s.replace(/["'/*]/g, ""); d.setHours(0)`)).toHaveLength(1)
+    expect(findLocalMidnightViolations(`const r = s.split(/\\/\\//); d.setHours(0)`)).toHaveLength(1)
+  })
+
+  test("satır sonundaki ve çok satırlı çağrı içindeki yorumlar taranmaz", () => {
+    expect(findLocalMidnightViolations(`const d = new Date(\n  ms, // eski: y, m, d\n)`)).toEqual([])
+    expect(findLocalMidnightViolations(`const d = new Date(ms /* , m, d */)`)).toEqual([])
+    expect(findLocalMidnightViolations(`const a = 1 // today.setHours(0, 0, 0, 0)`)).toEqual([])
+    expect(
+      findLocalMidnightViolations(`/* çok\nsatırlı */ const b = 1\nb.setHours(0)`)
+    ).toEqual(["3 → .setHours(0)"])
+  })
 })
 
 describe("gün/ay sınırları Türkiye takvimine göre kurulur (#874, #904)", () => {
@@ -248,9 +344,13 @@ describe("gün/ay sınırları Türkiye takvimine göre kurulur (#874, #904)", (
     expect(Object.keys(INTENTIONAL).filter((rel) => rel in PENDING_MIGRATION)).toEqual([])
   })
 
-  test("her kayıt gerekçeli", () => {
-    for (const reason of [...Object.values(INTENTIONAL), ...Object.values(PENDING_MIGRATION)]) {
-      expect(reason.trim().length).toBeGreaterThan(3)
-    }
+  test("her bilinçli istisna gerekçeli", () => {
+    const thin = Object.entries(INTENTIONAL).filter(([, reason]) => reason.trim().length < 15)
+    expect(thin).toEqual([])
+  })
+
+  test("her bekleyen geçiş bir issue'ya bağlı", () => {
+    const unlinked = Object.entries(PENDING_MIGRATION).filter(([, reason]) => !/#\d+/.test(reason))
+    expect(unlinked).toEqual([])
   })
 })
