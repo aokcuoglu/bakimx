@@ -51,6 +51,8 @@ import {
   PHOTO_TYPES,
   PHOTO_PHASES,
   VEHICLE_PHOTO_TYPES,
+  PAYMENT_STATUS,
+  type PaymentStatusKey,
   type PhotoPhaseKey,
 } from "@/lib/constants"
 import { formatTRY } from "@/lib/format"
@@ -969,7 +971,7 @@ export function WorkOrderDetail({
         <div className={cn(detail.shell, "space-y-3 p-4")}>
           <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> SMS Teslim Onayı</p>
           {order.paymentStatus !== "paid" && (
-            <p className="text-xs text-warning-strong">Uyarı: Bu araç kabulünde ödeme tamamlanmadı ({order.paymentStatus}).</p>
+            <p className="text-xs text-warning-strong">Uyarı: Bu araç kabulünde ödeme tamamlanmadı ({PAYMENT_STATUS[order.paymentStatus as PaymentStatusKey]?.label ?? order.paymentStatus}).</p>
           )}
           <p className="text-xs text-muted-foreground">Müşterinin telefonuna SMS ile gönderilen kodu girin. Kod 10 dakika geçerlidir.</p>
           {deliverySentCode && (
