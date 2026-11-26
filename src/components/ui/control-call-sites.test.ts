@@ -55,7 +55,7 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * ölçü `TabsList size="control"`dan (telefonda 44px, md+ 36px; `default`
  * segment ve `line` ile), şerit `h-auto`'yu, tetikleyici dolgusunu ve seçili
  * zemini varyanttan alır (segment seçili tetikleyici primitive'de `bg-card`,
- * pazarlama `RuhsatDemoSection` dahil — ray `bg-card` ile boyanmaz). Sekmeler
+ * `RuhsatDemoSection` dahil — ray `bg-card` ile boyanmaz). Sekmeler
  * arası yatay boşluk şeridin yerleşimidir (`gap-*`, şerit `px-*`). Çağrı yeri
  * şeride genişlik, grid/flex, `justify-start`, `border-b` çizgisi ve taşma
  * kaydırması verir.
@@ -437,8 +437,17 @@ const OUT_OF_SCOPE = [
  * bölümü değil, uygulamaya bitişik genel sayfaların (fiyatlar, blog, rehber,
  * demo, durum, yasal) ortak altbilgisi — kontrolleri matrise uyar (#889;
  * "Demo talep et" CSS modülüyle 28px'e indirilmişti ve kapı görmüyordu).
+ * Aynı gerekçeyle form/demo bileşenleri de kapsamdadır (#929): HeroLeadForm,
+ * ContactPage, RuhsatDemoSection, demo-ocr-upload — kontrolleri matrise uyar;
+ * pazarlama CTA yüksekliği `Button size="lg"`dan gelir.
  */
-const IN_SCOPE_FILES = ["components/sections/Footer.tsx"]
+const IN_SCOPE_FILES = [
+  "components/sections/Footer.tsx",
+  "components/sections/HeroLeadForm.tsx",
+  "components/sections/ContactPage.tsx",
+  "components/sections/RuhsatDemoSection.tsx",
+  "components/sections/demo-ocr-upload.tsx",
+]
 
 type ScannedTag = JsxOpeningTag & { file: string }
 
