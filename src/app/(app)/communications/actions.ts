@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { requireFeatureWorkshop } from "@/lib/auth"
+import { istanbulDateRange } from "@/lib/istanbul-time"
 
 async function requireAuth() {
   return (await requireFeatureWorkshop("communications")).user
@@ -24,9 +25,11 @@ export async function getCommunicationLogs(filters?: {
   if (filters?.status) where.status = filters.status
 
   if (filters?.dateFrom || filters?.dateTo) {
+    // `YYYY-MM-DD` İstanbul günü, bitiş günü dahil → `[start, end)` (#906).
+    const { start, end } = istanbulDateRange(filters.dateFrom, filters.dateTo)
     const sentAt: Record<string, Date> = {}
-    if (filters.dateFrom) sentAt.gte = new Date(filters.dateFrom)
-    if (filters.dateTo) sentAt.lte = new Date(filters.dateTo)
+    if (start) sentAt.gte = start
+    if (end) sentAt.lt = end
     where.sentAt = sentAt
   }
 

@@ -184,3 +184,53 @@ export function istanbulRecentMonths(months: number, now: Date = new Date()): Is
   }
   return buckets
 }
+
+/**
+ * Kullanıcının seçtiği `YYYY-MM-DD` gününü (`<input type="date">`, `?dateFrom=`)
+ * o İstanbul gününün 00:00'ına çevirir (#906). `new Date("2026-11-25")` UTC gece
+ * yarısı verir — TR gününden 3 saat kayık, seçilen günün 00:00–03:00 kayıtları
+ * önceki güne düşer. Biçim dışı ya da takvimde olmayan gün (`2026-02-31`) `null`.
+ */
+export function parseIstanbulDate(value: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) return null
+  const year = Number(match[1])
+  const month = Number(match[2]) - 1
+  const day = Number(match[3])
+  const localMidnightAsUtc = Date.UTC(year, month, day)
+  const check = new Date(localMidnightAsUtc)
+  if (
+    check.getUTCFullYear() !== year ||
+    check.getUTCMonth() !== month ||
+    check.getUTCDate() !== day
+  ) return null
+  return new Date(localMidnightAsUtc - ISTANBUL_UTC_OFFSET_MS)
+}
+
+/** `now`'ın düştüğü İstanbul haftasının Pazartesi 00:00'ı (UTC an olarak),
+ * `offsetWeeks` hafta kaydırılmış: `-1` = geçen haftanın başı, `1` = gelecek
+ * haftanın başı (#905). Hafta Pazartesi başlar. */
+export function istanbulWeekStart(now: Date = new Date(), offsetWeeks = 0): Date {
+  const shifted = new Date(now.getTime() + ISTANBUL_UTC_OFFSET_MS)
+  const isoWeekday = shifted.getUTCDay() || 7
+  return istanbulDayStart(now, -(isoWeekday - 1) + 7 * offsetWeeks)
+}
+
+/** Yarı açık tarih aralığı: `start` dahil, `end` hariç. Boş taraf sınırsızdır. */
+export type IstanbulDateRange = { start?: Date; end?: Date }
+
+/**
+ * Kullanıcının girdiği `dateFrom`/`dateTo` (`YYYY-MM-DD`, ikisi de dahil) çiftini
+ * İstanbul günlerine göre `[start, end)` aralığına çevirir: bitiş günü dahil
+ * olduğu için `end` = bitiş gününün ertesi 00:00. Sorgular `gte: start, lt: end`
+ * kullanır ve kendileri gün eklemez. Boş ya da geçersiz taraf `undefined` döner;
+ * `from > to` ters çevrilmez (boş sonuç).
+ */
+export function istanbulDateRange(from?: string | null, to?: string | null): IstanbulDateRange {
+  const start = from ? parseIstanbulDate(from) : null
+  const endDay = to ? parseIstanbulDate(to) : null
+  return {
+    start: start ?? undefined,
+    end: endDay ? new Date(endDay.getTime() + DAY_MS) : undefined,
+  }
+}
