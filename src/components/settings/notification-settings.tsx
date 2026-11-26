@@ -6,6 +6,7 @@ import { NOTIFICATION_PROVIDER_LABELS } from "@/lib/provider-labels"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 type TemplateData = {
   key: string
@@ -193,38 +194,37 @@ export function NotificationSettings({
         </div>
       )}
 
-      <div className="space-y-3">
+      <Accordion
+        type="single"
+        collapsible
+        variant="card"
+        value={expandedKey ?? ""}
+        onValueChange={(value) => {
+          setExpandedKey(value || null)
+          setEditingChannel(null)
+        }}
+      >
         {templates.map((template) => (
-          <div key={template.key} className="bg-card rounded-lg border border-border overflow-hidden">
-            <Button
-              type="button"
-              onClick={() => setExpandedKey(expandedKey === template.key ? null : template.key)}
-              variant="ghost"
-              size="row"
-              className="w-full justify-between px-5"
-              aria-expanded={expandedKey === template.key}
-            >
-              <div className="text-left">
-                <h3 className="text-sm font-semibold text-foreground">{template.label}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">{template.description}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1">
-                  {template.channels.map((ch) => (
-                    <span
-                      key={ch}
-                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${CHANNEL_COLORS[ch]}`}
-                    >
-                      {CHANNEL_LABELS[ch]}
-                    </span>
-                  ))}
-                </div>
-                <svg className={`size-4 text-muted-foreground transition-transform ${expandedKey === template.key ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-              </div>
-            </Button>
+          <AccordionItem key={template.key} value={template.key}>
+            <AccordionTrigger className="gap-3">
+              <span className="block min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-foreground">{template.label}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{template.description}</span>
+              </span>
+              <span className="flex gap-1">
+                {template.channels.map((ch) => (
+                  <span
+                    key={ch}
+                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${CHANNEL_COLORS[ch]}`}
+                  >
+                    {CHANNEL_LABELS[ch]}
+                  </span>
+                ))}
+              </span>
+            </AccordionTrigger>
 
-            {expandedKey === template.key && (
-              <div className="border-t border-border px-5 py-4 space-y-4">
+            <AccordionContent>
+              <div className="space-y-4">
                 {template.channels.map((ch) => {
                   const savedContent = template.savedTemplates[ch]?.content
                   const defaultContent = template.defaults[ch]
@@ -305,10 +305,10 @@ export function NotificationSettings({
                   )
                 })}
               </div>
-            )}
-          </div>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </div>
   )
 }

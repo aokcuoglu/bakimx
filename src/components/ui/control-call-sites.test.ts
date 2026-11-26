@@ -71,6 +71,23 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * üstü yüzeyler (→ `variant="on-photo"` / `"on-photo-ghost"`) yukarıdaki
  * serbest listeden çıktı. `hover:bg-destructive/10`, `hover:bg-primary/10`
  * gibi durum renkleri serbest kalır; fotoğraf üstü ton her önekte yasaktır.
+ *
+ * #926 — akordeon (`Accordion`, `AccordionItem`, `AccordionTrigger`,
+ * `AccordionContent`) kendi kural setiyle (`ACCORDION_FORBIDDEN`) taranır.
+ * Görünüm kökte `variant` ile seçilir: `default` alt çizgili liste, `card`
+ * her öğe ayrı, kenarlıksız kart (`ui/card.tsx`'in soluk halkası; durum tonu
+ * halka rengiyle), `disclosure` kart görünümlü tek açılır başlık.
+ * Tetikleyici yüksekliği (`--control-h`), dolgu, köşe, zemin, halka
+ * kalınlığı, gölge, yazı boyutu/ağırlığı ve alt çizgi variant'tan gelir;
+ * çağrı yerinde yazılmaz, iç parça (`**:data-[slot=accordion-…]:`,
+ * `[&_[data-slot=accordion-…]]:`) de ezilmez. Düğmeden farkı: torun seçicisi
+ * (`[&_button]:py-5`, `[&_a]:no-underline`, `[&_p]:mb-0`) atlanmaz, çekirdeği
+ * aynı ailelerle taranır. Serbest olanlar: genişlik, flex/grid, `gap-*`,
+ * `items-*`, `space-y-*`, dış boşluk, metin rengi (`hover:text-foreground`
+ * dahil), ayraç çizgisi (`border-t`, `border-b`), kenarlık ve halka RENGİ
+ * (kart durum tonu `ring-warning/30`), durum zemini (`bg-primary/[0.04]`),
+ * `scroll-mt-*`, geçiş. Düzyazı içeriğinde (`AccordionContent`) satır aralığı
+ * serbesttir.
  */
 
 /** Kapsamdaki form kontrolleri ve onlara `className` ileten sarmalayıcılar. */
@@ -123,7 +140,16 @@ export const TOGGLE_CONTROLS = ["ToggleGroup", "ToggleGroupItem", "Toggle"] as c
 /** Sekmeler (#854): düğme kural setiyle taranır. */
 export const TAB_CONTROLS = ["TabsList", "TabsTrigger"] as const
 
-export const CONTROLS = [...FIELD_CONTROLS, ...BUTTON_CONTROLS, ...TOGGLE_CONTROLS, ...TAB_CONTROLS] as const
+/** Akordeon (#926): kendi kural setiyle taranır. */
+export const ACCORDION_CONTROLS = ["Accordion", "AccordionItem", "AccordionTrigger", "AccordionContent"] as const
+
+export const CONTROLS = [
+  ...FIELD_CONTROLS,
+  ...BUTTON_CONTROLS,
+  ...TOGGLE_CONTROLS,
+  ...TAB_CONTROLS,
+  ...ACCORDION_CONTROLS,
+] as const
 
 type Control = (typeof CONTROLS)[number]
 
@@ -131,6 +157,8 @@ const usesButtonRules = (name: string) =>
   (BUTTON_CONTROLS as readonly string[]).includes(name) ||
   (TOGGLE_CONTROLS as readonly string[]).includes(name) ||
   (TAB_CONTROLS as readonly string[]).includes(name)
+
+const usesAccordionRules = (name: string) => (ACCORDION_CONTROLS as readonly string[]).includes(name)
 
 type Family = {
   /** Raporda görünen ad. */
@@ -140,12 +168,14 @@ type Family = {
   /** Bu bileşenlerde ailenin şu çekirdekleri serbesttir. */
   allow?: { tags: readonly Control[]; pattern: RegExp; reason: string }
   /**
-   * Hangi öneklerle yasak (yalnız `BUTTON_FORBIDDEN`): varsayılan her önek;
+   * Hangi öneklerle yasak (`BUTTON_FORBIDDEN`, `ACCORDION_FORBIDDEN`): varsayılan her önek;
    * `"base"` yalnız öneksiz ya da kırılım/koyu tema önekli (`md:`, `dark:`) —
    * `hover:` / `disabled:` / `aria-*:` durum rengi serbest; `"focus"` yalnız
-   * `focus*:` önekli (düğmenin kendi odak halkası ezilmez).
+   * `focus*:` önekli (düğmenin kendi odak halkası ezilmez); `"descendant"`
+   * yalnız torun / kardeş seçicili (`[&_p]:`, `**:`) — akordeon içeriğinin
+   * variant'tan gelen düzyazı aralığı ezilmez.
    */
-  when?: "base" | "focus"
+  when?: "base" | "focus" | "descendant"
 }
 
 // Keyfi değerde yalnız uzunluk: `text-[17px]`, `text-(length:--x)`; renk
@@ -207,6 +237,49 @@ export const BUTTON_FORBIDDEN: readonly Family[] = [
   { name: 'fotoğraf üstü ton → variant="on-photo" / "on-photo-ghost"', pattern: /^(?:bg|border)-(?:white|black)(?:\/(?:\d+|\[[^\]]+\]))?$/ },
 ]
 
+/**
+ * Akordeonun yasak sınıfları (#926). Ölçü ve görünüm kökteki `variant`'tan
+ * gelir (`default` / `card` / `disclosure`); `className` yerleşim içindir.
+ * Ad parantez içermez: `hitClass` sınıfı son " (" ayracından keser.
+ */
+export const ACCORDION_FORBIDDEN: readonly Family[] = [
+  { name: "yükseklik", pattern: /^h-(?!full$)/ },
+  { name: "en az / en çok yükseklik", pattern: /^m(?:in|ax)-h-/ },
+  { name: "kare ölçü", pattern: /^size-/ },
+  { name: "köşe", pattern: /^rounded(?:-|$)/ },
+  { name: "yazı boyutu", pattern: TEXT_SIZE },
+  { name: "yazı ağırlığı", pattern: FONT_WEIGHT },
+  {
+    name: "satır yüksekliği",
+    pattern: /^leading-/,
+    allow: {
+      tags: ["AccordionContent"],
+      pattern: /^leading-/,
+      reason: "içerik düzyazıdır; satır aralığı tipografi kararı",
+    },
+  },
+  { name: "dolgu → variant", pattern: /^p[xytblrse]?-/ },
+  { name: "zemin", pattern: /^bg-(?:background|card|transparent|muted)(?:\/(?:\d+|\[[^\]]+\]))?$/, when: "base" },
+  { name: "kenarlık kaldırma", pattern: /^border(?:-[trblxy])?-(?:0|none|transparent)$/ },
+  { name: "gölge", pattern: /^shadow(?:-|$)/ },
+  // Halka kalınlığı ve biçimi variant'tan; durum tonu halka RENGİYLE verilir
+  // (`ring-warning/30`, `ring-success/30`) ve serbesttir.
+  { name: "halka kalınlığı", pattern: /^ring(?:-(?:\d+(?:\.\d+)?|inset|\[(?:length:)?[\d.][^\]]*\]|\(length:[^)]*\)))?$/ },
+  { name: "halka boşluğu", pattern: /^ring-offset(?:-|$)/ },
+  { name: "outline", pattern: /^outline(?:-|$)/ },
+  { name: "alt çizgi → variant", pattern: /^(?:no-)?underline$/ },
+  { name: "keyfi özellik", pattern: /^\[(?:height|min-height|max-height|border-radius|font-size|font-weight|line-height|padding)/ },
+  // Akordeonda torun seçicisi atlanmaz (`[&_button]:py-5` yukarıdaki dolgu
+  // ailesine düşer); dış boşluk yalnız torunda — düzyazı aralığı — yasak.
+  { name: "içerik aralığı → variant", pattern: /^-?m[trblxyse]?-/, when: "descendant" },
+]
+
+/**
+ * Akordeonun iç parçasını (`**:data-[slot=accordion-trigger-icon]:size-5`,
+ * `[&_[data-slot=accordion-trigger]]:py-5`) seçen sınıf; iki yazımı da kapsar.
+ */
+const ACCORDION_SLOT = "slot=accordion-"
+
 /** Düğmenin kendi kutusunu değil sözde öğeyi / torunu / kardeşi biçimleyen önek. */
 const DESCENDANT_VARIANT = /^(?:before|after|\*{1,2}|\[&[_>+~])/
 /**
@@ -218,17 +291,27 @@ const BASE_VARIANT = /^(?:(?:max-)?(?:sm|md|lg|xl|2xl)|(?:min|max)-\[[^\]]+\]|@.
 /** Etiketin yasak sınıfları: `["h-7 (yükseklik)", "styles.input (CSS modülü)", …]`. */
 export function violations(tag: Pick<JsxOpeningTag, "name" | "classLiterals" | "cssModuleRefs">): string[] {
   const button = usesButtonRules(tag.name)
-  const families = button ? BUTTON_FORBIDDEN : FORBIDDEN
+  const accordion = usesAccordionRules(tag.name)
+  const families = accordion ? ACCORDION_FORBIDDEN : button ? BUTTON_FORBIDDEN : FORBIDDEN
   const found: string[] = []
   for (const literal of tag.classLiterals) {
     for (const token of literal.split(/\s+/).filter(Boolean)) {
       const core = utilityCore(token)
       const variants = utilityVariants(token)
+      // Akordeonun kendi parçasını (ikon, tetikleyici) torun seçiciyle ezmek
+      // de ölçü ezmesidir; seçici ne olursa olsun raporlanır.
+      if (accordion && token.includes(ACCORDION_SLOT)) {
+        found.push(`${token} (iç parça ezmesi)`)
+        continue
+      }
+      // Düğmede torun seçicisi (ikon boyutu) kutuyu değiştirmez, atlanır;
+      // akordeonda torun seçicisi variant'ın içeriğini ezer, taranır.
       if (button && variants.some((v) => DESCENDANT_VARIANT.test(v))) continue
       for (const family of families) {
         if (!family.pattern.test(core)) continue
         if (family.when === "base" && !variants.every((v) => BASE_VARIANT.test(v))) continue
         if (family.when === "focus" && !variants.some((v) => v.startsWith("focus"))) continue
+        if (family.when === "descendant" && !variants.some((v) => DESCENDANT_VARIANT.test(v))) continue
         if (family.allow?.tags.includes(tag.name as Control) && family.allow.pattern.test(core)) continue
         found.push(`${token} (${family.name})`)
       }
@@ -396,7 +479,7 @@ function callSiteViolations(): Row[] {
 /** `"h-7 (yükseklik)"` → `"h-7"` */
 const hitClass = (hit: string) => hit.slice(0, hit.lastIndexOf(" ("))
 
-describe("form kontrolleri ve düğmeler çağrı yerinde ezilmez (#888, #889)", () => {
+describe("form kontrolleri, düğmeler ve akordeon çağrı yerinde ezilmez (#888, #889, #926)", () => {
   test("kapı bilinen ihlalleri yakalar, yerleşim sınıflarına dokunmaz", () => {
     // Tailwind içerik tarayıcısı test dosyalarını da gezer: kaynakta başka yerde
     // geçmeyen sınıflar parçalanarak yazılır, üretilen CSS'e ölü kural girmesin.
@@ -533,6 +616,69 @@ describe("form kontrolleri ve düğmeler çağrı yerinde ezilmez (#888, #889)",
       '<Button variant="tint" size="row" className="ring-2 ring-primary">',
       '<Button variant="on-photo" size="icon" aria-label="Kapat">',
       '<DateRangePicker className="w-64" />',
+    ]
+    for (const source of good) {
+      for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])
+    }
+  })
+
+  test("akordeon ölçü, dolgu, köşe ve zemini variant'tan alır; yerleşime dokunmaz (#926)", () => {
+    const bad = [
+      '<AccordionTrigger className="px-4 py-3 hover:no-underline">',
+      '<AccordionItem className="rounded-xl border bg-card">',
+      '<AccordionItem className="border-0">',
+      '<AccordionContent className="px-4 pb-4">',
+      `<AccordionTrigger className="${"min-h-" + "14"} ring-1 ring-foreground/10">`,
+      // İkon gibi iç parçayı torun seçiciyle ezmek de ölçü ezmesidir.
+      `<AccordionTrigger className="${"**:data-[slot=accordion-trigger-icon]:" + "size-5!"}">`,
+      '<AccordionTrigger className="text-sm font-medium">',
+      `<Accordion className="${"space-y-2 " + "rounded-lg"}">`,
+      '<AccordionContent className={styles.x}>',
+      // Torun seçicisi akordeonda atlanmaz: variant'ın dolgusu, iç parçası,
+      // bağlantı alt çizgisi ve düzyazı aralığı torundan da ezilmez.
+      `<Accordion className="${"[&_button]:" + "py-5"}">`,
+      `<AccordionItem className="${"[&_[data-slot=accordion-trigger]]:" + "py-5"}">`,
+      `<AccordionContent className="${"[&_a]:" + "no-underline"}">`,
+      `<AccordionContent className="${"[&_p]:" + "mb-0"}">`,
+    ]
+    for (const source of bad) {
+      const tags = jsxOpeningTags(`import styles from "./x.module.css"\n${source}`, CONTROLS)
+      expect(tags.length).toBeGreaterThan(0)
+      expect(violations(tags[0])).not.toEqual([])
+    }
+
+    // Her aile tek sınıfla ayrı ayrı sabitlenir: sınıf tam olarak o aileye düşer.
+    const single: [string, string, string][] = [
+      ["AccordionItem", "bg-card", "zemin"],
+      ["AccordionTrigger", "hover:no-underline", "alt çizgi → variant"],
+      ["AccordionItem", "ring-1", "halka kalınlığı"],
+      ["AccordionItem", "ring-2", "halka kalınlığı"],
+      ["AccordionItem", "ring" + "-inset", "halka kalınlığı"],
+      ["AccordionTrigger", "ring-offset-2", "halka boşluğu"],
+      ["AccordionTrigger", "outline-none", "outline"],
+      ["AccordionItem", "border-b-0", "kenarlık kaldırma"],
+      ["AccordionTrigger", "h-10", "yükseklik"],
+      ["AccordionTrigger", "h-auto", "yükseklik"],
+      ["AccordionItem", "shadow-sm", "gölge"],
+    ]
+    for (const [tag, cls, family] of single) {
+      const [scanned] = jsxOpeningTags(`<${tag} className="${cls}">`, CONTROLS)
+      expect(violations(scanned)).toEqual([`${cls} (${family})`])
+    }
+
+    const good = [
+      '<AccordionTrigger className="items-center gap-3 text-muted-foreground hover:text-foreground">',
+      '<AccordionItem className="border-t border-border">',
+      '<AccordionItem className={cn("scroll-mt-4 transition-colors", isNew && "border-warning/30 bg-primary/[0.04]")}>',
+      '<AccordionContent className="grid gap-2 leading-relaxed sm:grid-cols-2">',
+      '<Accordion variant="card" className="mt-4 w-full">',
+      // Durum rengi ve hücreyi dolduran yükseklik serbest; halka RENGİ durum tonudur.
+      '<AccordionTrigger className="hover:bg-muted/50 h-full">',
+      '<AccordionItem className="ring-warning/30">',
+      '<AccordionItem className={cn(done ? "ring-success/30" : "ring-primary/25")}>',
+      `<AccordionItem className="${"ring-[color:var(--" + "warning)]"}">`,
+      // Tetikleyici içindeki öğe kendi etiketidir; akordeon kuralı ona uygulanmaz.
+      '<AccordionTrigger className="gap-3"><span className="line-clamp-1 text-xs" /></AccordionTrigger>',
     ]
     for (const source of good) {
       for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])

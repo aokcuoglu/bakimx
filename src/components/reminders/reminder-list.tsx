@@ -27,6 +27,7 @@ import { formatDate } from "@/lib/utils-client"
 import { MAINTENANCE_REMINDER_TYPES } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import type { ReminderRow } from "@/lib/reminders/queries"
+import { resolveReminderDueWindow } from "@/lib/reminders/date-filter"
 import {
   completeReminderAction,
   cancelReminderAction,
@@ -74,28 +75,16 @@ export function ReminderList({ initialReminders, stats }: Props) {
       items = items.filter((r) => r.type === typeFilter)
     }
     if (dateFilter) {
-      const now = new Date()
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-      switch (dateFilter) {
-        case "today": {
-          const tomorrow = new Date(today.getTime() + 86400000)
-          items = items.filter((r) => r.dueDate && new Date(r.dueDate) >= today && new Date(r.dueDate) < tomorrow)
-          break
-        }
-        case "week": {
-          const weekEnd = new Date(today.getTime() + 7 * 86400000)
-          items = items.filter((r) => r.dueDate && new Date(r.dueDate) >= today && new Date(r.dueDate) < weekEnd)
-          break
-        }
-        case "month": {
-          const monthEnd = new Date(today.getTime() + 30 * 86400000)
-          items = items.filter((r) => r.dueDate && new Date(r.dueDate) >= today && new Date(r.dueDate) < monthEnd)
-          break
-        }
-        case "overdue": {
-          items = items.filter((r) => r.status === "overdue")
-          break
-        }
+      // Sunucu sorgusuyla aynı pencere; günler Türkiye takvimine göre (#904).
+      const window = resolveReminderDueWindow(dateFilter)
+      if (window) {
+        items = items.filter((r) => {
+          if (!r.dueDate) return false
+          const due = new Date(r.dueDate)
+          return due >= window.gte && due < window.lt
+        })
+      } else if (dateFilter === "overdue") {
+        items = items.filter((r) => r.status === "overdue")
       }
     }
     return items
