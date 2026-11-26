@@ -223,8 +223,10 @@ describe("dokunma ölçülü seçiciler — size=\"control\" (#846)", () => {
       "data-[state=active]:bg-transparent",
       "data-[state=active]:text-primary-strong",
       "after:bg-primary",
-      "group-data-horizontal/tabs:after:bottom-0",
+      // Çizgi tetikleyicinin şeffaf kenarlığına oturur: şeridin border-b'siyle arada boşluk yok.
+      "group-data-horizontal/tabs:after:-bottom-px",
       "group-data-horizontal/tabs:after:h-0.5",
+      "group-data-vertical/tabs:after:-right-px",
       "group-data-vertical/tabs:after:w-0.5",
     ]) {
       expect(tabs).toContain(`${lineControl}${cls}`)
@@ -298,18 +300,21 @@ describe("dokunma ölçülü seçiciler — size=\"control\" (#846)", () => {
 
   test("telefonda dokunulan seçici size=\"control\" alır; yoğun masaüstü istisnaları gerekçeli (#854)", () => {
     const rows = unsizedSelectors()
-    const offenders = rows
-      .filter((row) => {
-        const covered = DENSE_SELECTORS.some((e) => e.file === row.file && e.tag === row.tag)
-        // Bir istisna satırı dosyadaki tek etiketi örter; ikinci ölçüsüz seçici yine düşer.
-        const siblings = rows.filter((r) => r.file === row.file && r.tag === row.tag).length
-        return !covered || siblings > 1
-      })
-      .map((row) => `${row.file}:${row.line} <${row.tag}>`)
+    // Hata çıktısı ne yapılacağını söyler (değer olarak, `reason`'da değil).
+    const sizeHint = (tag: string) => (tag === "TabsList" ? 'size="control"' : 'size="control" (seçenek kartı: "row")')
+    const offenders = rows.flatMap((row) => {
+      const covered = DENSE_SELECTORS.some((e) => e.file === row.file && e.tag === row.tag)
+      // Bir istisna satırı dosyadaki tek etiketi örter; ikinci ölçüsüz seçici yine düşer.
+      const siblings = rows.filter((r) => r.file === row.file && r.tag === row.tag).length
+      const at = `${row.file}:${row.line} <${row.tag}>`
+      if (!covered) return [`${at} — ${sizeHint(row.tag)} ver ya da DENSE_SELECTORS'a gerekçeyle ekle`]
+      if (siblings > 1) return [`${at} — DENSE_SELECTORS satırı dosyada tek etiketi örter; bu etikete ${sizeHint(row.tag)} ver`]
+      return []
+    })
     expect(offenders).toEqual([])
 
     const stale = DENSE_SELECTORS.filter((e) => !rows.some((row) => row.file === e.file && row.tag === e.tag))
-    expect(stale.map((e) => `${e.file} <${e.tag}>`)).toEqual([])
+    expect(stale.map((e) => `${e.file} <${e.tag}> — artık eşleşmiyor, DENSE_SELECTORS satırını sil`)).toEqual([])
     for (const e of DENSE_SELECTORS) expect(e.reason.length).toBeGreaterThan(20)
   })
 })

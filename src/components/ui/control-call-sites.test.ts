@@ -53,11 +53,17 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * variant'tan (`outline` birincil ton, `segment` gri ray + beyaz kart).
  * Sekmeler (`TabsList`, `TabsTrigger`, #854) de aynı kural setiyle taranır:
  * ölçü `TabsList size="control"`dan (telefonda 44px, md+ 36px; `default`
- * segment ve `line` ile), şerit `h-auto`'yu varyanttan alır. Çağrı yeri
- * yerleşim verir: genişlik, grid/flex, `justify-start`, yatay dolgu,
- * `border-b` çizgisi, taşma kaydırması.
- * Kör nokta: `buttonVariants({ className })` çağrısı JSX değildir, taranmaz
- * (#889 anında tek kullanım `ui/` içinde).
+ * segment ve `line` ile), şerit `h-auto`'yu, tetikleyici dolgusunu ve seçili
+ * zemini varyanttan alır (segment seçili tetikleyici primitive'de `bg-card`,
+ * pazarlama `RuhsatDemoSection` dahil — ray `bg-card` ile boyanmaz). Sekmeler
+ * arası yatay boşluk şeridin yerleşimidir (`gap-*`, şerit `px-*`). Çağrı yeri
+ * şeride genişlik, grid/flex, `justify-start`, `border-b` çizgisi ve taşma
+ * kaydırması verir.
+ * Kör noktalar: `buttonVariants({ className })` çağrısı JSX değildir, taranmaz
+ * (#889 anında tek kullanım `ui/` içinde). Başka modülden yeniden dışa
+ * aktarılan CSS modülü nesnesi (`order-detail-surface`'ten gelen `detail`)
+ * CSS modülü olarak tanınmaz; tarayıcı yalnız dosyadaki `*.module.css`
+ * içe aktarımını görür.
  *
  * #925 — ton da variant'tan gelir: `border-destructive/*` (yıkıcı çerçeve →
  * `variant="destructive-outline"`), öneksiz `bg-primary/N` (birincil ton →
@@ -491,7 +497,7 @@ describe("form kontrolleri ve düğmeler çağrı yerinde ezilmez (#888, #889)",
       '<ToggleGroupItem className="w-full justify-start text-muted-foreground">',
       '<TabsList variant="line" size="control" className="flex w-full flex-nowrap justify-start gap-1 border-b border-border -mb-px overflow-x-auto">',
       '<TabsList size="control" className="grid w-full grid-cols-2 sm:w-fit">',
-      '<TabsTrigger value="a" className="shrink-0 sm:px-3">',
+      '<TabsTrigger value="a" className="shrink-0">',
     ]
     for (const source of good) {
       for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])

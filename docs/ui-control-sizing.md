@@ -145,7 +145,10 @@ Ekipler, ekip detayı, katalog içe aktarma önizlemesi. Varsayılanlar (`line`
   36px; #911 sekmeleri kaldırıyor).
 - Pazarlama bölümleri (`components/sections/`: `RuhsatDemoSection` segment,
   `BlogCategoryFilters` `line`) varsayılanın üstüne kendi `--mk-*` ölçeğini
-  kurar; varsayılanı çevirmek o yüzeyleri sessizce değiştirirdi.
+  kurar; varsayılanı çevirmek o yüzeyleri sessizce değiştirirdi. Segment
+  sekmenin seçili tetikleyicisi ise primitive'de `bg-card`'dır (gri rayda
+  beyaz kart); bu renk düzeltmesi `/dijital-arac-kabul`'daki
+  `RuhsatDemoSection` segmentini de bilerek değiştirir.
 - `ui/` primitive'leri registry'ye yakın kalır; yeni eklenen upstream bileşen
   ve örnek kod varsayılan ölçüyle gelir.
 - Varsayılanın telefona sızmasını kapı engeller:
@@ -271,12 +274,16 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
   sayfası bölümleri kapsam dışıdır; genel sayfaların ortak altbilgisi
   `sections/Footer.tsx` taranır. `TabsList` / `TabsTrigger` aynı kural setiyle
   taranır (#854): şerit yüksekliği (`h-auto`), dolgusu (`p-0`, `pb-0`), zemini
-  ve tetikleyici ölçüsü/köşesi varyanttan gelir; çağrı yeri genişlik,
-  grid/flex, `justify-start`, yatay dolgu, `border-b` çizgisi ve taşma
-  kaydırması verir. Kör nokta:
+  ve tetikleyici ölçüsü/köşesi/dolgusu varyanttan gelir; sekmeler arası yatay
+  boşluk şeridin yerleşimidir (`gap-*`, şerit `px-*`). Çağrı yeri şeride
+  genişlik, grid/flex, `justify-start`, `border-b` çizgisi ve taşma kaydırması
+  verir. Kör nokta:
   sabite çıkarılmış sınıf (`TILE`), `className`'i nesneden yayan
-  `{...props}` ve `buttonVariants({ className })` çağrısı taranmaz — sabite
-  boyut sınıfı yazılmaz, `className` JSX'te `cn(...)` ile verilir.
+  `{...props}`, `buttonVariants({ className })` çağrısı ve başka modülden
+  yeniden dışa aktarılan CSS modülü nesnesi (`order-detail-surface`'ten gelen
+  `detail` — tarayıcı yalnız dosyadaki `*.module.css` içe aktarımını tanır)
+  taranmaz — sabite boyut sınıfı yazılmaz, `className` JSX'te `cn(...)` ile
+  verilir.
   Ton da variant'tan gelir (#925): öneksiz (ya da kırılım / tema önekli)
   `border-destructive/*` → `variant="destructive-outline"`, `bg-primary/N` →
   `variant="tint"`, her önekte `bg-white|black/*` / `border-white|black/*` →

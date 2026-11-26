@@ -316,6 +316,25 @@ export function TechnicianOrderDetail({
     return () => cancelAnimationFrame(frame)
   }, [order.id, validRequestedStep])
 
+  // Etkin adım taşan şeridin dışında kalmasın (derin bağlantı `?step=finish`,
+  // 390px'te scrollLeft 0 kalıyordu, #854): yalnız şerit yatay kaydırılır —
+  // scrollIntoView sayfayı dikey de kaydırır ve goToStep'in yukarı kaydırmasıyla
+  // çakışır. İş emri detayı (work-order-detail) aynı yolu izler.
+  const stepListRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const list = stepListRef.current
+    const trigger = list?.querySelector<HTMLElement>('[data-state="active"]')
+    if (!list || !trigger) return
+    const l = list.getBoundingClientRect()
+    const t = trigger.getBoundingClientRect()
+    const pad = 16
+    if (t.left < l.left + pad) {
+      list.scrollTo({ left: list.scrollLeft + (t.left - l.left) - pad, behavior: "smooth" })
+    } else if (t.right > l.right - pad) {
+      list.scrollTo({ left: list.scrollLeft + (t.right - l.right) + pad, behavior: "smooth" })
+    }
+  }, [currentStep])
+
   function goToStep(step: StepId) {
     if (step === currentStep) return
 
@@ -433,7 +452,7 @@ export function TechnicianOrderDetail({
           önceki adımın tamamlanmış olması bir sekmeye geçişi engellemez,
           kilit yalnız düzenlemeyi durdurur (yukarıdaki salt-okunur uyarısı). */}
       <Tabs value={currentStep} onValueChange={(value) => isStepId(value) && goToStep(value)}>
-        <TabsList variant="line" size="control" className="flex w-full flex-nowrap gap-1 border-b border-border -mb-px overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <TabsList variant="line" size="control" ref={stepListRef} className="flex w-full flex-nowrap gap-1 border-b border-border -mb-px overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {steps.map((step) => {
             const Icon = step.icon
             return (

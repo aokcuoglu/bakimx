@@ -48,9 +48,16 @@ export function VehicleFitToggle({
   className?: string
 }) {
   return (
-    <div className={cn("flex items-center justify-between gap-2 border-b border-border", className)}>
+    // Telefonda 44px'lik geniş düğme durum metnini "20 parça bu …"ya sıkıştırıyordu
+    // (#854): dar ekranda düğme üstte, metin altında tam görünür; md+ tek satır.
+    <div
+      className={cn(
+        "flex flex-col-reverse items-start gap-1.5 border-b border-border md:flex-row md:items-center md:justify-between md:gap-2",
+        className
+      )}
+    >
       <span
-        className={cn("truncate text-xs", pressed ? "font-medium text-foreground" : "text-muted-foreground")}
+        className={cn("text-xs md:truncate", pressed ? "font-medium text-foreground" : "text-muted-foreground")}
         aria-live="polite"
       >
         {vehicleFitSummary({ active: pressed, fitting, total, noun })}

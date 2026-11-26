@@ -111,12 +111,15 @@ function TabsTrigger({
         // order-detail.module.css `.tab` kalıbı. Yükseklik `--control-h`
         // (telefonda 44px, md+ 36px), metin kontrol ölçeğinde (`--control-fs`),
         // dolgu yok; seçili sekme mavi metin + 2px mavi alt çizgi
-        // (design-pattern-esantral: "mavi = seçili sekme"). Alt çizgi ve odak
-        // halkası tetikleyicinin İÇİNDE: yatay kaydırmalı şerit
-        // (`overflow-y-hidden`) dışarı taşanı keser. İki grup öneki birlikte
-        // seçiciyi `line` kurallarından özgül kılar; CSS sırasına bağlı değil.
+        // (design-pattern-esantral: "mavi = seçili sekme"). Alt çizgi
+        // tetikleyicinin şeffaf 1px kenarlığının üstüne oturur (`-bottom-px`;
+        // `bottom-0` dolgu kutusunda kalıp şeridin `border-b` çizgisiyle arada
+        // 1px boşluk bırakıyordu) ama kenarlık kutusunun İÇİNDE kalır: yatay
+        // kaydırmalı şerit (`overflow-y-hidden`) dışarı taşanı keser. Odak
+        // halkası da aynı nedenle içeride. İki grup öneki birlikte seçiciyi
+        // `line` kurallarından özgül kılar; CSS sırasına bağlı değil.
         "group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:h-(--control-h) group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:px-3 group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:text-(length:--control-fs) group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:hover:bg-transparent group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:focus-visible:ring-inset group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:data-[state=active]:border-transparent group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:data-[state=active]:bg-transparent group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:data-[state=active]:text-primary-strong dark:group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:data-[state=active]:bg-transparent",
-        "group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:after:bg-primary group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-horizontal/tabs:after:bottom-0 group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-horizontal/tabs:after:h-0.5 group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-vertical/tabs:after:right-0 group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-vertical/tabs:after:w-0.5",
+        "group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:after:bg-primary group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-horizontal/tabs:after:-bottom-px group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-horizontal/tabs:after:h-0.5 group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-vertical/tabs:after:-right-px group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-vertical/tabs:after:w-0.5",
         className
       )}
       {...props}
