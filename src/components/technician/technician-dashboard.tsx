@@ -330,19 +330,18 @@ export function TechnicianDashboard({
           // başlıktaki sayı kapalıyken de görünür.
           if ("collapsible" in section && section.collapsible) {
             return (
-              <Accordion key={section.title} type="single" collapsible>
-                <AccordionItem value="section" className="border-b-0">
-                  {/* Kapalıyken de dokunulabilir olduğu belli olsun: kart görünümlü,
-                      tam genişlik, 44px+ dokunma alanı, hover/basılı geri bildirimi. */}
-                  <AccordionTrigger className="min-h-14 items-center rounded-xl bg-card px-4 py-3 ring-1 ring-foreground/10 transition-colors hover:bg-muted/60 hover:no-underline active:bg-muted **:data-[slot=accordion-trigger-icon]:size-5! **:data-[slot=accordion-trigger-icon]:text-foreground!">
+              <Accordion key={section.title} type="single" collapsible variant="disclosure">
+                <AccordionItem value="section">
+                  {/* Kapalıyken de dokunulabilir olduğu belli olsun: `disclosure`
+                      tetikleyicisi kart görünümlü, tam genişlik, en az kontrol
+                      yüksekliğinde (telefonda 44px), hover/basılı geri bildirimli. */}
+                  <AccordionTrigger>
                     <span className={surface.panelTitle}>
                       {section.title}
                       <span className={surface.panelMeta}>({count})</span>
                     </span>
                   </AccordionTrigger>
-                  {/* AccordionContent içerikteki linklerin altını çizer ([&_a]:underline);
-                      buradaki linkler kart olduğundan bu bölümde kapatılır. */}
-                  <AccordionContent className="space-y-3 pt-2 pb-0 [&_a]:no-underline">
+                  <AccordionContent className="space-y-3">
                     {body}
                   </AccordionContent>
                 </AccordionItem>
