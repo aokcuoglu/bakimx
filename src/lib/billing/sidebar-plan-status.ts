@@ -26,7 +26,7 @@ export function getSidebarPlanStatus(plan: PlanState, planName: string): Sidebar
     return { title: "Abonelik sona erdi", detail: planName, action: "Yenile" }
   }
   if (plan.tier === "lite") {
-    return { title: "Lite · ücretsiz", detail: "Paketinizi yükseltebilirsiniz", action: "İncele" }
+    return { title: "Lite · ücretsiz", detail: "Servis Paketi'ne geçebilirsiniz", action: "İncele" }
   }
   return {
     title: planName,

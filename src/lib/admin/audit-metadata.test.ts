@@ -67,3 +67,10 @@ test("admin_addons_set listeleri anahtar yerine okunur ek özellik adıyla gör�
   expect(metadata.details.find((detail) => detail.key === "added")?.value).toBe("VIN ile araç tanıma, Çoklu şube")
   expect(metadata.details.find((detail) => detail.key === "removed")?.value).toBe("Yok")
 })
+
+test("abonelik durumu ham değer yerine okunur Türkçe etiketle görünür (#955)", () => {
+  const parsed = parseAuditMetadata(JSON.stringify({ status: "active", previousStatus: "past_due" }))
+  const byKey = Object.fromEntries(parsed.details.map((d) => [d.key, d.value]))
+  expect(byKey.status).toBe("Aktif")
+  expect(byKey.previousStatus).toBe("Ödeme gecikti")
+})
