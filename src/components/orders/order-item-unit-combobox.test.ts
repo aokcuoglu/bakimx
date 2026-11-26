@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { ORDER_ITEM_UNIT_LABELS, ORDER_ITEM_UNITS, type OrderItemUnit } from "@/lib/orders/quantity"
-import { matchesOrderItemUnit } from "./order-item-unit-combobox"
+import { acceptedUnit, matchesOrderItemUnit, nextUnitDraft, unitInputText } from "./order-item-unit-combobox"
 
 const SOURCE = readFileSync(join(import.meta.dir, "order-item-unit-combobox.tsx"), "utf8")
 
@@ -39,8 +39,53 @@ describe("birim seçici ortak ui/combobox'tır (#927)", () => {
     expect(SOURCE).toContain('inputMode="none"')
   })
 
-  test("Enter çevreleyen formu göndermez (teklif formu)", () => {
-    expect(SOURCE).toMatch(/if \(event\.key === "Enter"\) event\.preventDefault\(\)/)
+  test("Enter çevreleyen formu göndermez (teklif formu); kapalı alanda listeyi açar", () => {
+    expect(SOURCE).toContain('if (event.key !== "Enter") return')
+    expect(SOURCE).toContain("event.preventDefault()")
+    expect(SOURCE).toContain("if (!open) setOpen(true)")
+  })
+
+  test("metin odakta yalnız ince işaretçide seçilir (iOS seçim tutamaçları açılmaz)", () => {
+    expect(SOURCE).toContain('window.matchMedia("(pointer: fine)").matches')
+  })
+})
+
+describe("alan metni ve taslak kararları (#927)", () => {
+  test("taslak yokken alan seçili birimin etiketini gösterir", () => {
+    expect(unitInputText(null, "adet")).toBe("Adet")
+  })
+
+  test("kullanıcının yazdığı ve sildiği metin taslaktır ve görünür", () => {
+    expect(unitInputText(nextUnitDraft("input-change", "li", "adet"), "adet")).toBe("li")
+    expect(unitInputText(nextUnitDraft("input-clear", "", "adet"), "adet")).toBe("")
+  })
+
+  test("liste kapalıyken silinen metin, odak çıkınca (taslak düşer) etikete döner", () => {
+    const cleared = nextUnitDraft("input-clear", "", "adet")
+    expect(unitInputText(cleared, "adet")).toBe("")
+    // onBlur → setDraft(null)
+    expect(unitInputText(null, "adet")).toBe("Adet")
+  })
+
+  test("Base UI'ın kendi yazdığı metin taslağı düşürür (seçim, kapanışta etikete dönüş)", () => {
+    expect(nextUnitDraft("item-press", "Kilogram", "adet")).toBeNull()
+    expect(nextUnitDraft("none", "Adet", "adet")).toBeNull()
+    expect(nextUnitDraft("escape-key", "", "adet")).toBeNull()
+  })
+
+  test("birim dışarıdan değişince eski taslak geçersizleşir", () => {
+    const typed = nextUnitDraft("input-change", "li", "adet")
+    expect(unitInputText(typed, "metre")).toBe("Metre")
+    // Aynı birime geri dönülse bile taslak bayat kalmaz: seçim taslağı zaten düşürmüştür.
+    expect(unitInputText(nextUnitDraft("item-press", "Metre", "adet"), "adet")).toBe("Adet")
+  })
+
+  test("null (metin silindi) ve devre dışı seçim yok sayılır", () => {
+    const divisibleDisabled = (unit: OrderItemUnit) => unit === "litre"
+    expect(acceptedUnit(null, divisibleDisabled)).toBeNull()
+    expect(acceptedUnit("litre", divisibleDisabled)).toBeNull()
+    expect(acceptedUnit("kilogram", divisibleDisabled)).toBe("kilogram")
+    expect(acceptedUnit("litre")).toBe("litre")
   })
 })
 

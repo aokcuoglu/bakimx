@@ -52,7 +52,7 @@ const buttonVariants = cva(
         warning:
           "bg-warning text-warning-foreground hover:bg-warning/90 focus-visible:ring-warning/20",
         link: "text-primary underline-offset-4 hover:underline",
-        // Değer seçen Popover tetikleyicisi (birim, tarih) alan gibi görünür:
+        // Değer seçen Popover tetikleyicisi (tarih seçiciler) alan gibi görünür:
         // Input / SelectTrigger ile aynı çerçeve, zemin, ağırlık ve odak halkası;
         // köşe aşağıdaki compoundVariants'ta (#889).
         field:
