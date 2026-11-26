@@ -21,6 +21,8 @@ export interface AdminWorkshopRow {
   extraSeats: number
   /** Ek koltuklar hariç, erişim profilinin içerdiği koltuk (deneme dahil). */
   includedSeats: number
+  /** Süresiz eski Lite hakkı (`hasLifetimeLite`). */
+  lifetimeLite: boolean
   createdAt: string
   acquisitionSource: keyof typeof ACQUISITION_SOURCE_LABELS
   acquisitionAdvisorId: string | null

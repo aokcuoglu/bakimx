@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
+import { planActivationAuditMetadata } from "@/lib/admin/plan-activation-audit"
 import { computeTrialEnd, hasLifetimeLite, isSalePlanTier, normalizeAddons } from "@/lib/plan"
 import { diffAddons, extraVinQuotaSchema, workshopAddonsSchema } from "@/lib/validations/workshop-addons"
 import { activateBillingOrder } from "@/lib/billing/activate"
@@ -149,7 +150,10 @@ export async function activateWorkshopPlan(
   if (!isSalePlanTier(tier)) return { ok: false, error: "Geçersiz paket." }
   if (!STATUSES.includes(status as SubStatus)) return { ok: false, error: "Geçersiz durum." }
 
-  const current = await prisma.workshop.findUnique({ where: { id: workshopId }, select: { currentPeriodEnd: true, subscriptionStatus: true } })
+  const current = await prisma.workshop.findUnique({
+    where: { id: workshopId },
+    select: { currentPeriodEnd: true, subscriptionStatus: true, planTier: true, liteFreeGrantedAt: true },
+  })
   if (!current) return { ok: false, error: "İş yeri bulunamadı." }
   // A confirmed paid period is a commercial commitment: changing or downgrading
   // it midway must go through the renewal/billing flow, not this manual tool.
@@ -173,7 +177,7 @@ export async function activateWorkshopPlan(
     "Workshop",
     workshopId,
     "admin_plan_activated",
-    JSON.stringify({ tier, status })
+    JSON.stringify(planActivationAuditMetadata(current, tier, status))
   )
   revalidatePath("/admin", "layout")
   return { ok: true }

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, ChevronLeft, ChevronRight, Handshake } from "lucide-react"
 import { can, getAdminContext } from "@/lib/admin"
 import { prisma } from "@/lib/db"
-import { ADDON_VIN_LOOKUP_QUOTA, getEffectiveSeatLimit, getPlanState, normalizeAddons, planLabel } from "@/lib/plan"
+import { ADDON_VIN_LOOKUP_QUOTA, getEffectiveSeatLimit, getPlanState, hasLifetimeLite, normalizeAddons, planLabel } from "@/lib/plan"
 import { FEATURE_CATALOG } from "@/lib/feature-catalog"
 import { formatMinor } from "@/lib/billing/pricing"
 import { cn } from "@/lib/utils"
@@ -219,6 +219,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
               requestedPlanTier: workshop.requestedPlanTier,
               extraSeats: workshop.extraSeats,
               includedSeats: seatLimit - workshop.extraSeats,
+              lifetimeLite: hasLifetimeLite(workshop),
               planTier: workshop.planTier,
               subscriptionStatus: workshop.subscriptionStatus,
               currentPeriodEnd: workshop.currentPeriodEnd?.toISOString() ?? null,

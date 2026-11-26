@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db"
 import { formatMinor, getPlanPriceMinor } from "@/lib/billing/pricing"
-import { getEffectiveSeatLimit, type PlanTier } from "@/lib/plan"
+import { getEffectiveSeatLimit, hasLifetimeLite, type PlanTier } from "@/lib/plan"
 import type { BillingCycle } from "@prisma/client"
 import type { AdminWorkshopRow } from "@/app/admin/admin-workshops"
 import type { AdminDemoRequestRow, AdminSupportRequestRow } from "@/app/admin/admin-requests"
@@ -80,6 +80,7 @@ export async function getWorkshopRows(query: WorkshopListQuery): Promise<Worksho
     currentPeriodEnd: w.currentPeriodEnd ? w.currentPeriodEnd.toISOString() : null,
     extraSeats: w.extraSeats,
     includedSeats: getEffectiveSeatLimit(w) - w.extraSeats,
+    lifetimeLite: hasLifetimeLite(w),
     acquisitionSource: w.acquisitionSource,
     acquisitionAdvisorId: w.acquisitionAdvisorId,
     createdAt: w.createdAt.toISOString(),
