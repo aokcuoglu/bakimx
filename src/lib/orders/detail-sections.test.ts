@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import {
   ORDER_SECTIONS,
+  isOrderSectionId,
   pickActiveSection,
   sectionForLegacyTab,
   sectionUrl,
@@ -11,6 +12,13 @@ describe("ORDER_SECTIONS (#911)", () => {
     expect(ORDER_SECTIONS.map((s) => s.id)).toEqual(["ozet", "kalemler", "kanit", "odeme", "teknisyen", "gecmis"])
     expect(ORDER_SECTIONS.map((s) => s.label)).toEqual(["Özet", "Kalemler", "Kanıt", "Ödeme", "Teknisyen", "Geçmiş"])
   })
+})
+
+test("isOrderSectionId yalnız bölüm kimliklerini kabul eder", () => {
+  expect(isOrderSectionId("kalemler")).toBe(true)
+  expect(isOrderSectionId("parca")).toBe(false)
+  expect(isOrderSectionId("")).toBe(false)
+  expect(isOrderSectionId(undefined)).toBe(false)
 })
 
 describe("sectionForLegacyTab — eski ?tab= bağlantıları kırılmaz", () => {

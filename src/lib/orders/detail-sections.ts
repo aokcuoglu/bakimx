@@ -16,6 +16,11 @@ export const ORDER_SECTIONS = [
 
 export type OrderSectionId = (typeof ORDER_SECTIONS)[number]["id"]
 
+/** DOM'dan okunan değer (`data-section`, `location.hash`) gerçekten bir bölüm mü. */
+export function isOrderSectionId(value: string | null | undefined): value is OrderSectionId {
+  return ORDER_SECTIONS.some((section) => section.id === value)
+}
+
 // Eski sekme anahtarı → bölüm. `ozet` bilinçli olarak yok: Özet sayfanın başı,
 // açılışta kaydırılacak bir yer yok (liste "Düzenle"nin `?edit=1`i de böyle kalır).
 const LEGACY_TAB_SECTIONS = new Map<string, OrderSectionId>([
