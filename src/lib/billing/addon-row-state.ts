@@ -26,13 +26,19 @@ export interface AddonRowView {
 
 export type AddonRowViews = Record<AddonCatalogItem["key"], AddonRowView>
 
+function baseView(item: AddonCatalogItem): AddonRowView {
+  return { state: !item.shipped || item.features.length === 0 ? "comingSoon" : "locked", openFeatures: [] }
+}
+
 export function getAddonRowView(
   item: AddonCatalogItem,
   workshop: WorkshopEntitlementFields,
 ): AddonRowView {
-  if (item.features.length === 0) return { state: "comingSoon", openFeatures: [] }
+  if (!item.shipped || item.features.length === 0) return baseView(item)
 
   const plan = getPlanState(workshop)
+  // Erişimi olmayan atölyede (ödeme gecikti, dönem/deneme bitti, onaysız) olumlu rozet verilmez.
+  if (!plan.hasAccess) return baseView(item)
   const addons = normalizeAddons(workshop.addons)
   const open = item.features.filter((f) => hasWorkshopFeature(workshop, f))
   if (open.length === 0) return { state: "locked", openFeatures: [] }
@@ -52,8 +58,5 @@ export function resolveAddonRowViews(workshop: WorkshopEntitlementFields): Addon
 
 /** Atölye bağlamı olmayan yüzeyler (/fiyatlar, kilit ekranı) için bugünkü görünüm. */
 export const DEFAULT_ADDON_ROW_VIEWS: AddonRowViews = Object.fromEntries(
-  ADDON_CATALOG.map((item): [AddonCatalogItem["key"], AddonRowView] => [
-    item.key,
-    { state: item.features.length === 0 ? "comingSoon" : "locked", openFeatures: [] },
-  ]),
+  ADDON_CATALOG.map((item): [AddonCatalogItem["key"], AddonRowView] => [item.key, baseView(item)]),
 ) as AddonRowViews

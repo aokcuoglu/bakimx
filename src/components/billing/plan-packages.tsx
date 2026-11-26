@@ -106,10 +106,10 @@ function IncludedTable({ label = "Pakete dahil olanlar" }: { label?: string }) {
   )
 }
 
-const ADDON_STATE_BADGE: Record<AddonRowState, { label: string; variant: "secondary"; className?: string }> = {
+const ADDON_STATE_BADGE: Record<AddonRowState, { label: string; variant: "secondary" | "outline"; className?: string }> = {
   active: { label: "Etkin", variant: "secondary", className: "bg-success/10 text-success-strong" },
   trial: { label: "Denemede açık", variant: "secondary", className: "bg-primary/10 text-primary-strong" },
-  partial: { label: "Kısmen etkin", variant: "secondary" },
+  partial: { label: "Kısmen etkin", variant: "outline" },
   locked: { label: "Yakında", variant: "secondary" },
   comingSoon: { label: "Yakında", variant: "secondary" },
 }
@@ -140,7 +140,7 @@ function AddonRow({
           </p>
         )}
       </div>
-      {action}
+      {action && <div className="shrink-0 self-start">{action}</div>}
     </li>
   )
 }
@@ -149,22 +149,21 @@ function AddonRow({
 function AddonList({
   headingId,
   views = DEFAULT_ADDON_ROW_VIEWS,
-  isTrialing = false,
   renderAction,
 }: {
   headingId: string
   views?: AddonRowViews
-  isTrialing?: boolean
   /** Satır eylemi yuvası (ör. satın al); yoksa satır eylemsiz kalır. */
   renderAction?: (addon: AddonCatalogItem, view: AddonRowView) => React.ReactNode
 }) {
+  const hasTrialRow = Object.values(views).some((view) => view.state === "trial")
   return (
     <section aria-labelledby={headingId} className="space-y-3">
       <div className="space-y-1">
         <h3 id={headingId} className="text-sm font-semibold text-foreground">Pakete dahil olmayan ek özellikler</h3>
         <p className="text-xs leading-5 text-muted-foreground">
-          {isTrialing
-            ? "Deneme süresince hepsi açık. Deneme bitince yalnız \"Etkin\" olanlar açık kalır."
+          {hasTrialRow
+            ? "“Denemede açık” işaretli olanları deneme süresince kullanabilirsiniz; deneme bitince yalnız “Etkin” olanlar açık kalır."
             : <>
                 Uygulama içinden ayrıca alınır; satın alma yakında açılacak.
                 {TRIAL_INCLUDES_ADDONS && " Deneme süresince ücretsiz deneyebilirsiniz."}
@@ -412,7 +411,7 @@ export function PlanPackages({
                 />
               </div>
             </div>
-            <AddonList headingId="ayarlar-ek-ozellikler" views={addonViews} isTrialing={isTrialing} />
+            <AddonList headingId="ayarlar-ek-ozellikler" views={addonViews} />
           </div>
           <div className="min-w-0 overflow-hidden rounded-xl bg-card shadow-[inset_0_0_0_1px_var(--border)]">
             <IncludedTable />

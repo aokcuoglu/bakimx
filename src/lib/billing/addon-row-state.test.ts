@@ -22,7 +22,7 @@ const trial = (over: Record<string, unknown> = {}) =>
 test("pro + ek özellik yok: kapılı satırlar kilitli, AI yakında", () => {
   const v = resolveAddonRowViews(ws())
   for (const item of ADDON_CATALOG) {
-    expect(v[item.key].state).toBe(item.features.length === 0 ? "comingSoon" : "locked")
+    expect(v[item.key].state).toBe(item.shipped ? "locked" : "comingSoon")
   }
 })
 
@@ -45,7 +45,7 @@ test("aktif deneme: kapılı satırlar denemede açık; satın alınan etkin", (
   expect(v.vinLookup.state).toBe("trial")
   const mixed = resolveAddonRowViews(trial({ addons: ["ocrIntake"] }))
   expect(mixed.ocrIntake.state).toBe("active")
-  expect(mixed.eInvoice.state).toBe("trial")
+  expect(mixed.multiBranch.state).toBe("trial")
 })
 
 test("süresi dolmuş deneme kilitli", () => {
@@ -70,4 +70,55 @@ test("varsayılan görünümde etkin/deneme/kısmen yok ve anahtarlar katalogla 
   expect(states).not.toContain("partial")
   expect(Object.keys(DEFAULT_ADDON_ROW_VIEWS).sort()).toEqual(ADDON_CATALOG.map((i) => i.key).sort())
   expect(Object.keys(resolveAddonRowViews(ws())).sort()).toEqual(ADDON_CATALOG.map((i) => i.key).sort())
+})
+
+test("erişimi olmayan atölyede olumlu rozet yok (past_due, dönem bitti)", () => {
+  for (const v of [
+    resolveAddonRowViews(ws({ planTier: "premium", subscriptionStatus: "past_due" })),
+    resolveAddonRowViews(ws({ planTier: "premium", currentPeriodEnd: past() })),
+    resolveAddonRowViews(ws({ addons: ["ocrIntake"], subscriptionStatus: "canceled" })),
+  ]) {
+    expect(v.ocrIntake.state).toBe("locked")
+    expect(v.vinLookup.state).toBe("locked")
+  }
+})
+
+test("premium satırda süresi dolmuş deneme kilitli", () => {
+  const v = resolveAddonRowViews(
+    ws({ planTier: "premium", subscriptionStatus: "trialing", trialEndsAt: past() }),
+  )
+  expect(v.ocrIntake.state).toBe("locked")
+})
+
+test("eski lite ve starter + ek özellik: yalnız satın alınan etkin", () => {
+  for (const planTier of ["lite", "starter"] as const) {
+    const v = resolveAddonRowViews(ws({ planTier, addons: ["ocrIntake"] }))
+    expect(v.ocrIntake.state).toBe("active")
+    expect(v.multiBranch.state).toBe("locked")
+  }
+})
+
+test("lifetime Lite: ek özellik yoksa kilitli, varsa etkin", () => {
+  const base = { planTier: "lite" as const, subscriptionStatus: "canceled" as const, liteFreeGrantedAt: new Date() }
+  expect(resolveAddonRowViews(ws(base)).ocrIntake.state).toBe("locked")
+  expect(resolveAddonRowViews(ws({ ...base, addons: ["ocrIntake"] })).ocrIntake.state).toBe("active")
+})
+
+test("deneme + yalnız vinLookup: satır denemede açık", () => {
+  const v = resolveAddonRowViews(trial({ addons: ["vinLookup"] }))
+  expect(v.vinLookup.state).toBe("trial")
+})
+
+test("yayımlanmamış ek özellik her durumda yakında", () => {
+  for (const w of [
+    ws(),
+    ws({ planTier: "premium" }),
+    ws({ addons: ["eInvoice"] }),
+    trial(),
+    trial({ trialEndsAt: past() }),
+  ]) {
+    const v = resolveAddonRowViews(w)
+    expect(v.eInvoice.state).toBe("comingSoon")
+    expect(v.aiAssistant.state).toBe("comingSoon")
+  }
 })
