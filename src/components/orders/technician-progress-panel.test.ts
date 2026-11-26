@@ -67,4 +67,40 @@ test("kapanmış kabulde işaretlenmemiş madde 'bekliyor' değil 'işaretlenmed
   expect(closed).toContain(" — işaretlenmedi")
   expect(closed).not.toContain("bekliyor")
   expect(closed).not.toContain("Henüz")
+  // Başlık hapı ilerleme değil kayıt; hiç işaretlenmemiş grupta "0/1" sayacı yok.
+  expect(open).toContain("0 / 1 tamamlandı")
+  expect(open).toContain("0/1")
+  expect(closed).not.toContain("tamamlandı")
+  expect(closed).toContain("0 / 1 işaretlendi")
+  expect(closed).not.toContain("0/1")
+})
+
+test("kapanmış kabulde işaretlenmiş grubun sayacı kalır, madde yoksa hap çizilmez", async () => {
+  const { createElement } = await import("react")
+  const { renderToStaticMarkup } = await import("react-dom/server")
+  const { TechnicianProgressPanel } = await import("./technician-progress-panel")
+  const item = (id: string, isCompleted: boolean) => ({
+    id,
+    category: "repair",
+    description: `Madde ${id}`,
+    isCompleted,
+    isRequired: true,
+    completedAt: null,
+    note: null,
+  })
+  const partial = renderToStaticMarkup(
+    createElement(TechnicianProgressPanel, {
+      checklistItems: [item("a", true), item("b", false)],
+      laborSessions: [],
+      internalNotes: [],
+      closed: true,
+    }),
+  )
+  expect(partial).toContain("1/2")
+  expect(partial).toContain("1 / 2 işaretlendi")
+  const empty = renderToStaticMarkup(
+    createElement(TechnicianProgressPanel, { checklistItems: [], laborSessions: [], internalNotes: [], closed: true }),
+  )
+  expect(empty).not.toContain("işaretlendi")
+  expect(empty).toContain("Kontrol maddesi yok")
 })

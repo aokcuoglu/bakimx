@@ -74,14 +74,18 @@ function ChecklistCategoryBlock({
 }) {
   if (items.length === 0) return null
   const info = CHECKLIST_CATEGORIES[category]
+  const done = items.filter((i) => i.isCompleted).length
 
   return (
     <div className={detail.group}>
       <div className={detail.groupHead}>
         <DetailPill tone={CATEGORY_TONE[category]}>{info.label}</DetailPill>
-        <span className={detail.groupCount}>
-          {items.filter((i) => i.isCompleted).length}/{items.length}
-        </span>
+        {/* Kapanmış kabulde hiç işaretlenmemiş grupta "0/8" yarım iş gibi okunuyordu (#913). */}
+        {!(closed && done === 0) && (
+          <span className={detail.groupCount}>
+            {done}/{items.length}
+          </span>
+        )}
       </div>
       <ul>
         {items.map((item) => (
@@ -138,9 +142,18 @@ export function TechnicianProgressPanel({
       <DetailPanel
         title="Kontrol Listesi"
         aside={
-          <DetailPill tone={summary.total > 0 && summary.completed === summary.total ? "success" : "neutral"}>
-            {summary.completed} / {summary.total} tamamlandı
-          </DetailPill>
+          closed ? (
+            // Kapanmış kabulde ilerleme değil kayıt: kaç madde işaretlendi, nötr (#913).
+            summary.total > 0 && (
+              <DetailPill tone="neutral">
+                {summary.completed} / {summary.total} işaretlendi
+              </DetailPill>
+            )
+          ) : (
+            <DetailPill tone={summary.total > 0 && summary.completed === summary.total ? "success" : "neutral"}>
+              {summary.completed} / {summary.total} tamamlandı
+            </DetailPill>
+          )
         }
       >
         {summary.total === 0 ? (

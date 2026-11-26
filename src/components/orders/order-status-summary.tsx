@@ -23,15 +23,26 @@ function StepIssue({
   onNavigate: (id: OrderSectionId) => void
 }) {
   return (
-    <div className={detail.stepIssue}>
+    // Engel (düğmeyi kapatan) hafif uyarı tonlu kutuda öne çıkar; not düz ve soluk.
+    // Tonlu zeminde ikincil metin ve bağlantı `-strong` tonda (AGENTS.md).
+    <div
+      className={cn(
+        detail.stepIssue,
+        blocker ? "rounded-md bg-warning/10 px-3 py-2 text-muted-foreground-strong" : "text-muted-foreground",
+      )}
+    >
       {blocker && <TriangleAlert aria-hidden className={detail.stepIssueIcon} />}
       <div className="min-w-0">
-        <p className={blocker ? detail.stepIssueTitle : undefined}>{issue.text}</p>
+        <p className={blocker ? "font-medium text-warning-strong" : undefined}>{issue.text}</p>
         {issue.preview && <p className="truncate text-foreground">{issue.preview}</p>}
         <p>{issue.hint}</p>
         <a
           href="#kalemler"
-          className={cn(detail.hit, "mt-0.5 inline-block font-medium text-primary hover:underline")}
+          className={cn(
+            detail.hit,
+            "mt-0.5 inline-block font-medium hover:underline",
+            blocker ? "text-primary-strong" : "text-primary",
+          )}
           onClick={(event) => {
             event.preventDefault()
             onNavigate("kalemler")
