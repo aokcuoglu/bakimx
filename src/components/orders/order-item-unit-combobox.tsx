@@ -1,13 +1,41 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Check, ChevronDown, Search } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
+import { useState } from "react"
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox"
 import { ORDER_ITEM_UNIT_LABELS, ORDER_ITEM_UNITS, type OrderItemUnit } from "@/lib/orders/quantity"
 
+/** Küçük harf + Türkçe harfler tabana: "ş" → "s", "ı" / "I" → "i", "ü" → "u". */
+function foldTurkish(text: string): string {
+  return text.toLocaleLowerCase("tr").replace(/ı/g, "i").normalize("NFD").replace(/\p{M}/gu, "")
+}
+
+/**
+ * Birim listesinin filtresi: "sise" "Şişe"yi, "TAKIM" ve "takim" "Takım"ı bulur.
+ * Base UI'ın varsayılan `Intl.Collator` filtresi `tr` yerelinde ş/s, ü/u, ç/c'yi
+ * ayrı harf sayıyor ("sise" hiçbir şey bulmuyordu), yerelsizken de ı/i'yi
+ * ("takim" → Takım yok).
+ */
+export function matchesOrderItemUnit(unit: OrderItemUnit, query: string): boolean {
+  return foldTurkish(ORDER_ITEM_UNIT_LABELS[unit]).includes(foldTurkish(query.trim()))
+}
+
+/**
+ * Kalem birimi seçici — ortak `ui/combobox` (#927). Kapalıyken yanındaki
+ * girdiyle aynı ölçüde bir alandır (`size`); liste dar hücrede de okunur
+ * genişlikte açılır (`minWidth="menu"`).
+ *
+ * Telefonda "dokun → listeden seç": `inputMode="none"` sanal klavyeyi açmaz,
+ * donanım klavyesi yine süzer. Alan Radix diyaloglarının içinde de durduğu için
+ * arama kutusu popup'ta değil, alanın kendisidir (body'ye taşınan popup'taki
+ * girdi Radix odak tuzağına odağını kaptırırdı).
+ */
 export function OrderItemUnitCombobox({
   value,
   onValueChange,
@@ -24,78 +52,55 @@ export function OrderItemUnitCombobox({
   size?: "default" | "compact"
   className?: string
 }) {
-  const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState("")
-  const visibleUnits = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("tr")
-    return normalized
-      ? ORDER_ITEM_UNITS.filter((unit) => ORDER_ITEM_UNIT_LABELS[unit].toLocaleLowerCase("tr").includes(normalized))
-      : ORDER_ITEM_UNITS
-  }, [query])
-
-  function changeOpen(next: boolean) {
-    setOpen(next)
-    if (!next) setQuery("")
-  }
+  // Girdi metni yalnız kullanıcı yazarken / silerken seçili birimin etiketinden
+  // ayrılır. Base UI liste kapanınca metni etikete döndürüyor; ama liste hiç
+  // açılmadan silinen metin (Tab ile gelip Backspace) boş kalıyordu. Taslak
+  // yalnız kullanıcının yazdığı metindir: odak çıkınca ya da Base UI metni
+  // kendisi yazınca (seçim, kapanış) düşer.
+  const [draft, setDraft] = useState<{ unit: OrderItemUnit; text: string } | null>(null)
+  const inputValue = draft?.unit === value ? draft.text : ORDER_ITEM_UNIT_LABELS[value]
+  const typedByUser = (reason: string) => reason === "input-change" || reason === "input-clear"
 
   return (
-    <Popover open={open} onOpenChange={changeOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          // Alan görünümlü tetikleyici (#889): yanındaki girdiyle aynı boy,
-          // çerçeve ve köşe.
-          variant="field"
-          size={size}
-          role="combobox"
-          aria-label={ariaLabel}
-          aria-expanded={open}
-          className={cn("justify-between gap-1.5", className)}
-        >
-          <span className="truncate">{ORDER_ITEM_UNIT_LABELS[value]}</span>
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-56 gap-1.5 p-1.5">
-        <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Birim ara..."
-            aria-label="Birim ara"
-            size="sm"
-            className="pl-8"
-            autoFocus
-          />
-        </div>
-        <div role="listbox" aria-label="Birimler" className="max-h-60 overflow-y-auto py-0.5">
-          {visibleUnits.length === 0 ? (
-            <p className="px-2 py-3 text-center text-sm text-muted-foreground">Birim bulunamadı</p>
-          ) : visibleUnits.map((unit) => {
-            const disabled = isOptionDisabled?.(unit)
-            return (
-              <Button
-                key={unit}
-                type="button"
-                variant="ghost"
-                size="sm"
-                role="option"
-                aria-selected={unit === value}
-                disabled={disabled}
-                className="w-full justify-start gap-2 text-left"
-                onClick={() => {
-                  onValueChange(unit)
-                  changeOpen(false)
-                }}
-              >
-                <Check className={cn("size-4", unit === value ? "opacity-100" : "opacity-0")} />
-                {ORDER_ITEM_UNIT_LABELS[unit]}
-              </Button>
-            )
-          })}
-        </div>
-      </PopoverContent>
-    </Popover>
+    <Combobox
+      items={ORDER_ITEM_UNITS}
+      value={value}
+      itemToStringLabel={(unit: OrderItemUnit) => ORDER_ITEM_UNIT_LABELS[unit]}
+      filter={matchesOrderItemUnit}
+      locale="tr"
+      autoHighlight
+      inputValue={inputValue}
+      onInputValueChange={(text, details) =>
+        setDraft(typedByUser(details.reason) ? { unit: value, text } : null)}
+      onValueChange={(next: OrderItemUnit | null) => {
+        // Metni silmek seçimi `null` yapar: birim boş kalamaz, yok sayılır.
+        if (next == null || isOptionDisabled?.(next)) return
+        onValueChange(next)
+      }}
+    >
+      <ComboboxInput
+        size={size}
+        className={className}
+        aria-label={ariaLabel}
+        inputMode="none"
+        onFocus={(event) => event.currentTarget.select()}
+        onBlur={() => setDraft(null)}
+        // Enter yalnız listeden seçer; liste kapalıyken (ya da vurgu yokken)
+        // çevreleyen formu (teklif formu) göndermez.
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.preventDefault()
+        }}
+      />
+      <ComboboxContent minWidth="menu">
+        <ComboboxEmpty>Birim bulunamadı</ComboboxEmpty>
+        <ComboboxList>
+          {(unit: OrderItemUnit) => (
+            <ComboboxItem key={unit} value={unit} disabled={isOptionDisabled?.(unit)}>
+              {ORDER_ITEM_UNIT_LABELS[unit]}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
   )
 }

@@ -1665,7 +1665,8 @@ function QuantityField({ row, editable, onCell }: { row: Row; editable: boolean;
   )
 }
 
-function UnitField({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
+/** `fill`: mobil kartta Birim kolonunu doldurur; tablo hücresinde kompakt `w-24`. */
+function UnitField({ row, editable, onCell, fill = false }: { row: Row; editable: boolean; onCell: OnCell; fill?: boolean }) {
   const unit = ORDER_ITEM_UNITS.find((candidate) => candidate === row.unit) ?? "adet"
   if (row.type !== "part") return <span className="text-xs text-muted-foreground">—</span>
   if (!editable) return <span className="text-sm">{ORDER_ITEM_UNIT_LABELS[unit]}</span>
@@ -1674,7 +1675,7 @@ function UnitField({ row, editable, onCell }: { row: Row; editable: boolean; onC
       value={unit}
       ariaLabel={`${row.name || "Parça"} birimi`}
       size="compact"
-      className="w-24"
+      className={fill ? "w-full" : "w-24"}
       isOptionDisabled={(candidate) =>
         (row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}
       onValueChange={(next) => {
@@ -2701,9 +2702,9 @@ function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, s
               ? <QuantityField row={row} editable={ed.editable} onCell={onCell} />
               : <QtyStepper row={row} editable={ed.editable} onCell={onCell} />}
           </div>
-          <div className="min-w-0 space-y-1 [&_[role=combobox]]:!w-full">
+          <div className="min-w-0 space-y-1">
             <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground" data-pl="label">Birim</span>
-            <UnitField row={row} editable={ed.editable} onCell={onCell} />
+            <UnitField row={row} editable={ed.editable} onCell={onCell} fill />
           </div>
           <div className="min-w-0 space-y-1 [&_[data-slot=price-field]]:!w-full">
             <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground" data-pl="label">Fiyat</span>

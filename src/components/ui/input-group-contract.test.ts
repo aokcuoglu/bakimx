@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url"
 import ts from "typescript"
 import { Combobox as ComboboxPrimitive } from "@base-ui/react"
 import { Autocomplete, AutocompleteInput, AutocompleteInputGroup } from "./autocomplete"
-import { Combobox, ComboboxInput } from "./combobox"
+import { Combobox, ComboboxContent, ComboboxInput } from "./combobox"
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "./input-group"
 import { eachTsx, utilityCore } from "./jsx-source-scan"
 
@@ -223,5 +223,22 @@ describe("Combobox popup'ı grubun kutusuna çapalanır (#887)", () => {
       }
     })
     expect(offenders).toEqual([])
+  })
+})
+
+describe("dar hücredeki Combobox listesi okunur genişlikte açılabilir (#927)", () => {
+  type ContentElement = ReactElement<{ children: ReactElement<{ children: ReactElement<{ className?: string }> }> }>
+  const popupClasses = (element: ContentElement) =>
+    (element.props.children.props.children.props.className ?? "").split(/\s+/)
+
+  test('minWidth="menu" listeye en az genişlik verir (ekrana sığdırılarak); varsayılan çapanın genişliğidir', () => {
+    // Düz fonksiyon çağrısı yalnız ComboboxContent hook'suz olduğu için geçerli.
+    const menu = popupClasses(ComboboxContent({ minWidth: "menu" }))
+    expect(menu).toContain("w-(--anchor-width)")
+    expect(menu).toContain("min-w-[min(--spacing(56),var(--available-width))]")
+
+    const anchor = popupClasses(ComboboxContent({}))
+    expect(anchor).toContain("w-(--anchor-width)")
+    expect(anchor.filter((cls) => cls.startsWith("min-w-"))).toEqual([])
   })
 })

@@ -81,6 +81,7 @@ export const FIELD_CONTROLS = [
   // CitySelect / DistrictSelect onu `...props` ile LocationCombobox'a geçirir
   // (yayılımla iletim otomatik tespit edilmez, elle listelenir).
   "FilterSelect",
+  "OrderItemUnitCombobox",
   "LocationCombobox",
   "CitySelect",
   "DistrictSelect",
@@ -93,7 +94,6 @@ export const BUTTON_CONTROLS = [
   // Sarmalayıcılar: className'i Button'a iletir.
   "ColorCard",
   "CookiePreferencesButton",
-  "OrderItemUnitCombobox",
   "PhotoDeleteButton",
   "PrintButton",
   "StopLaborButton",

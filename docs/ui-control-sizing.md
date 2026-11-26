@@ -54,6 +54,11 @@ kutu genişliğinde biter. Popup genişliği yalnız `--anchor-width`'tir, girdi
 listeyi açar; girdi devre dışıyken açmaz. Chip'li çoklu seçim
 (`ComboboxChips`) chip kabına `useComboboxAnchor` ile çapalanır
 (`<ComboboxContent anchor={…}>`).
+Dar hücredeki alanın listesi (kalem satırında `w-24` birim seçici) kutu
+genişliğinde "Santimetre" / "Mililitre"yi sığdırmaz: `<ComboboxContent
+minWidth="menu">` listeye en az 14rem verir, ekranda yer yoksa
+`--available-width`'e iner (`min-w-[min(--spacing(56),var(--available-width))]`).
+Varsayılan (`"anchor"`) kutu genişliğidir (#927).
 
 **Eklenti dolgusu, dar hücre (#887):** satır içi eklentinin olduğu yanda
 girdinin dolgusu `--field-px` yerine 6px'tir (`pl-1.5` / `pr-1.5`), öbür yan
@@ -86,14 +91,16 @@ variant içindir, telefonda görünen `line` sekmenin ölçeğe bağlanması #85
 Button: sistem fontu, ağırlık 500, harf aralığı −0.01em, düz dolgu (gölge yok).
 Renk variant'ları ve Radix `asChild` sözleşmesi korunur.
 
-**Button `variant="field"`** (#889): değer seçen Popover tetikleyicisi (birim,
-tarih) girdi gibi görünür — `border-input`, `bg-card`, ağırlık 400, girdinin
+**Button `variant="field"`** (#889): değer seçen Popover tetikleyicisi (tarih)
+girdi gibi görünür — `border-input`, `bg-card`, ağırlık 400, girdinin
 köşesi (`--control-radius`, `compoundVariants` ile her boyutta) ve form
 kontrollerinin odak / geçersiz halkası (`ring-4 ring-ring/20`,
-`ring-4 ring-destructive/10`). Boyu yanındaki girdiyle aynı `size`'dır: kalem
-satırında `compact` (metni compact girdiyle aynı `--control-fs-field-xs`,
-telefonda 16px), formda `default` (`OrderItemUnitCombobox`).
-`DatePicker`, `DateRangePicker` ve `DateTimePicker` tetikleyicisi de `field`'dır.
+`ring-4 ring-destructive/10`). Boyu yanındaki girdiyle aynı `size`'dır: yoğun
+satırda `compact` (metni compact girdiyle aynı `--control-fs-field-xs`,
+telefonda 16px), formda `default`. `DatePicker`, `DateRangePicker` ve
+`DateTimePicker` tetikleyicisi `field`'dır. Kalem birimi seçici
+(`OrderItemUnitCombobox`) #927'den beri `field` düğmesi değil, `ComboboxInput`
+alanıdır (aynı `size`: kalem satırında `compact`, formda `default`).
 
 **Ton variant'ları** (#925): ton çağrı yerinde `className` ile değil variant
 ile verilir. `destructive-outline` — ikincil yıkıcı eylem (İptal, Pasif Yap):
@@ -202,8 +209,8 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
 - Form kontrolleri (`Input`, `InputGroup`, `InputGroupInput`,
   `InputGroupTextarea`, `Textarea`, `SelectTrigger`, `AutocompleteInput`,
   `ComboboxInput`, `ComboboxChips`, `AutocompleteInputGroup`) ve onlara
-  `className` ileten sarmalayıcılar (`FilterSelect`, `CitySelect`,
-  `DistrictSelect`) açılış etiketinde yükseklik (`h-*`, `min-h-*`, `size-*`),
+  `className` ileten sarmalayıcılar (`FilterSelect`, `OrderItemUnitCombobox`,
+  `CitySelect`, `DistrictSelect`) açılış etiketinde yükseklik (`h-*`, `min-h-*`, `size-*`),
   köşe (`rounded*`), yazı boyutu (`text-xs…xl`, keyfi uzunluk), satır
   yüksekliği (`leading-*`), dolgu (`p-*`, `py-*`, `pt-*`, `pb-*`), kenarlık
   kaldırma/kalınlığı (`border-0|none|transparent`, `border-2|4|8`), zemin
@@ -219,7 +226,7 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
   eşleşmeyen istisna testi düşürür.
 - Düğmeler ve seçiciler (#889): `Button`, `InputGroupButton`, onlara
   `className` / `*ClassName` ileten sarmalayıcılar (`PrintButton`,
-  `PhotoDeleteButton`, `OrderItemUnitCombobox`, `TechnicianAssign`,
+  `PhotoDeleteButton`, `TechnicianAssign`,
   `SidebarTrigger`, `FilterSheet` `triggerClassName`…) ve `ToggleGroup` /
   `ToggleGroupItem` / `Toggle` açılış etiketinde yükseklik (`h-*` — `h-full` hariç,
   `min-h-*`, `max-h-*`, `size-*` — `size-full` hariç), köşe (`rounded*`), yazı
