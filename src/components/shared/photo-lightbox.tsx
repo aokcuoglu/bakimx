@@ -197,12 +197,14 @@ export function PhotoLightbox({
             <>
               <CarouselPrevious
                 size="icon"
-                className="left-2 border-0 bg-black/60 text-white hover:bg-black/80 hover:text-white"
+                variant="on-photo-scrim"
+                className="left-2"
                 aria-label="Önceki fotoğraf"
               />
               <CarouselNext
                 size="icon"
-                className="right-2 border-0 bg-black/60 text-white hover:bg-black/80 hover:text-white"
+                variant="on-photo-scrim"
+                className="right-2"
                 aria-label="Sonraki fotoğraf"
               />
             </>

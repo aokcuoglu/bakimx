@@ -4,6 +4,7 @@ import { relative, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 import { cn } from "@/lib/utils"
 import { eachTsx, jsxOpeningTags } from "./jsx-source-scan"
+import { buttonVariants } from "./button"
 import { tabsListVariants } from "./tabs"
 
 const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8")
@@ -108,6 +109,38 @@ describe("kontrol ölçeği — e-santral (mobil 44px / masaüstü 36px)", () =>
     const page = read("../../app/design/page.tsx")
     for (const variant of ["destructive-outline", "tint"]) expect(page).toContain(`["${variant}", `)
     for (const variant of ["on-photo", "on-photo-ghost"]) expect(page).toContain(`variant="${variant}"`)
+  })
+
+  /**
+   * #928 — dilim 2 ton variant'ları: satır içi yıkıcı (`destructive-ghost`),
+   * uyarı tonu (`warning-tint`), galeri oku (`on-photo-scrim`).
+   */
+  test("soluk-dinlenme deyimi: className text-muted-foreground variant'ın dinlenme kırmızısını düşürür, hover kalır (#928)", () => {
+    const classes = cn(buttonVariants({ variant: "destructive-ghost", className: "text-muted-foreground" }))
+    const tokens = classes.split(/\s+/)
+    expect(tokens).not.toContain("text-destructive-strong")
+    expect(tokens).toContain("text-muted-foreground")
+    expect(tokens).toContain("hover:text-destructive-strong")
+    expect(tokens).toContain("hover:bg-destructive/10")
+  })
+
+  test("dilim 2 ton variant'ları tanımlı, çerçevesiz olanlar NO_BORDER'da, koyu hover /20 yok (#928)", () => {
+    const button = read("./button.tsx")
+    for (const key of ['"destructive-ghost":', '"warning-tint":', '"on-photo-scrim":']) {
+      expect(button).toContain(`        ${key}`)
+    }
+    const noBorder = button.slice(button.indexOf("const NO_BORDER_VARIANTS"), button.indexOf("] as const"))
+    expect(noBorder).toContain('"destructive-ghost",')
+    expect(noBorder).toContain('"on-photo-scrim",')
+    // warning-tint kendi kenarlığını taşır: NO_BORDER'da olmamalı.
+    expect(noBorder).not.toContain('"warning-tint"')
+    // -strong metin bg-muted üstünde koyu hover /20'de AA'nın altına iner.
+    const ghost = button.slice(button.indexOf('"destructive-ghost":'), button.indexOf('"warning-tint":'))
+    expect(ghost).not.toContain("dark:hover:bg-destructive/20")
+
+    const page = read("../../app/design/page.tsx")
+    for (const variant of ["destructive-ghost", "warning-tint"]) expect(page).toContain(`["${variant}", `)
+    expect(page).toContain('variant="on-photo-scrim"')
   })
 
   test("Input, Select, Textarea ve InputGroup değişkenden ölçülür", () => {
