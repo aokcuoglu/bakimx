@@ -177,3 +177,51 @@ test("#912: Durum hapı panel başlığında, teslim kodu düğmesi tek yerde", 
   expect(DETAIL).toContain('label: a.key === "delivered" ? "Teslim Et (OTP)" : a.label')
   expect(DETAIL).toContain('(a.key === "delivered" && deliveryBlocked)')
 })
+
+/**
+ * #913 — engeller Durum kartında. Başlığın altındaki iki uyarı şeridi kalktı;
+ * aynı metin, ad önizlemesi ve Kalemler'e çıkış yolu Durum kartında ve telefon
+ * özet kartında (`orderNextStep`, next-step.test.ts). Bağlantı sayfa içi `<a>`
+ * ("devamı" ile aynı kalıp), düğme değil.
+ */
+test("#913: uyarı şeritleri yok; engeller Durum kartında Kalemler bağlantısıyla", () => {
+  expect(DETAIL).not.toContain("kalemin fiyatı girilmemiş.")
+  expect(DETAIL).not.toContain("parça talebi karar bekliyor.")
+  expect(DETAIL).not.toContain('scrollToOrderSection("kalemler")} className="mt-1"')
+  const issue = SUMMARY.slice(SUMMARY.indexOf("function StepIssue"), SUMMARY.indexOf("function NextStepLine"))
+  expect(issue).toContain('href="#kalemler"')
+  expect(issue).toContain('onNavigate("kalemler")')
+  expect(issue).toContain("{issue.linkLabel}")
+  // Durum kartı ve telefon özeti aynı satırı, aynı gezinmeyle çizer.
+  expect(SUMMARY.match(/<NextStepLine step=\{nextStep\} onNavigate=\{onNavigate\} \/>/g)).toHaveLength(2)
+  const statusCard = DETAIL.slice(DETAIL.indexOf("<OrderStatusCard"))
+  expect(statusCard.slice(0, statusCard.indexOf("/>"))).toContain("onNavigate={scrollToOrderSection}")
+  // Telefonda engel varsa kartın başında okunur.
+  expect(SUMMARY).toContain("{blocked && stepBlock}")
+  expect(SUMMARY).toContain("{!blocked && stepBlock}")
+})
+
+/**
+ * #913 — dikey ritim: başlık blokları arası 16px (`.top`), özet/çipler/yerleşim
+ * arası 20px (`space-y-5`) ve ikisinin arası 36-44px (`surface.root`) idi. Artık
+ * sayfanın tek çocuğu `.flow`, aralık tek 24px adım. `surface.root`un aralığı
+ * başka modülden ezilmez (eşit özgüllük, yükleme sırasına kalır).
+ */
+test("#913: başlık blokları arası tek 24px adım", () => {
+  expect(rule(CSS, ".flow")).toContain("gap:24px")
+  expect(rule(CSS, ".flow")).toContain("flex-direction:column")
+  expect(CSS).not.toMatch(/^\.top \{/m)
+  expect(DETAIL).not.toContain("detail.top")
+  expect(DETAIL).not.toContain('<div className="min-w-0 space-y-5">')
+  // Tek çocuk: sayfa kökünün hemen altında akış, akışın içinde başlık ve yerleşim.
+  const page = DETAIL.slice(DETAIL.indexOf("<div ref={pageRef}"))
+  const flowAt = page.indexOf("<div className={detail.flow}>")
+  expect(flowAt).toBeGreaterThan(0)
+  expect(page.slice(page.indexOf(">") + 1, flowAt)).not.toMatch(/<(div|section)\b/)
+  expect(page.indexOf("<DetailHeader")).toBeGreaterThan(flowAt)
+  expect(page.indexOf("<OrderMobileSummary")).toBeGreaterThan(flowAt)
+  expect(page.indexOf("className={detail.layout}")).toBeGreaterThan(flowAt)
+  // Bölüm yığını ve kolon aralığı değişmez.
+  expect(rule(CSS, ".stack")).toContain("gap:28px")
+  expect(rule(CSS, ".layout")).toContain("gap:28px")
+})

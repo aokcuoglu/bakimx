@@ -240,13 +240,14 @@ export function AppShellChrome({
           />
         )}
         {/* `--app-sticky-top` (app-shell.module.css `.inset`): sayfa içi yapışkan
-            öğelerin üst barın ve deneme şeridinin altında durduğu ofset. */}
+            öğelerin üst barın, deneme şeridinin ve taklit bandının altında durduğu
+            ofset. Üst bar da aynı değişkenlerle yapışır (`shellStyles.bar`). */}
         <SidebarInset
           className={cn("min-h-screen bg-background", shellStyles.inset)}
           data-top-banner={topBannerVisible ? "" : undefined}
           data-sidebarless={hideSidebar ? "" : undefined}
         >
-          <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} topBannerVisible={topBannerVisible} />
+          <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} />
           <PageHeaderAccessContext.Provider value={headerAccess}>
             <main className={cn("flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:pb-8", inSettings && "bg-card")}>{children}</main>
           </PageHeaderAccessContext.Provider>
@@ -267,11 +268,9 @@ export function AppShellChrome({
 function AppHeader({
   pageHeader,
   userIdentity,
-  topBannerVisible,
 }: {
   pageHeader: PageHeaderState
   userIdentity?: UserIdentity
-  topBannerVisible: boolean
 }) {
   const { pageTitle } = pageHeader
   const pathname = usePathname()
@@ -297,9 +296,10 @@ function AppHeader({
         // Mobil/tablet (<lg) 58px bar + 44px düğme: e-santral "sticky üst bar"
         // ölçüsü (docs/design-pattern-esantral.md §Sticky üst bar). Masaüstünde
         // yalnız sidebar kapalıyken açma düğmesi için kompakt 48px görünür.
-        "sticky top-0 z-30 flex h-[58px] items-center border-b border-border bg-background lg:h-12",
+        // Yapışma ofseti (deneme şeridi + taklit bandı) `shellStyles.bar`da (#913).
+        "sticky z-30 flex h-[58px] items-center border-b border-border bg-background lg:h-12",
         shellStyles.header,
-        topBannerVisible && "lg:top-8",
+        shellStyles.bar,
         !sidebarless && "lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden",
       )}
     >

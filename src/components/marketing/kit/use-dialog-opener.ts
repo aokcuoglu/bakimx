@@ -1,28 +1,27 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useState } from "react"
+import { useReturnFocus } from "@/hooks/use-return-focus"
 
 /**
  * Dışarıdaki tetikleyicilerle açılan pencere durumu. Radix odağı yalnız kendi
  * `Dialog.Trigger`'ına döndürdüğü için açan öğe burada hatırlanır ve kapanışta
- * odaklanır; her açılışta `session` artar (form yeniden kurulup sıfırlanır).
+ * odaklanır (`useReturnFocus`); her açılışta `session` artar (form yeniden
+ * kurulup sıfırlanır).
  */
 export function useDialogOpener() {
   const [isOpen, setOpen] = useState(false)
   const [session, setSession] = useState(0)
-  const opener = useRef<HTMLElement | null>(null)
+  const { remember, onCloseAutoFocus } = useReturnFocus()
 
-  const open = useCallback((element: HTMLElement | null) => {
-    opener.current = element
-    setSession((value) => value + 1)
-    setOpen(true)
-  }, [])
-
-  const onCloseAutoFocus = useCallback((event: Event) => {
-    if (!opener.current?.isConnected) return
-    event.preventDefault()
-    opener.current.focus()
-  }, [])
+  const open = useCallback(
+    (element: HTMLElement | null) => {
+      remember(element)
+      setSession((value) => value + 1)
+      setOpen(true)
+    },
+    [remember],
+  )
 
   return { isOpen, setOpen, session, open, onCloseAutoFocus }
 }

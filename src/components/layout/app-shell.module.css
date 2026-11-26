@@ -173,16 +173,28 @@
 
 /* ── Sayfa içi yapışkan ofset ───────────────────────────── */
 /* `--app-sticky-top`: içerikteki yapışkan öğelerin (araç kabulü bölüm çipleri,
-   yan ray) üst barın ve deneme şeridinin hemen altında durması için. Değerler
-   `AppHeader` ve `(app)/layout.tsx` şeridinin sınıflarını izler; görünümü
-   değiştirmez, yalnız ölçüyü taşır:
+   yan ray) üst barın, deneme şeridinin ve taklit bandının hemen altında durması
+   için. Değerler `AppHeader`, `(app)/layout.tsx` şeridi ve `ImpersonationBanner`
+   ölçülerini izler; görünümü değiştirmez, yalnız ölçüyü taşır:
    - üst bar <lg 58px, lg+ 48px; lg+ sidebar açıkken bar gizli (0) — sidebarsız
      teknisyen rotalarında bar gizlenmez;
-   - deneme şeridi (32px) yalnız lg+ yapışkan, altında sayfayla kayar. */
+   - deneme şeridi (32px) yalnız lg+ yapışkan, altında sayfayla kayar;
+   - yönetici taklit bandı (40px, sabit yükseklik) her genişlikte yapışkan;
+     layout kökündeki `data-impersonating` ile açılır (#913). */
 .inset {
   --app-bar-h: 58px;
   --app-banner-h: 0px;
-  --app-sticky-top: calc(var(--app-bar-h) + var(--app-banner-h));
+  --app-imp-h: 0px;
+  --app-sticky-top: calc(var(--app-bar-h) + var(--app-banner-h) + var(--app-imp-h));
+}
+
+:global([data-impersonating]) .inset {
+  --app-imp-h: 40px;
+}
+
+/* Üst bar şeritlerin altında yapışır: deneme şeridi (yalnız lg+) + taklit bandı. */
+.bar {
+  top: calc(var(--app-banner-h) + var(--app-imp-h));
 }
 
 @media (min-width: 64rem) {

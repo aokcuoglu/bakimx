@@ -66,20 +66,26 @@ const LI_SEP = "border-t border-[var(--dash-sep)] first:border-t-0"
 function ChecklistCategoryBlock({
   category,
   items,
+  closed,
 }: {
   category: ChecklistCategoryKey
   items: TechnicianChecklistItem[]
+  closed: boolean
 }) {
   if (items.length === 0) return null
   const info = CHECKLIST_CATEGORIES[category]
+  const done = items.filter((i) => i.isCompleted).length
 
   return (
     <div className={detail.group}>
       <div className={detail.groupHead}>
         <DetailPill tone={CATEGORY_TONE[category]}>{info.label}</DetailPill>
-        <span className={detail.groupCount}>
-          {items.filter((i) => i.isCompleted).length}/{items.length}
-        </span>
+        {/* Kapanmış kabulde hiç işaretlenmemiş grupta "0/8" yarım iş gibi okunuyordu (#913). */}
+        {!(closed && done === 0) && (
+          <span className={detail.groupCount}>
+            {done}/{items.length}
+          </span>
+        )}
       </div>
       <ul>
         {items.map((item) => (
@@ -95,7 +101,9 @@ function ChecklistCategoryBlock({
               title={
                 <span className={cn("font-normal", item.isCompleted ? "text-success-strong" : "text-foreground")}>
                   {item.description}
-                  <span className="sr-only">{item.isCompleted ? " — tamamlandı" : " — bekliyor"}</span>
+                  <span className="sr-only">
+                    {item.isCompleted ? " — tamamlandı" : closed ? " — işaretlenmedi" : " — bekliyor"}
+                  </span>
                 </span>
               }
               sub={item.note}
@@ -112,10 +120,17 @@ export function TechnicianProgressPanel({
   checklistItems,
   laborSessions,
   internalNotes,
+  closed = false,
 }: {
   checklistItems: TechnicianChecklistItem[]
   laborSessions: TechnicianLaborSession[]
   internalNotes: TechnicianInternalNote[]
+  /**
+   * Kabul teslim edildi ya da iptal edildi (#913): işaretlenmemiş madde artık
+   * "bekliyor" değil, işaretlenmeden kapanmış bir kayıttır; boş durumlar da
+   * "henüz" demez.
+   */
+  closed?: boolean
 }) {
   const summary = summarizeChecklist(checklistItems)
   const activeLabor = laborSessions.find((l) => !l.endTime)
@@ -127,19 +142,29 @@ export function TechnicianProgressPanel({
       <DetailPanel
         title="Kontrol Listesi"
         aside={
-          <DetailPill tone={summary.total > 0 && summary.completed === summary.total ? "success" : "neutral"}>
-            {summary.completed} / {summary.total} tamamlandı
-          </DetailPill>
+          closed ? (
+            // Kapanmış kabulde ilerleme değil kayıt: kaç madde işaretlendi, nötr (#913).
+            summary.total > 0 && (
+              <DetailPill tone="neutral">
+                {summary.completed} / {summary.total} işaretlendi
+              </DetailPill>
+            )
+          ) : (
+            <DetailPill tone={summary.total > 0 && summary.completed === summary.total ? "success" : "neutral"}>
+              {summary.completed} / {summary.total} tamamlandı
+            </DetailPill>
+          )
         }
       >
         {summary.total === 0 ? (
-          <DetailEmpty>Henüz kontrol maddesi yok</DetailEmpty>
+          <DetailEmpty>{closed ? "Kontrol maddesi yok" : "Henüz kontrol maddesi yok"}</DetailEmpty>
         ) : (
           CATEGORY_ORDER.map((category) => (
             <ChecklistCategoryBlock
               key={category}
               category={category}
               items={checklistItems.filter((i) => i.category === category)}
+              closed={closed}
             />
           ))
         )}
@@ -190,7 +215,7 @@ export function TechnicianProgressPanel({
             ))}
           </ul>
         ) : (
-          <DetailEmpty>Henüz işçilik kaydı yok</DetailEmpty>
+          <DetailEmpty>{closed ? "İşçilik kaydı yok" : "Henüz işçilik kaydı yok"}</DetailEmpty>
         )}
       </DetailPanel>
 
@@ -199,7 +224,7 @@ export function TechnicianProgressPanel({
         aside={internalNotes.length > 0 && <DetailPill tone="neutral">{internalNotes.length} not</DetailPill>}
       >
         {internalNotes.length === 0 ? (
-          <DetailEmpty>Henüz iç not yok</DetailEmpty>
+          <DetailEmpty>{closed ? "İç not yok" : "Henüz iç not yok"}</DetailEmpty>
         ) : (
           <ul>
             {internalNotes.map((note) => (

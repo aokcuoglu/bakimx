@@ -1,4 +1,6 @@
-.top { display:flex; flex-direction:column; gap:16px; }
+/* #913 — sayfanın tek çocuğu: başlık, hızlı işlemler, uyarı / teslim kodu, telefon özeti,
+   çipler ve yerleşim arası tek 24px adım. Bölüm yığını (28px) ve kolon aralığı (24px) ayrı. */
+.flow { display:flex; flex-direction:column; gap:24px; min-width:0; }
 .stack { display:flex; flex-direction:column; gap:28px; }
 .header { display:grid; gap:12px; grid-template-areas:"crumb" "title" "sub" "actions"; min-width:0; }
 .crumb { grid-area:crumb; display:flex; align-items:center; gap:6px; min-width:0; font-size:15px; line-height:20px; color:var(--muted-foreground); }
@@ -94,7 +96,6 @@ a.item:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
    tahsilat + müşteri çıktısı; Teknisyen = bağlam kartı + ilerleme). */
 .layout { display:flex; flex-direction:column; gap:28px; min-width:0; }
 .main, .rail { display:contents; }
-.oReopen { order:0; }
 .oComplaint { order:10; }
 .oRecord { order:11; }
 .oInfo { order:12; }
@@ -128,9 +129,11 @@ a.item:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
 .summaryLink:hover { background:var(--dash-hover); }
 .summaryLink:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
 .summaryChevron { flex:none; width:16px; height:16px; color:var(--muted-foreground); }
-.nextStep { display:flex; flex-direction:column; gap:4px; font-size:15px; line-height:20px; color:var(--foreground); }
-.blocker { display:flex; align-items:flex-start; gap:6px; font-size:13px; line-height:18px; color:var(--warning-strong); }
-.blocker svg { flex:none; width:16px; height:16px; margin-top:1px; }
+.nextStep { display:flex; flex-direction:column; gap:8px; font-size:15px; line-height:20px; color:var(--foreground); }
+/* #913 — engel / not satırı: ne eksik (engelde uyarı tonu + simge), hangileri, ne yapılmalı, Kalemler bağlantısı.
+   Renk ve engelin tonlu zemini TSX'te (Tailwind): tonlu zemin ile metin tonu aynı literalde (theme-tokens kapısı). */
+.stepIssue { display:flex; align-items:flex-start; gap:6px; font-size:13px; line-height:18px; }
+.stepIssueIcon { flex:none; width:16px; height:16px; margin-top:1px; color:var(--warning-strong); }
 /* İki kolon: ana kolon + yapışkan ray. Ray görünür alandan uzunsa kendi içinde
    kaymaz (max-height/overflow yok): sayfayla kayar, alt kenarı görünür kalacak
    kadar yukarıda yapışır (`--rail-h` ResizeObserver'dan). */

@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
@@ -255,6 +256,8 @@ export function PartsLaborCard({
   onApplyStandardTax,
   addingType,
   onAddingTypeChange,
+  rememberAddOpener,
+  onAddDialogCloseAutoFocus,
 }: {
   orderId: string
   status: string
@@ -275,8 +278,15 @@ export function PartsLaborCard({
    */
   addingType: PartsAddType | null
   onAddingTypeChange: (type: PartsAddType | null) => void
+  /**
+   * "Kalem ekle" menüsü pencereyi açarken menünün düğmesini bildirir; pencere
+   * kapanınca odak oraya döner (#913). Menü öğesi o anda DOM'dan kalkar.
+   */
+  rememberAddOpener?: (opener: HTMLElement | null) => void
+  onAddDialogCloseAutoFocus?: (event: Event) => void
 }) {
   const canAdd = !isOrderLocked(status as OrderStatus)
+  const addMenuTriggerRef = useRef<HTMLButtonElement>(null)
   return (
     <DetailPanel
       title="Parçalar & İşçilikler"
@@ -286,16 +296,28 @@ export function PartsLaborCard({
           {canAdd && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="icon" aria-label="Kalem ekle">
+                <Button ref={addMenuTriggerRef} type="button" variant="ghost" size="icon" aria-label="Kalem ekle">
                   <Plus />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem className="gap-2" onClick={() => onAddingTypeChange("parca")}>
+                <DropdownMenuItem
+                  className="gap-2"
+                  onClick={() => {
+                    rememberAddOpener?.(addMenuTriggerRef.current)
+                    onAddingTypeChange("parca")
+                  }}
+                >
                   <PackagePlus className="size-4" />
                   Parça ekle
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2" onClick={() => onAddingTypeChange("iscilik")}>
+                <DropdownMenuItem
+                  className="gap-2"
+                  onClick={() => {
+                    rememberAddOpener?.(addMenuTriggerRef.current)
+                    onAddingTypeChange("iscilik")
+                  }}
+                >
                   <Wrench className="size-4" />
                   İşçilik ekle
                 </DropdownMenuItem>
@@ -319,6 +341,7 @@ export function PartsLaborCard({
           onApplyStandardTax={onApplyStandardTax}
           addingType={addingType}
           onAddingTypeChange={onAddingTypeChange}
+          onAddDialogCloseAutoFocus={onAddDialogCloseAutoFocus}
         />
       </div>
     </DetailPanel>
@@ -368,8 +391,11 @@ export function OrderPaymentCard({
   loading: boolean
   error?: string
   showCashbox?: boolean
-  /** Tahsilat alınabiliyorsa; hızlı işlemdeki "Tahsilat al" ile aynı pencere. */
-  onCollect?: () => void
+  /**
+   * Tahsilat alınabiliyorsa; hızlı işlemdeki "Tahsilat al" ile aynı pencere.
+   * Düğmeyi alır: pencere kapanınca odak oraya döner (#913).
+   */
+  onCollect?: (opener: HTMLElement) => void
 }) {
   const chain = orderTotalsChain(totals, taxRateBps)
   // Fiyat girilmeden alınmış avans da görünür; kalan ancak toplam varken anlamlı.
@@ -420,7 +446,7 @@ export function OrderPaymentCard({
 
       <div className={cn(detail.block, "space-y-2")}>
         {onCollect && (
-          <Button variant="foreground" onClick={onCollect} className="w-full">
+          <Button variant="foreground" onClick={(event) => onCollect(event.currentTarget)} className="w-full">
             <Wallet aria-hidden /> Tahsilat al
           </Button>
         )}
@@ -528,6 +554,7 @@ export function PaymentHistoryCard({
   customerName,
   collectionModalOpen,
   onCollectionModalOpenChange,
+  onCollectionModalCloseAutoFocus,
 }: {
   orderId: string
   collectionsLocked: boolean
@@ -541,6 +568,8 @@ export function PaymentHistoryCard({
   /** Tahsilat penceresi Ödeme kartından ve hızlı işlemden açılır (#881, #912). */
   collectionModalOpen: boolean
   onCollectionModalOpenChange: (open: boolean) => void
+  /** Pencere kapanınca odağı açan düğmeye döndürür (#913). */
+  onCollectionModalCloseAutoFocus?: (event: Event) => void
 }) {
   return (
     <>
@@ -604,6 +633,7 @@ export function PaymentHistoryCard({
           grandTotal={grandTotal}
           paidAmount={paidAmount}
           remainingAmount={remainingAmount}
+          onCloseAutoFocus={onCollectionModalCloseAutoFocus}
         />
       )}
     </>

@@ -40,7 +40,6 @@ import {
   RotateCcw,
   Undo2,
   Plus,
-  TriangleAlert,
   X,
   HardHat,
   ChevronRight,
@@ -108,6 +107,7 @@ import { DeferUntilVisible } from "@/components/shared/defer-until-visible"
 import { OrderSectionNav } from "@/components/orders/order-section-nav"
 import { OrderMobileSummary, OrderStatusCard } from "@/components/orders/order-status-summary"
 import { useOrderSectionScroll } from "@/components/orders/use-order-section-scroll"
+import { useReturnFocus } from "@/hooks/use-return-focus"
 import { orderNextStep } from "@/lib/orders/next-step"
 import { orderTotalsChain, totalsChainText } from "@/lib/orders/totals-chain"
 import { urlWithout } from "@/lib/orders/detail-sections"
@@ -190,14 +190,20 @@ function HandoverPerson({
   name,
   phone,
   emptyText,
+  closedText,
   onAdd,
 }: {
   label: string
   name: string | null
   phone: string | null
   emptyText: string
-  /** Verilmezse (yetki yok / emir kilitli) yalnız bilgi görünür. */
-  onAdd?: () => void
+  /** Teslimden sonra boş alanın anlamı geçmiş zamanla yazılır (#913); verilmezse `emptyText`. */
+  closedText?: string
+  /**
+   * Verilmezse (yetki yok / emir kilitli) yalnız bilgi görünür. Düğmeyi alır:
+   * düzenleme penceresi kapanınca odak oraya döner (#913).
+   */
+  onAdd?: (opener: HTMLElement) => void
 }) {
   return (
     <div className="min-w-0">
@@ -213,9 +219,9 @@ function HandoverPerson({
         </>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground">{emptyText}</p>
+          <p className="text-sm text-muted-foreground">{closedText ?? emptyText}</p>
           {onAdd && (
-            <Button variant="link" size="sm" onClick={onAdd} className="px-0">
+            <Button variant="link" size="sm" onClick={(event) => onAdd(event.currentTarget)} className="px-0">
               <Plus className="size-3.5" /> Bilgi ekle
             </Button>
           )}
@@ -316,6 +322,18 @@ export function WorkOrderDetail({
   // ?edit=1 ile gelindiğinde kart daha ilk render'da açık olsun (önce okuma
   // görünümü çizip sonra düzenlemeye atlama titremesi olmasın).
   const openInfoEditor = editInitially && !orderLocked && canEditInfo
+
+  // #913 — tetikleyicisiz pencereler (hızlı işlemler, Şikayet düzenleme, başlığın
+  // ⋯ menüsünden açılan İptal onayı ve Yeniden Aç) kapanınca odak açan düğmeye
+  // döner; Radix yalnız kendi Dialog.Trigger'ına döndürüyor, odak BODY'ye düşüyordu. Kalem düğmesi pencere açıkken çizilmez (kapanınca yeniden
+  // bağlanır), bu yüzden ref olarak hatırlanır; `?edit=1` ile açık gelen pencere de
+  // oraya döner. Hızlı işlem sayfayı bölüme kaydırdığı için odak dönerken sayfa
+  // geri kaymaz (`preventScroll`): sonuç kaydırılan bölümde görünür kalır.
+  const editInfoButtonRef = useRef<HTMLButtonElement>(null)
+  const { remember: rememberFocus, onCloseAutoFocus: returnFocusOnClose } = useReturnFocus({
+    preventScroll: true,
+    initial: openInfoEditor ? editInfoButtonRef : null,
+  })
 
   // BAK-102 — düzenleme aksiyonları (başlıktaki "Düzenle" ve boş getiren/teslim
   // alacak bloğundaki "Bilgi ekle") yalnız yetkili ve kilitli olmayan emirde.
@@ -506,7 +524,9 @@ export function WorkOrderDetail({
     }
   }
 
-  function startEditInfo() {
+  function startEditInfo(opener?: HTMLElement) {
+    // "Bilgi ekle" kaydedilince (ad girildi) DOM'dan kalkar: yedek kalem düğmesi.
+    rememberFocus(opener ?? editInfoButtonRef, editInfoButtonRef)
     setEditComplaint(order.intake.customerComplaint)
     setEditNote(order.intake.internalNote ?? "")
     setEditMileage(order.intake.mileageAtIntake != null ? String(order.intake.mileageAtIntake) : "")
@@ -746,28 +766,50 @@ export function WorkOrderDetail({
   // OTP akışını tetikler (müşteri onaylı teslim); verify hem intake hem order'ı
   // delivered yapar.
   const nextActions = NEXT_STATUSES[order.status] || []
-  const headerActions: DetailHeaderAction[] = nextActions.map((a) => ({
-    key: a.key,
-    label: a.key === "delivered" ? "Teslim Et (OTP)" : a.label,
-    onClick:
-      a.key === "delivered"
-        ? handleRequestDeliveryOtp
-        : a.key === "cancelled"
-          ? requestCancel
-          : () => void changeStatus(a.key),
-    tone: a.key === "cancelled" ? "danger" : a.primary ? "primary" : "secondary",
-    icon: ORDER_BACK_ACTION_ICONS[order.status]?.[a.key] ?? ORDER_ACTION_ICONS[a.key],
-    disabled:
-      (a.key === "delivered" && deliveryBlocked) ||
-      (a.key === "ready_for_delivery" && partsDecisionBlocked),
-  }))
-  // Telefon özet kartı ve raydaki Durum kartı: başlıktaki birincil aksiyon + engeli.
+  // Telefon özet kartı ve raydaki Durum kartı: başlıktaki birincil aksiyon + engelleri.
   const nextStep = orderNextStep({
     status: order.status,
     actions: nextActions,
-    unpricedCount: unpricedItems.length,
-    undecidedCount: undecidedRequests.length,
+    unpricedNames: unpricedItems.map((item) => item.name),
+    undecidedNames: undecidedRequests.map((request) => request.partName),
   })
+  // Pasif birincil düğmenin nedeni ekran okuyucuya (#913); görünür ayrıntı Durum kartında.
+  const blockedReason = nextStep?.blockers.map((issue) => `${issue.text}. ${issue.hint}`).join(" ")
+  const headerActions: DetailHeaderAction[] = nextActions.map((a) => {
+    const disabled =
+      (a.key === "delivered" && deliveryBlocked) ||
+      (a.key === "ready_for_delivery" && partsDecisionBlocked)
+    return {
+      key: a.key,
+      label: a.key === "delivered" ? "Teslim Et (OTP)" : a.label,
+      onClick:
+        a.key === "delivered"
+          ? handleRequestDeliveryOtp
+          : a.key === "cancelled"
+            ? requestCancel
+            : () => void changeStatus(a.key),
+      tone: a.key === "cancelled" ? "danger" : a.primary ? "primary" : "secondary",
+      icon: ORDER_BACK_ACTION_ICONS[order.status]?.[a.key] ?? ORDER_ACTION_ICONS[a.key],
+      disabled,
+      disabledReason: disabled && a.primary ? blockedReason : undefined,
+    }
+  })
+  // #183 → #913 — teslim edilmiş kabulü yeniden açma başlığın ⋯ menüsünde (durum
+  // makinesinin geçişi değil, gerekçeli ayrı action; `NEXT_STATUSES`e girmez).
+  // Teslim edilmiş kabulde birincil aksiyon yok, ikincil ton menüye iner.
+  if (canReopen && order.status === "delivered") {
+    headerActions.push({
+      key: "reopen",
+      label: "Yeniden Aç",
+      onClick: () => setReopenOpen(true),
+      tone: "secondary",
+      icon: RotateCcw,
+    })
+  }
+  // Kapanış anı: son "durum → teslim edildi / iptal" kaydı (geçmiş yeniden eskiye sıralı).
+  const closedAt = orderLocked
+    ? activity.find((entry) => entry.action === `order_status_changed_to_${order.status}`)?.at
+    : undefined
 
   const { vehicle: vehiclePhotos, damage: damagePhotos } = partitionIntakePhotos(intake.photos)
   const takenPhotoTypes = new Set(vehiclePhotos.map((p) => p.type))
@@ -788,7 +830,7 @@ export function WorkOrderDetail({
 
   // Eksik/istenen foto akışı: tipini seç, diyaloğu aç ve Kanıt bölümüne kaydır
   // (diyalog kapanınca kullanıcı fotoğrafları orada görür).
-  function focusPhoto(typeKey?: string, phase?: PhotoPhaseKey) {
+  function focusPhoto(typeKey?: string, phase?: PhotoPhaseKey, opener?: HTMLElement | null) {
     // Lite'ta eksik-fotoğraf kısayolları diyaloğu açamaz; kullanıcıyı ortak
     // yükseltme kartının bulunduğu Kanıt bölümüne taşır.
     if (!canUsePhotoChecklist) {
@@ -801,8 +843,11 @@ export function WorkOrderDetail({
     // İkisi de biliniyorsa hücre bağlamıdır (matris karesi / karşılaştır "+")
     // → tür ve aşama diyaloğda kilitli gelir.
     setPhotoContextLocked(Boolean(typeKey && phase))
+    // Odak açan kutucukta kalır (bölüme taşınmaz), pencere kapanınca oraya döner (#913).
+    // Kutucuk açıkça verilir: Safari fare tıklamasında düğmeye odak vermez.
+    rememberFocus(opener ?? undefined)
     setAddingPhoto(true)
-    scrollToOrderSection("kanit")
+    scrollToOrderSection("kanit", { focus: false })
   }
 
   // Hızlı butonlar (#881): pencere hemen açılır, sayfa arkada ilgili bölüme
@@ -821,7 +866,14 @@ export function WorkOrderDetail({
   const [partsAddType, setPartsAddType] = useState<PartsAddType | null>(null)
   const [collectionModalOpen, setCollectionModalOpen] = useState(false)
 
-  function handleQuickAction(action: OrderQuickAction) {
+  // Ödeme kartındaki "Tahsilat al" ve hızlı işlem aynı pencereyi açar; kart
+  // zaten ekranda olduğu için buradan kaydırılmaz, adrese dokunulmaz.
+  function openCollection(opener: HTMLElement) {
+    rememberFocus(opener)
+    setCollectionModalOpen(true)
+  }
+
+  function handleQuickAction(action: OrderQuickAction, opener: HTMLElement) {
     if (action === "foto") {
       // Lite: focusPhoto yükseltme alanına götürür. Diğerlerinde "Fotoğraf
       // ekle" kutusuyla aynı serbest akış: tür seçilebilir, aşama duruma göre.
@@ -829,25 +881,30 @@ export function WorkOrderDetail({
         focusPhoto()
         return
       }
+      rememberFocus(opener)
       setPhotoType("")
       setPhotoPhase(photoPhaseForStatus(order.status))
       setPhotoContextLocked(false)
       setAddingPhoto(true)
-      scrollToOrderSection("kanit")
+      scrollToOrderSection("kanit", { focus: false })
       return
     }
     if (action === "tahsilat") {
-      scrollToOrderSection("odeme")
-      setCollectionModalOpen(true)
+      scrollToOrderSection("odeme", { focus: false })
+      openCollection(opener)
       return
     }
-    scrollToOrderSection("kalemler")
+    rememberFocus(opener)
+    scrollToOrderSection("kalemler", { focus: false })
     setPartsAddType(action)
   }
 
   return (
     <div ref={pageRef} className={cn(surface.root, detail.page, "pb-24 lg:pb-6")}>
-      <div className={detail.top}>
+      {/* #913 — başlık → hızlı işlemler → (uyarı / teslim kodu) → özet + çipler →
+          yerleşim arası tek 24px adım. `surface.root`un kendi aralığı (36/44px)
+          yalnız bu tek çocuğa düşer; başka modülden ezilmez (eşit özgüllük). */}
+      <div className={detail.flow}>
       <DetailHeader
         plate={order.vehicle.plate}
         title={`${order.vehicle.brand} ${order.vehicle.model}`}
@@ -876,6 +933,7 @@ export function WorkOrderDetail({
         }
         actions={headerActions}
         loading={loading}
+        rememberOpener={rememberFocus}
       />
 
       <OrderQuickActions actions={quickActions} onAction={handleQuickAction} />
@@ -924,49 +982,6 @@ export function WorkOrderDetail({
         )
       )}
 
-      {/* Teslim adımında fiyatsız kalem varsa: başlıktaki teslim butonu pasif,
-          gerekçe ve çıkış yolu burada. Yalnız teslim adımında gösterilir —
-          önceki adımlarda fiyat henüz beklenen bir eksik değil. */}
-      {unpricedItems.length > 0 && order.status === "ready_for_delivery" && (
-        <Alert variant="warning">
-          <TriangleAlert />
-          <AlertTitle>{unpricedItems.length} kalemin fiyatı girilmemiş.</AlertTitle>
-          <AlertDescription>
-            <p className="truncate">
-              {unpricedItems.slice(0, 2).map((i) => i.name).join(", ")}
-              {unpricedItems.length > 2 && `, +${unpricedItems.length - 2}`}
-            </p>
-            <p className="text-xs">Teslim için tüm kalemlere fiyat girin (0 TL girilebilir).</p>
-            <Button variant="outline" onClick={() => scrollToOrderSection("kalemler")} className="mt-1">
-              Kalemlerde tamamla
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Karar bekleyen parça talebi: fiyat uyarısından farklı olarak teslim
-          adımından ÖNCE de gösterilir — "Teslime Hazır"ı da kapatan engel budur,
-          kullanıcı o düğmeyi pasif bulmadan önce nedenini görsün. */}
-      {partsDecisionBlocked && !orderLocked && (
-        <Alert variant="warning">
-          <TriangleAlert />
-          <AlertTitle>{undecidedRequests.length} parça talebi karar bekliyor.</AlertTitle>
-          <AlertDescription>
-            <p className="truncate">
-              {undecidedRequests.slice(0, 2).map((r) => r.partName).join(", ")}
-              {undecidedRequests.length > 2 && `, +${undecidedRequests.length - 2}`}
-            </p>
-            <p className="text-xs">
-              Her talebi ya kaleme ekleyin ya da iptal edin; karar verilmeden araç kabulü teslime
-              hazırlanamaz ve teslim edilemez.
-            </p>
-            <Button variant="outline" onClick={() => scrollToOrderSection("kalemler")} className="mt-1">
-              Kalemlerde karar ver
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
       {deliveryOtpMode && order.status === "ready_for_delivery" && (
         <div className={cn(detail.shell, "space-y-3 p-4")}>
           <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> SMS Teslim Onayı</p>
@@ -994,18 +1009,19 @@ export function WorkOrderDetail({
           </div>
         </div>
       )}
-      </div>
 
       {/* #911 — tek sayfa + yan ray. Telefon özet kartı başlığın altında (para
           raydaki Ödeme Özeti kartında, #912); bölüm çipleri üst barın altında
           yapışkan (iki kolonda gizli).
           Bloklar `data-section` taşır; tek kolonda ray kartları `order` ile
           ilgili bölümün içine girer (order-detail.module.css). */}
-      <div className="min-w-0 space-y-5">
       <OrderMobileSummary
         complaint={order.intake.customerComplaint}
         money={mobileMoney}
         nextStep={nextStep}
+        status={order.status}
+        closedAt={closedAt}
+        canReopen={canReopen}
         onNavigate={scrollToOrderSection}
       />
 
@@ -1013,21 +1029,6 @@ export function WorkOrderDetail({
 
       <div className={detail.layout}>
         <div className={detail.main}>
-          {canReopen && order.status === "delivered" && (
-            <div data-section="ozet" tabIndex={-1} className={cn(detail.section, detail.oReopen, detail.shell, "flex flex-wrap items-center justify-between gap-3 p-4")}>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">Araç kabulü teslim edildi</p>
-                  <p className="text-xs text-muted-foreground">
-                    Araç geri geldiyse araç kabulünü yeniden açabilirsiniz. Tahsilat ve müşteri
-                    onayı kayıtları korunur.
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setReopenOpen(true)}>
-                  Yeniden Aç
-                </Button>
-            </div>
-          )}
-
           {/* ÖZET — Şikayet & Notlar (düzenlenebilir) */}
           <div id="ozet" data-section="ozet" role="region" aria-label="Özet" tabIndex={-1} className={cn(detail.section, detail.oComplaint)}>
             <DetailPanel
@@ -1042,7 +1043,8 @@ export function WorkOrderDetail({
                         variant="ghost"
                         size="icon"
                         aria-label="Şikayet ve notları düzenle"
-                        onClick={startEditInfo}
+                        ref={editInfoButtonRef}
+                        onClick={() => startEditInfo()}
                       >
                         <Pencil className="size-3.5" />
                       </Button>
@@ -1081,13 +1083,17 @@ export function WorkOrderDetail({
                   name={order.intake.pickedUpByName}
                   phone={order.intake.pickedUpByPhone}
                   emptyText="Belirtilmedi — aracı müşterinin kendisi teslim alacak"
+                  closedText={order.status === "delivered" ? "Belirtilmedi — aracı müşterinin kendisi teslim aldı" : undefined}
                   onAdd={canOpenInfoEditor ? startEditInfo : undefined}
                 />
               </div>
             </DetailPanel>
 
             <Dialog open={editingInfo} onOpenChange={(open) => { if (!savingInfo) setEditingInfo(open) }}>
-              <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden sm:max-w-2xl">
+              <DialogContent
+                className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden sm:max-w-2xl"
+                onCloseAutoFocus={returnFocusOnClose}
+              >
                 <DialogHeader>
                   <DialogTitle>Şikayet ve notları düzenle</DialogTitle>
                   <DialogDescription>Araç kabulü kabul bilgilerini güncelleyin.</DialogDescription>
@@ -1164,7 +1170,7 @@ export function WorkOrderDetail({
                 listede ekranın çok altında kalıyor, banner viewport dışında kalıp
                 görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
                 Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
-            <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} addingType={partsAddType} onAddingTypeChange={setPartsAddType} />
+            <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} addingType={partsAddType} onAddingTypeChange={setPartsAddType} rememberAddOpener={rememberFocus} onAddDialogCloseAutoFocus={returnFocusOnClose} />
           </div>
 
           {/* KANIT — kabul kanıtları, fotoğraflar, hasar */}
@@ -1177,7 +1183,9 @@ export function WorkOrderDetail({
                   damageCount={damagePhotos.length}
                   approvalStatus={approvalStatus}
                   publicLinkStatus={publicLinkStatus}
-                  onMissingPhotoClick={(key) => focusPhoto(key)}
+                  onMissingPhotoClick={(key, opener) => focusPhoto(key, undefined, opener)}
+                  readOnly={orderLocked}
+                  photoCount={vehiclePhotos.length}
                 />
               </div>
             </DetailPanel>
@@ -1186,12 +1194,16 @@ export function WorkOrderDetail({
             <DetailPanel
               title="Fotoğraflar"
               aside={
-                canUsePhotoChecklist && (
+                canUsePhotoChecklist &&
+                (orderLocked ? (
+                  // Kapanmış kabulde eksik açı yarım iş değil, kayıttır: nötr sayı (#913).
+                  <DetailPill tone="neutral">{vehiclePhotos.length} fotoğraf</DetailPill>
+                ) : (
                   <DetailPill tone={missingRequired.length ? "warning" : "success"}>
                     {missingRequired.length === 0 && <CheckCircle2 className="size-3.5" />}
                     {photoCompletion.requiredCompleted}/{photoCompletion.required} zorunlu
                   </DetailPill>
-                )
+                ))
               }
             >
               <div className={cn(detail.block, "space-y-3")}>
@@ -1202,8 +1214,9 @@ export function WorkOrderDetail({
                     defaultPhase={photoPhaseForStatus(order.status)}
                     canDelete={!orderLocked}
                     onDeleted={() => router.refresh()}
-                    onAdd={orderLocked ? undefined : (type, phase) => focusPhoto(type, phase)}
-                    onAddOther={orderLocked ? undefined : (phase) => {
+                    onAdd={orderLocked ? undefined : (type, phase, opener) => focusPhoto(type, phase, opener)}
+                    onAddOther={orderLocked ? undefined : (phase, opener) => {
+                      rememberFocus(opener ?? undefined)
                       setPhotoType("")
                       setPhotoPhase(phase)
                       setPhotoContextLocked(false)
@@ -1232,7 +1245,7 @@ export function WorkOrderDetail({
                     }
                   }}
                 >
-                  <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+                  <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto" onCloseAutoFocus={returnFocusOnClose}>
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2"><Camera className="size-4 text-primary" /> Fotoğraf Ekle</DialogTitle>
                     </DialogHeader>
@@ -1402,6 +1415,7 @@ export function WorkOrderDetail({
                 customerName={customerName}
                 collectionModalOpen={collectionModalOpen}
                 onCollectionModalOpenChange={setCollectionModalOpen}
+                onCollectionModalCloseAutoFocus={returnFocusOnClose}
               />
               </>
             )}
@@ -1418,6 +1432,7 @@ export function WorkOrderDetail({
                 checklistItems={order.checklistItems}
                 laborSessions={order.laborSessions}
                 internalNotes={order.internalNotes}
+                closed={orderLocked}
               />
             )}
           </div>
@@ -1431,7 +1446,13 @@ export function WorkOrderDetail({
 
         {/* RAY — iki kolonda yapışkan; tek kolonda kartlar bölümlerin içine girer. */}
         <div ref={railRef} className={detail.rail}>
-          <OrderStatusCard status={order.status} nextStep={nextStep} />
+          <OrderStatusCard
+            status={order.status}
+            nextStep={nextStep}
+            closedAt={closedAt}
+            canReopen={canReopen}
+            onNavigate={scrollToOrderSection}
+          />
 
           <div data-section="odeme" tabIndex={-1} className={cn(detail.section, detail.oPricing)}>
             {/* Ödeme kartı (#912): sayfada paranın tek yeri. */}
@@ -1450,7 +1471,7 @@ export function WorkOrderDetail({
               loading={loading}
               error={error}
               showCashbox={canCashbox}
-              onCollect={canCashbox && !collectionsLocked ? () => setCollectionModalOpen(true) : undefined}
+              onCollect={canCashbox && !collectionsLocked ? openCollection : undefined}
             />
           </div>
 
@@ -1471,7 +1492,7 @@ export function WorkOrderDetail({
                 <div className={detail.contextMain}>
                   <p className={detail.itemTitle}>{order.assignedTechnicianName || "Henüz usta atanmadı"}</p>
                   <p className={detail.itemSub}>
-                    {order.assignedTechnicianName ? "" : "Atama yapıldığında kontrol listesi otomatik oluşur. "}
+                    {order.assignedTechnicianName || orderLocked ? "" : "Atama yapıldığında kontrol listesi otomatik oluşur. "}
                     Kontrol listesi ve işçilik teknisyen panelinde işaretlenir; burada salt okunur görünür.
                   </p>
                 </div>
@@ -1570,7 +1591,7 @@ export function WorkOrderDetail({
       </div>
 
       <AlertDialog open={confirmCancelOpen} onOpenChange={handleCancelDialogOpenChange}>
-        <AlertDialogContent>
+        <AlertDialogContent onCloseAutoFocus={returnFocusOnClose}>
           <AlertDialogHeader>
             <AlertDialogTitle>Araç kabulü iptal edilsin mi?</AlertDialogTitle>
             {/* Tek açıklama (aria-describedby tek kimliğe bağlanır), iki paragraf. */}
@@ -1614,7 +1635,7 @@ export function WorkOrderDetail({
       </AlertDialog>
 
       <AlertDialog open={reopenOpen} onOpenChange={(o) => { if (!reopening) setReopenOpen(o) }}>
-        <AlertDialogContent>
+        <AlertDialogContent onCloseAutoFocus={returnFocusOnClose}>
           <AlertDialogHeader>
             <AlertDialogTitle>Araç kabulü yeniden açılsın mı?</AlertDialogTitle>
             <AlertDialogDescription>

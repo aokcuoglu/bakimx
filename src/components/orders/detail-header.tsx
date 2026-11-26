@@ -1,6 +1,6 @@
 "use client"
 
-import type { ComponentType, ReactNode } from "react"
+import { useId, useRef, type ComponentType, type ReactNode } from "react"
 import Link from "next/link"
 import { ChevronRight, Loader2, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -25,10 +25,15 @@ export type DetailHeaderAction = {
   icon?: ComponentType<{ className?: string }>
   /**
    * Aksiyon şu an yapılamıyor (ör. teslim için eksik fiyat). Gerekçe başlıkta
-   * değil, başlığın altındaki uyarı şeridinde anlatılır — başlık üç katmanını
-   * korur, açıklama metni taşımaz.
+   * görünür metin olarak yazılmaz — başlık üç katmanını korur; ayrıntı ve çıkış
+   * yolu Durum kartında (#913).
    */
   disabled?: boolean
+  /**
+   * Pasif birincil düğmenin nedeni (#913). Görünmez; düğmeye `aria-describedby`
+   * ile bağlanır, ekran okuyucu düğmeyle birlikte okur.
+   */
+  disabledReason?: string
 }
 
 /**
@@ -54,6 +59,7 @@ export function DetailHeader({
   meta,
   actions = [],
   loading = false,
+  rememberOpener,
 }: {
   plate: string
   title: string
@@ -67,9 +73,18 @@ export function DetailHeader({
   meta?: ReactNode
   actions?: DetailHeaderAction[]
   loading?: boolean
+  /**
+   * Aksiyon çalışmadan önce onu tetikleyen düğme bildirilir: birincil düğme ya da
+   * `⋯` (menü öğesi menüyle birlikte DOM'dan kalkar). Aksiyon pencere açıyorsa
+   * (İptal onayı, Yeniden Aç) kapanınca odak oraya döner (#913).
+   */
+  rememberOpener?: (opener: HTMLElement | null) => void
 }) {
   const { primary, overflow } = splitHeaderActions(actions)
   const hasActions = Boolean(primary) || overflow.length > 0
+  const reasonId = useId()
+  const overflowTriggerRef = useRef<HTMLButtonElement>(null)
+  const primaryReason = primary?.disabled ? primary.disabledReason : undefined
 
   return (
     <header className={detail.header}>
@@ -93,8 +108,12 @@ export function DetailHeader({
               variant="default"
               size="lg"
               className={detail.primaryAction}
-              onClick={primary.onClick}
+              onClick={(event) => {
+                rememberOpener?.(event.currentTarget)
+                primary.onClick()
+              }}
               disabled={loading || primary.disabled}
+              aria-describedby={primaryReason ? reasonId : undefined}
             >
               {loading ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -104,10 +123,22 @@ export function DetailHeader({
               {primary.label}
             </Button>
           )}
+          {primaryReason && (
+            <span id={reasonId} className="sr-only">
+              {primaryReason}
+            </span>
+          )}
           {overflow.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="secondary" size="icon" aria-label="Diğer işlemler" disabled={loading}>
+                <Button
+                  ref={overflowTriggerRef}
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  aria-label="Diğer işlemler"
+                  disabled={loading}
+                >
                   <MoreHorizontal />
                 </Button>
               </DropdownMenuTrigger>
@@ -122,7 +153,10 @@ export function DetailHeader({
                     <div key={a.key}>
                       {needsSeparator && <DropdownMenuSeparator />}
                       <DropdownMenuItem
-                        onClick={a.onClick}
+                        onClick={() => {
+                          rememberOpener?.(overflowTriggerRef.current)
+                          a.onClick()
+                        }}
                         disabled={loading || a.disabled}
                         className={cn(
                           "gap-2",

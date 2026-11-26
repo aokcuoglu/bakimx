@@ -170,7 +170,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       : "Bu iş yerinin aboneliği sona erdi — plan kilidi nedeniyle salt-okunur."
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    // `data-impersonating`: taklit bandı (40px, yapışkan) kabuğun yapışkan
+    // ofsetine girer — üst bar, çipler ve ray bandın altında kalmaz (#913).
+    <div className="min-h-screen bg-background flex flex-col" data-impersonating={impersonation ? "" : undefined}>
       {/* Bu belgeyi render eden build'in imzası — açık sekme eskidiğinde
           engellemeyen "yenile" bildirimi için (bkz. version-update-notice.tsx). */}
       <VersionUpdateNotice loadedSignature={getBuildSignature()} />
@@ -180,8 +182,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {readOnlyMessage}
         </div>
       )}
+      {/* lg+ yapışkan. Taklitte bandın (40px) altına yapışır ve onun altında
+          katmanlanır; üst bar ikisinin altında (`--app-imp-h` + `--app-banner-h`, #913). */}
       {!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null && (
-        <div className="flex h-8 items-center justify-center bg-primary px-4 text-center text-sm font-medium leading-5 tracking-[-0.07px] text-primary-foreground lg:sticky lg:top-0 lg:z-50">
+        <div className={`flex h-8 items-center justify-center bg-primary px-4 text-center text-sm font-medium leading-5 tracking-[-0.07px] text-primary-foreground lg:sticky ${impersonation ? "lg:top-10 lg:z-40" : "lg:top-0 lg:z-50"}`}>
           Deneme sürenizin bitmesine{" "}
           <span className="font-semibold">{plan.trialDaysLeft} iş günü</span> kaldı.{" "}
           {!isTechnicianRole && <Link href="/settings/plans" className="font-semibold underline underline-offset-2">Paketleri incele</Link>}
