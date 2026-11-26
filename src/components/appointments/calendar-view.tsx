@@ -227,7 +227,8 @@ export function CalendarView({
           </div>
         </div>
       ) : view === "week" ? (
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-x-auto">
+         <div className="min-w-224 md:min-w-0">
           <div className="grid grid-cols-7 border-b border-border">
             {dayKeys.map((dayKey) => {
               const today = dayKey === todayKey
@@ -260,7 +261,7 @@ export function CalendarView({
                           <Icon className={cn("size-3 shrink-0", config.color)} />
                           <span className={cn("font-semibold truncate", config.color)}>{eventStartLabel(event)}</span>
                         </div>
-                        <div className="font-medium text-foreground truncate">{event.title}</div>
+                        <div className="font-medium text-foreground line-clamp-2 break-words">{event.title}</div>
                         {event.vehiclePlate && (
                           <div className="text-muted-foreground mt-0.5 font-mono">{event.vehiclePlate}</div>
                         )}
@@ -276,6 +277,7 @@ export function CalendarView({
               )
             })}
           </div>
+         </div>
         </div>
       ) : (
         <div className="rounded-lg border border-border bg-card overflow-hidden">
