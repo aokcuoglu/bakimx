@@ -265,15 +265,16 @@ export function TechnicianDashboard({
                 <Button
                   key={card.label}
                   type="button"
-                  variant="outline"
+                  variant={activeFilter === card.filter ? "tint" : "outline"}
                   size="row"
                   aria-pressed={activeFilter === card.filter}
                   onClick={() => handleFilterChange(card.filter)}
                   className={cn(
-                    "min-w-0 cursor-pointer items-start hover:bg-card hover:ring-2 hover:ring-primary",
+                    "min-w-0 cursor-pointer items-start hover:ring-2 hover:ring-primary",
                     // Hover: beyaz zemin + 2px mavi kenar (saydam bg-primary/5 kartı gri
-                    // sayfaya karıştırıp 1px kenarı yutuyordu). Seçili: aynı kenar + ton.
-                    activeFilter === card.filter && "bg-primary/10 ring-2 ring-primary hover:bg-primary/10"
+                    // sayfaya karıştırıp 1px kenarı yutuyordu). Seçili: aynı kenar +
+                    // tint variant'ının tonu (#925).
+                    activeFilter === card.filter ? "ring-2 ring-primary" : "hover:bg-card"
                   )}
                 >
                   <span className="flex w-full min-w-0 items-center gap-2.5 sm:block">
