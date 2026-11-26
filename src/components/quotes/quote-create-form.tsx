@@ -2,6 +2,8 @@
 "use client"
 
 import { listThenSelect } from "@/lib/ui/list-then-select"
+import { resolveInlineVehicleOwner } from "@/lib/quotes/inline-vehicle-owner"
+import { toast } from "sonner"
 import { useState, useCallback, useEffect, useActionState, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -165,14 +167,27 @@ export function QuoteCreateForm({
       fuelType: null,
       firstRegistrationDate: null,
     }
+    const next = resolveInlineVehicleOwner({
+      selectedCustomerId: customerId,
+      resultCustomerId: result.customerId,
+      resultCustomerName: result.customerName,
+      current: vehicles,
+      created,
+    })
     listThenSelect(
-      () =>
-        setVehicles((current) =>
-          current.some((vehicle) => vehicle.id === created.id) ? current : [created, ...current]
-        ),
+      () => {
+        if (next.switchCustomer) {
+          setCustomerLabel(next.switchCustomer.label)
+          form.setValue("customerId", next.switchCustomer.id, { shouldDirty: true, shouldValidate: true })
+        }
+        setVehicles(next.vehicles)
+      },
       () => {
         form.setValue("vehicleId", created.id, { shouldDirty: true, shouldValidate: true })
         setVehicleError("")
+        if (next.switchCustomer) {
+          toast.info(`Bu araç ${next.switchCustomer.label} adına kayıtlı; müşteri güncellendi.`)
+        }
       }
     )
   }
