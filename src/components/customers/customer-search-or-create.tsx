@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -204,19 +205,16 @@ export function CustomerSearchOrCreate({
           <div className="space-y-1"><Label>Şirket adı *</Label><Input autoFocus value={companyName} onChange={(e) => setCompanyName(e.target.value)} /></div>
         )}
         <div className="space-y-1"><Label>Telefon *</Label><Input value={phone} onChange={(e) => { setPhone(formatPhoneTR(e.target.value)); setDuplicates([]); setError("") }} inputMode="tel" placeholder="0544 515 74 08" /></div>
-        <Button
-          type="button"
-          variant="outline"
-          size="row"
-          onClick={() => setShowExtra((s) => !s)}
-          className="w-full justify-between text-foreground"
-        >
-          <span>Ek bilgiler (opsiyonel)</span>
-          <ChevronDown className={`size-4 transition-transform ${showExtra ? "rotate-180" : ""}`} />
-        </Button>
+        <Collapsible open={showExtra} onOpenChange={setShowExtra}>
+          <CollapsibleTrigger asChild>
+            <Button type="button" variant="outline" size="row" className="w-full justify-between text-foreground">
+              <span>Ek bilgiler (opsiyonel)</span>
+              <ChevronDown className={`size-4 transition-transform ${showExtra ? "rotate-180" : ""}`} />
+            </Button>
+          </CollapsibleTrigger>
 
-        {showExtra && (
-          <div className="space-y-3 rounded-sm border border-border p-3">
+          <CollapsibleContent>
+          <div className="mt-3 space-y-3 rounded-sm border border-border p-3">
             <TaxIdentityFields
               identityNumber={identityNumber}
               taxNumber={taxNumber}
@@ -236,7 +234,8 @@ export function CustomerSearchOrCreate({
               <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} placeholder="Mahalle / Sokak / No" />
             </div>
           </div>
-        )}
+          </CollapsibleContent>
+        </Collapsible>
         {duplicates.length > 0 ? (
           <div className="space-y-2 rounded-sm border border-warning/40 bg-warning/10 p-2.5">
             <p className="text-sm text-foreground">

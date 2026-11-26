@@ -10,6 +10,7 @@ import { AlertTriangle, ChevronDown, Loader2, ScanLine } from "lucide-react"
 import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES } from "@/lib/constants"
 import { VehicleBrandModelPicker } from "@/components/vehicles/vehicle-brand-model-picker"
 import { VinResolveButton, VinCandidateList, VinLockedNotice, VinResolveNotice, type useVinResolve } from "@/components/vehicles/vin-resolve"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { VinScanner } from "@/components/intake/vin-scanner"
 import { AddonLockedNote } from "@/components/billing/addon-gate"
 import { isValidVin, normalizeVin } from "@/lib/vin/types"
@@ -58,7 +59,7 @@ export function EntryVehicleFields({
   onFieldChange,
   confidence,
   showDetails,
-  onToggleDetails,
+  onShowDetailsChange,
   vinResolve,
   vinLookup,
   showAddonUpsell,
@@ -72,7 +73,7 @@ export function EntryVehicleFields({
   /** Ruhsat OCR güven skorları — düşükse alan sarıyla işaretlenir. */
   confidence: Record<string, number | undefined>
   showDetails: boolean
-  onToggleDetails: () => void
+  onShowDetailsChange: (open: boolean) => void
   vinResolve: ReturnType<typeof useVinResolve>
   /**
    * Şaseden araç tanıma (ek özellik) açık mı (#828)? Kapalıysa şase kamerası
@@ -160,19 +161,16 @@ export function EntryVehicleFields({
         coreFields
       )}
 
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full justify-between"
-        aria-expanded={showDetails}
-        onClick={onToggleDetails}
-      >
-        <span>Ruhsat / teknik bilgiler (opsiyonel)</span>
-        <ChevronDown className={`size-4 transition-transform ${showDetails ? "rotate-180" : ""}`} />
-      </Button>
+      <Collapsible open={showDetails} onOpenChange={onShowDetailsChange}>
+        <CollapsibleTrigger asChild>
+          <Button type="button" variant="outline" className="w-full justify-between">
+            <span>Ruhsat / teknik bilgiler (opsiyonel)</span>
+            <ChevronDown className={`size-4 transition-transform ${showDetails ? "rotate-180" : ""}`} />
+          </Button>
+        </CollapsibleTrigger>
 
-      {showDetails && (
-        <div className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-2 sm:p-4">
+        <CollapsibleContent>
+        <div className="mt-4 grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-2 sm:p-4">
           <div className="space-y-1.5 sm:col-span-2">
             <Label>Ticari adı</Label>
             <Input value={fields.commercialName} onChange={(e) => onFieldChange("commercialName", e.target.value)} />
@@ -292,7 +290,8 @@ export function EntryVehicleFields({
             <DatePicker value={fields.inspectionValidUntil} onChange={(v) => onFieldChange("inspectionValidUntil", v)} />
           </div>
         </div>
-      )}
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   )
 }

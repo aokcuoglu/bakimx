@@ -14,6 +14,7 @@ import {
   tecdocFuelToFormValue,
 } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { AlertTriangle, Car, ChevronDown, Loader2, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import { VehicleBrandModelPicker } from "@/components/vehicles/vehicle-brand-model-picker"
@@ -393,19 +394,21 @@ export function InlineCreateModal({
           )}
 
           {/* Detailed ruhsat fields */}
-          <Button
-            type="button"
-            variant="outline"
-            size="row"
-            onClick={() => setShowDetails((s) => !s)}
-            className="w-full min-w-0 justify-between gap-2 text-foreground"
-          >
-            <span className="min-w-0">Ruhsat / teknik bilgiler (opsiyonel)</span>
-            <ChevronDown className={`size-4 shrink-0 transition-transform ${showDetails ? "rotate-180" : ""}`} />
-          </Button>
+          <Collapsible open={showDetails} onOpenChange={setShowDetails}>
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="row"
+                className="w-full min-w-0 justify-between gap-2 text-foreground"
+              >
+                <span className="min-w-0">Ruhsat / teknik bilgiler (opsiyonel)</span>
+                <ChevronDown className={`size-4 shrink-0 transition-transform ${showDetails ? "rotate-180" : ""}`} />
+              </Button>
+            </CollapsibleTrigger>
 
-          {showDetails && (
-            <div className="grid grid-cols-2 gap-2 rounded-lg border border-border p-3">
+            <CollapsibleContent>
+            <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-border p-3">
               <div className="min-w-0 space-y-1 col-span-2">
                 <Label>Ticari Adı</Label>
                 <Input value={fields.commercialName} onChange={(e) => setField("commercialName", e.target.value)} />
@@ -495,7 +498,8 @@ export function InlineCreateModal({
                 <DatePicker value={fields.inspectionValidUntil} onChange={(v) => setField("inspectionValidUntil", v)} />
               </div>
             </div>
-          )}
+            </CollapsibleContent>
+          </Collapsible>
 
           {error && <p className="text-sm text-destructive-strong">{error}</p>}
 
