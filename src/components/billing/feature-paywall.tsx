@@ -26,7 +26,7 @@ export function FeaturePaywall({
       <div className="mx-auto flex min-h-[65vh] max-w-4xl items-center justify-center py-6 sm:py-10">
         <Card className="relative w-full overflow-hidden border-border bg-card shadow-md">
           <CardHeader className="relative items-center px-5 pt-8 text-center sm:px-10 sm:pt-12">
-            <div className="mb-4 flex size-14 items-center justify-center rounded-lg border border-border bg-muted text-foreground shadow-sm">
+            <div className="mb-4 flex size-14 items-center justify-center rounded-md border border-border bg-muted text-foreground shadow-sm">
               <LockKeyhole className="size-7" />
             </div>
             <Badge variant="secondary" className="mb-2">
@@ -53,7 +53,7 @@ export function FeaturePaywall({
             )}
             <ul className="mx-auto mb-7 grid max-w-2xl gap-3 sm:grid-cols-3">
               {definition.benefits.map((benefit) => (
-                <li key={benefit} className="flex items-start gap-2 rounded-lg border bg-card p-3 text-sm text-foreground">
+                <li key={benefit} className="flex items-start gap-2 rounded-md border bg-card p-3 text-sm text-foreground">
                   <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success-strong" />
                   <span>{benefit}</span>
                 </li>

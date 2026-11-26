@@ -138,7 +138,7 @@ export function NotificationSettings({
             const result = testResult[ch]
             const isTesting = testingChannel === ch
             return (
-              <div key={ch} className="flex flex-col gap-2 p-3 rounded-lg bg-muted border border-border">
+              <div key={ch} className="flex flex-col gap-2 p-3 rounded-md bg-muted border border-border">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className={CHANNEL_BADGE[ch]}>
                     {CHANNEL_LABELS[ch]}

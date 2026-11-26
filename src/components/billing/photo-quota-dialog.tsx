@@ -9,7 +9,7 @@ export function PhotoQuotaDialog({ limit }: { limit: number }) {
     <DialogContent>
       <DialogHeader><DialogTitle>Fotoğraf hakkı</DialogTitle><DialogDescription>Aktif fotoğraflar her araç kabulünde ayrı sayılır.</DialogDescription></DialogHeader>
       <div className="space-y-3 text-sm">
-        <div className="flex justify-between rounded-lg border bg-card p-3"><span>Araç kabul başına dahil hak</span><strong>{limit} fotoğraf</strong></div>
+        <div className="flex justify-between rounded-md border bg-card p-3"><span>Araç kabul başına dahil hak</span><strong>{limit} fotoğraf</strong></div>
         <p className="text-muted-foreground">Silinen fotoğraflar aktif hakka dahil değildir. Şu anda fotoğraf için satın alınabilen ek hak tanımlı değil.</p>
       </div>
     </DialogContent>
