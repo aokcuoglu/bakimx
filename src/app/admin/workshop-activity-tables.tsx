@@ -81,7 +81,7 @@ function QueryPrompt({ colSpan, pending, onRun }: { colSpan: number; pending: bo
     <TableCell colSpan={colSpan} className="h-36 text-center">
       <Button variant="foreground" type="button" disabled={pending} onClick={onRun}>
         {pending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Play aria-hidden="true" />}
-        {pending ? "Running…" : "Run Query"}
+        {pending ? "Yükleniyor…" : "Sorguyu çalıştır"}
       </Button>
     </TableCell>
   </TableRow>

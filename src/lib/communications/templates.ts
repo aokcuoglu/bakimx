@@ -95,6 +95,34 @@ const TEMPLATE_DEFAULTS: Record<CommunicationTemplateKey, Record<TemplateChannel
   },
 }
 
+/**
+ * #890 öncesi varsayılan hatırlatma SMS'i ("yarın" sabit). Ayarlarda "Kaydet"e
+ * basan atölyelerde bu metin birebir saklı kaldı (#908).
+ */
+const LEGACY_APPOINTMENT_REMINDER_SMS =
+  "Sayın {customerName}, {workshopName} - yarın ({appointmentDate} {appointmentTime}) randevunuz bulunmaktadır."
+
+/**
+ * Kayıtlı şablonu çözer. Eski varsayılanla birebir aynı olan kayıt hiç
+ * özelleştirilmemiştir; güncel varsayılana düşer. Özelleştirilmiş metne
+ * dokunulmaz.
+ */
+export function resolveTemplateContent(
+  key: CommunicationTemplateKey,
+  channel: TemplateChannel,
+  saved: string | null | undefined,
+): string {
+  if (!saved) return getDefaultTemplate(key, channel)
+  if (
+    key === "appointment_reminder" &&
+    channel === "sms" &&
+    saved.trim() === LEGACY_APPOINTMENT_REMINDER_SMS
+  ) {
+    return getDefaultTemplate(key, channel)
+  }
+  return saved
+}
+
 export function getDefaultTemplate(key: CommunicationTemplateKey, channel: TemplateChannel): string {
   return TEMPLATE_DEFAULTS[key]?.[channel] ?? ""
 }
