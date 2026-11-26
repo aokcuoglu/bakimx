@@ -115,10 +115,9 @@ test("sol kayıt sütunu yok; kayıt rayda tek kez, tutar şeridi yok", () => {
   expect(SOURCE).not.toContain("lg:grid-cols-[320px_minmax(0,1fr)]")
   expect(SOURCE).not.toMatch(/<OrderRecordRail[^>]*className=/)
   expect(SOURCE.match(/<OrderRecordRail\b/g)).toHaveLength(1)
-  const rail = SOURCE.slice(SOURCE.indexOf("className={detail.rail}"))
-  expect(rail).toContain("<OrderRecordRail order={order} customerName={customerName} />")
-  const record = rail.slice(0, rail.indexOf("<OrderRecordRail"))
-  expect(record.slice(record.lastIndexOf("<div "))).toContain('data-section="ozet"')
+  // #966: kart tek const; iki yuvada (ana kolon `inline`, ray) yeniden kullanılır.
+  expect(SOURCE).toContain("<OrderRecordRail order={order} customerName={customerName} />")
+  expect(SOURCE.match(/cardSlot\("ozet", recordCard, /g)).toHaveLength(2)
   expect(SOURCE).not.toMatch(/px-4 py-2\.5 text-sm lg:hidden/)
   expect(SOURCE).not.toContain("px-4 py-2.5 text-sm\", detail.shell")
 })
