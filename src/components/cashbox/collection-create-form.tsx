@@ -21,6 +21,7 @@ import { PaymentBadge } from "@/components/shared/status-badge"
 import { computePaymentStatus } from "@/lib/cashbox/status"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus } from "@/lib/money"
+import { istanbulDateTimeInputValue } from "@/lib/istanbul-time"
 import {
   ArrowLeft,
   Loader2,
@@ -90,7 +91,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
       serviceOrderId: preselectedOrderId || "",
       amount: 0,
       method: "cash",
-      paymentDate: new Date().toISOString().slice(0, 16),
+      paymentDate: istanbulDateTimeInputValue(new Date()),
       referenceNo: "",
       note: "",
     },
@@ -139,7 +140,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
     formData.set("serviceOrderId", values.serviceOrderId || "")
     formData.set("amount", String(liraToKurus(values.amount)))
     formData.set("method", values.method)
-    formData.set("paymentDate", new Date(values.paymentDate).toISOString())
+    formData.set("paymentDate", values.paymentDate)
     formData.set("referenceNo", values.referenceNo || "")
     formData.set("note", values.note || "")
 
