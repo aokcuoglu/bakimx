@@ -45,6 +45,22 @@ eklentiyle (🔍 / X, SKU çipi) duruyorsa kap `AutocompleteInputGroup`'tur
 `InputGroup`'ta eklenti genişliği kadar dar kalıyordu.
 `src/components/ui/input-group-contract.test.ts` bekçiliyor.
 
+**Combobox çapası (#887):** `ComboboxInput`'un kabı da aynı yoldur (Base UI
+`Combobox.InputGroup` + `InputGroup`); liste kutunun sol kenarında başlar ve
+kutu genişliğinde biter. Popup genişliği yalnız `--anchor-width`'tir, girdi
+çapasını telafi eden `+--spacing(7)` yoktur. Gruba basmak girdiyi odaklar ve
+listeyi açar; girdi devre dışıyken açmaz. Chip'li çoklu seçim
+(`ComboboxChips`) chip kabına `useComboboxAnchor` ile çapalanır
+(`<ComboboxContent anchor={…}>`).
+
+**Eklenti dolgusu, dar hücre (#887):** satır içi eklentinin olduğu yanda
+girdinin dolgusu `--field-px` yerine 6px'tir (`pl-1.5` / `pr-1.5`), öbür yan
+`--field-px` kalır. Eklenti kendi boyunda kalır (`shrink-0`), küçülen girdidir
+(`min-w-0`); düğme / kbd yanındaki dar boşluk negatif dış boşlukla değil küçük
+dolguyla verilir (`mr-[-0.3rem]` eklentiyi kutudan ~5px taşırıyordu). Sığmayan
+placeholder ya da değer odak dışında `…` ile biter (`text-ellipsis`). Textarea'lı
+grup bu kuralın dışındadır (eklentisi blok hizalıdır).
+
 **Odak halkası** tüm form kontrollerinde aynıdır: `ring-4 ring-ring/20`,
 geçersizde `ring-4 ring-destructive/10` (koyu temada `/20`). `InputGroup`
 halkayı grupta çizer ve iç denetimin `data-slot`'una bağlı değildir
