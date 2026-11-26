@@ -1,5 +1,5 @@
 import { TR_TIME_ZONE, trDayKey } from "@/lib/format-date"
-import { ISTANBUL_UTC_OFFSET_MS } from "@/lib/istanbul-time"
+import { istanbulWeekStart, parseIstanbulDate } from "@/lib/istanbul-time"
 
 /**
  * Takvim ızgarası: tüm gün aritmetiği `YYYY-MM-DD` anahtarları üzerinde ve UTC
@@ -71,7 +71,8 @@ export function addMonths(key: string, n: number): string {
 
 /** 0 = Pazartesi … 6 = Pazar. */
 export function mondayIndex(key: string): number {
-  return (new Date(keyToUtc(key)).getUTCDay() + 6) % 7
+  const midnight = istanbulMidnight(key)
+  return Math.round((midnight.getTime() - istanbulWeekStart(midnight).getTime()) / DAY_MS)
 }
 
 export function weekDayKeys(key: string): string[] {
@@ -100,7 +101,9 @@ export function dayKeysInView(view: CalendarViewMode, key: string): string[] {
 }
 
 function istanbulMidnight(key: string): Date {
-  return new Date(keyToUtc(key) - ISTANBUL_UTC_OFFSET_MS)
+  const midnight = parseIstanbulDate(key)
+  if (!midnight) throw new Error(`Geçersiz gün anahtarı: ${key}`)
+  return midnight
 }
 
 /** [start, end) — İstanbul gece yarısı anları. */
@@ -133,7 +136,7 @@ export function dayOfMonth(key: string): number {
 
 /** Anahtarın İstanbul öğlenini verir; etiketler hangi zonda çalışırsa çalışsın aynı gündür. */
 function noonInstant(key: string): Date {
-  return new Date(keyToUtc(key) + 12 * 60 * 60 * 1000 - ISTANBUL_UTC_OFFSET_MS)
+  return new Date(istanbulMidnight(key).getTime() + 12 * 60 * 60 * 1000)
 }
 
 const weekdayFormatter = new Intl.DateTimeFormat("tr-TR", { timeZone: TR_TIME_ZONE, weekday: "long" })

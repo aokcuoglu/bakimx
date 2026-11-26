@@ -26,13 +26,6 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * Bilinen kör noktalar (taranmaz; gerekçeleri yerinde yazılı):
  * - Sabite ya da fonksiyona çıkarılmış sınıf: `fieldClass("plate")`
  *   (entry-vehicle-fields, inline-create-modal — OCR düşük güven uyarı tonu).
- * - Ata öğeden torun kontrolü biçimleyen seçiciler: parts-labor-grid
- *   `GHOST_ROW` / `META_FIELD_*` ve mobil kart ad alanı
- *   (`[&_[data-slot=input]]:border-transparent`, `[&_input]:!text-muted-foreground`,
- *   ad alanının `px-0` + `font-medium`'u). Bunlar hayalet satır görünümüdür:
- *   kenarlık/zemin şeffaf, odakta geri gelir. Ölçü, köşe ve yazı boyutu bu
- *   seçicilerle ezilmez (#888'de 11px ve `rounded-md` kaldırıldı); yenisi
- *   eklenmez.
  *
  * #889 — düğmeler (`Button`, `InputGroupButton` ve onlara `className` ileten
  * sarmalayıcılar) aynı tarayıcıyla, kendi kural setiyle (`BUTTON_FORBIDDEN`)
