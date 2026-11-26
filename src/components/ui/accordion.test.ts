@@ -46,7 +46,7 @@ function contentInnerClasses(html: string): string[] {
 }
 
 describe("Accordion görünümleri (#926)", () => {
-  test("card: kökte variant, kart öğe, kontrol yüksekliğinde tetikleyici", () => {
+  test("card: kökte variant, kenarlıksız kart öğe, kontrol yüksekliğinde tetikleyici", () => {
     const html = render("card")
     expect(openingTag(html, "accordion")).toContain('data-variant="card"')
     expect(openingTag(html, "accordion-trigger")).toContain('aria-expanded="false"')
@@ -54,16 +54,18 @@ describe("Accordion görünümleri (#926)", () => {
     const root = slotClasses(html, "accordion")
     expect(root).toContain("gap-2")
 
+    // e-santral kartı: kenarlık yok, ui/card.tsx'in soluk halkası.
     const item = slotClasses(html, "accordion-item")
-    for (const cls of ["rounded-lg", "border", "bg-card"]) expect(item).toContain(cls)
+    for (const cls of ["rounded-lg", "bg-card", "ring-1", "ring-foreground/[0.05]"]) expect(item).toContain(cls)
+    expect(item.some((cls) => /^border(?:-|$)/.test(cls))).toBe(false)
 
     const trigger = slotClasses(html, "accordion-trigger")
     for (const cls of ["min-h-(--control-h)", "px-4", "py-3"]) expect(trigger).toContain(cls)
     expect(trigger).not.toContain("hover:underline")
     expect(trigger.some((cls) => /^h-/.test(cls))).toBe(false)
-    // Kartın iç köşesi: twMerge tabandaki rounded-lg'yi variant köşesiyle değiştirir.
-    expect(trigger).toContain("rounded-[calc(var(--radius)-1px)]")
-    expect(trigger).not.toContain("rounded-lg")
+    // Kenarlık olmadığı için tetikleyici kartın köşesini aynen taşır.
+    expect(trigger).toContain("rounded-lg")
+    expect(trigger.some((cls) => cls.startsWith("rounded-["))).toBe(false)
 
     const content = contentInnerClasses(render("card", true))
     for (const cls of ["px-4", "pt-0", "pb-4"]) expect(content).toContain(cls)
@@ -99,6 +101,10 @@ describe("Accordion görünümleri (#926)", () => {
       expect(trigger).toContain(cls)
     }
     expect(trigger).not.toContain("items-start")
+    // Kapalı başlığın oku koyu tonda (16px kalır): dokunulabilir olduğu belli olsun.
+    expect(trigger).toContain("**:data-[slot=accordion-trigger-icon]:text-foreground")
+    expect(trigger).not.toContain("**:data-[slot=accordion-trigger-icon]:text-muted-foreground")
+    expect(trigger).toContain("**:data-[slot=accordion-trigger-icon]:size-4")
 
     const content = contentInnerClasses(render("disclosure", true))
     expect(content).toEqual(["pt-2", "pb-0"])

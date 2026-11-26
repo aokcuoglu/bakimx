@@ -290,10 +290,10 @@ export function OrderChecklist({
         className={cn(
           "scroll-mt-4 transition-colors",
           allDone
-            ? "border-success/30 bg-primary/[0.04]"
+            ? "ring-success/30 bg-primary/[0.04]"
             : progress.total > 0 && !locked
-              ? "border-primary/25 bg-primary/[0.04]"
-              : "border-border bg-primary/[0.04]"
+              ? "ring-primary/25 bg-primary/[0.04]"
+              : "ring-border bg-primary/[0.04]"
         )}
       >
         <AccordionTrigger className="items-center gap-3">

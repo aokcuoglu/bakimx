@@ -358,7 +358,7 @@ function SupportRequestRow({
   const adminOptions = [{ value: UNASSIGNED, label: "Atanmadı" }, ...options.admins]
 
   return (
-    <AccordionItem value={r.id} className={cn(isNew && "border-warning/30")}>
+    <AccordionItem value={r.id} className={cn(isNew && "ring-warning/30")}>
       <AccordionTrigger className="gap-3">
         <span className="block min-w-0 flex-1 space-y-1">
           <span className="flex items-center gap-2 flex-wrap">

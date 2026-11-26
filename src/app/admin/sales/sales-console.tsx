@@ -623,10 +623,10 @@ export function SalesConsole({
               return (
                 <AccordionItem key={statusValue} value={statusValue}>
                   <AccordionTrigger>
-                    <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-3">
                       <Badge variant="outline" className={`text-[11px] ${statusColor}`}>{statusLabel}</Badge>
                       <span className="text-sm text-muted-foreground">{statusLeads.length} aday</span>
-                    </div>
+                    </span>
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-3">

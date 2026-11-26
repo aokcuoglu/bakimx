@@ -43,7 +43,7 @@ describe("teknisyen paneli KPI filtreleri", () => {
     // çağrı yerinde `[&_a]:no-underline` ile kapatmaya gerek kalmadı.
     expect(source).toContain('<Accordion key={section.title} type="single" collapsible variant="disclosure">')
     expect(source).not.toMatch(/<Accordion[^>]*defaultValue/)
-    expect(source).not.toContain('[&_a]:no-underline')
+    expect(source).not.toContain("[&_a]:" + "no-underline")
   })
 
   test("iş listelerinde adet, tıklanabilirlik ve aktif iş vurgusu gösterir", () => {

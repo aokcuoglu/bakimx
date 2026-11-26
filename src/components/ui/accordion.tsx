@@ -9,7 +9,9 @@ import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 /**
  * Akordeon görünümü kökte bir kez seçilir, öğeler bağlamdan okur (#926):
  * - `default` — alt çizgili liste (SSS, kayıt formundaki "Diğer sektörler").
- * - `card` — her öğe ayrı çerçeveli kart (şablon, destek talebi, aday listesi).
+ * - `card` — her öğe ayrı kart (şablon, destek talebi, aday listesi); e-santral
+ *   kartı gibi kenarlıksız, `ui/card.tsx`'in soluk halkasıyla. Durum tonu çağrı
+ *   yerinde halka RENGİYLE verilir (`ring-warning/30`), kalınlıkla değil.
  * - `disclosure` — tek bir kart görünümlü açılır başlık; içerik kartın altında
  *   akar (teknisyen panelindeki "Taslak İşler").
  * Tetikleyici her görünümde en az kontrol yüksekliğindedir (telefonda 44px).
@@ -28,16 +30,18 @@ const ROOT_VARIANT: Record<AccordionVariant, string> = {
 
 const ITEM_VARIANT: Record<AccordionVariant, string> = {
   default: "not-last:border-b",
-  card: "rounded-lg border bg-card",
+  card: "rounded-lg bg-card ring-1 ring-foreground/[0.05]",
   disclosure: "",
 }
 
-// Kart tetikleyicisinin köşesi kartın iç köşesidir: 12px kart − 1px kenarlık.
+// Kart kenarlıksız (halka kutunun dışına çizilir), tetikleyici kartın köşesini
+// (rounded-lg, 12px) aynen taşır. `disclosure` kapalıyken tek başına duran bir
+// başlıktır; oku koyu tonda kalır ki telefonda dokunulabilir olduğu belli olsun.
 const TRIGGER_VARIANT: Record<AccordionVariant, string> = {
   default: "min-h-(--control-h) py-3",
-  card: "min-h-(--control-h) rounded-[calc(var(--radius)-1px)] px-4 py-3 transition-colors hover:bg-muted/50",
+  card: "min-h-(--control-h) px-4 py-3 transition-colors hover:bg-muted/50",
   disclosure:
-    "min-h-(--control-h) items-center bg-card px-4 py-3 ring-1 ring-foreground/[0.05] transition-colors hover:bg-muted/60 active:bg-muted",
+    "min-h-(--control-h) items-center bg-card px-4 py-3 ring-1 ring-foreground/[0.05] transition-colors hover:bg-muted/60 active:bg-muted **:data-[slot=accordion-trigger-icon]:text-foreground",
 }
 
 const CONTENT_VARIANT: Record<AccordionVariant, string> = {
