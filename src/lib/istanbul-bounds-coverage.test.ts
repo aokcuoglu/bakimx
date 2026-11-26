@@ -65,9 +65,7 @@ const INTENTIONAL: Record<string, string> = {
  * issue'yu (`#123`) anar. Boşaldıkça silinir — paralel PR'lardan hangisi ikinci
  * merge olursa kaydı o siler.
  */
-const PENDING_MIGRATION: Record<string, string> = {
-  "app/(app)/cashbox/payments/page.tsx": "#905/#906",
-}
+const PENDING_MIGRATION: Record<string, string> = {}
 
 /** `quoteIndex`'teki tırnakla açılan dizenin kapanışından sonraki indeksi verir. */
 function skipString(source: string, quoteIndex: number): number {
