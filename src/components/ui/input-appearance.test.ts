@@ -34,6 +34,9 @@ describe("Input appearance", () => {
     expect(c).not.toContain("border-input")
     expect(c).not.toContain("bg-card")
     expect(attr(inputTag("ghost"), "data-appearance")).toBe("ghost")
+    expect(c).not.toContain("dark:bg-input/30")
+    expect(c).not.toContain("disabled:bg-input/50")
+    expect(c).toContain("disabled:bg-transparent")
   })
 
   test("inline: dolgu 0, odakta alan dolgusu", () => {
@@ -42,6 +45,9 @@ describe("Input appearance", () => {
     expect(c).toContain("focus-visible:px-(--field-px)")
     expect(c).not.toContain("px-(--field-px)")
     expect(attr(inputTag("inline"), "data-appearance")).toBe("inline")
+    expect(c).not.toContain("dark:bg-input/30")
+    expect(c).not.toContain("disabled:bg-input/50")
+    expect(c).toContain("disabled:bg-transparent")
   })
 
   test("default değişmez ve data-appearance yazmaz", () => {
@@ -50,6 +56,9 @@ describe("Input appearance", () => {
     expect(c).toContain("border-input")
     expect(c).toContain("bg-card")
     expect(attr(tag, "data-appearance")).toBeNull()
+    expect(decode(attr(tag, "class") ?? "")).toBe(
+      "h-(--control-h) w-full min-w-0 rounded-(--control-radius) border border-input bg-card px-(--field-px) py-1 text-(length:--control-fs) tracking-[-0.01em] transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/10 dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/20 data-[size=sm]:[--control-h:var(--control-h-sm)] data-[size=compact]:[--control-h:var(--control-h-xs)] data-[size=compact]:[--control-fs:var(--control-fs-field-xs)] data-[size=compact]:[--field-px:var(--control-px-xs)] data-[size=lg]:[--control-h:var(--control-h-lg)]"
+    )
   })
 })
 
@@ -64,6 +73,21 @@ describe("InputGroup appearance", () => {
       expect(attr(tag, "data-appearance")).toBe(appearance)
     })
   }
+
+  test("ghost: devre dışı grup varsayılan dolguyu geri almaz", () => {
+    const c = classes(groupTag("ghost"))
+    expect(c).toContain("has-disabled:bg-transparent")
+    expect(c).toContain("dark:has-disabled:bg-transparent")
+  })
+
+  test("quiet ve soft: koyu mod ve devre dışı karşılıkları var", () => {
+    const quiet = classes(groupTag("quiet"))
+    for (const c of ["has-disabled:bg-transparent", "dark:bg-transparent", "dark:focus-within:bg-background", "dark:has-disabled:bg-transparent"])
+      expect(quiet).toContain(c)
+    const soft = classes(groupTag("soft"))
+    for (const c of ["has-disabled:bg-muted/60", "dark:bg-muted/60", "dark:focus-within:bg-background", "dark:has-disabled:bg-muted/60"])
+      expect(soft).toContain(c)
+  })
 
   test("default değişmez", () => {
     const tag = groupTag()

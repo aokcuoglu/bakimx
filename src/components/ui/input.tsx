@@ -69,7 +69,6 @@ function Input({
 export {
   Input,
   inputSizeClasses,
-  inputAppearanceClasses,
   type InputSize,
   type InputAppearance,
 }

@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea"
 const inputGroupAppearanceClasses = {
   default: "",
   ghost:
-    "border-transparent bg-transparent group-hover/field-row:border-input group-focus-within/field-row:border-input dark:bg-transparent",
+    "border-transparent bg-transparent group-hover/field-row:border-input group-focus-within/field-row:border-input has-disabled:bg-transparent dark:bg-transparent dark:has-disabled:bg-transparent",
   quiet:
     "border-transparent bg-transparent text-muted-foreground transition-none group-hover/field-row:bg-muted/60 focus-within:border-input focus-within:bg-background focus-within:text-foreground has-disabled:bg-transparent dark:bg-transparent dark:group-hover/field-row:bg-muted/60 dark:focus-within:bg-background dark:has-disabled:bg-transparent [&>input]:transition-none",
   soft: "border-transparent bg-muted/60 text-muted-foreground focus-within:border-input focus-within:bg-background focus-within:text-foreground has-disabled:bg-muted/60 dark:bg-muted/60 dark:focus-within:bg-background dark:has-disabled:bg-muted/60",
