@@ -13,9 +13,9 @@ import type { OrderDetailData } from "@/components/orders/order-management-panel
  * geniş kapsayıcıda "Araç Kabul Bilgileri" gibi iki sütuna bölünür (rayda tek
  * sütun).
  *
- * İş no, kabul tarihi, usta, geliş nedeni ve tutarlar burada YOK: ilk dördü
- * "Araç Kabul Bilgileri"nde, tutarlar başlığın altındaki şeritte. Durum ve
- * ödeme başlıktaki haplarda.
+ * İş no, kabul tarihi, usta, geliş nedeni ve tutarlar burada YOK: iş no, tarih
+ * ve geliş nedeni "Araç Kabul Bilgileri"nde, usta başlıkta, tutarlar raydaki
+ * Ödeme Özeti kartında (#912). Durum ve ödeme başlıktaki haplarda.
  */
 export function OrderRecordRail({
   order,

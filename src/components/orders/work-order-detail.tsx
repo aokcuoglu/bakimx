@@ -980,8 +980,9 @@ export function WorkOrderDetail({
       )}
       </div>
 
-      {/* #911 — tek sayfa + yan ray. Tutar şeridi ve telefon özet kartı başlığın
-          altında; bölüm çipleri üst barın altında yapışkan (iki kolonda gizli).
+      {/* #911 — tek sayfa + yan ray. Telefon özet kartı başlığın altında (para
+          raydaki Ödeme Özeti kartında, #912); bölüm çipleri üst barın altında
+          yapışkan (iki kolonda gizli).
           Bloklar `data-section` taşır; tek kolonda ray kartları `order` ile
           ilgili bölümün içine girer (order-detail.module.css). */}
       <div className="min-w-0 space-y-5">

@@ -133,6 +133,24 @@ Bölümler tek kolonda; ray kartları akışta:
    - Ödeme kartı tek yer: tutar şeridi, Fiyatlandırma, Ödeme Özeti ve `MobileTotalsBar` buraya.
    - Kabul bilgileri sadeleşir; Durum Select'i karttan çıkar.
    - Mükerrer ekleme düğmeleri kalkar.
+
+   > **Uygulama notu (#912):**
+   > - **Para tek kartta.** Raydaki "Ödeme Özeti" kartı (telefonda Ödeme bölümünün başı): zincir (Ara Toplam · İndirim · KDV) indirim ya da KDV varken hep görünür, sonra Genel Toplam, Tahsil Edilen, Kalan. Parça / İşçilik / Dış İşçilik dökümü açılır satırda. "Tahsilat al" ve "İndirim / KDV" bu kartta. Tutar şeridi, Ödemeler'deki ikinci özet, tahsilat geçmişinin toplam bloğu ve `MobileTotalsBar` kalktı. Tahsilat geçmişi yalnız liste; "İptal Edilen" toplamı yok, iptal satırı üstü çizili ve "İptal" haplı.
+   > - **Tahsil edilen: tek etiket, tek kaynak.** Etiket "Tahsil Edilen" ("Ödenen" kalktı). Kaynak `orderPaidKurus` (`src/lib/cashbox/status.ts`): kasa açıkken tamamlanmış tahsilatların toplamı (defter), değilse `ServiceOrder.paidAmount` önbelleği. Eski `paidAmount || defter` önbellek 0'dan büyükken defteri hiç görmüyordu. KDV etiketi belgenin gerçek oranını yazar (`orderTotalsChain`); türetilmiş oran kısmi KDV'li belgede yanlıştı.
+   > - **Telefon özet kartı.** Para satırı düğme değil, Ödeme bölümüne bağlantı: "Kalan ₺…" (kasa yoksa "Genel Toplam ₺…"), altında Genel Toplam ve zincir. Kalemler'de telefon toplamı yok; #913'te yeniden bakılır.
+   > - **Durum yalnız başlıktan.** Kabul bilgileri kartından Durum, Atanan Usta, Ödeme ve Toplam Tutar satırları kalktı (Lite'ta usta satırı da yok). Başlık haritası (`NEXT_STATUSES`) durum makinesinin her hedefini sunar; `header-actions.test.ts` her durum için `orderStatusOptions(s).slice(1)` ile eşitliği sınar. İptal her durumda onay penceresi açar.
+   >
+   >   | Durum | Birincil | ⋯ menüsü |
+   >   |---|---|---|
+   >   | Taslak | Başla | İptal |
+   >   | Onay bekliyor (eski) | Başla | İptal |
+   >   | Onaylandı (eski) | Başla | Parça Bekliyor · İptal |
+   >   | İşlemde | Teslime Hazır | Parça Bekliyor · İptal |
+   >   | Parça bekliyor | Devam Et | Teslime Hazır · İptal |
+   >   | Teslime hazır | Teslim Et (OTP) | İşleme Geri Al · İptal |
+   >   | Teslim edildi | — | — (yönetici: "Yeniden Aç" notu) |
+   >   | İptal | Yeniden Aktif Et | — |
+   > - **Ekleme ilkesi.** Bir eylemin sayfada tek görünür girişi olur. Hızlı işlem satırı (#881) birincil yoldur; bölüm başlığındaki ikon menü ("Kalem ekle") uzun sayfada bölümün içinden aynı pencereyi açar. Grid araç çubuğu iş emri kabuğunda gizli (teklif ve teknisyen ekranında durur). Teslim kodu yalnız başlıktaki "Teslim Et (OTP)" ile istenir; Müşteri Çıktısı'ndaki ikinci düğme fiyat ve parça kararı kapısını atlıyordu.
 3. **#913 durum ve cilalar.**
    - Durum kartında sıradaki adım ve engeller.
    - Teslim edilmiş kabul görünümü.
