@@ -440,7 +440,7 @@ function PreviewPanel({
         )}
 
         <Tabs defaultValue={counts.error > 0 ? "errors" : "creates"}>
-          <TabsList variant="line" className="grid h-auto w-full grid-cols-2 sm:grid-cols-4">
+          <TabsList variant="line" size="control" className="grid w-full grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="creates">Yeni ({counts.created})</TabsTrigger>
             <TabsTrigger value="updates">Güncellenecek ({counts.updated})</TabsTrigger>
             <TabsTrigger value="skips">Atlanan ({counts.skipped})</TabsTrigger>

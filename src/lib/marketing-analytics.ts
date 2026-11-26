@@ -4,10 +4,15 @@ export const MARKETING_EVENT_NAMES = [
   "seo_landing_view", "trial_cta_click", "demo_cta_click", "register_started",
   "register_submitted", "demo_form_started", "demo_submitted", "purchase_started", "purchase_submitted",
   "feature_paywall_viewed", "feature_upgrade_clicked",
-  "lite_cta_click", "lite_registered", "first_work_order_created", "paid_subscription_confirmed",
+  "first_work_order_created", "paid_subscription_confirmed",
 ] as const
 
 export type MarketingEventName = (typeof MARKETING_EVENT_NAMES)[number]
+
+/** Kayıttan gelen ad güncel sözlükte mi? Emekli bir ad (eski kayıt) olay üretmez. */
+export function isMarketingEventName(value: unknown): value is MarketingEventName {
+  return typeof value === "string" && MARKETING_EVENT_NAMES.some((name) => name === value)
+}
 export type PlanTier = "lite" | "starter" | "pro" | "premium"
 export type BillingCycle = "monthly" | "yearly"
 export type FeaturePlacement = "page" | "inline"
@@ -25,8 +30,6 @@ type Common = {
 }
 
 export type MarketingEventPayloads = {
-  lite_cta_click: Common & { cta_location: string; plan_tier: "lite" }
-  lite_registered: Common & { plan_tier: "lite" }
   first_work_order_created: Common & { plan_tier: PlanTier }
   paid_subscription_confirmed: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle }
   seo_landing_view: Common & { landing_type: "home" | "product" | "pricing" | "demo" }
@@ -77,8 +80,6 @@ const CAMPAIGN_KEYS = {
 
 const COMMON_FIELDS = ["source_page", "cta_location", "campaign_source", "campaign_medium", "campaign_name", "referrer_host", "event_id"] as const
 const EVENT_FIELDS: Record<MarketingEventName, readonly string[]> = {
-  lite_cta_click: ["plan_tier"],
-  lite_registered: ["plan_tier"],
   first_work_order_created: ["plan_tier"],
   paid_subscription_confirmed: ["plan_tier", "billing_cycle"],
   seo_landing_view: ["landing_type"],

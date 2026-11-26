@@ -25,8 +25,9 @@ export default async function OrderDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  // Liste ekranındaki "Düzenle" aksiyonu buraya ?edit=1 ile gelir. Sekme
-  // değişimi sunucuya uğramaz; ?edit= istemcide adresten düşer.
+  // Liste ekranındaki "Düzenle" aksiyonu buraya ?edit=1 ile gelir. Eski
+  // `?tab=` bağlantıları ve bölüm gezinmesi (`#bölüm`) istemcidedir, sunucu
+  // okumaz; ?edit= bölüme gidilince istemcide adresten düşer.
   searchParams: Promise<{ edit?: string; returnTo?: string }>
 }) {
   const { id } = await params

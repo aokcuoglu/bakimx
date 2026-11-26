@@ -19,7 +19,7 @@ export function PartsTabsNav({ active }: { active: "parts" | "labor" }) {
 
   return (
     <Tabs value={active} onValueChange={handleChange}>
-      <TabsList variant="line" className="flex w-full flex-nowrap gap-1 sm:gap-2 border-b border-border pb-0 -mb-px">
+      <TabsList variant="line" size="control" className="flex w-full flex-nowrap gap-1 sm:gap-2 border-b border-border -mb-px">
         <TabsTrigger value="parts" className="shrink-0 flex-none">
           <Boxes className="size-4" /> Parçalar
         </TabsTrigger>
