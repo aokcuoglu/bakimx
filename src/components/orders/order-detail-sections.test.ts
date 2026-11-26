@@ -25,7 +25,7 @@ test("Ödeme, Kanıt, Teknisyen ve Geçmiş bölümleri Card kabuğu kullanmaz",
     expect(src).not.toContain("@/components/ui/card")
   }
   const history = MANAGEMENT.slice(MANAGEMENT.indexOf("export function PaymentHistoryCard"))
-  expect(history).toContain('<DetailPanel\n        title="Tahsilat Geçmişi"')
+  expect(history).toContain('<DetailPanel title="Tahsilat Geçmişi">')
   expect(history).not.toContain("<Card")
 })
 
@@ -148,4 +148,32 @@ test("#911: çip şeridi iki kolonda ölçülmez, dokunulan çip tutulur, hareke
 
 test("#911: boş şikâyet boş paragraf değil, açıklama gösterir", () => {
   expect(SUMMARY).toContain("Şikayet girilmedi")
+})
+
+/**
+ * #912 — telefon özet kartı "Tahsilat al"ı üçüncü kez tekrar etmez (hızlı işlem
+ * ve Ödeme kartında var); para satırı Ödeme bölümüne bağlantıdır.
+ */
+test("#912: özet kartında tahsilat düğmesi yok, para satırı Ödeme bölümüne gider", () => {
+  expect(SUMMARY).not.toContain("Tahsilat al")
+  expect(SUMMARY).not.toContain("onCollect")
+  expect(SUMMARY).not.toContain("@/components/ui/button")
+  const money = SUMMARY.slice(SUMMARY.indexOf("{money && ("))
+  expect(money).toContain('href="#odeme"')
+  expect(money).toContain('onNavigate("odeme")')
+})
+
+/**
+ * #912 — tekrarlar: Durum kartında hap panel başlığında; teslim kodu yalnız
+ * başlıktaki birincil "Teslim Et (OTP)" ile istenir (Müşteri Çıktısı'ndaki ikinci
+ * düğme fiyatsız kalem / karar bekleyen talep kapısını da atlıyordu).
+ */
+test("#912: Durum hapı panel başlığında, teslim kodu düğmesi tek yerde", () => {
+  const card = SUMMARY.slice(SUMMARY.indexOf("export function OrderStatusCard"))
+  expect(card).toContain('<DetailPanel title="Durum" aside={<OrderStatusPill status={status} />}')
+  expect(card.match(/<OrderStatusPill/g)).toHaveLength(1)
+  expect(DETAIL).not.toContain("SMS Teslim Kodu Gönder")
+  expect(DETAIL.match(/onClick=\{handleRequestDeliveryOtp\}/g)).toHaveLength(1)
+  expect(DETAIL).toContain('label: a.key === "delivered" ? "Teslim Et (OTP)" : a.label')
+  expect(DETAIL).toContain('(a.key === "delivered" && deliveryBlocked)')
 })

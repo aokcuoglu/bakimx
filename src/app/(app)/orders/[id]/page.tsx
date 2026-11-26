@@ -7,7 +7,8 @@ import { WorkOrderDetail } from "@/components/orders/work-order-detail"
 import { userDisplayName } from "@/lib/format"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
-import { computeRemainingAmount } from "@/lib/cashbox/status"
+import { computeRemainingAmount, orderDisplayPaymentStatus, orderPaidKurus } from "@/lib/cashbox/status"
+import { isCollectionLockedForOrder } from "@/lib/status-transitions"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { getOrderActivity } from "@/lib/orders/activity"
 import { getLaborCatalog } from "@/lib/labor/queries"
@@ -116,8 +117,25 @@ export default async function OrderDetailPage({
     : []
 
   const totalPaid = collections.filter(c => c.status === "completed").reduce((sum, c) => sum + c.amount, 0)
-  const paidAmount = order.paidAmount || totalPaid
+  // Tek kaynak (#912): kasa açıkken defter, değilse `paidAmount` önbelleği.
+  const paidAmount = orderPaidKurus({
+    ledgerLoaded: canCashbox,
+    completedTotalKurus: totalPaid,
+    cachedPaidKurus: order.paidAmount,
+  })
   const remainingAmount = computeRemainingAmount(totals.grandTotal, paidAmount)
+  // Hap da aynı sayılardan (#912): "Kalan ₺0" yanında önbellekten "Kısmi" yazmasın.
+  const paymentStatus = orderDisplayPaymentStatus({
+    ledgerLoaded: canCashbox,
+    grandTotalKurus: totals.grandTotal,
+    paidKurus: paidAmount,
+    cachedStatus: order.paymentStatus,
+  })
+  // Tahsilat kilidi sunucudaki kapıyla (createCollectionAction) AYNI girdiden:
+  // önbellekteki ödeme durumu. Türetilmiş durumdan beslenseydi ayrıştıkları
+  // nadir kayıtta düğme görünür, sunucu reddederdi (ya da tersi).
+  const collectionsLocked =
+    order.status === "cancelled" || isCollectionLockedForOrder(order.status, order.paymentStatus)
 
   const intakeForm = order.intakeForm
   const currentCustomer = currentWorkOrderCustomer(intakeForm)
@@ -127,7 +145,8 @@ export default async function OrderDetailPage({
     id: order.id,
     workOrderNo: formatWorkOrderNo(order),
     status: order.status,
-    paymentStatus: order.paymentStatus,
+    paymentStatus,
+    collectionsLocked,
     technicianName: order.technicianName,
     assignedTechnicianId: order.assignedTechnicianId,
     assignedTechnicianName: order.assignedTechnician?.fullName || null,
@@ -345,7 +364,7 @@ export default async function OrderDetailPage({
     order: {
       id: order.id,
       status: order.status,
-      paymentStatus: order.paymentStatus,
+      paymentStatus,
       items: order.items.map((i) => ({
         id: i.id,
         type: i.type,

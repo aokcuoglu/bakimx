@@ -55,3 +55,60 @@ export function computePaymentStatus(grandTotalKurus: number, paidKurus: number)
 export function computeRemainingAmount(grandTotalKurus: number, paidKurus: number): number {
   return Math.max(0, subKurus(grandTotalKurus, paidKurus))
 }
+
+/**
+ * Bir iş emrinin tahsil edilen tutarı (kuruş) — ekranda TEK kaynak (#912).
+ *
+ * Asıl kaynak tamamlanmış tahsilatların toplamıdır (defter). `order.paidAmount`
+ * yalnız bir önbellektir: `recalcOrderPayment` (src/lib/cashbox/recalc.ts)
+ * yazar, o çağrılmadan değişen bir kayıtta defterden ayrışabilir. Eskiden
+ * sayfa `order.paidAmount || defter` okuyordu: önbellek 0'dan büyükse defter
+ * hiç görülmüyordu, iptal edilen son tahsilattan sonra bile eski tutar kalıyordu.
+ *
+ * Defter yüklendiyse (kasa özelliği açık) her zaman defter kazanır — defter 0
+ * ve önbellek > 0 olsa da. Yüklenmediyse (Lite: tahsilat sorgusu atlanır)
+ * önbellek okunur; boşsa 0.
+ */
+export function orderPaidKurus({
+  ledgerLoaded,
+  completedTotalKurus,
+  cachedPaidKurus,
+}: {
+  /** Tamamlanmış tahsilatlar bu istekte sorgulandı mı. */
+  ledgerLoaded: boolean
+  /** Tamamlanmış tahsilatların toplamı (kuruş). */
+  completedTotalKurus: number
+  /** `ServiceOrder.paidAmount` önbelleği (kuruş). */
+  cachedPaidKurus: number | null | undefined
+}): number {
+  if (ledgerLoaded) return completedTotalKurus
+  return cachedPaidKurus ?? 0
+}
+
+/**
+ * Ekranda gösterilen ödeme durumu (hap) — tutarlarla AYNI sayılardan (#912).
+ *
+ * Tahsil edilen tutar defterden okunurken hap `ServiceOrder.paymentStatus`
+ * önbelleğinden okunursa ikisi ayrışabilir ("Kalan ₺0" yanında "Kısmi").
+ * Defter yüklendiyse durum aynı Genel Toplam ve tahsil edilen tutardan
+ * `computePaymentStatus` ile türetilir; bu, önbelleği yazan `recalcOrderPayment`
+ * ile aynı kuraldır. Yüklenmediyse önbellek okunur.
+ *
+ * DİKKAT: tahsilat kilidi (`isCollectionLockedForOrder`) bunu KULLANMAZ —
+ * sunucudaki kapı (`createCollectionAction`) önbelleği okur; ekrandaki düğme
+ * sunucunun kararıyla aynı girdiden beslenmeli.
+ */
+export function orderDisplayPaymentStatus({
+  ledgerLoaded,
+  grandTotalKurus,
+  paidKurus,
+  cachedStatus,
+}: {
+  ledgerLoaded: boolean
+  grandTotalKurus: number
+  paidKurus: number
+  /** `ServiceOrder.paymentStatus` önbelleği. */
+  cachedStatus: string
+}): string {
+  return ledgerLoaded ? computePaymentStatus(grandTotalKurus, paidKurus) : cachedStatus
+}

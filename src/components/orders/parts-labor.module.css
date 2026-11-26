@@ -12,8 +12,14 @@
   margin-block: 0;
 }
 
-.skin [data-pl="toolbar"] {
-  padding: 14px 18px;
+/* #912 — iş emri sayfasında ekleme tek yerden: başlığın altındaki hızlı işlemler
+   (#881) ve panel başlığındaki "Kalem ekle" menüsü. Grid'in kendi araç çubuğu ve
+   onu listeden ayıran çizgi bu kabukta gizli (teklif ve teknisyen ekranı kabuğu
+   görmez, onlarda araç çubuğu durur). Ekleme penceresi (Dialog) portal'la
+   body'ye çizildiği için çizgi araç çubuğunun DOM'daki komşusudur. */
+.skin [data-pl="toolbar"],
+.skin [data-pl="toolbar"] + [data-slot="separator"] {
+  display: none;
 }
 
 .skin [data-slot="separator"] {

@@ -63,7 +63,8 @@ for (const width of [390, 1440]) {
     })
     // Sayfa tek kaydırmalı (#911): eski `?tab=parca` Kalemler bölümüne kaydırır.
     await page.goto(`/api/auth/dev-login?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(`/orders/${orderId}?tab=parca`)}`)
-    // Hızlı buton ve Kalemler araç çubuğu aynı composer'ı açar.
+    // Hızlı buton ve Kalemler başlığındaki "Kalem ekle" menüsü aynı composer'ı
+    // açar; grid araç çubuğu iş emrinde gizli (#912), görünen tek "Parça ekle" hızlı butondur.
     await page.getByRole("button", { name: "Parça ekle", exact: true }).first().click()
     const composer = page.getByRole("dialog", { name: "Parça ekle", exact: true })
     const input = composer.getByPlaceholder("Parça no, adı, marka veya OEM ara…")

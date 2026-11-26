@@ -5,9 +5,11 @@
  *
  * Görünürlük, butonun açtığı asıl düğmeyle BİREBİR aynıdır — hızlı buton yeni
  * bir yetki yolu açmaz:
- * - Parça / İşçilik: `PartsLaborGrid` araç çubuğu (`!locked`)
+ * - Parça / İşçilik: Kalemler başlığındaki "Kalem ekle" menüsü (`!locked`; grid
+ *   araç çubuğu iş emri kabuğunda gizli, #912)
  * - Fotoğraf: Kanıt'taki ekleme akışı (`!orderLocked`; Lite'ta yükseltme alanına gider)
- * - Tahsilat: `PaymentHistoryCard` "Tahsilat Ekle" (kasa açık ve tahsilat kilitli değil)
+ * - Tahsilat: Ödeme Özeti kartındaki "Tahsilat al" (kasa açık ve tahsilat kilitli
+ *   değil; pencere `PaymentHistoryCard`ta durur, #912)
  */
 export type OrderQuickAction = "parca" | "iscilik" | "foto" | "tahsilat"
 
