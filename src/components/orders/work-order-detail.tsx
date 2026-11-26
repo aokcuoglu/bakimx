@@ -107,6 +107,7 @@ import { DeferUntilVisible } from "@/components/shared/defer-until-visible"
 import { OrderSectionNav } from "@/components/orders/order-section-nav"
 import { OrderMobileSummary, OrderStatusCard } from "@/components/orders/order-status-summary"
 import { useOrderSectionScroll } from "@/components/orders/use-order-section-scroll"
+import { useReturnFocus } from "@/hooks/use-return-focus"
 import { orderNextStep } from "@/lib/orders/next-step"
 import { orderTotalsChain, totalsChainText } from "@/lib/orders/totals-chain"
 import { urlWithout } from "@/lib/orders/detail-sections"
@@ -198,8 +199,11 @@ function HandoverPerson({
   emptyText: string
   /** Teslimden sonra boş alanın anlamı geçmiş zamanla yazılır (#913); verilmezse `emptyText`. */
   closedText?: string
-  /** Verilmezse (yetki yok / emir kilitli) yalnız bilgi görünür. */
-  onAdd?: () => void
+  /**
+   * Verilmezse (yetki yok / emir kilitli) yalnız bilgi görünür. Düğmeyi alır:
+   * düzenleme penceresi kapanınca odak oraya döner (#913).
+   */
+  onAdd?: (opener: HTMLElement) => void
 }) {
   return (
     <div className="min-w-0">
@@ -217,7 +221,7 @@ function HandoverPerson({
         <>
           <p className="text-sm text-muted-foreground">{closedText ?? emptyText}</p>
           {onAdd && (
-            <Button variant="link" size="sm" onClick={onAdd} className="px-0">
+            <Button variant="link" size="sm" onClick={(event) => onAdd(event.currentTarget)} className="px-0">
               <Plus className="size-3.5" /> Bilgi ekle
             </Button>
           )}
@@ -318,6 +322,18 @@ export function WorkOrderDetail({
   // ?edit=1 ile gelindiğinde kart daha ilk render'da açık olsun (önce okuma
   // görünümü çizip sonra düzenlemeye atlama titremesi olmasın).
   const openInfoEditor = editInitially && !orderLocked && canEditInfo
+
+  // #913 — tetikleyicisiz pencereler (hızlı işlemler, Şikayet düzenleme) kapanınca
+  // odak açan düğmeye döner; Radix yalnız kendi Dialog.Trigger'ına döndürüyor, odak
+  // BODY'ye düşüyordu. Kalem düğmesi pencere açıkken çizilmez (kapanınca yeniden
+  // bağlanır), bu yüzden ref olarak hatırlanır; `?edit=1` ile açık gelen pencere de
+  // oraya döner. Hızlı işlem sayfayı bölüme kaydırdığı için odak dönerken sayfa
+  // geri kaymaz (`preventScroll`): sonuç kaydırılan bölümde görünür kalır.
+  const editInfoButtonRef = useRef<HTMLButtonElement>(null)
+  const { remember: rememberFocus, onCloseAutoFocus: returnFocusOnClose } = useReturnFocus({
+    preventScroll: true,
+    initial: openInfoEditor ? editInfoButtonRef : null,
+  })
 
   // BAK-102 — düzenleme aksiyonları (başlıktaki "Düzenle" ve boş getiren/teslim
   // alacak bloğundaki "Bilgi ekle") yalnız yetkili ve kilitli olmayan emirde.
@@ -508,7 +524,8 @@ export function WorkOrderDetail({
     }
   }
 
-  function startEditInfo() {
+  function startEditInfo(opener?: HTMLElement) {
+    rememberFocus(opener ?? editInfoButtonRef)
     setEditComplaint(order.intake.customerComplaint)
     setEditNote(order.intake.internalNote ?? "")
     setEditMileage(order.intake.mileageAtIntake != null ? String(order.intake.mileageAtIntake) : "")
@@ -825,8 +842,10 @@ export function WorkOrderDetail({
     // İkisi de biliniyorsa hücre bağlamıdır (matris karesi / karşılaştır "+")
     // → tür ve aşama diyaloğda kilitli gelir.
     setPhotoContextLocked(Boolean(typeKey && phase))
+    // Odak açan kutucukta kalır (bölüme taşınmaz), pencere kapanınca oraya döner (#913).
+    rememberFocus()
     setAddingPhoto(true)
-    scrollToOrderSection("kanit")
+    scrollToOrderSection("kanit", { focus: false })
   }
 
   // Hızlı butonlar (#881): pencere hemen açılır, sayfa arkada ilgili bölüme
@@ -845,7 +864,14 @@ export function WorkOrderDetail({
   const [partsAddType, setPartsAddType] = useState<PartsAddType | null>(null)
   const [collectionModalOpen, setCollectionModalOpen] = useState(false)
 
-  function handleQuickAction(action: OrderQuickAction) {
+  // Ödeme kartındaki "Tahsilat al" ve hızlı işlem aynı pencereyi açar; kart
+  // zaten ekranda olduğu için buradan kaydırılmaz, adrese dokunulmaz.
+  function openCollection(opener: HTMLElement) {
+    rememberFocus(opener)
+    setCollectionModalOpen(true)
+  }
+
+  function handleQuickAction(action: OrderQuickAction, opener: HTMLElement) {
     if (action === "foto") {
       // Lite: focusPhoto yükseltme alanına götürür. Diğerlerinde "Fotoğraf
       // ekle" kutusuyla aynı serbest akış: tür seçilebilir, aşama duruma göre.
@@ -853,19 +879,21 @@ export function WorkOrderDetail({
         focusPhoto()
         return
       }
+      rememberFocus(opener)
       setPhotoType("")
       setPhotoPhase(photoPhaseForStatus(order.status))
       setPhotoContextLocked(false)
       setAddingPhoto(true)
-      scrollToOrderSection("kanit")
+      scrollToOrderSection("kanit", { focus: false })
       return
     }
     if (action === "tahsilat") {
-      scrollToOrderSection("odeme")
-      setCollectionModalOpen(true)
+      scrollToOrderSection("odeme", { focus: false })
+      openCollection(opener)
       return
     }
-    scrollToOrderSection("kalemler")
+    rememberFocus(opener)
+    scrollToOrderSection("kalemler", { focus: false })
     setPartsAddType(action)
   }
 
@@ -1011,7 +1039,8 @@ export function WorkOrderDetail({
                         variant="ghost"
                         size="icon"
                         aria-label="Şikayet ve notları düzenle"
-                        onClick={startEditInfo}
+                        ref={editInfoButtonRef}
+                        onClick={() => startEditInfo()}
                       >
                         <Pencil className="size-3.5" />
                       </Button>
@@ -1057,7 +1086,10 @@ export function WorkOrderDetail({
             </DetailPanel>
 
             <Dialog open={editingInfo} onOpenChange={(open) => { if (!savingInfo) setEditingInfo(open) }}>
-              <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden sm:max-w-2xl">
+              <DialogContent
+                className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden sm:max-w-2xl"
+                onCloseAutoFocus={returnFocusOnClose}
+              >
                 <DialogHeader>
                   <DialogTitle>Şikayet ve notları düzenle</DialogTitle>
                   <DialogDescription>Araç kabulü kabul bilgilerini güncelleyin.</DialogDescription>
@@ -1134,7 +1166,7 @@ export function WorkOrderDetail({
                 listede ekranın çok altında kalıyor, banner viewport dışında kalıp
                 görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
                 Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
-            <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} addingType={partsAddType} onAddingTypeChange={setPartsAddType} />
+            <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} addingType={partsAddType} onAddingTypeChange={setPartsAddType} rememberAddOpener={rememberFocus} onAddDialogCloseAutoFocus={returnFocusOnClose} />
           </div>
 
           {/* KANIT — kabul kanıtları, fotoğraflar, hasar */}
@@ -1179,6 +1211,7 @@ export function WorkOrderDetail({
                     onDeleted={() => router.refresh()}
                     onAdd={orderLocked ? undefined : (type, phase) => focusPhoto(type, phase)}
                     onAddOther={orderLocked ? undefined : (phase) => {
+                      rememberFocus()
                       setPhotoType("")
                       setPhotoPhase(phase)
                       setPhotoContextLocked(false)
@@ -1207,7 +1240,7 @@ export function WorkOrderDetail({
                     }
                   }}
                 >
-                  <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+                  <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto" onCloseAutoFocus={returnFocusOnClose}>
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2"><Camera className="size-4 text-primary" /> Fotoğraf Ekle</DialogTitle>
                     </DialogHeader>
@@ -1377,6 +1410,7 @@ export function WorkOrderDetail({
                 customerName={customerName}
                 collectionModalOpen={collectionModalOpen}
                 onCollectionModalOpenChange={setCollectionModalOpen}
+                onCollectionModalCloseAutoFocus={returnFocusOnClose}
               />
               </>
             )}
@@ -1432,7 +1466,7 @@ export function WorkOrderDetail({
               loading={loading}
               error={error}
               showCashbox={canCashbox}
-              onCollect={canCashbox && !collectionsLocked ? () => setCollectionModalOpen(true) : undefined}
+              onCollect={canCashbox && !collectionsLocked ? openCollection : undefined}
             />
           </div>
 

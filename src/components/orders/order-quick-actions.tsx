@@ -21,7 +21,8 @@ export function OrderQuickActions({
   onAction,
 }: {
   actions: readonly OrderQuickAction[]
-  onAction: (action: OrderQuickAction) => void
+  /** Düğmeyi de alır: açılan pencere kapanınca odak oraya döner (#913). */
+  onAction: (action: OrderQuickAction, opener: HTMLElement) => void
 }) {
   if (actions.length === 0) return null
   return (
@@ -29,7 +30,7 @@ export function OrderQuickActions({
       {actions.map((action) => {
         const { label, Icon } = QUICK_ACTIONS[action]
         return (
-          <Button key={action} type="button" variant="outline" onClick={() => onAction(action)}>
+          <Button key={action} type="button" variant="outline" onClick={(event) => onAction(action, event.currentTarget)}>
             <Icon aria-hidden className="text-primary" />
             {label}
           </Button>

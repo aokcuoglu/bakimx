@@ -62,6 +62,8 @@ type Props = {
   grandTotal: number
   paidAmount: number
   remainingAmount: number
+  /** Pencere dışarıdan açılır; kapanınca odağın açan öğeye dönmesi için (#913). */
+  onCloseAutoFocus?: (event: Event) => void
 }
 
 /**
@@ -76,6 +78,7 @@ export function CollectionQuickModal({
   grandTotal,
   paidAmount,
   remainingAmount,
+  onCloseAutoFocus,
 }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -155,7 +158,7 @@ export function CollectionQuickModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>
             <span className="flex items-center gap-2">

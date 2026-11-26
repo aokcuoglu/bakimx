@@ -43,18 +43,29 @@ export function sectionScrollBehavior(): ScrollBehavior {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
 }
 
-/** Bölüme kaydırır ve odağı bölüme taşır (klavye ve ekran okuyucu oradan devam eder). */
+/**
+ * Bölüme kaydırır ve odağı bölüme taşır (klavye ve ekran okuyucu oradan devam
+ * eder). `focus: false`: aynı anda pencere açılıyorsa (hızlı işlem, eksik
+ * fotoğraf) odak açan düğmede kalır; pencere kapanınca oraya döner (#913).
+ */
 function scrollToSection(
   root: HTMLElement,
   rail: HTMLElement | null,
   id: OrderSectionId,
   behavior: ScrollBehavior,
+  focus = true,
 ): boolean {
   const target = findSectionTarget(root, rail, id)
   if (!target) return false
   target.scrollIntoView({ block: "start", behavior })
-  target.focus({ preventScroll: true })
+  if (focus) target.focus({ preventScroll: true })
   return true
+}
+
+export type OrderSectionScrollOptions = {
+  behavior?: ScrollBehavior
+  /** Varsayılan true. Pencere açan yollar false verir (bkz. `scrollToSection`). */
+  focus?: boolean
 }
 
 /**
@@ -73,8 +84,9 @@ function goToSection(
   rail: HTMLElement | null,
   id: OrderSectionId,
   behavior: ScrollBehavior,
+  focus: boolean,
 ): void {
-  if (!scrollToSection(root, rail, id, behavior)) return
+  if (!scrollToSection(root, rail, id, behavior, focus)) return
   window.history.replaceState(null, "", sectionUrl(window.location.href, id))
 }
 
@@ -97,7 +109,7 @@ function goToSection(
 export function useOrderSectionScroll(
   pageRef: RefObject<HTMLElement | null>,
   railRef: RefObject<HTMLElement | null>,
-): (id: OrderSectionId, behavior?: ScrollBehavior) => void {
+): (id: OrderSectionId, options?: OrderSectionScrollOptions) => void {
   const router = useRouter()
 
   useEffect(() => {
@@ -146,8 +158,8 @@ export function useOrderSectionScroll(
     return () => observer.disconnect()
   }, [railRef])
 
-  return (id, behavior) => {
+  return (id, options) => {
     const root = pageRef.current
-    if (root) goToSection(root, railRef.current, id, behavior ?? sectionScrollBehavior())
+    if (root) goToSection(root, railRef.current, id, options?.behavior ?? sectionScrollBehavior(), options?.focus ?? true)
   }
 }

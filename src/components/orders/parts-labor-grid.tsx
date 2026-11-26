@@ -213,7 +213,7 @@ export function PartsLaborEditor({
   taxRateBps, onApplyStandardTax, vatPerLine = true, defaultVatLiable = false,
   flash, onAdd, onCell, onRemove,
   onSaveRow,
-  addingType: addingTypeProp, onAddingTypeChange,
+  addingType: addingTypeProp, onAddingTypeChange, onAddDialogCloseAutoFocus,
 }: {
   rows: Row[]
   vehicle?: PickerVehicle
@@ -251,6 +251,8 @@ export function PartsLaborEditor({
    */
   addingType?: PartsAddType | null
   onAddingTypeChange?: (type: PartsAddType | null) => void
+  /** Dışarıdan açılan ekleme modalı kapanınca odağı açan öğeye döndürür (#913). */
+  onAddDialogCloseAutoFocus?: (event: Event) => void
 }) {
   // Parça detay modalı (tek örnek) — arama, katalog picker'ı ve kalem satırları besler.
   const [detail, setDetail] = useState<DetailRequest | null>(null)
@@ -338,7 +340,7 @@ export function PartsLaborEditor({
       )}
 
       <Dialog open={addingType != null} onOpenChange={(open) => { if (!open) setAddingType(null) }}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl" onCloseAutoFocus={onAddDialogCloseAutoFocus}>
           <DialogHeader>
             <DialogTitle>{addingType === "iscilik" ? "İşçilik ekle" : "Parça ekle"}</DialogTitle>
             <DialogDescription>Yeni kalem araç kabulüne Ekle seçilince kaydedilir.</DialogDescription>
@@ -531,7 +533,7 @@ function PurchaseMarginNotice({ rows }: { rows: Row[] }) {
  */
 export function PartsLaborGrid({
   orderId, status, items, vehicle, onError, loading, laborCatalog, taxRateBps, onApplyStandardTax,
-  allowExternalLabor = true, addingType, onAddingTypeChange,
+  allowExternalLabor = true, addingType, onAddingTypeChange, onAddDialogCloseAutoFocus,
 }: {
   orderId: string
   status: string
@@ -554,6 +556,7 @@ export function PartsLaborGrid({
   /** Ekleme modalı dışarıdan yönetilir (bkz. `PartsLaborEditor`). */
   addingType?: PartsAddType | null
   onAddingTypeChange?: (type: PartsAddType | null) => void
+  onAddDialogCloseAutoFocus?: (event: Event) => void
 }) {
   const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
@@ -756,6 +759,7 @@ export function PartsLaborGrid({
       onSaveRow={saveRow}
       addingType={addingType}
       onAddingTypeChange={onAddingTypeChange}
+      onAddDialogCloseAutoFocus={onAddDialogCloseAutoFocus}
     />
   )
 }
