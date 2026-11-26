@@ -30,6 +30,13 @@ describe("tahsilat tarihi İstanbul saati (#931)", () => {
     }
     expect(read(FILES[2])).toContain("parseIstanbulLocalDateTime(data.paymentDate)")
   })
+
+  test("eski istemcinin ofsetli ISO değeri reddedilmez, ofsetsiz serbest metin reddedilir", () => {
+    const action = read(FILES[2])
+    // Deploy anında açık kalan sekme `toISOString()` gönderir; yalnız açık ofsetli değer kabul edilir.
+    expect(action).toContain("(?:Z|[+-]\\d{2}:\\d{2})$")
+    expect(parseIstanbulLocalDateTime("2026-11-26T06:00:00.000Z")).toBeNull()
+  })
 })
 
 describe("HTML varlığı JS dizesinde yazılmaz (#959)", () => {

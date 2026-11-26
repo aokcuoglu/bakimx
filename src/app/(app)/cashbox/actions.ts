@@ -68,7 +68,14 @@ export async function createCollectionAction(formData: FormData) {
     }
   }
 
-  const paymentDate = parseIstanbulLocalDateTime(data.paymentDate)
+  // Form `datetime-local` değerini (Türkiye saati) gönderir. Açık ofsetli ISO
+  // değer de kabul edilir: deploy sırasında açık kalmış eski istemci sekmesi
+  // tarihi `toISOString()` ile yolluyordu (#931).
+  const paymentDate =
+    parseIstanbulLocalDateTime(data.paymentDate) ??
+    (/(?:Z|[+-]\d{2}:\d{2})$/.test(data.paymentDate) && !Number.isNaN(Date.parse(data.paymentDate))
+      ? new Date(data.paymentDate)
+      : null)
   if (!paymentDate) return { error: "Geçersiz tahsilat tarihi" }
 
   const { collection, recalc } = await prisma.$transaction(async (tx) => {
