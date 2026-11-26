@@ -44,3 +44,22 @@ test("deneme şeridi ofseti değişmez: yalnız lg+ ve şerit görünürken 32px
   expect(lg).toContain(".inset[data-top-banner] {\n    --app-banner-h: 32px;")
   expect(SHELL).toContain('data-top-banner={topBannerVisible ? "" : undefined}')
 })
+
+/**
+ * #913 düzeltme turu — taklit + deneme birlikteyken iki şerit de `top:0`a
+ * yapışıyordu: deneme şeridi bandı örtüyor, üst bar (72px'e yapışan) altında
+ * 32px boşluk kalıyordu. Şerit bandın yüksekliği kadar aşağıda yapışır ve bandın
+ * altında katmanlanır; böylece `.bar`ın `--app-banner-h + --app-imp-h` hesabı
+ * gerçek yığınla aynı.
+ */
+test("taklit ve deneme şeridi birlikteyken şerit bandın altına yapışır", () => {
+  const strip = LAYOUT.slice(LAYOUT.indexOf("plan.isTrialing && plan.trialDaysLeft != null && ("))
+  const cls = strip.slice(0, strip.indexOf(">"))
+  expect(cls).toContain("lg:sticky")
+  expect(cls).toContain('${impersonation ? "lg:top-10 lg:z-40" : "lg:top-0 lg:z-50"}')
+  // Ölçüler tek yerden: şerit ofseti (top-10 = 40px) bandın h-10'u ve --app-imp-h ile aynı.
+  expect(BANNER).toContain("h-10")
+  expect(rule(":global([data-impersonating]) .inset")).toContain("--app-imp-h: 40px")
+  // Bant şeridin üstünde katmanlanır.
+  expect(BANNER).toContain("sticky top-0 z-50")
+})

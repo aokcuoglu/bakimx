@@ -182,8 +182,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {readOnlyMessage}
         </div>
       )}
+      {/* lg+ yapışkan. Taklitte bandın (40px) altına yapışır ve onun altında
+          katmanlanır; üst bar ikisinin altında (`--app-imp-h` + `--app-banner-h`, #913). */}
       {!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null && (
-        <div className="flex h-8 items-center justify-center bg-primary px-4 text-center text-sm font-medium leading-5 tracking-[-0.07px] text-primary-foreground lg:sticky lg:top-0 lg:z-50">
+        <div className={`flex h-8 items-center justify-center bg-primary px-4 text-center text-sm font-medium leading-5 tracking-[-0.07px] text-primary-foreground lg:sticky ${impersonation ? "lg:top-10 lg:z-40" : "lg:top-0 lg:z-50"}`}>
           Deneme sürenizin bitmesine{" "}
           <span className="font-semibold">{plan.trialDaysLeft} iş günü</span> kaldı.{" "}
           {!isTechnicianRole && <Link href="/settings/plans" className="font-semibold underline underline-offset-2">Paketleri incele</Link>}
