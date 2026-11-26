@@ -4,6 +4,7 @@ import { join } from "node:path"
 
 const SOURCE = readFileSync(join(import.meta.dir, "work-order-detail.tsx"), "utf8")
 const SECTION_SCROLL = readFileSync(join(import.meta.dir, "use-order-section-scroll.ts"), "utf8")
+const PANEL = readFileSync(join(import.meta.dir, "order-management-panel.tsx"), "utf8")
 const PAGE = readFileSync(
   join(import.meta.dir, "..", "..", "app", "(app)", "orders", "[id]", "page.tsx"),
   "utf8",
@@ -98,9 +99,10 @@ test("?edit=1 Şikayet penceresi kapanınca adresten düşer", () => {
 /**
  * #860 → #911 — sol kayıt sütunu geri gelmez: müşteri ve araç kaydı tek kez
  * render edilir; iki kolonda sağdaki rayda, tek kolonda Özet bölümünde (CSS
- * `order`). Yalnız dar ekranda görünen tutar şeridi geri gelmez.
+ * `order`). Yalnız dar ekranda görünen tutar şeridi geri gelmez; #912'den beri
+ * her genişlikteki şerit de yok (para raydaki Ödeme kartında).
  */
-test("sol kayıt sütunu yok; kayıt rayda tek kez, tutar şeridi her genişlikte", () => {
+test("sol kayıt sütunu yok; kayıt rayda tek kez, tutar şeridi yok", () => {
   expect(SOURCE).not.toContain("lg:grid-cols-[320px_minmax(0,1fr)]")
   expect(SOURCE).not.toMatch(/<OrderRecordRail[^>]*className=/)
   expect(SOURCE.match(/<OrderRecordRail\b/g)).toHaveLength(1)
@@ -109,6 +111,7 @@ test("sol kayıt sütunu yok; kayıt rayda tek kez, tutar şeridi her genişlikt
   const record = rail.slice(0, rail.indexOf("<OrderRecordRail"))
   expect(record.slice(record.lastIndexOf("<div "))).toContain('data-section="ozet"')
   expect(SOURCE).not.toMatch(/px-4 py-2\.5 text-sm lg:hidden/)
+  expect(SOURCE).not.toContain("px-4 py-2.5 text-sm\", detail.shell")
 })
 
 test("Müşteri & Araç paneli Araç Kabul Bilgileri'ni tekrar etmez", () => {
@@ -134,8 +137,9 @@ test("düzenleme aksiyonu order.edit yetkisine bağlıdır", () => {
 
 /**
  * #881 — hızlı butonlar başlığın hemen altında durur ve asıl düğmelerle aynı
- * kapıdan geçer: tahsilat kilidi hızlı buton ile "Tahsilat Ekle" arasında tek
- * değişkendir, pencereler kendi bileşenlerinde kalır (yalnız dışarıdan açılır).
+ * kapıdan geçer: tahsilat kilidi hızlı buton ile Ödeme kartındaki "Tahsilat al"
+ * arasında tek değişkendir (#912), pencereler kendi bileşenlerinde kalır
+ * (yalnız dışarıdan açılır).
  */
 test("hızlı butonlar başlığın altında, asıl pencereleri açar", () => {
   const afterHeader = SOURCE.slice(SOURCE.indexOf("actions={headerActions}"))
@@ -144,4 +148,26 @@ test("hızlı butonlar başlığın altında, asıl pencereleri açar", () => {
   expect(SOURCE).toContain("collectionsLocked={collectionsLocked}")
   expect(SOURCE).toContain("addingType={partsAddType} onAddingTypeChange={setPartsAddType}")
   expect(SOURCE).toContain("onCollectionModalOpenChange={setCollectionModalOpen}")
+  expect(SOURCE).toContain('onCollect={canCashbox && !collectionsLocked ? () => handleQuickAction("tahsilat") : undefined}')
+})
+
+/**
+ * #912 — para tek yerde. Genel Toplam / Tahsil Edilen / Kalan yalnız raydaki
+ * Ödeme kartında; Ödemeler bölümü yalnız tahsilat listesini taşır. "Ödenen" ile
+ * "Tahsil Edilen" iki ayrı kaynaktan okunabiliyordu (`order.paidAmount ||
+ * defter`): artık tek etiket, tek kaynak (`orderPaidKurus`).
+ */
+test("para tek yerde: tek etiket, tek kaynak, Ödemeler'de toplam ve ekleme düğmesi yok", () => {
+  expect(PANEL).not.toContain("Tahsilat Ekle")
+  expect(PANEL.match(/label="Tahsil Edilen"/g)).toHaveLength(1)
+  expect(PANEL.match(/title="Ödeme Özeti"/g)).toHaveLength(1)
+  expect(PANEL).not.toContain("Ödenen")
+  expect(SOURCE).not.toContain("Ödenen")
+  expect(SOURCE).not.toContain('title="Ödeme Özeti"')
+  const history = PANEL.slice(PANEL.indexOf("export function PaymentHistoryCard"))
+  expect(history).not.toContain('label="Genel Toplam"')
+  expect(history).not.toContain('label="Kalan"')
+  expect(history).not.toContain("useState")
+  expect(PAGE).toContain("const paidAmount = orderPaidKurus({")
+  expect(PAGE).not.toContain("order.paidAmount ||")
 })

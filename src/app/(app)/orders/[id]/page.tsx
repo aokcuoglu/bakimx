@@ -7,7 +7,7 @@ import { WorkOrderDetail } from "@/components/orders/work-order-detail"
 import { userDisplayName } from "@/lib/format"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
-import { computeRemainingAmount } from "@/lib/cashbox/status"
+import { computeRemainingAmount, orderPaidKurus } from "@/lib/cashbox/status"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { getOrderActivity } from "@/lib/orders/activity"
 import { getLaborCatalog } from "@/lib/labor/queries"
@@ -116,7 +116,12 @@ export default async function OrderDetailPage({
     : []
 
   const totalPaid = collections.filter(c => c.status === "completed").reduce((sum, c) => sum + c.amount, 0)
-  const paidAmount = order.paidAmount || totalPaid
+  // Tek kaynak (#912): kasa açıkken defter, değilse `paidAmount` önbelleği.
+  const paidAmount = orderPaidKurus({
+    ledgerLoaded: canCashbox,
+    completedTotalKurus: totalPaid,
+    cachedPaidKurus: order.paidAmount,
+  })
   const remainingAmount = computeRemainingAmount(totals.grandTotal, paidAmount)
 
   const intakeForm = order.intakeForm

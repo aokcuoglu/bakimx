@@ -43,6 +43,9 @@
 .fieldLabel { margin-bottom:4px; font-size:13px; line-height:18px; color:var(--muted-foreground); }
 .block { padding:16px 18px; }
 .block + .block { border-top:1px solid var(--dash-sep); }
+/* #912 — Ödeme kartındaki "Kalem dökümü" açılır satırı: dikey dolguyu Accordion tetikleyicisi taşır. */
+.disclosure { padding:4px 18px; }
+.block + .disclosure, .disclosure + .block, .emptyText + .block { border-top:1px solid var(--dash-sep); }
 .shell { border-radius:var(--radius-panel); background:var(--card); }
 /* Sayfa PageFrame içinde değil (/orders/[id] kayıtlı başlık yolu değil): 1440 sınırı burada.
    #911 — iki kolona görünüm alanı değil İÇERİK genişliğiyle geçilir (`@container detail`):
@@ -120,6 +123,11 @@ a.item:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
 .chip[aria-current="location"] { color:var(--primary-strong); background:color-mix(in oklab, var(--primary) 10%, var(--card)); }
 /* Telefon özet kartı: şikâyet, kalan, sıradaki adım (iki kolonda ray aynı işi görür). */
 .summary { min-width:0; }
+/* #912 — özet kartının para satırı Ödeme bölümüne bağlantı (düğme değil). */
+.summaryLink { display:flex; align-items:center; gap:12px; color:inherit; outline:none; transition:background-color 0.15s; }
+.summaryLink:hover { background:var(--dash-hover); }
+.summaryLink:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
+.summaryChevron { flex:none; width:16px; height:16px; color:var(--muted-foreground); }
 .nextStep { display:flex; flex-direction:column; gap:4px; font-size:15px; line-height:20px; color:var(--foreground); }
 .blocker { display:flex; align-items:flex-start; gap:6px; font-size:13px; line-height:18px; color:var(--warning-strong); }
 .blocker svg { flex:none; width:16px; height:16px; margin-top:1px; }

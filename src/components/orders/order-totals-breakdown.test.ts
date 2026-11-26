@@ -5,6 +5,7 @@ import { calculateOrderTotals } from "@/lib/totals"
 
 const DETAIL = readFileSync(join(import.meta.dir, "work-order-detail.tsx"), "utf8")
 const PANEL = readFileSync(join(import.meta.dir, "order-management-panel.tsx"), "utf8")
+const SUMMARY = readFileSync(join(import.meta.dir, "order-status-summary.tsx"), "utf8")
 const GRID = readFileSync(join(import.meta.dir, "parts-labor-grid.tsx"), "utf8")
 const TOTALS = readFileSync(join(import.meta.dir, "../../lib/totals.ts"), "utf8")
 
@@ -38,20 +39,38 @@ test("indirim/KDV yokken Genel Toplam kalem toplamına eşittir", () => {
   expect(totals.grandTotal).toBe(totals.subtotal)
 })
 
-test("üst özet şeridi indirim/KDV varken ara toplam ve KDV satırlarını gösterir", () => {
-  expect(DETAIL).toContain("Ara Toplam:")
-  expect(DETAIL).toContain("İndirim:")
-  expect(DETAIL).toContain("totals.discountAmount > 0 || order.totals.taxAmount > 0")
+/**
+ * #912 — para tek yerde: zincir raydaki Ödeme kartında ve telefon özet kartında
+ * görünür, ikisi de aynı saf fonksiyondan (`orderTotalsChain`) okur. Başlığın
+ * altındaki tutar şeridi ve Kalemler'deki `MobileTotalsBar` geri gelmez.
+ * Zincirin aritmetiği ve etiket sırası `src/lib/orders/totals-chain.test.ts`'te.
+ */
+test("Ödeme kartı ve telefon özeti zinciri orderTotalsChain'den okur; şerit ve MobileTotalsBar yok", () => {
+  expect(PANEL).toContain("const chain = orderTotalsChain(totals, taxRateBps)")
+  expect(DETAIL).toContain("chainText: totalsChainText(orderTotalsChain(order.totals, order.taxRate))")
+  expect(DETAIL).toContain("taxRateBps={order.taxRate}")
+  expect(SUMMARY).toContain("money.chainText")
+  expect(DETAIL).not.toContain("MobileTotalsBar")
+  expect(DETAIL).not.toContain("Genel Toplam:")
+  expect(DETAIL).not.toContain("Ara Toplam:")
+  // KDV oranı türetilmez: kısmi KDV'li belgede yanlış oran yazıyordu.
+  expect(PANEL).not.toContain("orderTaxRateDisplay")
 })
 
-test("Fiyatlandırma kartında kalem toplamlarının altındaki satır Ara Toplam'dır", () => {
-  expect(PANEL).toContain('label="Ara Toplam"')
-  // Kalem toplamlarının hemen ardından Genel Toplam GELMEZ; araya ara toplam
-  // (ve varsa indirim/KDV) girer.
-  const afterExternalLabor = PANEL.slice(PANEL.indexOf('label="Dış İşçilik Toplamı"'))
-  expect(afterExternalLabor.indexOf('label="Ara Toplam"')).toBeLessThan(
-    afterExternalLabor.indexOf('label="Genel Toplam"'),
-  )
+test("Ödeme kartında zincir Genel Toplam'dan önce ve açılır satırın DIŞINDA", () => {
+  const card = PANEL.slice(PANEL.indexOf("export function OrderPaymentCard"), PANEL.indexOf("<Dialog open={editingMeta}"))
+  const chainAt = card.indexOf("{chain.map(")
+  expect(chainAt).toBeGreaterThan(0)
+  expect(chainAt).toBeLessThan(card.indexOf('label="Genel Toplam"'))
+  // Zincir katlanmaz; yalnız kalem türü dökümü açılır satırdadır.
+  const disclosure = card.slice(card.indexOf("<AccordionContent>"), card.indexOf("</AccordionContent>"))
+  expect(card.indexOf("<AccordionContent>")).toBeGreaterThan(chainAt)
+  expect(disclosure).not.toContain("chain")
+  expect(disclosure).not.toContain('label="Genel Toplam"')
+  expect(disclosure).toContain('label="Dış İşçilik Toplamı"')
+  // Accordion Radix API'si: tek açılır, kapanabilir, öğe değeri zorunlu.
+  expect(card).toContain('<Accordion type="single" collapsible>')
+  expect(card).toMatch(/<AccordionItem value="[^"]+">/)
 })
 
 test("satır KDV bayrağı hem gösterimi hem hesabı besler — ikisi ayrışamaz", () => {

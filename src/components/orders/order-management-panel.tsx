@@ -1,16 +1,17 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { DetailPanel, DetailRow, DetailPill, DetailEmpty, DetailItem, OrderPaymentPill, detail, surface } from "@/components/orders/order-detail-surface"
+import { DetailPanel, DetailPill, DetailEmpty, DetailItem, OrderPaymentPill, detail, surface } from "@/components/orders/order-detail-surface"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import type { OrderStatusKey } from "@/lib/constants"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus, percentToBps, applyDiscountKurus, applyTaxBps, addKurus } from "@/lib/money"
 import { PAYMENT_METHOD_LABELS } from "@/lib/cashbox/status"
+import { formatChainAmount, orderTotalsChain } from "@/lib/orders/totals-chain"
 import type { PaymentMethodKey } from "@/lib/cashbox/status"
 import type {
   TechnicianChecklistItem,
@@ -22,6 +23,7 @@ import {
   Plus,
   Loader2,
   Pencil,
+  Wallet,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SendReminderButton } from "@/components/orders/send-reminder-button"
@@ -254,8 +256,20 @@ export function PartsLaborCard({
   )
 }
 
-export function PricingSummaryCard({
+/**
+ * Raydaki Ödeme kartı (#912) — sayfada paranın TEK yeri. Eskiden aynı rakamlar
+ * dört yerde duruyordu (tutar şeridi, Fiyatlandırma, Ödemeler'deki "Ödeme
+ * Özeti" ve tahsilat geçmişinin altındaki toplam bloğu) ve ödenen tutar iki
+ * farklı etiketle, iki farklı kaynaktan okunabiliyordu. Tahsil edilen tutar
+ * sayfada tek kaynaktan gelir (`orderPaidKurus`, page.tsx); etiket tektir.
+ *
+ * Sıra hesap zinciridir: (Ara Toplam → İndirim → KDV) → Genel Toplam, sonra
+ * Tahsil Edilen ve Kalan. Zincir indirim/KDV varken hep görünür (BAK-55);
+ * kalem türü dökümü açılır satırdadır.
+ */
+export function OrderPaymentCard({
   totals,
+  taxRateBps,
   paymentStatus,
   paidAmount,
   remainingAmount,
@@ -268,8 +282,11 @@ export function PricingSummaryCard({
   loading,
   error,
   showCashbox = true,
+  onCollect,
 }: {
   totals: Totals
+  /** Belgenin KDV oranı (bps) — KDV satırı gerçek oranı yazar. */
+  taxRateBps: number | null
   paymentStatus: string
   paidAmount: number
   remainingAmount: number
@@ -282,61 +299,85 @@ export function PricingSummaryCard({
   loading: boolean
   error?: string
   showCashbox?: boolean
+  /** Tahsilat alınabiliyorsa; hızlı işlemdeki "Tahsilat al" ile aynı pencere. */
+  onCollect?: () => void
 }) {
+  const chain = orderTotalsChain(totals, taxRateBps)
+  // Fiyat girilmeden alınmış avans da görünür; kalan ancak toplam varken anlamlı.
+  const showPaid = showCashbox && (totals.hasAnyPrice || paidAmount > 0)
   return (
     <>
-    <DetailPanel title="Fiyatlandırma" aside={showCashbox && <OrderPaymentPill status={paymentStatus} />}>
-      <div className={cn(surface.cardBody, "space-y-2")}>
-        <SummaryRow label="Parça Toplamı" value={totals.partsCount > 0 ? formatTRY(totals.partsTotal) : "—"} muted={totals.partsCount === 0} />
-        <SummaryRow label="İşçilik Toplamı" value={totals.laborCount > 0 ? formatTRY(totals.laborTotal) : "—"} muted={totals.laborCount === 0} />
-        <SummaryRow label="Dış İşçilik Toplamı" value={totals.externalLaborCount > 0 ? formatTRY(totals.externalLaborTotal) : "—"} muted={totals.externalLaborCount === 0} />
-        {/* Kalemlerin toplamı = ARA TOPLAM. Burada "Genel Toplam" yazıyordu
-            (99aa6e3) ve kartta iki Genel Toplam satırı vardı: kalem
-            toplamlarının hemen altındaki indirim/KDV uygulanmış rakam
-            "kalemler tutmuyor" gibi okunuyordu (BAK-55). */}
-        <div className="border-t pt-2 mt-2">
-          <SummaryRow label="Ara Toplam" value={totals.hasAnyPrice ? formatTRY(totals.subtotal) : "—"} bold />
+    <DetailPanel title="Ödeme Özeti" aside={showCashbox && <OrderPaymentPill status={paymentStatus} />}>
+      {totals.hasAnyPrice ? (
+        <div className={cn(detail.block, "space-y-2")}>
+          {/* Zincir açılır satırın DIŞINDA: Genel Toplam'ın neden kalem
+              toplamından farklı olduğu katlanmadan okunur (BAK-55). */}
+          {chain.map((row) => (
+            <SummaryRow key={row.key} label={row.label} value={formatChainAmount(row.amount)} />
+          ))}
+          <div className={cn(chain.length > 0 && "border-t pt-2")}>
+            <SummaryRow label="Genel Toplam" value={formatTRY(totals.grandTotal)} bold large />
+          </div>
         </div>
-        {totals.discountAmount > 0 && <SummaryRow label="İndirim" value={formatTRY(totals.discountAmount)} />}
-        {totals.taxAmount > 0 && <SummaryRow label={`KDV (${orderTaxRateDisplay(totals)})`} value={formatTRY(totals.taxAmount)} />}
-        <div className="border-t pt-2 mt-2">
-          <SummaryRow label="Genel Toplam" value={totals.hasAnyPrice ? formatTRY(totals.grandTotal) : "—"} bold large />
-        </div>
+      ) : (
+        <DetailEmpty>Henüz tutar girilmedi</DetailEmpty>
+      )}
 
-        {/* Tahsilat satırları Genel Toplam'ın ALTINDA: hesap zinciri (kalemler →
-            ara toplam → indirim/KDV → genel toplam) araya ödeme girmeden okunur. */}
-        {showCashbox && paidAmount > 0 && (
-          <>
-            <SummaryRow label="Tahsil Edilen" value={formatTRY(paidAmount)} bold tone="emerald" />
-            <SummaryRow label="Kalan Bakiye" value={formatTRY(remainingAmount)} bold tone={remainingAmount > 0 ? "rose" : "emerald"} />
-          </>
-        )}
-
-        <div className="pt-3 border-t">
-          {locked ? (
-            <p className="text-xs text-muted-foreground text-center">
-              Teslim edilmiş veya iptal edilmiş araç kabulünde fiyatlandırma düzenlenemez
-            </p>
-          ) : totals.discountAmount === 0 && totals.taxAmount === 0 ? (
-            <Button
-              variant="ghost"
-              onClick={() => setEditingMeta(true)}
-              size="sm"
-              className="w-full text-primary hover:text-primary"
-            >
-              <Plus className="size-3.5 mr-1" /> İndirim / KDV ekle
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={() => setEditingMeta(true)}
-              size="sm"
-              className="w-full"
-            >
-              <Pencil className="size-3.5 mr-1" /> İndirim & KDV Düzenle
-            </Button>
+      {showPaid && (
+        <div className={cn(detail.block, "space-y-2")}>
+          <SummaryRow label="Tahsil Edilen" value={formatTRY(paidAmount)} bold tone="emerald" />
+          {totals.hasAnyPrice && (
+            <SummaryRow label="Kalan" value={formatTRY(remainingAmount)} bold tone={remainingAmount > 0 ? "rose" : "emerald"} />
           )}
         </div>
+      )}
+
+      {totals.hasAnyPrice && (
+        <div className={detail.disclosure}>
+          <Accordion type="single" collapsible>
+            <AccordionItem value="kalem-dokumu">
+              <AccordionTrigger>Kalem dökümü</AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-2">
+                  <SummaryRow label="Parça Toplamı" value={totals.partsCount > 0 ? formatTRY(totals.partsTotal) : "—"} muted={totals.partsCount === 0} />
+                  <SummaryRow label="İşçilik Toplamı" value={totals.laborCount > 0 ? formatTRY(totals.laborTotal) : "—"} muted={totals.laborCount === 0} />
+                  <SummaryRow label="Dış İşçilik Toplamı" value={totals.externalLaborCount > 0 ? formatTRY(totals.externalLaborTotal) : "—"} muted={totals.externalLaborCount === 0} />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+      )}
+
+      <div className={cn(detail.block, "space-y-2")}>
+        {onCollect && (
+          <Button variant="foreground" onClick={onCollect} className="w-full">
+            <Wallet aria-hidden /> Tahsilat al
+          </Button>
+        )}
+        {locked ? (
+          <p className="text-xs text-muted-foreground text-center">
+            Teslim edilmiş veya iptal edilmiş araç kabulünde fiyatlandırma düzenlenemez
+          </p>
+        ) : totals.discountAmount === 0 && totals.taxAmount === 0 ? (
+          <Button
+            variant="ghost"
+            onClick={() => setEditingMeta(true)}
+            size="sm"
+            className="w-full text-primary hover:text-primary"
+          >
+            <Plus className="size-3.5 mr-1" /> İndirim / KDV ekle
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            onClick={() => setEditingMeta(true)}
+            size="sm"
+            className="w-full"
+          >
+            <Pencil className="size-3.5 mr-1" /> İndirim & KDV Düzenle
+          </Button>
+        )}
       </div>
     </DetailPanel>
     <Dialog open={editingMeta} onOpenChange={(open) => { if (!loading) setEditingMeta(open) }}>
@@ -375,11 +416,6 @@ function calculatePreviewTotal(subtotal: number, draft: { discountAmount: string
   return addKurus(afterDiscount, tax)
 }
 
-function orderTaxRateDisplay(totals: Totals): string {
-  if (totals.subtotal === 0) return "0%"
-  return `${Math.round((totals.taxAmount / Math.max(1, totals.subtotal - totals.discountAmount)) * 100)}%`
-}
-
 function SummaryRow({
   label,
   value,
@@ -406,48 +442,40 @@ function SummaryRow({
   )
 }
 
+/**
+ * Ödemeler bölümündeki tahsilat listesi. Toplamlar burada YOK (#912): Genel
+ * Toplam, Tahsil Edilen ve Kalan yalnız Ödeme kartında. "Tahsilat al" da
+ * oradan ve hızlı işlemden açılır; pencere burada durur, yalnız dışarıdan açılır.
+ */
 export function PaymentHistoryCard({
   orderId,
   collectionsLocked,
-  totals,
+  grandTotal,
+  hasAnyPrice,
   paidAmount,
   remainingAmount,
   collections,
   customerId,
   customerName,
-  collectionModalOpen: collectionModalOpenProp,
+  collectionModalOpen,
   onCollectionModalOpenChange,
 }: {
   orderId: string
   collectionsLocked: boolean
-  totals: Totals
+  grandTotal: number
+  hasAnyPrice: boolean
   paidAmount: number
   remainingAmount: number
   collections: Array<{ id: string; amount: number; method: string; status: string; paymentDate: string; referenceNo: string | null; note: string | null; cancellationReason: string | null }>
   customerId: string
   customerName: string
-  /** Tahsilat modalı hızlı butondan açılır (#881). Verilmezse kendi durumunu tutar. */
-  collectionModalOpen?: boolean
-  onCollectionModalOpenChange?: (open: boolean) => void
+  /** Tahsilat penceresi Ödeme kartından ve hızlı işlemden açılır (#881, #912). */
+  collectionModalOpen: boolean
+  onCollectionModalOpenChange: (open: boolean) => void
 }) {
-  const cancelledCollections = collections.filter((c) => c.status === "cancelled")
-  const [ownCollectionModalOpen, setOwnCollectionModalOpen] = useState(false)
-  const collectionModalOpen = collectionModalOpenProp ?? ownCollectionModalOpen
-  const setCollectionModalOpen = onCollectionModalOpenChange ?? setOwnCollectionModalOpen
-
   return (
     <>
-      <DetailPanel
-        title="Tahsilat Geçmişi"
-        aside={
-          !collectionsLocked && (
-            <Button variant="foreground" onClick={() => setCollectionModalOpen(true)}>
-              <Plus className="size-3.5" />
-              Tahsilat Ekle
-            </Button>
-          )
-        }
-      >
+      <DetailPanel title="Tahsilat Geçmişi">
         {collections.length === 0 ? (
           <div className={detail.group}>
             <DetailEmpty>Henüz tahsilat kaydı yok</DetailEmpty>
@@ -486,25 +514,7 @@ export function PaymentHistoryCard({
             })}
           </div>
         )}
-        {totals.hasAnyPrice && (
-          <div className={detail.group}>
-            <DetailRow label="Genel Toplam">
-              <span className="tabular-nums">{formatTRY(totals.grandTotal)}</span>
-            </DetailRow>
-            <DetailRow label="Tahsil Edilen">
-              <span className="tabular-nums">{formatTRY(paidAmount)}</span>
-            </DetailRow>
-            {cancelledCollections.length > 0 && (
-              <DetailRow label="İptal Edilen">
-                <span className="tabular-nums">{formatTRY(cancelledCollections.reduce((s, c) => s + c.amount, 0))}</span>
-              </DetailRow>
-            )}
-            <DetailRow label="Kalan">
-              <span className="font-semibold tabular-nums">{formatTRY(remainingAmount)}</span>
-            </DetailRow>
-          </div>
-        )}
-        {remainingAmount > 0 && totals.hasAnyPrice && (
+        {remainingAmount > 0 && hasAnyPrice && (
           <div className={cn(detail.group, detail.block)}>
             <SendReminderButton
               customerId={customerId}
@@ -519,10 +529,10 @@ export function PaymentHistoryCard({
       {!collectionsLocked && (
         <CollectionQuickModal
           open={collectionModalOpen}
-          onOpenChange={setCollectionModalOpen}
+          onOpenChange={onCollectionModalOpenChange}
           orderId={orderId}
           customerId={customerId}
-          grandTotal={totals.grandTotal}
+          grandTotal={grandTotal}
           paidAmount={paidAmount}
           remainingAmount={remainingAmount}
         />

@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DashOrderStatus, surface } from "@/components/dashboard/surface"
-import { DetailPanel, DetailRow, DetailPill, DetailEmpty, OrderPaymentPill, detail } from "@/components/orders/order-detail-surface"
+import { DetailPanel, DetailPill, OrderPaymentPill, detail } from "@/components/orders/order-detail-surface"
 import { orderListReturnHref } from "@/lib/orders/list-state"
 import { isUnassignedListHref } from "@/lib/orders/unassigned-in-service"
 import { DetailHeader, type DetailHeaderAction } from "@/components/orders/detail-header"
@@ -39,7 +39,6 @@ import {
   XCircle,
   RotateCcw,
   Plus,
-  Calculator,
   TriangleAlert,
   X,
   HardHat,
@@ -53,7 +52,6 @@ import {
   VEHICLE_PHOTO_TYPES,
   type PhotoPhaseKey,
 } from "@/lib/constants"
-import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
 import { STANDARD_TAX_BPS } from "@/lib/orders/line-vat"
 import { isOrderLocked, isCollectionLockedForOrder } from "@/lib/status-transitions"
@@ -75,11 +73,10 @@ import type { OrderActivityEntry } from "@/lib/orders/activity"
 import {
   NEXT_STATUSES,
   PartsLaborCard,
-  PricingSummaryCard,
+  OrderPaymentCard,
   PaymentHistoryCard,
   type OrderDetailData,
   type PricingMetaDraft,
-  type Totals,
 } from "@/components/orders/order-management-panel"
 import { OrderInfoCard } from "@/components/orders/order-info-card"
 import { reopenDeliveredOrderAction } from "@/app/(app)/orders/actions"
@@ -105,8 +102,9 @@ import { istanbulDateTimeInputValue } from "@/lib/istanbul-time"
 import { DeferUntilVisible } from "@/components/shared/defer-until-visible"
 import { OrderSectionNav } from "@/components/orders/order-section-nav"
 import { OrderMobileSummary, OrderStatusCard } from "@/components/orders/order-status-summary"
-import { sectionScrollBehavior, useOrderSectionScroll } from "@/components/orders/use-order-section-scroll"
+import { useOrderSectionScroll } from "@/components/orders/use-order-section-scroll"
 import { orderNextStep } from "@/lib/orders/next-step"
+import { orderTotalsChain, totalsChainText } from "@/lib/orders/totals-chain"
 import { urlWithout } from "@/lib/orders/detail-sections"
 import { OrderQuickActions } from "@/components/orders/order-quick-actions"
 import { PhotoSourceButtons } from "@/components/intake/photo-source-buttons"
@@ -260,7 +258,6 @@ export function WorkOrderDetail({
   // `router.replace` değil `history.replaceState`, sunucuya gidilmez.
   const pageRef = useRef<HTMLDivElement>(null)
   const railRef = useRef<HTMLDivElement>(null)
-  const pricingRef = useRef<HTMLDivElement>(null)
   const scrollToOrderSection = useOrderSectionScroll(pageRef, railRef)
 
   const [loading, setLoading] = useState(false)
@@ -392,11 +389,6 @@ export function WorkOrderDetail({
   const [deliveryOtpMode, setDeliveryOtpMode] = useState(false)
   const [deliveryOtpCode, setDeliveryOtpCode] = useState("")
   const [deliverySentCode, setDeliverySentCode] = useState<string | null>(null)
-
-  // Kalemlerdeki telefon toplam çubuğu fiyat kartına götürür (Ödeme bölümünün başı).
-  function focusPricingSummary() {
-    pricingRef.current?.scrollIntoView({ block: "start", behavior: sectionScrollBehavior() })
-  }
 
   async function changeStatus(newStatus: string) {
     setLoading(true)
@@ -776,6 +768,14 @@ export function WorkOrderDetail({
     order.status === "cancelled" ||
     isCollectionLockedForOrder(order.status as OrderStatus, order.paymentStatus as PaymentStatus)
   const quickActions = orderQuickActions({ orderLocked, canCashbox, collectionsLocked })
+  // Telefon özet kartının para satırı (#912): Ödeme kartının kısa hâli, ona bağlanır.
+  const mobileMoney = order.totals.hasAnyPrice
+    ? {
+        grandTotal: order.totals.grandTotal,
+        remaining: canCashbox ? order.remainingAmount : null,
+        chainText: totalsChainText(orderTotalsChain(order.totals, order.taxRate)),
+      }
+    : null
   const [partsAddType, setPartsAddType] = useState<PartsAddType | null>(null)
   const [collectionModalOpen, setCollectionModalOpen] = useState(false)
 
@@ -959,37 +959,9 @@ export function WorkOrderDetail({
           Bloklar `data-section` taşır; tek kolonda ray kartları `order` ile
           ilgili bölümün içine girer (order-detail.module.css). */}
       <div className="min-w-0 space-y-5">
-      {order.totals.hasAnyPrice && (
-        <div className={cn("flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 text-sm", detail.shell)}>
-          {/* İndirim/KDV varken Genel Toplam kalem tutarlarına EŞİT DEĞİLDİR:
-              yalnız sonuç gösterilince (ör. ₺400'lük tek kalem → ₺240) rakam
-              hatalı sanılıyordu (BAK-55). Zincir hep görünür: ara toplam →
-              indirim → KDV → genel toplam. Fark yoksa şerit eskisi gibi sade. */}
-          {order.totals.discountAmount > 0 || order.totals.taxAmount > 0 ? (
-            <>
-              <span className="text-muted-foreground">Ara Toplam: <span className="font-semibold text-foreground">{formatTRY(order.totals.subtotal)}</span></span>
-              {order.totals.discountAmount > 0 && (
-                <span className="text-muted-foreground">İndirim: <span className="font-semibold text-foreground">−{formatTRY(order.totals.discountAmount)}</span></span>
-              )}
-              {order.totals.taxAmount > 0 && (
-                <span className="text-muted-foreground">KDV{order.taxRate ? ` (%${bpsToPercent(order.taxRate)})` : ""}: <span className="font-semibold text-foreground">{formatTRY(order.totals.taxAmount)}</span></span>
-              )}
-            </>
-          ) : null}
-          <span className="text-muted-foreground">Genel Toplam: <span className="font-semibold text-foreground">{formatTRY(order.totals.grandTotal)}</span></span>
-          {canCashbox && (
-            <>
-              <span className="text-muted-foreground">Ödenen: <span className="font-semibold text-success-strong">{formatTRY(order.paidAmount)}</span></span>
-              <span className="text-muted-foreground">Kalan: <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>{formatTRY(order.remainingAmount)}</span></span>
-            </>
-          )}
-        </div>
-      )}
-
       <OrderMobileSummary
         complaint={order.intake.customerComplaint}
-        remainingAmount={canCashbox && order.totals.hasAnyPrice ? order.remainingAmount : null}
-        onCollect={canCashbox && !collectionsLocked ? () => handleQuickAction("tahsilat") : undefined}
+        money={mobileMoney}
         nextStep={nextStep}
         onNavigate={scrollToOrderSection}
       />
@@ -1150,15 +1122,6 @@ export function WorkOrderDetail({
                 görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
                 Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
             <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} addingType={partsAddType} onAddingTypeChange={setPartsAddType} />
-
-            {/* Mobil yapışkan toplam: kalem eklerken genel toplam hep görünür;
-                dokununca Fiyatlandırma kartına kaydırır. Alt navigasyonun (fixed,
-                <lg) üzerine oturur. */}
-            <MobileTotalsBar
-              totals={order.totals}
-              itemCount={order.items.length}
-              onJump={focusPricingSummary}
-            />
           </div>
 
           {/* KANIT — kabul kanıtları, fotoğraflar, hasar */}
@@ -1382,7 +1345,7 @@ export function WorkOrderDetail({
             />
           </div>
 
-          {/* ÖDEMELER — ödeme özeti + tahsilat geçmişi */}
+          {/* ÖDEMELER — tahsilat geçmişi (toplamlar raydaki Ödeme kartında, #912) */}
           <div id="odeme" data-section="odeme" role="region" aria-label="Ödeme" tabIndex={-1} className={cn(detail.section, detail.oPayments, detail.stack)}>
             {!canCashbox ? (
               <DetailPanel title="Ödemeler" bare>
@@ -1390,29 +1353,11 @@ export function WorkOrderDetail({
               </DetailPanel>
             ) : (
               <>
-              {/* Kompakt ödeme özeti */}
-              <DetailPanel title="Ödeme Özeti" aside={<OrderPaymentPill status={order.paymentStatus} />}>
-                {order.totals.hasAnyPrice ? (
-                  <>
-                    <DetailRow label="Genel Toplam">
-                      <span className="font-semibold tabular-nums">{formatTRY(order.totals.grandTotal)}</span>
-                    </DetailRow>
-                    <DetailRow label="Ödenen">
-                      <span className="font-semibold tabular-nums text-success-strong">{formatTRY(order.paidAmount)}</span>
-                    </DetailRow>
-                    <DetailRow label="Kalan">
-                      <span className={`font-semibold tabular-nums ${order.remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>{formatTRY(order.remainingAmount)}</span>
-                    </DetailRow>
-                  </>
-                ) : (
-                  <DetailEmpty>Henüz tutar girilmedi</DetailEmpty>
-                )}
-              </DetailPanel>
-
               <PaymentHistoryCard
                 orderId={order.id}
                 collectionsLocked={collectionsLocked}
-                totals={order.totals}
+                grandTotal={order.totals.grandTotal}
+                hasAnyPrice={order.totals.hasAnyPrice}
                 paidAmount={order.paidAmount}
                 remainingAmount={order.remainingAmount}
                 collections={order.collectionHistory}
@@ -1451,9 +1396,11 @@ export function WorkOrderDetail({
         <div ref={railRef} className={detail.rail}>
           <OrderStatusCard status={order.status} nextStep={nextStep} />
 
-          <div ref={pricingRef} data-section="odeme" tabIndex={-1} className={cn(detail.section, detail.oPricing)}>
-            <PricingSummaryCard
+          <div data-section="odeme" tabIndex={-1} className={cn(detail.section, detail.oPricing)}>
+            {/* Ödeme kartı (#912): sayfada paranın tek yeri. */}
+            <OrderPaymentCard
               totals={order.totals}
+              taxRateBps={order.taxRate}
               paymentStatus={order.paymentStatus}
               paidAmount={order.paidAmount}
               remainingAmount={order.remainingAmount}
@@ -1466,6 +1413,7 @@ export function WorkOrderDetail({
               loading={loading}
               error={error}
               showCashbox={canCashbox}
+              onCollect={canCashbox && !collectionsLocked ? () => handleQuickAction("tahsilat") : undefined}
             />
           </div>
 
@@ -1619,56 +1567,6 @@ export function WorkOrderDetail({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  )
-}
-
-// Mobil (<md) yapışkan Genel Toplam barı. Kalemler bölümünün SON çocuğu
-// olarak sticky durur: içerik uzunken alt navigasyonun üstünde yüzer, bölüm
-// sonuna gelince doğal akış yerine oturur — içeriği hiçbir zaman örtmez.
-// Özet kartı ve Ödeme çipi aynı işi gördüğü için #912'de kalkması planlı.
-function MobileTotalsBar({
-  totals,
-  itemCount,
-  onJump,
-}: {
-  totals: Totals
-  itemCount: number
-  onJump: () => void
-}) {
-  if (!totals.hasAnyPrice) return null
-  // Yapışkan kabuk opak `bg-card` (#889): outline düğmenin koyu temadaki
-  // yarı saydam zemini altındaki içeriği gösteriyordu. Düğme stok kalır.
-  return (
-    <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 rounded-md bg-card shadow-lg md:hidden">
-      <Button
-        type="button"
-        variant="outline"
-        size="row"
-        onClick={onJump}
-        aria-label="Fiyatlandırma özetine git"
-        className="w-full justify-between px-4"
-      >
-        <span className="flex min-w-0 flex-col items-start gap-0.5">
-          <span className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calculator className="size-4" />
-            Genel Toplam
-            <span className="text-xs text-muted-foreground">· {itemCount} kalem</span>
-          </span>
-          {/* Kalem toplamı ile genel toplam farklıysa farkın nedeni burada yazar
-              (BAK-55) — mobilde fiyatlandırma kartı ekranın çok altında kalıyor. */}
-          {(totals.discountAmount > 0 || totals.taxAmount > 0) && (
-            <span className="truncate text-[11px] text-muted-foreground">
-              {[
-                `Ara toplam ${formatTRY(totals.subtotal)}`,
-                totals.discountAmount > 0 ? `indirim −${formatTRY(totals.discountAmount)}` : null,
-                totals.taxAmount > 0 ? `KDV ${formatTRY(totals.taxAmount)}` : null,
-              ].filter(Boolean).join(" · ")}
-            </span>
-          )}
-        </span>
-        <span className="text-base font-bold tabular-nums text-foreground">{formatTRY(totals.grandTotal)}</span>
-      </Button>
     </div>
   )
 }

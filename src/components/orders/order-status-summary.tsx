@@ -1,7 +1,6 @@
 "use client"
 
-import { TriangleAlert, Wallet } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ChevronRight, TriangleAlert } from "lucide-react"
 import { DetailPanel, OrderStatusPill, detail } from "@/components/orders/order-detail-surface"
 import { formatTRY } from "@/lib/format"
 import type { OrderSectionId } from "@/lib/orders/detail-sections"
@@ -29,23 +28,32 @@ function NextStepLine({ step }: { step: OrderNextStep }) {
   )
 }
 
+/** Telefon özet kartının para satırı; Ödeme kartının kısa hâli (#912). */
+export type OrderMobileMoney = {
+  grandTotal: number
+  /** Kasa açıksa kalan; değilse null (satır Genel Toplam'ı yazar). */
+  remaining: number | null
+  /** İndirim/KDV varken tek satırlık zincir (BAK-55); yoksa null. */
+  chainText: string | null
+}
+
 /**
  * Telefon ve dar içerikte başlığın altındaki özet kartı (#911): müşteri ne
  * dedi, ne kadar alacak var, sıradaki adım ne. İki kolonda gizlenir; aynı
- * bilgiyi ray (Durum, fiyat, Müşteri & Araç) gösterir.
+ * bilgiyi ray (Durum, Ödeme, Müşteri & Araç) gösterir.
+ *
+ * Para satırı düğme değil, Ödeme bölümüne bağlantıdır (#912): tahsilat düğmesi
+ * hızlı işlemde ve Ödeme kartında durur, burada üçüncü kez tekrar etmez.
  */
 export function OrderMobileSummary({
   complaint,
-  remainingAmount,
-  onCollect,
+  money,
   nextStep,
   onNavigate,
 }: {
   complaint: string
-  /** Kasa açık ve tutar girilmişse kalan; değilse null (satır çizilmez). */
-  remainingAmount: number | null
-  /** Tahsilat alınabiliyorsa; "Tahsilat al" hızlı butonuyla aynı akış. */
-  onCollect?: () => void
+  /** Tutar girilmişse para satırı; değilse null (satır çizilmez). */
+  money: OrderMobileMoney | null
   nextStep: OrderNextStep | null
   onNavigate: (id: OrderSectionId) => void
 }) {
@@ -73,21 +81,44 @@ export function OrderMobileSummary({
           </a>
         )}
       </div>
-      {remainingAmount != null && (
-        <div className={cn(detail.block, "flex flex-wrap items-center justify-between gap-3")}>
-          <p className="text-[15px] leading-5 text-muted-foreground">
-            Kalan{" "}
-            <span className={`font-semibold tabular-nums ${remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>
-              {formatTRY(remainingAmount)}
+      {money && (
+        <a
+          href="#odeme"
+          className={cn(detail.block, detail.summaryLink)}
+          onClick={(event) => {
+            event.preventDefault()
+            onNavigate("odeme")
+          }}
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] leading-5 text-muted-foreground">
+              {money.remaining != null ? "Kalan" : "Genel Toplam"}{" "}
+              <span
+                className={cn(
+                  "font-semibold tabular-nums",
+                  money.remaining == null
+                    ? "text-foreground"
+                    : money.remaining > 0
+                      ? "text-destructive-strong"
+                      : "text-success-strong",
+                )}
+              >
+                {formatTRY(money.remaining ?? money.grandTotal)}
+              </span>
             </span>
-          </p>
-          {onCollect && (
-            <Button type="button" variant="outline" onClick={onCollect}>
-              <Wallet aria-hidden className="text-primary" />
-              Tahsilat al
-            </Button>
-          )}
-        </div>
+            {money.remaining != null && (
+              <span className="mt-0.5 block text-[13px] leading-[18px] text-muted-foreground tabular-nums">
+                Genel Toplam {formatTRY(money.grandTotal)}
+              </span>
+            )}
+            {money.chainText && (
+              <span className="mt-0.5 block text-[13px] leading-[18px] text-muted-foreground tabular-nums">
+                {money.chainText}
+              </span>
+            )}
+          </span>
+          <ChevronRight aria-hidden className={detail.summaryChevron} />
+        </a>
       )}
       {nextStep && (
         <div className={detail.block}>
