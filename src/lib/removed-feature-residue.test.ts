@@ -27,6 +27,10 @@ const REMOVED_PATHS = [
   "scripts/qa/lite-campaign.ts",
   "docs/lite-campaign.md",
   "docs/lite-acquisition-review.md",
+  // Hiçbir sayfada render edilmeyen eski landing bölümleri (#830).
+  "src/lib/landing/hero-slides.ts",
+  "src/components/sections/FeatureShowcaseSection.tsx",
+  "src/components/sections/StandOutSection.tsx",
 ]
 
 const REMOVED_REFERENCES = [
