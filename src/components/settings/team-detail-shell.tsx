@@ -3,11 +3,6 @@ import { Link2, Settings, Users } from "lucide-react"
 import { SettingsRecordTitle } from "@/components/settings/settings-trail"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-const listClass =
-  "flex h-auto w-max min-w-full items-end justify-start gap-1 border-b border-border bg-transparent p-0 group-data-horizontal/tabs:h-auto"
-const triggerClass =
-  "mb-1 h-7 shrink-0 rounded-lg px-2 after:bottom-[-5px] after:h-px data-[state=active]:border-transparent data-[state=active]:bg-muted data-[state=active]:shadow-none"
-
 export function TeamDetailShell({
   team,
   active,
@@ -33,21 +28,22 @@ export function TeamDetailShell({
       </div>
       <Tabs value={active} className="mt-4 min-w-0">
         <div className="max-w-full overflow-x-auto">
-          <TabsList variant="line" className={listClass}>
-            <TabsTrigger value="configuration" className={triggerClass} asChild>
+          {/* Telefonda dokunulan sayfa sekmesi: `line` + `size="control"` (#854). */}
+          <TabsList variant="line" size="control" className="w-max min-w-full justify-start border-b border-border">
+            <TabsTrigger value="configuration" asChild>
               <Link href={base}>
                 <Settings className="size-3.5" />
                 <span>Yapılandırma</span>
               </Link>
             </TabsTrigger>
-            <TabsTrigger value="members" className={triggerClass} asChild>
+            <TabsTrigger value="members" asChild>
               <Link href={`${base}/members`}>
                 <Users className="size-3.5" />
                 <span>Üyeler</span>
                 <span className="text-xs text-muted-foreground">{team.memberCount}</span>
               </Link>
             </TabsTrigger>
-            <TabsTrigger value="usage" className={triggerClass} asChild>
+            <TabsTrigger value="usage" asChild>
               <Link href={`${base}/usage`}>
                 <Link2 className="size-3.5" />
                 <span>Kullanım</span>

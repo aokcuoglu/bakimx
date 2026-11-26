@@ -60,3 +60,15 @@ test("ayarlar paket şeridi dönemi belli değilken aylık liste fiyatını gös
   expect(source).toContain("monthlyEquivalent(currentPkg.tier, stripPriceCycle)")
   expect(source).not.toContain("monthlyEquivalent(currentPkg.tier, stripCycle)")
 })
+
+test("ek özellik satırı durumu yalnız ayarlar sayfasından iner (#879)", () => {
+  const page = read("src/app/(app)/settings/plans/page.tsx")
+  expect(page).toContain("resolveAddonRowViews(workshop)")
+  expect(page).toContain("addonViews=")
+  expect(read("src/app/(site)/fiyatlar/page.tsx")).not.toContain("addonViews")
+  expect(read("src/components/billing/plan-locked.tsx")).not.toContain("addonViews")
+  const source = read("src/components/billing/plan-packages.tsx")
+  expect(source).toContain("renderAction")
+  expect(source).toContain('"bg-success/10 text-success-strong"')
+  for (const label of ["Etkin", "Denemede açık", "Kısmen etkin"]) expect(source).toContain(label)
+})

@@ -124,6 +124,11 @@ export type AddonCatalogItem = {
   description: string
   /** Bu ek özelliğin açtığı kapılar. AI danışmanının kodda kapısı yok. */
   features: readonly AddonFeature[]
+  /**
+   * Kullanıma açık mı? `false` satırlar yetkiden bağımsız "Yakında" görünür —
+   * kapı kodda tanımlı olsa bile ekranı henüz yoksa "Etkin" demek yanıltır (#879).
+   */
+  shipped: boolean
 }
 
 export const ADDON_CATALOG: readonly AddonCatalogItem[] = [
@@ -132,30 +137,35 @@ export const ADDON_CATALOG: readonly AddonCatalogItem[] = [
     name: "Şaseden parça",
     description: "Şase numarasından aracı tanıyın, uyumlu parçaları katalogdan bulun.",
     features: ["vinLookup", "partsCatalog"],
+    shipped: true,
   },
   {
     key: "aiAssistant",
     name: "AI danışmanı",
     description: "Arıza ve bakım kararlarında yapay zekâ destekli öneriler.",
     features: [],
+    shipped: false,
   },
   {
     key: "ocrIntake",
     name: FEATURE_CATALOG.ocrIntake.name,
     description: "Ruhsat fotoğrafından müşteri ve araç alanlarını otomatik doldurun.",
     features: ["ocrIntake"],
+    shipped: true,
   },
   {
     key: "eInvoice",
     name: FEATURE_CATALOG.eInvoice.name,
     description: "e-Fatura ve e-Arşiv işlemlerini BakımX içinde tamamlayın.",
     features: ["eInvoice"],
+    shipped: false,
   },
   {
     key: "multiBranch",
     name: FEATURE_CATALOG.multiBranch.name,
     description: "Birden fazla şubeyi tek hesaptan yönetin.",
     features: ["multiBranch"],
+    shipped: true,
   },
 ]
 

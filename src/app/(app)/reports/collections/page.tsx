@@ -4,6 +4,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { ReportsLayout } from "@/components/reports/reports-layout"
 import { CollectionsReport } from "@/components/reports/collections-report"
 import { getCollectionReportStats, getDailyCollectionAmounts, getMonthlyCollectionAmounts } from "@/lib/reports/queries"
+import { istanbulDateRange } from "@/lib/istanbul-time"
 
 export const metadata = { title: "Tahsilat Raporu" }
 
@@ -18,11 +19,11 @@ export default async function CollectionsReportPage({
   const params = await searchParams
   const workshopId = user.workshopId
 
-  const dateFrom = params.dateFrom ? new Date(params.dateFrom) : undefined
-  const dateTo = params.dateTo ? new Date(params.dateTo) : undefined
+  // `YYYY-MM-DD` İstanbul günü, bitiş günü dahil → `[start, end)` (#906).
+  const { start, end } = istanbulDateRange(params.dateFrom, params.dateTo)
 
   const [stats, dailyCollections, monthlyCollections] = await Promise.all([
-    getCollectionReportStats(workshopId, dateFrom, dateTo),
+    getCollectionReportStats(workshopId, start, end),
     getDailyCollectionAmounts(workshopId, 14),
     getMonthlyCollectionAmounts(workshopId, 6),
   ])

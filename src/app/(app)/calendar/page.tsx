@@ -31,9 +31,9 @@ export default async function CalendarPage({
       <div className="space-y-5 sm:space-y-6">
 
         <CalendarView
-          initialEvents={serializedEvents}
-          initialView={view}
-          initialDate={dateStr}
+          events={serializedEvents}
+          view={view}
+          date={dateStr}
         />
       </div>
     </AppShell>

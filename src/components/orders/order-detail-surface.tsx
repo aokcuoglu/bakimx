@@ -2,8 +2,9 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 import surface from "@/components/dashboard/surface.module.css"
-import { PAYMENT_STATUS } from "@/lib/constants"
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
 import { paymentPillTone } from "@/lib/orders/payment-pill"
+import { orderStatusPillTone } from "@/lib/orders/status-pill"
 import { cn } from "@/lib/utils"
 import detail from "./order-detail.module.css"
 
@@ -65,6 +66,15 @@ export function OrderPaymentPill({ status }: { status: string }) {
   return (
     <span className={cn(surface.pill, surface[`tone-${paymentPillTone(status)}`])}>
       {PAYMENT_STATUS[status as keyof typeof PAYMENT_STATUS]?.label ?? status}
+    </span>
+  )
+}
+
+/** `DashOrderStatus`un eşi: birim testinden erişilen modüller dashboard/surface.tsx'i almaz (bkz. üst not). */
+export function OrderStatusPill({ status }: { status: string }) {
+  return (
+    <span className={cn(surface.pill, surface[`tone-${orderStatusPillTone(status)}`])}>
+      {ORDER_STATUS[status as keyof typeof ORDER_STATUS]?.label ?? status}
     </span>
   )
 }

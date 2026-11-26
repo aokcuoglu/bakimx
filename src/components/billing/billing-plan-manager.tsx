@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { BillingCycleToggle } from "./billing-cycle-toggle"
 import { PlanPackages } from "@/components/billing/plan-packages"
+import type { AddonRowViews } from "@/lib/billing/addon-row-state"
 import { ManagePlanDialog } from "@/components/billing/manage-plan-dialog"
 import { BillingUsagePanel } from "@/components/billing/billing-usage-panel"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
@@ -61,6 +62,7 @@ export function BillingPlanManager({
   showComparison = true,
   explorePlansHref,
   referralDiscountBps = 0,
+  addonViews,
   usage,
 }: {
   ownedTier: PlanTier | null
@@ -86,6 +88,8 @@ export function BillingPlanManager({
   showComparison?: boolean
   explorePlansHref?: string
   referralDiscountBps?: number
+  /** Ek özellik satırlarının atölyedeki durumu (yalnız ayarlar görünümü). */
+  addonViews?: AddonRowViews
   usage?: { plan: PlanState; quota: WorkshopQuotaUsage }
 }) {
   const router = useRouter()
@@ -215,6 +219,7 @@ export function BillingPlanManager({
             isTrialing={isTrialing}
             trialDaysLeft={trialDaysLeft}
             referralDiscountBps={referralDiscountBps}
+            addonViews={addonViews}
             onSelectPlan={choosePlan}
             onManagePlan={() => openManage()}
             onRequestCycleChange={(next) => openManage(next)}

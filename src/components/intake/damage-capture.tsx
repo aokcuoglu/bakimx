@@ -206,7 +206,11 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader><DialogTitle>{VEHICLE_ZONES[selectedZone] || "Hasar ekle"}</DialogTitle></DialogHeader>
           <Form {...form}>
-            <form className="space-y-4" onSubmit={form.handleSubmit(save)}>
+            {/* min-w-0: DialogContent bir grid; ızgara öğesinin varsayılan asgari
+                genişliği min-content olduğundan foto editörünün sabit genişlikli
+                Konva tuvali formu (ve ResizeObserver ile tuvali) 390px'te diyalogdan
+                taşırıyordu; araç düğmeleri de tek satırda kenardan çıkıyordu (#854). */}
+            <form className="min-w-0 space-y-4" onSubmit={form.handleSubmit(save)}>
               {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
               <FormField control={form.control} name="damageType" render={({ field }) => <FormItem><FormLabel>Hasar türü</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger className="w-full"><SelectValue placeholder="Hasar türü seçin" /></SelectTrigger></FormControl><SelectContent>{Object.entries(DAMAGE_TYPES).map(([key, item]) => <SelectItem key={key} value={key}>{item.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />
               <FormField control={form.control} name="severity" render={({ field }) => <FormItem><FormLabel>Derece</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger className="w-full"><SelectValue placeholder="Derece seçin" /></SelectTrigger></FormControl><SelectContent>{Object.entries(DAMAGE_SEVERITY).map(([key, item]) => <SelectItem key={key} value={key}>{item.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />

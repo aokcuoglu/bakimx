@@ -11,6 +11,7 @@ import {
   getExpensiveOrders,
   getLongestDurationOrders,
 } from "@/lib/reports/queries"
+import { istanbulDateRange } from "@/lib/istanbul-time"
 import { prisma } from "@/lib/db"
 
 export const metadata = { title: "Araç Kabul Raporu" }
@@ -26,16 +27,16 @@ export default async function OrdersReportPage({
   const params = await searchParams
   const workshopId = user.workshopId
 
-  const dateFrom = params.dateFrom ? new Date(params.dateFrom) : undefined
-  const dateTo = params.dateTo ? new Date(params.dateTo) : undefined
+  // `YYYY-MM-DD` İstanbul günü, bitiş günü dahil → `[start, end)` (#906).
+  const { start, end } = istanbulDateRange(params.dateFrom, params.dateTo)
 
   const [stats, dailyOrders, monthlyOrders, expensiveOrders, longestDuration, technicians] =
     await Promise.all([
-      getOrdersReportStats(workshopId, dateFrom, dateTo),
+      getOrdersReportStats(workshopId, start, end),
       getDailyOrderCounts(workshopId, 14),
       getMonthlyOrderCounts(workshopId, 6),
-      getExpensiveOrders(workshopId, dateFrom, dateTo, params.technician, params.status, params.customer),
-      getLongestDurationOrders(workshopId, dateFrom, dateTo, params.technician, params.status, params.customer),
+      getExpensiveOrders(workshopId, start, end, params.technician, params.status, params.customer),
+      getLongestDurationOrders(workshopId, start, end, params.technician, params.status, params.customer),
       prisma.technician.findMany({
         where: { workshopId, isActive: true },
         select: { id: true, fullName: true },

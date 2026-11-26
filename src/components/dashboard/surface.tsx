@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatTrShortDate, formatTrTime } from "@/lib/format-date"
 import { APPOINTMENT_STATUS, ORDER_STATUS, type AppointmentStatusKey, type OrderStatusKey } from "@/lib/constants"
+import { orderStatusPillTone } from "@/lib/orders/status-pill"
 import { kpiNumeralFont } from "./kpi-font"
 import styles from "./surface.module.css"
 
@@ -135,20 +136,9 @@ export function DashTile({
   )
 }
 
-const ORDER_TONE: Record<OrderStatusKey, Tone> = {
-  draft: "neutral",
-  waiting_approval: "warning",
-  approved: "info",
-  in_progress: "info",
-  waiting_parts: "warning",
-  ready_for_delivery: "success",
-  delivered: "success",
-  cancelled: "destructive",
-}
-
 export function DashOrderStatus({ status }: { status: string }) {
   const key = status as OrderStatusKey
-  return <DashPill tone={ORDER_TONE[key] ?? "neutral"}>{ORDER_STATUS[key]?.label ?? status}</DashPill>
+  return <DashPill tone={orderStatusPillTone(status)}>{ORDER_STATUS[key]?.label ?? status}</DashPill>
 }
 
 const APPOINTMENT_TONE: Record<AppointmentStatusKey, Tone> = {
