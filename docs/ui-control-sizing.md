@@ -60,7 +60,7 @@ kalır, yalnız md+ 14px'e iner (`--control-fs-field-xs`). `--control-fs-xs`
 yalnız masaüstü yoğun araç çubuğu ve tablo başlığı içindir. Telefonda görünen
 seçici `size="control"` alır; sekmede `size="control"` yalnız `default` (segment)
 variant içindir, telefonda görünen `line` sekmenin ölçeğe bağlanması #854'te. İlke: etkileşimli öğe `--control-h`,
-şerit/ray `auto` — `order-detail.module.css` `.tab` aynı ilkenin mevcut örneğidir.
+şerit/ray `auto` — `order-detail.module.css` `.chip` (araç kabulü bölüm çipi, #911) aynı ilkenin mevcut örneğidir.
 
 Button: sistem fontu, ağırlık 500, harf aralığı −0.01em, düz dolgu (gölge yok).
 Renk variant'ları ve Radix `asChild` sözleşmesi korunur.
