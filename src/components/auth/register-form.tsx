@@ -637,6 +637,8 @@ function SectorStep({ form }: { form: WizardForm }) {
                 type="single"
                 value={field.value}
                 onValueChange={(value) => value && field.onChange(value)}
+                variant="outline"
+                size="row"
                 className="contents"
                 aria-label="Sektör seçimi"
               >
@@ -646,8 +648,6 @@ function SectorStep({ form }: { form: WizardForm }) {
                     <ToggleGroupItem
                       key={sector.id}
                       value={sector.id}
-                      variant="outline"
-                      size="row"
                       className="relative w-full items-start"
                     >
                       <span className="flex w-full items-start gap-3">
@@ -958,6 +958,8 @@ function TeamSizeStep({ form }: { form: WizardForm }) {
               type="single"
               value={field.value}
               onValueChange={(value) => value && field.onChange(value)}
+              variant="outline"
+              size="row"
               className="grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2"
               aria-label="Ekip büyüklüğü seçimi"
             >
@@ -965,8 +967,6 @@ function TeamSizeStep({ form }: { form: WizardForm }) {
                 <ToggleGroupItem
                   key={option.id}
                   value={option.id}
-                  variant="outline"
-                  size="row"
                   className="w-full flex-col justify-center gap-0 text-center"
                 >
                   <span className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
@@ -1003,6 +1003,8 @@ function ModulesStep({ form }: { form: WizardForm }) {
               type="multiple"
               value={field.value}
               onValueChange={field.onChange}
+              variant="outline"
+              size="row"
               className="grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-2"
               aria-label="Modül seçimi"
             >
@@ -1013,8 +1015,6 @@ function ModulesStep({ form }: { form: WizardForm }) {
                   <ToggleGroupItem
                     key={module.id}
                     value={module.id}
-                    variant="outline"
-                    size="row"
                     className="w-full"
                   >
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground group-data-[state=on]/toggle:bg-primary group-data-[state=on]/toggle:text-primary-foreground">
@@ -1202,11 +1202,11 @@ function SetupStep({ form }: { form: WizardForm }) {
           <p className="mb-3 text-xs leading-5 text-muted-foreground-strong">Hesabı kendiniz kurabilir veya ekibimizden ücretsiz destek isteyebilirsiniz.</p>
           <FormField control={form.control} name="setupPreference" render={({ field }) => (
             <FormItem>
-              <ToggleGroup type="single" value={field.value} onValueChange={(value) => value && field.onChange(value)} className="grid w-full grid-cols-1 items-stretch gap-2" aria-label="Kurulum desteği tercihi">
+              <ToggleGroup type="single" value={field.value} onValueChange={(value) => value && field.onChange(value)} variant="outline" size="row" className="grid w-full grid-cols-1 items-stretch gap-2" aria-label="Kurulum desteği tercihi">
                 {SETUP_OPTIONS.map((option) => {
                   const Icon = option.icon
                   return (
-                    <ToggleGroupItem key={option.id} value={option.id} variant="outline" size="row" className="w-full">
+                    <ToggleGroupItem key={option.id} value={option.id} className="w-full">
                       <Icon className="size-4 shrink-0 text-muted-foreground" />
                       <span><span className="block text-xs font-semibold">{option.label}</span><span className="mt-0.5 block text-[10px] font-normal leading-3 text-muted-foreground-strong">{option.description}</span></span>
                     </ToggleGroupItem>

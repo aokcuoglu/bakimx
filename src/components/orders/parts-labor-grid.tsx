@@ -310,7 +310,7 @@ export function PartsLaborEditor({
       )}
       {!locked && !onSaveRow && (
         <Tabs defaultValue="parca">
-          <TabsList variant="line" className="w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px sm:gap-2">
+          <TabsList variant="line" size="control" className="w-full flex-nowrap gap-1 border-b border-border -mb-px sm:gap-2">
             <TabsTrigger value="parca" className="shrink-0">
               <PackagePlus className="size-4" /> Parça
             </TabsTrigger>
