@@ -150,8 +150,9 @@ Ekipler, ekip detayı, katalog içe aktarma önizlemesi. Varsayılanlar (`line`
   masaüstüdür: iş emri tablosu kolon başlığının sıralama menüsü (tablo yalnız
   lg+) ve tasarım vitrininin kayıt kalıbı (yoğun `line` örneği). İş emri
   detayının sayfa sekmeleri #911'de kalktı.
-- Pazarlama bölümleri (`components/sections/`) çoğunlukla kendi `--mk-*`
-  ölçeğini kurar; `BlogCategoryFilters` `line` sekmesi bunun örneğidir.
+- Pazarlama kiti (`components/marketing/`) kendi `--mk-*` ölçeğini taşır ve
+  kapı dışındadır. `components/sections/` altındaki dosyalar da varsayılan
+  olarak kapı dışıdır (örnek: `BlogCategoryFilters` `line` sekmesi);
   `RuhsatDemoSection` (#929) artık `TabsList size="control"` kullanır ve
   `HeroLeadForm`, `ContactPage`, `demo-ocr-upload` ile birlikte kapı
   kapsamındadır (CTA'lar `Button size="lg"`). Segment sekmenin seçili
