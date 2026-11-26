@@ -67,7 +67,8 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * #926 — akordeon (`Accordion`, `AccordionItem`, `AccordionTrigger`,
  * `AccordionContent`) kendi kural setiyle (`ACCORDION_FORBIDDEN`) taranır.
  * Görünüm kökte `variant` ile seçilir: `default` alt çizgili liste, `card`
- * ayrı çerçeveli kart, `disclosure` kart görünümlü tek açılır başlık.
+ * her öğe ayrı, kenarlıksız kart (`ui/card.tsx`'in soluk halkası; durum tonu
+ * halka rengiyle), `disclosure` kart görünümlü tek açılır başlık.
  * Tetikleyici yüksekliği (`--control-h`), dolgu, köşe, zemin, halka
  * kalınlığı, gölge, yazı boyutu/ağırlığı ve alt çizgi variant'tan gelir;
  * çağrı yerinde yazılmaz, iç parça (`**:data-[slot=accordion-…]:`,
