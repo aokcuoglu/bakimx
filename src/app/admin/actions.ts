@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { planActivationAuditMetadata } from "@/lib/admin/plan-activation-audit"
 import { computeTrialEnd, hasLifetimeLite, isSalePlanTier, normalizeAddons } from "@/lib/plan"
-import { diffAddons, extraVinQuotaSchema, workshopAddonsSchema } from "@/lib/validations/workshop-addons"
+import { diffAddons, extraSeatsSchema, extraVinQuotaSchema, workshopAddonsSchema } from "@/lib/validations/workshop-addons"
 import { activateBillingOrder } from "@/lib/billing/activate"
 import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
 import { verifiedRegistrationTrialData } from "@/lib/billing/registration-trial"
@@ -228,18 +228,18 @@ export async function deleteEmptyWorkshop(workshopId: string, confirmationName: 
 export async function setWorkshopExtraSeats(workshopId: string, extraSeats: number): Promise<Result> {
   const ctx = await requireAdminCapability("manageWorkshops")
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
-  if (!Number.isInteger(extraSeats) || extraSeats < 0 || extraSeats > 500) {
-    return { ok: false, error: "Geçersiz ek koltuk sayısı." }
-  }
+  const parsedSeats = extraSeatsSchema.safeParse(extraSeats)
+  if (!parsedSeats.success) return { ok: false, error: "Geçersiz ek koltuk sayısı." }
 
-  await prisma.workshop.update({ where: { id: workshopId }, data: { extraSeats } })
+  // Yalnız koltuk yazılır; paket/durum bu action'da değişmez (#939).
+  await prisma.workshop.update({ where: { id: workshopId }, data: { extraSeats: parsedSeats.data } })
   await AuditLogAction(
     workshopId,
     ctx.user.id,
     "Workshop",
     workshopId,
     "admin_extra_seats_set",
-    JSON.stringify({ extraSeats })
+    JSON.stringify({ extraSeats: parsedSeats.data })
   )
   revalidatePath("/admin", "layout")
   return { ok: true }

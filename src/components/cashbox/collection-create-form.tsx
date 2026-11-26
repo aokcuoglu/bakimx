@@ -210,7 +210,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                         />
                       </div>
                       {customerSearch && !customerId && (
-                        <div className="mt-1.5 max-h-48 overflow-y-auto rounded-lg border border-border bg-background p-1 shadow-sm">
+                        <div className="mt-1.5 max-h-48 overflow-y-auto rounded-md border border-border bg-background p-1 shadow-sm">
                           {filteredCustomers.length === 0 ? (
                             <div className="px-3 py-3 text-sm text-muted-foreground">Sonuç bulunamadı</div>
                           ) : (
@@ -231,7 +231,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                         </div>
                       )}
                       {selectedCustomer && (
-                        <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border text-sm">
+                        <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-md bg-muted border border-border text-sm">
                           <span className="font-medium text-foreground">{nameFor(selectedCustomer)}</span>
                           <span className="text-muted-foreground">{selectedCustomer.phone}</span>
                           <Button
@@ -279,7 +279,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                 )}
 
                 {selectedOrder && (
-                  <div className="p-3 rounded-lg bg-muted border border-border space-y-1.5 text-sm">
+                  <div className="p-3 rounded-md bg-muted border border-border space-y-1.5 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">İş No</span>
                       <span className="font-mono font-medium text-foreground">{selectedOrder.workOrderNo || "—"}</span>
@@ -442,7 +442,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                       </div>
                     )}
                     {isOverpayment && (
-                      <div className="p-2.5 rounded-lg bg-muted border border-border text-muted-foreground text-xs flex items-start gap-2">
+                      <div className="p-2.5 rounded-md bg-muted border border-border text-muted-foreground text-xs flex items-start gap-2">
                         <Info className="size-3.5 mt-0.5 shrink-0" />
                         <span>Fazla ödeme: kalan bakiyeyi aşıyor ({formatTRY(amountKurus - remaining)} fazla)</span>
                       </div>

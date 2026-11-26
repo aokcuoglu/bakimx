@@ -13,6 +13,9 @@ import {
   DAMAGE_TYPES,
   DAMAGE_SEVERITY,
 } from "@/lib/constants"
+import { AddonLockedNote } from "@/components/billing/addon-gate"
+import { useAddonAccess } from "@/components/billing/addon-access"
+import { lockedHistoryHint } from "@/lib/vehicle-history/locked-copy"
 import type { CrossWorkshopHistory } from "@/lib/vehicle-history/types"
 
 /**
@@ -38,9 +41,12 @@ export function CrossWorkshopHistoryCard({
   history: CrossWorkshopHistory
   showOrders?: boolean
 }) {
+  const access = useAddonAccess()
   if (history.workshopCount === 0) return null
 
   const { locked } = history
+  const ocrEnabled = access.has("ocrIntake")
+  const hint = lockedHistoryHint(ocrEnabled)
 
   return (
     <Card>
@@ -72,13 +78,18 @@ export function CrossWorkshopHistoryCard({
         </div>
 
         {locked ? (
+          <>
           <Alert variant="warning">
             <ScanLine className="size-4" />
             <AlertDescription>
               Bu araç {history.workshopCount} başka serviste kayıtlı. Sahip ve geçmiş bilgileri
-              KVKK gereği maskelidir — <strong>ruhsatı okuttuğunuzda</strong> tamamı açılır.
+              KVKK gereği maskelidir — <strong>{hint.action}</strong>
+              {hint.tail}
             </AlertDescription>
           </Alert>
+          {/* Alert'in dışında: not düz yüzeyde okunur (tinted zeminde kontrast düşer). */}
+          {!ocrEnabled && access.showUpsell && <AddonLockedNote feature="ocrIntake" />}
+          </>
         ) : (
           <p className="text-xs text-muted-foreground">
             {history.accessReason === "registration_scan"

@@ -10,6 +10,7 @@ import {
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
+  type InputGroupAppearance,
 } from "@/components/ui/input-group"
 import type { InputSize } from "@/components/ui/input"
 import { ChevronDownIcon, XIcon, CheckIcon } from "lucide-react"
@@ -84,6 +85,7 @@ function ComboboxInput({
   showTrigger = true,
   showClear = false,
   size = "default",
+  appearance,
   onKeyDown,
   ...props
 }: Omit<ComboboxPrimitive.Input.Props, "size"> & {
@@ -91,11 +93,13 @@ function ComboboxInput({
   showClear?: boolean
   /** Input ölçeği (docs/ui-control-sizing.md); `InputGroup`'a geçer. */
   size?: InputSize
+  /** Görünüm (#952); `InputGroup`'a geçer. */
+  appearance?: InputGroupAppearance
 }) {
   const ignoreGroupPress = disabled || props.readOnly === true
   return (
     <ComboboxPrimitive.InputGroup
-      render={<InputGroup size={size} className={cn("w-auto", className)} />}
+      render={<InputGroup size={size} appearance={appearance} className={cn("w-auto", className)} />}
       onMouseDown={ignoreGroupPress ? (event) => event.preventBaseUIHandler() : undefined}
     >
       <ComboboxPrimitive.Input

@@ -40,21 +40,21 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
   const [seats, setSeats] = useState(w.extraSeats)
   const [open, setOpen] = useState(false)
   const paidPeriod = w.subscriptionStatus === "active" && !!w.currentPeriodEnd && new Date(w.currentPeriodEnd) > new Date()
-  // Ödenmiş dönemde yalnız ek koltuk değişir, dahil koltuk bugünkü profilden
-  // gelir. Aksi halde onay iş yerini Servis Paketi'ne (aktif) geçirir; yeni
-  // limit o paketin koltuğu üzerinden hesaplanır.
+  // Koltuk kaydı ve paket etkinleştirme ayrı düğmelerdir (#939). Ödenmiş dönemde
+  // dahil koltuk bugünkü profilden gelir; aksi halde limit, etkinleştirilecek
+  // paketin koltuğu üzerinden hesaplanır.
   const includedSeats = paidPeriod ? w.includedSeats : PLAN_SEATS[MANUAL_ACTIVATION_TIER]
   const manualLabel = PLAN_LABELS[MANUAL_ACTIVATION_TIER]
-  // Satıştaki paket dışındaki her eski satır onayla birlikte Servis Paketi'ne geçer;
-  // admin yalnız koltuğu değiştirse bile. Bu yüzden uyarı ve düğme hedefi söyler.
+  // Satıştaki paket dışındaki eski satır yalnız "Paketi etkinleştir" ile Servis
+  // Paketi'ne geçer; koltuk kaydı paketi değiştirmez. Uyarı ve düğme hedefi söyler.
   const legacyTier = !!w.planTier && !isSalePlanTier(w.planTier)
   const legacyNote = legacyTier
-    ? `Bu iş yeri ${planLabel(w.planTier)} satırında; onaylarsanız ${manualLabel}'ne geçer.` +
+    ? `Bu iş yeri ${planLabel(w.planTier)} satırında; etkinleştirirseniz ${manualLabel}'ne geçer.` +
       (w.lifetimeLite ? " Süresiz Lite hakkı kalkar." : "") +
       " Ek özellikler iş yeri detayındaki anahtarlardan açılır."
     : null
-  const confirmLabel = paidPeriod ? "Koltukları kaydet" : legacyTier ? `${manualLabel}'ne geçir` : "Onayla ve etkinleştir"
-  const confirmSuccess = paidPeriod ? "Ek koltuklar kaydedildi" : legacyTier ? `İş yeri ${manualLabel}'ne geçirildi` : "Paket etkinleştirildi"
+  const activateLabel = legacyTier ? `${manualLabel}'ne geçir` : "Paketi etkinleştir"
+  const activateSuccess = legacyTier ? `İş yeri ${manualLabel}'ne geçirildi` : "Paket etkinleştirildi"
 
   function run(fn: () => Promise<{ ok: boolean; error?: string }>, successMessage?: string, onSuccess?: () => void) {
     setError("")
@@ -96,7 +96,7 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
             </Button>
           </>
         ) : <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button variant="outline" size="sm">Aboneliği yönet</Button></DialogTrigger>
+          <DialogTrigger asChild><Button variant="outline">Aboneliği yönet</Button></DialogTrigger>
           <DialogContent className="sm:max-w-lg"><DialogHeader><DialogTitle>Aboneliği yönet</DialogTitle><DialogDescription>Değişikliklerin etkisini onaylamadan önce gözden geçirin.</DialogDescription></DialogHeader>
             {paidPeriod ? (
               <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
@@ -110,8 +110,29 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
                 {legacyNote && <p className="font-normal text-foreground">{legacyNote}</p>}
               </div>
             )}
-            <div className="rounded-lg border p-3"><div className="flex items-center justify-between"><span className="font-medium text-sm">Ek koltuk</span><div className="flex items-center gap-2"><Button size="icon-sm" variant="outline" disabled={pending || seats === 0} onClick={() => setSeats(seats - 1)} aria-label="Ek koltuğu azalt"><Minus /></Button><span className="w-6 text-center">{seats}</span><Button size="icon-sm" variant="outline" disabled={pending || seats >= 500} onClick={() => setSeats(seats + 1)} aria-label="Ek koltuğu artır"><Plus /></Button></div></div><p className="mt-1 text-xs text-muted-foreground">Yeni limit: {includedSeats + seats} koltuk{w.activeUsers != null ? ` · ${w.activeUsers} aktif kullanıcı` : ""}</p></div>
-            {error && <p className="text-sm text-destructive-strong" role="alert">{error}</p>}<DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Vazgeç</Button><Button variant="foreground" disabled={pending} onClick={() => run(async () => { if (seats !== w.extraSeats) { const r = await setWorkshopExtraSeats(w.id, seats); if (!r.ok) return r } return paidPeriod ? { ok: true } : activateWorkshopPlan(w.id, MANUAL_ACTIVATION_TIER, "active") }, confirmSuccess, () => setOpen(false))}>{pending && <Loader2 className="animate-spin" />}{confirmLabel}</Button></DialogFooter>
+            <div className="rounded-lg border p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm">Ek koltuk</span>
+                <div className="flex items-center gap-2">
+                  <Button size="icon" variant="outline" disabled={pending || seats === 0} onClick={() => setSeats(seats - 1)} aria-label="Ek koltuğu azalt"><Minus /></Button>
+                  <span className="w-6 text-center">{seats}</span>
+                  <Button size="icon" variant="outline" disabled={pending || seats >= 500} onClick={() => setSeats(seats + 1)} aria-label="Ek koltuğu artır"><Plus /></Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Yeni limit: {includedSeats + seats} koltuk{w.activeUsers != null ? ` · ${w.activeUsers} aktif kullanıcı` : ""}</p>
+              <Button variant="outline" disabled={pending || seats === w.extraSeats} onClick={() => run(() => setWorkshopExtraSeats(w.id, seats), "Ek koltuklar kaydedildi")}>
+                {pending && <Loader2 className="animate-spin" />}Koltukları kaydet
+              </Button>
+            </div>
+            {error && <p className="text-sm text-destructive-strong" role="alert">{error}</p>}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>Kapat</Button>
+              {!paidPeriod && (
+                <Button variant="foreground" disabled={pending} onClick={() => run(() => activateWorkshopPlan(w.id, MANUAL_ACTIVATION_TIER, "active"), activateSuccess, () => setOpen(false))}>
+                  {pending && <Loader2 className="animate-spin" />}{activateLabel}
+                </Button>
+              )}
+            </DialogFooter>
           </DialogContent>
         </Dialog>}
       </div>
