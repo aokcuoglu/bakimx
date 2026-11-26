@@ -75,6 +75,41 @@ describe("kontrol ölçeği — e-santral (mobil 44px / masaüstü 36px)", () =>
     for (const size of ["inline", "row", "tile"]) expect(page).toContain(`size="${size}"`)
   })
 
+  /**
+   * #925 — ton variant'tan gelir (çağrı yeri kapısı control-call-sites.test.ts);
+   * grup içi düğme grubun ölçüsünü izler; tarih seçici tetikleyicisi alan
+   * görünümündedir.
+   */
+  test("ton variant'ları, grup içi düğme ölçüsü ve tarih seçici tetikleyicisi (#925)", () => {
+    const button = read("./button.tsx")
+    for (const key of ['"destructive-outline":', "tint:", '"on-photo":', '"on-photo-ghost":']) {
+      expect(button).toContain(`        ${key}`)
+    }
+    // Kenarlıksız ton variant'ları row satırında şeffaf 1px çerçeve alır.
+    const noBorder = button.slice(button.indexOf("const NO_BORDER_VARIANTS"), button.indexOf("] as const"))
+    expect(noBorder).toContain('"tint",')
+    expect(noBorder).toContain('"on-photo-ghost",')
+
+    const group = read("./input-group.tsx")
+    const start = group.indexOf("const inputGroupButtonVariants = cva(")
+    expect(start).toBeGreaterThan(-1)
+    const block = group.slice(start, group.indexOf("\n)\n", start))
+    expect(block).toContain("h-[calc(var(--control-h)-4px)]")
+    expect(block).toContain("size-[calc(var(--control-h)-4px)]")
+    expect(block).not.toMatch(/\b(?:h|size)-[678]\b/)
+    expect(group).not.toContain("inputGroupButtonFit")
+
+    for (const file of ["./date-picker.tsx", "./date-range-picker.tsx", "./date-time-picker.tsx"]) {
+      const source = read(file)
+      expect(source).toContain('variant="field"')
+      expect(source).not.toContain("font-normal")
+    }
+
+    const page = read("../../app/design/page.tsx")
+    for (const variant of ["destructive-outline", "tint"]) expect(page).toContain(`["${variant}", `)
+    for (const variant of ["on-photo", "on-photo-ghost"]) expect(page).toContain(`variant="${variant}"`)
+  })
+
   test("Input, Select, Textarea ve InputGroup değişkenden ölçülür", () => {
     for (const file of ["./input.tsx", "./select.tsx", "./textarea.tsx", "./input-group.tsx"]) {
       expect(read(file)).not.toMatch(/(?:sm|md|lg|xl):(?:h|min-h|px|pl|pr|text|rounded)-/)

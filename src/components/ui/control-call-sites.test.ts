@@ -58,6 +58,13 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * `border-b` çizgisi, taşma kaydırması.
  * Kör nokta: `buttonVariants({ className })` çağrısı JSX değildir, taranmaz
  * (#889 anında tek kullanım `ui/` içinde).
+ *
+ * #925 — ton da variant'tan gelir: `border-destructive/*` (yıkıcı çerçeve →
+ * `variant="destructive-outline"`), öneksiz `bg-primary/N` (birincil ton →
+ * `variant="tint"`) ve `bg-white/*` / `border-white/*` / `bg-black/*` fotoğraf
+ * üstü yüzeyler (→ `variant="on-photo"` / `"on-photo-ghost"`) yukarıdaki
+ * serbest listeden çıktı. `hover:bg-destructive/10`, `hover:bg-primary/10`
+ * gibi durum renkleri serbest kalır; fotoğraf üstü ton her önekte yasaktır.
  */
 
 /** Kapsamdaki form kontrolleri ve onlara `className` ileten sarmalayıcılar. */
@@ -97,6 +104,11 @@ export const BUTTON_CONTROLS = [
   "SidebarTrigger",
   // `triggerClassName`'i tetikleyici Button'a iletir.
   "FilterSheet",
+  // ui/ sarmalayıcıları (#925): className'i tetikleyici Button'a iletir
+  // (ui/ taranmadığı için iletim otomatik tespit edilmez, elle listelenir).
+  "DatePicker",
+  "DateRangePicker",
+  "DateTimePicker",
 ] as const
 
 /** Seçiciler (#889): düğme kural setiyle taranır. */
@@ -182,6 +194,11 @@ export const BUTTON_FORBIDDEN: readonly Family[] = [
   { name: "kenarlık kaldırma", pattern: /^border(?:-[trblxy])?-(?:0|none|transparent)$/, when: "base" },
   { name: "gölge kaldırma", pattern: /^shadow-none$/, when: "base" },
   { name: "keyfi özellik", pattern: /^\[(?:height|min-height|max-height|border-radius|font-size|font-weight|line-height|padding)/ },
+  // Ton variant'tan gelir (#925). Ad parantez içermez: `hitClass` sınıfı
+  // son " (" ayracından keser.
+  { name: 'yıkıcı çerçeve tonu → variant="destructive-outline"', pattern: /^border-destructive(?:\/(?:\d+|\[[^\]]+\]))?$/, when: "base" },
+  { name: 'birincil ton zemini → variant="tint"', pattern: /^bg-primary\/(?:\d+|\[[^\]]+\])$/, when: "base" },
+  { name: 'fotoğraf üstü ton → variant="on-photo" / "on-photo-ghost"', pattern: /^(?:bg|border)-(?:white|black)(?:\/(?:\d+|\[[^\]]+\]))?$/ },
 ]
 
 /** Düğmenin kendi kutusunu değil sözde öğeyi / torunu / kardeşi biçimleyen önek. */
@@ -292,8 +309,9 @@ export const EXCEPTIONS: readonly Exception[] = [
     file: "components/shared/camera-scanner.tsx",
     tag: "Button",
     match: 'aria-label="Çek"',
-    allow: ["size-16", "rounded-full"],
-    reason: "Tam ekran kamera katmanının deklanşörü: 64px halkalı daire (kamera uygulaması kalıbı), kontrol matrisi dışında.",
+    allow: ["size-16", "rounded-full", "border-white"],
+    reason:
+      "Tam ekran kamera katmanının deklanşörü: 64px halkalı daire (kamera uygulaması kalıbı), kontrol matrisi dışında. Zemin/metin on-photo variant'ından; halka on-photo'nun soluk çerçevesi değil, kalın düz beyaz (border-4 border-white) kalır (#925).",
   },
   {
     file: "components/shared/camera-scanner.tsx",
@@ -307,8 +325,9 @@ export const EXCEPTIONS: readonly Exception[] = [
     file: "components/intake/registration-scanner.tsx",
     tag: "Button",
     match: 'aria-label="Çek"',
-    allow: ["size-16", "rounded-full"],
-    reason: "Tam ekran ruhsat tarayıcısının deklanşörü: 64px halkalı daire (kamera uygulaması kalıbı), kontrol matrisi dışında.",
+    allow: ["size-16", "rounded-full", "border-white"],
+    reason:
+      "Tam ekran ruhsat tarayıcısının deklanşörü: 64px halkalı daire (kamera uygulaması kalıbı), kontrol matrisi dışında. Zemin/metin on-photo variant'ından; halka kalın düz beyaz (border-4 border-white) kalır (#925).",
   },
 ]
 
@@ -473,6 +492,41 @@ describe("form kontrolleri ve düğmeler çağrı yerinde ezilmez (#888, #889)",
       '<TabsList variant="line" size="control" className="flex w-full flex-nowrap justify-start gap-1 border-b border-border -mb-px overflow-x-auto">',
       '<TabsList size="control" className="grid w-full grid-cols-2 sm:w-fit">',
       '<TabsTrigger value="a" className="shrink-0 sm:px-3">',
+    ]
+    for (const source of good) {
+      for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])
+    }
+  })
+
+  test("düğme tonu variant'tan gelir: yıkıcı çerçeve, birincil ton, fotoğraf üstü (#925)", () => {
+    const bad = [
+      '<Button variant="outline" className="border-destructive/20 text-destructive-strong">',
+      `<Button variant="outline" className="${"border-" + "destructive"}">`,
+      '<Button variant="secondary" className="bg-primary/10 text-primary-strong">',
+      `<Button variant="outline" className="${"dark:" + "bg-primary/20"}">`,
+      '<Button variant="ghost" size="icon" className="bg-white/10 text-white">',
+      '<Button variant="outline" className="border-white/30 text-white">',
+      // Fotoğraf üstü ton durum önekinde de yasak: variant="on-photo-ghost".
+      '<Button variant="ghost" className="text-white hover:bg-white/15">',
+      `<Button variant="ghost" className="${"bg-" + "black/60"}">`,
+      // Tarih seçici className'i tetikleyici Button'a iletir.
+      `<DatePicker className="${"h-" + "8"}" />`,
+      '<DateRangePicker className="bg-transparent" />',
+      '<DateTimePicker className="font-normal" />',
+    ]
+    for (const source of bad) {
+      const tags = jsxOpeningTags(source, CONTROLS)
+      expect(tags.length).toBeGreaterThan(0)
+      expect(violations(tags[0])).not.toEqual([])
+    }
+
+    const good = [
+      '<Button variant="destructive-outline" className="w-full gap-2">',
+      '<Button variant="ghost" className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong">',
+      '<Button variant="outline" className="hover:bg-primary/10 hover:ring-2 hover:ring-primary">',
+      '<Button variant="tint" size="row" className="ring-2 ring-primary">',
+      '<Button variant="on-photo" size="icon" aria-label="Kapat">',
+      '<DateRangePicker className="w-64" />',
     ]
     for (const source of good) {
       for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])

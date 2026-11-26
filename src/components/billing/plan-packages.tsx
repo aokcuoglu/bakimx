@@ -23,8 +23,11 @@ import {
   PLAN_COMPARISON,
   SERVICE_PACKAGE,
   getPlanPackage,
+  type AddonCatalogItem,
   type PlanComparisonValue,
 } from "@/lib/plans-catalog"
+import { DEFAULT_ADDON_ROW_VIEWS, type AddonRowState, type AddonRowView, type AddonRowViews } from "@/lib/billing/addon-row-state"
+import { FEATURE_CATALOG } from "@/lib/feature-catalog"
 import { PLAN_SEATS, TRIAL_INCLUDES_ADDONS, type PlanTier, type SalePlanTier } from "@/lib/plan"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
@@ -103,29 +106,78 @@ function IncludedTable({ label = "Pakete dahil olanlar" }: { label?: string }) {
   )
 }
 
+const ADDON_STATE_BADGE: Record<AddonRowState, { label: string; variant: "secondary" | "outline"; className?: string }> = {
+  active: { label: "Etkin", variant: "secondary", className: "bg-success/10 text-success-strong" },
+  trial: { label: "Denemede açık", variant: "secondary", className: "bg-primary/10 text-primary-strong" },
+  partial: { label: "Kısmen etkin", variant: "outline" },
+  locked: { label: "Yakında", variant: "secondary" },
+  comingSoon: { label: "Yakında", variant: "secondary" },
+}
+
+function AddonRow({
+  addon,
+  view,
+  action,
+}: {
+  addon: AddonCatalogItem
+  view: AddonRowView
+  action?: React.ReactNode
+}) {
+  const badge = ADDON_STATE_BADGE[view.state]
+  const closed = addon.features.filter((f) => !view.openFeatures.includes(f))
+  return (
+    <li className="flex items-start gap-3 px-4 py-3">
+      <PlusCircle className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-sm font-medium text-foreground">{addon.name}</span>
+          <Badge variant={badge.variant} className={badge.className}>{badge.label}</Badge>
+        </div>
+        <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{addon.description}</p>
+        {view.state === "partial" && (
+          <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+            Açık: {view.openFeatures.map((f) => FEATURE_CATALOG[f].name).join(", ")} · Kapalı: {closed.map((f) => FEATURE_CATALOG[f].name).join(", ")}
+          </p>
+        )}
+      </div>
+      {action && <div className="shrink-0 self-start">{action}</div>}
+    </li>
+  )
+}
+
 /** Pakete dahil OLMAYAN ek özellikler — fiyat yok, satın alma akışı yakında. */
-function AddonList({ headingId }: { headingId: string }) {
+function AddonList({
+  headingId,
+  views = DEFAULT_ADDON_ROW_VIEWS,
+  renderAction,
+}: {
+  headingId: string
+  views?: AddonRowViews
+  /** Satır eylemi yuvası (ör. satın al); yoksa satır eylemsiz kalır. */
+  renderAction?: (addon: AddonCatalogItem, view: AddonRowView) => React.ReactNode
+}) {
+  const hasTrialRow = Object.values(views).some((view) => view.state === "trial")
   return (
     <section aria-labelledby={headingId} className="space-y-3">
       <div className="space-y-1">
         <h3 id={headingId} className="text-sm font-semibold text-foreground">Pakete dahil olmayan ek özellikler</h3>
         <p className="text-xs leading-5 text-muted-foreground">
-          Uygulama içinden ayrıca alınır; satın alma yakında açılacak.
-          {TRIAL_INCLUDES_ADDONS && " Deneme süresince ücretsiz deneyebilirsiniz."}
+          {hasTrialRow
+            ? "“Denemede açık” işaretli olanları deneme süresince kullanabilirsiniz; deneme bitince yalnız “Etkin” olanlar açık kalır."
+            : <>
+                Uygulama içinden ayrıca alınır; satın alma yakında açılacak.
+                {TRIAL_INCLUDES_ADDONS && " Deneme süresince ücretsiz deneyebilirsiniz."}
+              </>}
         </p>
       </div>
       <ul className="divide-y rounded-xl bg-card shadow-[inset_0_0_0_1px_var(--border)]">
         {ADDON_CATALOG.map((addon) => (
-          <li key={addon.key} className="flex items-start gap-3 px-4 py-3">
-            <PlusCircle className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-sm font-medium text-foreground">{addon.name}</span>
-                <Badge variant="secondary">Yakında</Badge>
-              </div>
-              <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{addon.description}</p>
-            </div>
-          </li>
+          <AddonRow
+            key={addon.key}
+            addon={addon}
+            view={views[addon.key]}
+            action={renderAction?.(addon, views[addon.key])}
+          />
         ))}
       </ul>
     </section>
@@ -216,6 +268,7 @@ export function PlanPackages({
   isTrialing = false,
   trialDaysLeft = null,
   referralDiscountBps = 0,
+  addonViews,
 }: {
   /** `public` = /fiyatlar marketing layout. `settings` = compact in-app layout. */
   presentation?: "public" | "settings"
@@ -237,6 +290,8 @@ export function PlanPackages({
   isTrialing?: boolean
   trialDaysLeft?: number | null
   referralDiscountBps?: number
+  /** Ek özellik satırlarının durumu — yalnız `settings` görünümünde kullanılır. */
+  addonViews?: AddonRowViews
 }) {
   const isPublic = presentation === "public"
   const [billing, setBilling] = useState<BillingCycle>(currentCycle ?? (isPublic ? "monthly" : "yearly"))
@@ -356,7 +411,7 @@ export function PlanPackages({
                 />
               </div>
             </div>
-            <AddonList headingId="ayarlar-ek-ozellikler" />
+            <AddonList headingId="ayarlar-ek-ozellikler" views={addonViews} />
           </div>
           <div className="min-w-0 overflow-hidden rounded-xl bg-card shadow-[inset_0_0_0_1px_var(--border)]">
             <IncludedTable />
