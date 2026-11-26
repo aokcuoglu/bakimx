@@ -96,7 +96,7 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
             </Button>
           </>
         ) : <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button variant="outline" size="sm">Aboneliği yönet</Button></DialogTrigger>
+          <DialogTrigger asChild><Button variant="outline">Aboneliği yönet</Button></DialogTrigger>
           <DialogContent className="sm:max-w-lg"><DialogHeader><DialogTitle>Aboneliği yönet</DialogTitle><DialogDescription>Değişikliklerin etkisini onaylamadan önce gözden geçirin.</DialogDescription></DialogHeader>
             {paidPeriod ? (
               <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
@@ -110,7 +110,7 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
                 {legacyNote && <p className="font-normal text-foreground">{legacyNote}</p>}
               </div>
             )}
-            <div className="rounded-lg border p-3"><div className="flex items-center justify-between"><span className="font-medium text-sm">Ek koltuk</span><div className="flex items-center gap-2"><Button size="icon-sm" variant="outline" disabled={pending || seats === 0} onClick={() => setSeats(seats - 1)} aria-label="Ek koltuğu azalt"><Minus /></Button><span className="w-6 text-center">{seats}</span><Button size="icon-sm" variant="outline" disabled={pending || seats >= 500} onClick={() => setSeats(seats + 1)} aria-label="Ek koltuğu artır"><Plus /></Button></div></div><p className="mt-1 text-xs text-muted-foreground">Yeni limit: {includedSeats + seats} koltuk{w.activeUsers != null ? ` · ${w.activeUsers} aktif kullanıcı` : ""}</p></div>
+            <div className="rounded-lg border p-3"><div className="flex items-center justify-between"><span className="font-medium text-sm">Ek koltuk</span><div className="flex items-center gap-2"><Button size="icon" variant="outline" disabled={pending || seats === 0} onClick={() => setSeats(seats - 1)} aria-label="Ek koltuğu azalt"><Minus /></Button><span className="w-6 text-center">{seats}</span><Button size="icon" variant="outline" disabled={pending || seats >= 500} onClick={() => setSeats(seats + 1)} aria-label="Ek koltuğu artır"><Plus /></Button></div></div><p className="mt-1 text-xs text-muted-foreground">Yeni limit: {includedSeats + seats} koltuk{w.activeUsers != null ? ` · ${w.activeUsers} aktif kullanıcı` : ""}</p></div>
             {error && <p className="text-sm text-destructive-strong" role="alert">{error}</p>}<DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Vazgeç</Button><Button variant="foreground" disabled={pending} onClick={() => run(async () => { if (seats !== w.extraSeats) { const r = await setWorkshopExtraSeats(w.id, seats); if (!r.ok) return r } return paidPeriod ? { ok: true } : activateWorkshopPlan(w.id, MANUAL_ACTIVATION_TIER, "active") }, confirmSuccess, () => setOpen(false))}>{pending && <Loader2 className="animate-spin" />}{confirmLabel}</Button></DialogFooter>
           </DialogContent>
         </Dialog>}

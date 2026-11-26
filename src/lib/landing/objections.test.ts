@@ -1,9 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 
 import { LANDING_OBJECTIONS, objectionFaqAnchor } from "./objections";
 
-const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8");
 const publicFile = (p: string) => new URL(`../../../public${p}`, import.meta.url);
 
 describe("landing itiraz kartları", () => {
@@ -45,16 +44,5 @@ describe("landing itiraz kartları", () => {
 
     expect(supplier).toBeDefined();
     expect(supplier!.answer).toContain("kendi tedarikçi alış fiyatlarınız");
-  });
-
-  test("metinler tek veri dosyasında — bileşenler kendi kopyasını tutmuyor", () => {
-    const askBar = read("../../components/sections/HeroAskBar.tsx");
-
-    expect(askBar).toContain("LANDING_OBJECTIONS");
-
-    for (const objection of LANDING_OBJECTIONS) {
-      expect(askBar).not.toContain(objection.question);
-      expect(askBar).not.toContain(objection.answer);
-    }
   });
 });

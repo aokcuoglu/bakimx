@@ -4,6 +4,7 @@ import type { UserRole } from "@prisma/client"
 import { newIntakeHref } from "@/lib/intake/entry-links"
 import type { GatedFeature } from "@/lib/plan"
 import { actorCan, type Permission } from "@/lib/roles"
+import { isRouteAllowedForTechnician, isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { NAV_GROUPS, type NavGroup, type NavItem } from "./app-nav"
 
 export type PageAction = {
@@ -267,20 +268,30 @@ function backLink(parent: string, pathname: string): LinkCrumb | null {
   return label ? { label, href: concretePath(pathname, parent) } : null
 }
 
+/** Teknisyen kısıtlı rolünün açamadığı üst sayfa yerine ulaşabildiği ana sayfa (#883). */
+const TECHNICIAN_HOME: LinkCrumb = { label: "Teknisyen Paneli", href: "/technician" }
+
 function resolveSubPageHeader(
   pathname: string,
   pattern: string,
   recordTitle: string | undefined,
+  actor: PageHeaderActor | null,
 ): ResolvedPageHeader {
   const config = SUB_PAGE_HEADERS[pattern]
-  const chain = parentChain(config.parent, pathname, config.title ? recordTitle : undefined)
   const leaf = config.title ? (config.crumb ?? config.title) : recordTitle
+  const parentUnreachable =
+    actor !== null &&
+    isTechnicianRestrictedRole(actor.role) &&
+    !isRouteAllowedForTechnician(concretePath(pathname, config.parent))
+  const chain = parentUnreachable
+    ? { crumbs: [TECHNICIAN_HOME], complete: true }
+    : parentChain(config.parent, pathname, config.title ? recordTitle : undefined)
   const crumbs = chain.complete && leaf ? [...chain.crumbs, { label: leaf }] : chain.crumbs
   return {
     crumbs,
     title: config.title ?? recordTitle ?? "",
     titleMode: config.title ? "static" : "record",
-    back: backLink(config.parent, pathname),
+    back: parentUnreachable ? TECHNICIAN_HOME : backLink(config.parent, pathname),
     description: config.description,
     dynamicSubtitle: config.dynamicSubtitle ?? false,
     secondaryActions: [],
@@ -294,7 +305,7 @@ export function resolvePageHeader(
 ): ResolvedPageHeader | null {
   if (!Object.hasOwn(PAGE_HEADERS, pathname)) {
     const sub = matchSubPage(pathname)
-    return sub ? resolveSubPageHeader(pathname, sub.pattern, page?.recordTitle || undefined) : null
+    return sub ? resolveSubPageHeader(pathname, sub.pattern, page?.recordTitle || undefined, ctx.actor) : null
   }
   const config = PAGE_HEADERS[pathname]
   const entry = findMenuEntry(pathname)

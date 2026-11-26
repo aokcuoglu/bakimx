@@ -20,7 +20,7 @@ test("active Lite and expiring paid subscriptions have distinct status", () => {
     planTier: "lite", subscriptionStatus: "active", approvalStatus: "approved",
     trialEndsAt: null, currentPeriodEnd: null, liteFreeGrantedAt: new Date(),
   })
-  expect(getSidebarPlanStatus(lite, "Lite (eski)")).toMatchObject({ title: "Lite · ücretsiz", action: "İncele" })
+  expect(getSidebarPlanStatus(lite, "Lite (eski)")).toMatchObject({ title: "Lite · ücretsiz", detail: "Servis Paketi'ne geçebilirsiniz", action: "İncele" })
 
   const pro = getPlanState({
     planTier: "pro", subscriptionStatus: "active", approvalStatus: "approved",

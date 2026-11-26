@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/select"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { ChevronLeft, ChevronRight, PackageSearch, Search, Store, X } from "lucide-react"
+import { AddonLockedNote } from "@/components/billing/addon-gate"
+import { useAddonAccess } from "@/components/billing/addon-access"
 import { TecdocArticleRow } from "./tecdoc-article-row"
 import { BakimxProductRow } from "./bakimx-product-row"
 import { TecdocSearchResults } from "./tecdoc-search-results"
@@ -141,6 +143,12 @@ export function TecdocPartPicker({
   const [searchBrand, setSearchBrand] = useState("")
 
   const vehicleTypeId = vehicle?.catalogVehicleTypeId ?? null
+  // Parça kataloğu ek özellik (#853): kapalıysa TecDoc uçları (403) hiç çağrılmaz,
+  // kilit notu çizilir. BakımX/GetirBakım dalları kendi kapılarıyla sürer. Yetkiyi
+  // sunucu verir; bu yalnız görünürlük.
+  const access = useAddonAccess()
+  const catalogLocked = !access.has("partsCatalog")
+  const tecdocTypeId = catalogLocked ? null : vehicleTypeId
   /** Parça/ürün listesi yüklü → arama o kategoriye kapsamlı. */
   const inCategory = articles != null || bakimxLeafProducts != null
   const trimmedQuery = query.trim()
@@ -176,11 +184,11 @@ export function TecdocPartPicker({
   })
 
   const loadCategories = useCallback(async (supplierId?: number | null) => {
-    if (vehicleTypeId == null) return
+    if (tecdocTypeId == null) return
     setLoading(true)
     setError("")
     try {
-      const base = `/api/tecdoc/categories?vehicleId=${vehicleTypeId}`
+      const base = `/api/tecdoc/categories?vehicleId=${tecdocTypeId}`
       const res = await fetch(supplierId != null ? `${base}&supplierId=${supplierId}` : base)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Katalog yüklenemedi.")
@@ -199,7 +207,7 @@ export function TecdocPartPicker({
     } finally {
       setLoading(false)
     }
-  }, [vehicleTypeId])
+  }, [tecdocTypeId])
 
   // Açılış davranışı (her açılışta bir kez — initedRef guard'ı). `open` controlled
   // prop'tan (grid'in 🔍 butonu setTecdocOpen(true) ile doğrudan set eder) gelince
@@ -252,7 +260,7 @@ export function TecdocPartPicker({
   // Debounce 300 ms — part-search-input ile aynı kalıp. Kategori içindeyken
   // çalışmaz (orada yüklü liste client-side süzülür).
   useEffect(() => {
-    if (!open || vehicleTypeId == null || !globalSearch) {
+    if (!open || tecdocTypeId == null || !globalSearch) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearching(false)
       return
@@ -264,7 +272,7 @@ export function TecdocPartPicker({
       setSearching(true)
       try {
         const qs = new URLSearchParams({
-          vehicleId: String(vehicleTypeId),
+          vehicleId: String(tecdocTypeId),
           q: trimmedQuery,
           limit: String(SEARCH_LIMIT),
         })
@@ -286,7 +294,7 @@ export function TecdocPartPicker({
       active = false
       clearTimeout(t)
     }
-  }, [open, vehicleTypeId, globalSearch, trimmedQuery])
+  }, [open, tecdocTypeId, globalSearch, trimmedQuery])
 
   // NOT: Kategori eşleşmeleri client'taki ağaçtan gelir. Ağaç, "kategoriye atla"
   // açılışında atlandığı için null olabilir; tembel yüklemesi goBack/clearScope/
@@ -296,7 +304,7 @@ export function TecdocPartPicker({
     // BakımX yaprağı: parçalar TecDoc'tan değil kendi kataloğumuzdan gelir ve
     // araç bağı aranmaz.
     if (isBakimxNode(node)) return openBakimxLeaf(node)
-    if (vehicleTypeId == null) return
+    if (tecdocTypeId == null) return
     setStack((s) => [...s, node])
     setLoading(true)
     setError("")
@@ -304,7 +312,7 @@ export function TecdocPartPicker({
     try {
       // TecDoc parçalarını ve kategoriyle bağlı BakımX ürünlerini paralel yükle
       const [articlesRes, bakimxRes] = await Promise.all([
-        fetch(`/api/tecdoc/articles?vehicleId=${vehicleTypeId}&categoryId=${node.id}`),
+        fetch(`/api/tecdoc/articles?vehicleId=${tecdocTypeId}&categoryId=${node.id}`),
         fetchBakimxProductsByTecdocCategory(node.id, vehicleTypeId),
       ])
 
@@ -491,10 +499,10 @@ export function TecdocPartPicker({
   // Araç kataloğa bağlı değil: TecDoc tarafı yok. BakımX yazımı açıksa modal yine
   // de kullanılabilir (ürünler araçtan bağımsız) ve VIN bağlama yolu içeride
   // durur; değilse eski davranış — yalnız VinLinkPrompt.
-  const bakimxOnly = vehicleTypeId == null
+  const bakimxOnly = tecdocTypeId == null
   if (bakimxOnly && !bakimxEnabled) {
     if (hideTrigger) return null
-    return <VinLinkPrompt vehicle={vehicle} />
+    return catalogLocked ? <CatalogLockedNote showUpsell={access.showUpsell} /> : <VinLinkPrompt vehicle={vehicle} />
   }
 
   const leafCount = articles?.length ?? bakimxLeafProducts?.length ?? 0
@@ -602,7 +610,7 @@ export function TecdocPartPicker({
                 query={trimmedQuery}
                 categories={categoryMatches.visible}
                 categoryOverflow={categoryMatches.overflow}
-                articles={searchResults}
+                articles={catalogLocked ? [] : searchResults}
                 searching={searching}
                 bakimxProducts={bakimxSearchResults}
                 bakimxSearching={bakimxSearching}
@@ -624,7 +632,12 @@ export function TecdocPartPicker({
                 {/* Araç kataloğa bağlı değilken TecDoc dalı yok; kullanıcı neden
                     yalnız BakımX gördüğünü ve VIN'i nasıl bağlayacağını burada
                     görsün (composer'daki notun modal içindeki karşılığı). */}
-                {bakimxOnly && stack.length === 0 && (
+                {bakimxOnly && stack.length === 0 && catalogLocked && (
+                  <div className="space-y-2 border-b border-border/60 bg-muted/40 px-4 py-3">
+                    <CatalogLockedNote showUpsell={access.showUpsell} />
+                  </div>
+                )}
+                {bakimxOnly && stack.length === 0 && !catalogLocked && (
                   <div className="space-y-2 border-b border-border/60 bg-muted/40 px-4 py-3">
                     <p className="text-xs text-muted-foreground">
                       Araç katalogla eşleşmediği için araca özel parçalar listelenemiyor —
@@ -733,5 +746,22 @@ export function TecdocPartPicker({
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+/**
+ * Parça kataloğu (TecDoc) kapalıyken seçicinin yerine/üstüne çizilen not. Saha
+ * rolü satın alma kararı vermez: ona açıklama yok, yalnız sade bir cümle.
+ */
+export function CatalogLockedNote({ showUpsell }: { showUpsell: boolean }) {
+  return showUpsell ? (
+    <div className="space-y-1">
+      <AddonLockedNote feature="partsCatalog" />
+      <p className="text-xs text-muted-foreground">
+        Araca özel parça araması bu ek özellikle açılır; parçayı elle ekleyebilirsiniz.
+      </p>
+    </div>
+  ) : (
+    <p className="text-xs text-muted-foreground">Araca özel parça araması bu atölyede açık değil; parçayı elle ekleyebilirsiniz.</p>
   )
 }

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Loader2, ShoppingCart, Store } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import { formatTRY } from "@/lib/format"
 import { bakimxStockLabel } from "@/lib/parts/bakimx-item"
@@ -71,7 +72,7 @@ export function BakimxProductRow({
   }
 
   return (
-    <div className="border-b border-border/60">
+    <Collapsible open={orderOpen} onOpenChange={setOrderOpen} className="border-b border-border/60">
       <div className="flex items-center hover:bg-muted">
         <Button
           type="button"
@@ -112,23 +113,23 @@ export function BakimxProductRow({
             </span>
           </span>
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="compact"
-          onClick={() => setOrderOpen((open) => !open)}
-          aria-expanded={orderOpen}
-          // Etiket dar ekranda gizleniyor; erişilebilir ad `aria-label` ile
-          // KALIYOR — aksi hâlde mobilde düğme ekran okuyucuya isimsiz görünür.
-          aria-label="Sipariş ver"
-          className="mr-2 shrink-0 gap-1.5 text-muted-foreground hover:text-foreground"
-        >
-          <ShoppingCart className="size-3.5" />
-          <span className="hidden sm:inline">Sipariş ver</span>
-        </Button>
+        <CollapsibleTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="compact"
+            // Etiket dar ekranda gizleniyor; erişilebilir ad `aria-label` ile
+            // KALIYOR — aksi hâlde mobilde düğme ekran okuyucuya isimsiz görünür.
+            aria-label="Sipariş ver"
+            className="mr-2 shrink-0 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <ShoppingCart className="size-3.5" />
+            <span className="hidden sm:inline">Sipariş ver</span>
+          </Button>
+        </CollapsibleTrigger>
       </div>
 
-      {orderOpen && (
+      <CollapsibleContent>
         <div className="flex flex-wrap items-center gap-2 border-t border-border/60 bg-muted/40 px-3 py-2">
           <label htmlFor={`bakimx-order-qty-${product.id}`} className="text-xs text-muted-foreground">
             Adet
@@ -162,7 +163,7 @@ export function BakimxProductRow({
             Talep BakımX&apos;e gider; araç kabulüne kalem eklemez.
           </span>
         </div>
-      )}
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }
