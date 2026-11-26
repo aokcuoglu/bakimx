@@ -84,11 +84,14 @@ function AccordionItem({
 function AccordionTrigger({
   className,
   children,
+  heading = true,
   ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {
+}: React.ComponentProps<typeof AccordionPrimitive.Trigger> & {
+  /** `false` → başlık düzeyi (h3) yerine düz `div`; bir `h3` bölüm başlığının altındaki iç içe açılır satırlar için. */
+  heading?: boolean
+}) {
   const variant = React.useContext(AccordionVariantContext)
-  return (
-    <AccordionPrimitive.Header className="flex">
+  const trigger = (
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
@@ -108,7 +111,11 @@ function AccordionTrigger({
           className="pointer-events-none hidden shrink-0 group-aria-expanded/accordion-trigger:inline"
         />
       </AccordionPrimitive.Trigger>
-    </AccordionPrimitive.Header>
+  )
+  return heading ? (
+    <AccordionPrimitive.Header className="flex">{trigger}</AccordionPrimitive.Header>
+  ) : (
+    <div className="flex">{trigger}</div>
   )
 }
 
