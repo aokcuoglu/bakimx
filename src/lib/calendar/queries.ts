@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import { compareCalendarItems } from "@/lib/calendar/event-time"
 import { formatReminderType } from "@/lib/reminders/format"
 
 export interface CalendarViewItem {
@@ -6,6 +7,8 @@ export interface CalendarViewItem {
   title: string
   type: "appointment" | "delivery" | "maintenance_reminder"
   startAt: string
+  /** Yalnız tarihi olan etkinlik (hatırlatma): saat gösterilmez. */
+  allDay?: boolean
   endAt?: string
   status?: string
   customerName?: string
@@ -99,6 +102,7 @@ export async function getCalendarEvents(workshopId: string, startDate: Date, end
       title: `${formatReminderType(r.type)}: ${customerName}`,
       type: "maintenance_reminder",
       startAt: r.dueDate!.toISOString(),
+      allDay: true,
       status: r.status,
       customerName,
       vehiclePlate: r.vehicle?.plate || undefined,
@@ -107,6 +111,6 @@ export async function getCalendarEvents(workshopId: string, startDate: Date, end
     })
   }
 
-  items.sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+  items.sort(compareCalendarItems)
   return items
 }

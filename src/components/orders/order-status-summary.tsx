@@ -231,7 +231,7 @@ export function OrderStatusCard({
   onNavigate: (id: OrderSectionId) => void
 }) {
   return (
-    <DetailPanel title="Durum" aside={<OrderStatusPill status={status} />} className={detail.statusCard}>
+    <DetailPanel title="Durum" aside={<OrderStatusPill status={status} />}>
       <div className={detail.block}>
         {nextStep ? (
           <NextStepLine step={nextStep} onNavigate={onNavigate} />

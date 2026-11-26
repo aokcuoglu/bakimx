@@ -48,7 +48,7 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * ölçü `TabsList size="control"`dan (telefonda 44px, md+ 36px; `default`
  * segment ve `line` ile), şerit `h-auto`'yu, tetikleyici dolgusunu ve seçili
  * zemini varyanttan alır (segment seçili tetikleyici primitive'de `bg-card`,
- * pazarlama `RuhsatDemoSection` dahil — ray `bg-card` ile boyanmaz). Sekmeler
+ * `RuhsatDemoSection` dahil — ray `bg-card` ile boyanmaz). Sekmeler
  * arası yatay boşluk şeridin yerleşimidir (`gap-*`, şerit `px-*`). Çağrı yeri
  * şeride genişlik, grid/flex, `justify-start`, `border-b` çizgisi ve taşma
  * kaydırması verir.
@@ -81,6 +81,17 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * (kart durum tonu `ring-warning/30`), durum zemini (`bg-primary/[0.04]`),
  * `scroll-mt-*`, geçiş. Düzyazı içeriğinde (`AccordionContent`) satır aralığı
  * serbesttir.
+ *
+ * #950 — açılır bölüm (`Collapsible`, `CollapsibleTrigger`,
+ * `CollapsibleContent`) kendi kural setiyle (`COLLAPSIBLE_FORBIDDEN`) taranır.
+ * Açma/kapama animasyonu, taşma ve yükseklik primitive'dedir (içerik
+ * `overflow-hidden` + `animate-collapsible-*`; `keepMounted` ise
+ * `data-[state=closed]:hidden`): çağrı yerinde `animate-*`, `overflow-*`,
+ * `h-*` / `min-h-*` / `max-h-*` ve çıplak `hidden` yazılmaz — gizleme/yükseklik
+ * ezmesi odak halkasını kırpar ya da paneli kapalıyken bile gösterir. Panelin
+ * yüzeyi (dolgu, zemin, kenarlık, `flex`/`grid`) serbesttir. Tetikleyici
+ * `asChild` ile mevcut `Button`'ı sarar ve kendi `className`'ini taşımaz
+ * (görünüm sarılan düğmenin `variant`/`size`'ından gelir).
  */
 
 /** Kapsamdaki form kontrolleri ve onlara `className` ileten sarmalayıcılar. */
@@ -136,12 +147,16 @@ export const TAB_CONTROLS = ["TabsList", "TabsTrigger"] as const
 /** Akordeon (#926): kendi kural setiyle taranır. */
 export const ACCORDION_CONTROLS = ["Accordion", "AccordionItem", "AccordionTrigger", "AccordionContent"] as const
 
+/** Açılır bölüm (#950): kendi kural setiyle taranır. */
+export const COLLAPSIBLE_CONTROLS = ["Collapsible", "CollapsibleTrigger", "CollapsibleContent"] as const
+
 export const CONTROLS = [
   ...FIELD_CONTROLS,
   ...BUTTON_CONTROLS,
   ...TOGGLE_CONTROLS,
   ...TAB_CONTROLS,
   ...ACCORDION_CONTROLS,
+  ...COLLAPSIBLE_CONTROLS,
 ] as const
 
 type Control = (typeof CONTROLS)[number]
@@ -152,6 +167,8 @@ const usesButtonRules = (name: string) =>
   (TAB_CONTROLS as readonly string[]).includes(name)
 
 const usesAccordionRules = (name: string) => (ACCORDION_CONTROLS as readonly string[]).includes(name)
+
+const usesCollapsibleRules = (name: string) => (COLLAPSIBLE_CONTROLS as readonly string[]).includes(name)
 
 type Family = {
   /** Raporda görünen ad. */
@@ -268,6 +285,18 @@ export const ACCORDION_FORBIDDEN: readonly Family[] = [
 ]
 
 /**
+ * Açılır bölümün yasak sınıfları (#950): animasyon, taşma, yükseklik ve gizleme
+ * primitive'in işidir. Panel yüzeyi (dolgu, zemin, kenarlık) serbesttir.
+ */
+export const COLLAPSIBLE_FORBIDDEN: readonly Family[] = [
+  { name: "animasyon", pattern: /^animate-/ },
+  { name: "taşma", pattern: /^overflow(?:-|$)/ },
+  { name: "yükseklik", pattern: /^h-(?!full$)/ },
+  { name: "en az / en çok yükseklik", pattern: /^m(?:in|ax)-h-/ },
+  { name: "gizleme", pattern: /^hidden$/ },
+]
+
+/**
  * Akordeonun iç parçasını (`**:data-[slot=accordion-trigger-icon]:size-5`,
  * `[&_[data-slot=accordion-trigger]]:py-5`) seçen sınıf; iki yazımı da kapsar.
  */
@@ -285,7 +314,14 @@ const BASE_VARIANT = /^(?:(?:max-)?(?:sm|md|lg|xl|2xl)|(?:min|max)-\[[^\]]+\]|@.
 export function violations(tag: Pick<JsxOpeningTag, "name" | "classLiterals" | "cssModuleRefs">): string[] {
   const button = usesButtonRules(tag.name)
   const accordion = usesAccordionRules(tag.name)
-  const families = accordion ? ACCORDION_FORBIDDEN : button ? BUTTON_FORBIDDEN : FORBIDDEN
+  const collapsible = usesCollapsibleRules(tag.name)
+  const families = collapsible
+    ? COLLAPSIBLE_FORBIDDEN
+    : accordion
+      ? ACCORDION_FORBIDDEN
+      : button
+        ? BUTTON_FORBIDDEN
+        : FORBIDDEN
   const found: string[] = []
   for (const literal of tag.classLiterals) {
     for (const token of literal.split(/\s+/).filter(Boolean)) {
@@ -430,8 +466,17 @@ const OUT_OF_SCOPE = [
  * bölümü değil, uygulamaya bitişik genel sayfaların (fiyatlar, blog, rehber,
  * demo, durum, yasal) ortak altbilgisi — kontrolleri matrise uyar (#889;
  * "Demo talep et" CSS modülüyle 28px'e indirilmişti ve kapı görmüyordu).
+ * Aynı gerekçeyle form/demo bileşenleri de kapsamdadır (#929): HeroLeadForm,
+ * ContactPage, RuhsatDemoSection, demo-ocr-upload — kontrolleri matrise uyar;
+ * pazarlama CTA yüksekliği `Button size="lg"`dan gelir.
  */
-const IN_SCOPE_FILES = ["components/sections/Footer.tsx"]
+const IN_SCOPE_FILES = [
+  "components/sections/Footer.tsx",
+  "components/sections/HeroLeadForm.tsx",
+  "components/sections/ContactPage.tsx",
+  "components/sections/RuhsatDemoSection.tsx",
+  "components/sections/demo-ocr-upload.tsx",
+]
 
 type ScannedTag = JsxOpeningTag & { file: string }
 
@@ -676,6 +721,42 @@ describe("form kontrolleri, düğmeler ve akordeon çağrı yerinde ezilmez (#88
     for (const source of good) {
       for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])
     }
+  })
+
+  test("açılır bölüm animasyon, taşma, yükseklik ve gizlemeyi primitive'e bırakır (#950)", () => {
+    const bad = [
+      '<CollapsibleContent className="overflow-hidden">',
+      `<CollapsibleContent className="${"animate-" + "collapsible-down"}">`,
+      `<CollapsibleContent className="${"h-" + "40"}">`,
+      `<CollapsibleContent className="${"max-h-" + "40"}">`,
+      '<CollapsibleContent className="hidden">',
+      `<CollapsibleContent className="${"data-[state=closed]:" + "hidden"}">`,
+      '<Collapsible className="overflow-visible">',
+    ]
+    for (const source of bad) {
+      const tags = jsxOpeningTags(source, CONTROLS)
+      expect(tags.length).toBeGreaterThan(0)
+      expect(violations(tags[0])).not.toEqual([])
+    }
+
+    const good = [
+      '<Collapsible className="mt-3 border-t border-border pt-2">',
+      '<CollapsibleContent className="flex flex-wrap items-center gap-2 border-t bg-muted/40 px-3 py-2">',
+      '<CollapsibleContent keepMounted className="pt-3">',
+      '<CollapsibleTrigger asChild><Button className="w-full justify-between" /></CollapsibleTrigger>',
+    ]
+    for (const source of good) {
+      for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])
+    }
+  })
+
+  test("her CollapsibleTrigger asChild ile sarar ve kendi className'ini taşımaz (#950)", () => {
+    const triggers = scan().controls.filter((tag) => tag.name === "CollapsibleTrigger")
+    expect(triggers.length).toBeGreaterThan(0)
+    const offenders = triggers
+      .filter((tag) => !tag.attributes.has("asChild") || tag.attributes.has("className"))
+      .map((tag) => `${tag.file}:${tag.line}`)
+    expect(offenders).toEqual([])
   })
 
   test("form kontrolü ve düğme çağrı yerlerinde ölçü ezmesi yok", () => {

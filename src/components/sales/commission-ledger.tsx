@@ -5,7 +5,7 @@ import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import { AlertTriangle, CheckCircle2, CircleDollarSign, History, XCircle } from "lucide-react"
+import { AlertTriangle, CheckCircle2, ChevronDown, CircleDollarSign, History, XCircle } from "lucide-react"
 import type { BillingCycle, BillingOrderType, PlanTier, SalesCommissionReviewReason, SalesCommissionStatus } from "@prisma/client"
 import {
   approveSalesCommission,
@@ -18,6 +18,7 @@ import { salesCommissionApprovalSchema, salesCommissionVoidSchema } from "@/lib/
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -174,18 +175,25 @@ function CommissionCard({ commission, canManage }: { commission: Commission; can
           </div>
         )}
 
-        <details className="border-t pt-4">
-          <summary className="cursor-pointer text-sm font-medium text-foreground">Durum geçmişi ({commission.events.length})</summary>
-          <ol className="mt-3 space-y-3">
-            {commission.events.map((event) => (
-              <li key={event.id} className="border-l-2 border-border pl-3 text-sm">
-                <p className="font-medium text-foreground">{STATUS_LABELS[event.toStatus]} · {event.actorLabel}</p>
-                <p className="text-muted-foreground">{formatDateTime(event.createdAt)}{event.amountMinor == null ? "" : ` · ${formatMinor(event.amountMinor)}`}</p>
-                {event.reason && <p className="mt-1 text-muted-foreground">{event.reason}</p>}
-              </li>
-            ))}
-          </ol>
-        </details>
+        <Collapsible className="border-t pt-4">
+          <CollapsibleTrigger asChild>
+            <Button type="button" variant="link" size="inline" className="group text-foreground">
+              <ChevronDown className="size-3.5 transition-transform group-data-[state=open]:rotate-180" />
+              Durum geçmişi ({commission.events.length})
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <ol className="mt-3 space-y-3">
+              {commission.events.map((event) => (
+                <li key={event.id} className="border-l-2 border-border pl-3 text-sm">
+                  <p className="font-medium text-foreground">{STATUS_LABELS[event.toStatus]} · {event.actorLabel}</p>
+                  <p className="text-muted-foreground">{formatDateTime(event.createdAt)}{event.amountMinor == null ? "" : ` · ${formatMinor(event.amountMinor)}`}</p>
+                  {event.reason && <p className="mt-1 text-muted-foreground">{event.reason}</p>}
+                </li>
+              ))}
+            </ol>
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   )
