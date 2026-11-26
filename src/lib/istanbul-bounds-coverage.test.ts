@@ -26,14 +26,18 @@ import { join } from "node:path"
  *      ve ``new Date(`${a}, ${b}`)`` geçer. Çok satırlı çağrı da yakalanır.
  *   2. `.setHours(` — argümanından bağımsız (saat ataması da süreç saatindedir).
  *   3. `.toDateString(` — çıktısı yeniden ayrıştırılınca süreç gece yarısıdır.
+ *   4. `new Date("…T00:00:00")` / ``new Date(`${d}T23:59:59.999`)`` — saat dilimi eki
+ *      (`Z`, `+03:00`) olmayan tek dize/şablon argümanı süreç saatinde okunur (#933).
+ *      Kullanıcı tarihi `parseIstanbulDate`, tarih+saat `parseIstanbulLocalDateTime`.
  *
  * Bilinen sınırlar — bu bir sezgisel tarama, ayrıştırıcı değil; şunları GÖRMEZ:
  *   - `new Date(...parts)` — yayılan (spread) tek argümanın kaç değer taşıdığı
  *     kaynaktan okunamaz.
  *   - `.setDate(` / `.setMonth(` ile göreli kaydırma (yerel takvimde gün/ay atlar).
  *   - `getDate()` / `getDay()` / `getMonth()` ile yapılan takvim aritmetiği.
- *   - Saat dilimi eki olmayan dize ayrıştırma (`new Date("2026-11-25T00:00:00")`
- *     süreç saatinde okunur — kullanıcı girdisi `parseIstanbulLocalDateTime` ile).
+ *   - Değişkene konmuş saat dilimi eksiz dize (`new Date(value)`) ve ofsetsiz
+ *     yalnız-tarih dizesi (`new Date("2026-11-25")`, UTC gece yarısı): kural 4
+ *     yalnız `T..:..` ile biten düz dize/şablon argümanını görür.
  *   - Sunucuda date-fns `startOfDay` / `startOfMonth` — `"use client"` olmayan
  *     dosyada date-fns importunu `format-date-coverage.test.ts` zaten engeller.
  *   - Düzenli ifade başlangıcı önceki simgeden tahmin edilir; JSX metnindeki tek
@@ -56,6 +60,8 @@ const INTENTIONAL: Record<string, string> = {
     "takvim ilkelinin startMonth/endMonth yıl sınırları (tarayıcı yerel takvimi); gün sınırı değil",
   "components/ui/date-range-picker.tsx":
     "takvim ilkelinin startMonth/endMonth yıl sınırları (tarayıcı yerel takvimi); gün sınırı değil",
+  "app/admin/sales/sales-console.tsx":
+    "istemci tarafı: yerel takvim bileşenine (Calendar/format) gösterim için gün başı kurar; sunucuya yazılan değer değil",
   "components/ui/date-time-picker.tsx":
     "kullanıcının tarayıcıda seçtiği yerel anı kurar (setHours) + takvim ilkelinin yıl sınırları",
 }
@@ -213,6 +219,9 @@ function stripComments(source: string): string {
   return parts.join("")
 }
 
+/** `"…T09:00"` / `` `${d}T23:59:59.999` `` — son eki `Z` ya da ofset olmayan dize/şablon. */
+const OFFSETLESS_DATETIME_LITERAL = /^(["'`]).*\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?\1$|^(["'`]).*\}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?\2$/
+
 /** Kaynak metindeki süreç-saati gece yarısı ihlallerini `satır → kod` olarak döndürür. */
 export function findLocalMidnightViolations(rawSource: string): string[] {
   const source = stripComments(rawSource)
@@ -230,6 +239,14 @@ export function findLocalMidnightViolations(rawSource: string): string[] {
 
   for (const match of source.matchAll(/\.(?:setHours|toDateString)\s*\(/g)) {
     found.push({ index: match.index, text: snippet(match.index) })
+  }
+
+  for (const match of source.matchAll(/\bnew\s+Date\s*\(/g)) {
+    const open = match.index + match[0].length - 1
+    const args = callArguments(source, open)
+    if (args.length === 1 && OFFSETLESS_DATETIME_LITERAL.test(args[0])) {
+      found.push({ index: match.index, text: snippet(match.index) })
+    }
   }
 
   return found
@@ -268,6 +285,9 @@ describe("findLocalMidnightViolations", () => {
       `next.setHours(hours, minutes)`,
       `const e = new Date(new Date().toDateString())`,
       `const f = new Date([a, b][0], 0)`,
+      `const g = new Date("2026-11-25T09:00")`,
+      "const h = new Date(`${day}T23:59:59.999`)",
+      "const i = new Date(`${iso}T00:00:00`)",
     ]
     for (const source of bad) expect(findLocalMidnightViolations(source)).toHaveLength(1)
   })
@@ -285,6 +305,9 @@ describe("findLocalMidnightViolations", () => {
       `next.setUTCHours(0, 0, 0, 0)`,
       `const i = d.toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul" })`,
       `const j = new DateRange(a, b)`,
+      `const l = new Date("2026-07-07T00:00:00Z")`,
+      `const m = new Date("2026-11-25T09:00:00+03:00")`,
+      "const n = new Date(`${day}T00:00:00+03:00`)",
       `// eski: today.setHours(0, 0, 0, 0)`,
       `/* new Date(y, m, d) */ const k = 1`,
     ]

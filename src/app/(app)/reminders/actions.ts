@@ -7,6 +7,7 @@ import { requireWritableFeatureWorkshop, assertWorkshopAccess } from "@/lib/auth
 import type { Permission } from "@/lib/roles"
 import { reminderCreateSchema } from "@/lib/validations/reminder"
 import { getValidationError } from "@/lib/validations/shared"
+import { parseIstanbulDate } from "@/lib/istanbul-time"
 import { AuditLogAction } from "@/lib/audit"
 import { deriveReminderStatus } from "@/lib/reminders/status"
 import { notifyMaintenanceReminder } from "@/lib/communications/triggers"
@@ -55,10 +56,10 @@ export async function createReminderAction(formData: FormData) {
   })
   assertWorkshopAccess(vehicle, user.workshopId, "Araç")
 
-  const dueDate = data.dueDate && data.dueDate.trim() ? new Date(data.dueDate) : null
+  const dueDate = data.dueDate && data.dueDate.trim() ? parseIstanbulDate(data.dueDate.trim()) : null
   const dueMileage = data.dueMileage != null && data.dueMileage !== "" ? Number(data.dueMileage) : null
   const currentMileage = data.currentMileage != null && data.currentMileage !== "" ? Number(data.currentMileage) : null
-  const lastServiceDate = data.lastServiceDate && data.lastServiceDate.trim() ? new Date(data.lastServiceDate) : null
+  const lastServiceDate = data.lastServiceDate && data.lastServiceDate.trim() ? parseIstanbulDate(data.lastServiceDate.trim()) : null
   const lastServiceMileage = data.lastServiceMileage != null && data.lastServiceMileage !== "" ? Number(data.lastServiceMileage) : null
   const reminderDaysBefore = data.reminderDaysBefore != null && data.reminderDaysBefore !== "" ? Number(data.reminderDaysBefore) : null
   const reminderKmBefore = data.reminderKmBefore != null && data.reminderKmBefore !== "" ? Number(data.reminderKmBefore) : null
@@ -155,10 +156,10 @@ export async function updateReminderAction(formData: FormData) {
 
   const data = parsed.data!
 
-  const dueDate = data.dueDate && data.dueDate.trim() ? new Date(data.dueDate) : null
+  const dueDate = data.dueDate && data.dueDate.trim() ? parseIstanbulDate(data.dueDate.trim()) : null
   const dueMileage = data.dueMileage != null && data.dueMileage !== "" ? Number(data.dueMileage) : null
   const currentMileage = data.currentMileage != null && data.currentMileage !== "" ? Number(data.currentMileage) : null
-  const lastServiceDate = data.lastServiceDate && data.lastServiceDate.trim() ? new Date(data.lastServiceDate) : null
+  const lastServiceDate = data.lastServiceDate && data.lastServiceDate.trim() ? parseIstanbulDate(data.lastServiceDate.trim()) : null
   const lastServiceMileage = data.lastServiceMileage != null && data.lastServiceMileage !== "" ? Number(data.lastServiceMileage) : null
   const reminderDaysBefore = data.reminderDaysBefore != null && data.reminderDaysBefore !== "" ? Number(data.reminderDaysBefore) : null
   const reminderKmBefore = data.reminderKmBefore != null && data.reminderKmBefore !== "" ? Number(data.reminderKmBefore) : null
@@ -240,7 +241,11 @@ export async function postponeReminderAction(formData: FormData) {
   }), user.workshopId, "Hatırlatma")
 
   const updateData: Record<string, unknown> = { status: "postponed" as MaintenanceReminderStatus }
-  if (newDueDate) updateData.dueDate = new Date(newDueDate)
+  if (newDueDate) {
+    const parsedDueDate = parseIstanbulDate(newDueDate.trim())
+    if (!parsedDueDate) throw new Error("Geçersiz tarih")
+    updateData.dueDate = parsedDueDate
+  }
   if (newDueMileage) updateData.dueMileage = Number(newDueMileage)
 
   await prisma.maintenanceReminder.update({ where: { id }, data: updateData })
