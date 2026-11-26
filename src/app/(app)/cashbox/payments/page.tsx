@@ -5,6 +5,7 @@ import { getCollections } from "@/lib/cashbox/queries"
 import {
   COLLECTION_PERIOD_PRESETS,
   collectionExportParams,
+  collectionPeriodInput,
   resolveCollectionRange,
 } from "@/lib/cashbox/period"
 import { PaymentMethodBadge, CollectionStatusBadge } from "@/components/shared/status-badge"
@@ -29,9 +30,12 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
   const q = (params.q || "").trim()
   const method = params.method || ""
   const status = params.status || ""
-  const period = params.period || ""
+  // Dönem girdisi dışa aktarım rotasıyla aynı okuyucudan: `period`'suz tarih
+  // bağlantısı ikisinde de özel aralıktır.
+  const periodInput = collectionPeriodInput(params)
+  const period = periodInput.period
 
-  const range = resolveCollectionRange({ period, dateFrom: params.dateFrom, dateTo: params.dateTo })
+  const range = resolveCollectionRange(periodInput)
 
   const { rows: collections, total } = await getCollections(user.workshopId, {
     q: q || undefined,
@@ -43,14 +47,15 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
   })
 
   // Dışa aktarım ham filtreleri alır ve aralığı aynı `resolveCollectionRange` ile
-  // kendisi kurar — ekran ve CSV aynı kayıtları verir (#906).
+  // kendisi kurar — ekran ve CSV aynı aralığı ve filtreleri kullanır (#906).
+  // Satır sayısı ayrı: liste 200, CSV 5000 kayıtla sınırlı (sayfalama #936).
   const exportParams = collectionExportParams({
     q,
     method,
     status,
     period,
-    dateFrom: params.dateFrom,
-    dateTo: params.dateTo,
+    dateFrom: periodInput.dateFrom,
+    dateTo: periodInput.dateTo,
   })
 
   return (

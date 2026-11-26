@@ -12,6 +12,7 @@ import {
   COLLECTION_PERIOD_PRESETS,
   collectionExportParams,
   collectionPeriodFromSearchParams,
+  collectionPeriodInput,
   resolveCollectionRange,
 } from "./period"
 
@@ -165,17 +166,41 @@ describe("resolveCollectionRange — özel aralık (#906)", () => {
  * verir. Gidiş-dönüş aynı `[start, end)`'i üretmeli.
  */
 describe("CSV dışa aktarımı ekranla aynı aralığı kurar", () => {
-  const roundTrip = (filters: Parameters<typeof collectionExportParams>[0]) => {
-    const query = collectionExportParams(filters).toString()
+  type PageParams = { period?: string; dateFrom?: string; dateTo?: string }
+  // Sayfanın yaptığı: ham parametre → ortak okuyucu → aralık + CSV bağlantısı.
+  const pageSide = (params: PageParams) => {
+    const input = collectionPeriodInput(params)
+    return { input, range: resolveCollectionRange(input, NOW) }
+  }
+  // Rotanın yaptığı: bağlantının sorgu dizgisi → ortak okuyucu → aralık.
+  const exportSide = (input: ReturnType<typeof collectionPeriodInput>) => {
+    const query = collectionExportParams(input).toString()
     return resolveCollectionRange(collectionPeriodFromSearchParams(new URLSearchParams(query)), NOW)
   }
 
   for (const preset of COLLECTION_PERIOD_PRESETS) {
     test(`dönem: ${preset.label}`, () => {
-      const filters = { period: preset.value, dateFrom: "2026-11-20", dateTo: "2026-11-25" }
-      expect(roundTrip(filters)).toEqual(resolveCollectionRange(filters, NOW))
+      const { input, range } = pageSide({ period: preset.value, dateFrom: "2026-11-20", dateTo: "2026-11-25" })
+      expect(exportSide(input)).toEqual(range)
     })
   }
+
+  test("period'suz tarih: sayfa da rota da özel aralık sayar", () => {
+    const { input, range } = pageSide({ dateFrom: "2026-11-20", dateTo: "2026-11-25" })
+    expect(input.period).toBe("custom")
+    expect(range).toEqual(istanbulDateRange("2026-11-20", "2026-11-25"))
+    expect(exportSide(input)).toEqual(range)
+  })
+
+  test("ortak okuyucu: hazır dönem tarihe üstün gelir, boş girdi sınırsız", () => {
+    expect(collectionPeriodInput({ period: "today", dateFrom: "2026-11-20" }).period).toBe("today")
+    expect(collectionPeriodInput({})).toEqual({ period: "", dateFrom: null, dateTo: null })
+    expect(collectionPeriodInput({ period: "", dateFrom: "", dateTo: "" })).toEqual({
+      period: "",
+      dateFrom: null,
+      dateTo: null,
+    })
+  })
 
   test("bağlantı ham günü taşır, UTC'ye çevrilmiş günü değil", () => {
     const query = collectionExportParams({ period: "custom", dateFrom: "2026-11-25", dateTo: "2026-11-25" })
@@ -244,8 +269,20 @@ describe("tarih aralığı kaynak regresyonu (#905, #906)", () => {
     expect(source).not.toContain("new Date(filters.date")
   })
 
-  test("liste ve CSV aynı çözümleyiciyi kullanır", () => {
-    expect(read("app/(app)/cashbox/payments/page.tsx")).toContain("resolveCollectionRange(")
-    expect(read("app/api/cashbox/export/route.ts")).toContain("resolveCollectionRange(")
+  test("liste ve CSV aynı okuyucuyu ve çözümleyiciyi kullanır", () => {
+    const page = read("app/(app)/cashbox/payments/page.tsx")
+    const route = read("app/api/cashbox/export/route.ts")
+    expect(page).toContain("collectionPeriodInput(params)")
+    expect(page).toContain("resolveCollectionRange(")
+    expect(route).toContain("collectionPeriodFromSearchParams(searchParams)")
+    expect(route).toContain("resolveCollectionRange(")
+  })
+
+  test("kasa KPI'ları (Bugün / Bu Ay) listeyle aynı kapalı aralığı kullanır", () => {
+    const source = read("lib/cashbox/queries.ts")
+    expect(source).toContain("paymentDate: { gte: today, lt: tomorrow }")
+    expect(source).toContain("paymentDate: { gte: monthStartD, lt: nextMonthStartD }")
+    expect(source).not.toContain("paymentDate: { gte: today }")
+    expect(source).not.toContain("paymentDate: { gte: monthStartD }")
   })
 })

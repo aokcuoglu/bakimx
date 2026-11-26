@@ -64,8 +64,8 @@ export type CollectionListFilters = {
   method?: string
   status?: string
   period?: string
-  dateFrom?: string
-  dateTo?: string
+  dateFrom?: string | null
+  dateTo?: string | null
 }
 
 /**
@@ -88,17 +88,33 @@ export function collectionExportParams(filters: CollectionListFilters): URLSearc
   return params
 }
 
-/**
- * Dışa aktarım rotasının dönem girdisi. `period` taşımayan eski bağlantılar
- * yalnız `dateFrom`/`dateTo` gönderiyordu — onlar özel aralık sayılır.
- */
-export function collectionPeriodFromSearchParams(searchParams: URLSearchParams): {
+export type CollectionPeriodInput = {
   period: string
   dateFrom: string | null
   dateTo: string | null
-} {
-  const dateFrom = searchParams.get("dateFrom")
-  const dateTo = searchParams.get("dateTo")
-  const period = searchParams.get("period") || (dateFrom || dateTo ? "custom" : "")
+}
+
+/**
+ * Tahsilat listesi ve dışa aktarım rotasının ortak dönem girdisi — ikisi de
+ * ham parametreleri buradan okur, kayamazlar. `period` taşımayan eski
+ * bağlantılar yalnız `dateFrom`/`dateTo` gönderiyordu — onlar özel aralık sayılır.
+ */
+export function collectionPeriodInput(raw: {
+  period?: string | null
+  dateFrom?: string | null
+  dateTo?: string | null
+}): CollectionPeriodInput {
+  const dateFrom = raw.dateFrom || null
+  const dateTo = raw.dateTo || null
+  const period = raw.period || (dateFrom || dateTo ? "custom" : "")
   return { period, dateFrom, dateTo }
+}
+
+/** Dışa aktarım rotası: `collectionPeriodInput`, `URLSearchParams`'tan. */
+export function collectionPeriodFromSearchParams(searchParams: URLSearchParams): CollectionPeriodInput {
+  return collectionPeriodInput({
+    period: searchParams.get("period"),
+    dateFrom: searchParams.get("dateFrom"),
+    dateTo: searchParams.get("dateTo"),
+  })
 }

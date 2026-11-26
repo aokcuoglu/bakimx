@@ -67,8 +67,13 @@ export type PaymentMethodBreakdown = {
 
 export async function getCashboxStats(workshopId: string): Promise<CashboxStats> {
   // Bugün ve bu ay Türkiye takvimine göre, sunucunun saat diliminden bağımsız (#874).
-  const today = istanbulDayStart()
-  const monthStartD = istanbulMonthStart()
+  // Aralıklar kapalı `[start, end)`: ileri tarihli tahsilat girilebildiği için
+  // açık uçlu sayım tahsilat listesinin "Bugün"/"Bu Ay"ından fazlasını verirdi (#905).
+  const now = new Date()
+  const today = istanbulDayStart(now)
+  const tomorrow = istanbulDayStart(now, 1)
+  const monthStartD = istanbulMonthStart(now)
+  const nextMonthStartD = istanbulMonthStart(now, 1)
 
   const [
     todayCollections,
@@ -80,7 +85,7 @@ export async function getCashboxStats(workshopId: string): Promise<CashboxStats>
       where: {
         workshopId,
         status: "completed",
-        paymentDate: { gte: today },
+        paymentDate: { gte: today, lt: tomorrow },
       },
       _sum: { amount: true },
       _count: true,
@@ -89,7 +94,7 @@ export async function getCashboxStats(workshopId: string): Promise<CashboxStats>
       where: {
         workshopId,
         status: "completed",
-        paymentDate: { gte: monthStartD },
+        paymentDate: { gte: monthStartD, lt: nextMonthStartD },
       },
       _sum: { amount: true },
     }),
@@ -123,7 +128,6 @@ export async function getCashboxStats(workshopId: string): Promise<CashboxStats>
   let openReceivable = 0
   let overdueReceivable = 0
   let partialPayments = 0
-  const now = new Date()
 
   for (const order of activeOrders) {
     const totals = calculateOrderTotalsFromMinimal(order.items, {
