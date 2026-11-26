@@ -4,6 +4,7 @@ import { relative, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 import { cn } from "@/lib/utils"
 import { eachTsx, jsxOpeningTags } from "./jsx-source-scan"
+import { buttonVariants } from "./button"
 import { tabsListVariants } from "./tabs"
 
 const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8")
@@ -114,6 +115,15 @@ describe("kontrol ölçeği — e-santral (mobil 44px / masaüstü 36px)", () =>
    * #928 — dilim 2 ton variant'ları: satır içi yıkıcı (`destructive-ghost`),
    * uyarı tonu (`warning-tint`), galeri oku (`on-photo-scrim`).
    */
+  test("soluk-dinlenme deyimi: className text-muted-foreground variant'ın dinlenme kırmızısını düşürür, hover kalır (#928)", () => {
+    const classes = cn(buttonVariants({ variant: "destructive-ghost", className: "text-muted-foreground" }))
+    const tokens = classes.split(/\s+/)
+    expect(tokens).not.toContain("text-destructive-strong")
+    expect(tokens).toContain("text-muted-foreground")
+    expect(tokens).toContain("hover:text-destructive-strong")
+    expect(tokens).toContain("hover:bg-destructive/10")
+  })
+
   test("dilim 2 ton variant'ları tanımlı, çerçevesiz olanlar NO_BORDER'da, koyu hover /20 yok (#928)", () => {
     const button = read("./button.tsx")
     for (const key of ['"destructive-ghost":', '"warning-tint":', '"on-photo-scrim":']) {

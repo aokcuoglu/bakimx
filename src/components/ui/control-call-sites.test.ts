@@ -263,7 +263,8 @@ export const BUTTON_FORBIDDEN: readonly Family[] = [
   { name: 'yıkıcı çerçeve tonu → variant="destructive-outline"', pattern: /^border-destructive(?:\/(?:\d+|\[[^\]]+\]))?$/, when: "base" },
   { name: 'birincil ton → variant="tint"', pattern: /^(?:bg|border)-primary\/(?:\d+|\[[^\]]+\])$/, when: "base" },
   // Dilim 2 (#928): yıkıcı ve uyarı tonu her önekte variant'tan gelir; durum
-  // önekli `hover:bg-destructive/10` de artık yazılmaz. Gri dinlenen satır
+  // önekli `hover:bg-destructive/10` de artık yazılmaz. Toggle / ToggleGroupItem /
+  // TabsTrigger'da bu variant'lar yoktur: gerekçeli istisna ister (fuel-gauge). Gri dinlenen satır
   // simgesi `variant="destructive-ghost"` + `className="text-muted-foreground"`.
   { name: 'yıkıcı ton → variant="destructive-ghost" / "destructive-outline"', pattern: /^(?:text-destructive(?:-strong)?|bg-destructive(?:\/(?:\d+|\[[^\]]+\]))?)$/ },
   { name: 'uyarı ton → variant="warning-tint"', pattern: /^(?:bg|border)-warning(?:-foreground)?(?:\/(?:\d+|\[[^\]]+\]))?$/ },
@@ -458,7 +459,7 @@ export const EXCEPTIONS: readonly Exception[] = [
   {
     file: "components/orders/parts-labor-grid.tsx",
     tag: "Button",
-    match: 'variant="link" size="inline"',
+    match: "void cancel()",
     allow: ["text-destructive-strong"],
     reason:
       "Metin içindeki 'Siparişi iptal et' satır içi bağlantısı: link variant'ı birincil mavidir, yıkıcı eylem kırmızı okunmalı. destructive-ghost hover zemini ve odak kenarlığı taşır, satır içi metne uymaz; tek kullanım.",
@@ -723,13 +724,14 @@ describe("form kontrolleri, düğmeler ve akordeon çağrı yerinde ezilmez (#88
       '<Button variant="ghost" className="hover:bg-destructive/10 hover:text-destructive-strong">',
       `<Button variant="ghost" className="${"dark:hover:bg-" + "destructive/20"}">`,
       // Uyarı tonu: variant="warning-tint".
-      '<Button variant="outline" className="border-warning/40 bg-warning/10 text-warning-strong">',
+      '<Button variant="outline" className="border-warning/40">',
+      '<Button variant="outline" className="bg-warning/10">',
       `<Button variant="outline" className="${"hover:bg-" + "warning/20"}">`,
       // Birincil kenarlık tonu: variant="tint".
       '<Button variant="outline" className="border-primary/40">',
       // Galeri oku: variant="on-photo-scrim".
       `<CarouselPrevious className="${"bg-" + "black/60"} text-white" />`,
-      '<CarouselNext className="border-0 bg-white/10" />',
+      '<CarouselNext className="bg-white/10" />',
     ]
     for (const source of bad) {
       const tags = jsxOpeningTags(source, CONTROLS)
