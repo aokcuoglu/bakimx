@@ -189,6 +189,26 @@ describe("alt sayfa başlıkları (#855)", () => {
       expect(h.primaryAction).toBeUndefined()
     }
   })
+  test("#883: teknisyen kısıtlı rolü erişemediği listeye değil Teknisyen Paneli'ne döner", () => {
+    for (const role of ["usta", "cirak", "staff"] as const) {
+      for (const [path, title] of [
+        ["/quotes/new", "Yeni Teklif"],
+        ["/appointments/new", "Yeni Randevu"],
+        ["/reminders/new", "Yeni Hatırlatma"],
+      ] as const) {
+        const h = resolvePageHeader(path, { ...ALL, actor: { role } })!
+        expect(h.back).toEqual({ label: "Teknisyen Paneli", href: "/technician" })
+        expect(h.crumbs).toEqual([{ label: "Teknisyen Paneli", href: "/technician" }, { label: title }])
+      }
+    }
+  })
+  test("#883: ofis rolleri ve aktörsüz bağlam değişmez", () => {
+    for (const actor of [{ role: "owner" as const }, { role: "manager" as const }, null]) {
+      const h = resolvePageHeader("/quotes/new", { ...ALL, actor })!
+      expect(h.back).toEqual({ label: "Teklifler", href: "/quotes" })
+      expect(h.crumbs.at(-2)).toEqual({ label: "Teklifler", href: "/quotes" })
+    }
+  })
   test("alt sayfalar düğme taşımaz (tüm paketler açıkken bile)", () => {
     for (const pattern of Object.keys(SUB_PAGE_HEADERS)) {
       const h = resolvePageHeader(pattern.replaceAll("[id]", "x1"), ALL, { recordTitle: "Kayıt" })!
