@@ -19,6 +19,7 @@ import {
   setConversationStatusAction,
 } from "./actions"
 import type { InboxFilter, InboxRow, ThreadDetail } from "./data"
+import { formatTrDayMonthTime, formatTrTime } from "@/lib/format-date"
 
 /** Gelen kutusu tazeleme aralığı — canlı destek dakikalar değil saniyeler işidir. */
 const REFRESH_MS = 5000
@@ -30,16 +31,11 @@ const FILTERS: { value: InboxFilter; label: string }[] = [
 ]
 
 function formatDateTime(iso: string): string {
-  return new Intl.DateTimeFormat("tr-TR", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(iso))
+  return formatTrDayMonthTime(iso)
 }
 
 function formatTime(iso: string): string {
-  return new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" }).format(new Date(iso))
+  return formatTrTime(iso)
 }
 
 /**

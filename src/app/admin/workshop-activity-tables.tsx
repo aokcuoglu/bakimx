@@ -23,6 +23,7 @@ import {
   type CommunicationActivityKind,
   type CommunicationActivityRow,
 } from "@/app/admin/workshop-activity-actions"
+import { formatTrDateTime } from "@/lib/format-date"
 
 type QueryState<Row> = {
   hasRun: boolean
@@ -193,7 +194,7 @@ export function WorkshopActivityTables({ workshopId }: { workshopId: string }) {
             {!auditState.hasRun
               ? <QueryPrompt colSpan={3} pending={auditPending} onRun={() => runAudit()} />
               : auditState.rows.length
-                ? auditState.rows.map((row) => <TableRow key={row.id}><TableCell className="font-medium">{row.action}</TableCell><TableCell className="text-muted-foreground">{row.actor}</TableCell><TableCell className="text-right text-muted-foreground">{new Date(row.createdAt).toLocaleString("tr-TR")}</TableCell></TableRow>)
+                ? auditState.rows.map((row) => <TableRow key={row.id}><TableCell className="font-medium">{row.action}</TableCell><TableCell className="text-muted-foreground">{row.actor}</TableCell><TableCell className="text-right text-muted-foreground">{formatTrDateTime(row.createdAt)}</TableCell></TableRow>)
                 : <TableRow><TableCell colSpan={3} className="h-36 text-center text-muted-foreground">Bu filtreyle eşleşen işlem yok.</TableCell></TableRow>}
           </TableBody>
         </Table>
@@ -240,7 +241,7 @@ export function WorkshopActivityTables({ workshopId }: { workshopId: string }) {
             {!communicationState.hasRun
               ? <QueryPrompt colSpan={4} pending={communicationPending} onRun={() => runCommunications()} />
               : communicationState.rows.length
-                ? communicationState.rows.map((row) => <TableRow key={row.id}><TableCell className="text-muted-foreground">{row.kind}</TableCell><TableCell><p className="font-medium">{row.subject}</p><p className="text-xs text-muted-foreground">{row.detail}</p></TableCell><TableCell><Badge variant="outline" className={cn("capitalize", statusClass(row.status))}>{communicationActivityStatusLabel(row.status)}</Badge></TableCell><TableCell className="text-right text-muted-foreground">{new Date(row.createdAt).toLocaleString("tr-TR")}</TableCell></TableRow>)
+                ? communicationState.rows.map((row) => <TableRow key={row.id}><TableCell className="text-muted-foreground">{row.kind}</TableCell><TableCell><p className="font-medium">{row.subject}</p><p className="text-xs text-muted-foreground">{row.detail}</p></TableCell><TableCell><Badge variant="outline" className={cn("capitalize", statusClass(row.status))}>{communicationActivityStatusLabel(row.status)}</Badge></TableCell><TableCell className="text-right text-muted-foreground">{formatTrDateTime(row.createdAt)}</TableCell></TableRow>)
                 : <TableRow><TableCell colSpan={4} className="h-36 text-center text-muted-foreground">Bu filtreyle eşleşen kayıt yok.</TableCell></TableRow>}
           </TableBody>
         </Table>
