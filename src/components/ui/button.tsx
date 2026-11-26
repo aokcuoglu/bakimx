@@ -22,6 +22,8 @@ const NO_BORDER_VARIANTS = [
   "link",
   "tint",
   "on-photo-ghost",
+  "destructive-ghost",
+  "on-photo-scrim",
 ] as const
 
 // Basılma efekti `translate` değil `transform` yazar (#819): call-site'lar
@@ -70,6 +72,21 @@ const buttonVariants = cva(
         // kalır: /20 bg-muted'da 4.05, /13 4.48'e iniyor, geçen en yüksek /12
         // ise /10'dan gözle ayırt edilmiyor (ΔE_OK ≈ 0.01).
         tint: "bg-primary/10 text-primary-strong hover:bg-primary/20 aria-expanded:bg-primary/20 dark:hover:bg-primary/10 dark:aria-expanded:bg-primary/10",
+        // Dilim 2 (#928). Satır içi yıkıcı eylem (sil, kaldır, iptal): çerçevesiz,
+        // dinlenirken kırmızı. Satır çöp kutusu gibi gri dinlenmesi gerekenler
+        // çağrı yerinde `text-muted-foreground` verir (twMerge tonu düşürür);
+        // hover'da kırmızı geri gelir. Koyu hover /20 yok: -strong metin
+        // bg-muted üstünde AA'nın altına iner.
+        "destructive-ghost":
+          "text-destructive-strong hover:bg-destructive/10 hover:text-destructive-strong aria-expanded:bg-destructive/10 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+        // Dikkat isteyen ama engellemeyen seçim (düşük güvenli OCR önerisi):
+        // sarı çerçeveli, sarı tonlu zemin, -strong metin.
+        "warning-tint":
+          "border border-warning/40 bg-warning/10 text-warning-strong hover:bg-warning/20 aria-expanded:bg-warning/20 focus-visible:border-warning focus-visible:ring-warning/20 dark:hover:bg-warning/15 dark:aria-expanded:bg-warning/15",
+        // Fotoğraf üstünde yüzen galeri okları: koyu yarı saydam zemin, aydınlık
+        // fotoğrafta da okunur (on-photo'nun %10 beyazı okunmaz).
+        "on-photo-scrim":
+          "bg-black/60 text-white hover:bg-black/80 hover:text-white focus-visible:ring-white/40",
         // Fotoğraf / kamera katmanı üstünde (siyah zemin) çerçeveli ve hayalet düğme.
         "on-photo":
           "border border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white focus-visible:border-white focus-visible:ring-white/40",
