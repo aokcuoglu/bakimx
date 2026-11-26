@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { salesLeadDisplayName } from "@/lib/sales/crm"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
@@ -103,17 +104,9 @@ const DEMO_STATUS_DOT: Record<string, string> = {
 
 const SUPPORT_STATUS_BADGE: Record<string, string> = {
   new: "bg-warning/15 text-warning-strong ring-1 ring-warning/20",
-  in_progress: "bg-primary/15 text-primary",
+  in_progress: "bg-primary/15 text-primary-strong",
   resolved: "bg-success/15 text-success-strong",
   archived: "bg-muted text-muted-foreground",
-}
-
-function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium", className)}>
-      {children}
-    </span>
-  )
 }
 
 /* ────────────────────────────── Demo Talepleri ────────────────────────────── */
@@ -170,8 +163,8 @@ function DemoRequestRow({ r, canManage }: { r: AdminDemoRequestRow; canManage: b
         <div className="min-w-0 space-y-2">
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className={cn("text-base", isNew ? "font-bold" : "font-semibold")}>{r.name}</span>
-            <Badge className={DEMO_STATUS_BADGE[r.status] ?? "bg-muted"}>
-              <span className={cn("mr-1 size-1.5 rounded-full", DEMO_STATUS_DOT[r.status])} />
+            <Badge variant="secondary" className={DEMO_STATUS_BADGE[r.status] ?? "bg-muted text-muted-foreground"}>
+              <span className={cn("size-1.5 shrink-0 rounded-full", DEMO_STATUS_DOT[r.status])} />
               {DEMO_STATUSES.find((s) => s.value === r.status)?.label ?? r.status}
             </Badge>
           </div>
@@ -363,7 +356,7 @@ function SupportRequestRow({
         <span className="block min-w-0 flex-1 space-y-1">
           <span className="flex items-center gap-2 flex-wrap">
             <span className={cn("text-sm", isNew ? "font-bold" : "font-semibold")}>{r.name}</span>
-            <Badge className={SUPPORT_STATUS_BADGE[r.status] ?? "bg-muted"}>
+            <Badge variant="secondary" className={SUPPORT_STATUS_BADGE[r.status] ?? "bg-muted text-muted-foreground"}>
               {SUPPORT_STATUSES.find((s) => s.value === r.status)?.label ?? r.status}
             </Badge>
             {r.assignedToLabel && (
