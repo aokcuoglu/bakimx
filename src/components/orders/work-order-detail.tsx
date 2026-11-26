@@ -899,7 +899,10 @@ export function WorkOrderDetail({
 
   return (
     <div ref={pageRef} className={cn(surface.root, detail.page, "pb-24 lg:pb-6")}>
-      <div className={detail.top}>
+      {/* #913 — başlık → hızlı işlemler → (uyarı / teslim kodu) → özet + çipler →
+          yerleşim arası tek 24px adım. `surface.root`un kendi aralığı (36/44px)
+          yalnız bu tek çocuğa düşer; başka modülden ezilmez (eşit özgüllük). */}
+      <div className={detail.flow}>
       <DetailHeader
         plate={order.vehicle.plate}
         title={`${order.vehicle.brand} ${order.vehicle.model}`}
@@ -1003,14 +1006,12 @@ export function WorkOrderDetail({
           </div>
         </div>
       )}
-      </div>
 
       {/* #911 — tek sayfa + yan ray. Telefon özet kartı başlığın altında (para
           raydaki Ödeme Özeti kartında, #912); bölüm çipleri üst barın altında
           yapışkan (iki kolonda gizli).
           Bloklar `data-section` taşır; tek kolonda ray kartları `order` ile
           ilgili bölümün içine girer (order-detail.module.css). */}
-      <div className="min-w-0 space-y-5">
       <OrderMobileSummary
         complaint={order.intake.customerComplaint}
         money={mobileMoney}

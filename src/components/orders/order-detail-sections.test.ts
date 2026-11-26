@@ -200,3 +200,28 @@ test("#913: uyarı şeritleri yok; engeller Durum kartında Kalemler bağlantıs
   expect(SUMMARY).toContain("{blocked && stepBlock}")
   expect(SUMMARY).toContain("{!blocked && stepBlock}")
 })
+
+/**
+ * #913 — dikey ritim: başlık blokları arası 16px (`.top`), özet/çipler/yerleşim
+ * arası 20px (`space-y-5`) ve ikisinin arası 36-44px (`surface.root`) idi. Artık
+ * sayfanın tek çocuğu `.flow`, aralık tek 24px adım. `surface.root`un aralığı
+ * başka modülden ezilmez (eşit özgüllük, yükleme sırasına kalır).
+ */
+test("#913: başlık blokları arası tek 24px adım", () => {
+  expect(rule(CSS, ".flow")).toContain("gap:24px")
+  expect(rule(CSS, ".flow")).toContain("flex-direction:column")
+  expect(CSS).not.toMatch(/^\.top \{/m)
+  expect(DETAIL).not.toContain("detail.top")
+  expect(DETAIL).not.toContain('<div className="min-w-0 space-y-5">')
+  // Tek çocuk: sayfa kökünün hemen altında akış, akışın içinde başlık ve yerleşim.
+  const page = DETAIL.slice(DETAIL.indexOf("<div ref={pageRef}"))
+  const flowAt = page.indexOf("<div className={detail.flow}>")
+  expect(flowAt).toBeGreaterThan(0)
+  expect(page.slice(page.indexOf(">") + 1, flowAt)).not.toMatch(/<(div|section)\b/)
+  expect(page.indexOf("<DetailHeader")).toBeGreaterThan(flowAt)
+  expect(page.indexOf("<OrderMobileSummary")).toBeGreaterThan(flowAt)
+  expect(page.indexOf("className={detail.layout}")).toBeGreaterThan(flowAt)
+  // Bölüm yığını ve kolon aralığı değişmez.
+  expect(rule(CSS, ".stack")).toContain("gap:28px")
+  expect(rule(CSS, ".layout")).toContain("gap:28px")
+})

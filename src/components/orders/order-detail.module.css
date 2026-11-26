@@ -1,4 +1,6 @@
-.top { display:flex; flex-direction:column; gap:16px; }
+/* #913 — sayfanın tek çocuğu: başlık, hızlı işlemler, uyarı / teslim kodu, telefon özeti,
+   çipler ve yerleşim arası tek 24px adım. Bölüm yığını (28px) ve kolon aralığı (24px) ayrı. */
+.flow { display:flex; flex-direction:column; gap:24px; min-width:0; }
 .stack { display:flex; flex-direction:column; gap:28px; }
 .header { display:grid; gap:12px; grid-template-areas:"crumb" "title" "sub" "actions"; min-width:0; }
 .crumb { grid-area:crumb; display:flex; align-items:center; gap:6px; min-width:0; font-size:15px; line-height:20px; color:var(--muted-foreground); }
