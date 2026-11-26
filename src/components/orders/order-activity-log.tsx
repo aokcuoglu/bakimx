@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { formatTrTime } from "@/lib/format-date"
-import { countActivityRows, groupActivity, limitActivityRows } from "@/lib/orders/group-activity"
+import { countActivityRows, groupActivity, limitActivityRows, runTimeRange, summarizeRun } from "@/lib/orders/group-activity"
 import type { OrderActivityEntry, ActivityCategory } from "@/lib/orders/activity"
 
 const CATEGORY_ICONS: Record<ActivityCategory, React.ComponentType<{ className?: string }>> = {
@@ -82,37 +82,38 @@ export function OrderActivityLog({ entries }: { entries: OrderActivityEntry[] })
                   meta={entryMeta(row.entry)}
                 />
               ) : (
-                <Accordion key={row.key} type="single" collapsible>
-                  <AccordionItem value={row.key}>
-                    <AccordionTrigger>
-                      <span className={detail.item}>
-                        <span className={detail.itemStart}>
-                          <EntryIcon category={row.entries[0].category} />
-                        </span>
-                        <span className={detail.itemMain}>
-                          <span className={cn(detail.itemTitle, "block")}>
-                            {row.entries[0].label} · {row.entries.length} kez
+                <div key={row.key} className="px-[18px]">
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value={row.key}>
+                      <AccordionTrigger heading={false} className="items-center">
+                        <span className="flex min-w-0 flex-1 items-start gap-3.5">
+                          <span className={detail.itemStart}>
+                            <EntryIcon category={row.entries[0].category} />
                           </span>
-                          <span className={cn(detail.itemMeta, "block")}>
-                            {formatTrTime(row.entries[row.entries.length - 1].at)}–{formatTrTime(row.entries[0].at)} ·{" "}
-                            {row.entries[0].actor}
+                          <span className={detail.itemMain}>
+                            <span className={cn(detail.itemTitle, "block")}>{summarizeRun(row.entries)}</span>
+                            <span className={cn(detail.itemMeta, "block")}>
+                              {runTimeRange(row.entries)} · {row.entries[0].actor}
+                            </span>
                           </span>
                         </span>
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {row.entries.map((entry) => (
-                        <DetailItem
-                          key={entry.id}
-                          start={<EntryIcon category={entry.category} />}
-                          title={entry.label}
-                          sub={entry.detail}
-                          meta={entryMeta(entry)}
-                        />
-                      ))}
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="ml-4 border-l border-border">
+                          {row.entries.map((entry) => (
+                            <DetailItem
+                              key={entry.id}
+                              start={<EntryIcon category={entry.category} />}
+                              title={entry.label}
+                              sub={entry.detail}
+                              meta={entryMeta(entry)}
+                            />
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
               ),
             )}
           </section>

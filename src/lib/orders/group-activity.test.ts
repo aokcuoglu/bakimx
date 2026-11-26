@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { countActivityRows, groupActivity, limitActivityRows } from "./group-activity"
+import { countActivityRows, groupActivity, limitActivityRows, runTimeRange, summarizeRun } from "./group-activity"
 
 let n = 0
 const e = (at: string, actor = "Ali", action = "photo.add") => ({ id: `e${++n}`, at, actor, action })
@@ -110,4 +110,28 @@ test("limitActivityRows ilk N satırı alır, boş günü atar, seri tek satırd
   const limited = limitActivityRows(days, 2)
   expect(limited).toHaveLength(1)
   expect(countActivityRows(limited)).toBe(2)
+})
+
+test("summarizeRun: aynı etiketse etiket + kez", () => {
+  const x = { action: "photo_uploaded", label: "Fotoğraf eklendi" }
+  expect(summarizeRun([x, x, x])).toBe("Fotoğraf eklendi · 3 kez")
+})
+
+test("summarizeRun: farklı kalemler genel özet verir", () => {
+  const mk = (label: string) => ({ action: "order_item_removed", label })
+  expect(summarizeRun([mk("a çıkarıldı"), mk("b çıkarıldı"), mk("c çıkarıldı"), mk("d çıkarıldı")])).toBe(
+    "4 kalem çıkarıldı",
+  )
+  const add = (label: string) => ({ action: "order_item_added", label })
+  expect(summarizeRun([add("a eklendi"), add("b eklendi"), add("c eklendi")])).toBe("3 kalem eklendi")
+})
+
+test("summarizeRun: bilinmeyen eylemde etiketler farklıysa genel sayım", () => {
+  const mk = (label: string) => ({ action: "order_status_changed_to_x", label })
+  expect(summarizeRun([mk("a"), mk("b"), mk("c")])).toBe("3 işlem")
+})
+
+test("runTimeRange: aynı dakikada tek saat, değilse aralık (eskiden yeniye)", () => {
+  expect(runTimeRange([{ at: "2026-11-26T15:59:50Z" }, { at: "2026-11-26T15:59:10Z" }])).toBe("18:59")
+  expect(runTimeRange([{ at: "2026-11-26T16:05:00Z" }, { at: "2026-11-26T15:59:10Z" }])).toBe("18:59–19:05")
 })

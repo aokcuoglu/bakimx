@@ -1,4 +1,4 @@
-import { formatTrLongDate, trDayKey } from "@/lib/format-date"
+import { formatTrLongDate, formatTrTime, trDayKey } from "@/lib/format-date"
 import { istanbulDayKey } from "@/lib/istanbul-time"
 
 /** Gruplamanın ihtiyaç duyduğu alanlar; `OrderActivityEntry` bunu karşılar. */
@@ -103,4 +103,36 @@ export function limitActivityRows<T extends GroupableActivity>(days: ActivityDay
 
 export function countActivityRows<T extends GroupableActivity>(days: ActivityDay<T>[]): number {
   return days.reduce((n, d) => n + d.rows.length, 0)
+}
+
+const BULK_SUMMARY: Record<string, (n: number) => string> = {
+  order_item_added: (n) => `${n} kalem eklendi`,
+  order_item_removed: (n) => `${n} kalem çıkarıldı`,
+  order_item_completed: (n) => `${n} kalem yapıldı olarak işaretlendi`,
+  order_item_uncompleted: (n) => `${n} kalemin yapıldı işareti kaldırıldı`,
+  photo_uploaded: (n) => `${n} fotoğraf eklendi`,
+  photo_deleted: (n) => `${n} fotoğraf silindi`,
+  damage_mark_added: (n) => `${n} hasar işaretlendi`,
+  collection_created: (n) => `${n} tahsilat alındı`,
+  collection_cancelled: (n) => `${n} tahsilat iptal edildi`,
+}
+
+/**
+ * Daraltılmış serinin başlığı. Seridekilerin etiketi aynıysa "<etiket> · N kez";
+ * farklıysa (ör. dört ayrı kalemin çıkarılması) ilk kaydın etiketi yanıltır, bu
+ * yüzden eyleme özgü genel özet ("4 kalem çıkarıldı") verilir.
+ */
+export function summarizeRun(entries: { action: string; label: string }[]): string {
+  const n = entries.length
+  const first = entries[0]
+  if (entries.every((e) => e.label === first.label)) return `${first.label} · ${n} kez`
+  const bulk = BULK_SUMMARY[first.action]
+  return bulk ? bulk(n) : `${n} işlem`
+}
+
+/** Seri başlığındaki saat aralığı; başı ve sonu aynı dakikaysa tek saat. */
+export function runTimeRange(entries: { at: string }[]): string {
+  const start = formatTrTime(entries[entries.length - 1].at)
+  const end = formatTrTime(entries[0].at)
+  return start === end ? start : `${start}–${end}`
 }
