@@ -23,6 +23,7 @@ import type { GatedFeature } from "@/lib/plan"
 import { NAV_GROUPS, type NavGroup, type NavItem } from "@/lib/navigation/app-nav"
 import { hasPageHeader } from "@/lib/navigation/page-headers"
 import { PageFrame, PageHeaderAccessContext } from "@/components/layout/page-header"
+import { ScrollToTopOnNavigate } from "@/components/layout/scroll-to-top-on-navigate"
 import { lockedFeatureLabels } from "@/lib/feature-catalog"
 import { LockedBadgeText } from "@/components/billing/locked-badge-text"
 import type { SidebarPlanStatus } from "@/lib/billing/sidebar-plan-status"
@@ -228,6 +229,7 @@ export function AppShellChrome({
   return (
     <SetPageHeaderContext.Provider value={setPageHeader}>
       <SidebarProvider defaultOpen={!initialSidebarCollapsed}>
+        <ScrollToTopOnNavigate />
         {hideSidebar ? null : (
           <AppSidebar
             enabledFeatures={enabledFeatures}
