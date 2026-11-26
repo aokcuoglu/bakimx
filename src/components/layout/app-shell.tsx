@@ -22,6 +22,7 @@ import { TechnicianNotificationsBell } from "@/components/technician/technician-
 import type { GatedFeature } from "@/lib/plan"
 import { NAV_GROUPS, type NavGroup, type NavItem } from "@/lib/navigation/app-nav"
 import { hasPageHeader } from "@/lib/navigation/page-headers"
+import { AddonAccessProvider } from "@/components/billing/addon-access"
 import { PageFrame, PageHeaderAccessContext } from "@/components/layout/page-header"
 import { lockedFeatureLabels } from "@/lib/feature-catalog"
 import { LockedBadgeText } from "@/components/billing/locked-badge-text"
@@ -249,7 +250,9 @@ export function AppShellChrome({
         >
           <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} />
           <PageHeaderAccessContext.Provider value={headerAccess}>
-            <main className={cn("flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:pb-8", inSettings && "bg-card")}>{children}</main>
+            <AddonAccessProvider enabledFeatures={enabledFeatures} role={userIdentity?.role}>
+              <main className={cn("flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:pb-8", inSettings && "bg-card")}>{children}</main>
+            </AddonAccessProvider>
           </PageHeaderAccessContext.Provider>
         </SidebarInset>
         <GlobalSearch

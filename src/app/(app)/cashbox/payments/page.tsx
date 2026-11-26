@@ -15,10 +15,11 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { PrintButton } from "@/components/shared/print-button"
 import { FilterSelect } from "@/components/shared/filter-select"
-import { Search, Filter, Wallet, Eye, Download } from "lucide-react"
+import { COLLECTION_PAGE_SIZE, computeCollectionPage, parsePageParam } from "@/lib/cashbox/pagination"
+import { Search, Filter, Wallet, Eye, Download, ChevronLeft, ChevronRight } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
-type SP = { q?: string; method?: string; status?: string; period?: string; dateFrom?: string; dateTo?: string }
+type SP = { page?: string; q?: string; method?: string; status?: string; period?: string; dateFrom?: string; dateTo?: string }
 
 export const metadata = { title: "Ödemeler" }
 
@@ -37,18 +38,30 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
 
   const range = resolveCollectionRange(periodInput)
 
-  const { rows: collections, total } = await getCollections(user.workshopId, {
+  const filters = {
     q: q || undefined,
     method: method || undefined,
     status: status || undefined,
     rangeStart: range.start,
     rangeEnd: range.end,
-    limit: 200,
+    limit: COLLECTION_PAGE_SIZE,
+  }
+  const requestedPage = parsePageParam(params.page)
+  let result = await getCollections(user.workshopId, {
+    ...filters,
+    offset: (requestedPage - 1) * COLLECTION_PAGE_SIZE,
   })
+  let pageInfo = computeCollectionPage(requestedPage, result.total)
+  // Filtre daraldıysa istenen sayfa boş kalabilir; son sayfaya düş.
+  if (pageInfo.page !== requestedPage) {
+    result = await getCollections(user.workshopId, { ...filters, offset: pageInfo.offset })
+    pageInfo = computeCollectionPage(requestedPage, result.total)
+  }
+  const { rows: collections, total } = result
 
   // Dışa aktarım ham filtreleri alır ve aralığı aynı `resolveCollectionRange` ile
   // kendisi kurar — ekran ve CSV aynı aralığı ve filtreleri kullanır (#906).
-  // Satır sayısı ayrı: liste 200, CSV 5000 kayıtla sınırlı (sayfalama #936).
+  // Liste sayfalıdır (#936); CSV aynı süzülmüş kümeyi 5000 kayda kadar verir.
   const exportParams = collectionExportParams({
     q,
     method,
@@ -57,6 +70,13 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
     dateFrom: periodInput.dateFrom,
     dateTo: periodInput.dateTo,
   })
+
+  const pageHref = (page: number) => {
+    const sp = new URLSearchParams(exportParams)
+    if (page > 1) sp.set("page", String(page))
+    const qs = sp.toString()
+    return qs ? `/cashbox/payments?${qs}` : "/cashbox/payments"
+  }
 
   return (
     <AppShell workshopName={workshop?.name} subtitle={`${total} kayıt bulundu`}>
@@ -231,6 +251,46 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
                 )
               })}
             </div>
+
+            <nav
+              aria-label="Sayfalama"
+              className="flex items-center justify-between gap-3 print:hidden"
+            >
+              <p className="text-xs text-muted-foreground tabular-nums">
+                {pageInfo.from}–{pageInfo.to} / {total} kayıt
+              </p>
+              <div className="flex items-center gap-2">
+                {pageInfo.page > 1 ? (
+                  <Button variant="outline" asChild>
+                    <Link href={pageHref(pageInfo.page - 1)} rel="prev">
+                      <ChevronLeft className="size-4" />
+                      Önceki
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button variant="outline" disabled>
+                    <ChevronLeft className="size-4" />
+                    Önceki
+                  </Button>
+                )}
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {pageInfo.page} / {pageInfo.pageCount}
+                </span>
+                {pageInfo.page < pageInfo.pageCount ? (
+                  <Button variant="outline" asChild>
+                    <Link href={pageHref(pageInfo.page + 1)} rel="next">
+                      Sonraki
+                      <ChevronRight className="size-4" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button variant="outline" disabled>
+                    Sonraki
+                    <ChevronRight className="size-4" />
+                  </Button>
+                )}
+              </div>
+            </nav>
           </>
         )}
       </div>
