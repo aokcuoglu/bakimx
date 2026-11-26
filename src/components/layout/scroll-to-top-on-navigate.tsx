@@ -17,6 +17,7 @@ import { usePathname } from "next/navigation"
  *
  * Yalnız yol (`pathname`) değişince ve geçiş geri/ileri değilse çalışır:
  * - `?tab=`/filtre gibi arama parametresi geçişleri konumu korur,
+ * - URL'de `#hash` varsa hedefe Next kaydırır, dokunulmaz,
  * - tarayıcı geri'de Next listenin konumunu kendisi geri yükler.
  */
 export function ScrollToTopOnNavigate() {
@@ -39,6 +40,8 @@ export function ScrollToTopOnNavigate() {
       historyTraversal.current = false
       return
     }
+    // `#bölüm` bağlantısında hedefe Next kaydırır; üste almak onu bozar.
+    if (window.location.hash) return
     window.scrollTo({ top: 0, left: 0, behavior: "instant" })
   }, [pathname])
 

@@ -17,6 +17,10 @@ describe("ScrollToTopOnNavigate (#892)", () => {
     expect(source).toContain('"popstate"')
   })
 
+  test("hash'li adreste hedefe dokunmaz", () => {
+    expect(source).toContain("window.location.hash")
+  })
+
   test("kalıcı kabukta mount edilir", () => {
     expect(read("./app-shell.tsx")).toContain("<ScrollToTopOnNavigate />")
   })
