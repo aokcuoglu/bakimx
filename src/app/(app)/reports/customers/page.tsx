@@ -4,6 +4,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { ReportsLayout } from "@/components/reports/reports-layout"
 import { CustomersReport } from "@/components/reports/customers-report"
 import { getCustomerReportStats, getTopCustomersBySpend, getMostVisitedCustomers } from "@/lib/reports/queries"
+import { istanbulDateRange } from "@/lib/istanbul-time"
 
 export const metadata = { title: "Müşteri Raporu" }
 
@@ -18,11 +19,11 @@ export default async function CustomersReportPage({
   const params = await searchParams
   const workshopId = user.workshopId
 
-  const dateFrom = params.dateFrom ? new Date(params.dateFrom) : undefined
-  const dateTo = params.dateTo ? new Date(params.dateTo) : undefined
+  // `YYYY-MM-DD` İstanbul günü, bitiş günü dahil → `[start, end)` (#906).
+  const { start, end } = istanbulDateRange(params.dateFrom, params.dateTo)
 
   const [stats, topBySpend, mostVisited] = await Promise.all([
-    getCustomerReportStats(workshopId, dateFrom, dateTo),
+    getCustomerReportStats(workshopId, start, end),
     getTopCustomersBySpend(workshopId, 10),
     getMostVisitedCustomers(workshopId, 10),
   ])

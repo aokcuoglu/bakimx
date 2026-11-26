@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { requireAuth } from "@/lib/cashbox/feature-auth"
 import { getCollections, getOpenReceivables, getReceivableAging } from "@/lib/cashbox/queries"
+import { collectionPeriodFromSearchParams, resolveCollectionRange } from "@/lib/cashbox/period"
+import { istanbulDayKey } from "@/lib/istanbul-time"
 
 export async function GET(request: Request) {
   try {
@@ -15,10 +17,17 @@ export async function GET(request: Request) {
       const q = searchParams.get("q") || undefined
       const method = searchParams.get("method") || undefined
       const status = searchParams.get("status") || undefined
-      const dateFrom = searchParams.get("dateFrom") ? new Date(searchParams.get("dateFrom")!) : undefined
-      const dateTo = searchParams.get("dateTo") ? new Date(searchParams.get("dateTo")!) : undefined
+      // Ekranla aynı çözümleyici — CSV listedeki kayıtların aynısını verir (#906).
+      const range = resolveCollectionRange(collectionPeriodFromSearchParams(searchParams))
 
-      const { rows } = await getCollections(user.workshopId, { q, method, status, dateFrom, dateTo, limit: 5000 })
+      const { rows } = await getCollections(user.workshopId, {
+        q,
+        method,
+        status,
+        rangeStart: range.start,
+        rangeEnd: range.end,
+        limit: 5000,
+      })
 
       const nameFor = (c: typeof rows[number]["customer"]) =>
         c.type === "corporate" ? c.companyName || "—" : c.fullName || [c.firstName, c.lastName].filter(Boolean).join(" ") || "—"
@@ -28,7 +37,7 @@ export async function GET(request: Request) {
 
       const headers = ["Tarih", "Müşteri", "Telefon", "Araç Kabul", "Tutar", "Yöntem", "Durum", "Referans No", "Not"]
       const csvRows = rows.map((r) => [
-        r.paymentDate.slice(0, 10),
+        istanbulDayKey(new Date(r.paymentDate)),
         nameFor(r.customer),
         r.customer.phone,
         r.serviceOrder?.workOrderNo || "",
@@ -56,7 +65,7 @@ export async function GET(request: Request) {
         r.paidAmount,
         r.remainingAmount,
         statusLabels[r.paymentStatus] || r.paymentStatus,
-        r.createdAt.slice(0, 10),
+        istanbulDayKey(new Date(r.createdAt)),
       ])
       csv = BOM + [headers.join(","), ...csvRows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))].join("\n")
     } else if (type === "aging") {
@@ -83,7 +92,7 @@ export async function GET(request: Request) {
     return new NextResponse(csv, {
       headers: {
         "Content-Type": "text/csv;charset=utf-8",
-        "Content-Disposition": `attachment; filename="bakimx-${type}-${new Date().toISOString().slice(0, 10)}.csv"`,
+        "Content-Disposition": `attachment; filename="bakimx-${type}-${istanbulDayKey(new Date())}.csv"`,
       },
     })
   } catch (error) {
