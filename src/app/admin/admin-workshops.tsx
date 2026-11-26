@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { WorkshopActions } from "@/app/admin/workshop-actions"
 import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisition-sources"
+import { planLabel } from "@/lib/plan"
 
 export interface AdminWorkshopRow {
   id: string
@@ -18,15 +19,11 @@ export interface AdminWorkshopRow {
   trialEndsAt: string | null
   currentPeriodEnd?: string | null
   extraSeats: number
+  /** Ek koltuklar hariç, erişim profilinin içerdiği koltuk (deneme dahil). */
+  includedSeats: number
   createdAt: string
   acquisitionSource: keyof typeof ACQUISITION_SOURCE_LABELS
   acquisitionAdvisorId: string | null
-}
-
-const TIER_LABELS: Record<string, string> = {
-  starter: "Başlangıç",
-  pro: "Profesyonel",
-  premium: "Premium",
 }
 
 const APPROVAL_BADGE: Record<string, string> = {
@@ -61,11 +58,11 @@ function Row({ w, canManage }: { w: AdminWorkshopRow; canManage: boolean }) {
               {SUB_LABELS[w.subscriptionStatus] ?? w.subscriptionStatus}
             </Badge>
             <Badge variant="outline" className="text-[11px] bg-muted text-muted-foreground">
-              {TIER_LABELS[w.planTier] ?? w.planTier}
+              {planLabel(w.planTier)}
             </Badge>
             {w.requestedPlanTier && (
               <Badge variant="outline" className="text-[11px] bg-primary/15 text-foreground">
-                <Sparkles className="size-3 mr-1" /> Talep: {TIER_LABELS[w.requestedPlanTier] ?? w.requestedPlanTier}
+                <Sparkles className="size-3 mr-1" /> Talep: {planLabel(w.requestedPlanTier)}
               </Badge>
             )}
           </div>
