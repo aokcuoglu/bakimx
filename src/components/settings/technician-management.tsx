@@ -109,7 +109,10 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
                     })
                   }}
                   disabled={isPending}
-                  className="touch-manipulation"
+                  className={cn(
+                    "touch-manipulation",
+                    !t.isActive && "text-success-strong hover:bg-success/10 border-success/20"
+                  )}
                 >
                   {t.isActive ? "Pasif Yap" : "Aktif Yap"}
                 </Button>

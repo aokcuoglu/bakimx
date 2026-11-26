@@ -64,9 +64,12 @@ const buttonVariants = cva(
         "destructive-outline":
           "border border-destructive/20 bg-card text-destructive-strong hover:bg-destructive/10 aria-expanded:bg-destructive/10 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-input/30 dark:hover:bg-destructive/20 dark:focus-visible:ring-destructive/40",
         // Birincil tonlu seçili / önerilen eylem. Metin -strong: tonlu zeminde
-        // çıplak text-primary AA'yı geçmez (BAK-160). Koyu temada da /10:
-        // /20 koyu bg-muted üstünde 4.05:1'e iniyor (#925 ölçümü).
-        tint: "bg-primary/10 text-primary-strong hover:bg-primary/20 aria-expanded:bg-primary/20",
+        // çıplak text-primary AA'yı geçmez (BAK-160). Ölçüm (#925; kart /
+        // sayfa / bg-muted): açık /10 6.06 / 5.46 / 5.59, hover /20
+        // 5.25 / 4.77 / 4.87. Koyu /10 5.67 / 6.28 / 4.67; koyuda hover da /10
+        // kalır: /20 bg-muted'da 4.05, /13 4.48'e iniyor, geçen en yüksek /12
+        // ise /10'dan gözle ayırt edilmiyor (ΔE_OK ≈ 0.01).
+        tint: "bg-primary/10 text-primary-strong hover:bg-primary/20 aria-expanded:bg-primary/20 dark:hover:bg-primary/10 dark:aria-expanded:bg-primary/10",
         // Fotoğraf / kamera katmanı üstünde (siyah zemin) çerçeveli ve hayalet düğme.
         "on-photo":
           "border border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white focus-visible:border-white focus-visible:ring-white/40",

@@ -211,6 +211,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                 size="compact"
                 onClick={() => handleAction("cancel")}
                 disabled={actionLoading}
+                aria-label="İptal"
               >
                 <XCircle className="size-4" />
                 <span className="hidden sm:inline">İptal</span>

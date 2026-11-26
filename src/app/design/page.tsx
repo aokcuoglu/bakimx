@@ -514,7 +514,7 @@ export default function DesignSystemPage() {
             <p className="font-mono text-[11px] text-muted-foreground">
               on-photo · fotoğraf / kamera katmanı üstünde (koyu zemin)
             </p>
-            <div className="flex flex-wrap items-center gap-2 rounded-md bg-navy p-4">
+            <div className="flex flex-wrap items-center gap-2 rounded-md bg-black p-4">
               <Button variant="on-photo">on-photo</Button>
               <Button variant="on-photo-ghost">on-photo-ghost</Button>
             </div>

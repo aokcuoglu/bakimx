@@ -80,8 +80,11 @@ telefonda 16px), formda `default` (`OrderItemUnitCombobox`).
 ile verilir. `destructive-outline` — ikincil yıkıcı eylem (İptal, Pasif Yap):
 outline çerçevesi, `border-destructive/20`, `text-destructive-strong`. `tint` —
 birincil tonlu seçili / önerilen eylem: `bg-primary/10`,
-`text-primary-strong` (iki temada da `/10`; koyu temada `/20` `bg-muted`
-üstünde 4.05:1'e iniyordu). `on-photo` — fotoğraf / kamera katmanı (siyah
+`text-primary-strong`. Kart / sayfa / `bg-muted` üstünde açık temada durağan
+`/10` 6.06 / 5.46 / 5.59:1, hover `/20` 5.25 / 4.77 / 4.87:1; koyu temada
+durağan `/10` 5.67 / 6.28 / 4.67:1 ve hover da `/10` kalır (koyu `/20`
+`bg-muted`'da 4.05:1'e iniyor; geçen en yüksek `/12` gözle `/10`'dan
+ayrılmıyor). `on-photo` — fotoğraf / kamera katmanı (siyah
 zemin) üstünde çerçeveli düğme (`bg-white/10`, `border-white/30`);
 `on-photo-ghost` aynı zeminde hayalet düğme.
 
