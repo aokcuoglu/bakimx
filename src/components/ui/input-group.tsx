@@ -18,6 +18,10 @@ import { Textarea } from "@/components/ui/textarea"
  * denetimin `data-slot`'una bağlı değildir: `has-[input:focus-visible]`.
  * Base UI `render` birleştirmesi slot'u ezdiğinde (`AutocompleteInput`)
  * halka kayboluyordu (#888). Halka Input ile aynı: 4px, ring/20.
+ *
+ * Dar hücre (#887): satır içi eklentinin olduğu yanda girdinin dolgusu
+ * `--field-px` yerine 6px'tir (`[&>input]:pl-1.5` / `pr-1.5`); öbür yan
+ * `--field-px` kalır.
  */
 function InputGroup({
   className,
@@ -39,15 +43,21 @@ function InputGroup({
   )
 }
 
+/**
+ * Satır içi eklenti kendi boyunda kalır (`shrink-0`), yer açmak için küçülen
+ * girdidir (`min-w-0`). Düğme / kbd yanındaki dar iç boşluk negatif dış boşlukla
+ * değil, küçük dolguyla verilir: `mr-[-0.3rem]` eklentinin kutusunu grubun
+ * içerik kutusundan ~5px dışarı taşırıyordu (#887 — dar hücrede ölçüldü).
+ */
 const inputGroupAddonVariants = cva(
-  "flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--control-radius)-5px)] [&>svg:not([class*='size-'])]:size-4",
+  "flex h-auto shrink-0 cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--control-radius)-5px)] [&>svg:not([class*='size-'])]:size-4",
   {
     variants: {
       align: {
         "inline-start":
-          "order-first pl-2 has-[>button]:ml-[-0.3rem] has-[>kbd]:ml-[-0.15rem]",
+          "order-first pl-2 has-[>button]:pl-1 has-[>kbd]:pl-1.5",
         "inline-end":
-          "order-last pr-2 has-[>button]:mr-[-0.3rem] has-[>kbd]:mr-[-0.15rem]",
+          "order-last pr-2 has-[>button]:pr-1 has-[>kbd]:pr-1.5",
         "block-start":
           "order-first w-full justify-start px-2.5 pt-2 group-has-[>input]/input-group:pt-2 [.border-b]:pb-2",
         "block-end":
@@ -137,7 +147,11 @@ function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
   )
 }
 
-/** Ölçüyü `InputGroup`'un `size`'ından alır; kendi `size` prop'u yoktur. */
+/**
+ * Ölçüyü `InputGroup`'un `size`'ından alır; kendi `size` prop'u yoktur.
+ * Sığmayan placeholder / değer odak dışındayken harf ortasında kesilmez,
+ * `…` ile biter (`text-ellipsis`, #887).
+ */
 function InputGroupInput({
   className,
   ...props
@@ -149,7 +163,7 @@ function InputGroupInput({
       // kendi slot'unu geçse de grup denetimi olarak işaretli kalır.
       data-slot="input-group-control"
       className={cn(
-        "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent",
+        "flex-1 rounded-none border-0 bg-transparent text-ellipsis shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent",
         className
       )}
     />
