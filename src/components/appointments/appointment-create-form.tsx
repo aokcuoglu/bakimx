@@ -2,6 +2,8 @@
 "use client"
 
 import { listThenSelect } from "@/lib/ui/list-then-select"
+import { toast } from "sonner"
+import { ownerSwitchMessage } from "@/lib/vehicles/owner-switch-message"
 import { useState, useActionState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -137,6 +139,7 @@ export function AppointmentCreateForm({
           setCustomer({ id: r.customerId, label: r.customerName || "Seçili müşteri" })
           form.setValue("customerId", r.customerId, { shouldValidate: true })
           setVehicles([created])
+          toast.info(ownerSwitchMessage(r.customerName))
         } else {
           setVehicles((prev) => withVehicle(prev, created))
         }
