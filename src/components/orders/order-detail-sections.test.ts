@@ -91,9 +91,7 @@ test("#897: Teknisyen Panelinde Aç bağlantısı bağlam kartının içinde, ya
   expect(card).toContain("canOpenTechnicianView(order.assignedTechnicianId)")
   expect(card).toContain("technicianOrderPath(order.id)")
   expect(card).toContain("Henüz usta atanmadı")
-  const rail = DETAIL.slice(DETAIL.indexOf("className={detail.rail}"))
-  expect(rail).toContain('<section aria-label="Teknisyen"')
-  expect(rail).not.toContain("flex justify-end")
+  expect(card).not.toContain("flex justify-end")
   expect(TECH).not.toContain("Bu bölüm salt okunurdur")
 })
 
@@ -102,7 +100,7 @@ test("#911: iki kolon içerik genişliğine bağlı, ray yapışkan ve kendi iç
   expect(CSS).toContain("@container detail (min-width:780px)")
   expect(CSS).toContain("@container detail (min-width:1040px)")
   const twoColumn = CSS.slice(CSS.indexOf("@container detail (min-width:780px)"))
-  expect(twoColumn).toMatch(/\.rail \{ position:sticky; top:/)
+  expect(twoColumn).toMatch(/\.rail \{[^}]*position:sticky; top:/)
   expect(twoColumn).toContain("grid-template-columns:minmax(0,1fr) 300px")
   // Ray görünür alandan uzunsa sayfayla kayar; iç kaydırma çubuğu yok.
   for (const block of CSS.match(/\.rail \{[^}]*\}/g) ?? []) {
@@ -110,8 +108,46 @@ test("#911: iki kolon içerik genişliğine bağlı, ray yapışkan ve kendi iç
     expect(block).not.toContain("overflow-y")
   }
   // Tek kolonda çipler ve özet kartı, iki kolonda Durum kartı.
-  expect(twoColumn).toContain(".chips, .summary { display:none; }")
-  expect(twoColumn).toContain(".rail .statusCard { display:flex; }")
+  expect(twoColumn).toContain(".inline, .chips, .summary { display:none; }")
+  expect(twoColumn).toMatch(/\.rail \{ display:flex;/)
+  expect(rule(CSS, ".rail")).toContain("display:none")
+})
+
+/**
+ * #966 — DOM sırası görsel okuma sırasıdır (WCAG 2.4.3). Tek kolonda ray gizli,
+ * kartlar ana kolonda bölümün içinde; iki kolonda ana kolondaki `inline`
+ * yuvaları gizli, ray görünür. `order` / `display:contents` ile yeniden
+ * dizme geri gelmez; durumlu pencere (İndirim ve KDV) kartlardan bağımsız tek kopya.
+ */
+test("#966: ana kolon DOM sırası = dar düzendeki görsel sıra; ray kartları iki yuvada", () => {
+  const main = DETAIL.slice(DETAIL.indexOf("<div className={detail.main}>"), DETAIL.indexOf("className={detail.rail}"))
+  const markers = [
+    'id="ozet"',
+    'cardSlot("ozet", recordCard, true)',
+    "<OrderInfoCard",
+    'id="kalemler"',
+    'id="kanit"',
+    'cardSlot("odeme", pricingCard, true)',
+    'id="odeme"',
+    'cardSlot("odeme", shareCard, true)',
+    'cardSlot("teknisyen", technicianCard, true)',
+    'id="teknisyen"',
+    'id="gecmis"',
+  ]
+  const at = markers.map((m) => main.indexOf(m))
+  for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThanOrEqual(0)
+  expect(at).toEqual([...at].sort((a, b) => a - b))
+  // Ray: aynı kartlar, `inline` olmadan.
+  const rail = DETAIL.slice(DETAIL.indexOf("className={detail.rail}"), DETAIL.indexOf("<OrderPricingDialog"))
+  for (const card of ["pricingCard", "recordCard", "technicianCard", "shareCard"]) {
+    expect(rail).toContain(`${card}, false)`)
+  }
+  expect(DETAIL.match(/<OrderPricingDialog\b/g)).toHaveLength(1)
+  expect(DETAIL.match(/<OrderPaymentCard\b/g)).toHaveLength(1)
+  expect(CSS).not.toMatch(/display:\s*contents/)
+  expect(CSS).not.toMatch(/\.o(Complaint|Record|Info|Items|Evidence|Pricing|Payments|Share|TechCard|TechPanel|History)\b/)
+  expect(CSS).not.toMatch(/^\s*order:/m)
+  expect(DETAIL).not.toMatch(/detail\.o[A-Z]/)
 })
 
 test("#911: ağır hasar haritası görünür alana yaklaşınca bağlanır", () => {
