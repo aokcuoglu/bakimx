@@ -186,10 +186,9 @@ export function AppointmentRulesForm({ settings }: { settings: SettingsData }) {
                   {reminders.length > 1 && (
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="destructive-ghost"
                       size="sm"
                       onClick={() => removeReminder(index)}
-                      className="text-destructive-strong hover:text-destructive-strong"
                     >
                       <Trash2 className="size-4" />
                       <span className="sr-only">Kaldır</span>

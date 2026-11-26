@@ -21,6 +21,16 @@ export function isOrderSectionId(value: string | null | undefined): value is Ord
   return ORDER_SECTIONS.some((section) => section.id === value)
 }
 
+/**
+ * `location.hash`in son parçası. Önbellekteki bir yolculuk (önce `#kalemler`,
+ * sonra başka sayfa, sonra `/orders/<id>#odeme`) Next'te adresi `…#kalemler#odeme`
+ * yapar (#996): düz `slice(1)` "kalemler#odeme" okur, bölüm bulunamaz ve sayfa
+ * en üstte kalır. Tarayıcının kendi çapa çözümü de son parçayı kullanır.
+ */
+export function lastHashSegment(hash: string): string {
+  return hash.slice(hash.lastIndexOf("#") + 1)
+}
+
 // Eski sekme anahtarı → bölüm. `ozet` bilinçli olarak yok: Özet sayfanın başı,
 // açılışta kaydırılacak bir yer yok (liste "Düzenle"nin `?edit=1`i de böyle kalır).
 const LEGACY_TAB_SECTIONS = new Map<string, OrderSectionId>([
@@ -37,7 +47,10 @@ const LEGACY_TAB_SECTIONS = new Map<string, OrderSectionId>([
  */
 export function sectionForLegacyTab(value: string | null | undefined): OrderSectionId | null {
   if (!value) return null
-  return LEGACY_TAB_SECTIONS.get(value) ?? null
+  const legacy = LEGACY_TAB_SECTIONS.get(value)
+  if (legacy) return legacy
+  // Bölüm kimliğiyle yazılan bağlantı (`?tab=odeme`, #996) da aynı bölüme gider.
+  return value !== "ozet" && isOrderSectionId(value) ? value : null
 }
 
 /**
