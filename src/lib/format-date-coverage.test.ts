@@ -74,7 +74,6 @@ const PENDING_MIGRATION: Record<string, string> = {
   "components/intake/approval-timeline.tsx": "#875",
   "components/intake/damage-capture.tsx": "#875",
   "components/intake/public-share-page.tsx": "#875",
-  "components/orders/order-activity-log.tsx": "#875",
   "components/orders/order-list.tsx": "#875",
   "components/orders/parts-labor-grid.tsx": "#875",
   "components/orders/parts-request-panel.tsx": "#875",
