@@ -11,6 +11,7 @@ import {
   type WorkshopListQuery,
 } from "@/lib/admin-workshop-filters"
 import { INTERNAL_OPERATIONS_WORKSHOP_ID } from "@/lib/workshop-kind"
+import { istanbulMonthStart } from "@/lib/istanbul-time"
 
 export interface WorkshopListResult {
   rows: AdminWorkshopRow[]
@@ -317,7 +318,7 @@ function toOrderRow(o: OrderWithTxns): AdminOrderRow {
  *  aktif abonelikler ve gelir özeti. Ops home (sayaçlar) ve billing sayfası
  *  paylaşıyor. Admin-taraflı: tenant filtresi yok, requireAdmin çağıran tarafta. */
 export async function getBillingData(): Promise<BillingData> {
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  const monthStart = istanbulMonthStart()
   const orderInclude = {
     workshop: { select: { id: true, name: true, currentPeriodEnd: true } },
     paymentTransactions: { orderBy: { createdAt: "desc" as const }, take: TXN_HISTORY_TAKE },

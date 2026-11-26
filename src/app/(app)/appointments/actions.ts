@@ -51,7 +51,8 @@ export async function createAppointmentAction(formData: FormData) {
   const appointmentDate = parseIstanbulLocalDateTime(`${appointmentAt}T${appointmentTime}`)
   if (!appointmentDate) return { error: "Geçersiz tarih/saat" }
 
-  if (appointmentDate < new Date(new Date().toDateString())) {
+  // Bugünün başı Türkiye takvimine göre (#904), sürecin saat diliminden bağımsız.
+  if (appointmentDate < appointmentTodayBounds().today) {
     return { error: "Randevu tarihi geçmiş olamaz" }
   }
 
