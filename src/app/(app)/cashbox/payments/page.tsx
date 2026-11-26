@@ -221,7 +221,7 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
                         {c.serviceOrder && (
                           <p className="text-xs text-muted-foreground mt-0.5 font-mono">{c.serviceOrder.workOrderNo} &bull; {c.serviceOrder.vehicle.plate}</p>
                         )}
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{formatDate(c.paymentDate)}{c.referenceNo ? ` &bull; Ref: ${c.referenceNo}` : ""}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{formatDate(c.paymentDate)}{c.referenceNo ? ` • Ref: ${c.referenceNo}` : ""}</p>
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-bold text-foreground">{formatTRY(c.amount)}</p>
