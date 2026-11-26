@@ -72,12 +72,12 @@ export function DateTimePicker({
         <Button
           id={id}
           type="button"
-          variant="outline"
+          variant="field"
           disabled={disabled}
           aria-describedby={ariaDescribedBy}
           aria-invalid={ariaInvalid}
           className={cn(
-            "w-full justify-start gap-2 font-normal",
+            "w-full justify-start gap-2",
             !selected && "text-muted-foreground",
             className
           )}

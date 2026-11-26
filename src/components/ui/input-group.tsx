@@ -82,16 +82,22 @@ function InputGroupAddon({
   )
 }
 
+/**
+ * Grup içi düğme grubun yüksekliğini izler: `--control-h − 4px` (1px kenarlık
+ * + 1px nefes her yanda). Grup `size`'ı `--control-h`'i yeniden bağladığı için
+ * `sm` / `compact` grupta da taşmaz — md+ 32 / 28 / 24px, telefonda
+ * 40 / 32 / 28px (lg 46px) (#925).
+ */
 const inputGroupButtonVariants = cva(
   "flex items-center gap-2 text-sm shadow-none",
   {
     variants: {
       size: {
-        xs: "h-8 gap-1 rounded-[calc(var(--control-radius)-3px)] px-1.5 [&>svg:not([class*='size-'])]:size-3.5",
+        xs: "h-[calc(var(--control-h)-4px)] gap-1 rounded-[calc(var(--control-radius)-3px)] px-1.5 [&>svg:not([class*='size-'])]:size-3.5",
         sm: "",
         "icon-xs":
-          "size-8 rounded-[calc(var(--control-radius)-3px)] p-0 has-[>svg]:p-0",
-        "icon-sm": "size-8 p-0 has-[>svg]:p-0",
+          "size-[calc(var(--control-h)-4px)] rounded-[calc(var(--control-radius)-3px)] p-0 has-[>svg]:p-0",
+        "icon-sm": "size-[calc(var(--control-h)-4px)] p-0 has-[>svg]:p-0",
       },
     },
     defaultVariants: {
@@ -99,13 +105,6 @@ const inputGroupButtonVariants = cva(
     },
   }
 )
-
-/**
- * Düğme `sm` / `compact` grubun kutusundan taşmasın: grup ölçüsüne göre
- * küçülür (32px düğme 28px grupta kenarlığı aşıyordu).
- */
-const inputGroupButtonFit =
-  "group-data-[size=sm]/input-group:data-[size=xs]:h-7 group-data-[size=sm]/input-group:data-[size=icon-xs]:size-7 group-data-[size=sm]/input-group:data-[size=icon-sm]:size-7 group-data-[size=compact]/input-group:data-[size=xs]:h-6 group-data-[size=compact]/input-group:data-[size=icon-xs]:size-6 group-data-[size=compact]/input-group:data-[size=icon-sm]:size-6"
 
 function InputGroupButton({
   className,
@@ -120,7 +119,7 @@ function InputGroupButton({
       type={type}
       data-size={size}
       variant={variant}
-      className={cn(inputGroupButtonVariants({ size }), inputGroupButtonFit, className)}
+      className={cn(inputGroupButtonVariants({ size }), className)}
       {...props}
     />
   )

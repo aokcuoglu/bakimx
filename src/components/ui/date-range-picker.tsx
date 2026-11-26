@@ -57,11 +57,11 @@ export function DateRangePicker({
         <Button
           id={id}
           type="button"
-          variant="outline"
+          variant="field"
           disabled={disabled}
           aria-label={label}
           className={cn(
-            "w-full justify-start gap-2 bg-transparent font-normal",
+            "w-full justify-start gap-2",
             !value?.from && "text-muted-foreground",
             className,
           )}
