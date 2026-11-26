@@ -22,3 +22,14 @@ test("ortak diyalog viewport dışına taşmadan açılır", () => {
   expect(dialog).toContain("max-h-[calc(100dvh-2rem)]")
   expect(dialog).toContain("overflow-y-auto")
 })
+
+test("Kalemi düzenle diyaloğu ilk odağı düzenlenebilir alana verir (kaynak rozeti tooltip'i açmaz)", () => {
+  const editDialog = grid.slice(grid.indexOf("<DialogTitle>Kalemi düzenle"))
+  const open = grid.slice(grid.lastIndexOf("<DialogContent", grid.indexOf("<DialogTitle>Kalemi düzenle")), grid.indexOf("<DialogTitle>Kalemi düzenle"))
+  expect(editDialog.length).toBeGreaterThan(0)
+  expect(open).toContain("onOpenAutoFocus={focusFirstEditableField}")
+  expect(open).toContain("ref={editDialogRef}")
+  // Escape korumasını çağrı yerinde kopyalama — paylaşılan Dialog yapıyor.
+  expect(open).not.toContain("onEscapeKeyDown")
+  expect(grid).toContain('window.matchMedia("(pointer: coarse)").matches')
+})
