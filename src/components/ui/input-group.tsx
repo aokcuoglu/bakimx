@@ -9,6 +9,22 @@ import { Input, inputSizeClasses, type InputSize } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 /**
+ * Görünüm (#952): `ghost` çerçevesiz saydam, satır hover/odakta çerçeve;
+ * `quiet` saydam + soluk metin, hover'da hafif zemin, odakta tam alan;
+ * `soft` hafif dolgulu çip, odakta tam alan. Üst öğe `group/field-row` taşır.
+ */
+const inputGroupAppearanceClasses = {
+  default: "",
+  ghost:
+    "border-transparent bg-transparent group-hover/field-row:border-input group-focus-within/field-row:border-input dark:bg-transparent",
+  quiet:
+    "border-transparent bg-transparent text-muted-foreground transition-none group-hover/field-row:bg-muted/60 focus-within:border-input focus-within:bg-background focus-within:text-foreground has-disabled:bg-transparent dark:bg-transparent dark:group-hover/field-row:bg-muted/60 dark:focus-within:bg-background dark:has-disabled:bg-transparent [&>input]:transition-none",
+  soft: "border-transparent bg-muted/60 text-muted-foreground focus-within:border-input focus-within:bg-background focus-within:text-foreground has-disabled:bg-muted/60 dark:bg-muted/60 dark:focus-within:bg-background dark:has-disabled:bg-muted/60",
+} as const
+
+type InputGroupAppearance = keyof typeof inputGroupAppearanceClasses
+
+/**
  * `size` Input'la aynı ölçek (docs/ui-control-sizing.md): değişkenler grup
  * üzerinde yeniden bağlanır, içindeki `InputGroupInput` aynı yükseklik, metin
  * ve dolguyu buradan miras alır. Blok hizalı eklenti ve textarea'lı grup
@@ -26,16 +42,22 @@ import { Textarea } from "@/components/ui/textarea"
 function InputGroup({
   className,
   size = "default",
+  appearance = "default",
   ...props
-}: React.ComponentProps<"div"> & { size?: InputSize }) {
+}: React.ComponentProps<"div"> & {
+  size?: InputSize
+  appearance?: InputGroupAppearance
+}) {
   return (
     <div
       data-slot="input-group"
       data-size={size}
+      data-appearance={appearance === "default" ? undefined : appearance}
       role="group"
       className={cn(
         "group/input-group relative flex h-(--control-h) w-full min-w-0 items-center rounded-(--control-radius) border border-input bg-card transition-colors outline-none in-data-[slot=combobox-content]:focus-within:border-inherit in-data-[slot=combobox-content]:focus-within:ring-0 has-disabled:bg-input/50 has-disabled:opacity-50 has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-4 has-[input:focus-visible]:ring-ring/20 has-[textarea:focus-visible]:border-ring has-[textarea:focus-visible]:ring-4 has-[textarea:focus-visible]:ring-ring/20 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-4 has-[[data-slot][aria-invalid=true]]:ring-destructive/10 has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto dark:bg-input/30 dark:has-disabled:bg-input/80 dark:has-[[data-slot][aria-invalid=true]]:border-destructive/50 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/20 has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5",
         inputSizeClasses,
+        inputGroupAppearanceClasses[appearance],
         className
       )}
       {...props}
@@ -193,4 +215,5 @@ export {
   InputGroupText,
   InputGroupInput,
   InputGroupTextarea,
+  type InputGroupAppearance,
 }

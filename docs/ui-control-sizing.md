@@ -79,6 +79,17 @@ halkayı grupta çizer ve iç denetimin `data-slot`'una bağlı değildir
 (`has-[input:focus-visible]`); `InputGroupInput` slot'unu props'tan sonra
 yazar.
 
+**Görünüm (`appearance`, #952)** ölçüden bağımsızdır ve kontrolün kendi
+prop'udur. `Input`: `ghost` (çerçevesiz saydam; satır hover/odakta çerçeve),
+`inline` (metin gibi; odakta dolgu + çerçeve). `InputGroup`: `ghost`, `quiet`
+(saydam + soluk metin, hover'da hafif zemin) ve `soft` (hafif dolgulu çip).
+Kurallar: görünümü kullanan satır/kap `group/field-row` taşır; varyant sınıfları
+taban literalinden SONRA gelir; `data-[appearance=…]:` ile biçimlenmez
+(`data-appearance` yalnız QA kancasıdır); çağrı yerinde ata seçicisi
+(`[&_input]:…`) ya da `!` kullanılmaz. İleten sarmalayıcılar:
+`AutocompleteInputGroup`, `ComboboxInput`, `PartAttributeField`,
+`OrderItemUnitCombobox`.
+
 **iOS yakınlaştırması:** iOS Safari 16px altındaki metin girdisine odaklanınca
 sayfayı yakınlaştırır. Bu yüzden `compact` girdinin metni telefonda 16px'te
 kalır, yalnız md+ 14px'e iner (`--control-fs-field-xs`). `--control-fs-xs`

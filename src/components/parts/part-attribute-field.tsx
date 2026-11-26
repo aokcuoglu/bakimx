@@ -14,6 +14,7 @@ import {
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
+  type InputGroupAppearance,
 } from "@/components/ui/input-group"
 import type { InputSize } from "@/components/ui/input"
 import { Plus, Search, XIcon } from "lucide-react"
@@ -41,6 +42,7 @@ export function PartAttributeField({
   onOpenPicker,
   hideClear,
   size = "default",
+  appearance,
 }: {
   kind: "brand" | "category"
   vehicleTypeId: number | null
@@ -57,6 +59,8 @@ export function PartAttributeField({
   hideClear?: boolean
   /** Input ölçeği (docs/ui-control-sizing.md): kalem satırında `compact`. */
   size?: InputSize
+  /** Görünüm (#952): satır içi hayalet / sessiz / yumuşak alan. */
+  appearance?: InputGroupAppearance
 }) {
   // Seçenekler artık her hücrede ayrı fetch edilmez: grid seviyesindeki
   // PartAttrOptionsProvider araç başına TEK sefer çeker, buradan paylaşılır.
@@ -87,7 +91,7 @@ export function PartAttributeField({
       itemToStringValue={(o: AttrOption) => o.label}
       onValueChange={(v: string) => { setQuery(v); onQueryChange?.(v) }}
     >
-      <AutocompleteInputGroup size={size}>
+      <AutocompleteInputGroup size={size} appearance={appearance}>
         <AutocompleteInput
           render={
             <InputGroupInput placeholder={placeholder} disabled={disabled} title={value || undefined} />
