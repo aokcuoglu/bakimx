@@ -1,9 +1,28 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
 import type { TemplateChannel } from "@/lib/communications/templates"
 import { NOTIFICATION_PROVIDER_LABELS } from "@/lib/provider-labels"
+import {
+  notificationTemplateFormSchema,
+  type NotificationTemplateFormValues,
+} from "@/lib/validations/notification-template"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
@@ -27,9 +46,9 @@ const CHANNEL_LABELS: Record<TemplateChannel, string> = {
   email: "E-posta",
 }
 
-const CHANNEL_COLORS: Record<TemplateChannel, string> = {
-  sms: "bg-success/10 text-foreground border-success/20",
-  email: "bg-primary/10 text-foreground border-primary/20",
+const CHANNEL_BADGE: Record<TemplateChannel, string> = {
+  sms: "border-success/20 bg-success/10 text-success-strong",
+  email: "border-primary/20 bg-primary/10 text-primary-strong",
 }
 
 const PROVIDER_LABELS = NOTIFICATION_PROVIDER_LABELS
@@ -50,9 +69,9 @@ export function NotificationSettings({
 }) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
   const [editingChannel, setEditingChannel] = useState<TemplateChannel | null>(null)
-  const [editContent, setEditContent] = useState("")
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const router = useRouter()
+  const [resetting, setResetting] = useState(false)
+  const [resetError, setResetError] = useState<string | null>(null)
   const [testRecipient, setTestRecipient] = useState<Record<TemplateChannel, string>>({ sms: "", email: "" })
   const [testResult, setTestResult] = useState<Partial<Record<TemplateChannel, TestResult>>>({})
   const [testingChannel, setTestingChannel] = useState<TemplateChannel | null>(null)
@@ -86,31 +105,9 @@ export function NotificationSettings({
     setTestingChannel(null)
   }
 
-  async function handleSave(templateKey: string, channel: TemplateChannel) {
-    setSaving(true)
-    setMessage(null)
-    try {
-      const formData = new FormData()
-      formData.set("templateKey", templateKey)
-      formData.set("channel", channel)
-      formData.set("content", editContent)
-      const res = await fetch("/api/communications/templates", { method: "POST", body: formData })
-      const data = await res.json()
-      if (data.success) {
-        setMessage({ type: "success", text: "Şablon kaydedildi" })
-        setEditingChannel(null)
-      } else {
-        setMessage({ type: "error", text: data.error || "Kaydedilemedi" })
-      }
-    } catch {
-      setMessage({ type: "error", text: "Bağlantı hatası" })
-    }
-    setSaving(false)
-  }
-
   async function handleReset(templateKey: string, channel: TemplateChannel) {
-    setSaving(true)
-    setMessage(null)
+    setResetting(true)
+    setResetError(null)
     try {
       const formData = new FormData()
       formData.set("templateKey", templateKey)
@@ -118,21 +115,19 @@ export function NotificationSettings({
       const res = await fetch("/api/communications/templates", { method: "DELETE", body: formData })
       const data = await res.json()
       if (data.success) {
-        setMessage({ type: "success", text: "Şablon varsayılana sıfırlandı" })
+        toast.success("Şablon varsayılana sıfırlandı")
+        router.refresh()
       } else {
-        setMessage({ type: "error", text: data.error || "Sıfırlanamadı" })
+        setResetError(data.error || "Sıfırlanamadı")
       }
     } catch {
-      setMessage({ type: "error", text: "Bağlantı hatası" })
+      setResetError("Bağlantı hatası")
     }
-    setSaving(false)
+    setResetting(false)
   }
 
   function startEdit(templateKey: string, channel: TemplateChannel) {
-    const template = templates.find((t) => t.key === templateKey)
-    const content = template?.savedTemplates[channel]?.content || template?.defaults[channel] || ""
     setEditingChannel(channel)
-    setEditContent(content)
     setExpandedKey(templateKey)
   }
 
@@ -147,9 +142,9 @@ export function NotificationSettings({
             return (
               <div key={ch} className="flex flex-col gap-2 p-3 rounded-lg bg-muted border border-border">
                 <div className="flex items-center gap-2">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${CHANNEL_COLORS[ch]}`}>
+                  <Badge variant="outline" className={CHANNEL_BADGE[ch]}>
                     {CHANNEL_LABELS[ch]}
-                  </span>
+                  </Badge>
                   <span className="text-sm text-muted-foreground">
                     {PROVIDER_LABELS[providers[ch]] || providers[ch]}
                   </span>
@@ -188,10 +183,10 @@ export function NotificationSettings({
         </p>
       </div>
 
-      {message && (
-        <div className={`rounded-lg px-4 py-2.5 text-sm ${message.type === "success" ? "bg-success/10 text-foreground border border-success/20" : "bg-destructive/10 text-foreground border border-destructive/20"}`}>
-          {message.text}
-        </div>
+      {resetError && (
+        <Alert variant="destructive">
+          <AlertDescription>{resetError}</AlertDescription>
+        </Alert>
       )}
 
       <Accordion
@@ -213,12 +208,9 @@ export function NotificationSettings({
               </span>
               <span className="flex gap-1">
                 {template.channels.map((ch) => (
-                  <span
-                    key={ch}
-                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${CHANNEL_COLORS[ch]}`}
-                  >
+                  <Badge key={ch} variant="outline" className={CHANNEL_BADGE[ch]}>
                     {CHANNEL_LABELS[ch]}
-                  </span>
+                  </Badge>
                 ))}
               </span>
             </AccordionTrigger>
@@ -233,15 +225,15 @@ export function NotificationSettings({
                   return (
                     <div key={ch} className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${CHANNEL_COLORS[ch]}`}>
+                        <Badge variant="outline" className={CHANNEL_BADGE[ch]}>
                           {CHANNEL_LABELS[ch]}
-                        </span>
+                        </Badge>
                         <div className="flex gap-2">
                           {savedContent && (
                             <Button
                               type="button"
                               onClick={() => handleReset(template.key, ch)}
-                              disabled={saving}
+                              disabled={resetting}
                               variant="ghost"
                               size="sm"
                             >
@@ -262,42 +254,20 @@ export function NotificationSettings({
                       </div>
 
                       {isEditing ? (
-                        <div className="space-y-2">
-                          <Textarea
-                            value={editContent}
-                            onChange={(e) => setEditContent(e.target.value)}
-                            rows={ch === "email" ? 8 : 3}
-                            className="font-mono"
-                          />
-                          <div className="flex gap-2">
-                            <Button variant="foreground"
-                              type="button"
-                              onClick={() => handleSave(template.key, ch)}
-                              disabled={saving || !editContent.trim()}
-                              size="sm"
-                            >
-                              {saving ? "Kaydediliyor..." : "Kaydet"}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEditingChannel(null)}
-                            >
-                              İptal
-                            </Button>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Kullanılabilir değişkenler: {"{customerName}"}, {"{workshopName}"}, {"{vehiclePlate}"}, {"{appointmentDay}"}, {"{appointmentDate}"}, {"{appointmentTime}"},{"{approvalLink}"}, {"{portalLink}"}, {"{quoteNo}"}, {"{workOrderNo}"}, {"{totalAmount}"}, {"{maintenanceType}"}, {"{dueDate}"}, {"{customMessage}"}
-                          </p>
-                        </div>
+                        <TemplateEditForm
+                          templateKey={template.key}
+                          channel={ch}
+                          initialContent={savedContent || defaultContent}
+                          onSaved={() => setEditingChannel(null)}
+                          onCancel={() => setEditingChannel(null)}
+                        />
                       ) : (
                         <div className="rounded-lg bg-muted border border-border px-3 py-2">
                           <p className="text-xs text-muted-foreground font-mono whitespace-pre-wrap line-clamp-3">
                             {savedContent || defaultContent}
                           </p>
                           {savedContent && (
-                            <p className="text-[10px] text-primary mt-1 font-medium">Özel şablon</p>
+                            <p className="text-xs font-medium text-primary-strong mt-1">Özel şablon</p>
                           )}
                         </div>
                       )}
@@ -310,5 +280,83 @@ export function NotificationSettings({
         ))}
       </Accordion>
     </div>
+  )
+}
+
+function TemplateEditForm({
+  templateKey,
+  channel,
+  initialContent,
+  onSaved,
+  onCancel,
+}: {
+  templateKey: string
+  channel: TemplateChannel
+  initialContent: string
+  onSaved: () => void
+  onCancel: () => void
+}) {
+  const router = useRouter()
+  const [serverError, setServerError] = useState<string | null>(null)
+  const form = useForm<NotificationTemplateFormValues>({
+    resolver: zodResolver(notificationTemplateFormSchema),
+    defaultValues: { content: initialContent },
+  })
+
+  async function onSubmit(values: NotificationTemplateFormValues) {
+    setServerError(null)
+    try {
+      const formData = new FormData()
+      formData.set("templateKey", templateKey)
+      formData.set("channel", channel)
+      formData.set("content", values.content)
+      const res = await fetch("/api/communications/templates", { method: "POST", body: formData })
+      const data = await res.json()
+      if (data.success) {
+        toast.success("Şablon kaydedildi")
+        onSaved()
+        router.refresh()
+      } else {
+        setServerError(data.error || "Kaydedilemedi")
+      }
+    } catch {
+      setServerError("Bağlantı hatası")
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+        <FormField
+          control={form.control}
+          name="content"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="sr-only">Şablon metni</FormLabel>
+              <FormControl>
+                <Textarea rows={channel === "email" ? 8 : 3} className="font-mono" {...field} />
+              </FormControl>
+              <FormDescription>
+                Kullanılabilir değişkenler: {"{customerName}"}, {"{workshopName}"}, {"{vehiclePlate}"}, {"{appointmentDay}"}, {"{appointmentDate}"}, {"{appointmentTime}"},{"{approvalLink}"}, {"{portalLink}"}, {"{quoteNo}"}, {"{workOrderNo}"}, {"{totalAmount}"}, {"{maintenanceType}"}, {"{dueDate}"}, {"{customMessage}"}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {serverError && (
+          <Alert variant="destructive">
+            <AlertDescription>{serverError}</AlertDescription>
+          </Alert>
+        )}
+        <div className="flex gap-2">
+          <Button type="submit" variant="foreground" size="sm" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? "Kaydediliyor..." : "Kaydet"}
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+            İptal
+          </Button>
+        </div>
+      </form>
+    </Form>
   )
 }
