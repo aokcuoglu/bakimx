@@ -753,7 +753,7 @@ export function TecdocPartPicker({
  * Parça kataloğu (TecDoc) kapalıyken seçicinin yerine/üstüne çizilen not. Saha
  * rolü satın alma kararı vermez: ona açıklama yok, yalnız sade bir cümle.
  */
-function CatalogLockedNote({ showUpsell }: { showUpsell: boolean }) {
+export function CatalogLockedNote({ showUpsell }: { showUpsell: boolean }) {
   return showUpsell ? (
     <div className="space-y-1">
       <AddonLockedNote feature="partsCatalog" />

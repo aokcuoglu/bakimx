@@ -114,20 +114,11 @@ export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
   }
 
   // Ek özellik kapalıysa "Şaseden bağla" hiç çizilmez (403'e giden düğme yok);
-  // yönetici rolü kilit notunu, saha rolü yalnız elle düzenleme bağlantısını görür.
+  // yönetici rolü kilit notunu görür, saha rolü hiçbir şey görmez (araç düzenleme
+  // sayfasını da açamaz).
   // Yetkiyi yine /api/vin/resolve verir — bu yalnız görünürlüktür (#853).
   if (!access.has("vinLookup")) {
-    return (
-      <div className="space-y-2">
-        {access.showUpsell && <AddonLockedNote feature="vinLookup" />}
-        <Link
-          href={`/vehicles/${vehicle.id}/edit`}
-          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-        >
-          Marka/modeli araç düzenle sayfasından seçin
-        </Link>
-      </div>
-    )
+    return access.showUpsell ? <AddonLockedNote feature="vinLookup" /> : null
   }
 
   return (

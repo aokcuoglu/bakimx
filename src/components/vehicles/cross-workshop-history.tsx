@@ -78,17 +78,18 @@ export function CrossWorkshopHistoryCard({
         </div>
 
         {locked ? (
+          <>
           <Alert variant="warning">
             <ScanLine className="size-4" />
             <AlertDescription>
               Bu araç {history.workshopCount} başka serviste kayıtlı. Sahip ve geçmiş bilgileri
               KVKK gereği maskelidir — <strong>{hint.action}</strong>
               {hint.tail}
-              {!ocrEnabled && access.showUpsell && (
-                <AddonLockedNote feature="ocrIntake" className="mt-2" />
-              )}
             </AlertDescription>
           </Alert>
+          {/* Alert'in dışında: not düz yüzeyde okunur (tinted zeminde kontrast düşer). */}
+          {!ocrEnabled && access.showUpsell && <AddonLockedNote feature="ocrIntake" />}
+          </>
         ) : (
           <p className="text-xs text-muted-foreground">
             {history.accessReason === "registration_scan"

@@ -48,3 +48,16 @@ export function AddonAccessProvider({
 export function useAddonAccess(): AddonAccess {
   return useContext(AddonAccessContext)
 }
+
+/**
+ * Araç katalog kimliğini TecDoc uçlarına vermeden önce kapıdan geçirir (#853):
+ * parça kataloğu kapalıysa `null` döner, böylece arama/seçenek/eşleşme
+ * kancaları (`vehicleTypeId == null` ise hiç istek atmaz) 403'e gitmez.
+ */
+export function tecdocTypeIdFor(access: AddonAccess, catalogVehicleTypeId: number | null | undefined): number | null {
+  return access.has("partsCatalog") ? (catalogVehicleTypeId ?? null) : null
+}
+
+export function useTecdocTypeId(catalogVehicleTypeId: number | null | undefined): number | null {
+  return tecdocTypeIdFor(useAddonAccess(), catalogVehicleTypeId)
+}

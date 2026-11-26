@@ -1,7 +1,9 @@
 import { expect, test } from "bun:test"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { AddonAccessProvider, resolveAddonAccess } from "./addon-access"
+import { AddonAccessProvider, resolveAddonAccess, tecdocTypeIdFor } from "./addon-access"
 import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime"
 import { VinLinkPrompt } from "@/components/parts/vin-link-prompt"
 import { lockedHistoryHint } from "@/lib/vehicle-history/locked-copy"
@@ -33,11 +35,12 @@ test("VinLinkPrompt: şase ek özelliği kapalıyken düğme yok, yöneticiye ki
   expect(html).toContain("Ek özellik")
 })
 
-test("VinLinkPrompt: saha rolünde kilit notu da yok, elle yol var", () => {
+test("VinLinkPrompt: saha rolünde hiçbir şey çizilmez (düzenleme sayfasına yönlendirme yok)", () => {
   const html = render([], "usta")
   expect(html).not.toContain("Ek özellik")
   expect(html).not.toContain("Şaseden bağla")
-  expect(html).toContain("/vehicles/v1/edit")
+  expect(html).toBe("")
+  expect(html).not.toContain("/vehicles/")
 })
 
 test("VinLinkPrompt: ek özellik açıkken düğme çizilir", () => {
@@ -49,4 +52,19 @@ test("maskeli geçmiş cümlesi: OCR kapalıyken ruhsat vaadi yok (#853)", () =>
   const off = lockedHistoryHint(false)
   expect(off.action).not.toContain("ruhsat")
   expect(off.action).toContain("araç kabulü")
+})
+
+test("parça kataloğu kapalıyken TecDoc kimliği null: arama/seçenek/eşleşme kancaları istek atmaz (#853)", () => {
+  const locked = resolveAddonAccess(["vinLookup"], "owner")
+  expect(tecdocTypeIdFor(locked, 123)).toBeNull()
+  expect(tecdocTypeIdFor(resolveAddonAccess(["partsCatalog"], "owner"), 123)).toBe(123)
+  expect(tecdocTypeIdFor(resolveAddonAccess(["partsCatalog"], "owner"), null)).toBeNull()
+})
+
+test("parts-labor-grid: TecDoc kimliği kapıdan geçer, satır katalog düğmesi kilitliyken bağlı sayılmaz (#853)", () => {
+  const src = readFileSync(join(import.meta.dir, "../orders/parts-labor-grid.tsx"), "utf8")
+  // Ham kimlik yalnız kapı yardımcısına girdi olarak okunur; uçlara/seçici bileşenlere doğrudan verilmez.
+  expect(src).not.toMatch(/vehicleTypeId=\{vehicle\?\.catalogVehicleTypeId/)
+  expect(src).toContain("const linked = catalogTypeId != null")
+  expect(src).toContain("ed.isPart && ed.editable && ed.linked")
 })
