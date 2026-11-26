@@ -95,6 +95,14 @@ test("?edit=1 Şikayet penceresi kapanınca adresten düşer", () => {
   expect(body).toContain("if (editingInfo) return")
   expect(body).toContain('urlWithout(window.location.href, ["edit"])')
   expect(body).toContain("router.replace(next, { scroll: false })")
+  // #913: kapanış yolu aynı — Esc / İptal / dışarı tıklama `editingInfo`yu düşürür,
+  // etkiyi o tetikler. Odak dönüşü (`onCloseAutoFocus`) yalnız odak verir; adrese,
+  // pencere durumuna ve yönlendiriciye dokunmaz.
+  expect(SOURCE).toContain("<Dialog open={editingInfo} onOpenChange={(open) => { if (!savingInfo) setEditingInfo(open) }}>")
+  const HOOK = readFileSync(join(import.meta.dir, "..", "..", "hooks", "use-return-focus.ts"), "utf8")
+  for (const forbidden of ["history", "router", "location", "useEffect", "setState"]) {
+    expect(HOOK).not.toContain(forbidden)
+  }
 })
 
 /**
@@ -285,8 +293,9 @@ test("Yeniden Aç başlığın ⋯ menüsünde, yetkiye ve teslim durumuna bağl
  */
 test("kapanmış kabulde fotoğraf kartları salt okunur", () => {
   expect(SOURCE).toContain("readOnly={orderLocked}")
+  expect(SOURCE).toContain("photoCount={vehiclePhotos.length}")
   expect(SOURCE).toContain('<DetailPill tone="neutral">{vehiclePhotos.length} fotoğraf</DetailPill>')
-  expect(SOURCE).toContain("onAdd={orderLocked ? undefined : (type, phase) => focusPhoto(type, phase)}")
+  expect(SOURCE).toContain("onAdd={orderLocked ? undefined : (type, phase, opener) => focusPhoto(type, phase, opener)}")
   expect(SOURCE).toContain("closed={orderLocked}")
   expect(SOURCE).toContain('order.assignedTechnicianName || orderLocked ? "" : "Atama yapıldığında')
   const MATRIX = readFileSync(join(import.meta.dir, "..", "intake", "photo-phase-matrix.tsx"), "utf8")
@@ -305,8 +314,9 @@ test("kapanmış kabulde fotoğraf kartları salt okunur", () => {
  */
 test("hızlı işlem ve Şikayet pencereleri kapanınca odak açan düğmeye döner", () => {
   expect(SOURCE).toContain("useReturnFocus({\n    preventScroll: true,\n    initial: openInfoEditor ? editInfoButtonRef : null,\n  })")
-  // Dört pencere: Şikayet, fotoğraf, kalem ekleme, tahsilat.
-  expect(SOURCE.match(/onCloseAutoFocus=\{returnFocusOnClose\}/g)).toHaveLength(2)
+  // Altı pencere: Şikayet, fotoğraf, İptal onayı, Yeniden Aç (burada) + kalem ekleme, tahsilat (prop).
+  expect(SOURCE.match(/onCloseAutoFocus=\{returnFocusOnClose\}/g)).toHaveLength(4)
+  expect(SOURCE).toContain("<AlertDialogContent onCloseAutoFocus={returnFocusOnClose}>")
   expect(SOURCE).toContain("onAddDialogCloseAutoFocus={returnFocusOnClose}")
   expect(SOURCE).toContain("onCollectionModalCloseAutoFocus={returnFocusOnClose}")
   // Açan yollar hatırlar; pencere açan kaydırma odağı bölüme taşımaz.
@@ -314,8 +324,24 @@ test("hızlı işlem ve Şikayet pencereleri kapanınca odak açan düğmeye dö
   expect(quick.match(/rememberFocus\(opener\)/g)).toHaveLength(2)
   expect(quick).not.toMatch(/scrollToOrderSection\("\w+"\)/)
   const focusPhoto = SOURCE.slice(SOURCE.indexOf("function focusPhoto("), SOURCE.indexOf("function openCollection("))
-  expect(focusPhoto).toContain("rememberFocus()\n    setAddingPhoto(true)\n    scrollToOrderSection(\"kanit\", { focus: false })")
-  expect(SOURCE).toContain("rememberFocus(opener ?? editInfoButtonRef)")
+  expect(focusPhoto).toContain("rememberFocus(opener ?? undefined)\n    setAddingPhoto(true)\n    scrollToOrderSection(\"kanit\", { focus: false })")
+  // Kutucuklar açan öğeyi açıkça verir (Safari fare tıklamasında etkin öğe BODY kalır).
+  expect(SOURCE).toContain("onMissingPhotoClick={(key, opener) => focusPhoto(key, undefined, opener)}")
+  expect(SOURCE).toContain("onAddOther={orderLocked ? undefined : (phase, opener) => {\n                      rememberFocus(opener ?? undefined)")
+  const MATRIX = readFileSync(join(import.meta.dir, "..", "intake", "photo-phase-matrix.tsx"), "utf8")
+  expect(MATRIX).toContain("onClick={(event) => onAdd(event.currentTarget)}")
+  expect(MATRIX).toContain("onClick={(event) => onAddOther(key, event.currentTarget)}")
+  expect(MATRIX).toContain("onAdd(type, phase, compareOpenerRef.current)")
+  const EVIDENCE = readFileSync(join(import.meta.dir, "..", "intake", "intake-evidence-summary.tsx"), "utf8")
+  expect(EVIDENCE).toContain("onClick={(event) => onMissingClick?.(missing[index], event.currentTarget)}")
+  // Şikayet: "Bilgi ekle" kaydedilince kalkarsa yedek kalem düğmesi.
+  expect(SOURCE).toContain("rememberFocus(opener ?? editInfoButtonRef, editInfoButtonRef)")
+  // Başlık: birincil düğme ya da ⋯ (menü öğesi menüyle birlikte kalkar) hatırlanır.
+  expect(SOURCE).toContain("rememberOpener={rememberFocus}")
+  const HEADER = readFileSync(join(import.meta.dir, "detail-header.tsx"), "utf8")
+  expect(HEADER).toContain("rememberOpener?.(overflowTriggerRef.current)\n                          a.onClick()")
+  expect(HEADER).toContain("rememberOpener?.(event.currentTarget)\n                primary.onClick()")
+  expect(HEADER).toContain("ref={overflowTriggerRef}")
   expect(SOURCE).toContain("ref={editInfoButtonRef}")
   expect(SOURCE).toContain("rememberAddOpener={rememberFocus}")
   const QUICK = readFileSync(join(import.meta.dir, "order-quick-actions.tsx"), "utf8")

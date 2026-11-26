@@ -11,13 +11,16 @@ type PhotoCompletionBarProps = {
   completed: number
   missing: string[]
   missingLabels: string[]
-  onMissingClick?: (key: string) => void
+  /** Düğmeyi de verir: açılan pencere kapanınca odak oraya döner (#913). */
+  onMissingClick?: (key: string, opener: HTMLElement) => void
   /**
    * Kapanmış (teslim edilmiş / iptal) kabul (#913): eksik açı artık yarım iş
-   * değil, kayıttır. Yüzde, ilerleme çubuğu, "Eksik açıları ekleyin" ve ekleme
-   * düğmeleri yok; yalnız kaç zorunlu açının kayıtlı olduğu yazılır.
+   * değil, kayıttır. Zorunlu açı sayımı, yüzde, ilerleme çubuğu, "Eksik açıları
+   * ekleyin" ve ekleme düğmeleri yok; yalnız kayıtlı fotoğraf sayısı yazılır.
    */
   readOnly?: boolean
+  /** Salt okunur özetteki kayıtlı fotoğraf sayısı; verilmezse çekilmiş açı sayısı. */
+  photoCount?: number
 }
 
 export function PhotoCompletionBar({
@@ -30,16 +33,16 @@ export function PhotoCompletionBar({
   missingLabels,
   onMissingClick,
   readOnly = false,
+  photoCount,
 }: PhotoCompletionBarProps) {
   const isComplete = requiredCompleted === required
 
   if (readOnly) {
+    const count = photoCount ?? completed
     return (
       <section aria-label="Fotoğraf durumu" className="min-w-0 space-y-1">
         <p className="text-sm font-medium text-foreground">Fotoğraflar</p>
-        <p className="text-xs text-muted-foreground">
-          {requiredCompleted}/{required} zorunlu açı kayıtlı · toplam {completed} açı
-        </p>
+        <p className="text-xs text-muted-foreground">{count > 0 ? `${count} fotoğraf kayıtlı` : "Fotoğraf kaydı yok"}</p>
       </section>
     )
   }
@@ -83,7 +86,7 @@ export function PhotoCompletionBar({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => onMissingClick?.(missing[index])}
+                onClick={(event) => onMissingClick?.(missing[index], event.currentTarget)}
                 aria-label={`${label} fotoğrafını ekle`}
               >
                 <Camera className="size-3" aria-hidden="true" />
@@ -103,13 +106,18 @@ export function PhotoCompletionBar({
 }
 
 type IntakeEvidenceSummaryProps = {
-  photoCompletion: Omit<PhotoCompletionBarProps, "onMissingClick" | "readOnly">
+  photoCompletion: Omit<PhotoCompletionBarProps, "onMissingClick" | "readOnly" | "photoCount">
   damageCount: number
   approvalStatus: "none" | "pending" | "verified"
   publicLinkStatus: "none" | "active" | "expired"
-  onMissingPhotoClick?: (key: string) => void
-  /** Kapanmış kabul: fotoğraf durumu salt okunur özet (bkz. `PhotoCompletionBar`). */
+  onMissingPhotoClick?: (key: string, opener: HTMLElement) => void
+  /**
+   * Kapanmış kabul: fotoğraf durumu salt okunur özet (bkz. `PhotoCompletionBar`);
+   * müşteri onayı "bekleniyor" değil, alınmadı diye okunur.
+   */
   readOnly?: boolean
+  /** Salt okunur özette yazılan kayıtlı fotoğraf sayısı. */
+  photoCount?: number
 }
 
 export function IntakeEvidenceSummary({
@@ -119,13 +127,26 @@ export function IntakeEvidenceSummary({
   publicLinkStatus,
   onMissingPhotoClick,
   readOnly = false,
+  photoCount,
 }: IntakeEvidenceSummaryProps) {
-  const approvalText = approvalStatus === "verified" ? "Onaylandı" : approvalStatus === "pending" ? "Bekleniyor" : "Henüz yok"
+  const approvalText =
+    approvalStatus === "verified"
+      ? "Onaylandı"
+      : readOnly
+        ? "Alınmadı"
+        : approvalStatus === "pending"
+          ? "Bekleniyor"
+          : "Henüz yok"
   const linkText = publicLinkStatus === "active" ? "Aktif" : publicLinkStatus === "expired" ? "Süresi doldu" : "Oluşturulmadı"
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(220px,1fr)] lg:gap-6">
-      <PhotoCompletionBar {...photoCompletion} onMissingClick={onMissingPhotoClick} readOnly={readOnly} />
+      <PhotoCompletionBar
+        {...photoCompletion}
+        onMissingClick={onMissingPhotoClick}
+        readOnly={readOnly}
+        photoCount={photoCount}
+      />
 
       <dl className="divide-y divide-border border-t border-border lg:border-t-0 lg:border-l lg:pl-6">
         <div className="flex items-center justify-between gap-4 py-2 first:pt-0">

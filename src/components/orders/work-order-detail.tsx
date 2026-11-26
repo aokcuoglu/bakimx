@@ -323,9 +323,9 @@ export function WorkOrderDetail({
   // görünümü çizip sonra düzenlemeye atlama titremesi olmasın).
   const openInfoEditor = editInitially && !orderLocked && canEditInfo
 
-  // #913 — tetikleyicisiz pencereler (hızlı işlemler, Şikayet düzenleme) kapanınca
-  // odak açan düğmeye döner; Radix yalnız kendi Dialog.Trigger'ına döndürüyor, odak
-  // BODY'ye düşüyordu. Kalem düğmesi pencere açıkken çizilmez (kapanınca yeniden
+  // #913 — tetikleyicisiz pencereler (hızlı işlemler, Şikayet düzenleme, başlığın
+  // ⋯ menüsünden açılan İptal onayı ve Yeniden Aç) kapanınca odak açan düğmeye
+  // döner; Radix yalnız kendi Dialog.Trigger'ına döndürüyor, odak BODY'ye düşüyordu. Kalem düğmesi pencere açıkken çizilmez (kapanınca yeniden
   // bağlanır), bu yüzden ref olarak hatırlanır; `?edit=1` ile açık gelen pencere de
   // oraya döner. Hızlı işlem sayfayı bölüme kaydırdığı için odak dönerken sayfa
   // geri kaymaz (`preventScroll`): sonuç kaydırılan bölümde görünür kalır.
@@ -525,7 +525,8 @@ export function WorkOrderDetail({
   }
 
   function startEditInfo(opener?: HTMLElement) {
-    rememberFocus(opener ?? editInfoButtonRef)
+    // "Bilgi ekle" kaydedilince (ad girildi) DOM'dan kalkar: yedek kalem düğmesi.
+    rememberFocus(opener ?? editInfoButtonRef, editInfoButtonRef)
     setEditComplaint(order.intake.customerComplaint)
     setEditNote(order.intake.internalNote ?? "")
     setEditMileage(order.intake.mileageAtIntake != null ? String(order.intake.mileageAtIntake) : "")
@@ -829,7 +830,7 @@ export function WorkOrderDetail({
 
   // Eksik/istenen foto akışı: tipini seç, diyaloğu aç ve Kanıt bölümüne kaydır
   // (diyalog kapanınca kullanıcı fotoğrafları orada görür).
-  function focusPhoto(typeKey?: string, phase?: PhotoPhaseKey) {
+  function focusPhoto(typeKey?: string, phase?: PhotoPhaseKey, opener?: HTMLElement | null) {
     // Lite'ta eksik-fotoğraf kısayolları diyaloğu açamaz; kullanıcıyı ortak
     // yükseltme kartının bulunduğu Kanıt bölümüne taşır.
     if (!canUsePhotoChecklist) {
@@ -843,7 +844,8 @@ export function WorkOrderDetail({
     // → tür ve aşama diyaloğda kilitli gelir.
     setPhotoContextLocked(Boolean(typeKey && phase))
     // Odak açan kutucukta kalır (bölüme taşınmaz), pencere kapanınca oraya döner (#913).
-    rememberFocus()
+    // Kutucuk açıkça verilir: Safari fare tıklamasında düğmeye odak vermez.
+    rememberFocus(opener ?? undefined)
     setAddingPhoto(true)
     scrollToOrderSection("kanit", { focus: false })
   }
@@ -931,6 +933,7 @@ export function WorkOrderDetail({
         }
         actions={headerActions}
         loading={loading}
+        rememberOpener={rememberFocus}
       />
 
       <OrderQuickActions actions={quickActions} onAction={handleQuickAction} />
@@ -1180,8 +1183,9 @@ export function WorkOrderDetail({
                   damageCount={damagePhotos.length}
                   approvalStatus={approvalStatus}
                   publicLinkStatus={publicLinkStatus}
-                  onMissingPhotoClick={(key) => focusPhoto(key)}
+                  onMissingPhotoClick={(key, opener) => focusPhoto(key, undefined, opener)}
                   readOnly={orderLocked}
+                  photoCount={vehiclePhotos.length}
                 />
               </div>
             </DetailPanel>
@@ -1210,9 +1214,9 @@ export function WorkOrderDetail({
                     defaultPhase={photoPhaseForStatus(order.status)}
                     canDelete={!orderLocked}
                     onDeleted={() => router.refresh()}
-                    onAdd={orderLocked ? undefined : (type, phase) => focusPhoto(type, phase)}
-                    onAddOther={orderLocked ? undefined : (phase) => {
-                      rememberFocus()
+                    onAdd={orderLocked ? undefined : (type, phase, opener) => focusPhoto(type, phase, opener)}
+                    onAddOther={orderLocked ? undefined : (phase, opener) => {
+                      rememberFocus(opener ?? undefined)
                       setPhotoType("")
                       setPhotoPhase(phase)
                       setPhotoContextLocked(false)
@@ -1587,7 +1591,7 @@ export function WorkOrderDetail({
       </div>
 
       <AlertDialog open={confirmCancelOpen} onOpenChange={handleCancelDialogOpenChange}>
-        <AlertDialogContent>
+        <AlertDialogContent onCloseAutoFocus={returnFocusOnClose}>
           <AlertDialogHeader>
             <AlertDialogTitle>Araç kabulü iptal edilsin mi?</AlertDialogTitle>
             {/* Tek açıklama (aria-describedby tek kimliğe bağlanır), iki paragraf. */}
@@ -1631,7 +1635,7 @@ export function WorkOrderDetail({
       </AlertDialog>
 
       <AlertDialog open={reopenOpen} onOpenChange={(o) => { if (!reopening) setReopenOpen(o) }}>
-        <AlertDialogContent>
+        <AlertDialogContent onCloseAutoFocus={returnFocusOnClose}>
           <AlertDialogHeader>
             <AlertDialogTitle>Araç kabulü yeniden açılsın mı?</AlertDialogTitle>
             <AlertDialogDescription>

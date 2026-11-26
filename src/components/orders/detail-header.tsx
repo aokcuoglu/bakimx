@@ -1,6 +1,6 @@
 "use client"
 
-import { useId, type ComponentType, type ReactNode } from "react"
+import { useId, useRef, type ComponentType, type ReactNode } from "react"
 import Link from "next/link"
 import { ChevronRight, Loader2, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -59,6 +59,7 @@ export function DetailHeader({
   meta,
   actions = [],
   loading = false,
+  rememberOpener,
 }: {
   plate: string
   title: string
@@ -72,10 +73,17 @@ export function DetailHeader({
   meta?: ReactNode
   actions?: DetailHeaderAction[]
   loading?: boolean
+  /**
+   * Aksiyon çalışmadan önce onu tetikleyen düğme bildirilir: birincil düğme ya da
+   * `⋯` (menü öğesi menüyle birlikte DOM'dan kalkar). Aksiyon pencere açıyorsa
+   * (İptal onayı, Yeniden Aç) kapanınca odak oraya döner (#913).
+   */
+  rememberOpener?: (opener: HTMLElement | null) => void
 }) {
   const { primary, overflow } = splitHeaderActions(actions)
   const hasActions = Boolean(primary) || overflow.length > 0
   const reasonId = useId()
+  const overflowTriggerRef = useRef<HTMLButtonElement>(null)
   const primaryReason = primary?.disabled ? primary.disabledReason : undefined
 
   return (
@@ -100,7 +108,10 @@ export function DetailHeader({
               variant="default"
               size="lg"
               className={detail.primaryAction}
-              onClick={primary.onClick}
+              onClick={(event) => {
+                rememberOpener?.(event.currentTarget)
+                primary.onClick()
+              }}
               disabled={loading || primary.disabled}
               aria-describedby={primaryReason ? reasonId : undefined}
             >
@@ -120,7 +131,14 @@ export function DetailHeader({
           {overflow.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="secondary" size="icon" aria-label="Diğer işlemler" disabled={loading}>
+                <Button
+                  ref={overflowTriggerRef}
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  aria-label="Diğer işlemler"
+                  disabled={loading}
+                >
                   <MoreHorizontal />
                 </Button>
               </DropdownMenuTrigger>
@@ -135,7 +153,10 @@ export function DetailHeader({
                     <div key={a.key}>
                       {needsSeparator && <DropdownMenuSeparator />}
                       <DropdownMenuItem
-                        onClick={a.onClick}
+                        onClick={() => {
+                          rememberOpener?.(overflowTriggerRef.current)
+                          a.onClick()
+                        }}
                         disabled={loading || a.disabled}
                         className={cn(
                           "gap-2",

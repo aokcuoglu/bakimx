@@ -51,8 +51,9 @@ test("tamamlanan zorunlu fotoğraflarda eksik kısayolu göstermez", () => {
 
 // #913 — teslim edilmiş / iptal kabulde fotoğraf kartı yarım iş göstermez:
 // eksik açı düğmeleri kilitli kabulde diyaloğu açamıyordu, yalnız kaydırıyordu.
-test("kapanmış kabulde yüzde, eksik açı uyarısı ve ekleme düğmesi yok", () => {
-  const html = renderToStaticMarkup(createElement(IntakeEvidenceSummary, {
+// "N/6 zorunlu" çerçevesi de kapanmış kabulde eksik iş gibi okunuyordu.
+const closed = (photoCount: number, approvalStatus: "none" | "pending" | "verified") =>
+  renderToStaticMarkup(createElement(IntakeEvidenceSummary, {
     photoCompletion: {
       percentage: 33,
       requiredCompleted: 2,
@@ -63,15 +64,21 @@ test("kapanmış kabulde yüzde, eksik açı uyarısı ve ekleme düğmesi yok",
       missingLabels: ["Ön", "Arka", "Sol yan", "Sağ yan"],
     },
     damageCount: 1,
-    approvalStatus: "verified",
+    approvalStatus,
     publicLinkStatus: "active",
     onMissingPhotoClick: () => {},
     readOnly: true,
+    photoCount,
   }))
 
+test("kapanmış kabulde zorunlu sayım, yüzde, eksik açı uyarısı ve ekleme düğmesi yok", () => {
+  const html = closed(5, "verified")
+
   expect(html).toContain("Fotoğraflar")
-  expect(html).toContain("2/6 zorunlu açı kayıtlı · toplam 3 açı")
-  expect(html).not.toContain("Zorunlu fotoğraflar")
+  expect(html).toContain("5 fotoğraf kayıtlı")
+  expect(html).not.toContain("zorunlu")
+  expect(html).not.toContain("Zorunlu")
+  expect(html).not.toContain("2/6")
   expect(html).not.toContain("Eksik açıları ekleyin")
   expect(html).not.toContain("fotoğrafını ekle")
   expect(html).not.toContain('role="progressbar"')
@@ -80,4 +87,12 @@ test("kapanmış kabulde yüzde, eksik açı uyarısı ve ekleme düğmesi yok",
   // Diğer kanıt durumları aynen görünür.
   expect(html).toContain("1 kayıt")
   expect(html).toContain("Onaylandı")
+})
+
+test("kapanmış kabulde fotoğrafsız ve onaysız durum bekliyor gibi okunmaz", () => {
+  const html = closed(0, "pending")
+  expect(html).toContain("Fotoğraf kaydı yok")
+  expect(html).toContain("Alınmadı")
+  expect(html).not.toContain("Bekleniyor")
+  expect(html).not.toContain("Henüz")
 })
