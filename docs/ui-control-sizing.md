@@ -327,9 +327,10 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
   `CollapsibleContent` açılış etiketinde animasyon (`animate-*`), taşma
   (`overflow-*`), yükseklik (`h-*` — `h-full` hariç —, `min-h-*`, `max-h-*`) ve
   çıplak `hidden` taşımaz; açma/kapama animasyonu ve gizleme primitive'dedir
-  (`keepMounted` kapalıyken DOM'da tutar). Panel yüzeyi (dolgu, zemin,
-  kenarlık, `flex`/`grid`) serbesttir; odak halkası kırpılmasın diye gerekirse
-  iç kapsayıcıya dolgu verilir. `CollapsibleTrigger` her zaman `asChild` ile
+  (`keepMounted` kapalıyken DOM'da tutar). Dolgu, kenarlık ve zemin
+  `CollapsibleContent`'e DEĞİL iç kapsayıcıya verilir — aksi hâlde yükseklik
+  animasyonu dolgu+kenarlık kadar bir değerde takılır, 0'a kapanmaz; odak halkası
+  da böylece kırpılmaz. `CollapsibleTrigger` her zaman `asChild` ile
   mevcut `Button`'ı sarar ve `className` taşımaz. Kapı:
   `control-call-sites.test.ts` → `COLLAPSIBLE_FORBIDDEN`.
 

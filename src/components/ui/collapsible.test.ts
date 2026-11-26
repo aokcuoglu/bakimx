@@ -5,7 +5,7 @@ import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { Button } from "./button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./collapsible"
-import { eachTsx, jsxTagsWithAttribute } from "./jsx-source-scan"
+import { eachTsx, jsxOpeningTags, jsxTagsWithAttribute } from "./jsx-source-scan"
 
 /**
  * #950 — aç/kapa bölüm tek primitive'dir (`ui/collapsible.tsx`); çağrı yerinde
@@ -103,6 +103,10 @@ function disclosureHits(source: string, file: string) {
     .map((tag) => ({ tag: tag.name, line: tag.line }))
 }
 
+function rawDisclosureTags(source: string, file: string) {
+  return jsxOpeningTags(source, ["details", "summary"], file)
+}
+
 function scanDisclosures() {
   const hits: { file: string; tag: string; line: number }[] = []
   const rawDetails: string[] = []
@@ -111,7 +115,7 @@ function scanDisclosures() {
     (path, source) => {
       const file = relative(SRC, path).split(sep).join("/")
       for (const hit of disclosureHits(source, path)) hits.push({ file, ...hit })
-      if (/<(?:details|summary)\b/.test(source)) rawDetails.push(file)
+      if (rawDisclosureTags(source, path).length > 0) rawDetails.push(file)
     },
     (path) => `${relative(SRC, path)}${sep}`.startsWith(`components${sep}ui${sep}`)
   )
@@ -123,6 +127,12 @@ describe("elle açılır bölüm yok (#950)", () => {
     expect(disclosureHits("const a = <Button aria-expanded={open}>x</Button>", "a.tsx")).toHaveLength(1)
     expect(disclosureHits('const a = <Input role="combobox" aria-expanded={open} />', "a.tsx")).toEqual([])
     expect(disclosureHits('const a = <span className="group-aria-expanded/accordion-trigger:hidden" />', "a.tsx")).toEqual([])
+  })
+
+  test("<details> kapısı gerçek öğeyi yakalar, yorum ve dizgedeki anmaya dokunmaz", () => {
+    expect(rawDisclosureTags("const a = <details><summary>x</summary></details>", "a.tsx")).toHaveLength(2)
+    expect(rawDisclosureTags("// <details> yerine Collapsible\nconst a = 1", "a.tsx")).toEqual([])
+    expect(rawDisclosureTags("/* <summary> */ const a = '<details>'", "a.tsx")).toEqual([])
   })
 
   test("Collapsible dışında aria-expanded yok; <details>/<summary> yok", () => {

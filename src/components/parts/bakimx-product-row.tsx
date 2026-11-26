@@ -129,38 +129,40 @@ export function BakimxProductRow({
         </CollapsibleTrigger>
       </div>
 
-      <CollapsibleContent className="flex flex-wrap items-center gap-2 border-t border-border/60 bg-muted/40 px-3 py-2">
-        <label htmlFor={`bakimx-order-qty-${product.id}`} className="text-xs text-muted-foreground">
-          Adet
-        </label>
-        <Input
-          id={`bakimx-order-qty-${product.id}`}
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={BAKIMX_ORDER_MAX_QUANTITY}
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          className="w-24"
-        />
-        <span className="text-xs text-muted-foreground">{product.unit}</span>
-        <Button variant="foreground" type="button" size="compact" onClick={submitOrder} disabled={pending}>
-          {pending && <Loader2 className="size-3.5 animate-spin" />}
-          Talep gönder
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="compact"
-          onClick={() => setOrderOpen(false)}
-          disabled={pending}
-        >
-          Vazgeç
-        </Button>
-        {/* Talep ≠ kalem: aynı satırdaki iki eylemin karıştırılmaması için yazılı. */}
-        <span className="basis-full text-[11px] text-muted-foreground">
-          Talep BakımX&apos;e gider; araç kabulüne kalem eklemez.
-        </span>
+      <CollapsibleContent>
+        <div className="flex flex-wrap items-center gap-2 border-t border-border/60 bg-muted/40 px-3 py-2">
+          <label htmlFor={`bakimx-order-qty-${product.id}`} className="text-xs text-muted-foreground">
+            Adet
+          </label>
+          <Input
+            id={`bakimx-order-qty-${product.id}`}
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={BAKIMX_ORDER_MAX_QUANTITY}
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            className="w-24"
+          />
+          <span className="text-xs text-muted-foreground">{product.unit}</span>
+          <Button variant="foreground" type="button" size="compact" onClick={submitOrder} disabled={pending}>
+            {pending && <Loader2 className="size-3.5 animate-spin" />}
+            Talep gönder
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="compact"
+            onClick={() => setOrderOpen(false)}
+            disabled={pending}
+          >
+            Vazgeç
+          </Button>
+          {/* Talep ≠ kalem: aynı satırdaki iki eylemin karıştırılmaması için yazılı. */}
+          <span className="basis-full text-[11px] text-muted-foreground">
+            Talep BakımX&apos;e gider; araç kabulüne kalem eklemez.
+          </span>
+        </div>
       </CollapsibleContent>
     </Collapsible>
   )
