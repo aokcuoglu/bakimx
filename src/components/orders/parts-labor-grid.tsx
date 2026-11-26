@@ -2275,16 +2275,11 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail, onEdit,
               <TooltipTrigger asChild>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant={action.tone === "danger" ? "destructive-ghost" : "ghost"}
                   size="icon-sm"
                   onClick={action.run}
                   aria-label={action.hint}
-                  className={cn(
-                    "text-muted-foreground",
-                    action.tone === "danger"
-                      ? "hover:bg-destructive/10 hover:text-destructive-strong"
-                      : "hover:bg-muted hover:text-foreground",
-                  )}
+                  className="text-muted-foreground"
                 >
                   <action.Icon className="size-4" />
                 </Button>

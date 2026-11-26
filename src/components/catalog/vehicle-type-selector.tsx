@@ -186,10 +186,10 @@ export function VehicleTypeSelector({ selectedIds, onChange }: VehicleTypeSelect
                 {typeNames[typeId] || `Type ${typeId}`}
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="destructive-ghost"
                   size="icon-xs"
                   onClick={() => removeType(typeId)}
-                  className="ml-1 text-destructive-strong hover:bg-destructive/20"
+                  className="ml-1"
                   aria-label="Kaldır"
                 >
                   <X className="size-3" />
