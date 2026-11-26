@@ -150,12 +150,12 @@ Ekipler, ekip detayı, katalog içe aktarma önizlemesi. Varsayılanlar (`line`
   masaüstüdür: iş emri tablosu kolon başlığının sıralama menüsü (tablo yalnız
   lg+) ve tasarım vitrininin kayıt kalıbı (yoğun `line` örneği). İş emri
   detayının sayfa sekmeleri #911'de kalktı.
-- Pazarlama bölümleri (`components/sections/`: `RuhsatDemoSection` segment,
-  `BlogCategoryFilters` `line`) varsayılanın üstüne kendi `--mk-*` ölçeğini
-  kurar; varsayılanı çevirmek o yüzeyleri sessizce değiştirirdi. Segment
-  sekmenin seçili tetikleyicisi ise primitive'de `bg-card`'dır (gri rayda
-  beyaz kart); bu renk düzeltmesi `/dijital-arac-kabul`'daki
-  `RuhsatDemoSection` segmentini de bilerek değiştirir.
+- Pazarlama bölümleri (`components/sections/`) çoğunlukla kendi `--mk-*`
+  ölçeğini kurar; `BlogCategoryFilters` `line` sekmesi bunun örneğidir.
+  `RuhsatDemoSection` (#929) artık `TabsList size="control"` kullanır ve
+  `HeroLeadForm`, `ContactPage`, `demo-ocr-upload` ile birlikte kapı
+  kapsamındadır (CTA'lar `Button size="lg"`). Segment sekmenin seçili
+  tetikleyicisi primitive'de `bg-card`'dır (gri rayda beyaz kart).
 - `ui/` primitive'leri registry'ye yakın kalır; yeni eklenen upstream bileşen
   ve örnek kod varsayılan ölçüyle gelir.
 - Varsayılanın telefona sızmasını kapı engeller:
