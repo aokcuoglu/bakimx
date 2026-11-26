@@ -20,6 +20,8 @@ const NO_BORDER_VARIANTS = [
   "success",
   "warning",
   "link",
+  "tint",
+  "on-photo-ghost",
 ] as const
 
 // Basılma efekti `translate` değil `transform` yazar (#819): call-site'lar
@@ -55,6 +57,21 @@ const buttonVariants = cva(
         // köşe aşağıdaki compoundVariants'ta (#889).
         field:
           "border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:ring-4 aria-invalid:ring-destructive/10 dark:bg-input/30 dark:aria-invalid:ring-destructive/20",
+        // Ton variant'ları (#925): çağrı yerinde `border-destructive/*`,
+        // `bg-primary/N` ya da `bg-white/*` yazılmasın diye ton buradan gelir,
+        // className'den değil.
+        // İkincil yıkıcı eylem (İptal, Pasif Yap): outline çerçevesi, kırmızı ton.
+        "destructive-outline":
+          "border border-destructive/20 bg-card text-destructive-strong hover:bg-destructive/10 aria-expanded:bg-destructive/10 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-input/30 dark:hover:bg-destructive/20 dark:focus-visible:ring-destructive/40",
+        // Birincil tonlu seçili / önerilen eylem. Metin -strong: tonlu zeminde
+        // çıplak text-primary AA'yı geçmez (BAK-160). Koyu temada da /10:
+        // /20 koyu bg-muted üstünde 4.05:1'e iniyor (#925 ölçümü).
+        tint: "bg-primary/10 text-primary-strong hover:bg-primary/20 aria-expanded:bg-primary/20",
+        // Fotoğraf / kamera katmanı üstünde (siyah zemin) çerçeveli ve hayalet düğme.
+        "on-photo":
+          "border border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white focus-visible:border-white focus-visible:ring-white/40",
+        "on-photo-ghost":
+          "text-white hover:bg-white/15 hover:text-white focus-visible:ring-white/40",
       },
       size: {
         // Ölçüler --control-* değişkenlerinden: telefonda 44px, md+ 36px
