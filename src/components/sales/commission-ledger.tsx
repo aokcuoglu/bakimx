@@ -183,15 +183,15 @@ function CommissionCard({ commission, canManage }: { commission: Commission; can
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent>
-          <ol className="mt-3 space-y-3">
-            {commission.events.map((event) => (
-              <li key={event.id} className="border-l-2 border-border pl-3 text-sm">
-                <p className="font-medium text-foreground">{STATUS_LABELS[event.toStatus]} · {event.actorLabel}</p>
-                <p className="text-muted-foreground">{formatDateTime(event.createdAt)}{event.amountMinor == null ? "" : ` · ${formatMinor(event.amountMinor)}`}</p>
-                {event.reason && <p className="mt-1 text-muted-foreground">{event.reason}</p>}
-              </li>
-            ))}
-          </ol>
+            <ol className="mt-3 space-y-3">
+              {commission.events.map((event) => (
+                <li key={event.id} className="border-l-2 border-border pl-3 text-sm">
+                  <p className="font-medium text-foreground">{STATUS_LABELS[event.toStatus]} · {event.actorLabel}</p>
+                  <p className="text-muted-foreground">{formatDateTime(event.createdAt)}{event.amountMinor == null ? "" : ` · ${formatMinor(event.amountMinor)}`}</p>
+                  {event.reason && <p className="mt-1 text-muted-foreground">{event.reason}</p>}
+                </li>
+              ))}
+            </ol>
           </CollapsibleContent>
         </Collapsible>
       </CardContent>

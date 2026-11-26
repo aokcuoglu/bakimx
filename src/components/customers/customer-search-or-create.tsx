@@ -214,26 +214,26 @@ export function CustomerSearchOrCreate({
           </CollapsibleTrigger>
 
           <CollapsibleContent>
-          <div className="mt-3 space-y-3 rounded-sm border border-border p-3">
-            <TaxIdentityFields
-              identityNumber={identityNumber}
-              taxNumber={taxNumber}
-              taxOffice={taxOffice}
-              onIdentityChange={setIdentityNumber}
-              onTaxNumberChange={setTaxNumber}
-              onTaxOfficeChange={setTaxOffice}
-            />
-            <CityDistrictFields
-              city={city}
-              district={district}
-              onCityChange={setCity}
-              onDistrictChange={setDistrict}
-            />
-            <div className="space-y-1.5">
-              <Label>Adres</Label>
-              <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} placeholder="Mahalle / Sokak / No" />
+            <div className="mt-3 space-y-3 rounded-sm border border-border p-3">
+              <TaxIdentityFields
+                identityNumber={identityNumber}
+                taxNumber={taxNumber}
+                taxOffice={taxOffice}
+                onIdentityChange={setIdentityNumber}
+                onTaxNumberChange={setTaxNumber}
+                onTaxOfficeChange={setTaxOffice}
+              />
+              <CityDistrictFields
+                city={city}
+                district={district}
+                onCityChange={setCity}
+                onDistrictChange={setDistrict}
+              />
+              <div className="space-y-1.5">
+                <Label>Adres</Label>
+                <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} placeholder="Mahalle / Sokak / No" />
+              </div>
             </div>
-          </div>
           </CollapsibleContent>
         </Collapsible>
         {duplicates.length > 0 ? (
