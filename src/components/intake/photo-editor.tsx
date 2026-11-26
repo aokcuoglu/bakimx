@@ -113,7 +113,7 @@ export default function PhotoEditor({ sourceUrl, initialAnnotation, onSave, onCa
   }
   const allShapes = draft ? [...history.present, draft] : history.present
   return <div className="min-w-0 max-w-full space-y-3" ref={container}>
-    <ToggleGroup className="flex-wrap" type="single" value={tool} onValueChange={value => { if (value) { setTool(value as typeof tool); setSelected(null) } }} aria-label="Çizim aracı" disabled={busy}>
+    <ToggleGroup variant="outline" size="control" className="flex-wrap" type="single" value={tool} onValueChange={value => { if (value) { setTool(value as typeof tool); setSelected(null) } }} aria-label="Çizim aracı" disabled={busy}>
       {Object.entries(toolLabels).map(([value, label]) => <ToggleGroupItem key={value} value={value} aria-label={label}>{label}</ToggleGroupItem>)}
     </ToggleGroup>
     <div className="flex flex-wrap gap-2">

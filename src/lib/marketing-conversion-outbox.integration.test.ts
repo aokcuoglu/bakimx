@@ -13,15 +13,15 @@ test.skipIf(process.env.LITE_ANALYTICS_DB_TESTS !== "true")("PostgreSQL conversi
   const workshopIds: string[] = []
   try {
     for (let index = 0; index < 2; index++) {
-      const workshop = await prisma.workshop.create({ data: { loginCode: `qa-${randomUUID().slice(0, 12)}`, name: "Analytics QA fixture", phone: "TEST", city: "TEST", address: "TEST", planTier: "lite" } })
+      const workshop = await prisma.workshop.create({ data: { loginCode: `qa-${randomUUID().slice(0, 12)}`, name: "Analytics QA fixture", phone: "TEST", city: "TEST", address: "TEST", planTier: "pro" } })
       workshopIds.push(workshop.id)
     }
     const [workshopId, otherId] = workshopIds
-    const liteInput = { name: "lite_registered" as const, workshopId, key: workshopId, payload: { plan_tier: "lite" as const }, attribution: { campaignSource: "facebook", email: "must-not-persist@example.com" } }
-    await expect(prisma.$transaction(async tx => { await recordMarketingConversion(tx, liteInput); throw new Error("ROLLBACK_QA") })).rejects.toThrow("ROLLBACK_QA")
+    const attributedInput = { name: "paid_subscription_confirmed" as const, workshopId, key: "qa-attributed-order", payload: { plan_tier: "pro" as const, billing_cycle: "yearly" as const }, attribution: { campaignSource: "facebook", email: "must-not-persist@example.com" } }
+    await expect(prisma.$transaction(async tx => { await recordMarketingConversion(tx, attributedInput); throw new Error("ROLLBACK_QA") })).rejects.toThrow("ROLLBACK_QA")
     expect(await prisma.auditLog.count({ where: { workshopId, entityType: CONVERSION_ENTITY } })).toBe(0)
-    await Promise.all(Array.from({ length: 4 }, () => prisma.$transaction(tx => recordMarketingConversion(tx, liteInput))))
-    expect(await prisma.auditLog.count({ where: { workshopId, action: "lite_registered" } })).toBe(1)
+    await Promise.all(Array.from({ length: 4 }, () => prisma.$transaction(tx => recordMarketingConversion(tx, attributedInput))))
+    expect(await prisma.auditLog.count({ where: { workshopId, entityType: CONVERSION_ENTITY, action: "paid_subscription_confirmed" } })).toBe(1)
     // A real first and second work order through the shared transaction helper.
     const customer = await prisma.customer.create({ data: { workshopId, phone: "TEST" } })
     const vehicle = await prisma.vehicle.create({ data: { workshopId, customerId: customer.id, plate: "QA", brand: "QA", model: "QA" } })
@@ -34,7 +34,7 @@ test.skipIf(process.env.LITE_ANALYTICS_DB_TESTS !== "true")("PostgreSQL conversi
     expect(await prisma.auditLog.count({ where: { workshopId, action: "first_work_order_created" } })).toBe(1)
     const paid = { name: "paid_subscription_confirmed" as const, workshopId, key: "qa-confirmed-order", payload: { plan_tier: "pro" as const, billing_cycle: "monthly" as const } }
     await Promise.all(Array.from({ length: 4 }, () => prisma.$transaction(tx => recordMarketingConversion(tx, paid))))
-    expect(await prisma.auditLog.count({ where: { workshopId, action: "paid_subscription_confirmed" } })).toBe(1)
+    expect(await prisma.auditLog.count({ where: { workshopId, entityType: CONVERSION_ENTITY, action: "paid_subscription_confirmed" } })).toBe(2)
     const owner = { workshopId, role: "owner", mustChangePassword: false }
     for (const viewer of [null, { ...owner, role: "staff" }, { ...owner, impersonatorAdminId: "admin" }, { ...owner, mustChangePassword: true }, { ...owner, workshopId: otherId }]) {
       expect(await prisma.$transaction(tx => claimRecordedMarketingConversions(tx, viewer))).toEqual([])

@@ -1,4 +1,3 @@
-import { hasLifetimeLite } from "@/lib/lite-campaign"
 import type { Workshop } from "@prisma/client"
 
 /**
@@ -127,6 +126,25 @@ export const PLAN_LABELS: Record<PlanTier, string> = {
   starter: "Başlangıç (eski)",
   pro: "Servis Paketi",
   premium: "Paket + ek özellikler",
+}
+
+/**
+ * Saklanan paket değerinin okunur adı — admin ve satış ekranları yerel etiket
+ * haritası tutmasın diye tek kaynak. Tanınmayan değer (eski/elle yazılmış)
+ * ham haliyle, boş değer "—" olarak döner.
+ */
+export function planLabel(tier: string | null | undefined): string {
+  if (isPlanTier(tier)) return PLAN_LABELS[tier]
+  return tier || "—"
+}
+
+/**
+ * Eski Lite kampanyasından süresiz ücretsiz hak almış satır mı? Hak yalnız
+ * paket hâlâ `lite` iken geçerlidir; başka pakete geçen atölyede damga kalsa
+ * da etkisizdir. Yeni Lite kaydı açılmaz (#782, #830).
+ */
+export function hasLifetimeLite(workshop: { planTier: string; liteFreeGrantedAt?: Date | null }): boolean {
+  return workshop.planTier === "lite" && workshop.liteFreeGrantedAt != null
 }
 
 /**

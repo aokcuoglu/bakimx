@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache"
 import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
-import { hasLifetimeLite } from "@/lib/lite-campaign"
-import { computeTrialEnd, normalizeAddons, type PlanTier } from "@/lib/plan"
+import { planActivationAuditMetadata } from "@/lib/admin/plan-activation-audit"
+import { computeTrialEnd, hasLifetimeLite, isSalePlanTier, normalizeAddons } from "@/lib/plan"
 import { diffAddons, extraVinQuotaSchema, workshopAddonsSchema } from "@/lib/validations/workshop-addons"
 import { activateBillingOrder } from "@/lib/billing/activate"
 import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
@@ -83,7 +83,6 @@ async function sendOwnerDecisionEmail(
   }
 }
 
-const TIERS: PlanTier[] = ["starter", "pro", "premium"]
 const STATUSES = ["trialing", "active", "past_due", "canceled"] as const
 type SubStatus = (typeof STATUSES)[number]
 
@@ -138,7 +137,9 @@ export async function rejectWorkshop(workshopId: string): Promise<Result> {
   return { ok: true }
 }
 
-/** Activate a paid plan (fulfils any pending upgrade request). */
+/** Activate a paid plan (fulfils any pending upgrade request). Elle
+ *  etkinleştirme yalnız satıştaki pakete yapılır (#830); eski `starter` /
+ *  `premium` satırı buradan yeniden verilemez, ek özellikler `addons`'la açılır. */
 export async function activateWorkshopPlan(
   workshopId: string,
   tier: string,
@@ -146,10 +147,13 @@ export async function activateWorkshopPlan(
 ): Promise<Result> {
   const ctx = await requireAdminCapability("manageWorkshops")
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
-  if (!TIERS.includes(tier as PlanTier)) return { ok: false, error: "Geçersiz paket." }
+  if (!isSalePlanTier(tier)) return { ok: false, error: "Geçersiz paket." }
   if (!STATUSES.includes(status as SubStatus)) return { ok: false, error: "Geçersiz durum." }
 
-  const current = await prisma.workshop.findUnique({ where: { id: workshopId }, select: { currentPeriodEnd: true, subscriptionStatus: true } })
+  const current = await prisma.workshop.findUnique({
+    where: { id: workshopId },
+    select: { currentPeriodEnd: true, subscriptionStatus: true, planTier: true, liteFreeGrantedAt: true },
+  })
   if (!current) return { ok: false, error: "İş yeri bulunamadı." }
   // A confirmed paid period is a commercial commitment: changing or downgrading
   // it midway must go through the renewal/billing flow, not this manual tool.
@@ -160,7 +164,7 @@ export async function activateWorkshopPlan(
   await prisma.workshop.update({
     where: { id: workshopId },
     data: {
-      planTier: tier as PlanTier,
+      planTier: tier,
       subscriptionStatus: status as SubStatus,
       approvalStatus: "approved",
       requestedPlanTier: null,
@@ -173,7 +177,7 @@ export async function activateWorkshopPlan(
     "Workshop",
     workshopId,
     "admin_plan_activated",
-    JSON.stringify({ tier, status })
+    JSON.stringify(planActivationAuditMetadata(current, tier, status))
   )
   revalidatePath("/admin", "layout")
   return { ok: true }

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { isDowngradeBlocked, isPlanDowngrade, isPlanUpgrade } from "@/lib/billing/plan-change"
+import { DOWNGRADE_BLOCKED_MESSAGE, isDowngradeBlocked, isPlanDowngrade, isPlanUpgrade } from "@/lib/billing/plan-change"
 
 test("premium → pro/lite düşürmedir", () => {
   expect(isPlanDowngrade("premium", "pro")).toBe(true)
@@ -103,4 +103,12 @@ test("eski satırdan Servis Paketi'ne geçiş yükseltmedir; Paket + ek özellik
   expect(isPlanUpgrade("lite", "pro")).toBe(true)
   expect(isPlanUpgrade("starter", "pro")).toBe(true)
   expect(isPlanDowngrade("premium", "pro")).toBe(true)
+})
+
+// #830: tek pakette "daha düşük paket" dili yanlış; engel dönemi süren eski
+// satırdan Servis Paketi'ne geçişte çıkar.
+test("engel metni tek paket dilinde: Servis Paketi'ni anar, alt paketten söz etmez", () => {
+  expect(DOWNGRADE_BLOCKED_MESSAGE).not.toContain("daha düşük paket")
+  expect(DOWNGRADE_BLOCKED_MESSAGE).toContain("Servis Paketi")
+  expect(DOWNGRADE_BLOCKED_MESSAGE).toContain("iade")
 })
