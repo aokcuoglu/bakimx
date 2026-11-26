@@ -1,4 +1,5 @@
 import { sendCommunication } from "@/lib/communications"
+import { hasReadyNoticeBeenSent } from "@/lib/communications/ready-notice"
 import type { SendableChannel, TemplateVariables } from "@/lib/communications/types"
 
 async function getWorkshopName(workshopId: string): Promise<string> {
@@ -143,6 +144,16 @@ export async function notifyWorkOrderCompleted(
   passportToken?: string,
   entityId?: string,
 ) {
+  if (entityId) {
+    const { prisma } = await import("@/lib/db")
+    const alreadySent = await hasReadyNoticeBeenSent(
+      (where) => prisma.communicationLog.findFirst({ where, select: { id: true } }),
+      workshopId,
+      entityId,
+    )
+    if (alreadySent) return null
+  }
+
   const workshopName = await getWorkshopName(workshopId)
   const variables: TemplateVariables = {
     workshopName,
