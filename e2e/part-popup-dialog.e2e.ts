@@ -61,9 +61,10 @@ for (const width of [390, 1440]) {
       submitted = route.request().postData() ?? ""
       await route.continue()
     })
-    await page.goto(`/api/auth/dev-login?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(`/orders/${orderId}?tab=parcalar`)}`)
-    await page.getByRole("tab", { name: /Parça & İşçilik/ }).click()
-    await page.getByRole("button", { name: "Parça ekle", exact: true }).click()
+    // Sayfa tek kaydırmalı (#911): eski `?tab=parca` Kalemler bölümüne kaydırır.
+    await page.goto(`/api/auth/dev-login?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(`/orders/${orderId}?tab=parca`)}`)
+    // Hızlı buton ve Kalemler araç çubuğu aynı composer'ı açar.
+    await page.getByRole("button", { name: "Parça ekle", exact: true }).first().click()
     const composer = page.getByRole("dialog", { name: "Parça ekle", exact: true })
     const input = composer.getByPlaceholder("Parça no, adı, marka veya OEM ara…")
     await input.fill("QA")
@@ -96,7 +97,6 @@ for (const width of [390, 1440]) {
     expect(saved).toHaveLength(1)
     expect(saved[0].tecdocArticleId).toBe(article.tecdocArticleId)
     await page.reload()
-    await page.getByRole("tab", { name: /Parça & İşçilik/ }).click()
     await expect(page.getByText("QA fren diski", { exact: true }).filter({ visible: true }).first()).toBeVisible()
   })
 }

@@ -44,15 +44,13 @@
 .block { padding:16px 18px; }
 .block + .block { border-top:1px solid var(--dash-sep); }
 .shell { border-radius:var(--radius-panel); background:var(--card); }
-.tabList { justify-content:flex-start; height:auto; gap:4px; border-bottom:1px solid var(--dash-sep); }
-.tab { height:var(--control-h); padding-inline:12px; border-radius:0; border-color:transparent; background:transparent; font-size:15px; }
-.tab:hover { background:transparent; color:var(--foreground); }
-.tab[data-state="active"] { background:transparent; border-color:transparent; color:var(--primary-strong); }
-.tab[data-state="active"]::after { bottom:0; height:2px; background:var(--primary); opacity:1; }
-.tab:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
-@media (max-width:639px) { .tabList { width:auto; margin-inline:-16px; padding-inline:16px; scroll-padding-inline:16px; } }
-/* Sayfa PageFrame içinde değil (/orders/[id] kayıtlı başlık yolu değil): 1440 sınırı burada. */
-.page { max-width:1440px; margin-inline:auto; }
+/* Sayfa PageFrame içinde değil (/orders/[id] kayıtlı başlık yolu değil): 1440 sınırı burada.
+   #911 — iki kolona görünüm alanı değil İÇERİK genişliğiyle geçilir (`@container detail`):
+   aynı ekranda sidebar açık/kapalı çok farklı alan bırakır.
+   DİKKAT: `container-type` bu kutuyu portal'sız `position:fixed` torunlar için kapsayan
+   blok yapar (görünüm alanına değil sayfaya göre konumlanırlar). Sayfadaki sabit
+   öğeler portal'la body'ye çizilir (Dialog/Sheet/Popover); yeni fixed öğe de öyle olmalı. */
+.page { max-width:1440px; margin-inline:auto; container-type:inline-size; container-name:detail; }
 /* #848 — liste satırı: [başlangıç] [başlık / alt satır / zaman] [son] */
 .item { display:flex; align-items:flex-start; gap:14px; min-width:0; min-height:56px; padding:12px 18px; color:inherit; outline:none; }
 .item + .item { border-top:1px solid var(--dash-sep); }
@@ -74,16 +72,68 @@ a.item:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
    `position` YAZMA: modül CSS'i katmansızdır, Tailwind `absolute`ı ezer. */
 .tap::before { content:""; position:absolute; inset:-6px; }
 @media (min-width:768px) { .tap::before { display:none; } }
-/* Kilitli sekme yükseltme kutusu — yalnız bu sayfada */
+/* Kilitli bölüm yükseltme kutusu — yalnız bu sayfada */
 .page :global([data-slot="feature-upsell"]) { border:0; border-radius:var(--radius-panel); padding:18px; }
 .page :global([data-slot="feature-upsell-icon"]) { border:0; border-radius:10px; }
 .block :global([data-slot="feature-upsell"]) { padding:0; border-radius:0; background:transparent; }
-/* #897 — sekme şeridi ile ilk bölüm arası: Tabs kökü 8px aralık verir; üstüne 16/20 = 24/28px.
-   Paylaşılan ui/tabs.tsx'e dokunulmaz; yalnız sayfa düzeyindeki paneller (`>` — Kanıt'taki iç faz sekmeleri etkilenmez). */
-.pageTabs > [role="tabpanel"] { margin-top:16px; }
-@media (min-width:640px) { .pageTabs > [role="tabpanel"] { margin-top:20px; } }
-/* #897 — Teknisyen sekmesi bağlam kartı: [simge] [usta / not] [panel bağlantısı]; dar ekranda bağlantı alta tam genişlik */
+/* #897 — Teknisyen bağlam kartı (#911'den beri rayda): [simge] [usta / not] [panel bağlantısı]; dar alanda bağlantı alta tam genişlik */
 .context { display:flex; flex-wrap:wrap; align-items:center; gap:12px 14px; padding:14px 18px; }
 .contextMain { flex:1 1 220px; min-width:0; }
 .contextAction { flex:1 1 100%; }
 @media (min-width:640px) { .contextAction { flex:none; } }
+/* Rayda (300-340px) simge + metin yan yana sığsın, bağlantı alta tam genişlik. */
+.rail .contextMain { flex-basis:160px; }
+.rail .contextAction { flex:1 1 100%; }
+/* ── #911 — tek sayfa + yan ray ──────────────────────────────────────────
+   Tek kolonda (içerik <780px) ana kolon ve ray `display:contents` ile tek akışta
+   birleşir; bloklar `order` ile bölüm sırasına dizilir, ray kartları ilgili bölümün
+   içine girer (Özet = şikâyet + Müşteri & Araç + kabul bilgileri; Ödeme = fiyat +
+   tahsilat + müşteri çıktısı; Teknisyen = bağlam kartı + ilerleme). */
+.layout { display:flex; flex-direction:column; gap:28px; min-width:0; }
+.main, .rail { display:contents; }
+.oReopen { order:0; }
+.oComplaint { order:10; }
+.oRecord { order:11; }
+.oInfo { order:12; }
+.oItems { order:20; }
+.oEvidence { order:30; }
+.oPricing { order:40; }
+.oPayments { order:41; }
+.oShare { order:42; }
+.oTechCard { order:50; }
+.oTechPanel { order:51; }
+.oHistory { order:60; }
+.rail .statusCard { display:none; }
+/* Bölüme kaydırma hedefi: üst bar + çip şeridi + 12px nefes. Odak programla gelir (tabIndex -1):
+   fare/dokunuşla gelen odakta halka yok, klavyeyle gelende (`:focus-visible`) var. */
+.section { min-width:0; scroll-margin-top:calc(var(--app-sticky-top,58px) + var(--chips-h, calc(var(--control-h) + 16px)) + 12px); border-radius:var(--radius-panel); outline:none; }
+.section:focus-visible { outline:2px solid var(--ring); outline-offset:4px; }
+/* Bölüm çipleri: üst barın altında yapışkan, kenardan kenara (main px-4 / sm:px-6), yatay kayar. */
+.chips { position:sticky; top:var(--app-sticky-top,58px); z-index:20; margin-inline:-16px; padding:8px 16px; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; scroll-padding-inline:16px; border-bottom:1px solid color-mix(in oklab, var(--foreground) 8%, transparent); background:color-mix(in oklab, var(--card) 85%, transparent); -webkit-backdrop-filter:saturate(180%) blur(20px); backdrop-filter:saturate(180%) blur(20px); }
+.chips::-webkit-scrollbar { display:none; }
+.chipList { display:flex; gap:8px; width:max-content; }
+.chipList > li { flex:none; }
+@media (min-width:640px) { .chips { margin-inline:-24px; padding-inline:24px; scroll-padding-inline:24px; } }
+.chip { flex:none; display:inline-flex; align-items:center; height:var(--control-h); padding-inline:16px; border-radius:999px; font-size:15px; font-weight:500; line-height:20px; white-space:nowrap; color:var(--foreground); background:color-mix(in oklab, var(--foreground) 6%, transparent); outline:none; transition:background-color 0.15s, color 0.15s; }
+.chip:hover { background:color-mix(in oklab, var(--foreground) 9%, transparent); }
+.chip:focus-visible { box-shadow:0 0 0 2px var(--ring); }
+.chip[aria-current="location"] { color:var(--primary-strong); background:color-mix(in oklab, var(--primary) 10%, var(--card)); }
+/* Telefon özet kartı: şikâyet, kalan, sıradaki adım (iki kolonda ray aynı işi görür). */
+.summary { min-width:0; }
+.nextStep { display:flex; flex-direction:column; gap:4px; font-size:15px; line-height:20px; color:var(--foreground); }
+.blocker { display:flex; align-items:flex-start; gap:6px; font-size:13px; line-height:18px; color:var(--warning-strong); }
+.blocker svg { flex:none; width:16px; height:16px; margin-top:1px; }
+/* İki kolon: ana kolon + yapışkan ray. Ray görünür alandan uzunsa kendi içinde
+   kaymaz (max-height/overflow yok): sayfayla kayar, alt kenarı görünür kalacak
+   kadar yukarıda yapışır (`--rail-h` ResizeObserver'dan). */
+@container detail (min-width:780px) {
+  .layout { --chips-h:0px; display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:24px; align-items:start; }
+  .main, .rail { display:flex; flex-direction:column; gap:28px; min-width:0; }
+  .main > .section, .rail > .section { order:0; }
+  .rail { position:sticky; top:min(calc(var(--app-sticky-top,0px) + 16px), calc(100dvh - var(--rail-h,0px) - 16px)); }
+  .rail .statusCard { display:flex; }
+  .chips, .summary { display:none; }
+}
+@container detail (min-width:1040px) {
+  .layout { grid-template-columns:minmax(0,1fr) 340px; }
+}

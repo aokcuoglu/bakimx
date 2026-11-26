@@ -46,6 +46,9 @@ test("damage cards reload, preserve numbering, edit multiple marks and require e
     return route.fulfill({json:{success:true,mark}})
   })
   await page.goto(`/api/auth/dev-login?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(`/orders/${orderId}?tab=kanit`)}`)
+  // Hasar kaydı görünür alana yaklaşınca bağlanır (#911): bölüme in.
+  const damageSection=page.getByRole("region",{name:"Hasar",exact:true})
+  await damageSection.scrollIntoViewIfNeeded()
   await expect(page.getByText("#7 · Kaput",{exact:true})).toBeVisible()
   await expect(page.getByText("Fotoğraf eklenmedi",{exact:true})).toBeVisible()
   // The 3D model is the default view; the exploded plan stays one toggle away for keyboard use.
@@ -101,6 +104,7 @@ test("damage cards reload, preserve numbering, edit multiple marks and require e
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1)
   await page.goto("/orders")
   await page.goto(`/orders/${orderId}?tab=kanit`)
+  await damageSection.scrollIntoViewIfNeeded()
   await showPlan()
   await page.getByRole("button",{name:"Kaput — hasar ekle",exact:true}).click()
   await page.getByLabel("Not",{exact:true}).fill("Geri dönüşte korunacak taslak")

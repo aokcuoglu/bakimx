@@ -57,13 +57,13 @@ const browser = await chromium.launch();
   await page.waitForTimeout(800);
 
   // Olası yükleme iskeletleri bitene kadar başlık bekle
-  await page.getByText("Parça & İşçilik").first().waitFor({ timeout: 30_000 });
+  await page.getByText("Parçalar & İşçilikler").first().waitFor({ timeout: 30_000 });
   await page.waitForTimeout(500);
   await page.screenshot({ path: path.join(OUT_DIR, "order-detail.png") });
   console.log("order-detail.png ok");
 
   // ── 2. Parça kataloğu picker ───────────────────────────────────────────────
-  // Sekmeler `?tab=` ile URL-driven — doğrudan parça sekmesine git
+  // Sayfa tek kaydırmalı (#911); eski `?tab=parca` bağlantısı Kalemler bölümüne kaydırır
   await page.goto(`${BASE}/orders/${ORDER_ID}?tab=parca`);
   await page.waitForLoadState("networkidle");
   // Composer'daki 🔍 butonu plain varyantta searchTitle'ı aria-label alır:
