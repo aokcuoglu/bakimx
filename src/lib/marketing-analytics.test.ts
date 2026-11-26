@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { getMarketingContext, MARKETING_EVENT_NAMES, safePage, sanitizeMarketingPayload, sanitizeMarketingAttribution } from "./marketing-analytics"
+import { getMarketingContext, isMarketingEventName, MARKETING_EVENT_NAMES, safePage, sanitizeMarketingPayload, sanitizeMarketingAttribution } from "./marketing-analytics"
 
 describe("marketing analytics contract", () => {
   test("keeps the BAK-171 event dictionary stable", () => {
@@ -7,8 +7,16 @@ describe("marketing analytics contract", () => {
       "seo_landing_view", "trial_cta_click", "demo_cta_click", "register_started",
       "register_submitted", "demo_form_started", "demo_submitted", "purchase_started", "purchase_submitted",
       "feature_paywall_viewed", "feature_upgrade_clicked",
-      "lite_cta_click", "lite_registered", "first_work_order_created", "paid_subscription_confirmed",
+      "first_work_order_created", "paid_subscription_confirmed",
     ])
+    expect(MARKETING_EVENT_NAMES).toHaveLength(13)
+  })
+
+  test("emekli bir olay adı sözlükte sayılmaz (#830)", () => {
+    for (const name of MARKETING_EVENT_NAMES) expect(isMarketingEventName(name)).toBe(true)
+    expect(isMarketingEventName("retired_event")).toBe(false)
+    expect(isMarketingEventName(undefined)).toBe(false)
+    expect(isMarketingEventName(42)).toBe(false)
   })
 
   test("only derives allowlisted campaign and referrer fields", () => {
@@ -90,5 +98,5 @@ describe("Lite attribution minimization", () => {
 
 test("UTM context and caller payload both reject contact data", () => {
   expect(getMarketingContext({ pathname: "/fiyatlar", search: "?utm_source=secret%40example.com&utm_medium=5551234567&utm_campaign=Customer%20Name" }, "")).toEqual({ source_page: "/fiyatlar" })
-  expect(sanitizeMarketingPayload("lite_cta_click", { cta_location: "pricing_card", plan_tier: "lite", campaign_source: "secret@example.com", campaign_medium: "5551234567" })).toEqual({ cta_location: "pricing_card", plan_tier: "lite" })
+  expect(sanitizeMarketingPayload("trial_cta_click", { cta_location: "pricing_card", plan_tier: "pro", campaign_source: "secret@example.com", campaign_medium: "5551234567" })).toEqual({ cta_location: "pricing_card", plan_tier: "pro" })
 })

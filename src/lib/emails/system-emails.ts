@@ -44,20 +44,6 @@ export function workshopApprovedEmail(p: { firstName: string; workshopName: stri
   }
 }
 
-export function welcomeLiteEmail(p: { firstName: string; workshopName: string }): BuiltEmail {
-  return {
-    subject: "BakımX Lite hesabınız hazır",
-    html: renderEmailLayout({
-      heading: "Lite hesabınız hazır",
-      bodyHtml: `<p>Merhaba ${escapeHtml(p.firstName || "Yetkili")},</p>` +
-        `<p>${escapeHtml(p.workshopName)} için Lite paket kapsamını süresiz 0 TL kullanabilirsiniz. Yeni Lite kayıtları kapansa da ücretsiz hakkınız devam eder.</p>` +
-        `<p>Lite süreli deneme değildir; otomatik ücretli pakete dönüşmez. İlk müşteri, araç ve araç kabulünüzü oluşturarak başlayabilirsiniz.</p>`,
-      cta: { label: "Giriş Yap", url: `${appUrl()}/login` },
-      footerNote: "Bu e-postayı BakımX hesabınızı doğruladığınız için aldınız.",
-    }),
-  }
-}
-
 export function workshopRejectedEmail(p: { firstName: string; workshopName: string }): BuiltEmail {
   const name = escapeHtml(p.firstName || "Yetkili")
   const ws = escapeHtml(p.workshopName)
