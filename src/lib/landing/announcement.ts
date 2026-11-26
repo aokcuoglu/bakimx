@@ -21,7 +21,7 @@ export type LandingAnnouncement = {
 export const landingAnnouncement: LandingAnnouncement = {
   id: "2026-08-ruhsat-parca",
   badge: "Yeni",
-  text: "Ruhsatı okutun, araca uyan parçalar otomatik gelsin.",
+  text: "Ruhsat okuma ve şaseden parça artık ek özellik; denemede açık.",
   linkLabel: "İncele",
   href: "/#ozellikler",
 };
