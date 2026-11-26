@@ -21,6 +21,7 @@ import { usePartNumberMatch } from "@/lib/parts/use-part-number-match"
 import { purchaseMatchFields, type PurchaseMatch } from "@/lib/parts/purchase-match"
 import { compressImageForUpload } from "@/lib/image/compress-image"
 import { toast } from "sonner"
+import { formatTrDate } from "@/lib/format-date"
 
 export type TechnicianInfo = { id: string; fullName: string; role: string }
 export type SupplierInfo = { id: string; name: string }
@@ -59,9 +60,7 @@ function isoToTr(iso: string | null): string {
   if (!iso) return ""
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ""
-  const dd = String(d.getDate()).padStart(2, "0")
-  const mm = String(d.getMonth() + 1).padStart(2, "0")
-  return `${dd}.${mm}.${d.getFullYear()}`
+  return formatTrDate(d)
 }
 
 /**

@@ -4,8 +4,8 @@ export type ReminderStatus = "upcoming" | "due_soon" | "overdue" | "completed" |
 
 /**
  * Gün karşılaştırmaları Türkiye takvimine göredir (#904): `dueDate` formda
- * `YYYY-MM-DD` olarak seçilip UTC gece yarısı (TR 03:00) olarak yazılır;
- * `istanbulDayStart` onu seçilen güne, `now`'ı da bugünün TR gününe oturtur.
+ * `YYYY-MM-DD` olarak seçilip İstanbul gece yarısı olarak yazılır (#933 öncesi
+ * kayıtlar UTC gece yarısı, TR 03:00); `istanbulDayStart` ikisini de seçilen güne, `now`'ı da bugünün TR gününe oturtur.
  * Süreç UTC'de koşsa da TR 00:00–03:00 arasında dünkü kayıt gecikmiş sayılır.
  */
 export function deriveReminderStatus(input: {

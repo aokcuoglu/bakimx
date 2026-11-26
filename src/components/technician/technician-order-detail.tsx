@@ -78,6 +78,7 @@ import {
   START_REMINDER_CATEGORIES,
   COMPLETE_REMINDER_CATEGORIES,
 } from "@/lib/technician/gates"
+import { formatTrDate } from "@/lib/format-date"
 
 /**
  * Teknisyen DTO'sundaki kalem. `OrderItem` ofis düzenleyicisinin sözleşmesidir
@@ -1139,7 +1140,7 @@ function PurchaseCard({
         {item.purchasedAt && (
           <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
             <CalendarDays className="size-3 shrink-0" />
-            {new Date(item.purchasedAt).toLocaleDateString("tr-TR")}
+            {formatTrDate(item.purchasedAt)}
           </span>
         )}
         {item.tecdocArticleId != null && (
@@ -1249,7 +1250,7 @@ function ExternalLaborCard({
           {(item.purchasedAt || item.createdAt) && (
             <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
               <CalendarDays className="size-3 shrink-0" />
-              {new Date(item.purchasedAt ?? item.createdAt).toLocaleDateString("tr-TR")}
+              {formatTrDate(item.purchasedAt ?? item.createdAt)}
             </span>
           )}
           {(editable || deletable) && (
