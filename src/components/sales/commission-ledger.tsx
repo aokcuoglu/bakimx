@@ -13,6 +13,7 @@ import {
   voidSalesCommission,
 } from "@/app/admin/sales/commissions/actions"
 import { formatMinor } from "@/lib/billing/pricing"
+import { PLAN_LABELS } from "@/lib/plan"
 import { salesCommissionApprovalSchema, salesCommissionVoidSchema } from "@/lib/validations/sales"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -74,12 +75,6 @@ const TYPE_LABELS: Record<BillingOrderType, string> = {
   upgrade: "Yükseltme",
   downgrade: "Paket düşürme",
   renewal: "Yenileme",
-}
-const PLAN_LABELS: Record<PlanTier, string> = {
-  lite: "Lite",
-  starter: "Başlangıç",
-  pro: "Profesyonel",
-  premium: "Premium",
 }
 
 export function CommissionLedger({

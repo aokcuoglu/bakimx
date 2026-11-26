@@ -9,6 +9,7 @@ import type { BillingCycle, PlanTier } from "@prisma/client"
 import { createSalesCommissionRule } from "@/app/admin/sales/settings/actions"
 import { salesCommissionRuleSchema } from "@/lib/validations/sales"
 import { istanbulDateTimeInputValue } from "@/lib/sales/time"
+import { PLAN_LABELS } from "@/lib/plan"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -26,13 +27,6 @@ type Rule = {
   effectiveTo: string | null
   createdAt: string
   createdByName: string
-}
-
-const PLAN_LABELS: Record<PlanTier, string> = {
-  lite: "Lite",
-  starter: "Başlangıç",
-  pro: "Profesyonel",
-  premium: "Premium",
 }
 
 export function CommissionRuleSettings({ rules, now }: { rules: Rule[]; now: number }) {

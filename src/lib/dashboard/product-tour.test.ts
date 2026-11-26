@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import {
   getDashboardTourSteps,
   nextAvailableStepIndex,
@@ -36,6 +38,17 @@ describe("dashboard product tour config", () => {
   test("first-order step falls back through welcome anchors", () => {
     const last = getDashboardTourSteps(false).at(-1)
     expect(last?.targets).toEqual(["first-order", "welcome-cta", "welcome-banner"])
+  })
+
+  // Turun son adımının çapası Genel Bakış'taki "İlk işinize başlayın" kartı.
+  // Kart eskiden yalnız Lite atölyede çıkıyordu; artık iş emri olmayan her
+  // atölye görür (#830).
+  test("first-order card is shown to every workshop without a work order", () => {
+    const source = readFileSync(join(process.cwd(), "src/app/(app)/dashboard/page.tsx"), "utf8")
+    expect(source).toContain('data-tour="first-order"')
+    expect(source).toContain("const needsFirstOrder = !firstOrder")
+    expect(source).not.toContain('accessTier === "lite"')
+    expect(source).not.toContain("Kurulum tercihleriniz kaydedildi")
   })
 
   test("tourTargetSelector builds data-tour attribute", () => {

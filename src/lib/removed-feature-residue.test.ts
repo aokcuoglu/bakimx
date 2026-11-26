@@ -22,6 +22,17 @@ const REMOVED_PATHS = [
   "src/lib/parts/ai-search.ts",
   "src/lib/validations/market-research.ts",
   "scripts/activate-stage2a-pilot.ts",
+  // Lite kampanyası emekli (#830): kayıt anahtarı, QA betiği ve işletim dokümanları.
+  "src/lib/lite-campaign.ts",
+  "scripts/qa/lite-campaign.ts",
+  "docs/lite-campaign.md",
+  "docs/lite-acquisition-review.md",
+  // Hiçbir sayfada render edilmeyen eski landing bölümleri (#830).
+  "src/lib/landing/hero-slides.ts",
+  "src/components/sections/FeatureShowcaseSection.tsx",
+  "src/components/sections/StandOutSection.tsx",
+  // hero-slides.ts'in tek kullandığı görseller (#830).
+  "public/landing/hero",
 ]
 
 const REMOVED_REFERENCES = [
@@ -41,6 +52,16 @@ const REMOVED_REFERENCES = [
   "/api/advisor",
   "AiPartSearch",
   "activate-stage2a-pilot",
+  // Lite kampanyası (#830). Çıplak "Lite" yasak değil: eski `lite` satırları
+  // okunur kalır ve "Lite (eski)" etiketiyle görünür.
+  "@/lib/lite-campaign",
+  "isLiteRegistrationOpen",
+  "assertLiteRegistrationOpen",
+  "LiteRegistrationClosedError",
+  "LITE_REGISTRATION",
+  "welcomeLiteEmail",
+  "lite_cta_click",
+  "lite_registered",
 ]
 
 function collectFiles(dir: string, files: string[] = []): string[] {
