@@ -242,3 +242,18 @@ describe("dar hücredeki Combobox listesi okunur genişlikte açılabilir (#927)
     expect(anchor.filter((cls) => cls.startsWith("min-w-"))).toEqual([])
   })
 })
+
+describe("liste yüksekliği ilk konumlamada da sonlu olmalı (#963)", () => {
+  // Base UI `flip()`'i `size()`'dan ÖNCE koşar; `--available-height` ilk geçişte
+  // tanımsızdır. Yedeksiz `var(--available-height)` tüm `max-height` bildirimini
+  // geçersiz kılar, liste sınırsız ölçülür, iki yana da sığmaz ve (kilitli
+  // `lazyFlip` ile) yukarı yapışır — altta yer varken bile.
+  for (const file of ["combobox.tsx", "autocomplete.tsx"]) {
+    test(`${file}: var(--available-height) yedek değer taşır`, () => {
+      const source = readFileSync(fileURLToPath(new URL(`./${file}`, import.meta.url)), "utf8")
+      const uses = source.match(/var\(--available-height[^)]*\)/g) ?? []
+      expect(uses.length).toBeGreaterThan(0)
+      expect(uses.filter((use) => !use.includes(","))).toEqual([])
+    })
+  }
+})
