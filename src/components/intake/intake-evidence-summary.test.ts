@@ -48,3 +48,36 @@ test("tamamlanan zorunlu fotoğraflarda eksik kısayolu göstermez", () => {
   expect(html).toContain("Onaylandı")
   expect(html).toContain("Süresi doldu")
 })
+
+// #913 — teslim edilmiş / iptal kabulde fotoğraf kartı yarım iş göstermez:
+// eksik açı düğmeleri kilitli kabulde diyaloğu açamıyordu, yalnız kaydırıyordu.
+test("kapanmış kabulde yüzde, eksik açı uyarısı ve ekleme düğmesi yok", () => {
+  const html = renderToStaticMarkup(createElement(IntakeEvidenceSummary, {
+    photoCompletion: {
+      percentage: 33,
+      requiredCompleted: 2,
+      required: 6,
+      total: 11,
+      completed: 3,
+      missing: ["front", "rear", "left_side", "right_side"],
+      missingLabels: ["Ön", "Arka", "Sol yan", "Sağ yan"],
+    },
+    damageCount: 1,
+    approvalStatus: "verified",
+    publicLinkStatus: "active",
+    onMissingPhotoClick: () => {},
+    readOnly: true,
+  }))
+
+  expect(html).toContain("Fotoğraflar")
+  expect(html).toContain("2/6 zorunlu açı kayıtlı · toplam 3 açı")
+  expect(html).not.toContain("Zorunlu fotoğraflar")
+  expect(html).not.toContain("Eksik açıları ekleyin")
+  expect(html).not.toContain("fotoğrafını ekle")
+  expect(html).not.toContain('role="progressbar"')
+  expect(html).not.toContain("33%")
+  expect(html).not.toContain("<button")
+  // Diğer kanıt durumları aynen görünür.
+  expect(html).toContain("1 kayıt")
+  expect(html).toContain("Onaylandı")
+})

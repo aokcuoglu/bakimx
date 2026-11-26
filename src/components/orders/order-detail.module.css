@@ -94,7 +94,6 @@ a.item:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
    tahsilat + müşteri çıktısı; Teknisyen = bağlam kartı + ilerleme). */
 .layout { display:flex; flex-direction:column; gap:28px; min-width:0; }
 .main, .rail { display:contents; }
-.oReopen { order:0; }
 .oComplaint { order:10; }
 .oRecord { order:11; }
 .oInfo { order:12; }

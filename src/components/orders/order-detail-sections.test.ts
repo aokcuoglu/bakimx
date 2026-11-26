@@ -194,7 +194,8 @@ test("#913: uyarı şeritleri yok; engeller Durum kartında Kalemler bağlantıs
   expect(issue).toContain("{issue.linkLabel}")
   // Durum kartı ve telefon özeti aynı satırı, aynı gezinmeyle çizer.
   expect(SUMMARY.match(/<NextStepLine step=\{nextStep\} onNavigate=\{onNavigate\} \/>/g)).toHaveLength(2)
-  expect(DETAIL).toContain("<OrderStatusCard status={order.status} nextStep={nextStep} onNavigate={scrollToOrderSection}")
+  const statusCard = DETAIL.slice(DETAIL.indexOf("<OrderStatusCard"))
+  expect(statusCard.slice(0, statusCard.indexOf("/>"))).toContain("onNavigate={scrollToOrderSection}")
   // Telefonda engel varsa kartın başında okunur.
   expect(SUMMARY).toContain("{blocked && stepBlock}")
   expect(SUMMARY).toContain("{!blocked && stepBlock}")

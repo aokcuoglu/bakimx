@@ -117,7 +117,8 @@ export function PartsRequestPanel({
       title="Talepler"
       aside={
         <span className="flex items-center gap-2">
-          {undecidedCount > 0 && (
+          {/* Kapanmış (iptal) kabulde karar verilemez; "bekliyor" yarım iş gibi okunmasın (#913). */}
+          {undecidedCount > 0 && !locked && (
             <span className={cn(surface.pill, surface["tone-warning"])}>{undecidedCount} karar bekliyor</span>
           )}
           <span className={surface.rowEndText}>{requests.length} talep</span>

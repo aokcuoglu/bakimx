@@ -189,12 +189,15 @@ function HandoverPerson({
   name,
   phone,
   emptyText,
+  closedText,
   onAdd,
 }: {
   label: string
   name: string | null
   phone: string | null
   emptyText: string
+  /** Teslimden sonra boş alanın anlamı geçmiş zamanla yazılır (#913); verilmezse `emptyText`. */
+  closedText?: string
   /** Verilmezse (yetki yok / emir kilitli) yalnız bilgi görünür. */
   onAdd?: () => void
 }) {
@@ -212,7 +215,7 @@ function HandoverPerson({
         </>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground">{emptyText}</p>
+          <p className="text-sm text-muted-foreground">{closedText ?? emptyText}</p>
           {onAdd && (
             <Button variant="link" size="sm" onClick={onAdd} className="px-0">
               <Plus className="size-3.5" /> Bilgi ekle
@@ -773,6 +776,22 @@ export function WorkOrderDetail({
       disabledReason: disabled && a.primary ? blockedReason : undefined,
     }
   })
+  // #183 → #913 — teslim edilmiş kabulü yeniden açma başlığın ⋯ menüsünde (durum
+  // makinesinin geçişi değil, gerekçeli ayrı action; `NEXT_STATUSES`e girmez).
+  // Teslim edilmiş kabulde birincil aksiyon yok, ikincil ton menüye iner.
+  if (canReopen && order.status === "delivered") {
+    headerActions.push({
+      key: "reopen",
+      label: "Yeniden Aç",
+      onClick: () => setReopenOpen(true),
+      tone: "secondary",
+      icon: RotateCcw,
+    })
+  }
+  // Kapanış anı: son "durum → teslim edildi / iptal" kaydı (geçmiş yeniden eskiye sıralı).
+  const closedAt = orderLocked
+    ? activity.find((entry) => entry.action === `order_status_changed_to_${order.status}`)?.at
+    : undefined
 
   const { vehicle: vehiclePhotos, damage: damagePhotos } = partitionIntakePhotos(intake.photos)
   const takenPhotoTypes = new Set(vehiclePhotos.map((p) => p.type))
@@ -968,6 +987,9 @@ export function WorkOrderDetail({
         complaint={order.intake.customerComplaint}
         money={mobileMoney}
         nextStep={nextStep}
+        status={order.status}
+        closedAt={closedAt}
+        canReopen={canReopen}
         onNavigate={scrollToOrderSection}
       />
 
@@ -975,21 +997,6 @@ export function WorkOrderDetail({
 
       <div className={detail.layout}>
         <div className={detail.main}>
-          {canReopen && order.status === "delivered" && (
-            <div data-section="ozet" tabIndex={-1} className={cn(detail.section, detail.oReopen, detail.shell, "flex flex-wrap items-center justify-between gap-3 p-4")}>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">Araç kabulü teslim edildi</p>
-                  <p className="text-xs text-muted-foreground">
-                    Araç geri geldiyse araç kabulünü yeniden açabilirsiniz. Tahsilat ve müşteri
-                    onayı kayıtları korunur.
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setReopenOpen(true)}>
-                  Yeniden Aç
-                </Button>
-            </div>
-          )}
-
           {/* ÖZET — Şikayet & Notlar (düzenlenebilir) */}
           <div id="ozet" data-section="ozet" role="region" aria-label="Özet" tabIndex={-1} className={cn(detail.section, detail.oComplaint)}>
             <DetailPanel
@@ -1043,6 +1050,7 @@ export function WorkOrderDetail({
                   name={order.intake.pickedUpByName}
                   phone={order.intake.pickedUpByPhone}
                   emptyText="Belirtilmedi — aracı müşterinin kendisi teslim alacak"
+                  closedText={order.status === "delivered" ? "Belirtilmedi — aracı müşterinin kendisi teslim aldı" : undefined}
                   onAdd={canOpenInfoEditor ? startEditInfo : undefined}
                 />
               </div>
@@ -1140,6 +1148,7 @@ export function WorkOrderDetail({
                   approvalStatus={approvalStatus}
                   publicLinkStatus={publicLinkStatus}
                   onMissingPhotoClick={(key) => focusPhoto(key)}
+                  readOnly={orderLocked}
                 />
               </div>
             </DetailPanel>
@@ -1148,12 +1157,16 @@ export function WorkOrderDetail({
             <DetailPanel
               title="Fotoğraflar"
               aside={
-                canUsePhotoChecklist && (
+                canUsePhotoChecklist &&
+                (orderLocked ? (
+                  // Kapanmış kabulde eksik açı yarım iş değil, kayıttır: nötr sayı (#913).
+                  <DetailPill tone="neutral">{vehiclePhotos.length} fotoğraf</DetailPill>
+                ) : (
                   <DetailPill tone={missingRequired.length ? "warning" : "success"}>
                     {missingRequired.length === 0 && <CheckCircle2 className="size-3.5" />}
                     {photoCompletion.requiredCompleted}/{photoCompletion.required} zorunlu
                   </DetailPill>
-                )
+                ))
               }
             >
               <div className={cn(detail.block, "space-y-3")}>
@@ -1380,6 +1393,7 @@ export function WorkOrderDetail({
                 checklistItems={order.checklistItems}
                 laborSessions={order.laborSessions}
                 internalNotes={order.internalNotes}
+                closed={orderLocked}
               />
             )}
           </div>
@@ -1393,7 +1407,13 @@ export function WorkOrderDetail({
 
         {/* RAY — iki kolonda yapışkan; tek kolonda kartlar bölümlerin içine girer. */}
         <div ref={railRef} className={detail.rail}>
-          <OrderStatusCard status={order.status} nextStep={nextStep} onNavigate={scrollToOrderSection} />
+          <OrderStatusCard
+            status={order.status}
+            nextStep={nextStep}
+            closedAt={closedAt}
+            canReopen={canReopen}
+            onNavigate={scrollToOrderSection}
+          />
 
           <div data-section="odeme" tabIndex={-1} className={cn(detail.section, detail.oPricing)}>
             {/* Ödeme kartı (#912): sayfada paranın tek yeri. */}
@@ -1433,7 +1453,7 @@ export function WorkOrderDetail({
                 <div className={detail.contextMain}>
                   <p className={detail.itemTitle}>{order.assignedTechnicianName || "Henüz usta atanmadı"}</p>
                   <p className={detail.itemSub}>
-                    {order.assignedTechnicianName ? "" : "Atama yapıldığında kontrol listesi otomatik oluşur. "}
+                    {order.assignedTechnicianName || orderLocked ? "" : "Atama yapıldığında kontrol listesi otomatik oluşur. "}
                     Kontrol listesi ve işçilik teknisyen panelinde işaretlenir; burada salt okunur görünür.
                   </p>
                 </div>

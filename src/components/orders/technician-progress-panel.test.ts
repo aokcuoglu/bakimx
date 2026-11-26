@@ -36,3 +36,35 @@ test("süre biçimi saat eşiğini doğru geçer", () => {
   expect(formatMinutes(135)).toBe("2s 15dk")
   expect(formatMinutes(600)).toBe("10s 0dk")
 })
+
+/**
+ * #913 — teslim edilmiş / iptal kabulde işaretlenmemiş madde "bekliyor" diye
+ * okunmaz (bekleyen bir iş kalmadı); panel yine aksiyonsuz.
+ */
+test("kapanmış kabulde işaretlenmemiş madde 'bekliyor' değil 'işaretlenmedi' okunur", async () => {
+  const { createElement } = await import("react")
+  const { renderToStaticMarkup } = await import("react-dom/server")
+  const { TechnicianProgressPanel } = await import("./technician-progress-panel")
+  const item = {
+    id: "c1",
+    category: "inspection",
+    description: "Fren kontrolü",
+    isCompleted: false,
+    isRequired: true,
+    completedAt: null,
+    note: null,
+  }
+  const render = (closed: boolean) =>
+    renderToStaticMarkup(
+      createElement(TechnicianProgressPanel, { checklistItems: [item], laborSessions: [], internalNotes: [], closed }),
+    )
+
+  const open = render(false)
+  expect(open).toContain(" — bekliyor")
+  expect(open).toContain("Henüz işçilik kaydı yok")
+
+  const closed = render(true)
+  expect(closed).toContain(" — işaretlenmedi")
+  expect(closed).not.toContain("bekliyor")
+  expect(closed).not.toContain("Henüz")
+})

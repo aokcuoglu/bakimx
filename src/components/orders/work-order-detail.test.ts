@@ -241,3 +241,49 @@ test("Araç Kabul Bilgileri başlığı tekrarlamaz ve durumu değiştirmez", ()
   }
   expect(SOURCE).toContain("<OrderInfoCard order={order} />")
 })
+
+/**
+ * #913 — teslim edilmiş kabul: "Yeniden Aç" Özet bandından başlığın ⋯ menüsüne
+ * taşındı (yetkiye bağlı; asıl kapı `reopenDeliveredOrderAction`ta). Durum
+ * makinesinin geçişi değil, gerekçeli ayrı bir action: `NEXT_STATUSES`e girmez,
+ * başlık aksiyonları ile durum makinesi eşitliği (header-actions.test.ts) korunur.
+ * Teslim edilmiş kabulde birincil aksiyon yok; ikincil ton menüye iner.
+ */
+test("Yeniden Aç başlığın ⋯ menüsünde, yetkiye ve teslim durumuna bağlı", () => {
+  const reopen = SOURCE.slice(SOURCE.indexOf('if (canReopen && order.status === "delivered") {'))
+  const push = reopen.slice(0, reopen.indexOf("\n  }\n"))
+  expect(push).toContain("headerActions.push({")
+  expect(push).toContain('key: "reopen"')
+  expect(push).toContain('label: "Yeniden Aç"')
+  expect(push).toContain("onClick: () => setReopenOpen(true)")
+  expect(push).toContain('tone: "secondary"')
+  expect(NEXT_STATUSES.delivered).toEqual([])
+  expect(SOURCE).not.toContain("NEXT_STATUSES.delivered")
+  // Özet bandı kalktı; Durum kartı yolu tarif eder, kapanış anını yazar.
+  expect(SOURCE).not.toContain("Araç kabulü teslim edildi</p>")
+  expect(SOURCE).not.toContain("detail.oReopen")
+  expect(SOURCE.match(/onClick=\{\(\) => setReopenOpen\(true\)\}/g)).toBeNull()
+  const SUMMARY = readFileSync(join(import.meta.dir, "order-status-summary.tsx"), "utf8")
+  expect(SUMMARY).toContain("Araç geri geldiyse başlıktaki ⋯ menüsünden yeniden açabilirsiniz.")
+  expect(SUMMARY).toContain("{canReopen && status === \"delivered\" && (")
+  expect(SUMMARY).toContain("`${what} · ${formatTrDateTime(closedAt)}`")
+  expect(SOURCE).toContain("entry.action === `order_status_changed_to_${order.status}`")
+})
+
+/**
+ * #913 — kapanmış kabulde yarım iş göstergeleri ve ekleme aksiyonları yok: eksik
+ * açı düğmeleri kilitli kabulde diyaloğu açamıyordu (diyalog yalnız açık kabulde
+ * bağlı), yalnız sayfayı kaydırıyordu.
+ */
+test("kapanmış kabulde fotoğraf kartları salt okunur", () => {
+  expect(SOURCE).toContain("readOnly={orderLocked}")
+  expect(SOURCE).toContain('<DetailPill tone="neutral">{vehiclePhotos.length} fotoğraf</DetailPill>')
+  expect(SOURCE).toContain("onAdd={orderLocked ? undefined : (type, phase) => focusPhoto(type, phase)}")
+  expect(SOURCE).toContain("closed={orderLocked}")
+  expect(SOURCE).toContain('order.assignedTechnicianName || orderLocked ? "" : "Atama yapıldığında')
+  const MATRIX = readFileSync(join(import.meta.dir, "..", "intake", "photo-phase-matrix.tsx"), "utf8")
+  expect(MATRIX).toContain("const readOnly = !onAdd")
+  expect(MATRIX).toContain("const visibleRows = readOnly ? filledRows(key) : rows")
+  expect(MATRIX).toContain("Bu aşamada fotoğraf yok")
+  expect(MATRIX).toContain("{!readOnly && requiredRows.length ? `${filled}/${requiredRows.length}` : filled + extra}")
+})

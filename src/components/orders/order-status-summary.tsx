@@ -3,6 +3,7 @@
 import { ChevronRight, TriangleAlert } from "lucide-react"
 import { DetailPanel, OrderStatusPill, detail } from "@/components/orders/order-detail-surface"
 import { formatTRY } from "@/lib/format"
+import { formatTrDateTime } from "@/lib/format-date"
 import type { OrderSectionId } from "@/lib/orders/detail-sections"
 import type { OrderNextStep, OrderStepIssue } from "@/lib/orders/next-step"
 import { cn } from "@/lib/utils"
@@ -59,6 +60,26 @@ function NextStepLine({ step, onNavigate }: { step: OrderNextStep; onNavigate: (
   )
 }
 
+/**
+ * Kapanmış kabulün durumu (#913): ne zaman teslim edildi / iptal edildi ve —
+ * yetki varsa — geri gelen aracın kabulünün nereden yeniden açılacağı. "Yeniden
+ * Aç" başlığın ⋯ menüsünde; burada yalnız yol tarif edilir.
+ */
+function ClosedLine({ status, closedAt, canReopen }: { status: string; closedAt?: string; canReopen: boolean }) {
+  const what = status === "cancelled" ? "Araç kabulü iptal edildi" : "Araç teslim edildi"
+  return (
+    <div className={detail.nextStep}>
+      <p>{closedAt ? `${what} · ${formatTrDateTime(closedAt)}` : `${what}.`}</p>
+      {canReopen && status === "delivered" && (
+        <p className="text-[13px] leading-[18px] text-muted-foreground">
+          Araç geri geldiyse başlıktaki ⋯ menüsünden yeniden açabilirsiniz. Tahsilat ve müşteri onayı
+          kayıtları korunur.
+        </p>
+      )}
+    </div>
+  )
+}
+
 /** Telefon özet kartının para satırı; Ödeme kartının kısa hâli (#912). */
 export type OrderMobileMoney = {
   grandTotal: number
@@ -80,23 +101,35 @@ export function OrderMobileSummary({
   complaint,
   money,
   nextStep,
+  status,
+  closedAt,
+  canReopen = false,
   onNavigate,
 }: {
   complaint: string
   /** Tutar girilmişse para satırı; değilse null (satır çizilmez). */
   money: OrderMobileMoney | null
   nextStep: OrderNextStep | null
+  status: string
+  /** Kapanmış kabulde kapanış anı (ISO); bilinmiyorsa tarih yazılmaz. */
+  closedAt?: string
+  canReopen?: boolean
   onNavigate: (id: OrderSectionId) => void
 }) {
   const hasComplaint = complaint.trim().length > 0
   const truncated = complaint.length > COMPLAINT_PREVIEW_CHARS || complaint.includes("\n")
   // Engel varsa önce o (#913): başlıktaki düğme pasif, nedeni ilk okunan şey olsun.
   const blocked = Boolean(nextStep && nextStep.blockers.length > 0)
-  const stepBlock = nextStep && (
+  const closed = status === "delivered" || status === "cancelled"
+  const stepBlock = nextStep ? (
     <div className={detail.block}>
       <NextStepLine step={nextStep} onNavigate={onNavigate} />
     </div>
-  )
+  ) : closed ? (
+    <div className={detail.block}>
+      <ClosedLine status={status} closedAt={closedAt} canReopen={canReopen} />
+    </div>
+  ) : null
   return (
     <section aria-label="Kabul özeti" className={cn(detail.shell, detail.summary)}>
       {blocked && stepBlock}
@@ -169,15 +202,21 @@ export function OrderMobileSummary({
  * Salt okunur — aksiyonlar başlıkta kalır. Hap panel başlığında (#912), kart
  * gövdesi sıradaki adımı ve onu kapatan engelleri taşır: ne eksik, hangileri,
  * ne yapılmalı ve Kalemler'e bağlantı (#913 — başlığın altındaki uyarı şeritleri
- * buraya taşındı).
+ * buraya taşındı). Kapanmış kabulde kapanış anını ve yeniden açma yolunu yazar.
  */
 export function OrderStatusCard({
   status,
   nextStep,
+  closedAt,
+  canReopen = false,
   onNavigate,
 }: {
   status: string
   nextStep: OrderNextStep | null
+  /** Kapanmış kabulde kapanış anı (ISO); bilinmiyorsa tarih yazılmaz. */
+  closedAt?: string
+  /** Teslim edilmiş kabulü yeniden açma yetkisi (yalnız görünürlük; kapı action'da). */
+  canReopen?: boolean
   onNavigate: (id: OrderSectionId) => void
 }) {
   return (
@@ -186,9 +225,7 @@ export function OrderStatusCard({
         {nextStep ? (
           <NextStepLine step={nextStep} onNavigate={onNavigate} />
         ) : (
-          <p className="text-[15px] leading-5 text-muted-foreground">
-            {status === "cancelled" ? "Araç kabulü iptal edildi." : "Araç teslim edildi."}
-          </p>
+          <ClosedLine status={status} closedAt={closedAt} canReopen={canReopen} />
         )}
       </div>
     </DetailPanel>

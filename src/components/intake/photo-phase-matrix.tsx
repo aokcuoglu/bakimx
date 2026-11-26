@@ -37,6 +37,10 @@ export type { PhaseMatrixPhoto }
  * Boş kutu o açı ve aşama için ekleme diyaloğunu açar; dolu kutu üçlü
  * karşılaştırmayı açar, oradaki kareye tıklayınca zoom lightbox aşamalar
  * arasında gezinir. En sondaki "Fotoğraf ekle" kutusu serbest eklemedir.
+ *
+ * `onAdd` yoksa (kapanmış kabul, #913) yalnız çekilmiş kareler görünür: boş
+ * kutu, "Zorunlu" ipucu ve `0/6` sayacı yarım iş gibi okunuyordu. Sayaç o
+ * aşamadaki dolu açı sayısını yazar; boş aşamada tek satır açıklama.
  */
 export function PhotoPhaseMatrix({
   photos,
@@ -56,7 +60,14 @@ export function PhotoPhaseMatrix({
   defaultPhase?: PhotoPhaseKey
 }) {
   const rows = React.useMemo(() => buildPhotoPhaseMatrix(photos), [photos])
-  const [phase, setPhase] = useState<PhotoPhaseKey>(defaultPhase)
+  const readOnly = !onAdd
+  const filledRows = (key: PhotoPhaseKey) => rows.filter((row) => cellOf(row, key).photos.length > 0)
+  // Salt okunurda boş aşamayla açılmasın: varsayılan aşama boşsa ilk dolu aşama.
+  const [phase, setPhase] = useState<PhotoPhaseKey>(() =>
+    readOnly && filledRows(defaultPhase).length === 0
+      ? (PHOTO_PHASE_ORDER.find((key) => filledRows(key).length > 0) ?? defaultPhase)
+      : defaultPhase
+  )
   const requiredRows = rows.filter((row) => row.required)
   const [compareRow, setCompareRow] = useState<PhaseMatrixRow | null>(null)
   const [carouselOpen, setCarouselOpen] = useState(false)
@@ -93,59 +104,65 @@ export function PhotoPhaseMatrix({
               <TabsTrigger key={key} value={key} className="sm:px-3">
                 {PHOTO_PHASE_SHORT_LABELS[key]}
                 <span className="tabular-nums text-xs text-muted-foreground">
-                  {requiredRows.length ? `${filled}/${requiredRows.length}` : filled + extra}
+                  {!readOnly && requiredRows.length ? `${filled}/${requiredRows.length}` : filled + extra}
                 </span>
               </TabsTrigger>
             )
           })}
         </TabsList>
 
-        {PHOTO_PHASE_ORDER.map((key) => (
-          <TabsContent key={key} value={key} className="@container">
-            <ul className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
-              {rows.map((row) => {
-                const cell = cellOf(row, key)
-                const cover = cell.photos.find((p) => p.fileUrl) ?? cell.photos[0]
-                return (
-                  <li key={row.type} className="min-w-0 space-y-1">
-                    {cover ? (
-                      <FilledTile
-                        photo={cover}
-                        label={`${row.label} · ${PHOTO_PHASE_SHORT_LABELS[key]}`}
-                        onOpen={() => setCompareRow(row)}
-                      />
-                    ) : (
-                      <EmptyTile
-                        label={`${row.label} · ${PHOTO_PHASE_SHORT_LABELS[key]}`}
-                        disabled={!onAdd}
-                        onAdd={() => onAdd?.(row.type, key)}
-                      />
-                    )}
-                    <TileCaption
-                      label={row.label}
-                      hint={cell.photos.length > 1 ? `${cell.photos.length} fotoğraf` : !cover && row.required ? "Zorunlu" : null}
-                    />
-                  </li>
-                )
-              })}
-              {onAddOther ? (
-                <li className="min-w-0 space-y-1">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="tile"
-                    onClick={() => onAddOther(key)}
-                    className={cn(TILE, "text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring")}
-                  >
-                    <Plus className="size-4" />
-                    <span className="text-xs font-medium">Fotoğraf ekle</span>
-                  </Button>
-                  <TileCaption label="Diğer" hint="Ruhsat, şase…" />
-                </li>
-              ) : null}
-            </ul>
-          </TabsContent>
-        ))}
+        {PHOTO_PHASE_ORDER.map((key) => {
+          const visibleRows = readOnly ? filledRows(key) : rows
+          return (
+            <TabsContent key={key} value={key} className="@container">
+              {visibleRows.length === 0 ? (
+                <p className="text-[15px] leading-5 text-muted-foreground">Bu aşamada fotoğraf yok</p>
+              ) : (
+                <ul className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
+                  {visibleRows.map((row) => {
+                    const cell = cellOf(row, key)
+                    const cover = cell.photos.find((p) => p.fileUrl) ?? cell.photos[0]
+                    return (
+                      <li key={row.type} className="min-w-0 space-y-1">
+                        {cover ? (
+                          <FilledTile
+                            photo={cover}
+                            label={`${row.label} · ${PHOTO_PHASE_SHORT_LABELS[key]}`}
+                            onOpen={() => setCompareRow(row)}
+                          />
+                        ) : (
+                          <EmptyTile
+                            label={`${row.label} · ${PHOTO_PHASE_SHORT_LABELS[key]}`}
+                            onAdd={() => onAdd?.(row.type, key)}
+                          />
+                        )}
+                        <TileCaption
+                          label={row.label}
+                          hint={cell.photos.length > 1 ? `${cell.photos.length} fotoğraf` : !cover && row.required ? "Zorunlu" : null}
+                        />
+                      </li>
+                    )
+                  })}
+                  {onAddOther ? (
+                    <li className="min-w-0 space-y-1">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="tile"
+                        onClick={() => onAddOther(key)}
+                        className={cn(TILE, "text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring")}
+                      >
+                        <Plus className="size-4" />
+                        <span className="text-xs font-medium">Fotoğraf ekle</span>
+                      </Button>
+                      <TileCaption label="Diğer" hint="Ruhsat, şase…" />
+                    </li>
+                  ) : null}
+                </ul>
+              )}
+            </TabsContent>
+          )
+        })}
       </Tabs>
 
       <PhaseCompareDialog
@@ -199,13 +216,12 @@ function TileCaption({ label, hint }: { label: string; hint: string | null }) {
   )
 }
 
-function EmptyTile({ label, disabled, onAdd }: { label: string; disabled?: boolean; onAdd: () => void }) {
+function EmptyTile({ label, onAdd }: { label: string; onAdd: () => void }) {
   return (
     <Button
       type="button"
       variant="secondary"
       size="tile"
-      disabled={disabled}
       onClick={onAdd}
       aria-label={`${label} fotoğrafı ekle`}
       className={cn(TILE, "text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring")}
@@ -325,13 +341,16 @@ function PhaseCompareDialog({
                   <div className="flex aspect-square items-center justify-center rounded-md bg-secondary">
                     <span className="text-xs text-muted-foreground">Dosya yok</span>
                   </div>
+                ) : !onAdd ? (
+                  <div className="flex aspect-square items-center justify-center rounded-md bg-secondary">
+                    <span className="text-xs text-muted-foreground">Fotoğraf yok</span>
+                  </div>
                 ) : (
                   <Button
                     type="button"
                     variant="secondary"
                     size="tile"
-                    disabled={!onAdd}
-                    onClick={() => onAdd?.(phase)}
+                    onClick={() => onAdd(phase)}
                     className="w-full aspect-square gap-0.5 text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring"
                   >
                     <Plus className="size-3.5" />
