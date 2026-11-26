@@ -232,8 +232,9 @@ kod yazmadan önce hangisinin kapsamına girdiğine bak:
 | `src/lib/intake/photo-visibility.test.ts` | Fotoğraf okuyan sorguda `VISIBLE_PHOTO` filtresinin unutulması — soft-delete edilmiş kare galeride/PDF'te geri görünür |
 | `src/lib/test-mock-isolation.test.ts` | Kendi test dosyası olan bir modülün `mock.module` ile sahtelenmesi — sahte süreç geneli kalıcıdır ve asıl testi dosya sırasına göre düşürür (§7) |
 | `src/lib/format-date-coverage.test.ts` | `timeZone` vermeyen tarih/saat biçimlemesi (`toLocaleDateString`/`toLocaleTimeString`/`Intl.DateTimeFormat`, tarih seçenekli `toLocaleString`) ve sunucu dosyasında `date-fns` — prod konteyneri UTC'de koşarsa 09:00 randevu 06:00 görünür (#861). Biçimleme `@/lib/format-date` ile |
+| `src/lib/istanbul-bounds-coverage.test.ts` | Süreç saat diliminde gece yarısı kuran çok argümanlı `new Date(y, m, d)`, `.setHours(` ve `.toDateString(` — prod konteyneri UTC'de koşarsa "bugün" TR 03:00'te başlar, TR 00:00–03:00 kayıtları önceki güne/aya düşer (#874, #904). Gün/ay sınırları `@/lib/istanbul-time` ile (`istanbulDayBounds`, `istanbulDayStart`, `istanbulMonthStart`). Tüm `src/`'i tarar, `"use client"` dosyaları dahil; istisna yalnız gerekçesiyle `INTENTIONAL`a, geçiş bekleyen dosya issue numarasıyla `PENDING_MIGRATION`a |
 
-`rbac-coverage`, `photo-visibility`, `test-mock-isolation`, `format-date-coverage` ve `control-call-sites`
+`rbac-coverage`, `photo-visibility`, `test-mock-isolation`, `format-date-coverage`, `istanbul-bounds-coverage` ve `control-call-sites`
 bilinçli istisnalar için gerekçeli bir allowlist tutar. İstisna gerekiyorsa oraya **gerekçesiyle** ekle; testi gevşetme
 ya da taramayı daraltma.
 

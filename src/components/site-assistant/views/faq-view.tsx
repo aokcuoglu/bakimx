@@ -20,10 +20,10 @@ export function FaqView({ onBack }: FaqViewProps) {
       <Accordion type="multiple" className="w-full">
         {FAQ_ITEMS.map((item, i) => (
           <AccordionItem key={i} value={`q-${i}`}>
-            <AccordionTrigger className="py-3 text-left text-sm font-medium">
+            <AccordionTrigger>
               {item.question}
             </AccordionTrigger>
-            <AccordionContent className="pb-3 text-sm leading-relaxed text-muted-foreground">
+            <AccordionContent className="leading-relaxed text-muted-foreground">
               {item.answer}
             </AccordionContent>
           </AccordionItem>
