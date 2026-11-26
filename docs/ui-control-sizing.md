@@ -26,7 +26,7 @@ kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (76
 | Select `default` / `sm` / `compact` | 44 / 36 / 32px | 36 / 32 / 28px | |
 | `ToggleGroup` / `Toggle` `size="control"` | 44px | 36px | öğe yüksekliği; ray kendi dolgusunu ekler |
 | `ToggleGroupItem` `size="row"` | en az 44px | en az 36px | seçenek kartı (ikon + başlık + açıklama, #889): Button `row` ile aynı ölçü |
-| `Tabs` — `TabsList size="control"` (segment) | 44px | 36px | trigger yüksekliği; şerit `h-auto` |
+| `Tabs` — `TabsList size="control"` (segment) | 44px | 36px | trigger yüksekliği; şerit `h-auto`; seçili tetikleyici gri rayda beyaz kart (`bg-card`, koyuda `bg-input/30` — Toggle `segment` ile aynı, #854) |
 | `Tabs` — `TabsList variant="line" size="control"` | 44px | 36px | sayfa sekmesi (#854): şerit `h-auto`, metin `--control-fs` (17 / 15px), yatay dolgu 12px; seçili sekme dolgusuz, mavi metin + 2px mavi alt çizgi (e-santral, `.tab` kalıbı) |
 | Textarea | `min-h-16` | `min-h-16` | 10px köşe (md+ 8px, `--control-radius`) |
 

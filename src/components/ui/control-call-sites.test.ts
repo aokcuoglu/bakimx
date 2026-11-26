@@ -310,14 +310,6 @@ export const EXCEPTIONS: readonly Exception[] = [
     allow: ["size-16", "rounded-full"],
     reason: "Tam ekran ruhsat tarayıcısının deklanşörü: 64px halkalı daire (kamera uygulaması kalıbı), kontrol matrisi dışında.",
   },
-  // — Sekmeler (#854) —
-  {
-    file: "components/billing/plan-packages.tsx",
-    tag: "TabsList",
-    allow: ["bg-card"],
-    reason:
-      "Paket karşılaştırmasının mobil iki sekmesi sayfa zemininde (#f2f2f7): segment rayının bg-muted'i zeminden ayrışmaz, seçili tetikleyicinin bg-background'u rayda kaybolur; beyaz ray seçimi okutur. Kalıcı çözüm Tabs segment seçili durumunu Toggle segment gibi bg-card yapmak (ayrı iş).",
-  },
 ]
 
 /** İstisna bu etikete uygulanır mı (`match` verilmişse etiket metninde aranır). */

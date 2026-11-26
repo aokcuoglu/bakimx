@@ -130,6 +130,9 @@ describe("dokunma ölçülü seçiciler — size=\"control\" (#846)", () => {
     expect(toggle).toContain("data-[state=on]:bg-card data-[state=on]:text-foreground")
     expect(read("./toggle-group.tsx")).toContain("data-[variant=segment]:bg-muted data-[variant=segment]:p-0.5")
     expect(tabs).toContain("group-data-[size=control]/tabs-list:h-(--control-h)")
+    // #854: segment sekmenin seçili tetikleyicisi Toggle segment gibi gri rayda beyaz kart.
+    expect(tabs).toContain("data-[state=active]:bg-card data-[state=active]:text-foreground")
+    expect(tabs).not.toContain("data-[state=active]:bg-background")
     for (const source of [toggle, tabs]) {
       expect(source).not.toMatch(/(?:sm|md|lg|xl):(?:h|size|min-h)-/)
     }
