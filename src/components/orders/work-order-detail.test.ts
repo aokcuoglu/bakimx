@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
 const SOURCE = readFileSync(join(import.meta.dir, "work-order-detail.tsx"), "utf8")
+const SECTION_SCROLL = readFileSync(join(import.meta.dir, "use-order-section-scroll.ts"), "utf8")
 const PAGE = readFileSync(
   join(import.meta.dir, "..", "..", "app", "(app)", "orders", "[id]", "page.tsx"),
   "utf8",
@@ -41,23 +42,72 @@ test("telefon tıklanabilir kalır", () => {
  * `order.edit` yetkisi olan ve kilitli olmayan emirde görünür. Sunucu kapısı
  * `updateIntakeDetailsAction` içinde; buradaki yalnız görünürlük.
  */
-test("sekme geçişi sunucu navigasyonu tetiklemez", () => {
-  expect(SOURCE).toContain("window.history.replaceState")
+/**
+ * #911 — bölüm gezinmesi (çip, atlama) yalnız hash'i değiştirir:
+ * `history.replaceState(null, …)`, sayfa (Prisma + aktivite) yeniden üretilmez.
+ * Eski `?tab=` yalnız istemcide, açılışta bölüme çevrilir ve bir kez
+ * `router.replace(…, { scroll: false })` ile adresten düşer.
+ */
+test("bölüm gezinmesi sunucu navigasyonu tetiklemez", () => {
+  expect(SECTION_SCROLL).toContain('window.history.replaceState(null, "", sectionUrl(window.location.href, id))')
+  expect(SECTION_SCROLL).toContain('const tab = new URLSearchParams(window.location.search).get("tab")')
+  expect(SECTION_SCROLL).toContain("sectionForLegacyTab(tab)")
+  expect(SOURCE).toContain("useOrderSectionScroll(pageRef, railRef)")
   expect(SOURCE).not.toContain("router.replace(`/orders/${order.id}?tab=")
-  expect(SOURCE).toContain("parseOrderTab")
+  expect(SOURCE).not.toContain("useSearchParams")
+  expect(SOURCE).not.toContain("parseOrderTab")
 })
 
 /**
- * #860 — sayfa tek sütundur: sekmeler başlığın altında tam genişlikte, müşteri
- * ve araç kaydı her genişlikte Özet'in ilk paneli. Sol kayıt sütunu ve yalnız
- * dar ekranda görünen tutar şeridi geri gelmez.
+ * #911 düzeltme — Next'in yamaladığı `replaceState`, `window.history.state`
+ * (`__NA: true`) ile çağrılınca yönlendiricinin adresini güncellemiyor; sonraki
+ * `router.refresh()` (foto yükleme, durum değişimi, useOrderSync) eski adresi
+ * geri yazıyordu. İlk argüman her yerde `null`.
+ *
+ * Sorgu (`?tab=`, `?edit=`) ise replaceState ile DEĞİŞMEZ: sayfa `searchParams`
+ * aldığı için sorgu sayfa segmentinin anahtarı; yalnız tarayıcı adresi
+ * değişince sonraki `router.refresh()` ağaç uyuşmazlığına düşüp sayfayı en
+ * üste (ya da hash'e) atıyordu (ölçüm: y 2500 → 0). Sorgu `router.replace(…,
+ * { scroll: false })` ile düşer.
  */
-test("sol kayıt sütunu yok; kayıt Özet'te, tutar şeridi her genişlikte", () => {
+test("replaceState yalnız hash'i değiştirir ve Next'in iç durumunu taşımaz", () => {
+  for (const src of [SOURCE, SECTION_SCROLL]) {
+    expect(src).not.toContain("replaceState(window.history.state")
+    for (const call of src.match(/window\.history\.replaceState\([^\n]*/g) ?? []) {
+      expect(call).toBe('window.history.replaceState(null, "", sectionUrl(window.location.href, id))')
+    }
+  }
+  for (const src of [SOURCE, SECTION_SCROLL]) {
+    for (const call of src.match(/router\.replace\(\w[^\n]*/g) ?? []) {
+      expect(call).toEndWith("{ scroll: false })")
+    }
+  }
+  // Tarama boşa dönmesin: bir hash yazımı, iki sorgu temizliği (?tab=, ?edit=).
+  expect(SECTION_SCROLL.match(/window\.history\.replaceState\(/g)).toHaveLength(1)
+  expect([SOURCE, SECTION_SCROLL].flatMap((src) => src.match(/router\.replace\(\w/g) ?? [])).toHaveLength(2)
+})
+
+test("?edit=1 Şikayet penceresi kapanınca adresten düşer", () => {
+  const effect = SOURCE.slice(SOURCE.indexOf("const [editingInfo, setEditingInfo]"))
+  const body = effect.slice(0, effect.indexOf("}, [editingInfo, router])"))
+  expect(body).toContain("if (editingInfo) return")
+  expect(body).toContain('urlWithout(window.location.href, ["edit"])')
+  expect(body).toContain("router.replace(next, { scroll: false })")
+})
+
+/**
+ * #860 → #911 — sol kayıt sütunu geri gelmez: müşteri ve araç kaydı tek kez
+ * render edilir; iki kolonda sağdaki rayda, tek kolonda Özet bölümünde (CSS
+ * `order`). Yalnız dar ekranda görünen tutar şeridi geri gelmez.
+ */
+test("sol kayıt sütunu yok; kayıt rayda tek kez, tutar şeridi her genişlikte", () => {
   expect(SOURCE).not.toContain("lg:grid-cols-[320px_minmax(0,1fr)]")
   expect(SOURCE).not.toMatch(/<OrderRecordRail[^>]*className=/)
   expect(SOURCE.match(/<OrderRecordRail\b/g)).toHaveLength(1)
-  const ozet = SOURCE.slice(SOURCE.indexOf('<TabsContent value="ozet"'), SOURCE.indexOf('<TabsContent value="parca"'))
-  expect(ozet).toContain("<OrderRecordRail order={order} customerName={customerName} />")
+  const rail = SOURCE.slice(SOURCE.indexOf("className={detail.rail}"))
+  expect(rail).toContain("<OrderRecordRail order={order} customerName={customerName} />")
+  const record = rail.slice(0, rail.indexOf("<OrderRecordRail"))
+  expect(record.slice(record.lastIndexOf("<div "))).toContain('data-section="ozet"')
   expect(SOURCE).not.toMatch(/px-4 py-2\.5 text-sm lg:hidden/)
 })
 

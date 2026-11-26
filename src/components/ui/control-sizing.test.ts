@@ -272,12 +272,6 @@ describe("dokunma ölçülü seçiciler — size=\"control\" (#846)", () => {
       reason:
         "Tasarım vitrininin kayıt kalıbı: varsayılan `line` (28px) masaüstü yoğun sekme örneği; dokunma ölçülü karşılığı aynı sayfadaki `selector-sizes` bloğunda.",
     },
-    {
-      file: "components/orders/work-order-detail.tsx",
-      tag: "TabsList",
-      reason:
-        "İş emri detayının sayfa sekmeleri order-detail.module.css `.tab` ile zaten --control-h (44 / 36px); #911 sayfayı sekmesiz tek sayfaya çeviriyor, satır o PR'la kalkar.",
-    },
   ]
   /** Kapsam dışı: primitive'lerin kendisi ve kendi --mk-* ölçeğini taşıyan pazarlama yüzeyi. */
   const TOUCH_OUT_OF_SCOPE = [`components${sep}ui${sep}`, `components${sep}sections${sep}`, `components${sep}marketing${sep}`]

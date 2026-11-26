@@ -16,7 +16,7 @@ import {
 /**
  * Teknisyen panelinin "Parça & İşçilik" bölümü (BAK-141).
  *
- * Kendi tablosu YOKTUR: ofis tarafındaki `/orders/<id>?tab=parca` ekranını
+ * Kendi tablosu YOKTUR: ofis tarafındaki `/orders/<id>` Kalemler bölümünü
  * çalıştıran `PartsLaborGrid` adaptörünü olduğu gibi render eder. Yani parça
  * araması, TecDoc picker'ı, manuel parça diyalogu, işçilik/dış işçilik
  * autocomplete'i, stok düşümü ve satır KDV'si sahada da ofistekiyle BİREBİR

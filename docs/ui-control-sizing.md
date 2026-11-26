@@ -82,7 +82,7 @@ kalır, yalnız md+ 14px'e iner (`--control-fs-field-xs`). `--control-fs-xs`
 yalnız masaüstü yoğun araç çubuğu ve tablo başlığı içindir. **Telefonda
 dokunulan seçici `size="control"` alır** — sekmede `default` (segment) ve `line`
 ile; seçenek kartı `size="row"`. Ayrıntı: "Seçici ölçüsü" (#854). İlke: etkileşimli öğe `--control-h`,
-şerit/ray `auto` — `order-detail.module.css` `.tab` aynı ilkenin mevcut örneğidir.
+şerit/ray `auto` — `order-detail.module.css` `.chip` (araç kabulü bölüm çipi, #911) aynı ilkenin mevcut örneğidir.
 
 Button: sistem fontu, ağırlık 500, harf aralığı −0.01em, düz dolgu (gölge yok).
 Renk variant'ları ve Radix `asChild` sözleşmesi korunur.
@@ -138,11 +138,10 @@ yazılmaz. `line` + `control` sayfa sekmesidir: stok (Parçalar / İşçilikler)
 teknisyen adımları, kalem ekleme (Parça / İşçilik), araç geçmişi, Üyeler /
 Ekipler, ekip detayı, katalog içe aktarma önizlemesi. Varsayılanlar (`line`
 28px, Toggle 32px) **upstream'de kalır**, `control`'e çevrilmez:
-- Taşımadan sonra uygulamada ölçüsüz kalan seçici üçtür ve hepsi
-  masaüstüdür ya da ayrı işin konusudur: iş emri tablosu kolon başlığının
-  sıralama menüsü (tablo yalnız lg+), tasarım vitrininin kayıt kalıbı (yoğun
-  `line` örneği) ve iş emri detayının sayfa sekmeleri (`.tab` ile zaten 44 /
-  36px; #911 sekmeleri kaldırıyor).
+- Taşımadan sonra uygulamada ölçüsüz kalan seçici ikidir ve ikisi de
+  masaüstüdür: iş emri tablosu kolon başlığının sıralama menüsü (tablo yalnız
+  lg+) ve tasarım vitrininin kayıt kalıbı (yoğun `line` örneği). İş emri
+  detayının sayfa sekmeleri #911'de kalktı.
 - Pazarlama bölümleri (`components/sections/`: `RuhsatDemoSection` segment,
   `BlogCategoryFilters` `line`) varsayılanın üstüne kendi `--mk-*` ölçeğini
   kurar; varsayılanı çevirmek o yüzeyleri sessizce değiştirirdi. Segment
