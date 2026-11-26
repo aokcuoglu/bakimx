@@ -31,6 +31,8 @@ const REMOVED_PATHS = [
   "src/lib/landing/hero-slides.ts",
   "src/components/sections/FeatureShowcaseSection.tsx",
   "src/components/sections/StandOutSection.tsx",
+  // hero-slides.ts'in tek kullandığı görseller (#830).
+  "public/landing/hero",
 ]
 
 const REMOVED_REFERENCES = [
