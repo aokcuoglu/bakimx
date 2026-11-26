@@ -50,13 +50,14 @@ export interface LongestDurationRow {
 export async function getOrdersReportStats(
   workshopId: string,
   dateFrom?: Date,
-  dateTo?: Date
+  /** Aralık sonu, HARİÇ (`lt`) — `istanbulDateRange` bitiş gününün ertesini verir. */
+  dateEnd?: Date
 ): Promise<OrdersReportStats> {
   const where: import("@prisma/client").Prisma.ServiceOrderWhereInput = { workshopId }
-  if (dateFrom || dateTo) {
+  if (dateFrom || dateEnd) {
     where.createdAt = {
       ...(dateFrom ? { gte: dateFrom } : {}),
-      ...(dateTo ? { lt: new Date(dateTo.getTime() + 86400000) } : {}),
+      ...(dateEnd ? { lt: dateEnd } : {}),
     }
   }
 
@@ -136,17 +137,18 @@ export async function getMonthlyOrderCounts(
 export async function getExpensiveOrders(
   workshopId: string,
   dateFrom?: Date,
-  dateTo?: Date,
+  /** Aralık sonu, HARİÇ (`lt`) — `istanbulDateRange` bitiş gününün ertesini verir. */
+  dateEnd?: Date,
   technicianId?: string,
   status?: string,
   customerId?: string,
   limit = 10
 ): Promise<ExpensiveOrderRow[]> {
   const where: import("@prisma/client").Prisma.ServiceOrderWhereInput = { workshopId }
-  if (dateFrom || dateTo) {
+  if (dateFrom || dateEnd) {
     where.createdAt = {
       ...(dateFrom ? { gte: dateFrom } : {}),
-      ...(dateTo ? { lt: new Date(dateTo.getTime() + 86400000) } : {}),
+      ...(dateEnd ? { lt: dateEnd } : {}),
     }
   }
   if (technicianId) where.assignedTechnicianId = technicianId
@@ -196,7 +198,8 @@ export async function getExpensiveOrders(
 export async function getLongestDurationOrders(
   workshopId: string,
   dateFrom?: Date,
-  dateTo?: Date,
+  /** Aralık sonu, HARİÇ (`lt`) — `istanbulDateRange` bitiş gününün ertesini verir. */
+  dateEnd?: Date,
   technicianId?: string,
   status?: string,
   customerId?: string,
@@ -206,10 +209,10 @@ export async function getLongestDurationOrders(
     workshopId,
     completedAt: { not: null },
   }
-  if (dateFrom || dateTo) {
+  if (dateFrom || dateEnd) {
     where.createdAt = {
       ...(dateFrom ? { gte: dateFrom } : {}),
-      ...(dateTo ? { lt: new Date(dateTo.getTime() + 86400000) } : {}),
+      ...(dateEnd ? { lt: dateEnd } : {}),
     }
   }
   if (technicianId) where.assignedTechnicianId = technicianId
@@ -262,19 +265,20 @@ export async function getFilteredOrders(
   workshopId: string,
   options: {
     dateFrom?: Date
-    dateTo?: Date
+    /** Aralık sonu, HARİÇ (`lt`). */
+    dateEnd?: Date
     technicianId?: string
     status?: string
     customerId?: string
     limit?: number
   } = {}
 ) {
-  const { dateFrom, dateTo, technicianId, status, customerId, limit = 10 } = options
+  const { dateFrom, dateEnd, technicianId, status, customerId, limit = 10 } = options
   const where: import("@prisma/client").Prisma.ServiceOrderWhereInput = { workshopId }
-  if (dateFrom || dateTo) {
+  if (dateFrom || dateEnd) {
     where.createdAt = {
       ...(dateFrom ? { gte: dateFrom } : {}),
-      ...(dateTo ? { lt: new Date(dateTo.getTime() + 86400000) } : {}),
+      ...(dateEnd ? { lt: dateEnd } : {}),
     }
   }
   if (technicianId) where.assignedTechnicianId = technicianId
@@ -324,7 +328,8 @@ export interface MostVisitedCustomer {
 export async function getCustomerReportStats(
   workshopId: string,
   dateFrom?: Date,
-  dateTo?: Date
+  /** Aralık sonu, HARİÇ (`lt`) — `istanbulDateRange` bitiş gününün ertesini verir. */
+  dateEnd?: Date
 ): Promise<CustomerReportStats> {
   const monthD = istanbulMonthStart()
 
@@ -333,7 +338,7 @@ export async function getCustomerReportStats(
     prisma.customer.count({
       where: {
         workshopId,
-        createdAt: { gte: dateFrom ?? monthD, ...(dateTo ? { lt: new Date(dateTo.getTime() + 86400000) } : {}) },
+        createdAt: { gte: dateFrom ?? monthD, ...(dateEnd ? { lt: dateEnd } : {}) },
       },
     }),
   ])
@@ -453,16 +458,17 @@ export interface MonthlyCollectionCount {
 export async function getCollectionReportStats(
   workshopId: string,
   dateFrom?: Date,
-  dateTo?: Date
+  /** Aralık sonu, HARİÇ (`lt`) — `istanbulDateRange` bitiş gününün ertesini verir. */
+  dateEnd?: Date
 ): Promise<CollectionReportStats> {
   const completedWhere: import("@prisma/client").Prisma.CollectionPaymentWhereInput = {
     workshopId,
     status: "completed",
   }
-  if (dateFrom || dateTo) {
+  if (dateFrom || dateEnd) {
     completedWhere.paymentDate = {
       ...(dateFrom ? { gte: dateFrom } : {}),
-      ...(dateTo ? { lt: new Date(dateTo.getTime() + 86400000) } : {}),
+      ...(dateEnd ? { lt: dateEnd } : {}),
     }
   }
 

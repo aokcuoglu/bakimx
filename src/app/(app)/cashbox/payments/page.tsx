@@ -2,6 +2,11 @@ import { getAppData } from "@/app/(app)/data"
 import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { getCollections } from "@/lib/cashbox/queries"
+import {
+  COLLECTION_PERIOD_PRESETS,
+  collectionExportParams,
+  resolveCollectionRange,
+} from "@/lib/cashbox/period"
 import { PaymentMethodBadge, CollectionStatusBadge } from "@/components/shared/status-badge"
 import { formatTRY } from "@/lib/format"
 import { formatDate } from "@/lib/utils-client"
@@ -13,61 +18,6 @@ import { Search, Filter, Wallet, Eye, Download } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
 type SP = { q?: string; method?: string; status?: string; period?: string; dateFrom?: string; dateTo?: string }
-
-const DATE_PRESETS = [
-  { value: "", label: "Tüm Dönem" },
-  { value: "today", label: "Bugün" },
-  { value: "yesterday", label: "Dün" },
-  { value: "this_week", label: "Bu Hafta" },
-  { value: "last_week", label: "Geçen Hafta" },
-  { value: "this_month", label: "Bu Ay" },
-  { value: "last_month", label: "Geçen Ay" },
-  { value: "last_30", label: "Son 30 Gün" },
-  { value: "last_90", label: "Son 90 Gün" },
-  { value: "custom", label: "Özel" },
-]
-
-function getDateRange(period: string, dateFromStr?: string, dateToStr?: string): { dateFrom?: Date; dateTo?: Date } {
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-
-  switch (period) {
-    case "today":
-      return { dateFrom: today }
-    case "yesterday": {
-      const yesterday = new Date(today.getTime() - 86400000)
-      return { dateFrom: yesterday, dateTo: today }
-    }
-    case "this_week": {
-      const day = now.getDay() || 7
-      return { dateFrom: new Date(today.getTime() - (day - 1) * 86400000) }
-    }
-    case "last_week": {
-      const day = now.getDay() || 7
-      const endOfLastWeek = new Date(today.getTime() - day * 86400000)
-      const startOfLastWeek = new Date(endOfLastWeek.getTime() - 6 * 86400000)
-      return { dateFrom: startOfLastWeek, dateTo: endOfLastWeek }
-    }
-    case "this_month":
-      return { dateFrom: new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0) }
-    case "last_month": {
-      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0)
-      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
-      return { dateFrom: startOfLastMonth, dateTo: endOfLastMonth }
-    }
-    case "last_30":
-      return { dateFrom: new Date(today.getTime() - 29 * 86400000) }
-    case "last_90":
-      return { dateFrom: new Date(today.getTime() - 89 * 86400000) }
-    case "custom": {
-      const dateFrom = dateFromStr ? new Date(dateFromStr) : undefined
-      const dateTo = dateToStr ? new Date(dateToStr) : undefined
-      return { dateFrom, dateTo }
-    }
-    default:
-      return {}
-  }
-}
 
 export const metadata = { title: "Ödemeler" }
 
@@ -81,22 +31,27 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
   const status = params.status || ""
   const period = params.period || ""
 
-  const { dateFrom, dateTo } = getDateRange(period, params.dateFrom, params.dateTo)
+  const range = resolveCollectionRange({ period, dateFrom: params.dateFrom, dateTo: params.dateTo })
 
   const { rows: collections, total } = await getCollections(user.workshopId, {
     q: q || undefined,
     method: method || undefined,
     status: status || undefined,
-    dateFrom,
-    dateTo,
+    rangeStart: range.start,
+    rangeEnd: range.end,
     limit: 200,
   })
 
-  const exportParams = new URLSearchParams()
-  if (method) exportParams.set("method", method)
-  if (status) exportParams.set("status", status)
-  if (dateFrom) exportParams.set("dateFrom", dateFrom.toISOString().slice(0, 10))
-  if (dateTo) exportParams.set("dateTo", dateTo.toISOString().slice(0, 10))
+  // Dışa aktarım ham filtreleri alır ve aralığı aynı `resolveCollectionRange` ile
+  // kendisi kurar — ekran ve CSV aynı kayıtları verir (#906).
+  const exportParams = collectionExportParams({
+    q,
+    method,
+    status,
+    period,
+    dateFrom: params.dateFrom,
+    dateTo: params.dateTo,
+  })
 
   return (
     <AppShell workshopName={workshop?.name} subtitle={`${total} kayıt bulundu`}>
@@ -150,7 +105,7 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
               name="period"
               defaultValue={period}
               placeholder="Tüm Dönem"
-              options={DATE_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
+              options={COLLECTION_PERIOD_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
             />
             {period === "custom" && (
               <>

@@ -321,13 +321,16 @@ export async function getCollections(
     q?: string
     method?: string
     status?: string
-    dateFrom?: Date
-    dateTo?: Date
+    /** Aralık başı (dahil). */
+    rangeStart?: Date
+    /** Aralık sonu (HARİÇ) — `[rangeStart, rangeEnd)`. Kullanıcı girdisinden
+     * `resolveCollectionRange` kurar; burada gün eklenmez (#905). */
+    rangeEnd?: Date
     limit?: number
     offset?: number
   } = {}
 ): Promise<{ rows: CollectionListRow[]; total: number }> {
-  const { q, method, status, dateFrom, dateTo, limit = 100, offset = 0 } = options
+  const { q, method, status, rangeStart, rangeEnd, limit = 100, offset = 0 } = options
 
   const where: import("@prisma/client").Prisma.CollectionPaymentWhereInput = {
     workshopId,
@@ -335,10 +338,10 @@ export async function getCollections(
 
   if (method) where.method = method as import("@prisma/client").PaymentMethod
   if (status) where.status = status as import("@prisma/client").CollectionStatus
-  if (dateFrom || dateTo) {
+  if (rangeStart || rangeEnd) {
     where.paymentDate = {
-      ...(dateFrom ? { gte: dateFrom } : {}),
-      ...(dateTo ? { lt: new Date(dateTo.getTime() + 86400000) } : {}),
+      ...(rangeStart ? { gte: rangeStart } : {}),
+      ...(rangeEnd ? { lt: rangeEnd } : {}),
     }
   }
 
