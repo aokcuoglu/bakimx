@@ -485,7 +485,7 @@ export function PlanPackages({
       </div>
 
       <Tabs defaultValue="included" className="lg:hidden">
-        <TabsList size="control" className="grid w-full grid-cols-2 border-b bg-card">
+        <TabsList size="control" className="grid w-full grid-cols-2">
           <TabsTrigger value="included">Pakete dahil</TabsTrigger>
           <TabsTrigger value="addons">Ek özellikler</TabsTrigger>
         </TabsList>

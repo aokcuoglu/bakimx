@@ -79,7 +79,7 @@ export function StockMovementDialog({
 
           <div className="space-y-2">
             <Label className="text-xs">Hareket Tipi</Label>
-            <ToggleGroup type="single" value={type} onValueChange={(v) => { if (v) { setType(v as "in" | "out" | "adjustment"); setError("") } }} variant="outline" className="w-full">
+            <ToggleGroup type="single" value={type} onValueChange={(v) => { if (v) { setType(v as "in" | "out" | "adjustment"); setError("") } }} variant="outline" size="control" aria-label="Hareket tipi" className="w-full">
               <ToggleGroupItem value="in" className="flex-1">Giriş</ToggleGroupItem>
               <ToggleGroupItem value="out" className="flex-1">Çıkış</ToggleGroupItem>
               <ToggleGroupItem value="adjustment" className="flex-1">Düzeltme</ToggleGroupItem>

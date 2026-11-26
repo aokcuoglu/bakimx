@@ -2,22 +2,22 @@ import Link from "next/link"
 import { User, Users } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-const listClass =
-  "flex h-auto w-full items-end justify-start gap-1 border-b border-border bg-transparent p-0 group-data-horizontal/tabs:h-auto"
-const triggerClass =
-  "mb-1 h-7 rounded-lg px-2 after:bottom-[-5px] after:h-px data-[state=active]:border-transparent data-[state=active]:bg-muted data-[state=active]:shadow-none"
-
+/**
+ * Telefonda dokunulan sayfa sekmesi: `line` + `size="control"` (telefonda 44px,
+ * md+ 36px). Ölçü ve seçili görünüm varyanttan gelir; çağrı yeri yalnız yerleşim
+ * verir (#854, docs/ui-control-sizing.md).
+ */
 export function MembersTeamsTabs({ active }: { active: "members" | "teams" }) {
   return (
     <Tabs value={active}>
-      <TabsList variant="line" className={listClass}>
-        <TabsTrigger value="members" className={triggerClass} asChild>
+      <TabsList variant="line" size="control" className="w-full justify-start border-b border-border">
+        <TabsTrigger value="members" asChild>
           <Link href="/settings/members-and-teams/members">
             <User className="size-3.5" />
             <span>Üyeler</span>
           </Link>
         </TabsTrigger>
-        <TabsTrigger value="teams" className={triggerClass} asChild>
+        <TabsTrigger value="teams" asChild>
           <Link href="/settings/members-and-teams/teams">
             <Users className="size-3.5" />
             <span>Ekipler</span>

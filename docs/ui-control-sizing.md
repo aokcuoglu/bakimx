@@ -26,7 +26,8 @@ kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (76
 | Select `default` / `sm` / `compact` | 44 / 36 / 32px | 36 / 32 / 28px | |
 | `ToggleGroup` / `Toggle` `size="control"` | 44px | 36px | öğe yüksekliği; ray kendi dolgusunu ekler |
 | `ToggleGroupItem` `size="row"` | en az 44px | en az 36px | seçenek kartı (ikon + başlık + açıklama, #889): Button `row` ile aynı ölçü |
-| `Tabs` — `TabsList size="control"` (segment) | 44px | 36px | trigger yüksekliği; şerit `h-auto` |
+| `Tabs` — `TabsList size="control"` (segment) | 44px | 36px | trigger yüksekliği; şerit `h-auto`; seçili tetikleyici gri rayda beyaz kart (`bg-card`, koyuda `bg-input/30` — Toggle `segment` ile aynı, #854) |
+| `Tabs` — `TabsList variant="line" size="control"` | 44px | 36px | sayfa sekmesi (#854): şerit `h-auto`, metin `--control-fs` (17 / 15px), yatay dolgu 12px; seçili sekme dolgusuz, mavi metin + 2px mavi alt çizgi (e-santral, `.tab` kalıbı) |
 | Textarea | `min-h-16` | `min-h-16` | 10px köşe (md+ 8px, `--control-radius`) |
 
 **Input / InputGroup `size`** `--control-h`, `--control-fs` ve `--field-px`
@@ -78,9 +79,9 @@ kalır, yalnız md+ 14px'e iner (`--control-fs-field-xs`). `--control-fs-xs`
 (telefonda 14px) metin girdisinde kullanılmaz; yalnız Select ve düğme içindir.
 
 `default/sm/lg` Toggle (32px) ve `line` sekme (28px) upstream nova ölçeğidir;
-yalnız masaüstü yoğun araç çubuğu ve tablo başlığı içindir. Telefonda görünen
-seçici `size="control"` alır; sekmede `size="control"` yalnız `default` (segment)
-variant içindir, telefonda görünen `line` sekmenin ölçeğe bağlanması #854'te. İlke: etkileşimli öğe `--control-h`,
+yalnız masaüstü yoğun araç çubuğu ve tablo başlığı içindir. **Telefonda
+dokunulan seçici `size="control"` alır** — sekmede `default` (segment) ve `line`
+ile; seçenek kartı `size="row"`. Ayrıntı: "Seçici ölçüsü" (#854). İlke: etkileşimli öğe `--control-h`,
 şerit/ray `auto` — `order-detail.module.css` `.chip` (araç kabulü bölüm çipi, #911) aynı ilkenin mevcut örneğidir.
 
 Button: sistem fontu, ağırlık 500, harf aralığı −0.01em, düz dolgu (gölge yok).
@@ -126,8 +127,36 @@ hover kabuk kenarına değmez.
   `Tabs` `default` şeridiyle aynı dil, ama form değeri olduğu için `tablist`
   değil `radiogroup`.
 - Öğe boyu `size="control"` (telefonda görünen seçici), seçenek kartı
-  `size="row"`; yoğun filtre çip satırı `sm` (32px). Grup erişilebilir ad taşır
-  (`aria-label`).
+  `size="row"`; `sm` (32px) yalnız masaüstüne özgü yoğun süzgeçtedir (lg+ tablo
+  başlığı). Telefonda da görünen filtre çip satırı `control`'dür
+  (`/communications`, #854). Grup erişilebilir ad taşır (`aria-label`).
+
+**Seçici ölçüsü (#854).** Telefonda dokunulan her sekme şeridi ve seçici
+(`TabsList`, `ToggleGroup`, tek başına `Toggle`) `size="control"` alır — seçenek
+kartı `row`; `ToggleGroup`'un ölçüsü öğelere bağlamdan geçer, öğeye ayrıca
+yazılmaz. `line` + `control` sayfa sekmesidir: stok (Parçalar / İşçilikler),
+teknisyen adımları, kalem ekleme (Parça / İşçilik), araç geçmişi, Üyeler /
+Ekipler, ekip detayı, katalog içe aktarma önizlemesi. Varsayılanlar (`line`
+28px, Toggle 32px) **upstream'de kalır**, `control`'e çevrilmez:
+- Taşımadan sonra uygulamada ölçüsüz kalan seçici ikidir ve ikisi de
+  masaüstüdür: iş emri tablosu kolon başlığının sıralama menüsü (tablo yalnız
+  lg+) ve tasarım vitrininin kayıt kalıbı (yoğun `line` örneği). İş emri
+  detayının sayfa sekmeleri #911'de kalktı.
+- Pazarlama bölümleri (`components/sections/`: `RuhsatDemoSection` segment,
+  `BlogCategoryFilters` `line`) varsayılanın üstüne kendi `--mk-*` ölçeğini
+  kurar; varsayılanı çevirmek o yüzeyleri sessizce değiştirirdi. Segment
+  sekmenin seçili tetikleyicisi ise primitive'de `bg-card`'dır (gri rayda
+  beyaz kart); bu renk düzeltmesi `/dijital-arac-kabul`'daki
+  `RuhsatDemoSection` segmentini de bilerek değiştirir.
+- `ui/` primitive'leri registry'ye yakın kalır; yeni eklenen upstream bileşen
+  ve örnek kod varsayılan ölçüyle gelir.
+- Varsayılanın telefona sızmasını kapı engeller:
+  `src/components/ui/control-sizing.test.ts` ölçüsüz `TabsList` /
+  `ToggleGroup` / `Toggle`'ı yakalar; masaüstü istisnası `DENSE_SELECTORS`
+  listesine gerekçesiyle girer, artık eşleşmeyen satır testi düşürür.
+  CI'daki `quality` işi Playwright koşmaz (test, lint, typecheck, build); bu
+  yüzden dokunma hedefinin CI bekçisi bu kaynak kapısıdır, 390px piksel
+  ölçümü QA yürüyüşündedir.
 
 **Mobil alt navigasyon** bu matrisin dışındadır: `MobileNavLink` bir `Button`
 değil, `Link` (`src/components/layout/app-shell.tsx`).
@@ -242,10 +271,18 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
   gerekçesiyle `control-call-sites.test.ts` `EXCEPTIONS` listesindedir; `match`
   istisnayı dosyadaki tek etikete bağlar. `components/sections/` açılış
   sayfası bölümleri kapsam dışıdır; genel sayfaların ortak altbilgisi
-  `sections/Footer.tsx` taranır. `TabsList` / `TabsTrigger` #854'te. Kör nokta:
+  `sections/Footer.tsx` taranır. `TabsList` / `TabsTrigger` aynı kural setiyle
+  taranır (#854): şerit yüksekliği (`h-auto`), dolgusu (`p-0`, `pb-0`), zemini
+  ve tetikleyici ölçüsü/köşesi/dolgusu varyanttan gelir; sekmeler arası yatay
+  boşluk şeridin yerleşimidir (`gap-*`, şerit `px-*`). Çağrı yeri şeride
+  genişlik, grid/flex, `justify-start`, `border-b` çizgisi ve taşma kaydırması
+  verir. Kör nokta:
   sabite çıkarılmış sınıf (`TILE`), `className`'i nesneden yayan
-  `{...props}` ve `buttonVariants({ className })` çağrısı taranmaz — sabite
-  boyut sınıfı yazılmaz, `className` JSX'te `cn(...)` ile verilir.
+  `{...props}`, `buttonVariants({ className })` çağrısı ve başka modülden
+  yeniden dışa aktarılan CSS modülü nesnesi (`order-detail-surface`'ten gelen
+  `detail` — tarayıcı yalnız dosyadaki `*.module.css` içe aktarımını tanır)
+  taranmaz — sabite boyut sınıfı yazılmaz, `className` JSX'te `cn(...)` ile
+  verilir.
   Ton da variant'tan gelir (#925): öneksiz (ya da kırılım / tema önekli)
   `border-destructive/*` → `variant="destructive-outline"`, `bg-primary/N` →
   `variant="tint"`, her önekte `bg-white|black/*` / `border-white|black/*` →

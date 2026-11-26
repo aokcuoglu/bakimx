@@ -51,11 +51,19 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * Seçiciler (`ToggleGroup`, `ToggleGroupItem`, `Toggle`) aynı kural setiyle
  * taranır: ölçü `size`'dan (`control`, seçenek kartı `row`), seçili görünüm
  * variant'tan (`outline` birincil ton, `segment` gri ray + beyaz kart).
- * `TabsList` / `TabsTrigger` kapsam dışı: telefonda görünen `line` sekmenin
- * ölçeğe bağlanması #854'te; `!` ile yükseklik ezmesini control-sizing.test.ts
- * zaten yakalar.
- * Kör nokta: `buttonVariants({ className })` çağrısı JSX değildir, taranmaz
- * (#889 anında tek kullanım `ui/` içinde).
+ * Sekmeler (`TabsList`, `TabsTrigger`, #854) de aynı kural setiyle taranır:
+ * ölçü `TabsList size="control"`dan (telefonda 44px, md+ 36px; `default`
+ * segment ve `line` ile), şerit `h-auto`'yu, tetikleyici dolgusunu ve seçili
+ * zemini varyanttan alır (segment seçili tetikleyici primitive'de `bg-card`,
+ * pazarlama `RuhsatDemoSection` dahil — ray `bg-card` ile boyanmaz). Sekmeler
+ * arası yatay boşluk şeridin yerleşimidir (`gap-*`, şerit `px-*`). Çağrı yeri
+ * şeride genişlik, grid/flex, `justify-start`, `border-b` çizgisi ve taşma
+ * kaydırması verir.
+ * Kör noktalar: `buttonVariants({ className })` çağrısı JSX değildir, taranmaz
+ * (#889 anında tek kullanım `ui/` içinde). Başka modülden yeniden dışa
+ * aktarılan CSS modülü nesnesi (`order-detail-surface`'ten gelen `detail`)
+ * CSS modülü olarak tanınmaz; tarayıcı yalnız dosyadaki `*.module.css`
+ * içe aktarımını görür.
  *
  * #925 — ton da variant'tan gelir: `border-destructive/*` (yıkıcı çerçeve →
  * `variant="destructive-outline"`), öneksiz `bg-primary/N` (birincil ton →
@@ -112,12 +120,17 @@ export const BUTTON_CONTROLS = [
 /** Seçiciler (#889): düğme kural setiyle taranır. */
 export const TOGGLE_CONTROLS = ["ToggleGroup", "ToggleGroupItem", "Toggle"] as const
 
-export const CONTROLS = [...FIELD_CONTROLS, ...BUTTON_CONTROLS, ...TOGGLE_CONTROLS] as const
+/** Sekmeler (#854): düğme kural setiyle taranır. */
+export const TAB_CONTROLS = ["TabsList", "TabsTrigger"] as const
+
+export const CONTROLS = [...FIELD_CONTROLS, ...BUTTON_CONTROLS, ...TOGGLE_CONTROLS, ...TAB_CONTROLS] as const
 
 type Control = (typeof CONTROLS)[number]
 
 const usesButtonRules = (name: string) =>
-  (BUTTON_CONTROLS as readonly string[]).includes(name) || (TOGGLE_CONTROLS as readonly string[]).includes(name)
+  (BUTTON_CONTROLS as readonly string[]).includes(name) ||
+  (TOGGLE_CONTROLS as readonly string[]).includes(name) ||
+  (TAB_CONTROLS as readonly string[]).includes(name)
 
 type Family = {
   /** Raporda görünen ad. */
@@ -459,6 +472,11 @@ describe("form kontrolleri ve düğmeler çağrı yerinde ezilmez (#888, #889)",
       // Seçiciler aynı kural setiyle taranır.
       `<ToggleGroupItem className="${"h-auto rounded-lg " + "py-2"}">`,
       '<ToggleGroup className="rounded-lg bg-muted p-0.5">',
+      // Sekmeler de aynı kural setiyle taranır (#854).
+      '<TabsTrigger value="a" className="h-7 rounded-lg">',
+      '<TabsTrigger value="a" className="mb-1 text-xs">',
+      '<TabsList variant="line" className="h-auto bg-transparent p-0">',
+      '<TabsList variant="line" className="w-full border-b pb-0">',
     ]
     for (const source of bad) {
       const tags = jsxOpeningTags(`import styles from "./x.module.css"\n${source}`, CONTROLS)
@@ -477,6 +495,9 @@ describe("form kontrolleri ve düğmeler çağrı yerinde ezilmez (#888, #889)",
       `<Button size="icon" className="${"[&>svg]:" + "size-5"} ${"*:" + "size-4"}">`,
       '<ToggleGroup variant="outline" size="control" className="grid w-full gap-2 sm:grid-cols-2">',
       '<ToggleGroupItem className="w-full justify-start text-muted-foreground">',
+      '<TabsList variant="line" size="control" className="flex w-full flex-nowrap justify-start gap-1 border-b border-border -mb-px overflow-x-auto">',
+      '<TabsList size="control" className="grid w-full grid-cols-2 sm:w-fit">',
+      '<TabsTrigger value="a" className="shrink-0">',
     ]
     for (const source of good) {
       for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])
