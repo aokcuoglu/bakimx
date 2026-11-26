@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db"
 import { getSMSProvider } from "./sms"
 import { getEmailProvider } from "./email"
-import { getDefaultTemplate, renderTemplate, sanitizeTemplate } from "./templates"
+import { getDefaultTemplate, renderTemplate, resolveTemplateContent, sanitizeTemplate } from "./templates"
 import { checkRateLimit, recordAttempt } from "./rate-limit"
 import type { CommunicationType, CommunicationTemplateKey, SendableChannel, TemplateVariables, CommunicationResult } from "./types"
 
@@ -119,7 +119,11 @@ export async function sendCommunication(options: SendOptions): Promise<{
     const rateCheck = checkRateLimit(rateLimitKey)
     if (!rateCheck.allowed) continue
 
-    const templateContent = await getWorkshopTemplate(workshopId, templateKey, channel) || getDefaultTemplate(templateKey, channel)
+    const templateContent = resolveTemplateContent(
+      templateKey,
+      channel,
+      await getWorkshopTemplate(workshopId, templateKey, channel),
+    )
     const sanitized = sanitizeTemplate(templateContent)
     const rendered = renderTemplate(sanitized, enrichedVars)
 

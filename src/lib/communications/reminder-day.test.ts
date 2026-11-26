@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { appointmentDayWord } from "./reminder-day"
-import { renderTemplate, getDefaultTemplate } from "./templates"
+import { renderTemplate, getDefaultTemplate, resolveTemplateContent } from "./templates"
 
 describe("appointmentDayWord", () => {
   test("aynı Türkiye gününde bugün der", () => {
@@ -39,5 +39,35 @@ describe("appointmentDayWord", () => {
     })
     expect(text).toContain("bugün (25.11.2026 23:00)")
     expect(text).not.toContain("yarın")
+  })
+})
+
+describe("resolveTemplateContent (#908)", () => {
+  const legacy =
+    "Sayın {customerName}, {workshopName} - yarın ({appointmentDate} {appointmentTime}) randevunuz bulunmaktadır."
+
+  test("eski varsayılanla birebir aynı kayıt güncel varsayılana düşer", () => {
+    const text = resolveTemplateContent("appointment_reminder", "sms", legacy)
+    expect(text).toBe(getDefaultTemplate("appointment_reminder", "sms"))
+    expect(text).toContain("{appointmentDay}")
+  })
+
+  test("kenar boşluklu eski varsayılan da güncellenir", () => {
+    expect(resolveTemplateContent("appointment_reminder", "sms", `  ${legacy}\n`)).toContain("{appointmentDay}")
+  })
+
+  test("özelleştirilmiş kayda dokunulmaz", () => {
+    const custom = `${legacy} Teşekkürler.`
+    expect(resolveTemplateContent("appointment_reminder", "sms", custom)).toBe(custom)
+  })
+
+  test("başka anahtar/kanalda aynı metin değiştirilmez", () => {
+    expect(resolveTemplateContent("appointment_reminder", "email", legacy)).toBe(legacy)
+  })
+
+  test("kayıt yoksa varsayılan döner", () => {
+    expect(resolveTemplateContent("appointment_reminder", "sms", null)).toBe(
+      getDefaultTemplate("appointment_reminder", "sms"),
+    )
   })
 })

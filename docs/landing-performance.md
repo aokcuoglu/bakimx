@@ -77,8 +77,8 @@ iken render ediliyordu ama statik `import` onu her sayfanın ilk yüküne
 sokuyordu; canlı sohbet doğrulaması üzerinden **`zod` da** (51.4 kB br) bu yolla
 giriyordu.
 
-Dikkat: bunu tek başına yapmak yetmedi. `HeroAskBar` yalnızca
-`ASSISTANT_PANEL_ID` sabiti için `assistant-panel.tsx`i statik import ediyor ve
+Dikkat: bunu tek başına yapmak yetmedi. `HeroAskBar` (#929'da silindi) yalnızca
+`ASSISTANT_PANEL_ID` sabiti için `assistant-panel.tsx`i statik import ediyordu ve
 ikinci bir yol açık bırakıyordu. Sabit artık `assistant-bridge.ts`te — köprü
 ikisinin de bağımlılıksız ortak zemini. **Panelden landing'e sabit/tip
 sızdırmayın; paylaşılan şey köprüye girer.**
