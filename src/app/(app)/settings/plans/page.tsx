@@ -3,12 +3,15 @@ import { BillingPlanManager } from "@/components/billing/billing-plan-manager"
 import { PendingPaymentNotice } from "@/components/billing/pending-payment-notice"
 import { getAccountBillingContext } from "@/lib/billing/account-context"
 import { getHavaleInstructions } from "@/lib/billing/provider"
+import { resolveAddonRowViews } from "@/lib/billing/addon-row-state"
 import { getReferralDiscountBps } from "@/lib/billing/referral-discount"
 
 export const metadata = { title: "Paketler" }
 
 export default async function SettingsPlansPage() {
   const { workshop, plan, ownedTier, planName, pendingOrder, seatUsage, canPurchase } = await getAccountBillingContext()
+
+  const addonViews = resolveAddonRowViews(workshop)
 
   return (
     <AppShell pageTitle="Paketler" wide workshopName={workshop.name}>
@@ -21,6 +24,7 @@ export default async function SettingsPlansPage() {
           reference: pendingOrder.reference,
         }} />}
         <BillingPlanManager
+          addonViews={addonViews}
           ownedTier={ownedTier}
           currentPlanName={planName}
           currentCycle={workshop.billingCycle}
