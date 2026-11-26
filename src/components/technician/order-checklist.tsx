@@ -283,90 +283,89 @@ export function OrderChecklist({
   const allDone = progress.total > 0 && progress.remaining === 0
 
   return (
-    <div
-      ref={containerRef}
-      className={cn(
-        "rounded-lg border px-4 scroll-mt-4 transition-colors",
-        allDone
-          ? "border-success/30 bg-primary/[0.04]"
-          : progress.total > 0 && !locked
-            ? "border-primary/25 bg-primary/[0.04]"
-            : "border-border bg-primary/[0.04]"
-      )}
-    >
-      <Accordion type="multiple" value={open} onValueChange={onOpenChange}>
-        <AccordionItem value="checklist" className="border-0">
-          <AccordionTrigger className="items-center gap-3 py-3 hover:no-underline">
-            <span
-              aria-hidden
-              className={cn(
-                "grid size-9 shrink-0 place-items-center rounded-lg",
-                allDone ? "bg-success/15 text-success-strong" : "bg-primary/10 text-primary-strong"
-              )}
-            >
-              {allDone ? <CheckCircle2 className="size-5" /> : <ListChecks className="size-5" />}
-            </span>
-            <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-sm font-semibold text-foreground">Kontrol Listesi</span>
-                {/* Zorunlu olmadığı başlıkta yazıyor: teknisyen listeyi bir kapı
-                    değil, işini kanıtlayan bir kayıt olarak görsün. */}
-                <span className="rounded px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground bg-muted">
-                  isteğe bağlı
-                </span>
-                <span className="ml-auto text-xs font-medium tabular-nums text-muted-foreground">
-                  {progress.completed}/{progress.total}
-                </span>
+    <Accordion type="multiple" variant="card" value={open} onValueChange={onOpenChange}>
+      <AccordionItem
+        ref={containerRef}
+        value="checklist"
+        className={cn(
+          "scroll-mt-4 transition-colors",
+          allDone
+            ? "border-success/30 bg-primary/[0.04]"
+            : progress.total > 0 && !locked
+              ? "border-primary/25 bg-primary/[0.04]"
+              : "border-border bg-primary/[0.04]"
+        )}
+      >
+        <AccordionTrigger className="items-center gap-3">
+          <span
+            aria-hidden
+            className={cn(
+              "grid size-9 shrink-0 place-items-center rounded-lg",
+              allDone ? "bg-success/15 text-success-strong" : "bg-primary/10 text-primary-strong"
+            )}
+          >
+            {allDone ? <CheckCircle2 className="size-5" /> : <ListChecks className="size-5" />}
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-sm font-semibold text-foreground">Kontrol Listesi</span>
+              {/* Zorunlu olmadığı başlıkta yazıyor: teknisyen listeyi bir kapı
+                  değil, işini kanıtlayan bir kayıt olarak görsün. */}
+              <span className="rounded px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground bg-muted">
+                isteğe bağlı
               </span>
-              <span aria-hidden className="block h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                <span
-                  className={cn(
-                    "block h-full rounded-full motion-safe:transition-[width] motion-safe:duration-500",
-                    allDone ? "bg-success" : "bg-primary"
-                  )}
-                  style={{ width: `${progress.percent}%` }}
-                />
-              </span>
-              <span className="text-xs font-normal text-muted-foreground">
-                {progress.total === 0
-                  ? "Kontrol maddesi yok"
-                  : allDone
-                    ? "Tüm maddeler işaretlendi"
-                    : `${progress.remaining} madde kaldı`}
+              <span className="ml-auto text-xs font-medium tabular-nums text-muted-foreground">
+                {progress.completed}/{progress.total}
               </span>
             </span>
-          </AccordionTrigger>
-
-          <AccordionContent className="pb-4">
-            {CATEGORY_ORDER.map((category) => (
-              <ChecklistSection
-                key={category}
-                category={category}
-                items={active.filter((i) => i.category === category)}
-                state={state}
-                locked={locked}
+            <span aria-hidden className="block h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <span
+                className={cn(
+                  "block h-full rounded-full motion-safe:transition-[width] motion-safe:duration-500",
+                  allDone ? "bg-success" : "bg-primary"
+                )}
+                style={{ width: `${progress.percent}%` }}
               />
-            ))}
+            </span>
+            <span className="text-xs font-normal text-muted-foreground">
+              {progress.total === 0
+                ? "Kontrol maddesi yok"
+                : allDone
+                  ? "Tüm maddeler işaretlendi"
+                  : `${progress.remaining} madde kaldı`}
+            </span>
+          </span>
+        </AccordionTrigger>
 
-            {active.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Bu araç kabulünde kontrol maddesi kalmadı.
-              </p>
-            )}
+        <AccordionContent>
+          {CATEGORY_ORDER.map((category) => (
+            <ChecklistSection
+              key={category}
+              category={category}
+              items={active.filter((i) => i.category === category)}
+              state={state}
+              locked={locked}
+            />
+          ))}
 
-            <RemovedChecklistItems items={removed} state={state} locked={locked} />
+          {active.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Bu araç kabulünde kontrol maddesi kalmadı.
+            </p>
+          )}
 
-            {locked ? (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Teslim edilmiş/iptal edilmiş araç kabulünde kontrol maddesi eklenemez
-              </p>
-            ) : (
-              <AddChecklistItemForm orderId={orderId} />
-            )}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </div>
+          <RemovedChecklistItems items={removed} state={state} locked={locked} />
+
+          {locked ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Teslim edilmiş/iptal edilmiş araç kabulünde kontrol maddesi eklenemez
+            </p>
+          ) : (
+            <AddChecklistItemForm orderId={orderId} />
+          )}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   )
 }
 

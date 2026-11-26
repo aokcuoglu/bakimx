@@ -28,6 +28,7 @@ kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (76
 | `ToggleGroupItem` `size="row"` | en az 44px | en az 36px | seçenek kartı (ikon + başlık + açıklama, #889): Button `row` ile aynı ölçü |
 | `Tabs` — `TabsList size="control"` (segment) | 44px | 36px | trigger yüksekliği; şerit `h-auto` |
 | Textarea | `min-h-16` | `min-h-16` | 10px köşe (md+ 8px, `--control-radius`) |
+| `Accordion` `default` / `card` / `disclosure` | tetikleyici en az 44px | en az 36px | görünüm kökte `variant` (#926): `default` alt çizgili liste (SSS); `card` her öğe ayrı 12px kart (`rounded-lg border bg-card`), tetikleyici `px-4 py-3`, köşesi kartın iç köşesi (11px); `disclosure` kart görünümlü tek açılır başlık (`bg-card`, Card halkası), içerik kartın altında akar |
 
 **Input / InputGroup `size`** `--control-h`, `--control-fs` ve `--field-px`
 değişkenlerini öğenin kendisinde yeniden bağlar; taban sınıflar aynı kalır.
@@ -261,6 +262,19 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
 - Ham HTML etkileşimli kontrol kullanılmaz. Form gönderimi için kullanıcıya
   görünmeyen `input[type="hidden"]` alanları ve bir `Button`'un tetiklediği
   gizli dosya seçici (`type="file"` + `className="hidden"`) istisnadır.
+- Akordeon (#926): `Accordion`, `AccordionItem`, `AccordionTrigger` ve
+  `AccordionContent` açılış etiketinde yükseklik (`h-*` — `h-full` hariç,
+  `min-h-*`, `max-h-*`, `size-*`), köşe (`rounded*`), yazı boyutu ve ağırlığı,
+  satır yüksekliği (düzyazı `AccordionContent`'te serbest), dolgu (`p-*`,
+  `px-*`, `py-*`…), öneksiz nötr zemin (`bg-card|background|muted|transparent`),
+  kenarlık kaldırma (`border-0|none|transparent`), gölge, halka / `outline`,
+  alt çizgi (`underline`, `no-underline`) ve iç parça ezmesi
+  (`**:data-[slot=accordion-trigger-icon]:…`) taşımaz. Kart, dolgu ve tetikleyici
+  yüksekliği yerine kökte `variant="card"` / `"disclosure"` seçilir. Serbest:
+  genişlik, flex/grid, `gap-*`, `items-*`, `space-y-*`, dış boşluk, metin rengi
+  (`hover:text-foreground` dahil), ayraç çizgisi (`border-t`) ve kenarlık rengi
+  (`border-warning/30`), durum zemini (`bg-primary/[0.04]`), `scroll-mt-*`.
+  Kapı: `control-call-sites.test.ts` → `ACCORDION_FORBIDDEN`.
 
 Matrisi `src/components/ui/control-sizing.test.ts`,
 `src/components/ui/control-call-sites.test.ts` ve

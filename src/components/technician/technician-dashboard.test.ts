@@ -39,9 +39,11 @@ describe("teknisyen paneli KPI filtreleri", () => {
 
   test("Taslak İşler varsayılan olarak kapalı gelir ve kartların altı çizilmez", () => {
     expect(source).toContain('title: "Taslak İşler", orders: draftOrders, empty: "Taslak iş bulunmuyor", collapsible: true')
-    expect(source).toContain('<Accordion key={section.title} type="single" collapsible>')
+    // `disclosure` görünümü içerikteki bağlantıların altını çizmez (#926);
+    // çağrı yerinde `[&_a]:no-underline` ile kapatmaya gerek kalmadı.
+    expect(source).toContain('<Accordion key={section.title} type="single" collapsible variant="disclosure">')
     expect(source).not.toMatch(/<Accordion[^>]*defaultValue/)
-    expect(source).toContain('[&_a]:no-underline')
+    expect(source).not.toContain('[&_a]:no-underline')
   })
 
   test("iş listelerinde adet, tıklanabilirlik ve aktif iş vurgusu gösterir", () => {

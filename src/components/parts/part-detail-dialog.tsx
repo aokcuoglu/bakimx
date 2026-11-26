@@ -302,7 +302,7 @@ export function PartDetailDialog({
                     if (value.length > 0) void loadCrossRefs()
                   }}
                 >
-                  <AccordionItem value="cross-refs" className="border-b-0">
+                  <AccordionItem value="cross-refs">
                     <AccordionTrigger>Muadil parçalar</AccordionTrigger>
                     <AccordionContent>
                       {crossRefsLoading && (

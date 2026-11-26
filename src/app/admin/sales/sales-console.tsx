@@ -613,22 +613,22 @@ export function SalesConsole({
         ) : (
           <Accordion
             type="multiple"
+            variant="card"
             value={openStatuses}
             onValueChange={setOpenStatuses}
-            className="space-y-2"
           >
             {statuses.map(([statusValue, statusLabel, statusColor]) => {
               const statusLeads = leadsByStatus[statusValue] ?? []
               if (statusLeads.length === 0) return null
               return (
-                <AccordionItem key={statusValue} value={statusValue} className="rounded-xl border bg-card">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <AccordionItem key={statusValue} value={statusValue}>
+                  <AccordionTrigger>
                     <div className="flex items-center gap-3">
                       <Badge variant="outline" className={`text-[11px] ${statusColor}`}>{statusLabel}</Badge>
                       <span className="text-sm text-muted-foreground">{statusLeads.length} aday</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
+                  <AccordionContent>
                     <div className="space-y-3">
                       {statusLeads.map((lead) => (
                         <LeadCard

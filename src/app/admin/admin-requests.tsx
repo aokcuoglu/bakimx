@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils"
 import { salesLeadDisplayName } from "@/lib/sales/crm"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
   Select,
   SelectContent,
@@ -330,7 +331,6 @@ function SupportRequestRow({
   canManage: boolean
   options: SupportRequestOptions
 }) {
-  const [expanded, setExpanded] = useState(false)
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState("")
   const [note, setNote] = useState(r.internalNote ?? "")
@@ -358,22 +358,10 @@ function SupportRequestRow({
   const adminOptions = [{ value: UNASSIGNED, label: "Atanmadı" }, ...options.admins]
 
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-xl border bg-card transition-all",
-        isNew ? "border-warning/30" : "border-border/60"
-      )}
-    >
-      <Button
-        type="button"
-        variant="ghost"
-        size="row"
-        aria-expanded={expanded}
-        className="w-full items-start px-4 transition-colors hover:bg-muted/30"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
+    <AccordionItem value={r.id} className={cn(isNew && "border-warning/30")}>
+      <AccordionTrigger className="gap-3">
+        <span className="block min-w-0 flex-1 space-y-1">
+          <span className="flex items-center gap-2 flex-wrap">
             <span className={cn("text-sm", isNew ? "font-bold" : "font-semibold")}>{r.name}</span>
             <Badge className={SUPPORT_STATUS_BADGE[r.status] ?? "bg-muted"}>
               {SUPPORT_STATUSES.find((s) => s.value === r.status)?.label ?? r.status}
@@ -383,24 +371,25 @@ function SupportRequestRow({
                 → {r.assignedToLabel}
               </span>
             )}
-          </div>
-          <p className="text-sm text-muted-foreground">
+          </span>
+          <span className="block text-sm text-muted-foreground">
             {r.subject || r.businessName}
-          </p>
-          {!expanded && (
-            <p className="text-xs text-muted-foreground line-clamp-1">{r.message}</p>
-          )}
-        </div>
+          </span>
+          {/* Kapalıyken mesajın ilk satırı önizlenir; açılınca tamamı içerikte. */}
+          <span className="line-clamp-1 text-xs text-muted-foreground group-aria-expanded/accordion-trigger:hidden">
+            {r.message}
+          </span>
+        </span>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0 pt-0.5">
+        <span className="flex items-center gap-2 text-xs text-muted-foreground shrink-0 pt-0.5">
           <CalendarDays className="size-3.5" />
           <span>{dateStr}</span>
           <span className="text-muted-foreground-strong">{timeStr}</span>
-        </div>
-      </Button>
+        </span>
+      </AccordionTrigger>
 
-      {expanded && (
-        <div className="border-t px-4 pb-4 pt-3 space-y-4">
+      <AccordionContent>
+        <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
@@ -501,8 +490,8 @@ function SupportRequestRow({
 
           {error && <p className="text-sm text-destructive-strong">{error}</p>}
         </div>
-      )}
-    </div>
+      </AccordionContent>
+    </AccordionItem>
   )
 }
 
@@ -528,10 +517,10 @@ export function AdminSupportRequests({
   }
 
   return (
-    <div className="space-y-3">
+    <Accordion type="multiple" variant="card">
       {requests.map((r) => (
         <SupportRequestRow key={r.id} r={r} canManage={canManage} options={options} />
       ))}
-    </div>
+    </Accordion>
   )
 }

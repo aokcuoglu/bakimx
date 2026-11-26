@@ -667,10 +667,10 @@ function SectorStep({ form }: { form: WizardForm }) {
             </div>
             <Accordion type="single" collapsible className="mt-4">
               <AccordionItem value="coming-soon" className="border-t border-border">
-                <AccordionTrigger className="w-full rounded-none py-3 text-muted-foreground hover:text-foreground hover:no-underline">
+                <AccordionTrigger className="text-muted-foreground hover:text-foreground">
                   Diğer sektörler <span className="ml-1 font-normal">(yakında)</span>
                 </AccordionTrigger>
-                <AccordionContent className="grid grid-cols-1 gap-2 pt-2 sm:grid-cols-2">
+                <AccordionContent className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {COMING_SOON_SECTORS.map((sector) => {
                     const Icon = sector.icon
                     return (
