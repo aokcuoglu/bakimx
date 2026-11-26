@@ -463,7 +463,6 @@ const OPACITY_EXCEPTIONS: OpacityException[] = [
   { file: "components/parts/parts-list.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "components/parts/tecdoc-search-results.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "components/reminders/reminder-list.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
-  { file: "components/settings/technician-management.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "components/shared/empty-state.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "components/suppliers/supplier-detail.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
   { file: "components/suppliers/suppliers-list.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },

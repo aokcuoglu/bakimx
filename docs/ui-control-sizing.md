@@ -127,6 +127,18 @@ ayrılmıyor). `on-photo` — fotoğraf / kamera katmanı (siyah
 zemin) üstünde çerçeveli düğme (`bg-white/10`, `border-white/30`);
 `on-photo-ghost` aynı zeminde hayalet düğme.
 
+**Ton variant'ları, dilim 2** (#928): `destructive-ghost` — satır içi yıkıcı
+eylem (sil, kaldır, iptal): çerçevesiz, dinlenirken `text-destructive-strong`,
+hover `bg-destructive/10`; koyu hover `/20` yoktur (`-strong` metin
+`bg-muted`'da AA'nın altına iner). Satır çöp kutusu gibi gri dinlenmesi
+gereken yerler `variant="destructive-ghost"` + `className="text-muted-foreground"`
+yazar: twMerge variant'ın dinlenme rengini düşürür, `hover:text-destructive-strong`
+kalır. `warning-tint` — dikkat isteyen seçim (düşük güvenli OCR önerisi):
+`border-warning/40 bg-warning/10 text-warning-strong`; tonlu zeminde ikincil
+metin `text-muted-foreground-strong`. `on-photo-scrim` — fotoğraf üstünde
+yüzen galeri okları: `bg-black/60` (`on-photo`'nun %10 beyazı aydınlık
+fotoğrafta okunmaz).
+
 **Button `row`** satırları variant'tan bağımsız aynı çerçeve kutusundadır
 (kenarlıksız variant'lar şeffaf 1px çerçeve alır): seçili `secondary` satır
 `outline` komşularından kısa kalmaz, seçim değişince satır kaymaz. Hayalet
@@ -303,11 +315,15 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
   `detail` — tarayıcı yalnız dosyadaki `*.module.css` içe aktarımını tanır)
   taranmaz — sabite boyut sınıfı yazılmaz, `className` JSX'te `cn(...)` ile
   verilir.
-  Ton da variant'tan gelir (#925): öneksiz (ya da kırılım / tema önekli)
-  `border-destructive/*` → `variant="destructive-outline"`, `bg-primary/N` →
-  `variant="tint"`, her önekte `bg-white|black/*` / `border-white|black/*` →
-  `variant="on-photo"` / `"on-photo-ghost"`; `hover:bg-destructive/10`,
-  `hover:bg-primary/10` gibi durum tonları serbest kalır.
+  Ton da variant'tan gelir (#925, #928): öneksiz (ya da kırılım / tema önekli)
+  `border-destructive/*` → `variant="destructive-outline"`, `bg|border-primary/N`
+  → `variant="tint"`; HER önekte `text-destructive(-strong)` / `bg-destructive(/N)`
+  → `"destructive-ghost"` / `"destructive-outline"`, `bg|border-warning(/N)` →
+  `"warning-tint"`, `bg|border-white|black/*` → `"on-photo"` / `"on-photo-ghost"`
+  / `"on-photo-scrim"`; `hover:bg-primary/10` gibi birincil durum tonları
+  serbest kalır. Gerekçeli istisnalar `control-call-sites.test.ts`
+  `EXCEPTIONS`'ta (taklit modu bandı, fotoğraf sil dairesi, satır içi iptal
+  bağlantısı, yakıt çubuğu).
 - `ToggleGroupItem` / `TabsTrigger` / `TabsList` üzerinde `!` ile yükseklik
   ezilmez (`h-7!`). Telefonda tek başına duran eylem düğmesi `default` ya da
   üstüdür; `sm/xs/compact` yoğun satır ve araç çubuğu içindir.
