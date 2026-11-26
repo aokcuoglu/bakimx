@@ -31,4 +31,5 @@ test("Kalemi düzenle diyaloğu ilk odağı düzenlenebilir alana verir (kaynak 
   expect(open).toContain("ref={editDialogRef}")
   // Escape korumasını çağrı yerinde kopyalama — paylaşılan Dialog yapıyor.
   expect(open).not.toContain("onEscapeKeyDown")
+  expect(grid).toContain('window.matchMedia("(pointer: coarse)").matches')
 })

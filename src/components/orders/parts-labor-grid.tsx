@@ -262,14 +262,22 @@ export function PartsLaborEditor({
   const [editingRow, setEditingRow] = useState<Row | null>(null)
   const editDialogRef = useRef<HTMLDivElement>(null)
   // Radix ilk odağı DOM sırasındaki ilk tabbable'a (kaynak rozeti → tooltip açılır, ilk
-  // Escape yalnız onu kapatırdı) verir. Odak ilk DÜZENLENEBİLİR alana gider; yoksa varsayılan.
+  // Escape yalnız onu kapatırdı) verir. Klavyeli cihazda odak ilk DÜZENLENEBİLİR alana gider;
+  // dokunmatikte alana odaklanmak ekran klavyesini açıp Kaydet'i örter, o yüzden odak diyalog
+  // kutusunun kendisine verilir (tabIndex=-1; tek Escape yine kapatır).
   const focusFirstEditableField = useCallback((event: Event) => {
-    const field = editDialogRef.current?.querySelector<HTMLElement>(
-      'input:not([disabled]):not([readonly]):not([type="hidden"]), textarea:not([disabled]):not([readonly]), [role="combobox"]:not([disabled])',
+    const dialogNode = editDialogRef.current
+    if (window.matchMedia("(pointer: coarse)").matches) {
+      event.preventDefault()
+      dialogNode?.focus({ preventScroll: true })
+      return
+    }
+    const field = dialogNode?.querySelector<HTMLElement>(
+      'input:not([disabled]):not([readonly]):not([type="hidden"]), textarea:not([disabled]):not([readonly]), [role="combobox"]:not([disabled]):not([aria-disabled="true"])',
     )
     if (!field) return
     event.preventDefault()
-    field.focus()
+    field.focus({ preventScroll: true })
   }, [])
   const [savingRow, setSavingRow] = useState(false)
   const originalRow = editingRow ? rows.find((row) => row.id === editingRow.id) : undefined
