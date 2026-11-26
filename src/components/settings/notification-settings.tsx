@@ -70,8 +70,7 @@ export function NotificationSettings({
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
   const [editingChannel, setEditingChannel] = useState<TemplateChannel | null>(null)
   const router = useRouter()
-  const [resetting, setResetting] = useState(false)
-  const [resetError, setResetError] = useState<string | null>(null)
+  const [resettingKey, setResettingKey] = useState<string | null>(null)
   const [testRecipient, setTestRecipient] = useState<Record<TemplateChannel, string>>({ sms: "", email: "" })
   const [testResult, setTestResult] = useState<Partial<Record<TemplateChannel, TestResult>>>({})
   const [testingChannel, setTestingChannel] = useState<TemplateChannel | null>(null)
@@ -106,8 +105,7 @@ export function NotificationSettings({
   }
 
   async function handleReset(templateKey: string, channel: TemplateChannel) {
-    setResetting(true)
-    setResetError(null)
+    setResettingKey(`${templateKey}:${channel}`)
     try {
       const formData = new FormData()
       formData.set("templateKey", templateKey)
@@ -118,12 +116,12 @@ export function NotificationSettings({
         toast.success("Şablon varsayılana sıfırlandı")
         router.refresh()
       } else {
-        setResetError(data.error || "Sıfırlanamadı")
+        toast.error(data.error || "Sıfırlanamadı")
       }
     } catch {
-      setResetError("Bağlantı hatası")
+      toast.error("Bağlantı hatası")
     }
-    setResetting(false)
+    setResettingKey(null)
   }
 
   function startEdit(templateKey: string, channel: TemplateChannel) {
@@ -183,12 +181,6 @@ export function NotificationSettings({
         </p>
       </div>
 
-      {resetError && (
-        <Alert variant="destructive">
-          <AlertDescription>{resetError}</AlertDescription>
-        </Alert>
-      )}
-
       <Accordion
         type="single"
         collapsible
@@ -233,7 +225,7 @@ export function NotificationSettings({
                             <Button
                               type="button"
                               onClick={() => handleReset(template.key, ch)}
-                              disabled={resetting}
+                              disabled={isEditing || resettingKey === `${template.key}:${ch}`}
                               variant="ghost"
                               size="sm"
                             >
@@ -257,6 +249,7 @@ export function NotificationSettings({
                         <TemplateEditForm
                           templateKey={template.key}
                           channel={ch}
+                          disabled={resettingKey === `${template.key}:${ch}`}
                           initialContent={savedContent || defaultContent}
                           onSaved={() => setEditingChannel(null)}
                           onCancel={() => setEditingChannel(null)}
@@ -286,12 +279,14 @@ export function NotificationSettings({
 function TemplateEditForm({
   templateKey,
   channel,
+  disabled,
   initialContent,
   onSaved,
   onCancel,
 }: {
   templateKey: string
   channel: TemplateChannel
+  disabled: boolean
   initialContent: string
   onSaved: () => void
   onCancel: () => void
@@ -334,9 +329,17 @@ function TemplateEditForm({
             <FormItem>
               <FormLabel className="sr-only">Şablon metni</FormLabel>
               <FormControl>
-                <Textarea rows={channel === "email" ? 8 : 3} className="font-mono" {...field} />
+                <Textarea
+                  rows={channel === "email" ? 8 : 3}
+                  className="font-mono"
+                  {...field}
+                  onChange={(e) => {
+                    setServerError(null)
+                    field.onChange(e)
+                  }}
+                />
               </FormControl>
-              <FormDescription>
+              <FormDescription className="text-xs">
                 Kullanılabilir değişkenler: {"{customerName}"}, {"{workshopName}"}, {"{vehiclePlate}"}, {"{appointmentDay}"}, {"{appointmentDate}"}, {"{appointmentTime}"},{"{approvalLink}"}, {"{portalLink}"}, {"{quoteNo}"}, {"{workOrderNo}"}, {"{totalAmount}"}, {"{maintenanceType}"}, {"{dueDate}"}, {"{customMessage}"}
               </FormDescription>
               <FormMessage />
@@ -349,7 +352,7 @@ function TemplateEditForm({
           </Alert>
         )}
         <div className="flex gap-2">
-          <Button type="submit" variant="foreground" size="sm" disabled={form.formState.isSubmitting}>
+          <Button type="submit" variant="foreground" size="sm" disabled={disabled || form.formState.isSubmitting}>
             {form.formState.isSubmitting ? "Kaydediliyor..." : "Kaydet"}
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={onCancel}>

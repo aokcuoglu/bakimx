@@ -13,3 +13,10 @@ test("şablon formu react-hook-form + zod, hata Alert'tir", () => {
   expect(SOURCE).not.toContain("text-[10px]")
   expect(SOURCE).not.toContain("setEditContent")
 })
+
+test("FormData anahtarları ve yenileme korunur", () => {
+  for (const key of ["templateKey", "channel", "content"]) {
+    expect(SOURCE).toContain(`formData.set("${key}"`)
+  }
+  expect(SOURCE).toContain("router.refresh()")
+})

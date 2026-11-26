@@ -9,8 +9,8 @@ test("boş ve yalnız boşluktan oluşan metin reddedilir", () => {
   }
 })
 
-test("geçerli metin kırpılır, çok satır ve değişkenler korunur", () => {
-  const r = notificationTemplateFormSchema.safeParse({ content: "  Merhaba {customerName}\nRandevunuz var  " })
+test("geçerli metin olduğu gibi geçer (baş/son satır sonu dahil)", () => {
+  const r = notificationTemplateFormSchema.safeParse({ content: "\n  Merhaba {customerName}\nRandevunuz var  \n" })
   expect(r.success).toBe(true)
-  if (r.success) expect(r.data.content).toBe("Merhaba {customerName}\nRandevunuz var")
+  if (r.success) expect(r.data.content).toBe("\n  Merhaba {customerName}\nRandevunuz var  \n")
 })
