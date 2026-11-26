@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { PRIVATE_ROBOTS, brandedTitle } from "@/lib/seo"
 import { MarketingKitShowcase } from "./marketing-kit"
 import { RecordPatterns } from "./record-patterns"
@@ -563,6 +565,36 @@ export default function DesignSystemPage() {
               <Badge>default</Badge>
               <Badge variant="secondary">secondary</Badge>
             </div>
+          </div>
+          <div className="space-y-3 rounded-lg border border-border bg-card p-4" data-testid="selector-sizes">
+            <p className="font-mono text-[11px] text-muted-foreground">
+              seçiciler · size=&quot;control&quot; 44 / 36 — telefonda dokunulan sekme ve seçici (#854)
+            </p>
+            <div className="grid items-start gap-4 lg:grid-cols-2">
+              <Tabs defaultValue="parts">
+                <TabsList variant="line" size="control" className="w-full justify-start border-b border-border" aria-label="Örnek sayfa sekmesi">
+                  <TabsTrigger value="parts">line · control</TabsTrigger>
+                  <TabsTrigger value="labor">İşçilikler</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <Tabs defaultValue="intake">
+                <TabsList size="control" className="w-full" aria-label="Örnek segment sekmesi">
+                  <TabsTrigger value="intake">segment · control</TabsTrigger>
+                  <TabsTrigger value="delivery">Teslim</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <ToggleGroup type="single" defaultValue="all" variant="outline" size="control" className="flex-wrap" aria-label="Örnek seçim">
+                <ToggleGroupItem value="all">outline · control</ToggleGroupItem>
+                <ToggleGroupItem value="sms">SMS</ToggleGroupItem>
+              </ToggleGroup>
+              <ToggleGroup type="single" defaultValue="monthly" variant="segment" size="control" aria-label="Örnek dönem">
+                <ToggleGroupItem value="monthly">segment · control</ToggleGroupItem>
+                <ToggleGroupItem value="yearly">Yıllık</ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Varsayılan line sekme (28px) ve Toggle (32px) yalnız masaüstü yoğun yüzeyde kalır; örnek: aşağıdaki kayıt kalıbı.
+            </p>
           </div>
         </Section>
 
