@@ -1545,14 +1545,6 @@ export function WorkOrderDetail({
                     </div>
                   </>
                 )}
-
-                {order.status === "ready_for_delivery" && !deliveryOtpMode && (
-                  <div className="pt-3 border-t">
-                    <Button onClick={handleRequestDeliveryOtp} disabled={loading} variant="outline" className="w-full">
-                      <KeyRound className="size-4 mr-2" /> SMS Teslim Kodu Gönder
-                    </Button>
-                  </div>
-                )}
               </div>
             </DetailPanel>
           </div>

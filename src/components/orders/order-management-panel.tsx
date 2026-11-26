@@ -5,12 +5,20 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { DetailPanel, DetailPill, DetailEmpty, DetailItem, OrderPaymentPill, detail, surface } from "@/components/orders/order-detail-surface"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import type { OrderStatusKey } from "@/lib/constants"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus, percentToBps, applyDiscountKurus, applyTaxBps, addKurus } from "@/lib/money"
 import { PAYMENT_METHOD_LABELS } from "@/lib/cashbox/status"
+import { isOrderLocked } from "@/lib/status-transitions"
+import type { OrderStatus } from "@prisma/client"
 import { formatChainAmount, orderTotalsChain } from "@/lib/orders/totals-chain"
 import type { PaymentMethodKey } from "@/lib/cashbox/status"
 import type {
@@ -24,6 +32,8 @@ import {
   Loader2,
   Pencil,
   Wallet,
+  PackagePlus,
+  Wrench,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SendReminderButton } from "@/components/orders/send-reminder-button"
@@ -220,6 +230,12 @@ export const NEXT_STATUSES: Record<string, { key: OrderStatusKey; label: string;
   cancelled: [{ key: "draft", label: "Yeniden Aktif Et", primary: true }],
 }
 
+/**
+ * Kalemler paneli. Ekleme düğmesi sayfada tek yerde (#912): grid'in araç çubuğu
+ * bu kabukta gizli (parts-labor.module.css), hızlı işlemler (#881) ve başlıktaki
+ * "Kalem ekle" menüsü aynı pencereyi açar. Menü, hızlı işlem satırından uzakta
+ * (uzun sayfada Kalemler'e kaydırılmışken) ekleme yolu kalsın diye durur.
+ */
 export function PartsLaborCard({
   orderId,
   status,
@@ -250,10 +266,34 @@ export function PartsLaborCard({
   addingType?: PartsAddType | null
   onAddingTypeChange?: (type: PartsAddType | null) => void
 }) {
+  const canAdd = !isOrderLocked(status as OrderStatus) && onAddingTypeChange
   return (
     <DetailPanel
       title="Parçalar & İşçilikler"
-      aside={<span className={surface.rowEndText}>{items.length} kalem</span>}
+      aside={
+        <span className="flex items-center gap-2">
+          <span className={surface.rowEndText}>{items.length} kalem</span>
+          {canAdd && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="ghost" size="icon" aria-label="Kalem ekle">
+                  <Plus />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem className="gap-2" onClick={() => onAddingTypeChange("parca")}>
+                  <PackagePlus className="size-4" />
+                  Parça ekle
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2" onClick={() => onAddingTypeChange("iscilik")}>
+                  <Wrench className="size-4" />
+                  İşçilik ekle
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </span>
+      }
     >
       <div className={pl.skin}>
         <PartsLaborGrid

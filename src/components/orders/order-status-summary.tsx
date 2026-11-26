@@ -131,14 +131,14 @@ export function OrderMobileSummary({
 
 /**
  * Raydaki Durum kartı (#911, iki kolonda): durum hapı ve sıradaki adım.
- * Salt okunur — aksiyonlar başlıkta kalır. Engellerin ayrıntısı ve çıkış yolu
+ * Salt okunur — aksiyonlar başlıkta kalır. Hap panel başlığında (#912), kart
+ * gövdesi yalnız sıradaki adımı taşır. Engellerin ayrıntısı ve çıkış yolu
  * şimdilik başlığın altındaki uyarılarda (#913'te bu karta taşınır).
  */
 export function OrderStatusCard({ status, nextStep }: { status: string; nextStep: OrderNextStep | null }) {
   return (
-    <DetailPanel title="Durum" className={detail.statusCard}>
-      <div className={cn(detail.block, "space-y-3")}>
-        <OrderStatusPill status={status} />
+    <DetailPanel title="Durum" aside={<OrderStatusPill status={status} />} className={detail.statusCard}>
+      <div className={detail.block}>
         {nextStep ? (
           <NextStepLine step={nextStep} />
         ) : (

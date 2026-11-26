@@ -162,3 +162,18 @@ test("#912: özet kartında tahsilat düğmesi yok, para satırı Ödeme bölüm
   expect(money).toContain('href="#odeme"')
   expect(money).toContain('onNavigate("odeme")')
 })
+
+/**
+ * #912 — tekrarlar: Durum kartında hap panel başlığında; teslim kodu yalnız
+ * başlıktaki birincil "Teslim Et (OTP)" ile istenir (Müşteri Çıktısı'ndaki ikinci
+ * düğme fiyatsız kalem / karar bekleyen talep kapısını da atlıyordu).
+ */
+test("#912: Durum hapı panel başlığında, teslim kodu düğmesi tek yerde", () => {
+  const card = SUMMARY.slice(SUMMARY.indexOf("export function OrderStatusCard"))
+  expect(card).toContain('<DetailPanel title="Durum" aside={<OrderStatusPill status={status} />}')
+  expect(card.match(/<OrderStatusPill/g)).toHaveLength(1)
+  expect(DETAIL).not.toContain("SMS Teslim Kodu Gönder")
+  expect(DETAIL.match(/onClick=\{handleRequestDeliveryOtp\}/g)).toHaveLength(1)
+  expect(DETAIL).toContain('label: a.key === "delivered" ? "Teslim Et (OTP)" : a.label')
+  expect(DETAIL).toContain('(a.key === "delivered" && deliveryBlocked)')
+})

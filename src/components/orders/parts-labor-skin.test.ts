@@ -60,6 +60,24 @@ describe("Parça & İşçilik kabuğu (#849)", () => {
     expect(md?.[1]).not.toContain("display")
   })
 
+  test("#912: iş emrinde grid araç çubuğu ve ardındaki çizgi gizli; ekleme panel başlığında", () => {
+    const rule = css.match(/\.skin \[data-pl="toolbar"\],\s*\.skin \[data-pl="toolbar"\] \+ \[data-slot="separator"\] \{([^}]*)\}/)
+    expect(rule?.[1]).toContain("display: none")
+    // Çizgi gerçekten araç çubuğunun DOM komşusu: arada yalnız portal'lı Dialog
+    // (yerinde DOM üretmez) ve iş emrinde çizilmeyen teklif sekmeleri var.
+    const toolbarAt = grid.indexOf('data-pl="toolbar"')
+    const between = grid.slice(toolbarAt, grid.indexOf("{!locked && <Separator />}", toolbarAt))
+    expect(between).toContain("{!locked && !onSaveRow && (")
+    expect(between).not.toMatch(/<(div|section|p|span)\b/)
+    // Panel başlığındaki menü aynı ekleme penceresini açar.
+    const panel = read("order-management-panel.tsx")
+    const card = panel.slice(panel.indexOf("export function PartsLaborCard"), panel.indexOf("export function OrderPaymentCard"))
+    expect(card).toContain('aria-label="Kalem ekle"')
+    expect(card).toContain('onAddingTypeChange("parca")')
+    expect(card).toContain('onAddingTypeChange("iscilik")')
+    expect(card).toContain("const canAdd = !isOrderLocked(status as OrderStatus) && onAddingTypeChange")
+  })
+
   test("kalem adı kuralı yalnız data-pl=name kancasını ve :disabled'ı hedefler (#873)", () => {
     expect(css).toMatch(/\.skin \[data-pl="name"\]:disabled \{/)
     const bare = css.replace(/\[data-pl="name"\]:disabled/g, "")
