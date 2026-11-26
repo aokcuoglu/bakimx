@@ -495,7 +495,7 @@ export default function DesignSystemPage() {
                 ["tint", "Tint — birincil tonlu seçili / önerilen eylem"],
                 ["success", "Success"],
                 ["warning", "Warning"],
-                ["field", "Field — alan görünümlü seçici (birim, tarih)"],
+                ["field", "Field — alan görünümlü seçici (tarih)"],
               ] as const
             ).map(([variant, label]) => (
               <div

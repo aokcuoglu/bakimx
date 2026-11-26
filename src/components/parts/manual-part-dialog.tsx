@@ -216,6 +216,7 @@ export function ManualPartDialog({
               <span className="block text-xs font-medium text-muted-foreground">Birim</span>
               <OrderItemUnitCombobox
                 value={unit}
+                ariaLabel="Birim"
                 className="w-full"
                 onValueChange={(next) => {
                   setUnit(next)
