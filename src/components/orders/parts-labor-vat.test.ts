@@ -103,10 +103,10 @@ test("BİRİM FİYAT ham `unitPrice`'tır — gösterim çevrimi yok", () => {
  */
 test("Toplam sütunu KDV DAHİL tutarı basar — net toplam değil", () => {
   expect(GRID).toContain("const grossLineTotal = lineTotal == null ? null : lineTotal + (vatKurus ?? 0)")
-  // Masaüstü satırı, mobil kart ve composer önizlemesi — üçü de brüt okur.
+  // Masaüstü satırı, mobil kart, kompakt satır (#968) ve composer önizlemesi — dördü de brüt okur.
   expect(GRID).not.toContain("lineTotal={ed.lineTotal}")
   const grossUses = GRID.match(/lineTotal=\{ed\.grossLineTotal\}/g) ?? []
-  expect(grossUses.length).toBe(3)
+  expect(grossUses.length).toBe(4)
 })
 
 test("brüt tutarın yanında KDV'nin içinde olduğu YAZAR", () => {

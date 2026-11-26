@@ -40,6 +40,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { splitRowActions } from "@/lib/orders/row-actions"
+import { PRICE_NOT_ENTERED, compactRowDetail } from "@/lib/orders/compact-row"
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
@@ -217,6 +218,7 @@ export function PartsLaborEditor({
   flash, onAdd, onCell, onRemove,
   onSaveRow,
   addingType: addingTypeProp, onAddingTypeChange, onAddDialogCloseAutoFocus,
+  compactRows = false,
 }: {
   rows: Row[]
   vehicle?: PickerVehicle
@@ -256,6 +258,12 @@ export function PartsLaborEditor({
   onAddingTypeChange?: (type: PartsAddType | null) => void
   /** Dışarıdan açılan ekleme modalı kapanınca odağı açan öğeye döndürür (#913). */
   onAddDialogCloseAutoFocus?: (event: Event) => void
+  /**
+   * Dar kapsayıcıda kart yerine iki satırlık kompakt satır (#968): ad + tutar /
+   * "adet × birim fiyat", tüm aksiyonlar tek ⋯ menüsünde. Yalnız iş emri sayfası
+   * verir; teklif ve teknisyen ekranı kartı korur.
+   */
+  compactRows?: boolean
 }) {
   // Parça detay modalı (tek örnek) — arama, katalog picker'ı ve kalem satırları besler.
   const [detail, setDetail] = useState<DetailRequest | null>(null)
@@ -388,13 +396,13 @@ export function PartsLaborEditor({
       {!locked && <PurchaseMarginNotice rows={rows} />}
 
       {/* Ortak çarşaf liste: her iki tab'dan eklenen kalemler. Düzenle + sil. */}
-      {/* Geniş kapsayıcı (≥52rem): gerçek shadcn Base <table>. Eşik tablonun kendi
+      {/* Geniş kapsayıcı (≥54rem): gerçek shadcn Base <table>. Eşik tablonun kendi
           min genişliği; altında tablo zaten yatay kaydırmaya düşerdi, onun yerine
           aşağıdaki kart düzeni devreye girer.
           Satır alanı kendi içinde kayar; listenin sonunda `overscroll` sayfaya
           devredildiği için kullanıcı aynı hareketle ana sayfayı sürdürür. */}
-      <div className="hidden overflow-hidden rounded-md border border-border @min-[52rem]:block" data-pl="table">
-        <Table className="min-w-[52rem] table-fixed" containerClassName={ITEM_LIST_SCROLL}>
+      <div className="hidden overflow-hidden rounded-md border border-border @min-[54rem]:block" data-pl="table">
+        <Table className="min-w-[54rem] table-fixed" containerClassName={ITEM_LIST_SCROLL}>
           <colgroup>
             <col className="w-40" />{/* Tür */}
             <col />{/* Parça / İşçilik + Marka/Kategori meta (kalan alan) */}
@@ -403,8 +411,9 @@ export function PartsLaborEditor({
             {vatPerLine && <col className="w-16" />}{/* KDV */}
             <col className="w-36" />{/* Birim Fiyat */}
             <col className="w-28" />{/* Toplam */}
-            {/* İşlem — en çok iki 36px ikon + boşluk (BAK-104, bkz. RowActions) */}
-            <col className="w-24" />
+            {/* İşlem — ⋯ + düzenle + sil: üç 32px ikon + boşluk (~100px) ve hücre
+                dolgusu (16px) = 116px; w-30 = 120px (#967, eskiden w-24 Toplam'ı kırpıyordu) */}
+            <col className="w-30" />
           </colgroup>
           <TableHeader className="sticky top-0 z-10 bg-muted">
             <TableRow className="hover:bg-transparent">
@@ -449,29 +458,30 @@ export function PartsLaborEditor({
         </Table>
       </div>
 
-      {/* Dar kapsayıcı (<52rem): kart düzeni — mobil ekran VE masaüstündeki dar
+      {/* Dar kapsayıcı (<54rem): kart düzeni — mobil ekran VE masaüstündeki dar
           kolon (teklif formu) aynı düzeni paylaşır. İç scroll sonu sayfaya
           zincirlenir; kullanıcı parmağını/işaretçiyi taşımak zorunda kalmaz. */}
-      <div className={cn("space-y-2 @min-[52rem]:hidden", rows.length > 0 && ITEM_LIST_SCROLL)} data-pl="cards">
+      <div className={cn("space-y-2 @min-[54rem]:hidden", rows.length > 0 && ITEM_LIST_SCROLL)} data-pl="cards">
         {rows.length === 0 ? (
           <EmptyItemsHint locked={locked} />
         ) : (
-          rows.map((row) => (
-            <MobilePartRow
-              key={row.id}
-              row={row}
-              orderId={orderId}
-              locked={locked}
-              readOnlyFields={!!onSaveRow}
-              onEdit={onSaveRow && !locked ? setEditingRow : undefined}
-              vehicle={vehicle}
-              showAttributes={showAttributes}
-              onCell={onCell}
-              onRemove={onRemove}
-              flash={flash?.rowId === row.id ? flash.kind : null}
-              onShowDetail={setDetail}
-            />
-          ))
+          rows.map((row) => {
+            const rowProps = {
+              row,
+              orderId,
+              locked,
+              readOnlyFields: !!onSaveRow,
+              onEdit: onSaveRow && !locked ? setEditingRow : undefined,
+              vehicle,
+              onCell,
+              onRemove,
+              flash: flash?.rowId === row.id ? flash.kind : null,
+              onShowDetail: setDetail,
+            }
+            return compactRows
+              ? <CompactPartRow key={row.id} {...rowProps} />
+              : <MobilePartRow key={row.id} {...rowProps} showAttributes={showAttributes} />
+          })
         )}
       </div>
 
@@ -561,6 +571,7 @@ function PurchaseMarginNotice({ rows }: { rows: Row[] }) {
 export function PartsLaborGrid({
   orderId, status, items, vehicle, onError, loading, laborCatalog, taxRateBps, onApplyStandardTax,
   allowExternalLabor = true, addingType, onAddingTypeChange, onAddDialogCloseAutoFocus,
+  compactRows,
 }: {
   orderId: string
   status: string
@@ -584,6 +595,8 @@ export function PartsLaborGrid({
   addingType?: PartsAddType | null
   onAddingTypeChange?: (type: PartsAddType | null) => void
   onAddDialogCloseAutoFocus?: (event: Event) => void
+  /** Dar kapsayıcıda iki satırlık kompakt kalem satırı (#968); bkz. `PartsLaborEditor`. */
+  compactRows?: boolean
 }) {
   const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
@@ -787,6 +800,7 @@ export function PartsLaborGrid({
       addingType={addingType}
       onAddingTypeChange={onAddingTypeChange}
       onAddDialogCloseAutoFocus={onAddDialogCloseAutoFocus}
+      compactRows={compactRows}
     />
   )
 }
@@ -1655,6 +1669,9 @@ function QtyStepper({ row, editable, onCell, size = "compact", ghost = false }: 
   /** Satır hayaleti: çerçeve satır hover/odakta belirir (#952). */
   ghost?: boolean
 }) {
+  // Salt okunurda devre dışı adımlayıcı soluk görünüyor ve "+" kayboluyordu (#967):
+  // değiştirilemeyen miktar düz metin olarak okunur.
+  if (!editable) return <span className="text-sm tabular-nums">{row.quantity}</span>
   return (
     <div data-slot="qty-stepper" className={cn("inline-flex items-center rounded-(--control-radius) outline-1 -outline-offset-1 transition-colors", ghost ? "bg-transparent outline-transparent group-hover/field-row:outline-input group-focus-within/field-row:outline-input" : "bg-card outline-input dark:bg-input/30", size === "default" ? "h-(--control-h)" : "h-(--control-h-xs)")}>
       <Button type="button" variant="ghost" size="icon-xs" aria-label="Azalt"
@@ -2130,7 +2147,7 @@ function RowFlash({ kind, iconOnly }: { kind?: FlashKind | null; iconOnly?: bool
  * kullanır: aynı satırda tedarikçi fiyat karşılaştırma da 🏷 idi, iki farklı
  * aksiyon ayırt edilemiyordu.
  */
-function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail, onEdit, canDelete }: {
+function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail, onEdit, canDelete, menuOnly = false }: {
   row: Row
   ed: RowEditor
   orderId?: string
@@ -2139,6 +2156,8 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail, onEdit,
   onShowDetail: OnShowDetail
   onEdit?: (row: Row) => void
   canDelete?: boolean
+  /** Tüm aksiyonlar tek ⋯ menüsünde, satır içi ikon yok (kompakt satır, #968). */
+  menuOnly?: boolean
 }) {
   const [priceOpen, setPriceOpen] = useState(false)
   const [purchaseOpen, setPurchaseOpen] = useState(false)
@@ -2201,10 +2220,10 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail, onEdit,
 
   const split = splitRowActions(actions)
   // İş emrinde düzenleme görünür kalmalı; diğer keşif aksiyonları menüye iner.
-  const inline = onEdit && actions.length > 2
+  const inline = menuOnly ? [] : onEdit && actions.length > 2
     ? actions.filter((action) => action.key === "edit" || action.key === "delete")
     : split.inline
-  const overflow = onEdit && actions.length > 2
+  const overflow = menuOnly ? actions : onEdit && actions.length > 2
     ? actions.filter((action) => action.key !== "edit" && action.key !== "delete")
     : split.overflow
   const byKey = new Map(actions.map((a) => [a.key, a]))
@@ -2222,8 +2241,8 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail, onEdit,
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-sm"
-                aria-label={`${row.name || "Satır"} — diğer işlemler`}
+                size={menuOnly ? "icon" : "icon-sm"}
+                aria-label={`${row.name || "Satır"} — ${menuOnly ? "işlemler" : "diğer işlemler"}`}
                 className="text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <MoreHorizontal className="size-4" />
@@ -2256,16 +2275,11 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail, onEdit,
               <TooltipTrigger asChild>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant={action.tone === "danger" ? "destructive-ghost" : "ghost"}
                   size="icon-sm"
                   onClick={action.run}
                   aria-label={action.hint}
-                  className={cn(
-                    "text-muted-foreground",
-                    action.tone === "danger"
-                      ? "hover:bg-destructive/10 hover:text-destructive-strong"
-                      : "hover:bg-muted hover:text-foreground",
-                  )}
+                  className="text-muted-foreground"
                 >
                   <action.Icon className="size-4" />
                 </Button>
@@ -2634,6 +2648,70 @@ function DesktopPartRow({ row, orderId, locked, readOnlyFields = false, onEdit, 
         />
       </TableCell>
     </TableRow>
+  )
+}
+
+// ── Kompakt satır: iki satır (#968) ──────────────────────────────────────────
+/**
+ * İş emri sayfasının dar kapsayıcı satırı. Kart ~200px tutuyordu (7 kalem
+ * ~1.400px); burada satır 1: ad (en çok 2 satır) + KDV dahil tutar, satır 2:
+ * tür hapı · "adet × birim fiyat" (ya da "Fiyat girilmedi") · rozetler. Tüm
+ * aksiyonlar tek ⋯ menüsünde; düzenleme mevcut "Kalemi düzenle" diyaloğudur.
+ * Tutar `ed.grossLineTotal` — masaüstü tablonun Toplam hücresiyle aynı kaynak.
+ * Alanlar hep salt okunur: iş emrinde satır diyalogdan düzenlenir.
+ */
+function CompactPartRow({ row, orderId, locked, readOnlyFields = false, onEdit, vehicle, onCell, onRemove, flash, onShowDetail }: {
+  row: Row
+  orderId?: string
+  locked: boolean
+  readOnlyFields?: boolean
+  onEdit?: (row: Row) => void
+  vehicle?: PickerVehicle
+  onCell: OnCell
+  onRemove: (row: Row) => void
+  flash?: FlashKind | null
+  onShowDetail: OnShowDetail
+}) {
+  const ed = useRowEditor(row, vehicle, locked || readOnlyFields, onCell)
+  const type = row.type as ItemType
+  const detailText = compactRowDetail(row)
+
+  return (
+    <div className="relative flex items-start gap-1 py-3 pl-3.5 pr-1.5" data-pl="card" data-compact="">
+      <span className={cn("absolute inset-y-3 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} data-pl="accent" />
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="flex items-start justify-between gap-3">
+          <p className="min-w-0 line-clamp-2 break-words text-[15px] font-medium leading-5 text-foreground" data-pl="name">
+            {row.sku && <span className="mr-1.5 font-mono text-[11px] font-normal text-muted-foreground">{row.sku}</span>}
+            {row.name}
+          </p>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <RowFlash kind={flash} iconOnly />
+            <TotalField lineTotal={ed.grossLineTotal} strong vatIncluded={ed.vatKurus != null && ed.vatKurus > 0} />
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1" data-pl="head">
+          <TypeChip type={type} />
+          <span className={cn("text-[13px] leading-[18px] tabular-nums", detailText === PRICE_NOT_ENTERED ? "text-warning-strong" : "text-muted-foreground")}>
+            {detailText}
+          </span>
+          <SourceBadge source={row.source} />
+        </div>
+        <DoneBadge completedAt={row.completedAt} />
+        <ProcurementBadge procurement={row.externalProcurement} />
+      </div>
+      <RowActions
+        row={row}
+        ed={ed}
+        orderId={orderId}
+        vehicle={vehicle}
+        onRemove={onRemove}
+        onShowDetail={onShowDetail}
+        onEdit={onEdit}
+        canDelete={!locked && readOnlyFields}
+        menuOnly
+      />
+    </div>
   )
 }
 

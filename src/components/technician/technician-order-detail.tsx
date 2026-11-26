@@ -1271,11 +1271,11 @@ function ExternalLaborCard({
               {deletable && (
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="destructive-ghost"
                   size="icon-sm"
                   onClick={() => setConfirmOpen(true)}
                   aria-label={`${item.name} — dış işçilik kaydını sil`}
-                  className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong"
+                  className="shrink-0 text-muted-foreground"
                 >
                   <Trash2 className="size-4" />
                 </Button>
@@ -1345,11 +1345,11 @@ function PurchaseDeleteButton({
     <>
       <Button
         type="button"
-        variant="ghost"
+        variant="destructive-ghost"
         size="icon-sm"
         onClick={() => setOpen(true)}
         aria-label={`${item.name} — dışarıdan alınan parçayı sil`}
-        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong"
+        className="text-muted-foreground"
       >
         <Trash2 className="size-4" />
       </Button>
@@ -1403,7 +1403,7 @@ function InternalNotesSection({
           {!locked && (
             <Button
               type="button"
-              variant="ghost"
+              variant="destructive-ghost"
               size="icon"
               aria-label="İç notu sil"
               onClick={() => {
@@ -1411,7 +1411,7 @@ function InternalNotesSection({
                   await deleteInternalNoteAction(note.id)
                 })
               }}
-              className="text-warning-strong hover:text-destructive-strong md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              className="text-warning-strong md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
             >
               <Trash2 className="size-3.5" />
             </Button>

@@ -137,10 +137,10 @@ export function RuhsatDemoSection() {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          badge="Canlı Demo"
+          badge="Ek özellik · Canlı Demo"
           title="Ruhsatı okut,"
           titleHighlight="araç bilgilerini otomatik doldur."
-          subtitle="Ruhsat fotoğrafından araç bilgilerine uzanan akışı örnek verilerle deneyin."
+          subtitle="Ruhsat okuma Servis Paketi'ne dahil olmayan bir ek özelliktir; denemede açıktır. Akışı örnek verilerle deneyin."
         />
 
         <Tabs defaultValue="sample" onValueChange={reset} className="mt-10">

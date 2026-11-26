@@ -183,7 +183,7 @@ export function PartDetailDialog({
               <div className="space-y-5">
                 {/* --- Uygunluk: en üstte, çünkü ustanın ilk sorusu bu --- */}
                 {vehicleTypeId != null && compatibility && (
-                  <div className="rounded-lg border bg-muted/30 p-3">
+                  <div className="rounded-md border bg-muted/30 p-3">
                     {compatibility.status === "linked" ? (
                       <>
                         <Badge className="gap-1">
@@ -243,7 +243,7 @@ export function PartDetailDialog({
                       </span>
                     </Button>
                   ) : (
-                    <div className="flex h-44 w-full max-w-xs items-center justify-center rounded-lg border bg-muted">
+                    <div className="flex h-44 w-full max-w-xs items-center justify-center rounded-md border bg-muted">
                       <PackageSearch className="size-8 text-muted-foreground/40" />
                     </div>
                   )}

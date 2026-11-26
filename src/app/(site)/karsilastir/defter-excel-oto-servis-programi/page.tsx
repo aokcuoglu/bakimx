@@ -26,7 +26,7 @@ const options = [
 
 const relatedPages = [
   { href: "/oto-servis-programi", title: "Oto servis programı", text: "Araç kabulden teslimata bütün servis akışını görün." },
-  { href: "/dijital-arac-kabul", title: "Dijital araç kabul", text: "Ruhsat, fotoğraf ve hasar kaydı adımlarını inceleyin." },
+  { href: "/dijital-arac-kabul", title: "Dijital araç kabul", text: "Plaka, fotoğraf ve hasar kaydı adımlarını inceleyin." },
   { href: "/is-emri-programi", title: "İş emri programı", text: "İş, parça, işçilik ve onay kaydının ayrıntılarına bakın." },
   { href: "/rehber/arac-kabul-formu", title: "Araç kabul formu rehberi", text: "Eksiksiz kabul için uygulanabilir kontrol listesini okuyun." },
   { href: "/rehber/oto-servis-is-emri-nasil-hazirlanir", title: "İş emri hazırlama rehberi", text: "Bir iş emrinde bulunması gereken bilgileri öğrenin." },
