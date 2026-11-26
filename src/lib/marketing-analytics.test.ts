@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { getMarketingContext, isMarketingEventName, MARKETING_EVENT_NAMES, safePage, sanitizeMarketingPayload, sanitizeMarketingAttribution } from "./marketing-analytics"
 
 describe("marketing analytics contract", () => {
@@ -17,6 +19,11 @@ describe("marketing analytics contract", () => {
     expect(isMarketingEventName("retired_event")).toBe(false)
     expect(isMarketingEventName(undefined)).toBe(false)
     expect(isMarketingEventName(42)).toBe(false)
+  })
+
+  test("tarayıcı teslim döngüsü emekli adı atlar, partinin kalanını düşürmez (#830)", () => {
+    const source = readFileSync(join(import.meta.dir, "..", "components", "analytics", "marketing-analytics.tsx"), "utf8")
+    expect(source).toContain("if (!isMarketingEventName(event.name)) continue")
   })
 
   test("only derives allowlisted campaign and referrer fields", () => {
