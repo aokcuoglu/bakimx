@@ -6,6 +6,7 @@ import {
   technicianOrderListWhere,
 } from "@/lib/technician/order-visibility"
 import { UNASSIGNED_IN_SERVICE_WHERE } from "@/lib/orders/unassigned-in-service"
+import { istanbulDayBounds, istanbulDayStart } from "@/lib/istanbul-time"
 
 type OStat = import("@prisma/client").OrderStatus
 
@@ -30,9 +31,8 @@ export async function getTechnicianDashboardStats(
   scopeToTechnician = true
 ): Promise<TechnicianDashboardStats> {
   const scope = scopeToTechnician ? { assignedTechnicianId: technicianId } : {}
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today.getTime() + 86400000)
+  // "Bugün" Türkiye takvimine göre (#904) — süreç TZ'sinden bağımsız.
+  const { start: today, end: tomorrow } = istanbulDayBounds()
 
   const [
     assignedToMe,
@@ -327,8 +327,7 @@ export async function getManagerTechnicianOverview(workshopId: string) {
     orderBy: { fullName: "asc" },
   })
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = istanbulDayStart()
 
   return technicians.map((t) => ({
     id: t.id,

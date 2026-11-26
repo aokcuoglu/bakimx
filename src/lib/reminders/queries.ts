@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/db"
+import { istanbulDayStart } from "@/lib/istanbul-time"
+import { resolveReminderDueWindow } from "@/lib/reminders/date-filter"
 
 export type ReminderRow = {
   id: string
@@ -87,29 +89,13 @@ export async function getRemindersList(workshopId: string, filters?: {
     where.type = filters.type
   }
   if (filters?.dateFilter) {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    switch (filters.dateFilter) {
-      case "today": {
-        const tomorrow = new Date(today.getTime() + 86400000)
-        where.dueDate = { gte: today, lt: tomorrow }
-        break
-      }
-      case "week": {
-        const weekEnd = new Date(today.getTime() + 7 * 86400000)
-        where.dueDate = { gte: today, lt: weekEnd }
-        break
-      }
-      case "month": {
-        const monthEnd = new Date(today.getTime() + 30 * 86400000)
-        where.dueDate = { gte: today, lt: monthEnd }
-        break
-      }
-      case "overdue": {
-        where.dueDate = { lt: today }
-        where.status = { notIn: ["completed", "cancelled"] }
-        break
-      }
+    // Gün sınırları Türkiye takvimine göre (#904) — süreç TZ'sinden bağımsız.
+    const window = resolveReminderDueWindow(filters.dateFilter)
+    if (window) {
+      where.dueDate = window
+    } else if (filters.dateFilter === "overdue") {
+      where.dueDate = { lt: istanbulDayStart() }
+      where.status = { notIn: ["completed", "cancelled"] }
     }
   }
 

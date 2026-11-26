@@ -1,42 +1,38 @@
 import { expect, test } from "bun:test"
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
-import { buttonVariants } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 
 const SOURCE = readFileSync(
   resolve(process.cwd(), "src/app/admin/admin-requests.tsx"),
   "utf8"
 )
 
-function supportRequestTrigger(): string {
-  const rowStart = SOURCE.indexOf("function SupportRequestRow(")
-  const rowEnd = SOURCE.indexOf("export function AdminSupportRequests(", rowStart)
-  const row = SOURCE.slice(rowStart, rowEnd)
-  const triggerStart = row.indexOf("<Button")
-  const triggerEnd = row.indexOf(">", triggerStart)
-
-  return row.slice(triggerStart, triggerEnd + 1)
+function slice(startMarker: string, endMarker: string): string {
+  const start = SOURCE.indexOf(startMarker)
+  expect(start).toBeGreaterThan(-1)
+  const end = SOURCE.indexOf(endMarker, start)
+  return SOURCE.slice(start, end === -1 ? undefined : end)
 }
 
-test("destek talebi tetikleyicisi doğal kart yüksekliğini korur", () => {
-  const trigger = supportRequestTrigger()
-  const className = trigger.match(/className="([^"]+)"/)?.[1]
+const supportRequestRow = () =>
+  slice("function SupportRequestRow(", "export function AdminSupportRequests(")
+const adminSupportRequests = () => slice("export function AdminSupportRequests(", "\n}\n")
 
-  expect(trigger).toContain('variant="ghost"')
-  // Çok satırlı kart başlığı `size="row"` ile ölçülür (#889): sabit yükseklik
-  // yok, en az kontrol yüksekliği var.
-  expect(trigger).toContain('size="row"')
-  expect(trigger).toContain("aria-expanded={expanded}")
-  expect(className).toBeDefined()
+// #926: destek talebi satırı elle yazılmış açılır düğme değil, `card`
+// akordeonun öğesidir. Açık/kapalı durumu ve aria-expanded Radix'ten gelir;
+// tetikleyici yüksekliği akordeonun `--control-h` tabanından.
+test("destek talebi satırı kart akordeon öğesidir", () => {
+  const row = supportRequestRow()
 
-  const merged = cn(buttonVariants({ variant: "ghost", size: "row", className }))
-  const classes = merged.split(/\s+/)
+  expect(row).toContain("<AccordionItem value={r.id}")
+  expect(row).toContain("<AccordionTrigger")
+  expect(row).toContain("<AccordionContent>")
+  // Elle tutulan açık/kapalı durumu ve elle yazılan aria-expanded kalmadı.
+  expect(row).not.toMatch(/\saria-expanded=/)
+  expect(row).not.toMatch(/\[expanded, setExpanded\]/)
+  expect(row).not.toContain('size="row"')
+  // Kapalıyken mesaj önizlemesi, açılınca tetikleyicinin durumuyla gizlenir.
+  expect(row).toContain("group-aria-expanded/accordion-trigger:hidden")
 
-  expect(classes.some((cls) => /^h-/.test(cls))).toBe(false)
-  expect(classes).toContain("min-h-(--control-h)")
-  expect(classes).toContain("justify-start")
-  expect(classes).toContain("whitespace-normal")
-  expect(classes).not.toContain("h-8")
-  expect(classes).not.toContain("bg-primary")
+  expect(adminSupportRequests()).toContain('<Accordion type="multiple" variant="card"')
 })

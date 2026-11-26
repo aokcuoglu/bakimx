@@ -14,6 +14,7 @@ import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus, Prisma } from "@prisma/client"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { getPlanState, hasWorkshopFeature } from "@/lib/plan"
+import { istanbulMonthStart } from "@/lib/istanbul-time"
 
 export const metadata = { title: "Dış Alımlar" }
 
@@ -102,8 +103,7 @@ export default async function PurchasesPage({
     },
   }))
 
-  const now = new Date()
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+  const monthStart = istanbulMonthStart().getTime()
   const kpis = {
     count: rows.length,
     totalKurus: rows.reduce((s, r) => s + Math.round((r.purchasePriceKurus ?? 0) * r.quantity), 0),

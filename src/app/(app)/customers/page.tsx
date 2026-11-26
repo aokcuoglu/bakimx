@@ -6,6 +6,7 @@ import { Info } from "lucide-react"
 import { CustomerListWithDelete } from "@/components/customers/customer-list-with-delete"
 import { type CustomerRow } from "@/components/customers/customer-list"
 import { summarizeCustomerOrders } from "@/lib/customer-totals"
+import { istanbulMonthStart } from "@/lib/istanbul-time"
 import type { Prisma } from "@prisma/client"
 
 type SP = { q?: string; type?: string; tag?: string; source?: string }
@@ -85,8 +86,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
     }
   })
 
-  const now = new Date()
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const monthStart = istanbulMonthStart()
   const newThisMonth = customers.filter((c) => c.createdAt >= monthStart).length
   const returning = customers.filter((c) => {
     const orders = c.intakes
