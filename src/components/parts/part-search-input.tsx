@@ -202,10 +202,13 @@ export function PartSearchInput({
         )}
       </InputGroupAddon>
     ) : null
-  // Seçili parça numarası — input içinde öndeki mono çip.
+  // Seçili parça numarası — input içinde öndeki mono çip. Eklenti varsayılanda
+  // `shrink-0`; uzun numara girdiyi sıfıra ezip sondaki düğmeleri kutudan
+  // taşırmasın diye çip grubun en çok %40'ı kadar yer alır, sığmazsa küçülür ve
+  // `…` ile biter (tam numara `title`'da, #887).
   const skuChip = sku ? (
-    <InputGroupAddon align="inline-start" className="pr-1">
-      <span className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] leading-none text-muted-foreground">{sku}</span>
+    <InputGroupAddon align="inline-start" className="min-w-0 max-w-2/5 shrink pr-1">
+      <span title={sku} className="min-w-0 truncate rounded bg-muted px-1 py-0.5 font-mono text-[11px] leading-none text-muted-foreground">{sku}</span>
     </InputGroupAddon>
   ) : null
   const [query, setQuery] = useState(value)
