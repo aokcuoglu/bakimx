@@ -100,7 +100,7 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
                 </div>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={t.isActive ? "destructive-outline" : "outline"}
                   size="sm"
                   onClick={() => {
                     startTransition(async () => {
@@ -111,9 +111,7 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
                   disabled={isPending}
                   className={cn(
                     "touch-manipulation",
-                    t.isActive
-                      ? "text-destructive-strong hover:bg-destructive/10 border-destructive/20"
-                      : "text-success-strong hover:bg-success/10 border-success/20"
+                    !t.isActive && "text-success-strong hover:bg-success/10 border-success/20"
                   )}
                 >
                   {t.isActive ? "Pasif Yap" : "Aktif Yap"}

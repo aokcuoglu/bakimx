@@ -20,6 +20,8 @@ const NO_BORDER_VARIANTS = [
   "success",
   "warning",
   "link",
+  "tint",
+  "on-photo-ghost",
 ] as const
 
 // Basılma efekti `translate` değil `transform` yazar (#819): call-site'lar
@@ -55,6 +57,24 @@ const buttonVariants = cva(
         // köşe aşağıdaki compoundVariants'ta (#889).
         field:
           "border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:ring-4 aria-invalid:ring-destructive/10 dark:bg-input/30 dark:aria-invalid:ring-destructive/20",
+        // Ton variant'ları (#925): çağrı yerinde `border-destructive/*`,
+        // `bg-primary/N` ya da `bg-white/*` yazılmasın diye ton buradan gelir,
+        // className'den değil.
+        // İkincil yıkıcı eylem (İptal, Pasif Yap): outline çerçevesi, kırmızı ton.
+        "destructive-outline":
+          "border border-destructive/20 bg-card text-destructive-strong hover:bg-destructive/10 aria-expanded:bg-destructive/10 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-input/30 dark:hover:bg-destructive/20 dark:focus-visible:ring-destructive/40",
+        // Birincil tonlu seçili / önerilen eylem. Metin -strong: tonlu zeminde
+        // çıplak text-primary AA'yı geçmez (BAK-160). Ölçüm (#925; kart /
+        // sayfa / bg-muted): açık /10 6.06 / 5.46 / 5.59, hover /20
+        // 5.25 / 4.77 / 4.87. Koyu /10 5.67 / 6.28 / 4.67; koyuda hover da /10
+        // kalır: /20 bg-muted'da 4.05, /13 4.48'e iniyor, geçen en yüksek /12
+        // ise /10'dan gözle ayırt edilmiyor (ΔE_OK ≈ 0.01).
+        tint: "bg-primary/10 text-primary-strong hover:bg-primary/20 aria-expanded:bg-primary/20 dark:hover:bg-primary/10 dark:aria-expanded:bg-primary/10",
+        // Fotoğraf / kamera katmanı üstünde (siyah zemin) çerçeveli ve hayalet düğme.
+        "on-photo":
+          "border border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white focus-visible:border-white focus-visible:ring-white/40",
+        "on-photo-ghost":
+          "text-white hover:bg-white/15 hover:text-white focus-visible:ring-white/40",
       },
       size: {
         // Ölçüler --control-* değişkenlerinden: telefonda 44px, md+ 36px
