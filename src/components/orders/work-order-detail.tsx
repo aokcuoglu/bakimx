@@ -38,6 +38,7 @@ import {
   PackageCheck,
   XCircle,
   RotateCcw,
+  Undo2,
   Plus,
   TriangleAlert,
   X,
@@ -52,13 +53,14 @@ import {
   VEHICLE_PHOTO_TYPES,
   type PhotoPhaseKey,
 } from "@/lib/constants"
+import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
 import { STANDARD_TAX_BPS } from "@/lib/orders/line-vat"
-import { isOrderLocked, isCollectionLockedForOrder } from "@/lib/status-transitions"
+import { isOrderLocked } from "@/lib/status-transitions"
 import { findUnpricedItems } from "@/lib/orders/pricing-guard"
 import { findUndecidedPartsRequests } from "@/lib/orders/parts-request-guard"
 import { canOpenTechnicianView, technicianOrderPath } from "@/lib/technician/cross-links"
-import type { OrderStatus, PaymentStatus } from "@prisma/client"
+import type { OrderStatus } from "@prisma/client"
 import { DamageCapture } from "@/components/intake/damage-capture"
 import { PhotoGalleryGrid } from "@/components/intake/photo-gallery-grid"
 import { PhotoPhaseMatrix } from "@/components/intake/photo-phase-matrix"
@@ -112,7 +114,12 @@ import { PhotoSourceButtons } from "@/components/intake/photo-source-buttons"
 import { orderQuickActions, type OrderQuickAction } from "@/lib/orders/quick-actions"
 import type { PartsAddType } from "@/components/orders/parts-labor-grid"
 
-// Header aksiyon ikonları (eski orders ekranıyla aynı görünüm).
+// Header aksiyon ikonları (eski orders ekranıyla aynı görünüm). Hedef duruma göre;
+// geri dönüş geçişi ileri geçişin ikonunu almasın diye `ORDER_BACK_ACTION_ICONS`
+// (kaynak durum → hedef) önce bakılır: Teslime Hazır → İşlemde "Başla"nın ▶'i değil.
+const ORDER_BACK_ACTION_ICONS: Record<string, Record<string, DetailHeaderAction["icon"]>> = {
+  ready_for_delivery: { in_progress: Undo2 },
+}
 const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
   waiting_approval: Send,
   approved: CheckCircle2,
@@ -430,6 +437,14 @@ export function WorkOrderDetail({
     if (await changeStatus("cancelled")) setConfirmCancelOpen(false)
   }
 
+  // İstek sürerken kapanmaz. Vazgeç / Esc ile kapanınca pencerede gösterilen
+  // iptal hatası sayfanın üstünde asılı kalmasın.
+  function handleCancelDialogOpenChange(open: boolean) {
+    if (loading) return
+    setConfirmCancelOpen(open)
+    if (!open) setError("")
+  }
+
   async function saveMeta() {
     setLoading(true)
     setError("")
@@ -739,7 +754,7 @@ export function WorkOrderDetail({
           ? requestCancel
           : () => void changeStatus(a.key),
     tone: a.key === "cancelled" ? "danger" : a.primary ? "primary" : "secondary",
-    icon: ORDER_ACTION_ICONS[a.key],
+    icon: ORDER_BACK_ACTION_ICONS[order.status]?.[a.key] ?? ORDER_ACTION_ICONS[a.key],
     disabled:
       (a.key === "delivered" && deliveryBlocked) ||
       (a.key === "ready_for_delivery" && partsDecisionBlocked),
@@ -790,9 +805,8 @@ export function WorkOrderDetail({
 
   // Hızlı butonlar (#881): pencere hemen açılır, sayfa arkada ilgili bölüme
   // kayar; pencere kapanınca kullanıcı sonucu o bölümde görür.
-  const collectionsLocked =
-    order.status === "cancelled" ||
-    isCollectionLockedForOrder(order.status as OrderStatus, order.paymentStatus as PaymentStatus)
+  // Kilit sunucuda, tahsilat action'ının kapısıyla aynı girdiden hesaplanır (page.tsx).
+  const collectionsLocked = order.collectionsLocked
   const quickActions = orderQuickActions({ orderLocked, canCashbox, collectionsLocked })
   // Telefon özet kartının para satırı (#912): Ödeme kartının kısa hâli, ona bağlanır.
   const mobileMoney = order.totals.hasAnyPrice
@@ -1434,7 +1448,7 @@ export function WorkOrderDetail({
               loading={loading}
               error={error}
               showCashbox={canCashbox}
-              onCollect={canCashbox && !collectionsLocked ? () => handleQuickAction("tahsilat") : undefined}
+              onCollect={canCashbox && !collectionsLocked ? () => setCollectionModalOpen(true) : undefined}
             />
           </div>
 
@@ -1553,13 +1567,26 @@ export function WorkOrderDetail({
       </div>
       </div>
 
-      <AlertDialog open={confirmCancelOpen} onOpenChange={(o) => { if (!loading) setConfirmCancelOpen(o) }}>
+      <AlertDialog open={confirmCancelOpen} onOpenChange={handleCancelDialogOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Araç kabulü iptal edilsin mi?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Kalemler, fiyatlar, fotoğraflar ve usta ataması kilitlenir; araç kabulü
-              daha sonra başlıktaki &quot;Yeniden Aktif Et&quot; ile yeniden açılabilir.
+            {/* Tek açıklama (aria-describedby tek kimliğe bağlanır), iki paragraf. */}
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  Kalemler, fiyatlar, fotoğraflar ve usta ataması kilitlenir; araç kabulü
+                  daha sonra başlıktaki &quot;Yeniden Aktif Et&quot; ile yeniden açılabilir.
+                </p>
+                {/* İptal tahsilata dokunmaz (updateOrderStatusAction); iade akışı yok,
+                    Kasa'da yalnız tahsilat kaydı gerekçeyle iptal edilebilir. */}
+                {canCashbox && order.paidAmount > 0 && (
+                  <p>
+                    Tahsil edilen {formatTRY(order.paidAmount)} kayıtlı kalır; tahsilat kayıtları
+                    silinmez. Para geri verilecekse ilgili tahsilatı Kasa&apos;dan ayrıca iptal edin.
+                  </p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           {error && (

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { computePaymentStatus, computeRemainingAmount, orderPaidKurus } from "@/lib/cashbox/status"
+import { computePaymentStatus, computeRemainingAmount, orderDisplayPaymentStatus, orderPaidKurus } from "@/lib/cashbox/status"
 
 // All amounts are integer kuruş.
 
@@ -45,4 +45,19 @@ test("defter yüklenmediyse (Lite) önbellek okunur", () => {
 test("defter yüklenmediyse ve önbellek boşsa 0", () => {
   expect(orderPaidKurus({ ledgerLoaded: false, completedTotalKurus: 0, cachedPaidKurus: null })).toBe(0)
   expect(orderPaidKurus({ ledgerLoaded: false, completedTotalKurus: 0, cachedPaidKurus: undefined })).toBe(0)
+})
+
+// #912 — hap, tutarlarla aynı sayılardan okunur.
+
+test("defter yüklendiyse ödeme durumu tutarlardan türetilir (bayat önbellek görülmez)", () => {
+  expect(orderDisplayPaymentStatus({ ledgerLoaded: true, grandTotalKurus: 10000, paidKurus: 0, cachedStatus: "paid" })).toBe("unpaid")
+  expect(orderDisplayPaymentStatus({ ledgerLoaded: true, grandTotalKurus: 10000, paidKurus: 4000, cachedStatus: "unpaid" })).toBe("partial")
+  expect(orderDisplayPaymentStatus({ ledgerLoaded: true, grandTotalKurus: 10000, paidKurus: 10000, cachedStatus: "partial" })).toBe("paid")
+  // recalcOrderPayment ile aynı kural.
+  expect(orderDisplayPaymentStatus({ ledgerLoaded: true, grandTotalKurus: 10000, paidKurus: 10050, cachedStatus: "paid" }))
+    .toBe(computePaymentStatus(10000, 10050))
+})
+
+test("defter yüklenmediyse önbellekteki durum okunur", () => {
+  expect(orderDisplayPaymentStatus({ ledgerLoaded: false, grandTotalKurus: 10000, paidKurus: 0, cachedStatus: "partial" })).toBe("partial")
 })

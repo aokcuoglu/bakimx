@@ -149,7 +149,24 @@ test("hızlı butonlar başlığın altında, asıl pencereleri açar", () => {
   expect(SOURCE).toContain("collectionsLocked={collectionsLocked}")
   expect(SOURCE).toContain("addingType={partsAddType} onAddingTypeChange={setPartsAddType}")
   expect(SOURCE).toContain("onCollectionModalOpenChange={setCollectionModalOpen}")
-  expect(SOURCE).toContain('onCollect={canCashbox && !collectionsLocked ? () => handleQuickAction("tahsilat") : undefined}')
+  // Kart zaten ekranda: kartın düğmesi pencereyi kaydırmadan ve adrese
+  // dokunmadan açar; bölüme kaydırma yalnız başlık altındaki hızlı işlemde.
+  expect(SOURCE).toContain("onCollect={canCashbox && !collectionsLocked ? () => setCollectionModalOpen(true) : undefined}")
+  const quick = SOURCE.slice(SOURCE.indexOf("function handleQuickAction("))
+  const tahsilat = quick.slice(quick.indexOf('if (action === "tahsilat")'))
+  expect(tahsilat.slice(0, tahsilat.indexOf("return"))).toContain('scrollToOrderSection("odeme")')
+})
+
+/**
+ * #912 — hap tutarlarla aynı sayılardan; tahsilat kilidi sunucudaki kapıyla
+ * (createCollectionAction, önbellekteki ödeme durumu) aynı girdiden.
+ */
+test("ödeme hapı tutarlardan, tahsilat kilidi sunucu kapısının girdisinden", () => {
+  expect(PAGE).toContain("const paymentStatus = orderDisplayPaymentStatus({")
+  expect(PAGE).toContain("ledgerLoaded: canCashbox,")
+  expect(PAGE).toContain('order.status === "cancelled" || isCollectionLockedForOrder(order.status, order.paymentStatus)')
+  expect(SOURCE).toContain("const collectionsLocked = order.collectionsLocked")
+  expect(SOURCE).not.toContain("isCollectionLockedForOrder")
 })
 
 /**
@@ -189,13 +206,27 @@ test("başlıktaki İptal onay penceresi açar, durumu doğrudan yazmaz", () => 
   expect(SOURCE.match(/changeStatus\("cancelled"\)/g)).toHaveLength(1)
   const confirm = SOURCE.slice(SOURCE.indexOf("async function handleConfirmCancel()"))
   expect(confirm.slice(0, confirm.indexOf("\n  }"))).toContain('changeStatus("cancelled")')
-  // Pencere istek sürerken kapanmaz; onay düğmesi kendiliğinden kapatmaz.
+  // Pencere istek sürerken kapanmaz; onay düğmesi kendiliğinden kapatmaz;
+  // Vazgeç ile kapanınca pencerede gösterilen hata sayfada asılı kalmaz.
   const dialog = SOURCE.slice(SOURCE.indexOf("<AlertDialog open={confirmCancelOpen}"))
-  expect(dialog).toContain("onOpenChange={(o) => { if (!loading) setConfirmCancelOpen(o) }}")
+  expect(dialog).toContain("onOpenChange={handleCancelDialogOpenChange}")
+  expect(SOURCE).toMatch(/function handleCancelDialogOpenChange\(open: boolean\) \{\n\s+if \(loading\) return\n\s+setConfirmCancelOpen\(open\)\n\s+if \(!open\) setError\(""\)\n\s+\}/)
+  // Tahsilat varsa kaydın korunduğu söylenir (iade akışı yok, kayıt silinmez).
+  const body = dialog.slice(0, dialog.indexOf("</AlertDialog>"))
+  expect(body).toContain("{canCashbox && order.paidAmount > 0 && (")
+  expect(body).toContain("tahsilat kayıtları")
+  expect(body).toContain("silinmez")
+  // Tek açıklama öğesi (aria-describedby tek kimliğe bağlanır).
+  expect(body.match(/<AlertDialogDescription\b/g)).toHaveLength(1)
   expect(dialog.slice(0, dialog.indexOf("</AlertDialog>"))).toContain("event.preventDefault()")
   // Metin başlıktaki geri açma aksiyonunun gerçek adını verir.
   expect(dialog.slice(0, dialog.indexOf("</AlertDialog>"))).toContain("&quot;Yeniden Aktif Et&quot;")
   expect(NEXT_STATUSES.cancelled.map((a) => a.label)).toEqual(["Yeniden Aktif Et"])
+})
+
+test("İşleme Geri Al ileri geçişin ikonunu (▶) almaz", () => {
+  expect(SOURCE).toContain("ready_for_delivery: { in_progress: Undo2 },")
+  expect(SOURCE).toContain("icon: ORDER_BACK_ACTION_ICONS[order.status]?.[a.key] ?? ORDER_ACTION_ICONS[a.key],")
 })
 
 test("Araç Kabul Bilgileri başlığı tekrarlamaz ve durumu değiştirmez", () => {

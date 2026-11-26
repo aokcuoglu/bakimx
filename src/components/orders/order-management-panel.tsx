@@ -114,7 +114,13 @@ export type OrderDetailData = {
   id: string
   workOrderNo: string
   status: string
+  /** Gösterilen ödeme durumu: kasa açıkken tutarlardan türetilir (#912, page.tsx). */
   paymentStatus: string
+  /**
+   * Yeni tahsilat kapalı mı (iptal emir ya da teslim edilmiş ve ödenmiş). Sunucuda,
+   * tahsilat action'ının kapısıyla aynı girdiden (önbellekteki ödeme durumu) hesaplanır.
+   */
+  collectionsLocked: boolean
   technicianName: string | null
   assignedTechnicianId: string | null
   assignedTechnicianName: string | null
@@ -262,11 +268,15 @@ export function PartsLaborCard({
   taxRateBps?: number | null
   /** Bir satırın KDV tick'i açılırken oran tanımsızsa standart %20'yi iş emrine yazar. */
   onApplyStandardTax?: () => void
-  /** Ekleme modalı hızlı butonlardan açılır (#881). */
-  addingType?: PartsAddType | null
-  onAddingTypeChange?: (type: PartsAddType | null) => void
+  /**
+   * Ekleme penceresi dışarıdan yönetilir: hızlı işlemler (#881) ve başlıktaki
+   * "Kalem ekle" menüsü açar. Zorunlu — kabuk grid araç çubuğunu her zaman
+   * gizlediği için (#912) başka ekleme yolu yok.
+   */
+  addingType: PartsAddType | null
+  onAddingTypeChange: (type: PartsAddType | null) => void
 }) {
-  const canAdd = !isOrderLocked(status as OrderStatus) && onAddingTypeChange
+  const canAdd = !isOrderLocked(status as OrderStatus)
   return (
     <DetailPanel
       title="Parçalar & İşçilikler"

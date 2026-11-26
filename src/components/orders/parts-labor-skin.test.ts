@@ -75,7 +75,10 @@ describe("Parça & İşçilik kabuğu (#849)", () => {
     expect(card).toContain('aria-label="Kalem ekle"')
     expect(card).toContain('onAddingTypeChange("parca")')
     expect(card).toContain('onAddingTypeChange("iscilik")')
-    expect(card).toContain("const canAdd = !isOrderLocked(status as OrderStatus) && onAddingTypeChange")
+    expect(card).toContain("const canAdd = !isOrderLocked(status as OrderStatus)")
+    // Kabuk araç çubuğunu hep gizlediği için pencere dışarıdan yönetilmek ZORUNDA.
+    expect(card).toContain("addingType: PartsAddType | null\n")
+    expect(card).toContain("onAddingTypeChange: (type: PartsAddType | null) => void\n")
   })
 
   test("kalem adı kuralı yalnız data-pl=name kancasını ve :disabled'ı hedefler (#873)", () => {
