@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
+import { stripComments } from "@/lib/testing/strip-comments"
 
 /**
  * #179 — HAYATİ İNVARYANT: teklif bir ÖNERİDİR, teklif kalemi hiçbir koşulda
@@ -22,11 +23,6 @@ const ROOT = join(import.meta.dir, "..", "..")
 
 /** Stok hareketi yaratan/serbest bırakan çağrılar. */
 const STOCK_CALLS = ["reserveStockInTx(", "returnStockInTx(", "stockQty:"]
-
-/** Yorumları at — gerekçe metinlerinde yasaklı simgeler geçiyor. */
-function stripComments(source: string): string {
-  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
-}
 
 /** `export async function NAME(...)` gövdesini bir sonraki üst-düzey export'a kadar keser. */
 function functionBody(source: string, name: string): string {
