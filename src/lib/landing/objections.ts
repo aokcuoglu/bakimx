@@ -77,7 +77,7 @@ export const LANDING_OBJECTIONS: LandingObjection[] = [
   objection(
     "uyumlu-parca",
     "Araca hangi parça uyuyor bilmiyorum",
-    "Ruhsattaki şasi numarası araç modeline eşlenir; katalogda yalnız o araca uyan parçalar listelenir.",
+    "Şaseden parça bulma ek özelliktir (denemede açık): şasi numarası araç modeline eşlenir, katalogda yalnız o araca uyan parçalar listelenir.",
     "Araca uygun parçaların listelendiği parça kataloğu ekranı",
     ["uygun parça", "uyumlu", "katalog", "vin", "şasi", "marka model", "orijinal", "muadil"],
     "Parça uyumu",
@@ -85,7 +85,7 @@ export const LANDING_OBJECTIONS: LandingObjection[] = [
   objection(
     "hizli-kabul",
     "Araç kabulü yarım saat sürüyor",
-    "Ruhsatı okutun; plaka, marka, model, şasi ve model yılı otomatik dolar, siz yalnızca kontrol edip onaylarsınız.",
+    "Plakayı okutun, fotoğrafları çekin; ruhsat okuma ek özelliği açıksa araç bilgileri de otomatik dolar, siz yalnızca kontrol edip onaylarsınız.",
     "Ruhsat okutma adımında araç bilgilerinin otomatik dolduğu form",
     ["kabul", "ruhsat", "okutma", "tarama", "hızlı", "süre", "dakika", "veri girişi", "araba"],
     "Araç kabulü",
