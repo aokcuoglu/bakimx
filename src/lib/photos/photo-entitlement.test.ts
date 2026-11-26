@@ -23,7 +23,7 @@ test("Lite fotoğraf kısayolu diyaloğu açmak yerine yükseltme alanına gider
 
   expect(focusPhoto).toBeDefined()
   expect(focusPhoto).toContain("if (!canUsePhotoChecklist)")
-  expect(focusPhoto).toContain('handleTabChange("kanit")')
+  expect(focusPhoto).toContain('scrollToOrderSection("kanit")')
   expect(focusPhoto).toMatch(/if \(!canUsePhotoChecklist\)[\s\S]*?return[\s\S]*?setAddingPhoto\(true\)/)
 })
 

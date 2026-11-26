@@ -33,7 +33,9 @@ kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (76
 değişkenlerini öğenin kendisinde yeniden bağlar; taban sınıflar aynı kalır.
 `InputGroup` bağlamayı grup üzerinde yaptığı için içindeki `InputGroupInput`
 yüksekliği, metni ve dolguyu gruptan miras alır (kendi `size` prop'u yoktur);
-`sm` / `compact` grupta `InputGroupButton` kutudan taşmayacak kadar küçülür.
+`InputGroupButton` grubun `--control-h`'inden 4px kısadır (#925): md+
+32 / 28 / 24px, telefonda 40 / 32 / 28px (`lg` 46px) — `sm` / `compact`
+grupta da kutudan taşmaz.
 `ComboboxInput` aynı `size`'ı `InputGroup`'a geçirir. `PartSearchInput`,
 `PartAttributeField` ve `FilterSelect` da `size` alır (kalem satırında
 `compact`, yoğun filtre çubuğunda `sm`).
@@ -44,6 +46,25 @@ eklentiyle (🔍 / X, SKU çipi) duruyorsa kap `AutocompleteInputGroup`'tur
 çapalanır, liste kutunun tam genişliğinde ve hizasında açılır; düz
 `InputGroup`'ta eklenti genişliği kadar dar kalıyordu.
 `src/components/ui/input-group-contract.test.ts` bekçiliyor.
+
+**Combobox çapası (#887):** `ComboboxInput`'un kabı da aynı yoldur (Base UI
+`Combobox.InputGroup` + `InputGroup`); liste kutunun sol kenarında başlar ve
+kutu genişliğinde biter. Popup genişliği yalnız `--anchor-width`'tir, girdi
+çapasını telafi eden `+--spacing(7)` yoktur. Gruba basmak girdiyi odaklar ve
+listeyi açar; girdi devre dışıyken açmaz. Chip'li çoklu seçim
+(`ComboboxChips`) chip kabına `useComboboxAnchor` ile çapalanır
+(`<ComboboxContent anchor={…}>`).
+
+**Eklenti dolgusu, dar hücre (#887):** satır içi eklentinin olduğu yanda
+girdinin dolgusu `--field-px` yerine 6px'tir (`pl-1.5` / `pr-1.5`), öbür yan
+`--field-px` kalır. Eklenti kendi boyunda kalır (`shrink-0`), küçülen girdidir
+(`min-w-0`); düğme / kbd yanındaki dar boşluk negatif dış boşlukla değil küçük
+dolguyla verilir (`mr-[-0.3rem]` eklentiyi kutudan ~5px taşırıyordu). Sığmayan
+placeholder ya da değer odak dışında `…` ile biter (`text-ellipsis`). Uzunluğu
+veriye bağlı metin eklentisi (parça aramasındaki SKU çipi) girdiyi ezmesin diye
+sınırlanır: eklenti `min-w-0 max-w-2/5 shrink`, metni `min-w-0 truncate` ve tam
+değer `title`'da. Textarea'lı grup bu kuralın dışındadır (eklentisi blok
+hizalıdır).
 
 **Odak halkası** tüm form kontrollerinde aynıdır: `ring-4 ring-ring/20`,
 geçersizde `ring-4 ring-destructive/10` (koyu temada `/20`). `InputGroup`
@@ -60,7 +81,7 @@ kalır, yalnız md+ 14px'e iner (`--control-fs-field-xs`). `--control-fs-xs`
 yalnız masaüstü yoğun araç çubuğu ve tablo başlığı içindir. Telefonda görünen
 seçici `size="control"` alır; sekmede `size="control"` yalnız `default` (segment)
 variant içindir, telefonda görünen `line` sekmenin ölçeğe bağlanması #854'te. İlke: etkileşimli öğe `--control-h`,
-şerit/ray `auto` — `order-detail.module.css` `.tab` aynı ilkenin mevcut örneğidir.
+şerit/ray `auto` — `order-detail.module.css` `.chip` (araç kabulü bölüm çipi, #911) aynı ilkenin mevcut örneğidir.
 
 Button: sistem fontu, ağırlık 500, harf aralığı −0.01em, düz dolgu (gölge yok).
 Renk variant'ları ve Radix `asChild` sözleşmesi korunur.
@@ -72,6 +93,19 @@ kontrollerinin odak / geçersiz halkası (`ring-4 ring-ring/20`,
 `ring-4 ring-destructive/10`). Boyu yanındaki girdiyle aynı `size`'dır: kalem
 satırında `compact` (metni compact girdiyle aynı `--control-fs-field-xs`,
 telefonda 16px), formda `default` (`OrderItemUnitCombobox`).
+`DatePicker`, `DateRangePicker` ve `DateTimePicker` tetikleyicisi de `field`'dır.
+
+**Ton variant'ları** (#925): ton çağrı yerinde `className` ile değil variant
+ile verilir. `destructive-outline` — ikincil yıkıcı eylem (İptal, Pasif Yap):
+outline çerçevesi, `border-destructive/20`, `text-destructive-strong`. `tint` —
+birincil tonlu seçili / önerilen eylem: `bg-primary/10`,
+`text-primary-strong`. Kart / sayfa / `bg-muted` üstünde açık temada durağan
+`/10` 6.06 / 5.46 / 5.59:1, hover `/20` 5.25 / 4.77 / 4.87:1; koyu temada
+durağan `/10` 5.67 / 6.28 / 4.67:1 ve hover da `/10` kalır (koyu `/20`
+`bg-muted`'da 4.05:1'e iniyor; geçen en yüksek `/12` gözle `/10`'dan
+ayrılmıyor). `on-photo` — fotoğraf / kamera katmanı (siyah
+zemin) üstünde çerçeveli düğme (`bg-white/10`, `border-white/30`);
+`on-photo-ghost` aynı zeminde hayalet düğme.
 
 **Button `row`** satırları variant'tan bağımsız aynı çerçeve kutusundadır
 (kenarlıksız variant'lar şeffaf 1px çerçeve alır): seçili `secondary` satır
@@ -212,6 +246,11 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
   sabite çıkarılmış sınıf (`TILE`), `className`'i nesneden yayan
   `{...props}` ve `buttonVariants({ className })` çağrısı taranmaz — sabite
   boyut sınıfı yazılmaz, `className` JSX'te `cn(...)` ile verilir.
+  Ton da variant'tan gelir (#925): öneksiz (ya da kırılım / tema önekli)
+  `border-destructive/*` → `variant="destructive-outline"`, `bg-primary/N` →
+  `variant="tint"`, her önekte `bg-white|black/*` / `border-white|black/*` →
+  `variant="on-photo"` / `"on-photo-ghost"`; `hover:bg-destructive/10`,
+  `hover:bg-primary/10` gibi durum tonları serbest kalır.
 - `ToggleGroupItem` / `TabsTrigger` / `TabsList` üzerinde `!` ile yükseklik
   ezilmez (`h-7!`). Telefonda tek başına duran eylem düğmesi `default` ya da
   üstüdür; `sm/xs/compact` yoğun satır ve araç çubuğu içindir.

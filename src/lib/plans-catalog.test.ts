@@ -43,7 +43,7 @@ test("paket öne çıkanları ek özellik içermez, plaka okumayı içerir", () 
 
 test("ek özellik kataloğu fiyat taşımaz ve her ek özellik kapısını kapsar", () => {
   for (const addon of ADDON_CATALOG) {
-    expect(Object.keys(addon).sort()).toEqual(["description", "features", "key", "name"])
+    expect(Object.keys(addon).sort()).toEqual(["description", "features", "key", "name", "shipped"])
     expect(JSON.stringify(addon)).not.toMatch(/price|₺|TL/i)
   }
   const covered = new Set(ADDON_CATALOG.flatMap((addon) => addon.features))
