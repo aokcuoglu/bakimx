@@ -207,11 +207,11 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             {!isTerminal ? (
               <Button
                 type="button"
-                variant="outline"
+                variant="destructive-outline"
                 size="compact"
                 onClick={() => handleAction("cancel")}
                 disabled={actionLoading}
-                className="border-destructive/20 text-destructive-strong hover:bg-destructive/10"
+                aria-label="İptal"
               >
                 <XCircle className="size-4" />
                 <span className="hidden sm:inline">İptal</span>
@@ -231,11 +231,10 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             {!reminder.createdAppointmentId ? (
               <Button
                 type="button"
-                variant="outline"
+                variant="tint"
                 size="xs"
                 onClick={() => handleAction("create-appointment")}
                 disabled={actionLoading}
-                className="border-primary/20 bg-primary/10 text-primary-strong hover:bg-primary/20"
               >
                 <CalendarClock className="size-3.5" />
                 Randevu Oluştur

@@ -293,12 +293,12 @@ export function CameraScanner({
     <div className="fixed inset-0 z-50 flex flex-col bg-black text-white">
       {/* Üst bar */}
       <div className="flex items-center justify-between p-4 shrink-0">
-        <Button type="button" variant="ghost" size="icon" onClick={handleClose} className="bg-white/10 text-white hover:bg-white/20 hover:text-white" aria-label="Kapat">
+        <Button type="button" variant="on-photo" size="icon" onClick={handleClose} aria-label="Kapat">
           <X className="size-5" />
         </Button>
         <span className="text-sm font-medium">{title}</span>
         {torchSupported && status === "ready" ? (
-          <Button type="button" variant="ghost" size="icon" onClick={toggleTorch} className="bg-white/10 text-white hover:bg-white/20 hover:text-white" aria-label="Flaş">
+          <Button type="button" variant="on-photo" size="icon" onClick={toggleTorch} aria-label="Flaş">
             {torchOn ? <Zap className="size-5 text-warning-strong" /> : <ZapOff className="size-5" />}
           </Button>
         ) : (
@@ -378,7 +378,7 @@ export function CameraScanner({
                   <Button variant="foreground" size="lg" onClick={accept} className="gap-2">
                     <Check className="size-4" /> Kullan
                   </Button>
-                  <Button variant="outline" onClick={retake} className="gap-2 border-white/30 bg-white/10 text-white hover:bg-white/20">
+                  <Button variant="on-photo" onClick={retake} className="gap-2">
                     <RefreshCw className="size-4" /> Tekrar çek
                   </Button>
                 </div>
@@ -388,7 +388,7 @@ export function CameraScanner({
               <div className="flex flex-col items-center gap-3 text-center">
                 <AlertTriangle className="size-8 text-warning-strong" />
                 <p className="max-w-sm text-sm text-white">{errorMsg}</p>
-                <Button variant="outline" onClick={retake} className="gap-2 border-white/30 bg-white/10 text-white hover:bg-white/20">
+                <Button variant="on-photo" onClick={retake} className="gap-2">
                   <RefreshCw className="size-4" /> Tekrar çek
                 </Button>
               </div>
@@ -420,9 +420,9 @@ export function CameraScanner({
         {onManualEntry && (
           <Button
             type="button"
-            variant="ghost"
+            variant="on-photo-ghost"
             onClick={onManualEntry}
-            className="absolute left-6 top-1/2 h-auto -translate-y-1/2 flex-col gap-1 rounded-xl px-3 py-2 text-xs text-white hover:bg-white/10 hover:text-white"
+            className="absolute left-6 top-1/2 h-auto -translate-y-1/2 flex-col gap-1 rounded-xl px-3 py-2 text-xs"
           >
             <Keyboard className="size-5" /> El ile gir
           </Button>
@@ -430,9 +430,9 @@ export function CameraScanner({
         {status === "ready" && (
           <Button
             type="button"
-            variant="ghost"
+            variant="on-photo"
             onClick={capture}
-            className="size-16 rounded-full border-4 border-white bg-white/20 text-white hover:bg-white/30 hover:text-white active:scale-95"
+            className="size-16 rounded-full border-4 border-white active:scale-95"
             aria-label="Çek"
           >
             <Camera className="size-7" />
@@ -442,9 +442,9 @@ export function CameraScanner({
         {(status === "ready" || status === "starting") && (
           <Button
             type="button"
-            variant="ghost"
+            variant="on-photo-ghost"
             onClick={() => fileInputRef.current?.click()}
-            className="absolute right-6 top-1/2 h-auto -translate-y-1/2 flex-col gap-1 rounded-xl px-3 py-2 text-xs text-white hover:bg-white/10 hover:text-white"
+            className="absolute right-6 top-1/2 h-auto -translate-y-1/2 flex-col gap-1 rounded-xl px-3 py-2 text-xs"
           >
             <Upload className="size-5" /> Dosyadan
           </Button>
