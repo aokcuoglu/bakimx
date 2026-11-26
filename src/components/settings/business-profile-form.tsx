@@ -157,10 +157,10 @@ export function BusinessProfileForm({
             <div className="flex items-center gap-3">
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- arbitrary workshop logo URL
-                <img src={logoUrl} alt="" className="size-12 rounded-lg border border-border object-cover" />
+                <img src={logoUrl} alt="" className="size-12 rounded-md border border-border object-cover" />
               ) : (
                 <span
-                  className="flex size-12 items-center justify-center rounded-lg border border-border bg-muted text-xs font-semibold text-foreground"
+                  className="flex size-12 items-center justify-center rounded-md border border-border bg-muted text-xs font-semibold text-foreground"
                   aria-hidden
                 >
                   {workshopInitials(nameValue || workshop.name)}

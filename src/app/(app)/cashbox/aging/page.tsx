@@ -66,7 +66,7 @@ function AgingBucketCard({ bucket, colorIndex }: { bucket: Awaited<ReturnType<ty
     return (
       <div className="rounded-lg border border-border bg-card p-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className={cn("size-9 rounded-lg flex items-center justify-center", color.accentBg)}>
+          <div className={cn("size-9 rounded-md flex items-center justify-center", color.accentBg)}>
             <Icon className={cn("size-4", color.text)} />
           </div>
           <div>
@@ -83,7 +83,7 @@ function AgingBucketCard({ bucket, colorIndex }: { bucket: Awaited<ReturnType<ty
     <div className="rounded-lg border border-border bg-card overflow-hidden">
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className={cn("size-9 rounded-lg flex items-center justify-center", color.accentBg)}>
+          <div className={cn("size-9 rounded-md flex items-center justify-center", color.accentBg)}>
             <Icon className={cn("size-4", color.text)} />
           </div>
           <div>
