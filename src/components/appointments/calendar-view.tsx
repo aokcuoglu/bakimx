@@ -170,7 +170,7 @@ export function CalendarView({
         <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-warning" /> Bakım</span>
       </div>
 
-      <div className="relative" aria-label="Takvim" aria-busy={isNavigating}>
+      <div className="relative" role="region" aria-label="Takvim" aria-busy={isNavigating}>
         {isNavigating && (
           <div className="absolute inset-0 z-10 flex items-start justify-center rounded-lg bg-card/90">
             <BrandSpinner size={32} label="Takvim yükleniyor…" className="py-8" />
