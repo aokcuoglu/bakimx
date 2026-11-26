@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useRef } from "react"
 import { returnFocusTo } from "@/hooks/use-return-focus"
 
 type OpenerDocument = {
@@ -45,21 +45,39 @@ export function openerCandidates(snapshot: OpenerSnapshot, doc: Pick<OpenerDocum
 /**
  * Radix modal `Content` odağı yalnız kendi `Trigger`ına döndürür; menü maddesinden
  * ya da koddan açılan (kontrollü) pencere kapanınca odak `BODY`ye düşer. Paylaşılan
- * `DialogContent` / `SheetContent` / `AlertDialogContent` bunu çağırır: açan öğe
- * ilk çizimde yakalanır, kapanışta DOM'daysa odaklanır. Çağıranın
- * `onCloseAutoFocus`ı önce çalışır ve `preventDefault` ederse karışılmaz. Açan
- * öğe de menü tetikleyicisi de yoksa Radix'in varsayılanı sürer.
+ * `DialogContent` / `SheetContent` / `AlertDialogContent` bunu çağırır.
+ *
+ * Yakalama AÇILIŞ anında yapılır: sarmalayıcı bileşen pencere kapalıyken de
+ * (Root çocuklarını hep çizer) bağlı olduğundan ilk çizim doğru an değildir.
+ * Radix `onOpenAutoFocus`u FocusScope bağlanırken, odağı içeri almadan önce
+ * çağırır; o an `activeElement` hâlâ açan öğedir. Kapanışta öğe DOM'daysa
+ * odaklanır (Radix ile aynı şekilde `preventScroll`). Çağıranın handler'ları
+ * önce çalışır ve `preventDefault` ederse karışılmaz.
  */
-export function useOpenerFocus(onCloseAutoFocus?: (event: Event) => void) {
-  const [snapshot] = useState<OpenerSnapshot>(() =>
-    typeof document === "undefined" ? EMPTY : captureOpener(document),
-  )
-  return useCallback(
+export function useOpenerFocus(
+  onOpenAutoFocus?: (event: Event) => void,
+  onCloseAutoFocus?: (event: Event) => void,
+) {
+  const snapshot = useRef<OpenerSnapshot>(EMPTY)
+
+  const handleOpenAutoFocus = useCallback(
     (event: Event) => {
+      snapshot.current = captureOpener(document)
+      onOpenAutoFocus?.(event)
+    },
+    [onOpenAutoFocus],
+  )
+
+  const handleCloseAutoFocus = useCallback(
+    (event: Event) => {
+      const opener = snapshot.current
+      snapshot.current = EMPTY
       onCloseAutoFocus?.(event)
       if (event.defaultPrevented) return
-      returnFocusTo(event, openerCandidates(snapshot, document))
+      returnFocusTo(event, openerCandidates(opener, document), { preventScroll: true })
     },
-    [onCloseAutoFocus, snapshot],
+    [onCloseAutoFocus],
   )
+
+  return { onOpenAutoFocus: handleOpenAutoFocus, onCloseAutoFocus: handleCloseAutoFocus }
 }

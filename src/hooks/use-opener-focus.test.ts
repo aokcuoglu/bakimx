@@ -64,8 +64,23 @@ test("menü maddesinden açılınca madde kalkar, odak menünün tetikleyicisine
 for (const file of ["dialog", "sheet", "alert-dialog"]) {
   test(`ui/${file}.tsx odak dönüşünü bağlar ve Escape guard'ını korur`, () => {
     const source = readFileSync(`src/components/ui/${file}.tsx`, "utf8")
-    expect(source).toContain("useOpenerFocus(onCloseAutoFocus)")
-    expect(source).toContain("onCloseAutoFocus={returnFocusToOpener}")
+    expect(source).toContain("useOpenerFocus(onOpenAutoFocus, onCloseAutoFocus)")
+    expect(source).toContain("onOpenAutoFocus={openerFocus.onOpenAutoFocus}")
+    expect(source).toContain("onCloseAutoFocus={openerFocus.onCloseAutoFocus}")
     expect(source).toContain("yieldEscapeToBaseUIPopup(event, onEscapeKeyDown)")
   })
 }
+
+// Gerçek yaşam döngüsü: sarmalayıcı sayfa çizilirken (kapalı, odak BODY) kurulur;
+// açan düğme sonradan odaklanır; açılış handler'ı yakalar; kapanışta dönülür.
+test("kapalıyken kurulan sarmalayıcı açılışta yakalar, kapanışta döner", () => {
+  const doc = fakeDoc(null)
+  const created = captureOpener(doc)
+  expect(created.element).toBeNull()
+  const button = fakeElement(true)
+  doc.activeElement = button
+  const atOpen = captureOpener(doc)
+  const event = fakeEvent()
+  expect(returnFocusTo(event, openerCandidates(atOpen, fakeDoc(null)), { preventScroll: true })).toBe(true)
+  expect(button.calls).toHaveLength(1)
+})
