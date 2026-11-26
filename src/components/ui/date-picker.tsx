@@ -47,10 +47,10 @@ export function DatePicker({
         <Button
           id={id}
           type="button"
-          variant="outline"
+          variant="field"
           disabled={disabled}
           className={cn(
-            "w-full min-w-0 justify-start gap-2 font-normal",
+            "w-full min-w-0 justify-start gap-2",
             !selected && "text-muted-foreground",
             className
           )}

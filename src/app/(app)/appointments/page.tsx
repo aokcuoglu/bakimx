@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { AppointmentList } from "@/components/appointments/appointment-list"
 import { formatAppointmentNo } from "@/lib/work-order-number"
 import { appointmentTodayBounds, resolveAppointmentDateWindow } from "@/lib/appointments/date-filter"
-import { cn } from "@/lib/utils"
 
 export const metadata = { title: "Randevular" }
 
@@ -135,12 +134,9 @@ export default async function AppointmentsPage({
             return (
               <Button
                 key={tab.key}
-                variant={isActive ? "secondary" : "ghost"}
+                variant={isActive ? "tint" : "ghost"}
                 size="compact"
-                className={cn(
-                  "whitespace-nowrap",
-                  isActive ? "bg-primary/10 text-primary-strong" : "text-muted-foreground"
-                )}
+                className="whitespace-nowrap"
                 asChild
               >
                 <Link href={href} aria-current={isActive ? "page" : undefined}>

@@ -368,9 +368,9 @@ export function AppointmentDetail({
                   <input type="hidden" name="status" value="cancelled" />
                   <Button
                     type="submit"
-                    variant="outline"
+                    variant="destructive-outline"
                     size="compact"
-                    className="w-full border-destructive/20 text-destructive-strong hover:bg-destructive/10"
+                    className="w-full"
                   >
                     <XCircle className="size-4" />
                     Randevuyu İptal Et

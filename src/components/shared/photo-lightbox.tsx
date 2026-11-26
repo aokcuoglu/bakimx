@@ -40,9 +40,6 @@ const MAX_SCALE = 5
 const TOGGLE_SCALE = 2.5
 const DOUBLE_TAP_MS = 300
 
-/** Fotoğraf görüntüleyici kontrolleri siyah zemin üzerinde durur. */
-const ON_DARK = "text-white hover:bg-white/15 hover:text-white"
-
 /**
  * Tam ekran, siyah zeminli fotoğraf galerisi.
  * Kaydırma (Embla), ok tuşları, küçük resim şeridi; görselde iki parmakla
@@ -155,9 +152,8 @@ export function PhotoLightbox({
           </span>
           <Button
             type="button"
-            variant="ghost"
+            variant="on-photo-ghost"
             size="icon"
-            className={ON_DARK}
             aria-label={zoomed ? "Uzaklaştır" : "Yakınlaştır"}
             aria-pressed={zoomed}
             onClick={() => setZoomCommand((value) => value + 1)}
@@ -167,9 +163,8 @@ export function PhotoLightbox({
           <DialogClose asChild>
             <Button
               type="button"
-              variant="ghost"
+              variant="on-photo"
               size="icon"
-              className="bg-white/20 text-white hover:bg-white/30 hover:text-white"
               aria-label="Kapat"
             >
               <X />

@@ -261,12 +261,12 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
     <div className="pointer-events-auto fixed inset-0 z-[60] flex flex-col bg-black text-white">
       {/* Üst bar */}
       <div className="flex items-center justify-between p-4 shrink-0">
-        <Button type="button" variant="ghost" size="icon" onClick={handleClose} className="bg-white/10 text-white hover:bg-white/20 hover:text-white" aria-label="Kapat">
+        <Button type="button" variant="on-photo" size="icon" onClick={handleClose} aria-label="Kapat">
           <X className="size-5" />
         </Button>
         <span className="text-sm font-medium">Ruhsatı Tara</span>
         {torchSupported && status === "ready" ? (
-          <Button type="button" variant="ghost" size="icon" onClick={toggleTorch} className="bg-white/10 text-white hover:bg-white/20 hover:text-white" aria-label="Flaş">
+          <Button type="button" variant="on-photo" size="icon" onClick={toggleTorch} aria-label="Flaş">
             {torchOn ? <Zap className="size-5 text-warning-strong" /> : <ZapOff className="size-5" />}
           </Button>
         ) : (
@@ -325,7 +325,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
               {status === "unsupported" && "Bu cihaz/tarayıcı canlı kamerayı desteklemiyor. Lütfen dosyadan yükleyin."}
               {status === "error" && (errorMsg || "Kamera açılamadı. Lütfen dosyadan yükleyin.")}
             </p>
-            <Button variant="outline" onClick={handleClose} className="border-white/30 bg-white/10 text-white hover:bg-white/20">
+            <Button variant="on-photo" onClick={handleClose}>
               Dosyadan Yükle&apos;ye dön
             </Button>
           </div>
@@ -337,9 +337,9 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
         {status === "ready" && (
           <Button
             type="button"
-            variant="ghost"
+            variant="on-photo"
             onClick={capture}
-            className="size-16 rounded-full border-4 border-white bg-white/20 text-white hover:bg-white/30"
+            className="size-16 rounded-full border-4 border-white active:scale-95"
             aria-label="Çek"
           >
             <Camera className="size-7" />
@@ -347,7 +347,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
         )}
         {status === "captured" && (
           <>
-            <Button variant="outline" onClick={retake} className="gap-2 border-white/30 bg-white/10 text-white hover:bg-white/20">
+            <Button variant="on-photo" onClick={retake} className="gap-2">
               <RefreshCw className="size-4" />
               Tekrar çek
             </Button>
