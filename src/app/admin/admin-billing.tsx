@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { confirmBillingOrder, cancelBillingOrder, retryStuckActivation } from "@/app/admin/actions"
 import { planLabel } from "@/lib/plan"
 
@@ -211,18 +212,14 @@ function PaymentAttempts({ txns }: { txns: AdminTxnRow[] }) {
   if (txns.length === 0) return null
 
   return (
-    <div className="mt-2">
-      <Button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        variant="link"
-        size="inline"
-        aria-expanded={open}
-      >
-        {open ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-        <span className="text-xs">Ödeme denemeleri ({txns.length})</span>
-      </Button>
-      {open && (
+    <Collapsible open={open} onOpenChange={setOpen} className="mt-2">
+      <CollapsibleTrigger asChild>
+        <Button type="button" variant="link" size="inline">
+          {open ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+          <span className="text-xs">Ödeme denemeleri ({txns.length})</span>
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
         <div className="mt-2">
           <div className="hidden md:block rounded-lg border border-border bg-background overflow-hidden">
             <table className="w-full text-xs">
@@ -270,8 +267,8 @@ function PaymentAttempts({ txns }: { txns: AdminTxnRow[] }) {
             ))}
           </div>
         </div>
-      )}
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }
 

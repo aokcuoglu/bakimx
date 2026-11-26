@@ -7,7 +7,8 @@ import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import surface from "@/components/dashboard/surface.module.css"
-import { Input } from "@/components/ui/input"
+import { Input, type InputAppearance } from "@/components/ui/input"
+import type { InputGroupAppearance } from "@/components/ui/input-group"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -1566,7 +1567,7 @@ function PartIdentity({ row, oneLine, hint = "Araç kabulü kilitli — parça t
 }
 
 /** İş emri satırı görünen tanımı — katalog/stok kartını değiştirmez. */
-function PartNameField({ row, onCell, oneLine }: { row: Row; onCell: OnCell; oneLine?: boolean }) {
+function PartNameField({ row, onCell, oneLine, appearance }: { row: Row; onCell: OnCell; oneLine?: boolean; appearance?: InputAppearance }) {
   const [draft, setDraft] = useState(row.name)
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sunucudan doğrulanan tanımı taslağa taşır
@@ -1614,6 +1615,7 @@ function PartNameField({ row, onCell, oneLine }: { row: Row; onCell: OnCell; one
         aria-label="Parça tanımı"
         title={hint}
         size="compact"
+        appearance={appearance}
         className="min-w-0 flex-1"
       />
     </div>
@@ -1628,8 +1630,9 @@ function PartNameField({ row, onCell, oneLine }: { row: Row; onCell: OnCell; one
 // satıra kayıyor (adın uzunluğuna göre), adın yerini yiyor ve dış alım
 // satırında tür kolonundan taşan üçüncü ikonla üst üste biniyorlardı. Artık
 // hepsi satırın sağındaki tek aksiyon grubunda (`RowActions`).
-function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
+function PartField({ row, ed, onCell, oneLine, readOnlyHint, appearance }: {
   row: Row; ed: RowEditor; onCell: OnCell
+  appearance?: InputAppearance
   /** Masaüstü tablo satırı: ad tek satırda kırpılır (bkz. PartIdentity). */
   oneLine?: boolean
   readOnlyHint?: string
@@ -1637,7 +1640,7 @@ function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
       {ed.isPart && ed.editable ? (
-        <PartNameField row={row} onCell={onCell} oneLine={oneLine} />
+        <PartNameField row={row} onCell={onCell} oneLine={oneLine} appearance={appearance} />
       ) : ed.isPart ? (
         <PartIdentity row={row} oneLine={oneLine} hint={readOnlyHint} />
       ) : (
@@ -1647,6 +1650,7 @@ function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
           placeholder="İşçilik adı"
           disabled={!ed.editable || row.__saving}
           size="compact"
+          appearance={appearance}
           data-pl="name"
         />
       )}
@@ -1660,14 +1664,16 @@ function PartField({ row, ed, onCell, oneLine, readOnlyHint }: {
 // `border` değil içe dönük `outline`: yer kaplamaz, `icon-xs` (32 / 28px)
 // düğmeler compact kutuya taşmadan sığar ve çerçeve düğmenin üstünde çizilir
 // (#889 — 1px'lik kenarlık 30px'lik iç alan bırakıyor, düğme taşıyordu).
-function QtyStepper({ row, editable, onCell, size = "compact" }: {
+function QtyStepper({ row, editable, onCell, size = "compact", ghost = false }: {
   row: Row; editable: boolean; onCell: OnCell; size?: "default" | "compact"
+  /** Satır hayaleti: çerçeve satır hover/odakta belirir (#952). */
+  ghost?: boolean
 }) {
   // Salt okunurda devre dışı adımlayıcı soluk görünüyor ve "+" kayboluyordu (#967):
   // değiştirilemeyen miktar düz metin olarak okunur.
   if (!editable) return <span className="text-sm tabular-nums">{row.quantity}</span>
   return (
-    <div data-slot="qty-stepper" className={cn("inline-flex items-center rounded-(--control-radius) bg-card outline-1 -outline-offset-1 outline-input transition-colors dark:bg-input/30", size === "default" ? "h-(--control-h)" : "h-(--control-h-xs)")}>
+    <div data-slot="qty-stepper" className={cn("inline-flex items-center rounded-(--control-radius) outline-1 -outline-offset-1 transition-colors", ghost ? "bg-transparent outline-transparent group-hover/field-row:outline-input group-focus-within/field-row:outline-input" : "bg-card outline-input dark:bg-input/30", size === "default" ? "h-(--control-h)" : "h-(--control-h-xs)")}>
       <Button type="button" variant="ghost" size="icon-xs" aria-label="Azalt"
         disabled={!editable || row.quantity <= 1}
         onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })}>
@@ -1683,7 +1689,8 @@ function QtyStepper({ row, editable, onCell, size = "compact" }: {
   )
 }
 
-function QuantityField({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
+/** `fill`: mobil kartta kolonu doldurur; tablo hücresinde `w-24`. */
+function QuantityField({ row, editable, onCell, appearance, fill = false }: { row: Row; editable: boolean; onCell: OnCell; appearance?: InputAppearance; fill?: boolean }) {
   const unit = ORDER_ITEM_UNITS.find((candidate) => candidate === row.unit) ?? "adet"
   const [draft, setDraft] = useState(String(row.quantity))
   useEffect(() => {
@@ -1710,7 +1717,8 @@ function QuantityField({ row, editable, onCell }: { row: Row; editable: boolean;
       value={draft}
       aria-label={`${row.name || "Satır"} miktarı`}
       size="compact"
-      className="w-24 text-center tabular-nums"
+      appearance={appearance}
+      className={cn(fill ? "w-full" : "w-24", "text-center tabular-nums")}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur() }}
@@ -1719,7 +1727,7 @@ function QuantityField({ row, editable, onCell }: { row: Row; editable: boolean;
 }
 
 /** `fill`: mobil kartta Birim kolonunu doldurur; tablo hücresinde kompakt `w-24`. */
-function UnitField({ row, editable, onCell, fill = false }: { row: Row; editable: boolean; onCell: OnCell; fill?: boolean }) {
+function UnitField({ row, editable, onCell, fill = false, appearance }: { row: Row; editable: boolean; onCell: OnCell; fill?: boolean; appearance?: "default" | "ghost" }) {
   const unit = ORDER_ITEM_UNITS.find((candidate) => candidate === row.unit) ?? "adet"
   if (row.type !== "part") return <span className="text-xs text-muted-foreground">—</span>
   if (!editable) return <span className="text-sm">{ORDER_ITEM_UNIT_LABELS[unit]}</span>
@@ -1728,6 +1736,7 @@ function UnitField({ row, editable, onCell, fill = false }: { row: Row; editable
       value={unit}
       ariaLabel={`${row.name || "Parça"} birimi`}
       size="compact"
+      appearance={appearance}
       className={fill ? "w-full" : "w-24"}
       isOptionDisabled={(candidate) =>
         (row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}
@@ -1762,7 +1771,7 @@ function toPriceDraft(unitPriceKurus: number | null): string {
 //
 // BAK-91 — alış fiyatı kayıtlı kalemde satış hâlâ maliyete eşit/altındaysa
 // rakamın KENDİSİ renklenir: satır "hayalet" olduğu için kenarlık/zemin
-// GHOST_ROW tarafından şeffaflanır (metin rengi ezilmez). Zararına satır
+// `appearance="ghost"` ile şeffaflanır (metin rengi ezilmez). Zararına satır
 // destructive, revize edilmemiş satır warning — biri hata, öbürü hatırlatma.
 const MARGIN_TONE: Record<PurchaseMarginState, string> = {
   none: "",
@@ -1773,8 +1782,11 @@ const MARGIN_TONE: Record<PurchaseMarginState, string> = {
 }
 
 // size: satır hücresinde compact; composer'da (form alanı) default.
-function PriceField({ row, ed, wide, size = "compact" }: {
+function PriceField({ row, ed, wide, fill, size = "compact", appearance }: {
   row: Row; ed: RowEditor; wide?: boolean; size?: "default" | "compact"
+  /** Mobil kartta kolonu doldurur. */
+  fill?: boolean
+  appearance?: InputAppearance
 }) {
   const tone = MARGIN_TONE[ed.marginState]
   if (!ed.editable) {
@@ -1793,7 +1805,8 @@ function PriceField({ row, ed, wide, size = "compact" }: {
       placeholder="₺0,00"
       aria-label="Birim fiyat"
       size={size}
-      className={cn("text-right tabular-nums", tone, wide ? "w-32" : "w-28")}
+      appearance={appearance}
+      className={cn("text-right tabular-nums", tone, fill ? "w-full" : wide ? "w-32" : "w-28")}
       value={ed.editingPrice ? ed.priceDraft : row.unitPrice != null ? formatTRY(row.unitPrice) : ""}
       onFocus={(e) => { if (!ed.editingPrice) ed.startPrice(); e.currentTarget.select() }}
       onChange={(e) => { if (!ed.editingPrice) ed.startPrice(); ed.setPriceDraft(e.target.value) }}
@@ -1826,7 +1839,7 @@ function ModalPriceField({ row, onCell }: { row: Row; onCell: OnCell }) {
       placeholder="₺0,00"
       aria-label="Birim fiyat"
       size="compact"
-      className="w-28 text-right tabular-nums"
+      className="w-full text-right tabular-nums"
       value={draft}
       onFocus={(event) => event.currentTarget.select()}
       onChange={(event) => setDraft(event.target.value)}
@@ -1907,12 +1920,13 @@ function CostPriceField({ row, onCell }: { row: Row; onCell: OnCell }) {
  * Not BİRİM fiyatın değil SATIRIN KDV'sidir (miktarla çarpılmış): kullanıcının
  * Genel Toplam'da göreceği rakam bu. Miktar 1 iken ikisi zaten aynı.
  */
-function PriceCell({ row, ed, wide, align = "end" }: {
+function PriceCell({ row, ed, wide, align = "end", appearance }: {
   row: Row; ed: RowEditor; wide?: boolean; align?: "end" | "start"
+  appearance?: InputAppearance
 }) {
   return (
     <div className={cn("flex flex-col gap-0.5", align === "end" ? "items-end" : "items-start")}>
-      <PriceField row={row} ed={ed} wide={wide} />
+      <PriceField row={row} ed={ed} wide={wide} appearance={appearance} />
       {ed.vatKurus != null && ed.vatKurus > 0 && <VatHint vatKurus={ed.vatKurus} className="pr-2.5" />}
       <PurchaseCostHint row={row} ed={ed} />
     </div>
@@ -2413,8 +2427,9 @@ function AttrReadOnly({ value, oneLine, title }: { value: string | null; oneLine
 
 // Marka/Kategori hücresi (masaüstü + mobil + composer ortak). Düzenlenebilirken
 // katalog önerili + serbest-metin Autocomplete; kilitliyken salt-görünür etiket.
-function AttrCell({ kind, row, ed, onCell, bare, oneLine }: {
+function AttrCell({ kind, row, ed, onCell, bare, oneLine, appearance }: {
   kind: "brand" | "category"; row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; bare?: boolean
+  appearance?: InputGroupAppearance
   /** Masaüstü satırı: kilitli emirde de tek satırda kalsın (uzun metin kısalır,
    *  tam hali title'da). Mobil kartta sarma korunur → tam metin görünür. */
   oneLine?: boolean
@@ -2443,6 +2458,7 @@ function AttrCell({ kind, row, ed, onCell, bare, oneLine }: {
     <PartAttributeField
       kind={kind}
       size="compact"
+      appearance={appearance}
       vehicleTypeId={ed.catalogTypeId}
       value={value ?? ""}
       disabled={row.__saving}
@@ -2489,49 +2505,11 @@ const ROW_ACCENT: Record<ItemType, string> = {
 
 // ── Hayalet-satır: liste hücrelerindeki form kontrolleri düz metin gibi okunur;
 // satır hover / focus-within olunca kenarlık belirir, aksiyonlar görünür.
-// (Yalnız masaüstü <tr>'ye uygulanır; composer/mobil etkilenmez.)
-const GHOST_ROW = cn(
-  "group transition-colors hover:bg-muted/40",
-  "[&_[data-slot=input-group]]:border-transparent [&_[data-slot=input-group]]:bg-transparent dark:[&_[data-slot=input-group]]:bg-transparent",
-  "[&_[data-slot=input]]:border-transparent [&_[data-slot=input]]:bg-transparent dark:[&_[data-slot=input]]:bg-transparent",
-  "[&_[data-slot=qty-stepper]]:outline-transparent [&_[data-slot=qty-stepper]]:bg-transparent",
-  "[&_[data-slot=price-field]]:border-transparent",
-  "hover:[&_[data-slot=input-group]]:border-input hover:[&_[data-slot=input]]:border-input hover:[&_[data-slot=qty-stepper]]:outline-input hover:[&_[data-slot=price-field]]:border-input",
-  "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=qty-stepper]]:outline-input focus-within:[&_[data-slot=price-field]]:border-input",
-)
-
-// Marka/Kategori alanları: ölçü, köşe ve yazı boyutu `PartAttributeField
-// size="compact"`tan gelir (telefonda 16px — 11px'lik eski ezme iOS'ta odakta
-// sayfayı yakınlaştırıyordu, #888). Burada yalnız hayalet görünüm kalır: ikincil
-// meta olarak muted renk. !important → GHOST_ROW'un genel kurallarını ezer.
-// NOT: eski not "[data-slot=input-group-control] seçicisi üretilmiyor" diyordu;
-// asıl neden AutocompleteInput'un slot'u ezmesiydi (#888'de düzeldi).
-const META_FIELD_BASE = cn(
-  "[&_input]:!text-muted-foreground",
-  "focus-within:[&_input]:!text-foreground",
-)
-
-// Masaüstü: hayalet meta — kutu yok, adın altında düz metin gibi hizalı okunur
-// ("MARKA · Kategori"). Satır hover / odakta gri dolgu + kenarlık belirir →
-// düzenlenebilir olduğu anlaşılır, ama boştayken satırı şişirmez.
-const META_FIELD_DESKTOP = cn(
-  META_FIELD_BASE,
-  "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-transparent",
-  // Zemin ANINDA gelsin: input ve input-group'un kendi `transition-colors`ı
-  // (150 ms) hover'da "geç beliriyor" hissi veriyordu. Dolgu zaten her durumda
-  // px-2.5 (Input tabanı) → hover'da metin kaymaz, yalnız zemin belirir.
-  "[&_[data-slot=input-group]]:!transition-none [&_input]:!transition-none",
-  "group-hover:[&_[data-slot=input-group]]:!bg-muted/60",
-  "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background",
-)
-
-// Mobil: hover yok → alanların düzenlenebilir olduğu ancak dolgu ile belli olur;
-// bu yüzden kart içinde hafif gri çip görünümü korunur.
-const META_FIELD_MOBILE = cn(
-  META_FIELD_BASE,
-  "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-muted/60",
-  "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background",
-)
+// Satır `group/field-row` taşır; kontroller `appearance="ghost"` (Input,
+// InputGroup) / `ghost` (QtyStepper) ile bu grubu izler, Marka/Kategori meta
+// alanları `appearance="quiet"` (masaüstü) ya da `"soft"` (mobil) alır (#952).
+// Yalnız masaüstü <tr>'ye uygulanır; composer/mobil etkilenmez.
+const GHOST_ROW = "group group/field-row transition-colors hover:bg-muted/40"
 
 // ── Masaüstü satırı: gerçek <tr> (çarşaf liste) ──────────────────────────────
 /**
@@ -2603,15 +2581,15 @@ function DesktopPartRow({ row, orderId, locked, readOnlyFields = false, onEdit, 
           için Marka/Kategori meta satırı */}
       <TableCell className="whitespace-normal py-3.5">
         <div className="min-w-0">
-          <PartField row={row} ed={ed} onCell={onCell} oneLine readOnlyHint={readOnlyFields && !locked ? "Kalemi düzenle ile değiştirin" : undefined} />
+          <PartField row={row} ed={ed} onCell={onCell} appearance="ghost" oneLine readOnlyHint={readOnlyFields && !locked ? "Kalemi düzenle ile değiştirin" : undefined} />
           <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
           {showMeta && (
             // Marka + Kategori HER ZAMAN tek satır: sabit genişlik yerine esneyen
             // iki eşit sütun (kolon daraldığında alt alta sarıp satırı uzatmasın).
-            <div className={cn("mt-0.5 flex items-center gap-1", META_FIELD_DESKTOP)}>
-              <div className="min-w-0 flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare oneLine /></div>
+            <div className="mt-0.5 flex items-center gap-1">
+              <div className="min-w-0 flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} appearance="quiet" bare oneLine /></div>
               <span aria-hidden className="shrink-0 text-[11px] text-muted-foreground/40">·</span>
-              <div className="min-w-0 flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare oneLine /></div>
+              <div className="min-w-0 flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} appearance="quiet" bare oneLine /></div>
             </div>
           )}
           <DoneBadge completedAt={row.completedAt} className="mt-1.5" />
@@ -2623,15 +2601,15 @@ function DesktopPartRow({ row, orderId, locked, readOnlyFields = false, onEdit, 
       <TableCell className="py-3.5">
         <div className="flex justify-center">
           {ed.isPart
-            ? <QuantityField row={row} editable={ed.editable} onCell={onCell} />
-            : <QtyStepper row={row} editable={ed.editable} onCell={onCell} />}
+            ? <QuantityField row={row} editable={ed.editable} onCell={onCell} appearance="ghost" />
+            : <QtyStepper row={row} editable={ed.editable} onCell={onCell} ghost />}
         </div>
       </TableCell>
 
       {/* Birim — ondalıklı miktar yalnız litre seçiliyken geçerlidir. */}
       <TableCell className="py-3.5">
         <div className="flex justify-center">
-          <UnitField row={row} editable={ed.editable} onCell={onCell} />
+          <UnitField row={row} editable={ed.editable} onCell={onCell} appearance="ghost" />
         </div>
       </TableCell>
 
@@ -2647,7 +2625,7 @@ function DesktopPartRow({ row, orderId, locked, readOnlyFields = false, onEdit, 
       {/* Birim Fiyat (net) + tick açıkken altında "+₺X KDV" notu */}
       <TableCell className="py-3.5">
         <div className="flex justify-end">
-          <PriceCell row={row} ed={ed} wide />
+          <PriceCell row={row} ed={ed} wide appearance="ghost" />
         </div>
       </TableCell>
 
@@ -2788,13 +2766,8 @@ function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, s
       </div>
 
       {/* Parça / İşçilik adı (öne çıkan) — hayalet: kenarlıksız, odakta belirir */}
-      <div className={cn(
-        "mt-1.5",
-        "[&_[data-slot=input-group]]:border-transparent [&_[data-slot=input-group]]:bg-transparent [&_[data-slot=input]]:border-transparent [&_[data-slot=input]]:bg-transparent",
-        "[&_[data-slot=input-group]]:px-0 [&_[data-slot=input]]:!px-0 [&_[data-slot=input]]:font-medium",
-        "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-(--field-px)",
-      )}>
-        <PartField row={row} ed={ed} onCell={onCell} readOnlyHint={readOnlyFields && !locked ? "Kalemi düzenle ile değiştirin" : undefined} />
+      <div className="mt-1.5">
+        <PartField row={row} ed={ed} onCell={onCell} appearance="inline" readOnlyHint={readOnlyFields && !locked ? "Kalemi düzenle ile değiştirin" : undefined} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
         <DoneBadge completedAt={row.completedAt} className="mt-1" />
         <ProcurementBadge procurement={row.externalProcurement} />
@@ -2802,9 +2775,9 @@ function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, s
 
       {/* Marka / Kategori — kompakt gri çipler (etiketsiz), yalnız parça */}
       {showMeta && (
-        <div className={cn("mt-1 flex flex-wrap gap-1.5", META_FIELD_MOBILE)}>
-          <div className="min-w-[7rem] flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
-          <div className="min-w-[7rem] flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          <div className="min-w-[7rem] flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} appearance="soft" bare /></div>
+          <div className="min-w-[7rem] flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} appearance="soft" bare /></div>
         </div>
       )}
 
@@ -2815,19 +2788,19 @@ function MobilePartRow({ row, orderId, locked, readOnlyFields = false, onEdit, s
         {/* İşçilik satırında miktar adımlayıcısı (~82px) 4rem'e sığmıyor, BİRİM
             "—"nin üstüne taşıyordu: o kolon içeriği kadar açılır (#888). */}
         <div className={cn("grid items-start gap-1.5", ed.isPart ? "grid-cols-[4rem_minmax(0,1fr)_6.5rem]" : "grid-cols-[auto_minmax(0,1fr)_6.5rem]")}>
-          <div className="min-w-0 space-y-1 [&_input]:!w-full">
+          <div className="min-w-0 space-y-1">
             <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground" data-pl="label">Miktar</span>
             {ed.isPart
-              ? <QuantityField row={row} editable={ed.editable} onCell={onCell} />
+              ? <QuantityField row={row} editable={ed.editable} onCell={onCell} fill />
               : <QtyStepper row={row} editable={ed.editable} onCell={onCell} />}
           </div>
           <div className="min-w-0 space-y-1">
             <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground" data-pl="label">Birim</span>
             <UnitField row={row} editable={ed.editable} onCell={onCell} fill />
           </div>
-          <div className="min-w-0 space-y-1 [&_[data-slot=price-field]]:!w-full">
+          <div className="min-w-0 space-y-1">
             <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground" data-pl="label">Fiyat</span>
-            {showActions ? <PriceField row={row} ed={ed} /> : <ModalPriceField row={row} onCell={onCell} />}
+            {showActions ? <PriceField row={row} ed={ed} fill /> : <ModalPriceField row={row} onCell={onCell} />}
             <PurchaseCostHint row={row} ed={ed} />
           </div>
         </div>

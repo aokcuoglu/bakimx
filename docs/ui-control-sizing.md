@@ -79,6 +79,17 @@ halkayı grupta çizer ve iç denetimin `data-slot`'una bağlı değildir
 (`has-[input:focus-visible]`); `InputGroupInput` slot'unu props'tan sonra
 yazar.
 
+**Görünüm (`appearance`, #952)** ölçüden bağımsızdır ve kontrolün kendi
+prop'udur. `Input`: `ghost` (çerçevesiz saydam; satır hover/odakta çerçeve),
+`inline` (metin gibi; odakta dolgu + çerçeve). `InputGroup`: `ghost`, `quiet`
+(saydam + soluk metin, hover'da hafif zemin) ve `soft` (hafif dolgulu çip).
+Kurallar: görünümü kullanan satır/kap `group/field-row` taşır; varyant sınıfları
+taban literalinden SONRA gelir; `data-[appearance=…]:` ile biçimlenmez
+(`data-appearance` yalnız QA kancasıdır); çağrı yerinde ata seçicisi
+(`[&_input]:…`) ya da `!` kullanılmaz. İleten sarmalayıcılar:
+`AutocompleteInputGroup`, `ComboboxInput`, `PartAttributeField`,
+`OrderItemUnitCombobox`.
+
 **iOS yakınlaştırması:** iOS Safari 16px altındaki metin girdisine odaklanınca
 sayfayı yakınlaştırır. Bu yüzden `compact` girdinin metni telefonda 16px'te
 kalır, yalnız md+ 14px'e iner (`--control-fs-field-xs`). `--control-fs-xs`
@@ -324,6 +335,16 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
   halka rengi — `card` kenarlıksız olduğu için durum tonu halka rengiyle
   (`ring-warning/30`, `ring-success/30`) —, durum zemini (`bg-primary/[0.04]`),
   `scroll-mt-*`. Kapı: `control-call-sites.test.ts` → `ACCORDION_FORBIDDEN`.
+- Açılır bölüm (#950): `Collapsible`, `CollapsibleTrigger` ve
+  `CollapsibleContent` açılış etiketinde animasyon (`animate-*`), taşma
+  (`overflow-*`), yükseklik (`h-*` — `h-full` hariç —, `min-h-*`, `max-h-*`) ve
+  çıplak `hidden` taşımaz; açma/kapama animasyonu ve gizleme primitive'dedir
+  (`keepMounted` kapalıyken DOM'da tutar). Dolgu, kenarlık ve zemin
+  `CollapsibleContent`'e DEĞİL iç kapsayıcıya verilir — aksi hâlde yükseklik
+  animasyonu dolgu+kenarlık kadar bir değerde takılır, 0'a kapanmaz; odak halkası
+  da böylece kırpılmaz. `CollapsibleTrigger` her zaman `asChild` ile
+  mevcut `Button`'ı sarar ve `className` taşımaz. Kapı:
+  `control-call-sites.test.ts` → `COLLAPSIBLE_FORBIDDEN`.
 
 Matrisi `src/components/ui/control-sizing.test.ts`,
 `src/components/ui/control-call-sites.test.ts` ve

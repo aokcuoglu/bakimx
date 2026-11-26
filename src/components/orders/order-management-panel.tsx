@@ -416,13 +416,7 @@ export function OrderPaymentCard({
   paidAmount,
   remainingAmount,
   locked,
-  editingMeta,
   setEditingMeta,
-  metaDraft,
-  setMetaDraft,
-  saveMeta,
-  loading,
-  error,
   showCashbox = true,
   onCollect,
 }: {
@@ -433,13 +427,7 @@ export function OrderPaymentCard({
   paidAmount: number
   remainingAmount: number
   locked: boolean
-  editingMeta: boolean
   setEditingMeta: (b: boolean) => void
-  metaDraft: PricingMetaDraft
-  setMetaDraft: (v: PricingMetaDraft) => void
-  saveMeta: () => void
-  loading: boolean
-  error?: string
   showCashbox?: boolean
   /**
    * Tahsilat alınabiliyorsa; hızlı işlemdeki "Tahsilat al" ile aynı pencere.
@@ -451,7 +439,6 @@ export function OrderPaymentCard({
   // Fiyat girilmeden alınmış avans da görünür; kalan ancak toplam varken anlamlı.
   const showPaid = showCashbox && (totals.hasAnyPrice || paidAmount > 0)
   return (
-    <>
     <DetailPanel title="Ödeme Özeti" aside={showCashbox && <OrderPaymentPill status={paymentStatus} />}>
       {totals.hasAnyPrice ? (
         <div className={cn(detail.block, "space-y-2")}>
@@ -525,6 +512,34 @@ export function OrderPaymentCard({
         )}
       </div>
     </DetailPanel>
+  )
+}
+
+/**
+ * "İndirim ve KDV düzenle" penceresi (#966). Ödeme kartı iki yuvada render
+ * edildiği için (dar düzende ana kolon, iki kolonda ray) durumlu pencere
+ * kartın içinde kalamaz: sayfada tek kopya, kartlardan bağımsız.
+ */
+export function OrderPricingDialog({
+  totals,
+  editingMeta,
+  setEditingMeta,
+  metaDraft,
+  setMetaDraft,
+  saveMeta,
+  loading,
+  error,
+}: {
+  totals: Totals
+  editingMeta: boolean
+  setEditingMeta: (b: boolean) => void
+  metaDraft: PricingMetaDraft
+  setMetaDraft: (v: PricingMetaDraft) => void
+  saveMeta: () => void
+  loading: boolean
+  error?: string
+}) {
+  return (
     <Dialog open={editingMeta} onOpenChange={(open) => { if (!loading) setEditingMeta(open) }}>
       <DialogContent>
         <DialogHeader>
@@ -550,7 +565,6 @@ export function OrderPaymentCard({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-    </>
   )
 }
 

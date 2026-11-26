@@ -79,7 +79,9 @@ test("mobil kartta miktar, birim ve birim fiyat aynı kurumsal grid satırındad
   expect(mobile).toContain('>Miktar</span>')
   expect(mobile).toContain('>Birim</span>')
   expect(mobile).toContain('>Fiyat</span>')
-  expect(mobile).toContain('[&_[data-slot=price-field]]:!w-full')
+  expect(mobile).toContain('<PriceField row={row} ed={ed} fill />')
+  expect(mobile).toContain('<QuantityField row={row} editable={ed.editable} onCell={onCell} fill />')
+  expect(mobile).not.toContain('!w-full')
 })
 
 test("BİRİM FİYAT ham `unitPrice`'tır — gösterim çevrimi yok", () => {
