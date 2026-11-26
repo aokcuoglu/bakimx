@@ -79,7 +79,9 @@ test("mobil kartta miktar, birim ve birim fiyat aynı kurumsal grid satırındad
   expect(mobile).toContain('>Miktar</span>')
   expect(mobile).toContain('>Birim</span>')
   expect(mobile).toContain('>Fiyat</span>')
-  expect(mobile).toContain('[&_[data-slot=price-field]]:!w-full')
+  expect(mobile).toContain('<PriceField row={row} ed={ed} fill />')
+  expect(mobile).toContain('<QuantityField row={row} editable={ed.editable} onCell={onCell} fill />')
+  expect(mobile).not.toContain('!w-full')
 })
 
 test("BİRİM FİYAT ham `unitPrice`'tır — gösterim çevrimi yok", () => {
@@ -101,10 +103,10 @@ test("BİRİM FİYAT ham `unitPrice`'tır — gösterim çevrimi yok", () => {
  */
 test("Toplam sütunu KDV DAHİL tutarı basar — net toplam değil", () => {
   expect(GRID).toContain("const grossLineTotal = lineTotal == null ? null : lineTotal + (vatKurus ?? 0)")
-  // Masaüstü satırı, mobil kart ve composer önizlemesi — üçü de brüt okur.
+  // Masaüstü satırı, mobil kart, kompakt satır (#968) ve composer önizlemesi — dördü de brüt okur.
   expect(GRID).not.toContain("lineTotal={ed.lineTotal}")
   const grossUses = GRID.match(/lineTotal=\{ed\.grossLineTotal\}/g) ?? []
-  expect(grossUses.length).toBe(3)
+  expect(grossUses.length).toBe(4)
 })
 
 test("brüt tutarın yanında KDV'nin içinde olduğu YAZAR", () => {

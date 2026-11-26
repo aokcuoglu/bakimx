@@ -128,7 +128,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
                 <User className="size-4 text-muted-foreground" />
                 Müşteri
               </h3>
-              <Link href={`/customers/${collection.customer.id}`} className="block rounded-lg border border-border bg-muted p-3 hover:bg-muted transition-colors">
+              <Link href={`/customers/${collection.customer.id}`} className="block rounded-md border border-border bg-muted p-3 hover:bg-muted transition-colors">
                 <p className="text-sm font-semibold text-foreground">{nameFor()}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{collection.customer.phone}</p>
                 {collection.customer.email && <p className="text-xs text-muted-foreground">{collection.customer.email}</p>}
@@ -142,7 +142,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
                 <FileText className="size-4 text-muted-foreground" />
                 Araç Kabul
               </h3>
-              <Link href={`/orders/${collection.serviceOrder!.id}`} className="block rounded-lg border border-border bg-muted p-3 hover:bg-muted transition-colors">
+              <Link href={`/orders/${collection.serviceOrder!.id}`} className="block rounded-md border border-border bg-muted p-3 hover:bg-muted transition-colors">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-sm font-semibold text-foreground">{collection.serviceOrder.workOrderNo || "—"}</span>
                   <PaymentBadge status={collection.serviceOrder.paymentStatus} size="sm" />

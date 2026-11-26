@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -77,6 +77,7 @@ import {
   NEXT_STATUSES,
   PartsLaborCard,
   OrderPaymentCard,
+  OrderPricingDialog,
   PaymentHistoryCard,
   type OrderDetailData,
   type PricingMetaDraft,
@@ -110,7 +111,7 @@ import { useOrderSectionScroll } from "@/components/orders/use-order-section-scr
 import { useReturnFocus } from "@/hooks/use-return-focus"
 import { orderNextStep } from "@/lib/orders/next-step"
 import { orderTotalsChain, totalsChainText } from "@/lib/orders/totals-chain"
-import { urlWithout } from "@/lib/orders/detail-sections"
+import { urlWithout, type OrderSectionId } from "@/lib/orders/detail-sections"
 import { OrderQuickActions } from "@/components/orders/order-quick-actions"
 import { PhotoSourceButtons } from "@/components/intake/photo-source-buttons"
 import { orderQuickActions, type OrderQuickAction } from "@/lib/orders/quick-actions"
@@ -899,6 +900,138 @@ export function WorkOrderDetail({
     setPartsAddType(action)
   }
 
+  // #966 — raydaki kartlar iki yuvada durur: dar düzende ana kolonda bölümün içinde
+  // (`detail.inline`), iki kolonda rayda; kapsayıcı sorgusuyla biri `display:none`.
+  // Böylece DOM ve klavye sırası görsel sırayla aynı kalır. Durumlu pencereler
+  // (İndirim ve KDV) tek kopya: `OrderPricingDialog`.
+  // Ödeme kartı (#912): sayfada paranın tek yeri.
+  const pricingCard = (
+    <OrderPaymentCard
+      totals={order.totals}
+      taxRateBps={order.taxRate}
+      paymentStatus={order.paymentStatus}
+      paidAmount={order.paidAmount}
+      remainingAmount={order.remainingAmount}
+      locked={isOrderLocked(order.status as OrderStatus)}
+      setEditingMeta={setMetaEditorOpen}
+      showCashbox={canCashbox}
+      onCollect={canCashbox && !collectionsLocked ? openCollection : undefined}
+    />
+  )
+  const recordCard = (
+    <OrderRecordRail order={order} customerName={customerName} />
+  )
+  // Panelin kendisi bilinçli olarak aksiyonsuz (bkz. technician-progress-panel).
+  // İşaretleme teknisyen panelinde yapıldığı için geçiş linki panelin
+  // dışında, raydaki bağlam kartında durur (BAK-23, #897; #911).
+  const technicianCard = canTeam ? (
+    <section aria-label="Teknisyen" className={cn(surface.card, detail.context)}>
+      <span aria-hidden className={cn(surface.tile, surface["tone-info"])}>
+        <HardHat />
+      </span>
+      <div className={detail.contextMain}>
+        <p className={detail.itemTitle}>{order.assignedTechnicianName || "Henüz usta atanmadı"}</p>
+        <p className={detail.itemSub}>
+          {order.assignedTechnicianName || orderLocked ? "" : "Atama yapıldığında kontrol listesi otomatik oluşur. "}
+          Kontrol listesi ve işçilik teknisyen panelinde işaretlenir; burada salt okunur görünür.
+        </p>
+      </div>
+      {canOpenTechnicianView(order.assignedTechnicianId) && (
+        <Button variant="outline" asChild className={detail.contextAction}>
+          <Link href={technicianOrderPath(order.id)}>
+            Teknisyen Panelinde Aç
+            <ChevronRight />
+          </Link>
+        </Button>
+      )}
+    </section>
+  ) : null
+  // Müşteri Çıktısı & Paylaşım
+  const shareCard = (
+    <DetailPanel title="Müşteri Çıktısı">
+      <div className={cn(surface.cardBody, "space-y-3")}>
+        {!shareToken ? (
+          <>
+            <p className="text-xs text-muted-foreground">Müşteriyle paylaşabileceğiniz salt-görüntü bir özet linki oluşturun.</p>
+            <Button variant="foreground" onClick={handleGenerateShareLink} disabled={loading} className="w-full">
+              <Share2 className="size-4 mr-2" /> Müşteri Çıktı Linki Oluştur
+            </Button>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 text-xs">
+              {intake.shareLinks[0]?.isActive ? <Eye className="size-3.5 text-success-strong" /> : <EyeOff className="size-3.5 text-destructive-strong" />}
+              <span className={intake.shareLinks[0]?.isActive ? "text-success-strong font-medium" : "text-destructive-strong font-medium"}>
+                {intake.shareLinks[0]?.isActive ? "Link aktif" : "Link devre dışı"}
+              </span>
+            </div>
+            <Button variant="outline" className="w-full justify-start" asChild>
+              <Link href={`/s/${shareToken}`} target="_blank" rel="noopener noreferrer">
+                <FileText className="size-4 text-muted-foreground" /> Müşteri Çıktısını Aç
+              </Link>
+            </Button>
+            <Button variant="outline" className="w-full justify-start" asChild>
+              <Link href={`/s/${shareToken}/pdf`} target="_blank" rel="noopener noreferrer">
+                <Printer className="size-4 text-muted-foreground" /> Yazdır / PDF
+              </Link>
+            </Button>
+            <Button
+              variant="whatsapp"
+              type="button"
+              size="lg"
+              className="w-full justify-start"
+              onClick={() => {
+                if (!shareLinkFull) return
+                const text = generateWhatsAppShareText({ publicLink: shareLinkFull, totalAmount: order.totals.hasAnyPrice ? order.totals.grandTotal : null })
+                window.open(getWhatsAppSendUrl(order.customer.phone, text), "_blank")
+              }}
+            >
+              <Share2 className="size-4" /> WhatsApp ile Paylaş
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="compact"
+                onClick={async () => {
+                  const linkId = intake.shareLinks[0]?.id
+                  if (!linkId) return
+                  try {
+                    await fetch(`/api/intakes/${intake.id}/share-visibility`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ linkId, isActive: !intake.shareLinks[0].isActive }),
+                    })
+                    router.refresh()
+                  } catch {}
+                }}
+                className="flex-1"
+              >
+                {intake.shareLinks[0]?.isActive ? <><EyeOff className="size-3.5" /> Devre Dışı</> : <><Eye className="size-3.5" /> Etkinleştir</>}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="compact"
+                onClick={async () => { if (shareLinkFull) { try { await navigator.clipboard.writeText(shareLinkFull) } catch {} } }}
+                className="flex-1"
+              >
+                <LinkIcon className="size-3.5" /> Kopyala
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </DetailPanel>
+  )
+  function cardSlot(section: OrderSectionId, card: ReactNode, inline: boolean) {
+    return (
+      <div data-section={section} tabIndex={-1} className={cn(detail.section, inline && detail.inline)}>
+        {card}
+      </div>
+    )
+  }
+
   return (
     <div ref={pageRef} className={cn(surface.root, detail.page, "pb-24 lg:pb-6")}>
       {/* #913 — başlık → hızlı işlemler → (uyarı / teslim kodu) → özet + çipler →
@@ -1030,7 +1163,7 @@ export function WorkOrderDetail({
       <div className={detail.layout}>
         <div className={detail.main}>
           {/* ÖZET — Şikayet & Notlar (düzenlenebilir) */}
-          <div id="ozet" data-section="ozet" role="region" aria-label="Özet" tabIndex={-1} className={cn(detail.section, detail.oComplaint)}>
+          <div id="ozet" data-section="ozet" role="region" aria-label="Özet" tabIndex={-1} className={detail.section}>
             <DetailPanel
               title="Şikayet & Notlar"
               aside={
@@ -1155,8 +1288,16 @@ export function WorkOrderDetail({
             </Dialog>
           </div>
 
+
+          {cardSlot("ozet", recordCard, true)}
+
+          {/* Kabul bilgileri (telefonda Özet bölümünde) */}
+          <div data-section="ozet" tabIndex={-1} className={detail.section}>
+            <OrderInfoCard order={order} />
+          </div>
+
           {/* KALEMLER — parça talepleri + parça & işçilik */}
-          <div id="kalemler" data-section="kalemler" role="region" aria-label="Kalemler" tabIndex={-1} className={cn(detail.section, detail.oItems, "space-y-5")}>
+          <div id="kalemler" data-section="kalemler" role="region" aria-label="Kalemler" tabIndex={-1} className={cn(detail.section, "space-y-5")}>
             {!canUseInventory && (
               <InlineFeatureUpsell feature="partsInventory" currentTier={currentTier} />
             )}
@@ -1170,11 +1311,11 @@ export function WorkOrderDetail({
                 listede ekranın çok altında kalıyor, banner viewport dışında kalıp
                 görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
                 Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
-            <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} addingType={partsAddType} onAddingTypeChange={setPartsAddType} rememberAddOpener={rememberFocus} onAddDialogCloseAutoFocus={returnFocusOnClose} />
+            <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} addingType={partsAddType} onAddingTypeChange={setPartsAddType} rememberAddOpener={rememberFocus} onAddDialogCloseAutoFocus={returnFocusOnClose} totals={order.totals} onNavigateToPayment={() => scrollToOrderSection("odeme")} />
           </div>
 
           {/* KANIT — kabul kanıtları, fotoğraflar, hasar */}
-          <div id="kanit" data-section="kanit" role="region" aria-label="Kanıt" tabIndex={-1} className={cn(detail.section, detail.oEvidence, detail.stack)}>
+          <div id="kanit" data-section="kanit" role="region" aria-label="Kanıt" tabIndex={-1} className={cn(detail.section, detail.stack)}>
             {/* Kabul kanıtları */}
             <DetailPanel title="Kabul kanıtları">
               <div className={surface.cardBody}>
@@ -1390,13 +1531,10 @@ export function WorkOrderDetail({
             )}
           </div>
 
-          {/* Kabul bilgileri (telefonda Özet bölümünde) */}
-          <div data-section="ozet" tabIndex={-1} className={cn(detail.section, detail.oInfo)}>
-            <OrderInfoCard order={order} />
-          </div>
-
           {/* ÖDEMELER — tahsilat geçmişi (toplamlar raydaki Ödeme kartında, #912) */}
-          <div id="odeme" data-section="odeme" role="region" aria-label="Ödeme" tabIndex={-1} className={cn(detail.section, detail.oPayments, detail.stack)}>
+          {cardSlot("odeme", pricingCard, true)}
+
+          <div id="odeme" data-section="odeme" role="region" aria-label="Ödeme" tabIndex={-1} className={cn(detail.section, detail.stack)}>
             {!canCashbox ? (
               <DetailPanel title="Ödemeler" bare>
                 <InlineFeatureUpsell feature="cashbox" currentTier={currentTier} />
@@ -1421,8 +1559,12 @@ export function WorkOrderDetail({
             )}
           </div>
 
+          {cardSlot("odeme", shareCard, true)}
+
+          {technicianCard && cardSlot("teknisyen", technicianCard, true)}
+
           {/* TEKNİSYEN — teknisyen panelindeki ilerleme, salt okunur */}
-          <div id="teknisyen" data-section="teknisyen" role="region" aria-label="Teknisyen" tabIndex={-1} className={cn(detail.section, detail.oTechPanel)}>
+          <div id="teknisyen" data-section="teknisyen" role="region" aria-label="Teknisyen" tabIndex={-1} className={detail.section}>
             {!canTeam ? (
               <DetailPanel title="Teknisyen" bare>
                 <InlineFeatureUpsell feature="team" currentTier={currentTier} />
@@ -1438,7 +1580,7 @@ export function WorkOrderDetail({
           </div>
 
           {/* GEÇMİŞ */}
-          <div id="gecmis" data-section="gecmis" role="region" aria-label="Geçmiş" tabIndex={-1} className={cn(detail.section, detail.oHistory)}>
+          <div id="gecmis" data-section="gecmis" role="region" aria-label="Geçmiş" tabIndex={-1} className={detail.section}>
             {/* İşlem Geçmişi (personel-içi; public paylaşıma dahil değildir) */}
             <OrderActivityLog entries={activity} />
           </div>
@@ -1454,141 +1596,24 @@ export function WorkOrderDetail({
             onNavigate={scrollToOrderSection}
           />
 
-          <div data-section="odeme" tabIndex={-1} className={cn(detail.section, detail.oPricing)}>
-            {/* Ödeme kartı (#912): sayfada paranın tek yeri. */}
-            <OrderPaymentCard
-              totals={order.totals}
-              taxRateBps={order.taxRate}
-              paymentStatus={order.paymentStatus}
-              paidAmount={order.paidAmount}
-              remainingAmount={order.remainingAmount}
-              locked={isOrderLocked(order.status as OrderStatus)}
-              editingMeta={editingMeta}
-              setEditingMeta={setMetaEditorOpen}
-              metaDraft={metaDraft}
-              setMetaDraft={setMetaDraft}
-              saveMeta={saveMeta}
-              loading={loading}
-              error={error}
-              showCashbox={canCashbox}
-              onCollect={canCashbox && !collectionsLocked ? openCollection : undefined}
-            />
-          </div>
-
-          {/* Müşteri & Araç */}
-          <div data-section="ozet" tabIndex={-1} className={cn(detail.section, detail.oRecord)}>
-            <OrderRecordRail order={order} customerName={customerName} />
-          </div>
-
-          {canTeam && (
-            <div data-section="teknisyen" tabIndex={-1} className={cn(detail.section, detail.oTechCard)}>
-              {/* Panelin kendisi bilinçli olarak aksiyonsuz (bkz. technician-progress-panel).
-                  İşaretleme teknisyen panelinde yapıldığı için geçiş linki panelin
-                  dışında, raydaki bağlam kartında durur (BAK-23, #897; #911). */}
-              <section aria-label="Teknisyen" className={cn(surface.card, detail.context)}>
-                <span aria-hidden className={cn(surface.tile, surface["tone-info"])}>
-                  <HardHat />
-                </span>
-                <div className={detail.contextMain}>
-                  <p className={detail.itemTitle}>{order.assignedTechnicianName || "Henüz usta atanmadı"}</p>
-                  <p className={detail.itemSub}>
-                    {order.assignedTechnicianName || orderLocked ? "" : "Atama yapıldığında kontrol listesi otomatik oluşur. "}
-                    Kontrol listesi ve işçilik teknisyen panelinde işaretlenir; burada salt okunur görünür.
-                  </p>
-                </div>
-                {canOpenTechnicianView(order.assignedTechnicianId) && (
-                  <Button variant="outline" asChild className={detail.contextAction}>
-                    <Link href={technicianOrderPath(order.id)}>
-                      Teknisyen Panelinde Aç
-                      <ChevronRight />
-                    </Link>
-                  </Button>
-                )}
-              </section>
-            </div>
-          )}
-
-          <div data-section="odeme" tabIndex={-1} className={cn(detail.section, detail.oShare)}>
-            {/* Müşteri Çıktısı & Paylaşım */}
-            <DetailPanel title="Müşteri Çıktısı">
-              <div className={cn(surface.cardBody, "space-y-3")}>
-                {!shareToken ? (
-                  <>
-                    <p className="text-xs text-muted-foreground">Müşteriyle paylaşabileceğiniz salt-görüntü bir özet linki oluşturun.</p>
-                    <Button variant="foreground" onClick={handleGenerateShareLink} disabled={loading} className="w-full">
-                      <Share2 className="size-4 mr-2" /> Müşteri Çıktı Linki Oluştur
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2 text-xs">
-                      {intake.shareLinks[0]?.isActive ? <Eye className="size-3.5 text-success-strong" /> : <EyeOff className="size-3.5 text-destructive-strong" />}
-                      <span className={intake.shareLinks[0]?.isActive ? "text-success-strong font-medium" : "text-destructive-strong font-medium"}>
-                        {intake.shareLinks[0]?.isActive ? "Link aktif" : "Link devre dışı"}
-                      </span>
-                    </div>
-                    <Button variant="outline" className="w-full justify-start" asChild>
-                      <Link href={`/s/${shareToken}`} target="_blank" rel="noopener noreferrer">
-                        <FileText className="size-4 text-muted-foreground" /> Müşteri Çıktısını Aç
-                      </Link>
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start" asChild>
-                      <Link href={`/s/${shareToken}/pdf`} target="_blank" rel="noopener noreferrer">
-                        <Printer className="size-4 text-muted-foreground" /> Yazdır / PDF
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="whatsapp"
-                      type="button"
-                      size="lg"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        if (!shareLinkFull) return
-                        const text = generateWhatsAppShareText({ publicLink: shareLinkFull, totalAmount: order.totals.hasAnyPrice ? order.totals.grandTotal : null })
-                        window.open(getWhatsAppSendUrl(order.customer.phone, text), "_blank")
-                      }}
-                    >
-                      <Share2 className="size-4" /> WhatsApp ile Paylaş
-                    </Button>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="compact"
-                        onClick={async () => {
-                          const linkId = intake.shareLinks[0]?.id
-                          if (!linkId) return
-                          try {
-                            await fetch(`/api/intakes/${intake.id}/share-visibility`, {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ linkId, isActive: !intake.shareLinks[0].isActive }),
-                            })
-                            router.refresh()
-                          } catch {}
-                        }}
-                        className="flex-1"
-                      >
-                        {intake.shareLinks[0]?.isActive ? <><EyeOff className="size-3.5" /> Devre Dışı</> : <><Eye className="size-3.5" /> Etkinleştir</>}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="compact"
-                        onClick={async () => { if (shareLinkFull) { try { await navigator.clipboard.writeText(shareLinkFull) } catch {} } }}
-                        className="flex-1"
-                      >
-                        <LinkIcon className="size-3.5" /> Kopyala
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </DetailPanel>
-          </div>
+          {cardSlot("odeme", pricingCard, false)}
+          {cardSlot("ozet", recordCard, false)}
+          {technicianCard && cardSlot("teknisyen", technicianCard, false)}
+          {cardSlot("odeme", shareCard, false)}
         </div>
       </div>
       </div>
+
+      <OrderPricingDialog
+        totals={order.totals}
+        editingMeta={editingMeta}
+        setEditingMeta={setMetaEditorOpen}
+        metaDraft={metaDraft}
+        setMetaDraft={setMetaDraft}
+        saveMeta={saveMeta}
+        loading={loading}
+        error={error}
+      />
 
       <AlertDialog open={confirmCancelOpen} onOpenChange={handleCancelDialogOpenChange}>
         <AlertDialogContent onCloseAutoFocus={returnFocusOnClose}>

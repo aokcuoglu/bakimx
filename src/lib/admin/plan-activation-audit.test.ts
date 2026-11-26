@@ -22,9 +22,9 @@ test("denetim ekranı paket alanlarını okunur adla gösterir", () => {
   const parsed = parseAuditMetadata(JSON.stringify(planActivationAuditMetadata({ planTier: "lite", subscriptionStatus: "active", liteFreeGrantedAt: new Date() }, "pro", "active")))
   expect(parsed.details).toEqual([
     { key: "tier", label: "Paket", value: "Servis Paketi" },
-    { key: "status", label: "Durum", value: "active" },
+    { key: "status", label: "Durum", value: "Aktif" },
     { key: "previousTier", label: "Önceki paket", value: "Lite (eski)" },
-    { key: "previousStatus", label: "Önceki durum", value: "active" },
+    { key: "previousStatus", label: "Önceki durum", value: "Aktif" },
     { key: "hadLifetimeLite", label: "Süresiz Lite hakkı vardı", value: "Evet" },
   ])
 })
