@@ -90,24 +90,14 @@ a.item:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
 .rail .contextMain { flex-basis:160px; }
 .rail .contextAction { flex:1 1 100%; }
 /* ── #911 — tek sayfa + yan ray ──────────────────────────────────────────
-   Tek kolonda (içerik <780px) ana kolon ve ray `display:contents` ile tek akışta
-   birleşir; bloklar `order` ile bölüm sırasına dizilir, ray kartları ilgili bölümün
-   içine girer (Özet = şikâyet + Müşteri & Araç + kabul bilgileri; Ödeme = fiyat +
-   tahsilat + müşteri çıktısı; Teknisyen = bağlam kartı + ilerleme). */
+   #966: DOM sırası = görsel okuma sırası (WCAG 2.4.3). Tek kolonda yalnız ana kolon
+   görünür; ray kartları (Müşteri & Araç, Ödeme Özeti, Müşteri Çıktısı, teknisyen
+   kartı) ana kolonda bölümün içinde `.inline` yuvasında durur. İki kolonda ray
+   görünür, `.inline` yuvaları gizlenir (display:none: odak ve okuyucudan da düşer).
+   CSS ile yeniden dizme yok. */
 .layout { display:flex; flex-direction:column; gap:28px; min-width:0; }
-.main, .rail { display:contents; }
-.oComplaint { order:10; }
-.oRecord { order:11; }
-.oInfo { order:12; }
-.oItems { order:20; }
-.oEvidence { order:30; }
-.oPricing { order:40; }
-.oPayments { order:41; }
-.oShare { order:42; }
-.oTechCard { order:50; }
-.oTechPanel { order:51; }
-.oHistory { order:60; }
-.rail .statusCard { display:none; }
+.main { display:flex; flex-direction:column; gap:28px; min-width:0; }
+.rail { display:none; }
 /* Bölüme kaydırma hedefi: üst bar + çip şeridi + 12px nefes. Odak programla gelir (tabIndex -1):
    fare/dokunuşla gelen odakta halka yok, klavyeyle gelende (`:focus-visible`) var. */
 .section { min-width:0; scroll-margin-top:calc(var(--app-sticky-top,58px) + var(--chips-h, calc(var(--control-h) + 16px)) + 12px); border-radius:var(--radius-panel); outline:none; }
@@ -139,11 +129,8 @@ a.item:focus-visible { box-shadow:inset 0 0 0 2px var(--ring); }
    kadar yukarıda yapışır (`--rail-h` ResizeObserver'dan). */
 @container detail (min-width:780px) {
   .layout { --chips-h:0px; display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:24px; align-items:start; }
-  .main, .rail { display:flex; flex-direction:column; gap:28px; min-width:0; }
-  .main > .section, .rail > .section { order:0; }
-  .rail { position:sticky; top:min(calc(var(--app-sticky-top,0px) + 16px), calc(100dvh - var(--rail-h,0px) - 16px)); }
-  .rail .statusCard { display:flex; }
-  .chips, .summary { display:none; }
+  .rail { display:flex; flex-direction:column; gap:28px; min-width:0; position:sticky; top:min(calc(var(--app-sticky-top,0px) + 16px), calc(100dvh - var(--rail-h,0px) - 16px)); }
+  .inline, .chips, .summary { display:none; }
 }
 @container detail (min-width:1040px) {
   .layout { grid-template-columns:minmax(0,1fr) 340px; }

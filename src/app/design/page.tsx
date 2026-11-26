@@ -492,7 +492,9 @@ export default function DesignSystemPage() {
                 ["whatsapp", "WhatsApp"],
                 ["destructive", "Destructive"],
                 ["destructive-outline", "Destructive outline — ikincil yıkıcı eylem (İptal, Pasif Yap)"],
+                ["destructive-ghost", "Destructive ghost — satır içi sil / kaldır / iptal"],
                 ["tint", "Tint — birincil tonlu seçili / önerilen eylem"],
+                ["warning-tint", "Warning tint — dikkat isteyen seçim (düşük güvenli OCR önerisi)"],
                 ["success", "Success"],
                 ["warning", "Warning"],
                 ["field", "Field — alan görünümlü seçici (tarih)"],
@@ -514,11 +516,12 @@ export default function DesignSystemPage() {
           </div>
           <div className="space-y-3 rounded-lg border border-border bg-card p-4" data-testid="button-on-photo">
             <p className="font-mono text-[11px] text-muted-foreground">
-              on-photo · fotoğraf / kamera katmanı üstünde (koyu zemin)
+              on-photo · on-photo-scrim · fotoğraf / kamera katmanı üstünde (koyu zemin)
             </p>
             <div className="flex flex-wrap items-center gap-2 rounded-md bg-black p-4">
               <Button variant="on-photo">on-photo</Button>
               <Button variant="on-photo-ghost">on-photo-ghost</Button>
+              <Button variant="on-photo-scrim">on-photo-scrim</Button>
             </div>
           </div>
           <div className="space-y-3 rounded-lg border border-border bg-card p-4" data-testid="button-sizes">

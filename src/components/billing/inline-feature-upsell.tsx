@@ -16,7 +16,7 @@ export function InlineFeatureUpsell({
   return (
     <div data-slot="feature-upsell" className="rounded-lg border border-border bg-card p-4 text-foreground">
       <div className="mb-3 flex items-start gap-3">
-        <div data-slot="feature-upsell-icon" className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-foreground">
+        <div data-slot="feature-upsell-icon" className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-foreground">
           <LockKeyhole className="size-4" />
         </div>
         <div>

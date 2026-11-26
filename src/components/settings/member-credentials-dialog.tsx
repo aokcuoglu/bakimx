@@ -124,7 +124,7 @@ export function MemberCredentialsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="rounded-lg border border-warning/20 bg-warning/10 p-3 flex items-start gap-2">
+        <div className="rounded-md border border-warning/20 bg-warning/10 p-3 flex items-start gap-2">
           <TriangleAlert className="size-4 text-warning-strong shrink-0 mt-0.5" />
           <p className="text-xs text-warning-strong leading-relaxed">
             Geçici şifre yalnız bu ekranda görünür. Pencereyi kapattıktan sonra bir daha
@@ -132,7 +132,7 @@ export function MemberCredentialsDialog({
           </p>
         </div>
 
-        <dl className="rounded-lg border border-border divide-y divide-border">
+        <dl className="rounded-md border border-border divide-y divide-border">
           {rows.map((row) => (
             <div key={row.label} className="flex items-baseline justify-between gap-3 px-3 py-2.5">
               <dt className="text-xs text-muted-foreground shrink-0">{row.label}</dt>

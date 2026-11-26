@@ -24,15 +24,6 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * böylece çağrı yeri ezmesi sarmalayıcı üzerinden de yakalanır.
  *
  * Bilinen kör noktalar (taranmaz; gerekçeleri yerinde yazılı):
- * - Sabite ya da fonksiyona çıkarılmış sınıf: `fieldClass("plate")`
- *   (entry-vehicle-fields, inline-create-modal — OCR düşük güven uyarı tonu).
- * - Ata öğeden torun kontrolü biçimleyen seçiciler: parts-labor-grid
- *   `GHOST_ROW` / `META_FIELD_*` ve mobil kart ad alanı
- *   (`[&_[data-slot=input]]:border-transparent`, `[&_input]:!text-muted-foreground`,
- *   ad alanının `px-0` + `font-medium`'u). Bunlar hayalet satır görünümüdür:
- *   kenarlık/zemin şeffaf, odakta geri gelir. Ölçü, köşe ve yazı boyutu bu
- *   seçicilerle ezilmez (#888'de 11px ve `rounded-md` kaldırıldı); yenisi
- *   eklenmez.
  *
  * #889 — düğmeler (`Button`, `InputGroupButton` ve onlara `className` ileten
  * sarmalayıcılar) aynı tarayıcıyla, kendi kural setiyle (`BUTTON_FORBIDDEN`)
@@ -55,7 +46,7 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * ölçü `TabsList size="control"`dan (telefonda 44px, md+ 36px; `default`
  * segment ve `line` ile), şerit `h-auto`'yu, tetikleyici dolgusunu ve seçili
  * zemini varyanttan alır (segment seçili tetikleyici primitive'de `bg-card`,
- * pazarlama `RuhsatDemoSection` dahil — ray `bg-card` ile boyanmaz). Sekmeler
+ * `RuhsatDemoSection` dahil — ray `bg-card` ile boyanmaz). Sekmeler
  * arası yatay boşluk şeridin yerleşimidir (`gap-*`, şerit `px-*`). Çağrı yeri
  * şeride genişlik, grid/flex, `justify-start`, `border-b` çizgisi ve taşma
  * kaydırması verir.
@@ -69,8 +60,16 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * `variant="destructive-outline"`), öneksiz `bg-primary/N` (birincil ton →
  * `variant="tint"`) ve `bg-white/*` / `border-white/*` / `bg-black/*` fotoğraf
  * üstü yüzeyler (→ `variant="on-photo"` / `"on-photo-ghost"`) yukarıdaki
- * serbest listeden çıktı. `hover:bg-destructive/10`, `hover:bg-primary/10`
- * gibi durum renkleri serbest kalır; fotoğraf üstü ton her önekte yasaktır.
+ * serbest listeden çıktı. `hover:bg-primary/10` gibi birincil durum renkleri
+ * serbest kalır; fotoğraf üstü ton her önekte yasaktır.
+ *
+ * #928 — dilim 2: yıkıcı ton (`text-destructive(-strong)`, `bg-destructive/N`)
+ * ve uyarı tonu (`bg|border-warning/N`) her önekte yasak; satır içi yıkıcı
+ * eylem `variant="destructive-ghost"`, sarı tonlu seçim `"warning-tint"`,
+ * fotoğraf üstü galeri oku `"on-photo-scrim"`. Gri dinlenen satır çöp kutusu
+ * `variant="destructive-ghost"` + `className="text-muted-foreground"` yazar
+ * (twMerge variant'ın dinlenme rengini düşürür, hover kırmızıyı geri getirir).
+ * `border-primary/N` öneksiz de variant'tandır (`"tint"`).
  *
  * #926 — akordeon (`Accordion`, `AccordionItem`, `AccordionTrigger`,
  * `AccordionContent`) kendi kural setiyle (`ACCORDION_FORBIDDEN`) taranır.
@@ -88,6 +87,17 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * (kart durum tonu `ring-warning/30`), durum zemini (`bg-primary/[0.04]`),
  * `scroll-mt-*`, geçiş. Düzyazı içeriğinde (`AccordionContent`) satır aralığı
  * serbesttir.
+ *
+ * #950 — açılır bölüm (`Collapsible`, `CollapsibleTrigger`,
+ * `CollapsibleContent`) kendi kural setiyle (`COLLAPSIBLE_FORBIDDEN`) taranır.
+ * Açma/kapama animasyonu, taşma ve yükseklik primitive'dedir (içerik
+ * `overflow-hidden` + `animate-collapsible-*`; `keepMounted` ise
+ * `data-[state=closed]:hidden`): çağrı yerinde `animate-*`, `overflow-*`,
+ * `h-*` / `min-h-*` / `max-h-*` ve çıplak `hidden` yazılmaz — gizleme/yükseklik
+ * ezmesi odak halkasını kırpar ya da paneli kapalıyken bile gösterir. Panelin
+ * yüzeyi (dolgu, zemin, kenarlık, `flex`/`grid`) serbesttir. Tetikleyici
+ * `asChild` ile mevcut `Button`'ı sarar ve kendi `className`'ini taşımaz
+ * (görünüm sarılan düğmenin `variant`/`size`'ından gelir).
  */
 
 /** Kapsamdaki form kontrolleri ve onlara `className` ileten sarmalayıcılar. */
@@ -132,6 +142,9 @@ export const BUTTON_CONTROLS = [
   "DatePicker",
   "DateRangePicker",
   "DateTimePicker",
+  // ui/carousel (#928): className'i Button'a iletir, variant alır.
+  "CarouselPrevious",
+  "CarouselNext",
 ] as const
 
 /** Seçiciler (#889): düğme kural setiyle taranır. */
@@ -143,12 +156,16 @@ export const TAB_CONTROLS = ["TabsList", "TabsTrigger"] as const
 /** Akordeon (#926): kendi kural setiyle taranır. */
 export const ACCORDION_CONTROLS = ["Accordion", "AccordionItem", "AccordionTrigger", "AccordionContent"] as const
 
+/** Açılır bölüm (#950): kendi kural setiyle taranır. */
+export const COLLAPSIBLE_CONTROLS = ["Collapsible", "CollapsibleTrigger", "CollapsibleContent"] as const
+
 export const CONTROLS = [
   ...FIELD_CONTROLS,
   ...BUTTON_CONTROLS,
   ...TOGGLE_CONTROLS,
   ...TAB_CONTROLS,
   ...ACCORDION_CONTROLS,
+  ...COLLAPSIBLE_CONTROLS,
 ] as const
 
 type Control = (typeof CONTROLS)[number]
@@ -159,6 +176,8 @@ const usesButtonRules = (name: string) =>
   (TAB_CONTROLS as readonly string[]).includes(name)
 
 const usesAccordionRules = (name: string) => (ACCORDION_CONTROLS as readonly string[]).includes(name)
+
+const usesCollapsibleRules = (name: string) => (COLLAPSIBLE_CONTROLS as readonly string[]).includes(name)
 
 type Family = {
   /** Raporda görünen ad. */
@@ -233,8 +252,14 @@ export const BUTTON_FORBIDDEN: readonly Family[] = [
   // Ton variant'tan gelir (#925). Ad parantez içermez: `hitClass` sınıfı
   // son " (" ayracından keser.
   { name: 'yıkıcı çerçeve tonu → variant="destructive-outline"', pattern: /^border-destructive(?:\/(?:\d+|\[[^\]]+\]))?$/, when: "base" },
-  { name: 'birincil ton zemini → variant="tint"', pattern: /^bg-primary\/(?:\d+|\[[^\]]+\])$/, when: "base" },
-  { name: 'fotoğraf üstü ton → variant="on-photo" / "on-photo-ghost"', pattern: /^(?:bg|border)-(?:white|black)(?:\/(?:\d+|\[[^\]]+\]))?$/ },
+  { name: 'birincil ton → variant="tint"', pattern: /^(?:bg|border)-primary\/(?:\d+|\[[^\]]+\])$/, when: "base" },
+  // Dilim 2 (#928): yıkıcı ve uyarı tonu her önekte variant'tan gelir; durum
+  // önekli `hover:bg-destructive/10` de artık yazılmaz. Toggle / ToggleGroupItem /
+  // TabsTrigger'da bu variant'lar yoktur: gerekçeli istisna ister (fuel-gauge). Gri dinlenen satır
+  // simgesi `variant="destructive-ghost"` + `className="text-muted-foreground"`.
+  { name: 'yıkıcı ton → variant="destructive-ghost" / "destructive-outline"', pattern: /^(?:text-destructive(?:-strong)?|bg-destructive(?:\/(?:\d+|\[[^\]]+\]))?)$/ },
+  { name: 'uyarı ton → variant="warning-tint"', pattern: /^(?:bg|border)-warning(?:-foreground)?(?:\/(?:\d+|\[[^\]]+\]))?$/ },
+  { name: 'fotoğraf üstü ton → variant="on-photo" / "on-photo-ghost" / "on-photo-scrim"', pattern: /^(?:bg|border)-(?:white|black)(?:\/(?:\d+|\[[^\]]+\]))?$/ },
 ]
 
 /**
@@ -275,6 +300,18 @@ export const ACCORDION_FORBIDDEN: readonly Family[] = [
 ]
 
 /**
+ * Açılır bölümün yasak sınıfları (#950): animasyon, taşma, yükseklik ve gizleme
+ * primitive'in işidir. Panel yüzeyi (dolgu, zemin, kenarlık) serbesttir.
+ */
+export const COLLAPSIBLE_FORBIDDEN: readonly Family[] = [
+  { name: "animasyon", pattern: /^animate-/ },
+  { name: "taşma", pattern: /^overflow(?:-|$)/ },
+  { name: "yükseklik", pattern: /^h-(?!full$)/ },
+  { name: "en az / en çok yükseklik", pattern: /^m(?:in|ax)-h-/ },
+  { name: "gizleme", pattern: /^hidden$/ },
+]
+
+/**
  * Akordeonun iç parçasını (`**:data-[slot=accordion-trigger-icon]:size-5`,
  * `[&_[data-slot=accordion-trigger]]:py-5`) seçen sınıf; iki yazımı da kapsar.
  */
@@ -292,7 +329,14 @@ const BASE_VARIANT = /^(?:(?:max-)?(?:sm|md|lg|xl|2xl)|(?:min|max)-\[[^\]]+\]|@.
 export function violations(tag: Pick<JsxOpeningTag, "name" | "classLiterals" | "cssModuleRefs">): string[] {
   const button = usesButtonRules(tag.name)
   const accordion = usesAccordionRules(tag.name)
-  const families = accordion ? ACCORDION_FORBIDDEN : button ? BUTTON_FORBIDDEN : FORBIDDEN
+  const collapsible = usesCollapsibleRules(tag.name)
+  const families = collapsible
+    ? COLLAPSIBLE_FORBIDDEN
+    : accordion
+      ? ACCORDION_FORBIDDEN
+      : button
+        ? BUTTON_FORBIDDEN
+        : FORBIDDEN
   const found: string[] = []
   for (const literal of tag.classLiterals) {
     for (const token of literal.split(/\s+/).filter(Boolean)) {
@@ -348,13 +392,6 @@ export const EXCEPTIONS: readonly Exception[] = [
       'type="color" renk kuyusu: p-1 rengi çerçeveden ayırır. Yükseklik bileşenden, genişlik w-(--control-h) ile kare.',
   },
   {
-    file: "components/intake/smart-capture-registration.tsx",
-    tag: "Input",
-    allow: ["bg-warning/10"],
-    reason:
-      "OCR düşük güven durumu: uyarı tonu bir durum rengi, ölçü değil (entry-vehicle-fields ve inline-create-modal aynı tonu fieldClass ile verir).",
-  },
-  {
     file: "components/layout/global-search-box.tsx",
     tag: "Input",
     allow: ["styles.input"],
@@ -385,6 +422,39 @@ export const EXCEPTIONS: readonly Exception[] = [
     allow: ["formStyles.passwordToggle"],
     reason:
       "Giriş formu pazarlama kitinin FloatingField'ıyla kurulur; şifre göster/gizle metin düğmesi o alanın içindeki --mk-* ölçeğindeki parçadır (dialog-form.module.css, design-pattern-esantral §7).",
+  },
+  // — Dilim 2 (#928): ton variant'ı olmayan üç kalıp + bir veri çubuğu —
+  {
+    file: "components/layout/impersonation-banner.tsx",
+    tag: "Button",
+    match: 'type="submit"',
+    allow: ["bg-warning-foreground/10", "hover:bg-warning-foreground/20"],
+    reason:
+      "Taklit modu bandı düz bg-warning zemin üzerinde durur; düğme koyu warning-foreground'un tonlu yüzeyidir (zemine göre ters tonlama). warning-tint açık zemin içindir ve bu bantta okunmaz; tek kullanım, variant açmaya değmez.",
+  },
+  {
+    file: "components/intake/photo-delete-button.tsx",
+    tag: "Button",
+    match: 'aria-label={photoLabel',
+    allow: ["text-destructive-strong", "hover:bg-destructive"],
+    reason:
+      "Fotoğraf küçük resminin üstündeki sil dairesi: dinlenirken opak nötr daire, hover'da DOLU kırmızı zemin + destructive-foreground ikon (ters kontrast). destructive-ghost tonlu /10 hover verir; dolu kırmızı hover bu kalıba özgü ve tek kullanım.",
+  },
+  {
+    file: "components/orders/parts-labor-grid.tsx",
+    tag: "Button",
+    match: "void cancel()",
+    allow: ["text-destructive-strong"],
+    reason:
+      "Metin içindeki 'Siparişi iptal et' satır içi bağlantısı: link variant'ı birincil mavidir, yıkıcı eylem kırmızı okunmalı. destructive-ghost hover zemini ve odak kenarlığı taşır, satır içi metne uymaz; tek kullanım.",
+  },
+  {
+    file: "components/intake/fuel-gauge.tsx",
+    tag: "ToggleGroupItem",
+    match: "isFuelSegmentFilled",
+    allow: ["bg-destructive", "data-[state=on]:bg-destructive"],
+    reason:
+      "Yakıt çubuğunun dolu bölmeleri bir veri göstergesidir (düşük seviyede kırmızı dolgu, normalde birincil dolgu); düğme tonu değil. Seçili durumu ezen data-[state=on]: kuralı gerekli (yorum yerinde).",
   },
   {
     file: "components/shared/photo-lightbox.tsx",
@@ -437,8 +507,17 @@ const OUT_OF_SCOPE = [
  * bölümü değil, uygulamaya bitişik genel sayfaların (fiyatlar, blog, rehber,
  * demo, durum, yasal) ortak altbilgisi — kontrolleri matrise uyar (#889;
  * "Demo talep et" CSS modülüyle 28px'e indirilmişti ve kapı görmüyordu).
+ * Aynı gerekçeyle form/demo bileşenleri de kapsamdadır (#929): HeroLeadForm,
+ * ContactPage, RuhsatDemoSection, demo-ocr-upload — kontrolleri matrise uyar;
+ * pazarlama CTA yüksekliği `Button size="lg"`dan gelir.
  */
-const IN_SCOPE_FILES = ["components/sections/Footer.tsx"]
+const IN_SCOPE_FILES = [
+  "components/sections/Footer.tsx",
+  "components/sections/HeroLeadForm.tsx",
+  "components/sections/ContactPage.tsx",
+  "components/sections/RuhsatDemoSection.tsx",
+  "components/sections/demo-ocr-upload.tsx",
+]
 
 type ScannedTag = JsxOpeningTag & { file: string }
 
@@ -571,7 +650,7 @@ describe("form kontrolleri, düğmeler ve akordeon çağrı yerinde ezilmez (#88
       '<Button className="w-full justify-between gap-2 text-left whitespace-normal md:hidden">',
       `<Button size="icon" className="${"[&_svg:not([class*='size-'])]:" + "size-5"}">`,
       `<Button className="relative before:absolute ${"before:" + "h-11"} ${"before:" + "min-h-full"}">`,
-      '<Button variant="ghost" className="text-muted-foreground hover:bg-destructive/10 disabled:hover:bg-transparent">',
+      '<Button variant="ghost" className="text-muted-foreground hover:bg-muted disabled:hover:bg-transparent">',
       '<Button className="shadow-md">',
       '<Button size="row" className="w-full items-start border-dashed px-4 font-mono">',
       '<Button variant="outline" size="row" className="h-full hover:ring-2 hover:ring-primary">',
@@ -611,11 +690,46 @@ describe("form kontrolleri, düğmeler ve akordeon çağrı yerinde ezilmez (#88
 
     const good = [
       '<Button variant="destructive-outline" className="w-full gap-2">',
-      '<Button variant="ghost" className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong">',
+      '<Button variant="destructive-ghost" size="icon-sm" className="text-muted-foreground">',
       '<Button variant="outline" className="hover:bg-primary/10 hover:ring-2 hover:ring-primary">',
       '<Button variant="tint" size="row" className="ring-2 ring-primary">',
       '<Button variant="on-photo" size="icon" aria-label="Kapat">',
       '<DateRangePicker className="w-64" />',
+    ]
+    for (const source of good) {
+      for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])
+    }
+  })
+
+  test("düğme tonu dilim 2: yıkıcı, uyarı ve fotoğraf üstü ton variant'tan gelir (#928)", () => {
+    const bad = [
+      // Yıkıcı ton her önekte yasak: variant="destructive-ghost".
+      '<Button variant="ghost" className="text-destructive-strong">',
+      '<Button variant="ghost" className="hover:bg-destructive/10 hover:text-destructive-strong">',
+      `<Button variant="ghost" className="${"dark:hover:bg-" + "destructive/20"}">`,
+      // Uyarı tonu: variant="warning-tint".
+      '<Button variant="outline" className="border-warning/40">',
+      '<Button variant="outline" className="bg-warning/10">',
+      `<Button variant="outline" className="${"hover:bg-" + "warning/20"}">`,
+      // Birincil kenarlık tonu: variant="tint".
+      '<Button variant="outline" className="border-primary/40">',
+      // Galeri oku: variant="on-photo-scrim".
+      `<CarouselPrevious className="${"bg-" + "black/60"} text-white" />`,
+      '<CarouselNext className="bg-white/10" />',
+    ]
+    for (const source of bad) {
+      const tags = jsxOpeningTags(source, CONTROLS)
+      expect(tags.length).toBeGreaterThan(0)
+      expect(violations(tags[0])).not.toEqual([])
+    }
+
+    const good = [
+      '<Button variant="destructive-ghost" size="icon-sm" className="text-muted-foreground">',
+      '<Button variant="destructive-outline" className="w-full">',
+      '<Button variant="warning-tint" size="sm" className="touch-manipulation">',
+      '<Button variant="tint" size="default">',
+      '<CarouselPrevious size="icon" variant="on-photo-scrim" className="left-2" />',
+      '<Button variant="outline" className="hover:bg-primary/10 text-warning-strong">',
     ]
     for (const source of good) {
       for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])
@@ -683,6 +797,42 @@ describe("form kontrolleri, düğmeler ve akordeon çağrı yerinde ezilmez (#88
     for (const source of good) {
       for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])
     }
+  })
+
+  test("açılır bölüm animasyon, taşma, yükseklik ve gizlemeyi primitive'e bırakır (#950)", () => {
+    const bad = [
+      '<CollapsibleContent className="overflow-hidden">',
+      `<CollapsibleContent className="${"animate-" + "collapsible-down"}">`,
+      `<CollapsibleContent className="${"h-" + "40"}">`,
+      `<CollapsibleContent className="${"max-h-" + "40"}">`,
+      '<CollapsibleContent className="hidden">',
+      `<CollapsibleContent className="${"data-[state=closed]:" + "hidden"}">`,
+      '<Collapsible className="overflow-visible">',
+    ]
+    for (const source of bad) {
+      const tags = jsxOpeningTags(source, CONTROLS)
+      expect(tags.length).toBeGreaterThan(0)
+      expect(violations(tags[0])).not.toEqual([])
+    }
+
+    const good = [
+      '<Collapsible className="mt-3 border-t border-border pt-2">',
+      '<CollapsibleContent className="flex flex-wrap items-center gap-2 border-t bg-muted/40 px-3 py-2">',
+      '<CollapsibleContent keepMounted className="pt-3">',
+      '<CollapsibleTrigger asChild><Button className="w-full justify-between" /></CollapsibleTrigger>',
+    ]
+    for (const source of good) {
+      for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])
+    }
+  })
+
+  test("her CollapsibleTrigger asChild ile sarar ve kendi className'ini taşımaz (#950)", () => {
+    const triggers = scan().controls.filter((tag) => tag.name === "CollapsibleTrigger")
+    expect(triggers.length).toBeGreaterThan(0)
+    const offenders = triggers
+      .filter((tag) => !tag.attributes.has("asChild") || tag.attributes.has("className"))
+      .map((tag) => `${tag.file}:${tag.line}`)
+    expect(offenders).toEqual([])
   })
 
   test("form kontrolü ve düğme çağrı yerlerinde ölçü ezmesi yok", () => {

@@ -76,6 +76,7 @@ export function OrderItemUnitCombobox({
   isOptionDisabled,
   ariaLabel = "Birim",
   size = "default",
+  appearance,
   className,
 }: {
   value: OrderItemUnit
@@ -84,6 +85,8 @@ export function OrderItemUnitCombobox({
   ariaLabel?: string
   /** Yanındaki girdinin boyu: kalem satırında `compact`, formda `default`. */
   size?: "default" | "compact"
+  /** Görünüm (#952): tablo satırında `ghost`, formda `default`. */
+  appearance?: "default" | "ghost"
   className?: string
 }) {
   // Taslak: Base UI liste kapanınca metni etikete döndürüyor; ama liste hiç
@@ -113,6 +116,7 @@ export function OrderItemUnitCombobox({
     >
       <ComboboxInput
         size={size}
+        appearance={appearance}
         className={className}
         aria-label={ariaLabel}
         inputMode="none"

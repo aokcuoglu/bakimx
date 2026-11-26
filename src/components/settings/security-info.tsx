@@ -32,17 +32,17 @@ export function SecurityInfo({ workshop, user }: { workshop: WorkshopData; user:
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
+            <div className="p-4 rounded-md bg-muted border border-border space-y-1">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">İş Yeri ID</div>
               <div className="text-sm font-mono text-foreground">{workshop.id}</div>
             </div>
-            <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
+            <div className="p-4 rounded-md bg-muted border border-border space-y-1">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">İş Yeri Adı</div>
               <div className="text-sm text-foreground">{workshop.name}</div>
             </div>
           </div>
 
-          <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+          <div className="p-4 rounded-md bg-primary/10 border border-primary/20">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="size-5 text-primary shrink-0 mt-0.5" />
               <div>
@@ -66,22 +66,22 @@ export function SecurityInfo({ workshop, user }: { workshop: WorkshopData; user:
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
+            <div className="p-4 rounded-md bg-muted border border-border space-y-1">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ad Soyad</div>
               <div className="text-sm text-foreground">{[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}</div>
             </div>
             {/* E-postasız hesap kullanıcı adıyla girer — kutu boş kalmasın. */}
-            <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
+            <div className="p-4 rounded-md bg-muted border border-border space-y-1">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 {user.email ? "E-posta" : "Kullanıcı Adı"}
               </div>
               <div className="text-sm text-foreground">{user.email ?? user.username ?? "—"}</div>
             </div>
-            <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
+            <div className="p-4 rounded-md bg-muted border border-border space-y-1">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Kullanıcı ID</div>
               <div className="text-sm font-mono text-foreground">{user.id}</div>
             </div>
-            <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
+            <div className="p-4 rounded-md bg-muted border border-border space-y-1">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">İş Yeri Üyeliği</div>
               <div className="text-sm text-foreground">{workshop.name}</div>
             </div>
@@ -106,7 +106,7 @@ export function SecurityInfo({ workshop, user }: { workshop: WorkshopData; user:
               { label: "İş yeri sahipliği doğrulama (assertWorkshopAccess)", active: true },
               { label: "Denetim günlüğü kaydı", active: true },
             ].map((feature) => (
-              <div key={feature.label} className="flex items-center gap-3 p-3 rounded-lg bg-muted border border-border">
+              <div key={feature.label} className="flex items-center gap-3 p-3 rounded-md bg-muted border border-border">
                 <CheckCircle2 className="size-4 text-primary shrink-0" />
                 <span className="text-sm text-foreground">{feature.label}</span>
               </div>

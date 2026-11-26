@@ -8,6 +8,7 @@ import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
+import type { FieldTone } from "@/components/ui/field-tone"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 // Ruhsat tarih alanları DB'de GG.AA.YYYY (dd.MM.yyyy) string tutulur; bu bileşen
@@ -27,6 +28,7 @@ export interface DatePickerProps {
   id?: string
   disabled?: boolean
   className?: string
+  tone?: FieldTone
 }
 
 export function DatePicker({
@@ -36,6 +38,7 @@ export function DatePicker({
   id,
   disabled,
   className,
+  tone,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
   const selected = parseTrDate(value)
@@ -48,6 +51,7 @@ export function DatePicker({
           id={id}
           type="button"
           variant="field"
+          data-tone={tone === "warning" ? tone : undefined}
           disabled={disabled}
           className={cn(
             "w-full min-w-0 justify-start gap-2",
