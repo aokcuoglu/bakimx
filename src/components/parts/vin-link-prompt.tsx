@@ -8,6 +8,8 @@ import { Loader2, ScanLine } from "lucide-react"
 import { VinCandidateList, VinLockedNotice } from "@/components/vehicles/vin-resolve"
 import { linkVehicleCatalogAction } from "@/app/(app)/vehicles/actions"
 import { isValidVin, type VinCandidate, type VinResolution } from "@/lib/vin/types"
+import { AddonLockedNote } from "@/components/billing/addon-gate"
+import { useAddonAccess } from "@/components/billing/addon-access"
 import { isPlanTier, type PlanTier } from "@/lib/plan"
 import type { PickerVehicle } from "./tecdoc-part-picker"
 
@@ -20,6 +22,7 @@ import type { PickerVehicle } from "./tecdoc-part-picker"
  */
 export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
   const router = useRouter()
+  const access = useAddonAccess()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
@@ -108,6 +111,14 @@ export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
       setError("Şase sorgulama sırasında bir hata oluştu. Lütfen tekrar deneyin.")
       setLoading(false)
     }
+  }
+
+  // Ek özellik kapalıysa "Şaseden bağla" hiç çizilmez (403'e giden düğme yok);
+  // yönetici rolü kilit notunu görür, saha rolü hiçbir şey görmez (araç düzenleme
+  // sayfasını da açamaz).
+  // Yetkiyi yine /api/vin/resolve verir — bu yalnız görünürlüktür (#853).
+  if (!access.has("vinLookup")) {
+    return access.showUpsell ? <AddonLockedNote feature="vinLookup" /> : null
   }
 
   return (

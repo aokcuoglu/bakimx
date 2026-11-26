@@ -2,7 +2,7 @@
    Yalnız PartsLaborCard `.skin` sarar; teklif formu ve teknisyen ekranı aynı
    ızgarayı kullanır ama bu kuralları görmez. Kancalar grid'deki data-pl
    özniteliğidir (TooltipTrigger kendi data-slot'unu yazdığı için data-slot
-   değil). `!important` yardımcı sınıflar (META_FIELD_*) ezilemez; denenmez. */
+   değil). Hayalet alan görünümü Input / InputGroup `appearance` varyantından gelir (#952). */
 .skin {
   --pl-sep: var(--dash-sep, var(--border));
   --pl-hover: var(--dash-hover, var(--muted));
