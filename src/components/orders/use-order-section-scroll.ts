@@ -13,12 +13,13 @@ import {
 
 /**
  * Bölümün kaydırma hedefi: aynı `data-section`ı taşıyan bloklardan görünür
- * olan en üstteki. Telefonda ray `display:contents` olduğu için ray kartları
- * akışın parçasıdır (Ödeme bölümü fiyat kartıyla başlar); iki kolonda yapışkan
- * raydaki kartlar hedef olmaz, ana kolondaki blok seçilir.
+ * olan en üstteki. Ray kartları ana kolonda da `.inline` yuvasında durur (#966):
+ * tek kolonda ray gizlidir, kartlar akışın parçasıdır (Ödeme bölümü fiyat
+ * kartıyla başlar); iki kolonda yapışkan raydaki kartlar hedef olmaz, ana
+ * kolondaki blok seçilir.
  */
 function findSectionTarget(root: HTMLElement, rail: HTMLElement | null, id: OrderSectionId): HTMLElement | null {
-  const railIsColumn = rail ? getComputedStyle(rail).display !== "contents" : false
+  const railIsColumn = rail ? rail.getClientRects().length > 0 : false
   let target: HTMLElement | null = null
   let targetTop = Number.POSITIVE_INFINITY
   for (const block of root.querySelectorAll<HTMLElement>(`[data-section="${id}"]`)) {
