@@ -15,6 +15,7 @@ import {
   Info,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { istanbulDateTimeInputValue } from "@/lib/istanbul-time"
 import { Input } from "@/components/ui/input"
 import {
   Dialog,
@@ -49,9 +50,7 @@ const METHODS = [
 ] as const
 
 function localDateTimeValue() {
-  const now = new Date()
-  const offset = now.getTimezoneOffset() * 60_000
-  return new Date(now.getTime() - offset).toISOString().slice(0, 16)
+  return istanbulDateTimeInputValue(new Date())
 }
 
 type Props = {
@@ -135,7 +134,7 @@ export function CollectionQuickModal({
     formData.set("serviceOrderId", orderId)
     formData.set("amount", String(liraToKurus(values.amount)))
     formData.set("method", values.method)
-    formData.set("paymentDate", new Date(values.paymentDate).toISOString())
+    formData.set("paymentDate", values.paymentDate)
     formData.set("referenceNo", values.referenceNo || "")
     formData.set("note", values.note || "")
 
