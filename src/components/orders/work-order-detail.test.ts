@@ -43,18 +43,56 @@ test("telefon tıklanabilir kalır", () => {
  * `updateIntakeDetailsAction` içinde; buradaki yalnız görünürlük.
  */
 /**
- * #911 — bölüm gezinmesi (çip, atlama, eski `?tab=` bağlantısı) adresi
- * `history.replaceState` ile `#bölüm` yapar; sayfa (Prisma + aktivite) yeniden
- * üretilmez. `?tab=` yalnız istemcide, açılışta bölüme çevrilir.
+ * #911 — bölüm gezinmesi (çip, atlama) yalnız hash'i değiştirir:
+ * `history.replaceState(null, …)`, sayfa (Prisma + aktivite) yeniden üretilmez.
+ * Eski `?tab=` yalnız istemcide, açılışta bölüme çevrilir ve bir kez
+ * `router.replace(…, { scroll: false })` ile adresten düşer.
  */
 test("bölüm gezinmesi sunucu navigasyonu tetiklemez", () => {
-  expect(SECTION_SCROLL).toContain("window.history.replaceState")
-  expect(SECTION_SCROLL).toContain("sectionForLegacyTab(new URLSearchParams(window.location.search).get(\"tab\"))")
-  expect(SECTION_SCROLL).not.toContain("router.")
+  expect(SECTION_SCROLL).toContain('window.history.replaceState(null, "", sectionUrl(window.location.href, id))')
+  expect(SECTION_SCROLL).toContain('const tab = new URLSearchParams(window.location.search).get("tab")')
+  expect(SECTION_SCROLL).toContain("sectionForLegacyTab(tab)")
   expect(SOURCE).toContain("useOrderSectionScroll(pageRef, railRef)")
   expect(SOURCE).not.toContain("router.replace(`/orders/${order.id}?tab=")
   expect(SOURCE).not.toContain("useSearchParams")
   expect(SOURCE).not.toContain("parseOrderTab")
+})
+
+/**
+ * #911 düzeltme — Next'in yamaladığı `replaceState`, `window.history.state`
+ * (`__NA: true`) ile çağrılınca yönlendiricinin adresini güncellemiyor; sonraki
+ * `router.refresh()` (foto yükleme, durum değişimi, useOrderSync) eski adresi
+ * geri yazıyordu. İlk argüman her yerde `null`.
+ *
+ * Sorgu (`?tab=`, `?edit=`) ise replaceState ile DEĞİŞMEZ: sayfa `searchParams`
+ * aldığı için sorgu sayfa segmentinin anahtarı; yalnız tarayıcı adresi
+ * değişince sonraki `router.refresh()` ağaç uyuşmazlığına düşüp sayfayı en
+ * üste (ya da hash'e) atıyordu (ölçüm: y 2500 → 0). Sorgu `router.replace(…,
+ * { scroll: false })` ile düşer.
+ */
+test("replaceState yalnız hash'i değiştirir ve Next'in iç durumunu taşımaz", () => {
+  for (const src of [SOURCE, SECTION_SCROLL]) {
+    expect(src).not.toContain("replaceState(window.history.state")
+    for (const call of src.match(/window\.history\.replaceState\([^\n]*/g) ?? []) {
+      expect(call).toBe('window.history.replaceState(null, "", sectionUrl(window.location.href, id))')
+    }
+  }
+  for (const src of [SOURCE, SECTION_SCROLL]) {
+    for (const call of src.match(/router\.replace\(\w[^\n]*/g) ?? []) {
+      expect(call).toEndWith("{ scroll: false })")
+    }
+  }
+  // Tarama boşa dönmesin: bir hash yazımı, iki sorgu temizliği (?tab=, ?edit=).
+  expect(SECTION_SCROLL.match(/window\.history\.replaceState\(/g)).toHaveLength(1)
+  expect([SOURCE, SECTION_SCROLL].flatMap((src) => src.match(/router\.replace\(\w/g) ?? [])).toHaveLength(2)
+})
+
+test("?edit=1 Şikayet penceresi kapanınca adresten düşer", () => {
+  const effect = SOURCE.slice(SOURCE.indexOf("const [editingInfo, setEditingInfo]"))
+  const body = effect.slice(0, effect.indexOf("}, [editingInfo, router])"))
+  expect(body).toContain("if (editingInfo) return")
+  expect(body).toContain('urlWithout(window.location.href, ["edit"])')
+  expect(body).toContain("router.replace(next, { scroll: false })")
 })
 
 /**

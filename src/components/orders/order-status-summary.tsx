@@ -24,6 +24,7 @@ function NextStepLine({ step }: { step: OrderNextStep }) {
           {step.blocker}
         </p>
       )}
+      {step.note && <p className="text-[13px] leading-[18px] text-muted-foreground">{step.note}</p>}
     </div>
   )
 }
@@ -48,13 +49,18 @@ export function OrderMobileSummary({
   nextStep: OrderNextStep | null
   onNavigate: (id: OrderSectionId) => void
 }) {
+  const hasComplaint = complaint.trim().length > 0
   const truncated = complaint.length > COMPLAINT_PREVIEW_CHARS || complaint.includes("\n")
   return (
     <section aria-label="Kabul özeti" className={cn(detail.shell, detail.summary)}>
       <div className={detail.block}>
         <p className={detail.fieldLabel}>Müşteri şikayeti</p>
-        <p className="line-clamp-2 whitespace-pre-line text-[15px] leading-5 text-foreground">{complaint}</p>
-        {truncated && (
+        {hasComplaint ? (
+          <p className="line-clamp-2 whitespace-pre-line text-[15px] leading-5 text-foreground">{complaint}</p>
+        ) : (
+          <p className="text-[15px] leading-5 text-muted-foreground">Şikayet girilmedi</p>
+        )}
+        {hasComplaint && truncated && (
           <a
             href="#ozet"
             className={cn(detail.hit, "mt-1 inline-block text-sm text-primary hover:underline")}

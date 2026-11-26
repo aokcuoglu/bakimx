@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
+import { ORDER_SECTIONS } from "@/lib/orders/detail-sections"
 
 const read = (f: string) => readFileSync(join(import.meta.dir, f), "utf8")
 const DETAIL = read("work-order-detail.tsx")
@@ -122,4 +123,29 @@ test("#911: ağır hasar haritası görünür alana yaklaşınca bağlanır", ()
 test("#911: kilitli bölümler başlıklı yükseltme kutusu gösterir", () => {
   expect(DETAIL).toContain('<DetailPanel title="Ödemeler" bare>\n                <InlineFeatureUpsell feature="cashbox"')
   expect(DETAIL).toContain('<DetailPanel title="Teknisyen" bare>\n                <InlineFeatureUpsell feature="team"')
+})
+
+test("#911: her bölümün ilk bloğu adlı bölge; odak halkası yalnız klavyede", () => {
+  for (const { id, label } of ORDER_SECTIONS) {
+    expect(DETAIL).toContain(`<div id="${id}" data-section="${id}" role="region" aria-label="${label}" tabIndex={-1}`)
+  }
+  expect(rule(CSS, ".section")).toContain("outline:none")
+  expect(CSS).toMatch(/\.section:focus-visible \{ outline:2px solid var\(--ring\)/)
+})
+
+test("#911: hasar yer tutucusu yüklenmiş blok boyunda (derin bağlantı kaymasın)", () => {
+  expect(DETAIL).toContain('placeholderClassName="min-h-[760px] sm:min-h-[640px]"')
+})
+
+test("#911: çip şeridi iki kolonda ölçülmez, dokunulan çip tutulur, hareket azaltmaya uyar", () => {
+  const SPY = readFileSync(join(import.meta.dir, "..", "..", "hooks", "use-section-spy.ts"), "utf8")
+  expect(SPY).toContain("if (nav && nav.getClientRects().length === 0) return")
+  expect(SPY).toContain("return { active: held ?? spied, hold: setHeld }")
+  expect(NAV).toContain("hold(section.id)")
+  expect(NAV).toContain("const behavior = sectionScrollBehavior()")
+  expect(NAV).not.toContain('behavior: "smooth"')
+})
+
+test("#911: boş şikâyet boş paragraf değil, açıklama gösterir", () => {
+  expect(SUMMARY).toContain("Şikayet girilmedi")
 })

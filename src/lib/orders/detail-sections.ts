@@ -41,15 +41,31 @@ export function sectionForLegacyTab(value: string | null | undefined): OrderSect
 }
 
 /**
- * Bölüme gidildikten sonraki adres: `#bölüm`. `tab` ve `edit` düşer (yeniden
- * yüklemede düzenleme penceresi tekrar açılmasın), `returnTo` gibi diğer
- * parametreler korunur. Yol + sorgu + hash döner (`history.replaceState` için).
+ * Bölüme gidildikten sonraki adres: `#bölüm`; `drop` verilen parametreler düşer,
+ * diğerleri (`returnTo`…) korunur. Yol + sorgu + hash döner.
+ *
+ * Yalnız hash değişiyorsa `history.replaceState(null, …)` yeter. Sorgu
+ * değişiyorsa (`?tab=` / `?edit=` düşüyorsa) `router.replace(…, { scroll: false })`
+ * gerekir: sayfa `searchParams` aldığı için sorgu sayfa segmentinin anahtarıdır;
+ * yalnız tarayıcı adresi değişirse sonraki `router.refresh()` ağaç uyuşmazlığına
+ * düşüp sayfayı hash'e ya da en üste kaydırıyordu (#911 ölçümü).
  */
-export function sectionUrl(href: string, id: OrderSectionId): string {
+export function sectionUrl(href: string, id: OrderSectionId, drop: readonly string[] = []): string {
   const url = new URL(href)
-  url.searchParams.delete("tab")
-  url.searchParams.delete("edit")
+  for (const name of drop) url.searchParams.delete(name)
   url.hash = id
+  return `${url.pathname}${url.search}${url.hash}`
+}
+
+/**
+ * Adresten parametreleri düşürür (hash korunur). Hiçbiri yoksa null — adres
+ * değişmez, gezinme yapılmaz. Liste "Düzenle"nin `?edit=1`i ve eski `?tab=`
+ * yalnız ilk açılış içindir: yeniden yüklemede pencere tekrar açılmasın.
+ */
+export function urlWithout(href: string, names: readonly string[]): string | null {
+  const url = new URL(href)
+  if (!names.some((name) => url.searchParams.has(name))) return null
+  for (const name of names) url.searchParams.delete(name)
   return `${url.pathname}${url.search}${url.hash}`
 }
 

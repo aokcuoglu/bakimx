@@ -5,6 +5,7 @@ import {
   pickActiveSection,
   sectionForLegacyTab,
   sectionUrl,
+  urlWithout,
 } from "@/lib/orders/detail-sections"
 
 describe("ORDER_SECTIONS (#911)", () => {
@@ -41,14 +42,28 @@ describe("sectionForLegacyTab — eski ?tab= bağlantıları kırılmaz", () => 
 })
 
 describe("sectionUrl", () => {
-  test("tab ve edit düşer, returnTo korunur, hash bölüm olur", () => {
-    const href = "https://app.test/orders/abc?tab=parca&edit=1&returnTo=%2Forders%3Fstatus%3Dopen"
-    expect(sectionUrl(href, "kalemler")).toBe("/orders/abc?returnTo=%2Forders%3Fstatus%3Dopen#kalemler")
+  test("yalnız hash değişir; sorgu aynen kalır (replaceState için)", () => {
+    expect(sectionUrl("https://app.test/orders/abc?returnTo=%2Forders", "kanit")).toBe("/orders/abc?returnTo=%2Forders#kanit")
+    expect(sectionUrl("https://app.test/orders/abc#ozet", "gecmis")).toBe("/orders/abc#gecmis")
   })
 
-  test("parametre yoksa yalnız yol + hash; eski hash değişir", () => {
-    expect(sectionUrl("https://app.test/orders/abc", "kanit")).toBe("/orders/abc#kanit")
-    expect(sectionUrl("https://app.test/orders/abc#ozet", "gecmis")).toBe("/orders/abc#gecmis")
+  test("drop verilen parametreler düşer, returnTo korunur", () => {
+    const href = "https://app.test/orders/abc?tab=parca&edit=1&returnTo=%2Forders%3Fstatus%3Dopen"
+    expect(sectionUrl(href, "kalemler", ["tab"])).toBe("/orders/abc?edit=1&returnTo=%2Forders%3Fstatus%3Dopen#kalemler")
+    expect(sectionUrl(href, "kalemler", ["tab", "edit"])).toBe("/orders/abc?returnTo=%2Forders%3Fstatus%3Dopen#kalemler")
+  })
+})
+
+describe("urlWithout", () => {
+  test("parametre düşer, returnTo ve hash korunur", () => {
+    expect(urlWithout("https://app.test/orders/abc?returnTo=%2Forders&edit=1#kanit", ["edit"])).toBe("/orders/abc?returnTo=%2Forders#kanit")
+    expect(urlWithout("https://app.test/orders/abc?edit=1", ["edit"])).toBe("/orders/abc")
+    expect(urlWithout("https://app.test/orders/abc?tab=ozet&returnTo=%2Forders", ["tab"])).toBe("/orders/abc?returnTo=%2Forders")
+  })
+
+  test("parametre yoksa adres değişmez (null)", () => {
+    expect(urlWithout("https://app.test/orders/abc?returnTo=%2Forders", ["edit"])).toBeNull()
+    expect(urlWithout("https://app.test/orders/abc", ["tab", "edit"])).toBeNull()
   })
 })
 

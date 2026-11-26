@@ -107,6 +107,7 @@ import { OrderSectionNav } from "@/components/orders/order-section-nav"
 import { OrderMobileSummary, OrderStatusCard } from "@/components/orders/order-status-summary"
 import { sectionScrollBehavior, useOrderSectionScroll } from "@/components/orders/use-order-section-scroll"
 import { orderNextStep } from "@/lib/orders/next-step"
+import { urlWithout } from "@/lib/orders/detail-sections"
 import { OrderQuickActions } from "@/components/orders/order-quick-actions"
 import { PhotoSourceButtons } from "@/components/intake/photo-source-buttons"
 import { orderQuickActions, type OrderQuickAction } from "@/lib/orders/quick-actions"
@@ -336,6 +337,18 @@ export function WorkOrderDetail({
     }
   }
   const [editingInfo, setEditingInfo] = useState(openInfoEditor)
+  // Liste "Düzenle"nin ?edit=1'i yalnız ilk açılış içindir: pencere kapanınca
+  // (Kaydet, İptal, Esc) adresten düşer, yeniden yükleme tekrar açmaz. Sorgu
+  // değiştiği için `router.replace` (scroll: false): replaceState yalnız tarayıcı
+  // adresini değiştirir, sonraki `router.refresh()` sayfayı en üste atıyordu.
+  // `?tab=` varken açılışta bölüm kancası adresi zaten değiştiriyor; iki
+  // `router.replace` yarışmasın (sonuncusu kazanır), bu tur atlanır.
+  useEffect(() => {
+    if (editingInfo) return
+    if (new URLSearchParams(window.location.search).has("tab")) return
+    const next = urlWithout(window.location.href, ["edit"])
+    if (next) router.replace(next, { scroll: false })
+  }, [editingInfo, router])
   const [savingInfo, setSavingInfo] = useState(false)
   const [editComplaint, setEditComplaint] = useState(openInfoEditor ? order.intake.customerComplaint : "")
   const [editNote, setEditNote] = useState(openInfoEditor ? order.intake.internalNote ?? "" : "")
@@ -1001,7 +1014,7 @@ export function WorkOrderDetail({
           )}
 
           {/* ÖZET — Şikayet & Notlar (düzenlenebilir) */}
-          <div id="ozet" data-section="ozet" tabIndex={-1} className={cn(detail.section, detail.oComplaint)}>
+          <div id="ozet" data-section="ozet" role="region" aria-label="Özet" tabIndex={-1} className={cn(detail.section, detail.oComplaint)}>
             <DetailPanel
               title="Şikayet & Notlar"
               aside={
@@ -1122,7 +1135,7 @@ export function WorkOrderDetail({
           </div>
 
           {/* KALEMLER — parça talepleri + parça & işçilik */}
-          <div id="kalemler" data-section="kalemler" tabIndex={-1} className={cn(detail.section, detail.oItems, "space-y-5")}>
+          <div id="kalemler" data-section="kalemler" role="region" aria-label="Kalemler" tabIndex={-1} className={cn(detail.section, detail.oItems, "space-y-5")}>
             {!canUseInventory && (
               <InlineFeatureUpsell feature="partsInventory" currentTier={currentTier} />
             )}
@@ -1149,7 +1162,7 @@ export function WorkOrderDetail({
           </div>
 
           {/* KANIT — kabul kanıtları, fotoğraflar, hasar */}
-          <div id="kanit" data-section="kanit" tabIndex={-1} className={cn(detail.section, detail.oEvidence, detail.stack)}>
+          <div id="kanit" data-section="kanit" role="region" aria-label="Kanıt" tabIndex={-1} className={cn(detail.section, detail.oEvidence, detail.stack)}>
             {/* Kabul kanıtları */}
             <DetailPanel title="Kabul kanıtları">
               <div className={surface.cardBody}>
@@ -1339,7 +1352,9 @@ export function WorkOrderDetail({
               <DetailPanel title="Hasar">
                 <div className={detail.block}>
                   {/* 3B görüntüleyici ve hasar kayıtları ağır: görünür alana yaklaşınca bağlanır (#911). */}
-                  <DeferUntilVisible label="Hasar kaydı yükleniyor">
+                  {/* Yer tutucu yüklenmiş blok boyunda (ölçüm #911: 390px'te ~755-770px,
+                      640px+ 580-680px): değişim anında üstteki derin bağlantı hedefi kaymaz. */}
+                  <DeferUntilVisible label="Hasar kaydı yükleniyor" placeholderClassName="min-h-[760px] sm:min-h-[640px]">
                     <DamageCapture reloadKey={JSON.stringify([intake.damageMarks,intake.photos])} intakeFormId={intake.id} vehicle={intake.vehicle} readOnly={orderLocked} modalMetadata />
                   </DeferUntilVisible>
                 </div>
@@ -1368,7 +1383,7 @@ export function WorkOrderDetail({
           </div>
 
           {/* ÖDEMELER — ödeme özeti + tahsilat geçmişi */}
-          <div id="odeme" data-section="odeme" tabIndex={-1} className={cn(detail.section, detail.oPayments, detail.stack)}>
+          <div id="odeme" data-section="odeme" role="region" aria-label="Ödeme" tabIndex={-1} className={cn(detail.section, detail.oPayments, detail.stack)}>
             {!canCashbox ? (
               <DetailPanel title="Ödemeler" bare>
                 <InlineFeatureUpsell feature="cashbox" currentTier={currentTier} />
@@ -1411,7 +1426,7 @@ export function WorkOrderDetail({
           </div>
 
           {/* TEKNİSYEN — teknisyen panelindeki ilerleme, salt okunur */}
-          <div id="teknisyen" data-section="teknisyen" tabIndex={-1} className={cn(detail.section, detail.oTechPanel)}>
+          <div id="teknisyen" data-section="teknisyen" role="region" aria-label="Teknisyen" tabIndex={-1} className={cn(detail.section, detail.oTechPanel)}>
             {!canTeam ? (
               <DetailPanel title="Teknisyen" bare>
                 <InlineFeatureUpsell feature="team" currentTier={currentTier} />
@@ -1426,7 +1441,7 @@ export function WorkOrderDetail({
           </div>
 
           {/* GEÇMİŞ */}
-          <div id="gecmis" data-section="gecmis" tabIndex={-1} className={cn(detail.section, detail.oHistory)}>
+          <div id="gecmis" data-section="gecmis" role="region" aria-label="Geçmiş" tabIndex={-1} className={cn(detail.section, detail.oHistory)}>
             {/* İşlem Geçmişi (personel-içi; public paylaşıma dahil değildir) */}
             <OrderActivityLog entries={activity} />
           </div>

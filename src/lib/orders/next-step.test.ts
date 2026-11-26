@@ -20,18 +20,25 @@ test("teslim edilmiş ve iptal emirde sıradaki adım yok", () => {
   expect(step("cancelled", 2, 1)).toBeNull()
 })
 
-test("engel yoksa null", () => {
-  expect(step("in_progress")).toEqual({ label: "Teslime Hazır", blocker: null })
+test("açık iş yoksa engel de not da yok", () => {
+  expect(step("in_progress")).toEqual({ label: "Teslime Hazır", blocker: null, note: null })
 })
 
-test("karar bekleyen parça talebi teslim adımından önce de engeldir", () => {
-  expect(step("in_progress", 0, 2)?.blocker).toBe("2 parça talebi karar bekliyor")
+// Başlıktaki kural: karar bekleyen talep "Teslime Hazır"ı ve teslimi kapatır.
+test("karar bekleyen parça talebi yalnız Teslime Hazır ve teslim adımında engeldir", () => {
+  expect(step("in_progress", 0, 2)).toEqual({ label: "Teslime Hazır", blocker: "2 parça talebi karar bekliyor", note: null })
   expect(step("ready_for_delivery", 3, 1)?.blocker).toBe("1 parça talebi karar bekliyor")
 })
 
-test("fiyatsız kalem yalnız teslim adımında engeldir", () => {
-  expect(step("in_progress", 3)?.blocker).toBeNull()
-  expect(step("ready_for_delivery", 3)?.blocker).toBe("3 kalemin fiyatı girilmemiş")
+test("sıradaki adımı kapatmıyorsa karar bekleyen talep nötr not olur", () => {
+  expect(step("draft", 0, 2)).toEqual({ label: "Başla", blocker: null, note: "2 parça talebi karar bekliyor" })
+  expect(step("waiting_parts", 0, 1)).toEqual({ label: "Devam Et", blocker: null, note: "1 parça talebi karar bekliyor" })
+})
+
+test("fiyatsız kalem yalnız teslim adımında engeldir, önceki adımlarda yazılmaz", () => {
+  expect(step("in_progress", 3)).toEqual({ label: "Teslime Hazır", blocker: null, note: null })
+  expect(step("draft", 3)).toEqual({ label: "Başla", blocker: null, note: null })
+  expect(step("ready_for_delivery", 3)).toEqual({ label: "Teslim Et", blocker: "3 kalemin fiyatı girilmemiş", note: null })
 })
 
 test("birincil aksiyonu olmayan liste adım üretmez", () => {

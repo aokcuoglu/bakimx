@@ -7,8 +7,10 @@ export type NextStatusAction = { key: string; label: string; primary?: boolean }
 export type OrderNextStep = {
   /** Başlıktaki birincil düğmenin işi: "Başla", "Teslime Hazır", "Teslim Et"… */
   label: string
-  /** O adımı bugün kapatan engel; yoksa null. */
+  /** O adımı (başlıktaki düğmeyi) bugün kapatan engel; yoksa null. */
   blocker: string | null
+  /** Sıradaki adımı kapatmayan ama ileride kapatacak açık iş; yoksa null. */
+  note: string | null
 }
 
 /**
@@ -17,9 +19,13 @@ export type OrderNextStep = {
  *
  * Adım, başlıktaki birincil aksiyonla aynı girdiden (`NEXT_STATUSES`) okunur;
  * buraya ayrı bir durum makinesi yazılmaz. Lib → bileşen bağımlılığı olmasın diye
- * liste çağıran yerden gelir. Engeller sayfadaki uyarılarla aynı koşulda çıkar:
- * karar bekleyen parça talebi kilitli olmayan her emirde (Teslime Hazır'ı da
- * kapatır), fiyatsız kalem yalnız teslim adımında.
+ * liste çağıran yerden gelir.
+ *
+ * Engel yalnız sıradaki adımın düğmesini gerçekten kapatıyorsa engeldir —
+ * başlıktaki `disabled` kuralıyla aynı: karar bekleyen parça talebi "Teslime
+ * Hazır"ı ve teslimi, fiyatsız kalem teslimi kapatır. Sıradaki adım başka bir
+ * şeyse (ör. "Başla", "Devam Et") karar bekleyen talep nötr bir not olur;
+ * fiyatsız kalem teslimden önce beklenen bir eksik olduğu için hiç yazılmaz.
  *
  * Teslim edilmiş ve iptal emirde sıradaki adım yoktur → null.
  */
@@ -40,9 +46,11 @@ export function orderNextStep({
   // Başlık teslim düğmesini "Teslim Et (OTP)" diye yazar; durum satırında yöntem yazılmaz.
   const label = primary.key === "delivered" ? "Teslim Et" : primary.label
 
-  let blocker: string | null = null
-  if (undecidedCount > 0) blocker = `${undecidedCount} parça talebi karar bekliyor`
-  else if (unpricedCount > 0 && status === "ready_for_delivery") blocker = `${unpricedCount} kalemin fiyatı girilmemiş`
+  const undecided = undecidedCount > 0 ? `${undecidedCount} parça talebi karar bekliyor` : null
+  const unpriced = unpricedCount > 0 ? `${unpricedCount} kalemin fiyatı girilmemiş` : null
+  const partsGate = primary.key === "ready_for_delivery" || primary.key === "delivered"
 
-  return { label, blocker }
+  if (partsGate && undecided) return { label, blocker: undecided, note: null }
+  if (primary.key === "delivered" && unpriced) return { label, blocker: unpriced, note: null }
+  return { label, blocker: null, note: undecided }
 }
