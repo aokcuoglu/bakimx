@@ -239,7 +239,13 @@ export function AppShellChrome({
             onOpenSearch={() => setSearchOpen(true)}
           />
         )}
-        <SidebarInset className="min-h-screen bg-background">
+        {/* `--app-sticky-top` (app-shell.module.css `.inset`): sayfa içi yapışkan
+            öğelerin üst barın ve deneme şeridinin altında durduğu ofset. */}
+        <SidebarInset
+          className={cn("min-h-screen bg-background", shellStyles.inset)}
+          data-top-banner={topBannerVisible ? "" : undefined}
+          data-sidebarless={hideSidebar ? "" : undefined}
+        >
           <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} topBannerVisible={topBannerVisible} />
           <PageHeaderAccessContext.Provider value={headerAccess}>
             <main className={cn("flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:pb-8", inSettings && "bg-card")}>{children}</main>

@@ -41,7 +41,8 @@ function formatDate(iso: string): string {
   })
 }
 
-const INITIAL_COUNT = 6
+// Tek sayfada Geçmiş son bölüm (#911): ilk 5 kayıt, gerisi "N kaydı daha göster" ile.
+const INITIAL_COUNT = 5
 
 export function OrderActivityLog({ entries }: { entries: OrderActivityEntry[] }) {
   const [expanded, setExpanded] = useState(false)
