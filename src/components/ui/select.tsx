@@ -4,6 +4,7 @@ import * as React from "react"
 import { Select as SelectPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { resolveSelectValueChange } from "@/lib/ui/select-value-change"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
 /**
@@ -19,6 +20,11 @@ import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
  * yorumlar, yani boş seçimde tetikleyicide yine filtre etiketi ("Durum",
  * "Bakım Türü") görünür — üç bitişik filtrenin üçünün birden "Tümü" yazması
  * bu sayede olmaz.
+ *
+ * Koruma (#907): kontrollü değer doluyken `SelectItem`'dan gelmeyen ham `""`
+ * gizli yerel select'in sahte yayımıdır ("satır içi oluştur → seç" akışında
+ * seçenek ve değer aynı render'da verilince) ve yutulur; gerçek "seçim yok"
+ * her zaman nöbetçi değerle gelir.
  */
 const EMPTY_VALUE = "__bakimx-empty__"
 
@@ -31,8 +37,12 @@ function Select({
       data-slot="select"
       onValueChange={
         onValueChange &&
-        ((value: string) =>
-          onValueChange(value === EMPTY_VALUE ? "" : value))
+        ((value: string) => {
+          // Gizli yerel select'in sahte "" yayımını yutar (#907,
+          // lib/ui/select-value-change.ts).
+          const next = resolveSelectValueChange(value, props.value, EMPTY_VALUE)
+          if (next !== null) onValueChange(next)
+        })
       }
       {...props}
     />
