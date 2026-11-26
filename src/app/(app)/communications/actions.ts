@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/db"
 import { requireFeatureWorkshop } from "@/lib/auth"
-import { istanbulDateRange } from "@/lib/istanbul-time"
 
 async function requireAuth() {
   return (await requireFeatureWorkshop("communications")).user
@@ -12,8 +11,6 @@ export async function getCommunicationLogs(filters?: {
   type?: string
   status?: string
   search?: string
-  dateFrom?: string
-  dateTo?: string
 }) {
   const { workshopId } = await requireAuth()
   // `internal: false` workshopId kadar kritik: platform yöneticilerine giden
@@ -23,15 +20,6 @@ export async function getCommunicationLogs(filters?: {
 
   if (filters?.type) where.type = filters.type
   if (filters?.status) where.status = filters.status
-
-  if (filters?.dateFrom || filters?.dateTo) {
-    // `YYYY-MM-DD` İstanbul günü, bitiş günü dahil → `[start, end)` (#906).
-    const { start, end } = istanbulDateRange(filters.dateFrom, filters.dateTo)
-    const sentAt: Record<string, Date> = {}
-    if (start) sentAt.gte = start
-    if (end) sentAt.lt = end
-    where.sentAt = sentAt
-  }
 
   if (filters?.search) {
     const q = filters.search
