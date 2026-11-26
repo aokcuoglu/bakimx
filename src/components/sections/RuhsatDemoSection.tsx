@@ -144,9 +144,9 @@ export function RuhsatDemoSection() {
         />
 
         <Tabs defaultValue="sample" onValueChange={reset} className="mt-10">
-          <TabsList className="mx-auto mb-5 h-auto">
+          <TabsList size="control" className="mx-auto mb-5">
             <TabsTrigger value="sample">Örnek ruhsat</TabsTrigger>
-            <TabsTrigger value="upload" className="text-muted-foreground">Kendi ruhsatını dene</TabsTrigger>
+            <TabsTrigger value="upload">Kendi ruhsatını dene</TabsTrigger>
           </TabsList>
           <TabsContent value="sample">
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12 items-start">
@@ -172,9 +172,10 @@ export function RuhsatDemoSection() {
                     type="button"
                     onClick={start}
                     variant="navy"
-                    className="h-7 w-full gap-2 text-sm font-semibold"
+                    size="lg"
+                    className="w-full"
                   >
-                    <ScanLine className="h-4 w-4" />
+                    <ScanLine />
                     Örnek ruhsatı okut
                   </Button>
                 ) : (
@@ -182,9 +183,10 @@ export function RuhsatDemoSection() {
                     type="button"
                     onClick={reset}
                     variant="outline"
-                    className="h-7 w-full gap-2 border-primary/30"
+                    size="lg"
+                    className="w-full"
                   >
-                    <RotateCcw className="h-4 w-4" />
+                    <RotateCcw />
                     Yeniden oynat
                   </Button>
                 )}

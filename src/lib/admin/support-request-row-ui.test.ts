@@ -36,3 +36,8 @@ test("destek talebi satırı kart akordeon öğesidir", () => {
 
   expect(adminSupportRequests()).toContain('<Accordion type="multiple" variant="card"')
 })
+
+test("durum rozeti ortak Badge bileşenidir", () => {
+  expect(SOURCE).toContain('from "@/components/ui/badge"')
+  expect(SOURCE).not.toContain("function Badge(")
+})

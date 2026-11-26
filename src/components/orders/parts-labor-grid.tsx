@@ -74,6 +74,8 @@ import {
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import type { OrderItem } from "@/components/orders/order-management-panel"
+import { useAddonAccess, useTecdocTypeId } from "@/components/billing/addon-access"
+import { CatalogLockedNote } from "@/components/parts/tecdoc-part-picker"
 import { PartSearchInput } from "@/components/parts/part-search-input"
 import { PartAttributeField } from "@/components/parts/part-attribute-field"
 import { TecdocPartPicker, type PickerVehicle } from "@/components/parts/tecdoc-part-picker"
@@ -309,10 +311,11 @@ export function PartsLaborEditor({
   )
 
   const headCls = "text-xs font-medium uppercase tracking-wide text-muted-foreground"
+  const optionsTypeId = useTecdocTypeId(vehicle?.catalogVehicleTypeId)
 
   return (
     <VatContext.Provider value={vat}>
-    <PartAttrOptionsProvider vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}>
+    <PartAttrOptionsProvider vehicleTypeId={optionsTypeId}>
     <TooltipProvider>
     {/* min-w-0: düzenleyici bir grid/flex hücresinin içine konduğunda (teklif
         ekranında FormItem `display:grid`) hücrenin otomatik asgari genişliği
@@ -1042,7 +1045,11 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
   // Bu modal oturumunda açılan stok kartının kodu (yeniden denemede ikinci kart
   // açılmasını engeller). Modal her açılışta sıfırlanır.
   const createdPartSkuRef = useRef<string | null>(null)
-  const linked = vehicle?.catalogVehicleTypeId != null
+  const access = useAddonAccess()
+  const catalogLocked = !access.has("partsCatalog")
+  // Parça kataloğu kapalıysa TecDoc kimliği uçlara verilmez (sessiz 403 yok, #853).
+  const tecdocTypeId = useTecdocTypeId(vehicle?.catalogVehicleTypeId)
+  const linked = tecdocTypeId != null
   const [prefetching, setPrefetching] = useState(false)
   // Prefetch dolarken mevcut aramayı periyodik yeniden tetikleyen sinyal:
   // değeri her artışında PartSearchInput aynı query'yi yeniden sorgular.
@@ -1233,7 +1240,8 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
 
   return (
     <div className="space-y-3">
-      {!linked && (
+      {catalogLocked && access.showUpsell && <CatalogLockedNote showUpsell />}
+      {!linked && !catalogLocked && (
         // Bağlama yolu burada da dursun: aksi hâlde katalogsuz araçta kullanıcı
         // "sınırlı" uyarısıyla baş başa kalıyor (VinLinkPrompt yalnız
         // TecdocPartPicker içinde ve o da `linked` iken basılıyordu).
@@ -1250,7 +1258,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
       <PartSearchInput
         value={name}
         sku={null}
-        vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+        vehicleTypeId={tecdocTypeId}
         supplierId={filter.supplierId ?? null}
         categoryId={filter.categoryId ?? null}
         disabled={disabled}
@@ -1373,7 +1381,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         initialName={name}
-        vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+        vehicleTypeId={tecdocTypeId}
         submitting={submitting}
         onSubmit={submitManualDraft}
       />
@@ -1441,7 +1449,8 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   const identityLocked = isPart && (
     row.tecdocArticleId != null || row.bakimxProductId != null || row.getirbakimProductId != null
   )
-  const linked = vehicle?.catalogVehicleTypeId != null
+  const catalogTypeId = useTecdocTypeId(vehicle?.catalogVehicleTypeId)
+  const linked = catalogTypeId != null
   const [editingPrice, setEditingPrice] = useState(false)
   const [priceDraft, setPriceDraft] = useState("")
   const [tecdocOpen, setTecdocOpen] = useState(false)
@@ -1491,7 +1500,7 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   }
 
   return {
-    isPart, editable, identityLocked, linked, filter, setFilter,
+    isPart, editable, identityLocked, linked, catalogTypeId, filter, setFilter,
     editingPrice, setEditingPrice, priceDraft, setPriceDraft,
     tecdocOpen, setTecdocOpen, lineTotal, grossLineTotal,
     vatLiable, vatKurus, marginState,
@@ -2327,7 +2336,7 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail, onEdit,
 function RowTecdocPicker({ row, ed, vehicle, onCell, onShowDetail }: {
   row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onShowDetail: OnShowDetail
 }) {
-  if (!(ed.isPart && ed.editable && vehicle?.catalogVehicleTypeId != null)) return null
+  if (!(ed.isPart && ed.editable && ed.linked)) return null
   return (
     <TecdocPartPicker
       vehicle={vehicle}
@@ -2385,7 +2394,7 @@ function AttrReadOnly({ value, oneLine, title }: { value: string | null; oneLine
 
 // Marka/Kategori hücresi (masaüstü + mobil + composer ortak). Düzenlenebilirken
 // katalog önerili + serbest-metin Autocomplete; kilitliyken salt-görünür etiket.
-function AttrCell({ kind, row, ed, vehicle, onCell, bare, oneLine }: {
+function AttrCell({ kind, row, ed, onCell, bare, oneLine }: {
   kind: "brand" | "category"; row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; bare?: boolean
   /** Masaüstü satırı: kilitli emirde de tek satırda kalsın (uzun metin kısalır,
    *  tam hali title'da). Mobil kartta sarma korunur → tam metin görünür. */
@@ -2415,7 +2424,7 @@ function AttrCell({ kind, row, ed, vehicle, onCell, bare, oneLine }: {
     <PartAttributeField
       kind={kind}
       size="compact"
-      vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+      vehicleTypeId={ed.catalogTypeId}
       value={value ?? ""}
       disabled={row.__saving}
       onSelect={(id, name) => {

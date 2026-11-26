@@ -7,6 +7,7 @@ import { z } from "zod/v4"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { subKurus, sumKurus } from "@/lib/money"
+import { parseIstanbulLocalDateTime } from "@/lib/istanbul-time"
 import { isCollectionLockedForOrder } from "@/lib/status-transitions"
 
 const collectionCreateSchema = z.object({
@@ -67,8 +68,15 @@ export async function createCollectionAction(formData: FormData) {
     }
   }
 
-  const paymentDate = new Date(data.paymentDate)
-  if (isNaN(paymentDate.getTime())) return { error: "Geçersiz tahsilat tarihi" }
+  // Form `datetime-local` değerini (Türkiye saati) gönderir. Açık ofsetli ISO
+  // değer de kabul edilir: deploy sırasında açık kalmış eski istemci sekmesi
+  // tarihi `toISOString()` ile yolluyordu (#931).
+  const paymentDate =
+    parseIstanbulLocalDateTime(data.paymentDate) ??
+    (/(?:Z|[+-]\d{2}:\d{2})$/.test(data.paymentDate) && !Number.isNaN(Date.parse(data.paymentDate))
+      ? new Date(data.paymentDate)
+      : null)
+  if (!paymentDate) return { error: "Geçersiz tahsilat tarihi" }
 
   const { collection, recalc } = await prisma.$transaction(async (tx) => {
     const created = await tx.collectionPayment.create({
