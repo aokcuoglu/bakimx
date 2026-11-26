@@ -4,7 +4,7 @@ import { Autocomplete as AutocompletePrimitive } from "@base-ui/react/autocomple
 
 import { cn } from "@/lib/utils"
 import type { InputSize } from "@/components/ui/input"
-import { InputGroup } from "@/components/ui/input-group"
+import { InputGroup, type InputGroupAppearance } from "@/components/ui/input-group"
 
 /**
  * Serbest-form arama için shadcn-stili Autocomplete (Base UI). Combobox'tan farkı:
@@ -46,15 +46,17 @@ function AutocompleteInput({ onKeyDown, ...props }: AutocompletePrimitive.Input.
  */
 function AutocompleteInputGroup({
   size = "default",
+  appearance,
   className,
   ...props
 }: Omit<AutocompletePrimitive.InputGroup.Props, "render" | "className"> & {
   size?: InputSize
+  appearance?: InputGroupAppearance
   className?: string
 }) {
   return (
     <AutocompletePrimitive.InputGroup
-      render={<InputGroup size={size} className={className} />}
+      render={<InputGroup size={size} appearance={appearance} className={className} />}
       {...props}
     />
   )
