@@ -17,12 +17,32 @@ for (const width of [390, 1440]) {
     await invoice.getByRole("button", { name: "İptal" }).click()
     await expect(invoice).toBeHidden()
 
-    await expect(orderInfo.getByRole("combobox", { name: "Durum" })).toBeVisible()
+    // #912 — durum yalnız başlıktan değişir; kartta Durum seçici yok.
+    await expect(orderInfo.getByRole("combobox", { name: "Durum" })).toHaveCount(0)
     await expect(orderInfo.getByRole("combobox", { name: "Servise geliş nedeni" })).toBeVisible()
-    await orderInfo.getByRole("combobox", { name: "Durum" }).click()
-    await expect(page.getByRole("listbox")).toBeVisible()
-    await page.keyboard.press("Escape")
-    await expect(page.getByRole("dialog", { name: "Durumu düzenle" })).toHaveCount(0)
+
+    // Başlıktaki İptal onay ister; "Vazgeç" hiçbir istek göndermez.
+    let statusPosts = 0
+    await page.route("**/api/orders/*/status", async (route) => {
+      statusPosts += 1
+      await route.abort()
+    })
+    const more = page.getByRole("button", { name: "Diğer işlemler" })
+    if (await more.count()) {
+      await more.click()
+      const cancel = page.getByRole("menuitem", { name: "İptal", exact: true })
+      if (await cancel.count()) {
+        await cancel.click()
+        const confirm = page.getByRole("alertdialog", { name: "Araç kabulü iptal edilsin mi?" })
+        await expect(confirm).toBeVisible()
+        await confirm.getByRole("button", { name: "Vazgeç" }).click()
+        await expect(confirm).toBeHidden()
+      } else {
+        await page.keyboard.press("Escape")
+      }
+    }
+    expect(statusPosts).toBe(0)
+    await page.unroute("**/api/orders/*/status")
 
     await page.getByRole("button", { name: "Şikayet ve notları düzenle" }).click()
     const intake = page.getByRole("dialog", { name: "Şikayet ve notları düzenle" })

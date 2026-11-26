@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
+import { NEXT_STATUSES } from "@/components/orders/order-management-panel"
 
 const SOURCE = readFileSync(join(import.meta.dir, "work-order-detail.tsx"), "utf8")
 const SECTION_SCROLL = readFileSync(join(import.meta.dir, "use-order-section-scroll.ts"), "utf8")
@@ -170,4 +171,42 @@ test("para tek yerde: tek etiket, tek kaynak, Ödemeler'de toplam ve ekleme dü�
   expect(history).not.toContain("useState")
   expect(PAGE).toContain("const paidAmount = orderPaidKurus({")
   expect(PAGE).not.toContain("order.paidAmount ||")
+})
+
+/**
+ * #912 — durum yalnız başlıktan değişir. Bilgi kartındaki Durum Select'i
+ * kalktı; onunla birlikte oradaki iptal onayı da gitti. Kapı korunur: başlıktaki
+ * İptal onay penceresini açar, POST yalnız pencere onaylanınca gider (eskiden
+ * başlık iki durumda iptali tek dokunuşla yazıyordu; bu bilinçli sıkılaştırma).
+ */
+test("başlıktaki İptal onay penceresi açar, durumu doğrudan yazmaz", () => {
+  const mapping = SOURCE.slice(SOURCE.indexOf("const headerActions: DetailHeaderAction[]"))
+  const onClick = mapping.slice(0, mapping.indexOf("tone:"))
+  expect(onClick).toContain('a.key === "cancelled"')
+  expect(onClick).toContain("? requestCancel")
+  expect(SOURCE).toMatch(/function requestCancel\(\) \{\n\s+setError\(""\)\n\s+setConfirmCancelOpen\(true\)\n\s+\}/)
+  // `changeStatus("cancelled")` tek yerde: onay penceresinin işleyicisinde.
+  expect(SOURCE.match(/changeStatus\("cancelled"\)/g)).toHaveLength(1)
+  const confirm = SOURCE.slice(SOURCE.indexOf("async function handleConfirmCancel()"))
+  expect(confirm.slice(0, confirm.indexOf("\n  }"))).toContain('changeStatus("cancelled")')
+  // Pencere istek sürerken kapanmaz; onay düğmesi kendiliğinden kapatmaz.
+  const dialog = SOURCE.slice(SOURCE.indexOf("<AlertDialog open={confirmCancelOpen}"))
+  expect(dialog).toContain("onOpenChange={(o) => { if (!loading) setConfirmCancelOpen(o) }}")
+  expect(dialog.slice(0, dialog.indexOf("</AlertDialog>"))).toContain("event.preventDefault()")
+  // Metin başlıktaki geri açma aksiyonunun gerçek adını verir.
+  expect(dialog.slice(0, dialog.indexOf("</AlertDialog>"))).toContain("&quot;Yeniden Aktif Et&quot;")
+  expect(NEXT_STATUSES.cancelled.map((a) => a.label)).toEqual(["Yeniden Aktif Et"])
+})
+
+test("Araç Kabul Bilgileri başlığı tekrarlamaz ve durumu değiştirmez", () => {
+  const INFO = readFileSync(join(import.meta.dir, "order-info-card.tsx"), "utf8")
+  expect(INFO).toContain('<DetailPanel title="Araç Kabul Bilgileri">')
+  for (const gone of ['aria-label="Durum"', "TechnicianAssign", "OrderPaymentPill", "Toplam Tutar", "orderStatusOptions", "/status`"]) {
+    expect(INFO).not.toContain(gone)
+  }
+  // Başlıkta olmayanlar kalır.
+  for (const kept of ['label="İş No"', 'label="Oluşturulma"', 'label="Tahmini Teslim"', 'label="Fatura Numarası"', 'label="Fatura Tarihi"', 'aria-label="Servise geliş nedeni"']) {
+    expect(INFO).toContain(kept)
+  }
+  expect(SOURCE).toContain("<OrderInfoCard order={order} />")
 })

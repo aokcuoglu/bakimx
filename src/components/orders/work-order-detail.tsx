@@ -82,6 +82,7 @@ import { OrderInfoCard } from "@/components/orders/order-info-card"
 import { reopenDeliveredOrderAction } from "@/app/(app)/orders/actions"
 import {
   AlertDialog,
+  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -390,7 +391,7 @@ export function WorkOrderDetail({
   const [deliveryOtpCode, setDeliveryOtpCode] = useState("")
   const [deliverySentCode, setDeliverySentCode] = useState<string | null>(null)
 
-  async function changeStatus(newStatus: string) {
+  async function changeStatus(newStatus: string): Promise<boolean> {
     setLoading(true)
     setError("")
     try {
@@ -400,13 +401,33 @@ export function WorkOrderDetail({
         body: JSON.stringify({ status: newStatus }),
       })
       const data = await res.json()
-      if (data.success) router.refresh()
-      else setError(data.error || "Durum güncellenemedi")
+      if (data.success) {
+        router.refresh()
+        return true
+      }
+      setError(data.error || "Durum güncellenemedi")
+      return false
     } catch {
       setError("Bir hata oluştu")
+      return false
     } finally {
       setLoading(false)
     }
+  }
+
+  // İptal terminal ve kilitleyici: kalemler, fiyat, fotoğraf ve usta ataması
+  // kapanır. Başlıktaki İptal her durumda önce onay ister (#912 — eskiden yalnız
+  // bilgi kartındaki Durum Select'i soruyordu, başlık iki durumda tek dokunuşla
+  // yazıyordu). POST yalnız onaylanınca gider; hata pencerenin içinde görünür.
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false)
+
+  function requestCancel() {
+    setError("")
+    setConfirmCancelOpen(true)
+  }
+
+  async function handleConfirmCancel() {
+    if (await changeStatus("cancelled")) setConfirmCancelOpen(false)
   }
 
   async function saveMeta() {
@@ -711,7 +732,12 @@ export function WorkOrderDetail({
   const headerActions: DetailHeaderAction[] = nextActions.map((a) => ({
     key: a.key,
     label: a.key === "delivered" ? "Teslim Et (OTP)" : a.label,
-    onClick: a.key === "delivered" ? handleRequestDeliveryOtp : () => changeStatus(a.key),
+    onClick:
+      a.key === "delivered"
+        ? handleRequestDeliveryOtp
+        : a.key === "cancelled"
+          ? requestCancel
+          : () => void changeStatus(a.key),
     tone: a.key === "cancelled" ? "danger" : a.primary ? "primary" : "secondary",
     icon: ORDER_ACTION_ICONS[a.key],
     disabled:
@@ -1336,13 +1362,7 @@ export function WorkOrderDetail({
 
           {/* Kabul bilgileri (telefonda Özet bölümünde) */}
           <div data-section="ozet" tabIndex={-1} className={cn(detail.section, detail.oInfo)}>
-            <OrderInfoCard
-              order={order}
-              technicians={technicians}
-              onRequestDelivery={handleRequestDeliveryOtp}
-              deliveryBlocked={deliveryBlocked}
-              partsDecisionBlocked={partsDecisionBlocked}
-            />
+            <OrderInfoCard order={order} />
           </div>
 
           {/* ÖDEMELER — tahsilat geçmişi (toplamlar raydaki Ödeme kartında, #912) */}
@@ -1539,6 +1559,37 @@ export function WorkOrderDetail({
         </div>
       </div>
       </div>
+
+      <AlertDialog open={confirmCancelOpen} onOpenChange={(o) => { if (!loading) setConfirmCancelOpen(o) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Araç kabulü iptal edilsin mi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Kalemler, fiyatlar, fotoğraflar ve usta ataması kilitlenir; araç kabulü
+              daha sonra başlıktaki &quot;Yeniden Aktif Et&quot; ile yeniden açılabilir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Vazgeç</AlertDialogCancel>
+            {/* Pencere istek sürerken açık kalır; yalnız başarıda kapanır. */}
+            <AlertDialogAction
+              variant="destructive"
+              disabled={loading}
+              onClick={(event) => {
+                event.preventDefault()
+                void handleConfirmCancel()
+              }}
+            >
+              {loading ? "İptal ediliyor…" : "İptal Et"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={reopenOpen} onOpenChange={(o) => { if (!reopening) setReopenOpen(o) }}>
         <AlertDialogContent>

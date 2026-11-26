@@ -10,42 +10,22 @@ import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogFooter,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog"
-import { DetailPanel, DetailRow, OrderPaymentPill, detail } from "@/components/orders/order-detail-surface"
-import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
+import { DetailPanel, DetailRow, detail } from "@/components/orders/order-detail-surface"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
-import { formatTRY } from "@/lib/format"
-import { ORDER_STATUS, ARRIVAL_REASON_ORDER, ARRIVAL_REASONS, arrivalReasonLabel, type OrderStatusKey } from "@/lib/constants"
-import { isOrderLocked, orderStatusOptions } from "@/lib/status-transitions"
+import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS, arrivalReasonLabel } from "@/lib/constants"
+import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import { cn } from "@/lib/utils"
 import { Loader2, Pencil } from "lucide-react"
 import type { OrderDetailData } from "@/components/orders/order-management-panel"
 
-export function OrderInfoCard({
-  order,
-  technicians,
-  onRequestDelivery,
-  deliveryBlocked,
-  partsDecisionBlocked,
-}: {
-  order: OrderDetailData
-  technicians?: AssignableTechnician[]
-  onRequestDelivery?: () => void
-  /** Fiyatsız kalem ya da karar bekleyen parça talebi → teslim kapalı. */
-  deliveryBlocked?: boolean
-  /** Karar bekleyen parça talebi → "Teslime Hazır" da kapalı (BAK-85). */
-  partsDecisionBlocked?: boolean
-}) {
+/**
+ * "Araç Kabul Bilgileri" — yalnız başlıkta OLMAYAN kabul bilgileri (#912):
+ * iş no, tarihler, notlar, fatura ve geliş nedeni. Durum, ödeme, atanan usta
+ * ve toplam başlıkta / raydaki Ödeme kartında; burada tekrar etmez. Durum
+ * yalnız başlık aksiyonlarından değişir (iptal onayı orada).
+ */
+export function OrderInfoCard({ order }: { order: OrderDetailData }) {
   const locked = isOrderLocked(order.status as OrderStatus)
 
   const router = useRouter()
@@ -88,61 +68,7 @@ export function OrderInfoCard({
     }
   }
 
-  const [changingStatus, setChangingStatus] = useState(false)
   const [changingReason, setChangingReason] = useState(false)
-  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false)
-  const statusOptions = orderStatusOptions(order.status as OrderStatus)
-
-  // Sıradan geçişlerle "İptal" onayından gelen geçiş aynı isteği paylaşır —
-  // fetch mantığı tek yerde, iki çağıran arasında kopyalanmaz.
-  async function postStatusChange(next: string) {
-    setChangingStatus(true)
-    try {
-      const res = await fetch(`/api/orders/${order.id}/status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: next }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        router.refresh()
-        return true
-      }
-      toast.error(data.error || "Durum güncellenemedi")
-      return false
-    } catch {
-      toast.error("Bir hata oluştu")
-      return false
-    } finally {
-      setChangingStatus(false)
-    }
-  }
-
-  async function handleStatusSelect(next: string) {
-    if (!next || next === order.status) return
-    // Teslim müşteri onaylı (OTP) verilir — dropdown'dan doğrudan yazılmaz.
-    // OTP paneli sekme şeridinin ÜSTÜNDE açılıyor, bu dropdown ise sekme
-    // içeriğinin altında; mobilde hiçbir şey olmamış gibi görünmesin diye
-    // kullanıcıya nereye bakacağını söylüyoruz.
-    if (next === "delivered") {
-      onRequestDelivery?.()
-      toast.info("Teslim onay kodu paneli sayfanın üstünde açıldı")
-      return
-    }
-    // İptal terminal ve kilitleyici bir aksiyon — sayfa başlığındaki eylem
-    // haritası da (NEXT_STATUSES) bu üç durumdan doğrudan iptali esirger.
-    // Tek dokunuşla yazmak yerine onay iste; POST yalnız onaylanınca gider.
-    if (next === "cancelled") {
-      setConfirmCancelOpen(true)
-      return
-    }
-    await postStatusChange(next)
-  }
-
-  async function handleConfirmCancel() {
-    const ok = await postStatusChange("cancelled")
-    if (ok) setConfirmCancelOpen(false)
-  }
 
   async function handleReasonSelect(next: string) {
     if (next === (order.arrivalReason ?? "")) return
@@ -170,7 +96,7 @@ export function OrderInfoCard({
       <DetailPanel title="Araç Kabul Bilgileri">
         <div className={detail.kvWrap}>
         <div className={detail.kvCols}>
-          {/* SOL: mevcut iş emri kimliği ve atama bilgileri */}
+          {/* SOL: iş emri kimliği, tarihler, notlar */}
           <div>
             <InfoRow label="İş No" value={order.workOrderNo} mono />
             <InfoRow label="Oluşturulma" value={formatDateTime(order.createdAt)} />
@@ -181,16 +107,6 @@ export function OrderInfoCard({
             {order.completedAt && (
               <InfoRow label="Tamamlanma" value={formatDateTime(order.completedAt)} />
             )}
-            <DetailRow label="Atanan Usta">
-              {/* Atama tek bir yerden yürür (technician-assign); burada yalnız tetikleyici durur. */}
-              <TechnicianAssign
-                orderId={order.id}
-                assignedTechnicianId={order.assignedTechnicianId}
-                assignedTechnicianName={order.assignedTechnicianName}
-                technicians={technicians ?? []}
-                locked={locked}
-              />
-            </DetailRow>
             {order.technicianName && order.technicianName !== order.assignedTechnicianName && (
               <InfoRow label="Teknisyen (eski)" value={order.technicianName} />
             )}
@@ -199,12 +115,9 @@ export function OrderInfoCard({
                 {order.notes}
               </DetailRow>
             )}
-            <DetailRow label="Ödeme">
-              <OrderPaymentPill status={order.paymentStatus} />
-            </DetailRow>
           </div>
 
-          {/* SAĞ: fatura, tutar, durum, geliş nedeni. */}
+          {/* SAĞ: fatura ve geliş nedeni. */}
           <div>
             <DetailRow label="Fatura Numarası">
               <span className="flex items-center justify-end gap-2">
@@ -231,22 +144,6 @@ export function OrderInfoCard({
               label="Fatura Tarihi"
               value={order.invoiceDate ? formatDate(order.invoiceDate) : "—"}
             />
-            <InfoRow
-              label="Toplam Tutar"
-              value={order.totals.hasAnyPrice ? formatTRY(order.totals.grandTotal) : "—"}
-            />
-            <DetailRow label="Durum">
-              <Select value={order.status} onValueChange={handleStatusSelect} disabled={changingStatus || statusOptions.length <= 1}>
-                <SelectTrigger className="w-full max-w-[170px] min-w-0" aria-label="Durum"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((s) => (
-                    <SelectItem key={s} value={s} disabled={(s === "delivered" && deliveryBlocked) || (s === "ready_for_delivery" && partsDecisionBlocked)}>
-                      {ORDER_STATUS[s as OrderStatusKey]?.label ?? s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </DetailRow>
             <DetailRow label="Servise Geliş Nedeni">
               {locked ? (
                 <span>{arrivalReasonLabel(order.arrivalReason)}</span>
@@ -289,29 +186,6 @@ export function OrderInfoCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog
-        open={confirmCancelOpen}
-        onOpenChange={(open) => {
-          if (!open && !changingStatus) setConfirmCancelOpen(false)
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Araç kabulü iptal edilsin mi?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Kalemler, fiyatlar, fotoğraflar ve usta ataması kilitlenir; araç kabulü
-              daha sonra &quot;Taslak&quot; seçilerek yeniden açılabilir.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={changingStatus}>Vazgeç</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmCancel} disabled={changingStatus}>
-              {changingStatus ? "İptal ediliyor…" : "İptal Et"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   )
 }

@@ -178,25 +178,44 @@ export type PricingMetaDraft = {
 
 // `primary: true` marks the happy-path forward action; other forwards are
 // secondary, `cancelled` is destructive. Consumed by the merged detail header.
+//
+// #912 — durum YALNIZ başlıktan değişir (bilgi kartındaki Durum Select'i kalktı).
+// Bu yüzden harita durum makinesinin sunduğu her hedefi taşır: anahtar kümesi
+// `orderStatusOptions(s).slice(1)` ile birebir aynıdır (header-actions.test.ts).
+// Başlıktaki iptal her durumda onay penceresi açar (work-order-detail.tsx).
 export const NEXT_STATUSES: Record<string, { key: OrderStatusKey; label: string; primary?: boolean }[]> = {
   // Onay artık teslimde (delivery OTP) alınır, kabulde değil (bkz. status-transitions.ts).
   // Taslak iş emri doğrudan başlar; "Onaya Gönder" kaldırıldı. waiting_approval sadece
   // eski kayıtlar ileri gidebilsin diye durur (onay jargonu olmadan).
-  draft: [{ key: "in_progress", label: "Başla", primary: true }],
+  draft: [
+    { key: "in_progress", label: "Başla", primary: true },
+    { key: "cancelled", label: "İptal" },
+  ],
   waiting_approval: [
     { key: "in_progress", label: "Başla", primary: true },
     { key: "cancelled", label: "İptal" },
   ],
-  approved: [{ key: "in_progress", label: "Başla", primary: true }, { key: "waiting_parts", label: "Parça Bekliyor" }],
+  approved: [
+    { key: "in_progress", label: "Başla", primary: true },
+    { key: "waiting_parts", label: "Parça Bekliyor" },
+    { key: "cancelled", label: "İptal" },
+  ],
   in_progress: [
     { key: "waiting_parts", label: "Parça Bekliyor" },
     { key: "ready_for_delivery", label: "Teslime Hazır", primary: true },
+    { key: "cancelled", label: "İptal" },
   ],
   waiting_parts: [
     { key: "in_progress", label: "Devam Et", primary: true },
     { key: "ready_for_delivery", label: "Teslime Hazır" },
+    { key: "cancelled", label: "İptal" },
   ],
-  ready_for_delivery: [{ key: "delivered", label: "Teslim Edildi", primary: true }, { key: "cancelled", label: "İptal" }],
+  ready_for_delivery: [
+    { key: "delivered", label: "Teslim Edildi", primary: true },
+    // Teslimden önce işe geri dönmek (ör. son kontrolde eksik çıktı).
+    { key: "in_progress", label: "İşleme Geri Al" },
+    { key: "cancelled", label: "İptal" },
+  ],
   delivered: [],
   cancelled: [{ key: "draft", label: "Yeniden Aktif Et", primary: true }],
 }

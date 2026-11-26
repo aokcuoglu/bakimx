@@ -104,15 +104,22 @@ export function canTransitionOrder(from: OrderStatus, to: OrderStatus): boolean 
 const RETIRED_ORDER_STATUSES: readonly OrderStatus[] = ["waiting_approval", "approved"]
 
 /**
- * İş emri kartındaki Durum dropdown'ında listelenecek değerler: mevcut durum +
- * durum makinesinin o durumdan izin verdiği, emekli olmayan hedefler. Liste
- * `ORDER_TRANSITIONS`'tan türediği için UI ile sunucu doğrulaması ayrışamaz.
+ * Bir iş emrinin elle seçilebilecek durumları: mevcut durum + durum makinesinin o
+ * durumdan izin verdiği, emekli olmayan hedefler. Liste `ORDER_TRANSITIONS`'tan
+ * türediği için UI ile sunucu doğrulaması ayrışamaz.
+ *
+ * #912'den beri durum yalnız detay başlığından değişir (bilgi kartındaki Durum
+ * Select'i kalktı). Bu fonksiyon başlık haritasının (`NEXT_STATUSES`,
+ * order-management-panel.tsx) sınandığı referanstır: her durum için başlığın
+ * sunduğu hedef kümesi `orderStatusOptions(s).slice(1)` ile birebir aynıdır
+ * (src/lib/orders/header-actions.test.ts). Makineye yeni bir geçiş eklenirse
+ * başlık da onu sunmak zorunda kalır; aksi hâlde geçiş UI'dan erişilemez olur.
  *
  * Mevcut durum filtreye TABİ DEĞİL: emri zaten emekli bir statüde olan eski
- * kayıtlar dropdown'da kendi durumlarını doğru görsün diye ilk eleman hep `current`.
+ * kayıtlar kendi durumlarını doğru görsün diye ilk eleman hep `current`.
  *
- * NOT: `delivered` listede DURUR ama seçilince doğrudan yazılmaz — çağıran taraf
- * müşteri onaylı teslim (OTP) akışını tetikler (bkz. order-info-card.tsx).
+ * NOT: `delivered` listede DURUR ama doğrudan yazılmaz — başlık müşteri onaylı
+ * teslim (OTP) akışını tetikler (bkz. work-order-detail.tsx).
  */
 export function orderStatusOptions(current: OrderStatus): OrderStatus[] {
   const targets = (ORDER_TRANSITIONS[current] ?? []).filter((s) => !RETIRED_ORDER_STATUSES.includes(s))
