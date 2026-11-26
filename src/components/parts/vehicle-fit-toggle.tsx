@@ -57,7 +57,7 @@ export function VehicleFitToggle({
       </span>
       <Toggle
         variant="outline"
-        size="sm"
+        size="control"
         pressed={pressed}
         onPressedChange={onPressedChange}
         onMouseDown={onMouseDown}

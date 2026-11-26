@@ -66,8 +66,11 @@ const tabsListVariants = cva(
 )
 
 /**
- * `size="control"` yalnız `variant="default"` (segment) içindir: şerit `h-auto`
- * olur, yükseklik tetikleyicilere (`--control-h`: telefonda 44px, md+ 36px) geçer.
+ * `size="control"` telefonda dokunulan sekme şeridi içindir: şerit `h-auto`
+ * olur, yükseklik tetikleyicilere (`--control-h`: telefonda 44px, md+ 36px)
+ * geçer. `default` (segment) ve `line` ile çalışır; `line` + `control` e-santral
+ * sayfa sekmesidir (TabsTrigger'daki not). Varsayılan `line` (28px) masaüstü
+ * yoğun yüzey içindir (docs/ui-control-sizing.md, #854).
  */
 function TabsList({
   className,
@@ -100,6 +103,16 @@ function TabsTrigger({
         "group-data-[size=control]/tabs-list:h-(--control-h)",
         "data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground",
         "after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[-7px] group-data-horizontal/tabs:after:h-px group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-1 group-data-vertical/tabs:after:w-px group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100",
+        // `line` + `size="control"` (#854): e-santral sayfa sekmesi —
+        // order-detail.module.css `.tab` kalıbı. Yükseklik `--control-h`
+        // (telefonda 44px, md+ 36px), metin kontrol ölçeğinde (`--control-fs`),
+        // dolgu yok; seçili sekme mavi metin + 2px mavi alt çizgi
+        // (design-pattern-esantral: "mavi = seçili sekme"). Alt çizgi ve odak
+        // halkası tetikleyicinin İÇİNDE: yatay kaydırmalı şerit
+        // (`overflow-y-hidden`) dışarı taşanı keser. İki grup öneki birlikte
+        // seçiciyi `line` kurallarından özgül kılar; CSS sırasına bağlı değil.
+        "group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:h-(--control-h) group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:px-3 group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:text-(length:--control-fs) group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:hover:bg-transparent group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:focus-visible:ring-inset group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:data-[state=active]:border-transparent group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:data-[state=active]:bg-transparent group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:data-[state=active]:text-primary-strong dark:group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:data-[state=active]:bg-transparent",
+        "group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:after:bg-primary group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-horizontal/tabs:after:bottom-0 group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-horizontal/tabs:after:h-0.5 group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-vertical/tabs:after:right-0 group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:group-data-vertical/tabs:after:w-0.5",
         className
       )}
       {...props}

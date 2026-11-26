@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test"
 import { readFileSync } from "node:fs"
+import { relative, sep } from "node:path"
 import { fileURLToPath } from "node:url"
+import { cn } from "@/lib/utils"
 import { eachTsx, jsxOpeningTags } from "./jsx-source-scan"
+import { tabsListVariants } from "./tabs"
 
 const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8")
 
@@ -171,16 +174,105 @@ describe("dokunma ölçülü seçiciler — size=\"control\" (#846)", () => {
     expect(offenders).toEqual([])
   })
 
-  test('TabsList size="control" ile variant="line" birlikte kullanılmaz', () => {
-    const offenders: string[] = []
-    eachTsx(srcRoot, (path, source) => {
-      for (const tag of openingTags(source)) {
-        if (tag.startsWith("<TabsList") && /size="control"/.test(tag) && /variant="line"/.test(tag)) {
-          offenders.push(path)
+  test('`line` sekme `size="control"` ile kontrol ölçüsüne bağlanır (#854)', () => {
+    const tabs = read("./tabs.tsx")
+    const lineControl = "group-data-[variant=line]/tabs-list:group-data-[size=control]/tabs-list:"
+    // Tetikleyici: 44 / 36px, kontrol metni, e-santral seçili sekme (mavi metin + 2px mavi çizgi).
+    for (const cls of [
+      "h-(--control-h)",
+      "px-3",
+      "text-(length:--control-fs)",
+      "data-[state=active]:bg-transparent",
+      "data-[state=active]:text-primary-strong",
+      "after:bg-primary",
+      "group-data-horizontal/tabs:after:bottom-0",
+      "group-data-horizontal/tabs:after:h-0.5",
+      "group-data-vertical/tabs:after:w-0.5",
+    ]) {
+      expect(tabs).toContain(`${lineControl}${cls}`)
+    }
+    // Şerit: line'ın sabit 44px bandı yerine h-auto (yükseklik tetikleyiciden).
+    const list = cn(tabsListVariants({ variant: "line", size: "control" }))
+    expect(list).toContain("group-data-horizontal/tabs:h-auto")
+    expect(list).not.toContain("group-data-horizontal/tabs:h-11")
+    // Varsayılan line (28px) masaüstü yoğun yüzey için korunur.
+    expect(tabs).toContain("group-data-[variant=line]/tabs-list:h-7")
+    // Vitrin dokunma ölçülü sekme ve seçicileri gösterir.
+    const page = read("../../app/design/page.tsx")
+    expect(page).toContain('data-testid="selector-sizes"')
+    expect(page).toContain('<TabsList variant="line" size="control"')
+  })
+
+  /**
+   * #854 — telefonda dokunulan seçici dokunma ölçüsünü taşır: `TabsList`
+   * `size="control"`, `ToggleGroup` ve tek başına `Toggle` `size="control"`
+   * (seçenek kartı `row`; grup ölçüsü öğelere bağlamdan geçer). Upstream
+   * varsayılanı (line sekme 28px, Toggle 32px) yalnız masaüstü yoğun yüzeyde
+   * kalır ve aşağıda gerekçesiyle listelenir; yeni seçici ya ölçek alır ya da
+   * listeye girer. Artık eşleşmeyen satır testi düşürür.
+   * CI'daki `quality` işi Playwright koşmaz (test / lint / typecheck / build),
+   * bu yüzden dokunma hedefinin CI bekçisi bu kaynak kapısıdır; piksel ölçümü
+   * QA'nın 390px yürüyüşündedir.
+   */
+  const TOUCH_SIZES: Record<string, readonly string[]> = {
+    TabsList: ['"control"'],
+    ToggleGroup: ['"control"', '"row"'],
+    Toggle: ['"control"', '"row"'],
+  }
+  const DENSE_SELECTORS: readonly { file: string; tag: keyof typeof TOUCH_SIZES; reason: string }[] = [
+    {
+      file: "components/orders/order-table-column-header.tsx",
+      tag: "ToggleGroup",
+      reason:
+        "İş emri tablosunun kolon başlığı sıralama menüsü: tablo yalnız lg+ çizilir (order-list `hidden lg:block`), telefonda kart listesi var — masaüstü yoğun süzgeç, öğeler `sm` (32px).",
+    },
+    {
+      file: "app/design/record-patterns.tsx",
+      tag: "TabsList",
+      reason:
+        "Tasarım vitrininin kayıt kalıbı: varsayılan `line` (28px) masaüstü yoğun sekme örneği; dokunma ölçülü karşılığı aynı sayfadaki `selector-sizes` bloğunda.",
+    },
+    {
+      file: "components/orders/work-order-detail.tsx",
+      tag: "TabsList",
+      reason:
+        "İş emri detayının sayfa sekmeleri order-detail.module.css `.tab` ile zaten --control-h (44 / 36px); #911 sayfayı sekmesiz tek sayfaya çeviriyor, satır o PR'la kalkar.",
+    },
+  ]
+  /** Kapsam dışı: primitive'lerin kendisi ve kendi --mk-* ölçeğini taşıyan pazarlama yüzeyi. */
+  const TOUCH_OUT_OF_SCOPE = [`components${sep}ui${sep}`, `components${sep}sections${sep}`, `components${sep}marketing${sep}`]
+
+  function unsizedSelectors() {
+    const rows: { file: string; tag: string; line: number }[] = []
+    eachTsx(
+      srcRoot,
+      (path, source) => {
+        const file = relative(srcRoot, path).split(sep).join("/")
+        for (const tag of jsxOpeningTags(source, Object.keys(TOUCH_SIZES), path)) {
+          const size = tag.attributes.get("size")
+          if (!size || !TOUCH_SIZES[tag.name].includes(size)) rows.push({ file, tag: tag.name, line: tag.line })
         }
-      }
-    })
+      },
+      (path) => TOUCH_OUT_OF_SCOPE.some((dir) => `${relative(srcRoot, path)}${sep}`.startsWith(dir))
+    )
+    return rows
+  }
+
+  test("telefonda dokunulan seçici size=\"control\" alır; yoğun masaüstü istisnaları gerekçeli (#854)", () => {
+    const rows = unsizedSelectors()
+    const offenders = rows
+      .filter((row) => {
+        const covered = DENSE_SELECTORS.some((e) => e.file === row.file && e.tag === row.tag)
+        // Bir istisna satırı dosyadaki tek etiketi örter; ikinci ölçüsüz seçici yine düşer.
+        const siblings = rows.filter((r) => r.file === row.file && r.tag === row.tag).length
+        return !covered || siblings > 1
+      })
+      .map((row) => `${row.file}:${row.line} <${row.tag}>`)
     expect(offenders).toEqual([])
+
+    const stale = DENSE_SELECTORS.filter((e) => !rows.some((row) => row.file === e.file && row.tag === e.tag))
+    expect(stale.map((e) => `${e.file} <${e.tag}>`)).toEqual([])
+    for (const e of DENSE_SELECTORS) expect(e.reason.length).toBeGreaterThan(20)
   })
 })
 

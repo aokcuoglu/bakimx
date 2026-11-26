@@ -433,7 +433,7 @@ export function TechnicianOrderDetail({
           önceki adımın tamamlanmış olması bir sekmeye geçişi engellemez,
           kilit yalnız düzenlemeyi durdurur (yukarıdaki salt-okunur uyarısı). */}
       <Tabs value={currentStep} onValueChange={(value) => isStepId(value) && goToStep(value)}>
-        <TabsList variant="line" className="flex w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <TabsList variant="line" size="control" className="flex w-full flex-nowrap gap-1 border-b border-border -mb-px overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {steps.map((step) => {
             const Icon = step.icon
             return (
