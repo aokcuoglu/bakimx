@@ -1193,7 +1193,7 @@ export function VehicleEntryWizard({
             onFieldChange={setField}
             confidence={confidence}
             showDetails={showDetails}
-            onToggleDetails={() => setShowDetails((s) => !s)}
+            onShowDetailsChange={setShowDetails}
             vinResolve={vinResolve}
             vinLookup={entitlements.vinLookup}
             showAddonUpsell={entitlements.showAddonUpsell}
@@ -1263,7 +1263,7 @@ export function VehicleEntryWizard({
             onFieldChange={setField}
             confidence={confidence}
             showDetails={showDetails}
-            onToggleDetails={() => setShowDetails((s) => !s)}
+            onShowDetailsChange={setShowDetails}
             vinResolve={vinResolve}
             vinLookup={entitlements.vinLookup}
             showAddonUpsell={entitlements.showAddonUpsell}
