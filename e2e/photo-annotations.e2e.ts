@@ -38,6 +38,8 @@ test.afterAll(async () => {
 test("photo source survives touch annotation, retry, zoom and saved-version editing", async ({ page }) => {
   test.setTimeout(90_000)
   await page.goto(`/api/auth/dev-login?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(`/orders/${orderId}?tab=kanit`)}`)
+  // Hasar kaydı görünür alana yaklaşınca bağlanır (#911): bölüme in.
+  await page.getByRole("region", { name: "Hasar", exact: true }).scrollIntoViewIfNeeded()
   await page.getByRole("button", { name: "Bölge listesinden hasar ekle", exact: true }).click()
   await page.getByRole("button", { name: "Ön tampon", exact: true }).click()
   const jpeg = await page.evaluate(() => {

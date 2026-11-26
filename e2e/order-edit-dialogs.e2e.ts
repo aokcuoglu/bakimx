@@ -64,17 +64,16 @@ test("item edits stay local until the dialog is saved", async ({ page }) => {
     savedBody = route.request().postData() ?? ""
     await route.fulfill({ status: 200, contentType: "application/json", body: '{"success":true}' })
   })
-  await page.goto(`/api/auth/dev-login?redirect=/orders/${itemOrderId}`)
-  await page.getByRole("tab", { name: /Parça & İşçilik/ }).click()
+  await page.goto(`/api/auth/dev-login?redirect=/orders/${itemOrderId}?tab=parca`)
   const edit = page.getByRole("button", { name: "Kalemi düzenle" }).first()
   await edit.waitFor({ timeout: 10_000 }).catch(() => {})
   test.skip(await edit.count() === 0, "An editable order item is required")
 
-  await page.getByRole("button", { name: "Parça ekle" }).click()
+  await page.getByRole("button", { name: "Parça ekle" }).first().click()
   await expect(page.getByRole("dialog", { name: "Parça ekle" })).toBeVisible()
   await page.keyboard.press("Escape")
 
-  await page.getByRole("button", { name: "İşçilik ekle" }).click()
+  await page.getByRole("button", { name: "İşçilik ekle" }).first().click()
   const labor = page.getByRole("dialog", { name: "İşçilik ekle" })
   const labels = ["İşçilik", "Miktar", "KDV", "Birim Fiyat"]
   const tops = await Promise.all(labels.map(async (label) => (await labor.getByText(label, { exact: true }).first().boundingBox())!.y))
