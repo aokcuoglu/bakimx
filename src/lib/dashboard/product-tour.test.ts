@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import {
   getDashboardTourSteps,
@@ -51,8 +51,25 @@ describe("dashboard product tour config", () => {
     expect(source).not.toContain("Kurulum tercihleriniz kaydedildi")
   })
 
+  // Hedefsiz adım turu sessizce atlatır (#930: create-center). Her adım
+  // çapasının değeri, tur dosyası ve testler dışında bir kaynak dosyada
+  // (data-tour / tourId / NAV_TOUR_ATTR) geçmek zorunda.
+  test("every tour target id is anchored somewhere in rendered source", () => {
+    const root = join(process.cwd(), "src")
+    const files = (readdirSync(root, { recursive: true }) as string[])
+      .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+      .filter((f) => !f.endsWith("lib/dashboard/product-tour.ts"))
+    const corpus = files.map((f) => readFileSync(join(root, f), "utf8")).join("\n")
+    const ids = new Set(
+      [true, false].flatMap((m) => getDashboardTourSteps(m).flatMap((s) => s.targets)),
+    )
+    for (const id of ids) {
+      expect(corpus.includes(`"${id}"`) || corpus.includes(`data-tour="${id}"`)).toBe(true)
+    }
+  })
+
   test("tourTargetSelector builds data-tour attribute", () => {
-    expect(tourTargetSelector("create-center")).toBe('[data-tour="create-center"]')
+    expect(tourTargetSelector("global-search")).toBe('[data-tour="global-search"]')
   })
 })
 
@@ -60,7 +77,7 @@ describe("nextAvailableStepIndex", () => {
   const steps: TourStepDef[] = [
     { id: "a", title: "A", description: "", targets: ["welcome-banner"] },
     { id: "b", title: "B", description: "", targets: ["nav-orders"] },
-    { id: "c", title: "C", description: "", targets: ["create-center"] },
+    { id: "c", title: "C", description: "", targets: ["sidebar-trigger"] },
   ]
 
   test("skips missing targets forward", () => {

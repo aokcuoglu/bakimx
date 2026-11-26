@@ -1,7 +1,6 @@
 export type TourTargetId =
   | "welcome-banner"
   | "nav-orders"
-  | "create-center"
   | "global-search"
   | "sidebar-trigger"
   | "first-order"
