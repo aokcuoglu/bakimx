@@ -4,26 +4,57 @@ import { ChevronRight, TriangleAlert } from "lucide-react"
 import { DetailPanel, OrderStatusPill, detail } from "@/components/orders/order-detail-surface"
 import { formatTRY } from "@/lib/format"
 import type { OrderSectionId } from "@/lib/orders/detail-sections"
-import type { OrderNextStep } from "@/lib/orders/next-step"
+import type { OrderNextStep, OrderStepIssue } from "@/lib/orders/next-step"
 import { cn } from "@/lib/utils"
 
 // İki satıra sığmayacak şikâyet "devamı" ile Özet'teki tam metne bağlanır.
 // 390px telefonda kart içi satır ~40 karakter.
 const COMPLAINT_PREVIEW_CHARS = 80
 
-function NextStepLine({ step }: { step: OrderNextStep }) {
+/** Engel ya da not: ne eksik, hangileri, ne yapılmalı ve Kalemler'e bağlantı (#913). */
+function StepIssue({
+  issue,
+  blocker,
+  onNavigate,
+}: {
+  issue: OrderStepIssue
+  blocker: boolean
+  onNavigate: (id: OrderSectionId) => void
+}) {
+  return (
+    <div className={detail.stepIssue}>
+      {blocker && <TriangleAlert aria-hidden className={detail.stepIssueIcon} />}
+      <div className="min-w-0">
+        <p className={blocker ? detail.stepIssueTitle : undefined}>{issue.text}</p>
+        {issue.preview && <p className="truncate text-foreground">{issue.preview}</p>}
+        <p>{issue.hint}</p>
+        <a
+          href="#kalemler"
+          className={cn(detail.hit, "mt-0.5 inline-block font-medium text-primary hover:underline")}
+          onClick={(event) => {
+            event.preventDefault()
+            onNavigate("kalemler")
+          }}
+        >
+          {issue.linkLabel}
+        </a>
+      </div>
+    </div>
+  )
+}
+
+function NextStepLine({ step, onNavigate }: { step: OrderNextStep; onNavigate: (id: OrderSectionId) => void }) {
   return (
     <div className={detail.nextStep}>
       <p>
         Sıradaki adım: <span className="font-semibold">{step.label}</span>
       </p>
-      {step.blocker && (
-        <p className={detail.blocker}>
-          <TriangleAlert aria-hidden />
-          {step.blocker}
-        </p>
-      )}
-      {step.note && <p className="text-[13px] leading-[18px] text-muted-foreground">{step.note}</p>}
+      {step.blockers.map((issue) => (
+        <StepIssue key={issue.kind} issue={issue} blocker onNavigate={onNavigate} />
+      ))}
+      {step.notes.map((issue) => (
+        <StepIssue key={issue.kind} issue={issue} blocker={false} onNavigate={onNavigate} />
+      ))}
     </div>
   )
 }
@@ -59,8 +90,16 @@ export function OrderMobileSummary({
 }) {
   const hasComplaint = complaint.trim().length > 0
   const truncated = complaint.length > COMPLAINT_PREVIEW_CHARS || complaint.includes("\n")
+  // Engel varsa önce o (#913): başlıktaki düğme pasif, nedeni ilk okunan şey olsun.
+  const blocked = Boolean(nextStep && nextStep.blockers.length > 0)
+  const stepBlock = nextStep && (
+    <div className={detail.block}>
+      <NextStepLine step={nextStep} onNavigate={onNavigate} />
+    </div>
+  )
   return (
     <section aria-label="Kabul özeti" className={cn(detail.shell, detail.summary)}>
+      {blocked && stepBlock}
       <div className={detail.block}>
         <p className={detail.fieldLabel}>Müşteri şikayeti</p>
         {hasComplaint ? (
@@ -120,11 +159,7 @@ export function OrderMobileSummary({
           <ChevronRight aria-hidden className={detail.summaryChevron} />
         </a>
       )}
-      {nextStep && (
-        <div className={detail.block}>
-          <NextStepLine step={nextStep} />
-        </div>
-      )}
+      {!blocked && stepBlock}
     </section>
   )
 }
@@ -132,15 +167,24 @@ export function OrderMobileSummary({
 /**
  * Raydaki Durum kartı (#911, iki kolonda): durum hapı ve sıradaki adım.
  * Salt okunur — aksiyonlar başlıkta kalır. Hap panel başlığında (#912), kart
- * gövdesi yalnız sıradaki adımı taşır. Engellerin ayrıntısı ve çıkış yolu
- * şimdilik başlığın altındaki uyarılarda (#913'te bu karta taşınır).
+ * gövdesi sıradaki adımı ve onu kapatan engelleri taşır: ne eksik, hangileri,
+ * ne yapılmalı ve Kalemler'e bağlantı (#913 — başlığın altındaki uyarı şeritleri
+ * buraya taşındı).
  */
-export function OrderStatusCard({ status, nextStep }: { status: string; nextStep: OrderNextStep | null }) {
+export function OrderStatusCard({
+  status,
+  nextStep,
+  onNavigate,
+}: {
+  status: string
+  nextStep: OrderNextStep | null
+  onNavigate: (id: OrderSectionId) => void
+}) {
   return (
     <DetailPanel title="Durum" aside={<OrderStatusPill status={status} />} className={detail.statusCard}>
       <div className={detail.block}>
         {nextStep ? (
-          <NextStepLine step={nextStep} />
+          <NextStepLine step={nextStep} onNavigate={onNavigate} />
         ) : (
           <p className="text-[15px] leading-5 text-muted-foreground">
             {status === "cancelled" ? "Araç kabulü iptal edildi." : "Araç teslim edildi."}

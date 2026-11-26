@@ -40,7 +40,6 @@ import {
   RotateCcw,
   Undo2,
   Plus,
-  TriangleAlert,
   X,
   HardHat,
   ChevronRight,
@@ -746,27 +745,33 @@ export function WorkOrderDetail({
   // OTP akışını tetikler (müşteri onaylı teslim); verify hem intake hem order'ı
   // delivered yapar.
   const nextActions = NEXT_STATUSES[order.status] || []
-  const headerActions: DetailHeaderAction[] = nextActions.map((a) => ({
-    key: a.key,
-    label: a.key === "delivered" ? "Teslim Et (OTP)" : a.label,
-    onClick:
-      a.key === "delivered"
-        ? handleRequestDeliveryOtp
-        : a.key === "cancelled"
-          ? requestCancel
-          : () => void changeStatus(a.key),
-    tone: a.key === "cancelled" ? "danger" : a.primary ? "primary" : "secondary",
-    icon: ORDER_BACK_ACTION_ICONS[order.status]?.[a.key] ?? ORDER_ACTION_ICONS[a.key],
-    disabled:
-      (a.key === "delivered" && deliveryBlocked) ||
-      (a.key === "ready_for_delivery" && partsDecisionBlocked),
-  }))
-  // Telefon özet kartı ve raydaki Durum kartı: başlıktaki birincil aksiyon + engeli.
+  // Telefon özet kartı ve raydaki Durum kartı: başlıktaki birincil aksiyon + engelleri.
   const nextStep = orderNextStep({
     status: order.status,
     actions: nextActions,
-    unpricedCount: unpricedItems.length,
-    undecidedCount: undecidedRequests.length,
+    unpricedNames: unpricedItems.map((item) => item.name),
+    undecidedNames: undecidedRequests.map((request) => request.partName),
+  })
+  // Pasif birincil düğmenin nedeni ekran okuyucuya (#913); görünür ayrıntı Durum kartında.
+  const blockedReason = nextStep?.blockers.map((issue) => `${issue.text}. ${issue.hint}`).join(" ")
+  const headerActions: DetailHeaderAction[] = nextActions.map((a) => {
+    const disabled =
+      (a.key === "delivered" && deliveryBlocked) ||
+      (a.key === "ready_for_delivery" && partsDecisionBlocked)
+    return {
+      key: a.key,
+      label: a.key === "delivered" ? "Teslim Et (OTP)" : a.label,
+      onClick:
+        a.key === "delivered"
+          ? handleRequestDeliveryOtp
+          : a.key === "cancelled"
+            ? requestCancel
+            : () => void changeStatus(a.key),
+      tone: a.key === "cancelled" ? "danger" : a.primary ? "primary" : "secondary",
+      icon: ORDER_BACK_ACTION_ICONS[order.status]?.[a.key] ?? ORDER_ACTION_ICONS[a.key],
+      disabled,
+      disabledReason: disabled && a.primary ? blockedReason : undefined,
+    }
   })
 
   const { vehicle: vehiclePhotos, damage: damagePhotos } = partitionIntakePhotos(intake.photos)
@@ -922,49 +927,6 @@ export function WorkOrderDetail({
             </AlertDescription>
           </Alert>
         )
-      )}
-
-      {/* Teslim adımında fiyatsız kalem varsa: başlıktaki teslim butonu pasif,
-          gerekçe ve çıkış yolu burada. Yalnız teslim adımında gösterilir —
-          önceki adımlarda fiyat henüz beklenen bir eksik değil. */}
-      {unpricedItems.length > 0 && order.status === "ready_for_delivery" && (
-        <Alert variant="warning">
-          <TriangleAlert />
-          <AlertTitle>{unpricedItems.length} kalemin fiyatı girilmemiş.</AlertTitle>
-          <AlertDescription>
-            <p className="truncate">
-              {unpricedItems.slice(0, 2).map((i) => i.name).join(", ")}
-              {unpricedItems.length > 2 && `, +${unpricedItems.length - 2}`}
-            </p>
-            <p className="text-xs">Teslim için tüm kalemlere fiyat girin (0 TL girilebilir).</p>
-            <Button variant="outline" onClick={() => scrollToOrderSection("kalemler")} className="mt-1">
-              Kalemlerde tamamla
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Karar bekleyen parça talebi: fiyat uyarısından farklı olarak teslim
-          adımından ÖNCE de gösterilir — "Teslime Hazır"ı da kapatan engel budur,
-          kullanıcı o düğmeyi pasif bulmadan önce nedenini görsün. */}
-      {partsDecisionBlocked && !orderLocked && (
-        <Alert variant="warning">
-          <TriangleAlert />
-          <AlertTitle>{undecidedRequests.length} parça talebi karar bekliyor.</AlertTitle>
-          <AlertDescription>
-            <p className="truncate">
-              {undecidedRequests.slice(0, 2).map((r) => r.partName).join(", ")}
-              {undecidedRequests.length > 2 && `, +${undecidedRequests.length - 2}`}
-            </p>
-            <p className="text-xs">
-              Her talebi ya kaleme ekleyin ya da iptal edin; karar verilmeden araç kabulü teslime
-              hazırlanamaz ve teslim edilemez.
-            </p>
-            <Button variant="outline" onClick={() => scrollToOrderSection("kalemler")} className="mt-1">
-              Kalemlerde karar ver
-            </Button>
-          </AlertDescription>
-        </Alert>
       )}
 
       {deliveryOtpMode && order.status === "ready_for_delivery" && (
@@ -1431,7 +1393,7 @@ export function WorkOrderDetail({
 
         {/* RAY — iki kolonda yapışkan; tek kolonda kartlar bölümlerin içine girer. */}
         <div ref={railRef} className={detail.rail}>
-          <OrderStatusCard status={order.status} nextStep={nextStep} />
+          <OrderStatusCard status={order.status} nextStep={nextStep} onNavigate={scrollToOrderSection} />
 
           <div data-section="odeme" tabIndex={-1} className={cn(detail.section, detail.oPricing)}>
             {/* Ödeme kartı (#912): sayfada paranın tek yeri. */}

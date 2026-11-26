@@ -1,6 +1,6 @@
 "use client"
 
-import type { ComponentType, ReactNode } from "react"
+import { useId, type ComponentType, type ReactNode } from "react"
 import Link from "next/link"
 import { ChevronRight, Loader2, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -25,10 +25,15 @@ export type DetailHeaderAction = {
   icon?: ComponentType<{ className?: string }>
   /**
    * Aksiyon şu an yapılamıyor (ör. teslim için eksik fiyat). Gerekçe başlıkta
-   * değil, başlığın altındaki uyarı şeridinde anlatılır — başlık üç katmanını
-   * korur, açıklama metni taşımaz.
+   * görünür metin olarak yazılmaz — başlık üç katmanını korur; ayrıntı ve çıkış
+   * yolu Durum kartında (#913).
    */
   disabled?: boolean
+  /**
+   * Pasif birincil düğmenin nedeni (#913). Görünmez; düğmeye `aria-describedby`
+   * ile bağlanır, ekran okuyucu düğmeyle birlikte okur.
+   */
+  disabledReason?: string
 }
 
 /**
@@ -70,6 +75,8 @@ export function DetailHeader({
 }) {
   const { primary, overflow } = splitHeaderActions(actions)
   const hasActions = Boolean(primary) || overflow.length > 0
+  const reasonId = useId()
+  const primaryReason = primary?.disabled ? primary.disabledReason : undefined
 
   return (
     <header className={detail.header}>
@@ -95,6 +102,7 @@ export function DetailHeader({
               className={detail.primaryAction}
               onClick={primary.onClick}
               disabled={loading || primary.disabled}
+              aria-describedby={primaryReason ? reasonId : undefined}
             >
               {loading ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -103,6 +111,11 @@ export function DetailHeader({
               ) : null}
               {primary.label}
             </Button>
+          )}
+          {primaryReason && (
+            <span id={reasonId} className="sr-only">
+              {primaryReason}
+            </span>
           )}
           {overflow.length > 0 && (
             <DropdownMenu>

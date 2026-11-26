@@ -177,3 +177,25 @@ test("#912: Durum hapı panel başlığında, teslim kodu düğmesi tek yerde", 
   expect(DETAIL).toContain('label: a.key === "delivered" ? "Teslim Et (OTP)" : a.label')
   expect(DETAIL).toContain('(a.key === "delivered" && deliveryBlocked)')
 })
+
+/**
+ * #913 — engeller Durum kartında. Başlığın altındaki iki uyarı şeridi kalktı;
+ * aynı metin, ad önizlemesi ve Kalemler'e çıkış yolu Durum kartında ve telefon
+ * özet kartında (`orderNextStep`, next-step.test.ts). Bağlantı sayfa içi `<a>`
+ * ("devamı" ile aynı kalıp), düğme değil.
+ */
+test("#913: uyarı şeritleri yok; engeller Durum kartında Kalemler bağlantısıyla", () => {
+  expect(DETAIL).not.toContain("kalemin fiyatı girilmemiş.")
+  expect(DETAIL).not.toContain("parça talebi karar bekliyor.")
+  expect(DETAIL).not.toContain('scrollToOrderSection("kalemler")} className="mt-1"')
+  const issue = SUMMARY.slice(SUMMARY.indexOf("function StepIssue"), SUMMARY.indexOf("function NextStepLine"))
+  expect(issue).toContain('href="#kalemler"')
+  expect(issue).toContain('onNavigate("kalemler")')
+  expect(issue).toContain("{issue.linkLabel}")
+  // Durum kartı ve telefon özeti aynı satırı, aynı gezinmeyle çizer.
+  expect(SUMMARY.match(/<NextStepLine step=\{nextStep\} onNavigate=\{onNavigate\} \/>/g)).toHaveLength(2)
+  expect(DETAIL).toContain("<OrderStatusCard status={order.status} nextStep={nextStep} onNavigate={scrollToOrderSection}")
+  // Telefonda engel varsa kartın başında okunur.
+  expect(SUMMARY).toContain("{blocked && stepBlock}")
+  expect(SUMMARY).toContain("{!blocked && stepBlock}")
+})

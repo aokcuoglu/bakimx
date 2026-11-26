@@ -36,3 +36,17 @@ test("BÜYÜK HARF etiket kalıbı geri dönmez", () => {
     expect(read(f)).not.toContain("uppercase tracking-wider")
   }
 })
+
+/**
+ * #913 — pasif birincil düğmenin nedeni görünür metin değil (başlık üç katmanını
+ * korur), ekran okuyucuya `aria-describedby` ile okunur. Neden Durum kartındaki
+ * engellerle aynı kaynaktan (`nextStep.blockers`).
+ */
+test("pasif birincil düğmenin nedeni aria-describedby ile okunur", () => {
+  expect(HEADER).toContain("disabledReason?: string")
+  expect(HEADER).toContain("const primaryReason = primary?.disabled ? primary.disabledReason : undefined")
+  expect(HEADER).toContain("aria-describedby={primaryReason ? reasonId : undefined}")
+  expect(HEADER).toMatch(/<span id=\{reasonId\} className="sr-only">/)
+  expect(DETAIL).toContain("disabledReason: disabled && a.primary ? blockedReason : undefined")
+  expect(DETAIL).toContain("nextStep?.blockers.map(")
+})
