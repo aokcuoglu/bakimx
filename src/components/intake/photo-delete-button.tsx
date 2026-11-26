@@ -88,10 +88,10 @@ export function PhotoDeleteButton({
       ) : (
         <Button
           type="button"
-          variant="outline"
+          variant="destructive-outline"
           size="sm"
           onClick={() => setOpen(true)}
-          className={cn("text-destructive-strong", className)}
+          className={className}
         >
           <Trash2 className="size-3.5" />
           Fotoğrafı sil
