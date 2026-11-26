@@ -60,8 +60,11 @@ girdinin dolgusu `--field-px` yerine 6px'tir (`pl-1.5` / `pr-1.5`), öbür yan
 `--field-px` kalır. Eklenti kendi boyunda kalır (`shrink-0`), küçülen girdidir
 (`min-w-0`); düğme / kbd yanındaki dar boşluk negatif dış boşlukla değil küçük
 dolguyla verilir (`mr-[-0.3rem]` eklentiyi kutudan ~5px taşırıyordu). Sığmayan
-placeholder ya da değer odak dışında `…` ile biter (`text-ellipsis`). Textarea'lı
-grup bu kuralın dışındadır (eklentisi blok hizalıdır).
+placeholder ya da değer odak dışında `…` ile biter (`text-ellipsis`). Uzunluğu
+veriye bağlı metin eklentisi (parça aramasındaki SKU çipi) girdiyi ezmesin diye
+sınırlanır: eklenti `min-w-0 max-w-2/5 shrink`, metni `min-w-0 truncate` ve tam
+değer `title`'da. Textarea'lı grup bu kuralın dışındadır (eklentisi blok
+hizalıdır).
 
 **Odak halkası** tüm form kontrollerinde aynıdır: `ring-4 ring-ring/20`,
 geçersizde `ring-4 ring-destructive/10` (koyu temada `/20`). `InputGroup`

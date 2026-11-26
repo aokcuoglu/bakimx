@@ -179,7 +179,7 @@ describe("Combobox popup'ı grubun kutusuna çapalanır (#887)", () => {
   }>
 
   test("ComboboxInput kabı Base UI Combobox.InputGroup + InputGroup'tur", () => {
-    // Hook'suz bileşen: çağrılınca kap öğesini döndürür.
+    // Düz fonksiyon çağrısı yalnız ComboboxInput hook'suz olduğu için geçerli; hook eklenirse bu test render'a geçmeli.
     const element: GroupElement = ComboboxInput({ size: "compact", className: "w-full" })
     expect(element.type).toBe(ComboboxPrimitive.InputGroup)
     expect(element.props.render.type).toBe(InputGroup)
@@ -193,19 +193,23 @@ describe("Combobox popup'ı grubun kutusuna çapalanır (#887)", () => {
     expect(attr(groups[0], "data-size")).toBe("sm")
   })
 
-  test("devre dışı girdide gruba basış Base UI'a bırakılmaz (liste açılmaz)", () => {
-    let prevented = false
-    const disabled: GroupElement = ComboboxInput({ disabled: true })
-    disabled.props.onMouseDown?.({ preventBaseUIHandler: () => { prevented = true } })
-    expect(prevented).toBe(true)
+  test("devre dışı / salt okunur girdide gruba basış Base UI'a bırakılmaz (liste açılmaz)", () => {
+    for (const props of [{ disabled: true }, { readOnly: true }]) {
+      let prevented = false
+      const element: GroupElement = ComboboxInput(props)
+      element.props.onMouseDown?.({ preventBaseUIHandler: () => { prevented = true } })
+      expect(prevented).toBe(true)
+    }
     const enabled: GroupElement = ComboboxInput({})
     expect(enabled.props.onMouseDown).toBeUndefined()
   })
 
   test("popup genişliği çapanın genişliğidir; girdi çapası telafisi yok", () => {
     const source = readFileSync(fileURLToPath(new URL("./combobox.tsx", import.meta.url)), "utf8")
-    expect(source).toContain("w-(--anchor-width) max-w-(--available-width)")
-    expect(source).not.toContain("min-w-[calc(var(--anchor-width)")
+    const popup = source.match(/"group\/combobox-content [^"]*"/)?.[0].slice(1, -1).split(/\s+/) ?? []
+    expect(popup).toContain("w-(--anchor-width)")
+    expect(popup).toContain("max-w-(--available-width)")
+    expect(popup.filter((cls) => cls.startsWith("min-w-"))).toEqual([])
     expect(source).not.toContain("data-chips")
   })
 

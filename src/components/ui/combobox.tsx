@@ -71,9 +71,11 @@ function keepSelectionOnEscape(
  * ile aynı yol): Base UI grubu popup'ın çapası olarak kaydeder, liste girdinin
  * değil kutunun tam genişliğinde ve sol kenarında açılır. Girdiye çapalıyken
  * liste 1px içeriden başlıyor, eklenti (⌄) kadar kısa bitiyordu (#887).
- * Gruba basmak girdiyi odaklar ve listeyi açar; girdi devre dışıysa basış
- * Base UI'a bırakılmaz (kökü `disabled` almayan çağrı yeri — ilçe alanı —
- * listeyi açmasın).
+ * Gruba basmak girdiyi odaklar ve listeyi açar. Girdi devre dışı ya da salt
+ * okunursa (`disabled` / `readOnly` yalnız girdide) basış Base UI'a bırakılmaz:
+ * kökü `disabled` almayan çağrı yeri (ilçe alanı) listeyi açmasın. Kök
+ * düzeyindeki `disabled` / `readOnly`'yi Base UI'ın grup işleyicisi kendisi
+ * karşılar.
  */
 function ComboboxInput({
   className,
@@ -90,10 +92,11 @@ function ComboboxInput({
   /** Input ölçeği (docs/ui-control-sizing.md); `InputGroup`'a geçer. */
   size?: InputSize
 }) {
+  const ignoreGroupPress = disabled || props.readOnly === true
   return (
     <ComboboxPrimitive.InputGroup
       render={<InputGroup size={size} className={cn("w-auto", className)} />}
-      onMouseDown={disabled ? (event) => event.preventBaseUIHandler() : undefined}
+      onMouseDown={ignoreGroupPress ? (event) => event.preventBaseUIHandler() : undefined}
     >
       <ComboboxPrimitive.Input
         render={<InputGroupInput disabled={disabled} />}
