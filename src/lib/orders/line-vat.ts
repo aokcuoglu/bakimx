@@ -23,16 +23,29 @@ import { applyTaxBps } from "@/lib/money"
 export const STANDARD_TAX_BPS = 2000
 
 /**
- * Satır KDV'sini hesaplarken kullanılacak oran: belgenin KDV oranı tanımlıysa o,
- * değilse standart %20.
- *
- * Belgede oran yokken bir satırın tick'i açılırsa düzenleyici standart oranı
- * belgeye de YAZAR (bkz. PartsLaborEditor / onApplyStandardTax) — aksi hâlde
- * satırda "+₺20,00 KDV" yazarken Genel Toplam'a hiç KDV girmezdi.
+ * Belgenin KDV oranı yokken standart %20'ye düşen oran. Satır gösteriminde
+ * DOĞRUDAN kullanılmaz (#1007): totals.ts `order.taxRate ?? 0` kullanır, yani
+ * oranı olmayan belgede satırda %20 göstermek Genel Toplam ile ayrışır. Satır
+ * için `rowTaxBps` kullan.
  */
 export function effectiveTaxBps(documentTaxBps: number | null | undefined): number {
   const bps = Math.trunc(documentTaxBps ?? 0)
   return bps > 0 ? bps : STANDARD_TAX_BPS
+}
+
+/**
+ * Satır gösteriminde kullanılacak KDV oranı (bps), totals.ts ile aynı kural:
+ * belgenin oranı varsa o; yoksa 0 — yalnız bu satırın tick'i belgeye standart
+ * %20'yi yazacaksa (`willApplyStandard`, bkz. onApplyStandardTax) %20.
+ * Oran 0 iken `lineVatKurus` 0 döner, satırda KDV ipucu/brüt görünmez.
+ */
+export function rowTaxBps(
+  documentTaxBps: number | null | undefined,
+  willApplyStandard: boolean
+): number {
+  const bps = Math.trunc(documentTaxBps ?? 0)
+  if (bps > 0) return bps
+  return willApplyStandard ? STANDARD_TAX_BPS : 0
 }
 
 /**
