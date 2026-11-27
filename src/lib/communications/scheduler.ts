@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db"
 import { formatTrDate, formatTrTime } from "@/lib/format-date"
 import { notifyAppointmentReminder, notifyMaintenanceReminder } from "@/lib/communications/triggers"
 import { appointmentDayWord } from "@/lib/communications/reminder-day"
+import { reminderDaysUntil } from "@/lib/reminders/dates"
 import { formatReminderType } from "@/lib/reminders/format"
 import { getPlanState, hasWorkshopFeature, type GatedFeature } from "@/lib/plan"
 
@@ -171,7 +172,7 @@ export async function processMaintenanceReminders(workshopId?: string): Promise<
     let shouldSend = false
 
     if (reminder.dueDate) {
-      const daysUntil = Math.ceil((reminder.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      const daysUntil = reminderDaysUntil(reminder.dueDate, now)
       const reminderDaysBefore = reminder.reminderDaysBefore ?? 7
 
       if (daysUntil <= reminderDaysBefore || daysUntil <= 0) {
