@@ -519,10 +519,10 @@ test("getEnabledFeatures paket özellikleri + açık ek özellikleri verir", () 
   expect(getEnabledFeatures(wsFields({ planTier: "premium" }))).toEqual([...GATED_FEATURES])
 })
 
-test("getVinLookupBaseQuota: pro 0, vinLookup ya da partsCatalog 15.000, premium 15.000", () => {
+test("getVinLookupBaseQuota: pro 0, vinLookup ya da partsCatalog 1.000 (hesap genelinde), premium/deneme 15.000", () => {
   expect(getVinLookupBaseQuota(wsFields())).toBe(0)
-  expect(getVinLookupBaseQuota(wsFields({ addons: ["vinLookup"] }))).toBe(15_000)
-  expect(getVinLookupBaseQuota(wsFields({ addons: ["partsCatalog"] }))).toBe(15_000)
+  expect(getVinLookupBaseQuota(wsFields({ addons: ["vinLookup"] }))).toBe(1_000)
+  expect(getVinLookupBaseQuota(wsFields({ addons: ["partsCatalog"] }))).toBe(1_000)
   expect(getVinLookupBaseQuota(wsFields({ addons: ["ocrIntake"] }))).toBe(0)
   expect(getVinLookupBaseQuota(wsFields({ planTier: "premium" }))).toBe(15_000)
 })

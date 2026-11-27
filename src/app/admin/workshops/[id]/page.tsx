@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { IndefiniteAccessBadge } from "@/app/admin/indefinite-access-badge"
+import { isIndefiniteAccess } from "@/lib/admin/manual-plan-activation"
 import { ArrowLeft, ChevronLeft, ChevronRight, Handshake } from "lucide-react"
 import { can, getAdminContext } from "@/lib/admin"
 import { prisma } from "@/lib/db"
@@ -171,6 +173,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
               <Badge variant="outline" className={cn("text-[11px]", SUB_BADGE[workshop.subscriptionStatus] ?? "bg-muted")}>
                 {SUB_LABELS[workshop.subscriptionStatus] ?? workshop.subscriptionStatus}
               </Badge>
+              {isIndefiniteAccess({ ...workshop, lifetimeLite: hasLifetimeLite(workshop) }) && <IndefiniteAccessBadge />}
               <Badge variant="outline" className="text-[11px] bg-muted text-muted-foreground">
                 {planLabel(workshop.planTier)}
               </Badge>
@@ -237,7 +240,13 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
           <Field label="Döngü" value={workshop.billingCycle ? CYCLE_LABELS[workshop.billingCycle] : null} />
           <Field
             label="Dönem bitişi"
-            value={workshop.currentPeriodEnd ? formatTrDate(workshop.currentPeriodEnd) : null}
+            value={
+              isIndefiniteAccess({ ...workshop, lifetimeLite: hasLifetimeLite(workshop) })
+                ? "Süresiz"
+                : workshop.currentPeriodEnd
+                  ? formatTrDate(workshop.currentPeriodEnd)
+                  : null
+            }
           />
           <Field
             label="Talep edilen paket"
@@ -313,6 +322,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
               extraVinQuota={workshop.extraVinQuota}
               addonBaseQuota={ADDON_VIN_LOOKUP_QUOTA}
               allUnlockedReason={allUnlockedReason}
+              branchCount={workshop.organizationId ? await prisma.workshop.count({ where: { organizationId: workshop.organizationId, kind: "customer" } }) : 1}
             />
           ) : (
             <>

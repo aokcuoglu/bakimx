@@ -5,8 +5,11 @@ import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { planActivationAuditMetadata } from "@/lib/admin/plan-activation-audit"
+import { resolveManualActivationPeriod } from "@/lib/admin/manual-plan-activation"
+import { manualPlanActivationSchema } from "@/lib/validations/plan-activation"
 import { computeTrialEnd, hasLifetimeLite, isSalePlanTier, normalizeAddons } from "@/lib/plan"
-import { diffAddons, extraSeatsSchema, extraVinQuotaSchema, workshopAddonsSchema } from "@/lib/validations/workshop-addons"
+import { planAddonFanOut, resolveAddonTargets, type AddonTargetClient } from "@/lib/admin/addon-targets"
+import { extraSeatsSchema, extraVinQuotaSchema, workshopAddonsSchema } from "@/lib/validations/workshop-addons"
 import { activateBillingOrder } from "@/lib/billing/activate"
 import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
 import { verifiedRegistrationTrialData } from "@/lib/billing/registration-trial"
@@ -83,8 +86,6 @@ async function sendOwnerDecisionEmail(
   }
 }
 
-const STATUSES = ["trialing", "active", "past_due", "canceled"] as const
-type SubStatus = (typeof STATUSES)[number]
 
 const DEMO_STATUSES: DemoRequestStatus[] = ["new", "contacted", "qualified", "converted", "archived"]
 const SUPPORT_STATUSES: SupportRequestStatus[] = ["new", "in_progress", "resolved", "archived"]
@@ -143,12 +144,13 @@ export async function rejectWorkshop(workshopId: string): Promise<Result> {
 export async function activateWorkshopPlan(
   workshopId: string,
   tier: string,
-  status: string = "active"
+  input: unknown,
 ): Promise<Result> {
   const ctx = await requireAdminCapability("manageWorkshops")
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
   if (!isSalePlanTier(tier)) return { ok: false, error: "Geçersiz paket." }
-  if (!STATUSES.includes(status as SubStatus)) return { ok: false, error: "Geçersiz durum." }
+  const parsed = manualPlanActivationSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz dönem." }
 
   const current = await prisma.workshop.findUnique({
     where: { id: workshopId },
@@ -161,11 +163,16 @@ export async function activateWorkshopPlan(
     return { ok: false, error: "Aktif ücretli abonelik dönem ortasında değiştirilemez. Yenileme/faturalandırma akışını kullanın." }
   }
 
+  // Dönem ya da açık "süresiz" seçimi yazılır (#1040); sessiz süresiz erişim yok.
+  const period = resolveManualActivationPeriod(parsed.data, new Date())
+
   await prisma.workshop.update({
     where: { id: workshopId },
     data: {
       planTier: tier,
-      subscriptionStatus: status as SubStatus,
+      subscriptionStatus: "active",
+      billingCycle: period.billingCycle,
+      currentPeriodEnd: period.currentPeriodEnd,
       approvalStatus: "approved",
       requestedPlanTier: null,
       planRequestedAt: null,
@@ -177,7 +184,7 @@ export async function activateWorkshopPlan(
     "Workshop",
     workshopId,
     "admin_plan_activated",
-    JSON.stringify(planActivationAuditMetadata(current, tier, status))
+    JSON.stringify(planActivationAuditMetadata(current, tier, "active", period))
   )
   revalidatePath("/admin", "layout")
   return { ok: true }
@@ -248,7 +255,13 @@ export async function setWorkshopExtraSeats(workshopId: string, extraSeats: numb
 /**
  * Atölyenin ek özelliklerini (add-on) tek tek aç/kapa (#827). Tam liste gönderilir;
  * gelmeyen anahtar kapanır. Paket (`planTier`) ve self-serve yenileme bu alana
- * dokunmaz — burası `Workshop.addons`'ın bugünkü tek yazım yolu.
+ * dokunmaz — `Workshop.addons`'ın yazım yolları bu eylem ve CLI'dır
+ * (`scripts/workshop-admin.ts`).
+ *
+ * Ek özellikler hesap başınadır (#829): değişiklik organizasyonun tüm müşteri
+ * şubelerine yayılır; her şube için ayrı denetim kaydı, updateMany ile aynı
+ * transaction'da yazılır. Hiçbir hedef değişmiyorsa no-op; aynı listeyi yeniden
+ * kaydetmek ayrışmış şubeleri onarır.
  */
 export async function setWorkshopAddons(workshopId: string, addons: unknown): Promise<Result> {
   const ctx = await requireAdminCapability("manageWorkshops")
@@ -256,26 +269,31 @@ export async function setWorkshopAddons(workshopId: string, addons: unknown): Pr
   const parsed = workshopAddonsSchema.safeParse(addons)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz ek özellik." }
 
-  const workshop = await prisma.workshop.findFirst({
-    where: { id: workshopId, kind: "customer" },
-    select: { addons: true },
-  })
-  if (!workshop) return { ok: false, error: "İş yeri bulunamadı." }
+  const targets = await resolveAddonTargets(prisma as unknown as AddonTargetClient, workshopId)
+  if (!targets) return { ok: false, error: "İş yeri bulunamadı." }
 
   const next = normalizeAddons(parsed.data)
-  const diff = diffAddons(workshop.addons, next)
-  if (diff.added.length === 0 && diff.removed.length === 0) return { ok: true }
+  const { noop, workshopIds, entries } = planAddonFanOut(targets, next)
+  if (noop) return { ok: true }
 
-  await prisma.workshop.update({ where: { id: workshopId }, data: { addons: next } })
-  await AuditLogAction(
-    workshopId,
-    ctx.user.id,
-    "Workshop",
-    workshopId,
-    "admin_addons_set",
-    JSON.stringify(diff),
-  )
-  revalidatePath(`/admin/workshops/${workshopId}`, "page")
+  // `AuditLogAction` tek satır yazar; burada yazım + şube başına kayıt atomik
+  // olmalı, bu yüzden aynı şemayla doğrudan `auditLog.create` kullanılır.
+  await prisma.$transaction([
+    prisma.workshop.updateMany({ where: { id: { in: workshopIds }, kind: "customer" }, data: { addons: next } }),
+    ...entries.map(({ id, diff }) =>
+      prisma.auditLog.create({
+        data: {
+          workshopId: id,
+          actorUserId: ctx.user.id,
+          entityType: "Workshop",
+          entityId: id,
+          action: "admin_addons_set",
+          metadataJson: JSON.stringify(workshopIds.length > 1 ? { ...diff, workshopIds } : diff),
+        },
+      }),
+    ),
+  ])
+  for (const id of workshopIds) revalidatePath(`/admin/workshops/${id}`, "page")
   return { ok: true }
 }
 

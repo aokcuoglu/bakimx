@@ -165,6 +165,7 @@ export default async function OrderDetailPage({
       laborTotal: totals.laborTotal,
       externalLaborTotal: totals.externalLaborTotal,
       subtotal: totals.subtotal,
+      taxableSubtotal: totals.taxableSubtotal,
       discountAmount: totals.discountAmount,
       taxAmount: totals.taxAmount,
       grandTotal: totals.grandTotal,

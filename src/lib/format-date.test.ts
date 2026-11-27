@@ -7,6 +7,8 @@ import {
   formatTrDayMonthTime,
   formatTrLongDate,
   formatTrMediumDate,
+  formatTrPaddedDayMonthShortTime,
+  formatTrPaddedMediumDate,
   formatTrShortDate,
   formatTrTime,
   trDayKey,
@@ -86,5 +88,32 @@ describe("utils-client yeniden ihracı", () => {
   test("aynı fonksiyon referansı", () => {
     expect(formatDate).toBe(formatTrDate)
     expect(formatDateTime).toBe(formatTrDateTime)
+  })
+})
+
+describe("formatTrPadded* (satış konsolu biçimleri, #875)", () => {
+  const SINGLE_DIGIT = "2026-11-05T06:00:00Z" // TR 05 Kas 09:00
+
+  test("gün iki haneli, ay kısa", () => {
+    expect(formatTrPaddedMediumDate(SINGLE_DIGIT)).toBe("05 Kas 2026")
+    expect(formatTrPaddedDayMonthShortTime(SINGLE_DIGIT)).toBe("05 Kas 09:00")
+  })
+
+  test("eski toLocaleDateString çıktısıyla aynı (Istanbul'a sabitlenmiş)", () => {
+    for (const iso of [SINGLE_DIGIT, MORNING, LATE_NIGHT]) {
+      const d = new Date(iso)
+      const tz = "Europe/Istanbul"
+      expect(formatTrPaddedMediumDate(iso)).toBe(
+        d.toLocaleDateString("tr-TR", { timeZone: tz, day: "2-digit", month: "short", year: "numeric" }),
+      )
+      expect(formatTrPaddedDayMonthShortTime(iso)).toBe(
+        d.toLocaleDateString("tr-TR", { timeZone: tz, day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
+      )
+    }
+  })
+
+  test("geçersiz tarihte tire", () => {
+    expect(formatTrPaddedMediumDate("x")).toBe("—")
+    expect(formatTrPaddedDayMonthShortTime("x")).toBe("—")
   })
 })

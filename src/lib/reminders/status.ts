@@ -55,13 +55,3 @@ export function deriveReminderStatus(input: {
   if (isDueSoon) return "due_soon"
   return "upcoming"
 }
-
-export function getStatusFromDueDates(args: {
-  dueDate?: string | Date | null
-  dueMileage?: number | null
-  currentMileage?: number | null
-  reminderDaysBefore?: number | null
-  reminderKmBefore?: number | null
-}, now: Date = new Date()): ReminderStatus {
-  return deriveReminderStatus({ status: "upcoming", ...args }, now)
-}

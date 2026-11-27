@@ -111,8 +111,9 @@ export async function POST(request: Request) {
               bakimxDiscountBps: source.bakimxDiscountBps,
               extraSeats: 0,
               extraVinQuota: 0,
-              // Ek özellikler atölye bazında tutulur (#827); yeni şube kaynağın
-              // açık ek özelliklerini devralır — paket alanları gibi.
+              // Ek özellikler hesap başınadır (#829); yeni şube kaynağın açık ek
+              // özelliklerini devralır. Katalog kotası hesap genelinde sayılır
+              // (`resolveWorkshopQuotaContext`): extraVinQuota 0 kalır, toplam kapsar.
               addons: source.addons,
               onboardingProfile: {
                 status: "completed",
