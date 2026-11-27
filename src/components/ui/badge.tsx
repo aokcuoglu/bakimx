@@ -14,6 +14,16 @@ const badgeVariants = cva(
           "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
         destructive:
           "bg-destructive/10 text-destructive-strong focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
+        // Açık tonlu durum rozetleri (#1002): tonlu zemin + -strong metin + ince
+        // çerçeve tek yerde; çağrı yeri `bg-*/10` ezmesi yazmaz.
+        "success-tint":
+          "border-success/20 bg-success/10 text-success-strong [a]:hover:bg-success/20",
+        "warning-tint":
+          "border-warning/20 bg-warning/10 text-warning-strong [a]:hover:bg-warning/20",
+        "destructive-tint":
+          "border-destructive/20 bg-destructive/10 text-destructive-strong [a]:hover:bg-destructive/20",
+        "primary-tint":
+          "border-primary/20 bg-primary/10 text-primary-strong [a]:hover:bg-primary/20",
         outline:
           "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
         ghost:

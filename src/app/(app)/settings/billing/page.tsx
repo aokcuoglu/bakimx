@@ -140,7 +140,7 @@ export default async function SettingsBillingPage({ searchParams }: {
                   <TableCell className="px-3"><span className="block font-mono text-xs">{order.reference}</span><span className="text-xs text-muted-foreground">{describeBillingOrder(order).title} · {order.method === "card" ? "Kart" : order.method === "havale" ? "Havale/EFT" : "Manuel"}</span></TableCell>
                   <TableCell className="font-medium">{formatMinor(order.amountMinor)}</TableCell>
                   <TableCell>{formatDate(order.confirmedAt)}</TableCell>
-                  <TableCell className="px-3 text-right"><Badge variant="outline" className="border-success/20 bg-success/10 text-success-strong">Ödendi</Badge><Button asChild variant="ghost" size="compact"><Link href={`/api/billing/orders/${order.id}/receipt`} target="_blank" rel="noopener noreferrer">Makbuz</Link></Button></TableCell>
+                  <TableCell className="px-3 text-right"><Badge variant="success-tint">Ödendi</Badge><Button asChild variant="ghost" size="compact"><Link href={`/api/billing/orders/${order.id}/receipt`} target="_blank" rel="noopener noreferrer">Makbuz</Link></Button></TableCell>
                 </TableRow>)}</TableBody>
               </Table>
             )}

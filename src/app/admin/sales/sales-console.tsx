@@ -358,7 +358,7 @@ export function SalesConsole({
     <div className="space-y-8">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
-          <Badge variant="outline" className="mb-3 gap-1.5 bg-primary/10 text-primary-strong">
+          <Badge variant="primary-tint" className="mb-3 gap-1.5">
             <Radar className="size-3.5" /> Canlı saha görünümü
           </Badge>
           <h1 className="text-page-title text-foreground">Satış operasyon merkezi</h1>
@@ -796,10 +796,8 @@ function LeadCard({
             <h3 className="font-semibold text-foreground">{salesLeadDisplayName(lead)}</h3>
             <Badge variant="outline" className={`text-[11px] ${statusColor}`}>{statusLabel}</Badge>
             <Badge
-              variant="outline"
-              className={lead.locationConfirmedAt
-                ? "bg-success/10 text-success-strong border-success/20 text-[11px]"
-                : "bg-warning/10 text-warning-strong border-warning/20 text-[11px]"}
+              variant={lead.locationConfirmedAt ? "success-tint" : "warning-tint"}
+              className="text-[11px]"
             >
               {lead.locationConfirmedAt ? "Konum doğrulandı" : "Konum bekliyor"}
             </Badge>
@@ -1060,7 +1058,7 @@ function DiscountCodeSection({
               {isAdmin ? "BakımX bütçesinden bir danışmana özel kod verin." : "Kendi satış marjınızdan müşteriye özel kod oluşturun."}
             </p>
           </div>
-          <Badge variant="outline" className={isAdmin ? "bg-primary/10 text-primary-strong" : "bg-warning/10 text-warning-strong"}>
+          <Badge variant={isAdmin ? "primary-tint" : "warning-tint"}>
             {isAdmin ? "BakımX destekli" : "Danışman bütçeli"}
           </Badge>
         </div>
@@ -1180,8 +1178,7 @@ function DiscountCodeSection({
                       <td className="px-4 py-2.5">%{dc.discountPercent}</td>
                       <td className="px-4 py-2.5">
                         <Badge
-                          variant="outline"
-                          className={dc.fundingSource === "bakimx_funded" ? "bg-primary/10 text-primary-strong" : "bg-warning/10 text-warning-strong"}
+                          variant={dc.fundingSource === "bakimx_funded" ? "primary-tint" : "warning-tint"}
                         >
                           {SALES_DISCOUNT_FUNDING_LABELS[dc.fundingSource]}
                         </Badge>
@@ -1192,9 +1189,9 @@ function DiscountCodeSection({
                         ) : used ? (
                           <Badge variant="outline" className="text-[11px] bg-muted text-muted-foreground">Kullanıldı</Badge>
                         ) : expired ? (
-                          <Badge variant="outline" className="text-[11px] bg-destructive/10 text-destructive-strong">Süresi Doldu</Badge>
+                          <Badge variant="destructive-tint" className="text-[11px]">Süresi Doldu</Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[11px] bg-success/10 text-success-strong">Aktif</Badge>
+                          <Badge variant="success-tint" className="text-[11px]">Aktif</Badge>
                         )}
                       </td>
                       <td className="px-4 py-2.5">
