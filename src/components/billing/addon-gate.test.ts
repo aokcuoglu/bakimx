@@ -3,22 +3,37 @@ import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { AddonGate, AddonLockedNote } from "./addon-gate"
 
-test("kompakt not: ad, Ek özellik rozeti ve yeni sekmede açılan destek bağlantısı; açıklama cümlesi yok (#828)", () => {
+test("kompakt not: satın alınabilen ek özellik Ayarlar → Paketler'e gider (#829)", () => {
   const html = renderToStaticMarkup(createElement(AddonLockedNote, { feature: "vinLookup" }))
   expect(html).toContain("VIN ile araç tanıma")
   expect(html).toContain("Ek özellik")
-  expect(html).toContain("Bilgi alın")
-  expect(html).toContain('target="_blank"')
-  expect(html).toContain('rel="noopener noreferrer"')
-  expect(html).toContain("https://wa.me/")
-  expect(html).toContain("yeni sekmede açılır")
-  // "yakında satın alınabilir" vaadi sayfa düzeyindeki kilitte kalır.
+  expect(html).toContain("Satın al")
+  expect(html).toContain('href="/settings/plans?addon=vinLookup#ayarlar-ek-ozellikler"')
+  expect(html).not.toContain('target="_blank"')
+  expect(html).not.toContain("wa.me")
   expect(html).not.toContain("yakında")
   // Rozet span'dır; not içinde blok öğe yok (p içinde div uyarısı çıkmasın).
   expect(html).not.toMatch(/<p[\s>]/)
 })
 
-test("Bilgi alın: bağlantı görünümlü düğme, telefonda 44px dokunma katmanı, yükseklik ezmesi yok", () => {
+test("kompakt not: parça kataloğu kapısı da şaseden parça satın almasına gider", () => {
+  const html = renderToStaticMarkup(createElement(AddonLockedNote, { feature: "partsCatalog" }))
+  expect(html).toContain("addon=vinLookup")
+})
+
+test("kompakt not: satılmayan ek özellik yeni sekmede açılan destek bağlantısında kalır (#828)", () => {
+  const html = renderToStaticMarkup(createElement(AddonLockedNote, { feature: "multiBranch" }))
+  expect(html).toContain("Bilgi alın")
+  expect(html).toContain('target="_blank"')
+  expect(html).toContain('rel="noopener noreferrer"')
+  expect(html).toContain("https://wa.me/")
+  expect(html).toContain("yeni sekmede açılır")
+  expect(html).not.toContain("/settings/plans")
+  // Rozet span'dır; not içinde blok öğe yok (p içinde div uyarısı çıkmasın).
+  expect(html).not.toMatch(/<p[\s>]/)
+})
+
+test("eylem bağlantısı: bağlantı görünümlü düğme, telefonda 44px dokunma katmanı, yükseklik ezmesi yok", () => {
   const html = renderToStaticMarkup(createElement(AddonLockedNote, { feature: "ocrIntake" }))
   const link = html.match(/<a [^>]*>/)?.[0] ?? ""
   expect(link).toContain('data-variant="link"')

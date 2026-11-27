@@ -10,7 +10,6 @@ import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { Button } from "@/components/ui/button"
 import { revealedCardSuffix } from "@/lib/billing/payment-helpers"
-import type { PlanTier } from "@/lib/plan"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
 
 export const metadata: Metadata = {

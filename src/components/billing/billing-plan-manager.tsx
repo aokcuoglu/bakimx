@@ -4,7 +4,7 @@ import { useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm, useWatch } from "react-hook-form"
-import { AlertTriangle, CheckCircle2, CreditCard, Landmark, Package, X } from "lucide-react"
+import { AlertTriangle, CreditCard, Landmark, Package, X } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,9 +17,13 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { BillingCycleToggle } from "./billing-cycle-toggle"
 import { PlanPackages } from "@/components/billing/plan-packages"
 import type { AddonRowViews } from "@/lib/billing/addon-row-state"
+import type { AddonOrderKey } from "@/lib/billing/addon-pricing"
+import type { AddonLandingReason } from "@/lib/billing/addon-landing"
 import { ManagePlanDialog } from "@/components/billing/manage-plan-dialog"
 import { BillingUsagePanel } from "@/components/billing/billing-usage-panel"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
+import { AddonPurchaseDialog } from "@/components/billing/addon-purchase-dialog"
+import { HavaleInstructions } from "@/components/billing/havale-instructions"
 import { CancelPendingOrderButton } from "@/components/billing/pending-order-actions"
 import { createBillingOrder } from "@/app/(app)/billing/actions"
 import { DOWNGRADE_BLOCKED_MESSAGE, isDowngradeBlocked } from "@/lib/billing/plan-change"
@@ -63,6 +67,8 @@ export function BillingPlanManager({
   explorePlansHref,
   referralDiscountBps = 0,
   addonViews,
+  initialAddon,
+  addonNotice,
   usage,
 }: {
   ownedTier: PlanTier | null
@@ -90,6 +96,10 @@ export function BillingPlanManager({
   referralDiscountBps?: number
   /** Ek özellik satırlarının atölyedeki durumu (yalnız ayarlar görünümü). */
   addonViews?: AddonRowViews
+  /** `?addon=` bağlantısından gelen: satın alma penceresi açık başlar. */
+  initialAddon?: AddonOrderKey
+  /** `?addon=` geldi ama pencere açılmadıysa nedeni (ek özellik bölümünde uyarı). */
+  addonNotice?: { reason: AddonLandingReason; message: string }
   usage?: { plan: PlanState; quota: WorkshopQuotaUsage }
 }) {
   const router = useRouter()
@@ -97,6 +107,7 @@ export function BillingPlanManager({
   const [manageOpen, setManageOpen] = useState(false)
   const [pendingPaymentOpen, setPendingPaymentOpen] = useState(false)
   const [managePreferredCycle, setManagePreferredCycle] = useState<Cycle | null>(null)
+  const [addonDialogKey, setAddonDialogKey] = useState<AddonOrderKey | null>(initialAddon ?? null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState<PaymentResult | null>(null)
@@ -220,6 +231,8 @@ export function BillingPlanManager({
             trialDaysLeft={trialDaysLeft}
             referralDiscountBps={referralDiscountBps}
             addonViews={addonViews}
+            addonNotice={addonNotice}
+            onPurchaseAddon={setAddonDialogKey}
             onSelectPlan={choosePlan}
             onManagePlan={() => openManage()}
             onRequestCycleChange={(next) => openManage(next)}
@@ -290,6 +303,22 @@ export function BillingPlanManager({
         />
       )}
 
+      {addonDialogKey && currentPeriodEnd && (
+        <AddonPurchaseDialog
+          key={addonDialogKey}
+          addonKey={addonDialogKey}
+          open
+          onOpenChange={(next) => { if (!next) setAddonDialogKey(null) }}
+          billingCycle={currentCycle ?? "monthly"}
+          currentPeriodEnd={currentPeriodEnd}
+          hasPendingOrder={hasPendingOrder}
+          defaultInvoiceTitle={defaultInvoiceTitle}
+          defaultTaxNumber={defaultTaxNumber}
+          defaultTaxOffice={defaultTaxOffice}
+          havale={havale}
+        />
+      )}
+
       {pendingMethod === "card" && pendingReference && pendingAmountMinor != null && (
         <Dialog open={pendingPaymentOpen} onOpenChange={setPendingPaymentOpen}>
           <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-[640px]">
@@ -319,21 +348,13 @@ export function BillingPlanManager({
                   <CardPaymentPanel reference={done.reference} amountMinor={done.amountMinor} planLabel={`${pkg?.name} · ${cycle === "yearly" ? "Yıllık" : "Aylık"}`} />
                 </div>
               ) : (
-                <div className="mx-auto max-w-lg space-y-5 py-3" role="status">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="size-7 text-success-strong" aria-hidden="true" />
-                    <div><h3 className="text-lg font-semibold">Havale talebiniz oluşturuldu</h3><p className="text-sm text-muted-foreground">Ödemeniz teyit edilince paketiniz güncellenecek.</p></div>
-                  </div>
-                  <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 rounded-md border bg-muted/30 p-4 text-sm">
-                    <dt className="text-muted-foreground">Tutar</dt><dd className="font-semibold">{formatMinor(done.amountMinor)}</dd>
-                    <dt className="text-muted-foreground">Alıcı</dt><dd>{havale.accountTitle}</dd>
-                    <dt className="text-muted-foreground">Banka</dt><dd>{havale.bank}</dd>
-                    <dt className="text-muted-foreground">IBAN</dt><dd className="break-all font-mono">{havale.iban}</dd>
-                    <dt className="text-muted-foreground">Açıklama</dt><dd className="font-mono font-semibold">{done.reference}</dd>
-                  </dl>
-                  <p className="text-sm text-muted-foreground">Havale açıklamasına referans kodunu yazın.</p>
-                  <Button type="button" variant="outline" onClick={() => closeDialog(false)}>Sayfaya dön</Button>
-                </div>
+                <HavaleInstructions
+                  havale={havale}
+                  reference={done.reference}
+                  amountMinor={done.amountMinor}
+                  subtitle="Ödemeniz teyit edilince paketiniz güncellenecek."
+                  onClose={() => closeDialog(false)}
+                />
               )
             ) : (
               <div className="space-y-5">

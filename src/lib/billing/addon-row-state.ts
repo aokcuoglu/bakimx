@@ -15,8 +15,28 @@ import {
  * - `partial`: kapıların yalnız bir kısmı açık.
  * - `locked`: hiçbiri açık değil.
  * - `comingSoon`: kodda kapısı olmayan özellik.
+ *
+ * Satın alma bağlamı (`AddonRowContext`) verildiğinde `locked` satırlar (#829):
+ * - `purchasable`: açık ücretli dönemde, hesap atölyesinde → "Satın al".
+ * - `needsPackage`: ücretli dönem yok → önce paket.
+ * - `notAccount`: ek özellik hesap başınadır; ana şubeden yönetilir.
+ * - `contact`: fiyatı var ama uygulama içinden satılmıyor (çoklu şube).
  */
-export type AddonRowState = "active" | "trial" | "partial" | "locked" | "comingSoon"
+export type AddonRowState =
+  | "active"
+  | "trial"
+  | "partial"
+  | "locked"
+  | "comingSoon"
+  | "purchasable"
+  | "needsPackage"
+  | "notAccount"
+  | "contact"
+
+export interface AddonRowContext {
+  /** Atölye faturalama hesabının sahibi mi (`resolveBillingAccount`)? */
+  isAccountWorkshop: boolean
+}
 
 export interface AddonRowView {
   state: AddonRowState
@@ -30,18 +50,36 @@ function baseView(item: AddonCatalogItem): AddonRowView {
   return { state: !item.shipped || item.features.length === 0 ? "comingSoon" : "locked", openFeatures: [] }
 }
 
+/** Satın alma yalnız açık ücretli dönemde: aktif abonelik ve bitmemiş dönem. */
+function hasPaidPeriod(workshop: WorkshopEntitlementFields): boolean {
+  const end = workshop.currentPeriodEnd
+  return workshop.subscriptionStatus === "active" && end !== null && end.getTime() > Date.now()
+}
+
+function lockedView(
+  item: AddonCatalogItem,
+  workshop: WorkshopEntitlementFields,
+  ctx: AddonRowContext | undefined,
+): AddonRowView {
+  if (!ctx || item.monthlyPrice === null) return { state: "locked", openFeatures: [] }
+  if (!item.purchasable) return { state: "contact", openFeatures: [] }
+  if (!ctx.isAccountWorkshop) return { state: "notAccount", openFeatures: [] }
+  return { state: hasPaidPeriod(workshop) ? "purchasable" : "needsPackage", openFeatures: [] }
+}
+
 export function getAddonRowView(
   item: AddonCatalogItem,
   workshop: WorkshopEntitlementFields,
+  ctx?: AddonRowContext,
 ): AddonRowView {
   if (!item.shipped || item.features.length === 0) return baseView(item)
 
   const plan = getPlanState(workshop)
   // Erişimi olmayan atölyede (ödeme gecikti, dönem/deneme bitti, onaysız) olumlu rozet verilmez.
-  if (!plan.hasAccess) return baseView(item)
+  if (!plan.hasAccess) return lockedView(item, workshop, ctx)
   const addons = normalizeAddons(workshop.addons)
   const open = item.features.filter((f) => hasWorkshopFeature(workshop, f))
-  if (open.length === 0) return { state: "locked", openFeatures: [] }
+  if (open.length === 0) return lockedView(item, workshop, ctx)
   if (open.length < item.features.length) return { state: "partial", openFeatures: open }
 
   const permanent = item.features.every(
@@ -50,9 +88,12 @@ export function getAddonRowView(
   return { state: permanent ? "active" : "trial", openFeatures: [] }
 }
 
-export function resolveAddonRowViews(workshop: WorkshopEntitlementFields): AddonRowViews {
+export function resolveAddonRowViews(
+  workshop: WorkshopEntitlementFields,
+  ctx?: AddonRowContext,
+): AddonRowViews {
   return Object.fromEntries(
-    ADDON_CATALOG.map((item) => [item.key, getAddonRowView(item, workshop)]),
+    ADDON_CATALOG.map((item) => [item.key, getAddonRowView(item, workshop, ctx)]),
   ) as AddonRowViews
 }
 
