@@ -288,7 +288,7 @@ export function SalesTerritoryMap({
               Bu bölgede servis ara
             </Button>
           )}
-          <div className="flex items-center gap-2 rounded-xl border bg-primary/10 px-3 py-2 text-primary-strong">
+          <div className="flex items-center gap-2 rounded-md border bg-primary/10 px-3 py-2 text-primary-strong">
             <MapPin className="size-4" />
             <span className="text-sm font-semibold tabular-nums">{mappedLeads.length}</span>
             <span className="text-xs">doğrulanmış</span>
@@ -322,9 +322,9 @@ export function SalesTerritoryMap({
         )}
 
         {selectedDiscovery && (
-          <div className="absolute bottom-4 left-4 right-4 z-10 max-w-md rounded-xl border bg-card/95 p-3 shadow-lg backdrop-blur-sm sm:right-auto">
+          <div className="absolute bottom-4 left-4 right-4 z-10 max-w-md rounded-md border bg-card/95 p-3 shadow-lg backdrop-blur-sm sm:right-auto">
             <div className="flex items-start gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground-strong">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground-strong">
                 <Building2 className="size-4" />
               </div>
               <div className="min-w-0 flex-1">

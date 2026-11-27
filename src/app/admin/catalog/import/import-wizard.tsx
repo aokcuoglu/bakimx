@@ -27,6 +27,7 @@ import type { CatalogBrandOption } from "@/app/admin/catalog/data"
 import type { CatalogImportHistoryRow } from "@/app/admin/catalog/import/data"
 import { cancelBakimxCatalogImportAction } from "@/app/admin/catalog/import/actions"
 import type { ImportActionError, ImportApplyResult, ImportPreviewResult, ImportPreviewRow } from "@/lib/catalog/bakimx-import-service"
+import { formatTrDateTime } from "@/lib/format-date"
 
 /**
  * İçe aktarma sihirbazı: **dosya seç → ön izle → uygula.**
@@ -248,7 +249,7 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border px-3 py-2">
+          <div className="flex items-center justify-between rounded-md border px-3 py-2">
             <div>
               <p className="text-sm font-medium text-foreground">Fiyatlar KDV dahil</p>
               <p className="text-xs text-muted-foreground">
@@ -268,7 +269,7 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground">Ürün dosyası</p>
             <div
-              className="rounded-xl border border-dashed border-border bg-muted/20 p-4 transition-colors hover:border-primary/50 hover:bg-muted/40"
+              className="rounded-md border border-dashed border-border bg-muted/20 p-4 transition-colors hover:border-primary/50 hover:bg-muted/40"
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
                 event.preventDefault()
@@ -288,7 +289,7 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
               />
               {file ? (
                 <div className="flex items-center gap-3">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary-strong">
                     <FileJson2 className="size-5" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -626,7 +627,7 @@ function ImportHistory({ rows }: { rows: CatalogImportHistoryRow[] }) {
                 <TableCell className="text-right tabular-nums">{row.skippedCount}</TableCell>
                 <TableCell className="text-right tabular-nums">{row.errorCount}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">
-                  {new Date(row.appliedAt ?? row.createdAt).toLocaleString("tr-TR")}
+                  {formatTrDateTime(row.appliedAt ?? row.createdAt)}
                 </TableCell>
               </TableRow>
             ))}

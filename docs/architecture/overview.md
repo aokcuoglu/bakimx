@@ -236,7 +236,7 @@ default**, with every send recorded in `CommunicationLog` / `CalendarSyncLog`:
 
 | Capability | Real provider | Endpoint |
 |---|---|---|
-| SMS | **Netgsm** | `https://api.netgsm.com.tr/sms/send/get` |
+| SMS | **Netgsm** | `https://api.netgsm.com.tr/sms/rest/v2/send` |
 | WhatsApp | **WhatsApp Business** (Meta) | `https://graph.facebook.com/v18.0` |
 | E-mail | **Resend** | `https://api.resend.com/emails` |
 | Calendar | **Google Calendar** | `https://www.googleapis.com/calendar/v3` |

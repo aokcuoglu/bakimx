@@ -8,6 +8,7 @@ import {
   communicationStatusLabel,
   type CommunicationStatus,
 } from "@/lib/communications/status-labels"
+import { formatTrDateTime } from "@/lib/format-date"
 
 type LogEntry = {
   id: string
@@ -146,7 +147,7 @@ export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats:
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{log.provider}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
-                      {new Date(log.sentAt).toLocaleString("tr-TR")}
+                      {formatTrDateTime(log.sentAt)}
                     </td>
                   </tr>
                 ))}
@@ -184,7 +185,7 @@ export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats:
               )}
 
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-                <span>{new Date(log.sentAt).toLocaleString("tr-TR")}</span>
+                <span>{formatTrDateTime(log.sentAt)}</span>
                 <span aria-hidden="true">·</span>
                 <span>{log.provider}</span>
               </div>

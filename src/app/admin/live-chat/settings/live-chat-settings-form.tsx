@@ -151,7 +151,7 @@ export function LiveChatSettingsForm({ defaultValues }: { defaultValues: LiveCha
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div className="overflow-hidden rounded-xl border">
+            <div className="overflow-hidden rounded-md border">
               <div className="hidden grid-cols-[minmax(11rem,1fr)_10rem_10rem] gap-3 border-b bg-muted/50 px-4 py-2.5 sm:grid">
                 <p className="text-xs font-medium text-muted-foreground">Gün</p>
                 <p className="text-xs font-medium text-muted-foreground">Başlangıç</p>

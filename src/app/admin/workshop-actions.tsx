@@ -99,18 +99,18 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
           <DialogTrigger asChild><Button variant="outline">Aboneliği yönet</Button></DialogTrigger>
           <DialogContent className="sm:max-w-lg"><DialogHeader><DialogTitle>Aboneliği yönet</DialogTitle><DialogDescription>Değişikliklerin etkisini onaylamadan önce gözden geçirin.</DialogDescription></DialogHeader>
             {paidPeriod ? (
-              <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
+              <div className="rounded-md bg-muted p-3 text-sm space-y-1">
                 <p>Aktif paket: <strong>{planLabel(w.planTier)}</strong></p>
                 <p>Dönem bitişi: <strong>{new Date(w.currentPeriodEnd!).toLocaleDateString("tr-TR")}</strong></p>
                 <p className="text-muted-foreground-strong">Ödenmiş dönem boyunca paket değiştirilemez; yenileme için faturalandırma akışını kullanın.</p>
               </div>
             ) : (
-              <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
+              <div className="rounded-md bg-muted p-3 text-sm space-y-1">
                 <p>Manuel etkinleştirme: <strong>{manualLabel}</strong></p>
                 {legacyNote && <p className="font-normal text-foreground">{legacyNote}</p>}
               </div>
             )}
-            <div className="rounded-lg border p-3 space-y-2">
+            <div className="rounded-md border p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-sm">Ek koltuk</span>
                 <div className="flex items-center gap-2">

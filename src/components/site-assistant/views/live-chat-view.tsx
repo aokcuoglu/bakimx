@@ -11,6 +11,7 @@ import { MAX_MESSAGE_LENGTH } from "@/lib/validations/live-chat";
 import type { LiveChatMessageWire, LiveChatStatusWire } from "@/lib/live-chat/types";
 import { useLiveChat } from "../use-live-chat";
 import { ViewHeader } from "./view-header";
+import { formatTrTime } from "@/lib/format-date"
 
 interface LiveChatViewProps {
   onBack: () => void;
@@ -18,7 +19,7 @@ interface LiveChatViewProps {
 
 function formatTime(iso: string): string {
   const date = new Date(iso);
-  return new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" }).format(date);
+  return formatTrTime(date);
 }
 
 /** Çevrimdışıyken gösterilen "ne zaman açığız" kartı. */

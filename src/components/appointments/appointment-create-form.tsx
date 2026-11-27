@@ -194,7 +194,7 @@ export function AppointmentCreateForm({
                 <FormItem>
                   <FormLabel htmlFor="appointmentCustomerSearch">Müşteri *</FormLabel>
                   {customer ? (
-                    <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card p-3">
+                    <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-card p-3">
                       <div className="flex min-w-0 items-center gap-2">
                         <User className="size-4 shrink-0 text-primary" />
                         <p className="truncate font-semibold text-foreground">{customer.label}</p>

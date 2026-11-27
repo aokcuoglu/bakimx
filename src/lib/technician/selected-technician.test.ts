@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import {
   canSelectAnyTechnician,
+  resolveKioskFocusTechnicianId,
   resolveSelectedTechnicianId,
 } from "@/lib/technician/selected-technician"
 
@@ -42,4 +43,31 @@ test("saha rolleri yalnız kendi teknisyen kaydını görür", () => {
   expect(canSelectAnyTechnician("usta")).toBe(false)
   expect(canSelectAnyTechnician("cirak")).toBe(false)
   expect(canSelectAnyTechnician("staff")).toBe(false)
+})
+
+test("kiosk odağı: saha rolü yabancı ?technician'ı yok sayıp kendini alır", () => {
+  expect(
+    resolveKioskFocusTechnicianId({ canSelect: false, requested: "tech_2", ownTechnicianId: "tech_1", activeIds: IDS })
+  ).toBe("tech_1")
+})
+
+test("kiosk odağı: saha rolünün kaydı yoksa ya da pasifse null", () => {
+  expect(
+    resolveKioskFocusTechnicianId({ canSelect: false, requested: null, ownTechnicianId: null, activeIds: IDS })
+  ).toBeNull()
+  expect(
+    resolveKioskFocusTechnicianId({ canSelect: false, requested: null, ownTechnicianId: "gone", activeIds: IDS })
+  ).toBeNull()
+})
+
+test("kiosk odağı: yönetici param vermezse ya da geçersiz verirse ilk aktif teknisyen", () => {
+  expect(
+    resolveKioskFocusTechnicianId({ canSelect: true, requested: undefined, ownTechnicianId: null, activeIds: IDS })
+  ).toBe("tech_1")
+  expect(
+    resolveKioskFocusTechnicianId({ canSelect: true, requested: "other_ws", ownTechnicianId: null, activeIds: IDS })
+  ).toBe("tech_1")
+  expect(
+    resolveKioskFocusTechnicianId({ canSelect: true, requested: "tech_2", ownTechnicianId: null, activeIds: IDS })
+  ).toBe("tech_2")
 })
