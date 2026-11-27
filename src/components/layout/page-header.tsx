@@ -63,7 +63,7 @@ export function PageHeaderView({
   const reserveTitle = header.title === ""
 
   return (
-    <header data-slot="page-header" data-tour={header.tourId} className={styles.header}>
+    <header data-slot="page-header" data-tour={header.tourId} className={cn(styles.header, header.desktopOnly && styles.desktopOnly)}>
       <PageTrail crumbs={crumbs} back={header.back} />
       <div className={styles.row}>
         <h1
