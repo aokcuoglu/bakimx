@@ -29,6 +29,7 @@ import { BrandLogo } from "@/components/shared/brand-logo"
 import { WorkshopContactBlock } from "@/components/shared/workshop-contact-block"
 import { Button } from "@/components/ui/button"
 import type { WorkshopPublicContact } from "@/lib/workshop-contact"
+import { formatTrDate, formatTrDateTime } from "@/lib/format-date"
 
 type SafePassportVehicle = {
   plate: string
@@ -139,8 +140,8 @@ type PassportTokenInfo = {
   }
 }
 
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("tr-TR")
-const fmtDateTime = (iso: string) => new Date(iso).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+const fmtDate = (iso: string) => formatTrDate(iso)
+const fmtDateTime = (iso: string) => formatTrDateTime(iso)
 
 export function PublicVehiclePassportPage({
   data,

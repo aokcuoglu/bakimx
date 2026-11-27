@@ -12,6 +12,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { cn } from "@/lib/utils"
 import { getVehicleGeometry, type BodyType } from "./vehicle-geometry"
 import { modelForBody } from "./vehicle-3d-models"
+import { formatTrDateTime } from "@/lib/format-date"
 
 // three.js stays out of every other bundle: it is fetched only when the 3D view renders.
 const Vehicle3DViewer = dynamic(() => import("./vehicle-3d-viewer"), { ssr: false, loading: () => <div className="grid h-[320px] place-items-center rounded-md bg-muted sm:h-[400px]"><BrandSpinner size={40} label="3B model yükleniyor" /></div> })
@@ -40,7 +41,7 @@ export function VehicleDamageMap({ damageMarks, bodyType = "sedan", photos = [],
   damageMarks.forEach((m,i) => { (marksByZone[m.zone] ??= []).push(m.number ?? i+1) })
   return <div className="space-y-3">
     {showSummary && vehicle && <p className="font-medium">{vehicle.plate} · {vehicle.brand} {vehicle.model}</p>}
-    {showSummary && <p className="text-sm text-muted-foreground">{damageMarks.length ? `${damageMarks.length} hasar kaydı` : inspectionStatus === "no_visible_damage" ? "Kontrol edildi, görünür hasar gözlenmedi" : "Kontrol kaydı yok"}{inspectedAt && ` · ${new Date(inspectedAt).toLocaleString("tr-TR")}`}</p>}
+    {showSummary && <p className="text-sm text-muted-foreground">{damageMarks.length ? `${damageMarks.length} hasar kaydı` : inspectionStatus === "no_visible_damage" ? "Kontrol edildi, görünür hasar gözlenmedi" : "Kontrol kaydı yok"}{inspectedAt && ` · ${formatTrDateTime(inspectedAt)}`}</p>}
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="min-w-0 space-y-2">
         {bodyType !== "unsupported" && <div className="space-y-2">

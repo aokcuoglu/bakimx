@@ -25,6 +25,7 @@ import {
 } from "@/lib/validations/status-incident"
 import { createStatusIncidentAction, resolveStatusIncidentAction } from "@/app/admin/status/actions"
 import { deriveOverallStatus, OVERALL_STATUS_LABELS, SEVERITY_LABELS } from "@/lib/status-page"
+import { formatTrDateTime } from "@/lib/format-date"
 
 export interface AdminStatusIncidentRow {
   id: string
@@ -133,7 +134,7 @@ export function StatusIncidentConsole({
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">
-                    {new Date(incident.createdAt).toLocaleString("tr-TR")} · {incident.createdByEmail}
+                    {formatTrDateTime(incident.createdAt)} · {incident.createdByEmail}
                   </p>
                 </div>
                 {!incident.resolvedAt && (

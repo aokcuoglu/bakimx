@@ -22,6 +22,7 @@ import { getSeatLimit, type SalePlanTier } from "@/lib/plan"
 import { SERVICE_PACKAGE } from "@/lib/plans-catalog"
 import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
 import { cn } from "@/lib/utils"
+import { formatTrLongDate } from "@/lib/format-date"
 
 type Cycle = "monthly" | "yearly"
 type Method = "card" | "havale"
@@ -90,7 +91,7 @@ export function ManagePlanDialog({
   const total = planAmount
   const periodEnd =
     currentPeriodEnd != null
-      ? new Date(currentPeriodEnd).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })
+      ? formatTrLongDate(currentPeriodEnd)
       : null
   const locked = !canPurchase || hasPendingOrder
   // Paketi henüz satın almamış atölye (deneme / eski satır) varsayılan dönemi de onaylayabilir.
