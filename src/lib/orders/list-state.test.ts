@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test"
 import { orderDetailHref, orderListReturnHref, readOrderListState } from "./list-state"
 
 describe("order list navigation state", () => {
-  test("round trips every server filter and client table setting through view/edit links", () => {
-    const state = { sorting: [{ id: "dates", desc: true }], columnFilters: [{ id: "customer", value: "İpek & Ortakları" }], columnVisibility: { delivery: true, invoice: false } }
-    const params = new URLSearchParams({ q: "34 HMK", status: "active", payment: "unpaid", technician: "unassigned", invoice: "without", view: JSON.stringify(state) })
+  test("round trips every server filter, the server sort and the column visibility through view/edit links", () => {
+    const state = { columnVisibility: { delivery: true, invoice: false } }
+    const params = new URLSearchParams({ q: "34 HMK", status: "active", payment: "unpaid", technician: "unassigned", invoice: "without", sort: "total", dir: "desc", view: JSON.stringify(state) })
     const list = `/orders?${params}`
     for (const edit of [false, true]) {
       const detail = new URL(orderDetailHref("order-id", list, edit), "http://localhost")
@@ -15,9 +15,13 @@ describe("order list navigation state", () => {
   })
 
   test("invalid state cannot introduce non-data columns or untyped values", () => {
-    const state = readOrderListState(JSON.stringify({ sorting: [null, { id: "actions", desc: false }, { id: "dates", desc: "yes" }], columnFilters: [null, { id: "customer", value: {} }], columnVisibility: { actions: false, customer: "false", invoice: false } }))
-    expect(state).toEqual({ sorting: [], columnFilters: [], columnVisibility: { delivery: false, invoice: false } })
-    for (const raw of [null, "{", "null", "[]"]) expect(readOrderListState(raw).sorting).toEqual([])
+    const state = readOrderListState(JSON.stringify({ columnVisibility: { actions: false, customer: "false", invoice: false } }))
+    expect(state).toEqual({ columnVisibility: { delivery: false, invoice: false } })
+    for (const raw of [null, "{", "null", "[]"]) expect(readOrderListState(raw)).toEqual({ columnVisibility: { delivery: false } })
+  })
+
+  test("legacy sorting / columnFilters keys in old links are ignored", () => {
+    expect(readOrderListState(JSON.stringify({ sorting: [{ id: "dates", desc: true }], columnFilters: [{ id: "customer", value: "x" }] }))).toEqual({ columnVisibility: { delivery: false } })
   })
 
   test("direct visits and untrusted return destinations fall back to the order list", () => {

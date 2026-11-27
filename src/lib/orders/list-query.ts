@@ -4,6 +4,7 @@ import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { isInvoiceMissing } from "@/lib/orders/invoice-filter"
+import { ORDER_LIST_DATA_COLUMN_ORDER } from "@/lib/orders/list-columns"
 
 /** Araç Kabulleri listesi ilk yüklemede ve her "Daha fazla yükle"de bu kadar kayıt büyür. */
 export const ORDER_LIST_PAGE_SIZE = 100
@@ -56,6 +57,59 @@ export function buildOrderListWhere(
 }
 
 export const ORDER_LIST_ORDER_BY = [{ createdAt: "desc" }, { id: "desc" }] satisfies Prisma.ServiceOrderOrderByWithRelationInput[]
+
+export type OrderListSortColumn = (typeof ORDER_LIST_DATA_COLUMN_ORDER)[number]
+export type OrderListSort = { column: OrderListSortColumn; desc: boolean }
+
+/** `?sort=<kolon>&dir=asc|desc` → doğrulanmış sıralama; geçersiz/eksik ise null (varsayılan sıra). */
+export function resolveOrderListSort(sort: string | undefined, dir: string | undefined): OrderListSort | null {
+  const column = ORDER_LIST_DATA_COLUMN_ORDER.find((id) => id === sort)
+  if (!column) return null
+  return { column, desc: dir === "desc" }
+}
+
+/**
+ * Boş değer hep sona gider: Prisma'da `nulls` yalnız bu kolonlar için
+ * seçilebilir ve "fiyatsız / faturasız / teslimsiz" kayıtların yönle yer
+ * değiştirmesi sıralamayı okunmaz yapardı.
+ */
+function nullsLast(desc: boolean) {
+  return { sort: desc ? "desc" : "asc", nulls: "last" } as const
+}
+
+/**
+ * Kolon → sunucu `orderBy`. Tüm kayıtlar üzerinde çalışır (yalnız yüklenen
+ * pencerede değil) ve `id` ile kararlı bağlanır: aynı değere sahip satırlar
+ * "Daha fazla yükle"de sıra değiştirmez.
+ *
+ * Ekran sırasından BİLİNÇLİ sapmalar (veritabanı sırası, Türkçe etiket değil):
+ * - Durum / Ödeme: enum bildirim sırası = iş akışı sırası (Taslak → … → İptal),
+ *   etiketin alfabesi değil. Etiket alfabesi bir iş sırası taşımazdı.
+ * - Müşteri: `Customer.fullName` (bireyselde ad soyad, kurumsalda firma adı —
+ *   ekranda gösterilen adın saklı hâli). Harf sırası veritabanının
+ *   harmanlamasıdır (Türkçe Ç/Ö/Ş/İ için tam `tr` sırası değil).
+ * - İş No: `workOrderNo` metni; numarası boş eski kayıtlar (ekranda `BX-…`
+ *   yedek numarası) sona düşer.
+ * - Araç: plakaya göre (kayıtlı sıkı biçim, boşluksuz).
+ * - Teknisyen: atanmamışlar küçükten büyüğe sonda, büyükten küçüğe başta.
+ */
+export function buildOrderListOrderBy(sort: OrderListSort | null): Prisma.ServiceOrderOrderByWithRelationInput[] {
+  if (!sort) return ORDER_LIST_ORDER_BY
+  const dir = sort.desc ? "desc" : "asc"
+  const nulls = nullsLast(sort.desc)
+  const primary: Prisma.ServiceOrderOrderByWithRelationInput =
+    sort.column === "workOrderNo" ? { workOrderNo: nulls }
+    : sort.column === "vehicle" ? { intakeForm: { vehicle: { plate: dir } } }
+    : sort.column === "customer" ? { intakeForm: { vehicle: { customer: { fullName: nulls } } } }
+    : sort.column === "status" ? { status: dir }
+    : sort.column === "payment" ? { paymentStatus: dir }
+    : sort.column === "invoice" ? { invoiceNo: nulls }
+    : sort.column === "total" ? { grandTotal: nulls }
+    : sort.column === "dates" ? { createdAt: dir }
+    : sort.column === "delivery" ? { estimatedDeliveryAt: nulls }
+    : { assignedTechnician: { fullName: dir } }
+  return [primary, { createdAt: "desc" }, { id: "desc" }]
+}
 
 /** Listenin gerçekten çizdiği alanlar — tam satır/ilişki çekilmez. */
 export const ORDER_LIST_SELECT = {

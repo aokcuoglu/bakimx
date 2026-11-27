@@ -1,5 +1,6 @@
 import type { Prisma, PaymentStatus } from "@prisma/client"
 import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
+import { computeStoredGrandTotal } from "@/lib/orders/stored-total"
 import { sumKurus } from "@/lib/money"
 import { computePaymentStatus, computeRemainingAmount } from "@/lib/cashbox/status"
 
@@ -46,6 +47,12 @@ export async function recalcOrderPayment(
       paidAmount,
       remainingAmount,
       lastPaymentAt,
+      // Liste sıralaması için saklanan toplam (#831) — kalemler/indirim/KDV
+      // değiştiğinde bu çağrı zaten yapılıyor, ayrı bir senkron yolu yok.
+      grandTotal: computeStoredGrandTotal(order.items, {
+        discountAmount: order.discountAmount,
+        taxRate: order.taxRate,
+      }),
     },
   })
 

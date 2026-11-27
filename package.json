@@ -25,6 +25,7 @@
     "db:merge-customers": "bunx tsx scripts/merge-duplicate-customers.ts",
     "sales:rollout-audit": "bunx tsx scripts/audit-sales-rollout.ts",
     "db:backfill-articles": "bunx tsx scripts/backfill-tecdoc-articles.ts",
+    "db:backfill-order-grand-total": "bunx tsx scripts/backfill-order-grand-total.ts",
     "db:backfill-article-oems": "bunx tsx scripts/backfill-tecdoc-article-oems.ts",
     "db:prod-reset": "bunx tsx scripts/prod-reset.ts",
     "db:studio": "prisma studio",
