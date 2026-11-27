@@ -4,7 +4,7 @@ import { CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react"
 import { prisma } from "@/lib/db"
 import { formatMinor } from "@/lib/billing/pricing"
 import { formatTrDate } from "@/lib/format-date"
-import { getPlanPackage } from "@/lib/plans-catalog"
+import { describeBillingOrder } from "@/lib/billing/addon-pricing"
 import { TAMI_ERROR_MESSAGES } from "@/lib/tami/errors"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
@@ -22,10 +22,14 @@ export const metadata: Metadata = {
 // Sonuç DAİMA anlık DB durumundan türetilir (query'deki `err` yalnız bir ipucu).
 export const dynamic = "force-dynamic"
 
-function planLabel(tier: PlanTier, cycle: string): string {
-  const pkg = getPlanPackage(tier)
-  const c = cycle === "yearly" ? "Yıllık" : "Aylık"
-  return pkg ? `${pkg.name} · ${c}` : c
+function planLabel(order: {
+  type: string
+  planTier: string
+  billingCycle: "monthly" | "yearly"
+  addonLines: unknown
+}): string {
+  const d = describeBillingOrder(order)
+  return `${d.title} · ${d.cycleLabel}`
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -60,13 +64,13 @@ function IconBadge({
 
 /** Sipariş özeti kartı — plan/tutar/son 4 hane. Workshop kimliği GÖSTERİLMEZ. */
 function OrderSummary({
-  tier,
-  cycle,
+  label,
+  isAddon,
   amountMinor,
   maskedPan,
 }: {
-  tier: PlanTier
-  cycle: string
+  label: string
+  isAddon: boolean
   amountMinor: number
   maskedPan?: string | null
 }) {
@@ -74,8 +78,8 @@ function OrderSummary({
   return (
     <div className="mt-4 space-y-1.5 rounded-lg border bg-muted/40 p-4 text-left text-sm">
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground">Paket</span>
-        <span className="font-medium text-foreground">{planLabel(tier, cycle)}</span>
+        <span className="text-muted-foreground">{isAddon ? "Ek özellik" : "Paket"}</span>
+        <span className="font-medium text-foreground">{label}</span>
       </div>
       <div className="flex items-center justify-between">
         <span className="text-muted-foreground">Tutar</span>
@@ -144,7 +148,8 @@ export default async function PaymentResultPage({
     where: { billingOrderId: order.id },
     orderBy: { createdAt: "desc" },
   })
-  const tier = order.planTier as PlanTier
+  const orderLabel = planLabel(order)
+  const isAddon = order.type === "addon"
 
   // 2) Başarı → sipariş onaylandı (aktifleşti).
   if (order.status === "confirmed") {
@@ -154,11 +159,11 @@ export default async function PaymentResultPage({
           <IconBadge icon={CheckCircle2} tone="success" />
           <h1 className="text-xl font-bold tracking-tight text-foreground">Ödeme başarılı</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Paketiniz aktifleştirildi. Uygulamayı hemen kullanmaya başlayabilirsiniz.
+            {isAddon ? "Ek özelliğiniz aktifleştirildi." : "Paketiniz aktifleştirildi."} Uygulamayı hemen kullanmaya başlayabilirsiniz.
           </p>
           <OrderSummary
-            tier={tier}
-            cycle={order.billingCycle}
+            label={orderLabel}
+            isAddon={isAddon}
             amountMinor={order.amountMinor}
             maskedPan={lastTxn?.maskedPan}
           />
@@ -217,8 +222,8 @@ export default async function PaymentResultPage({
             otomatik yenilenecek.
           </p>
           <OrderSummary
-            tier={tier}
-            cycle={order.billingCycle}
+            label={orderLabel}
+            isAddon={isAddon}
             amountMinor={order.amountMinor}
             maskedPan={lastTxn?.maskedPan}
           />
@@ -242,11 +247,13 @@ export default async function PaymentResultPage({
   } else if (err === "config") {
     errorMessage =
       "Kart ödemesi şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin veya bizimle iletişime geçin."
+  } else if (err === "period") {
+    errorMessage = "Paket döneminiz sona ermiş; ek özellik için önce paketinizi yenileyin. Kartınızdan tahsilat yapılmadı."
   }
 
   // Yapılandırma hatasında kart yeniden-deneme panelini gösterme — deneme yine
   // aynı guard'a takılır; kullanıcıya "iletişime geçin" ipucu daha doğru.
-  const canRetryCard = order.method === "card" && err !== "config"
+  const canRetryCard = order.method === "card" && err !== "config" && err !== "period"
 
   return (
     <Shell>
@@ -257,8 +264,8 @@ export default async function PaymentResultPage({
           {errorMessage ?? "Ödeme henüz tamamlanmadı. Aşağıdan yeniden deneyebilirsiniz."}
         </p>
         <OrderSummary
-          tier={tier}
-          cycle={order.billingCycle}
+          label={orderLabel}
+          isAddon={isAddon}
           amountMinor={order.amountMinor}
           maskedPan={lastTxn?.maskedPan}
         />
@@ -269,7 +276,7 @@ export default async function PaymentResultPage({
           <CardPaymentPanel
             reference={order.reference}
             amountMinor={order.amountMinor}
-            planLabel={planLabel(tier, order.billingCycle)}
+            planLabel={orderLabel}
           />
         </div>
       ) : (

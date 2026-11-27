@@ -1,5 +1,5 @@
 import { z } from "zod/v4"
-import { ADDON_ORDER_KEYS } from "@/lib/billing/addon-pricing"
+import { ADDON_ORDER_KEYS, isPerBranchAddon } from "@/lib/billing/addon-pricing"
 
 export const addonOrderSchema = z.object({
   items: z
@@ -11,6 +11,10 @@ export const addonOrderSchema = z.object({
     )
     .min(1, "En az bir ek özellik seçin")
     .max(3)
+    .refine(
+      (items) => items.every((i) => i.quantity === 1 || isPerBranchAddon(i.key)),
+      "Bu ek özellik hesap başına tek adet satılır",
+    )
     .refine((items) => new Set(items.map((i) => i.key)).size === items.length, "Aynı ek özellik birden fazla eklenemez"),
   method: z.enum(["card", "havale"]).default("havale"),
   invoiceTitle: z.string().min(2, "Fatura ünvanı zorunludur"),
