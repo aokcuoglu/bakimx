@@ -295,7 +295,7 @@ export function QuoteCreateForm({
                         <div>
                           <Input type="hidden" ref={field.ref} name={field.name} value={field.value} onChange={field.onChange} />
                           {field.value && customerLabel ? (
-                            <div className="flex items-center justify-between rounded-lg border border-border p-2.5">
+                            <div className="flex items-center justify-between rounded-md border border-border p-2.5">
                               <span className="flex items-center gap-2 text-sm font-medium">
                                 <User className="size-4 text-primary" /> {customerLabel}
                               </span>
@@ -360,9 +360,8 @@ export function QuoteCreateForm({
                   <div className="flex justify-end">
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="tint-ghost"
                       size="sm"
-                      className="text-primary"
                       onClick={() => setVehicleModalOpen(true)}
                     >
                       <Plus className="size-4" />

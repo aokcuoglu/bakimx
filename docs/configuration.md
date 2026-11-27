@@ -223,7 +223,7 @@ SMS_PROVIDER=mock
 # NETGSM_USERCODE=your-netgsm-usercode
 # NETGSM_PASSWORD=your-netgsm-password
 # NETGSM_SENDER=BAKIMX
-# NETGSM_API_URL=https://api.netgsm.com.tr/sms/send/get
+# NETGSM_API_URL=https://api.netgsm.com.tr/sms/rest/v2/send
 
 # E-posta Sağlayıcı — mock (varsayılan) veya resend
 EMAIL_PROVIDER=mock

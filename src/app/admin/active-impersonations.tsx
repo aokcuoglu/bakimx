@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Eye } from "lucide-react"
 import { getActiveImpersonationSessions } from "@/lib/impersonation"
 import { RevokeImpersonationButton } from "@/app/admin/revoke-impersonation-button"
+import { formatTrDateTime } from "@/lib/format-date"
 
 /**
  * Açık taklit (impersonation) oturumları — konsolun en hassas yeteneğinin canlı
@@ -12,7 +13,7 @@ import { RevokeImpersonationButton } from "@/app/admin/revoke-impersonation-butt
  * bilgisidir — bölümü gizlemek, hiç bakılmamış olmakla aynı görünürdü.
  */
 function fmt(d: Date): string {
-  return d.toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })
+  return formatTrDateTime(d)
 }
 
 function remainingLabel(expiresAt: Date): string {
