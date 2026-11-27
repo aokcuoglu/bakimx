@@ -123,20 +123,20 @@ function StockBadge({ part }: { part: TechnicianPartRow }) {
   const label = `${part.stockQty} ${part.unit}`
   if (part.stockQty <= 0) {
     return (
-      <Badge variant="outline" className="border-destructive/20 bg-destructive/10 text-destructive-strong">
+      <Badge variant="destructive-tint">
         Stokta yok
       </Badge>
     )
   }
   if (part.stockQty <= part.criticalStockQty) {
     return (
-      <Badge variant="outline" className="border-warning/20 bg-warning/10 text-warning-strong">
+      <Badge variant="warning-tint">
         {label} · kritik
       </Badge>
     )
   }
   return (
-    <Badge variant="outline" className="border-success/20 bg-success/10 text-success-strong">
+    <Badge variant="success-tint">
       {label}
     </Badge>
   )

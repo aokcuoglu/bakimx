@@ -568,6 +568,12 @@ export default function DesignSystemPage() {
               <Badge>default</Badge>
               <Badge variant="secondary">secondary</Badge>
             </div>
+            <div className="flex flex-wrap items-center gap-2" data-testid="badge-tints">
+              <Badge variant="success-tint">success-tint</Badge>
+              <Badge variant="warning-tint">warning-tint</Badge>
+              <Badge variant="destructive-tint">destructive-tint</Badge>
+              <Badge variant="primary-tint">primary-tint</Badge>
+            </div>
           </div>
           <div className="space-y-3 rounded-lg border border-border bg-card p-4" data-testid="selector-sizes">
             <p className="font-mono text-[11px] text-muted-foreground">

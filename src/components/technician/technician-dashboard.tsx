@@ -382,7 +382,7 @@ function OrderCard({ order }: { order: OrderRow }) {
             <span className="flex flex-wrap items-center justify-end gap-1.5">
               <StatusBadge status={order.status} size="lg" className="text-sm" />
               {order.hasActiveLabor && (
-                <Badge variant="outline" className="h-7 px-3 text-sm border-success/20 bg-success/10 text-success-strong">
+                <Badge variant="success-tint" className="h-7 px-3 text-sm">
                   İşçilik
                 </Badge>
               )}

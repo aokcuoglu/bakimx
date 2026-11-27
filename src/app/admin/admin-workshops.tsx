@@ -63,7 +63,7 @@ function Row({ w, canManage }: { w: AdminWorkshopRow; canManage: boolean }) {
               {planLabel(w.planTier)}
             </Badge>
             {w.requestedPlanTier && (
-              <Badge variant="outline" className="text-[11px] bg-primary/15 text-foreground">
+              <Badge variant="primary-tint" className="text-[11px]">
                 <Sparkles className="size-3 mr-1" /> Talep: {planLabel(w.requestedPlanTier)}
               </Badge>
             )}
