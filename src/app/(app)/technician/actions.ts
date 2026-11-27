@@ -970,55 +970,6 @@ export async function updateLaborSessionAction(sessionId: string, formData: Form
   return { success: true }
 }
 
-export async function createTechnicianAction(formData: FormData) {
-  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
-  const { user } = await requireWritableWorkshop("team.manage")
-
-  const fullName = (formData.get("fullName") as string || "").trim()
-  const phone = (formData.get("phone") as string || "").trim()
-  const role = (formData.get("role") as string || "usta").trim()
-
-  if (!fullName) return { error: "Ad soyad zorunludur" }
-  if (!phone) return { error: "Telefon zorunludur" }
-
-  const validRoles = ["usta", "teknisyen", "servis_danismani", "yonetici"]
-  if (!validRoles.includes(role)) return { error: "Geçersiz rol" }
-
-  const technician = await prisma.technician.create({
-    data: {
-      workshopId: user.workshopId,
-      fullName,
-      phone,
-      role: role as import("@prisma/client").TechnicianRole,
-    },
-  })
-
-  await AuditLogAction(user.workshopId, user.id, "Technician", technician.id, "technician_created")
-
-  revalidatePath("/settings/team")
-  revalidatePath("/technician")
-  return { success: true, id: technician.id }
-}
-
-export async function toggleTechnicianActiveAction(technicianId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
-  const { user } = await requireWritableWorkshop("team.manage")
-
-  const technician = await prisma.technician.findFirst({
-    where: { id: technicianId, workshopId: user.workshopId },
-  })
-  if (!technician) return { error: "Teknisyen bulunamadı" }
-
-  await prisma.technician.updateMany({
-    where: { id: technicianId, workshopId: user.workshopId },
-    data: { isActive: !technician.isActive },
-  })
-
-  revalidatePath("/settings/team")
-  revalidatePath("/technician")
-  return { success: true }
-}
-
 /**
  * İş emri kalemini (parça/işçilik) "yapıldı" işaretler veya işareti kaldırır.
  *
