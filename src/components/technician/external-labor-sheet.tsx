@@ -83,7 +83,7 @@ export function EditExternalLaborButton({ orderId, item }: { orderId: string; it
   )
 }
 
-function ExternalLaborSheet({
+export function ExternalLaborSheet({
   orderId,
   item,
   open,

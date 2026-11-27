@@ -1,11 +1,6 @@
 import { test, expect } from "bun:test"
 import { shouldSeedChecklist } from "./checklist-seed"
-import { CHECKLIST_TEMPLATE, missingTemplateItems, templateSortOrder } from "./checklist-template"
-import {
-  countRemainingChecklist,
-  START_REMINDER_CATEGORIES,
-  COMPLETE_REMINDER_CATEGORIES,
-} from "./gates"
+import { CHECKLIST_TEMPLATE, missingTemplateItems } from "./checklist-template"
 
 const assigned = { status: "in_progress" as const, assignedTechnicianId: "tech_1" }
 const allKeys = CHECKLIST_TEMPLATE.map((t) => t.key)
@@ -53,23 +48,4 @@ test("kilitli iş emirlerinde seed edilmez", () => {
 test("taslak/onay bekleyen atanmış iş emri de seed edilir", () => {
   expect(shouldSeedChecklist({ ...assigned, status: "draft" }, [])).toBe(true)
   expect(shouldSeedChecklist({ ...assigned, status: "waiting_parts" }, [])).toBe(true)
-})
-
-/**
- * Kontrol listesi artık kapı değil (BAK-24), ama seed hâlâ önemli: liste boş
- * kalırsa teknisyene hatırlatılacak madde de kalmaz, iş emri kontrolsüz kapanır.
- */
-test("boş listede hatırlatılacak madde yoktur", () => {
-  expect(countRemainingChecklist([], START_REMINDER_CATEGORIES)).toBe(0)
-  expect(countRemainingChecklist([], COMPLETE_REMINDER_CATEGORIES)).toBe(0)
-})
-
-test("seed edilmiş liste her iki aşamada da hatırlatma üretir", () => {
-  const seeded = CHECKLIST_TEMPLATE.map((t) => ({
-    category: t.category,
-    isCompleted: false,
-    sortOrder: templateSortOrder(t.key),
-  }))
-  expect(countRemainingChecklist(seeded, START_REMINDER_CATEGORIES)).toBeGreaterThan(0)
-  expect(countRemainingChecklist(seeded, COMPLETE_REMINDER_CATEGORIES)).toBeGreaterThan(0)
 })

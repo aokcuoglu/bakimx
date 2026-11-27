@@ -29,16 +29,29 @@ export function TechnicianPhotoUpload({
   intakeFormId,
   orderStatus,
   existingPhotoTypes,
+  open: openProp,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   intakeFormId: string
   orderStatus: string
   /** İş emrinde hâlihazırda bulunan fotoğrafların türleri (eksik rozetleri için). */
   existingPhotoTypes: string[]
+  /** Verilirse sayfa dışarıdan yönetilir (iş ekranı kutucuğu). */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  /** Yerleşik "Fotoğraf Ekle" tuşu ve eksik rozetleri çizilmez. */
+  hideTrigger?: boolean
 }) {
   const router = useRouter()
   const defaultPhase = suggestPhotoPhase(orderStatus)
 
-  const [open, setOpen] = useState(false)
+  const [ownOpen, setOwnOpen] = useState(false)
+  const open = openProp ?? ownOpen
+  function setOpen(next: boolean) {
+    setOwnOpen(next)
+    onOpenChange?.(next)
+  }
   const [type, setType] = useState<string>("")
   const [phase, setPhase] = useState<string>(defaultPhase)
   const [note, setNote] = useState("")
@@ -119,8 +132,8 @@ export function TechnicianPhotoUpload({
   }
 
   return (
-    <div className="mt-3 space-y-2">
-      {missing.length > 0 && (
+    <div className={hideTrigger ? undefined : "mt-3 space-y-2"}>
+      {!hideTrigger && missing.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-xs text-muted-foreground">Eksik:</span>
           {missing.map((key) => (
@@ -139,16 +152,18 @@ export function TechnicianPhotoUpload({
         </div>
       )}
 
-      <Button
-        type="button"
-        variant="outline"
-        size="lg"
-        onClick={() => openWith()}
-        className="w-full touch-manipulation"
-      >
-        <Plus className="size-4" />
-        Fotoğraf Ekle
-      </Button>
+      {!hideTrigger && (
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          onClick={() => openWith()}
+          className="w-full touch-manipulation"
+        >
+          <Plus className="size-4" />
+          Fotoğraf Ekle
+        </Button>
+      )}
 
       <BottomSheet
         open={open}

@@ -62,6 +62,7 @@ describe("kontrol ölçeği — e-santral (mobil 44px / masaüstü 36px)", () =>
     expect(block).toContain('inline: "gap-1 rounded-sm p-0 text-[length:inherit] leading-[inherit]"')
     expect(block).toContain('row: "min-h-(--control-h) justify-start gap-3 rounded-md px-3 py-2.5 text-left ')
     expect(block).toContain('tile: "flex-col gap-1.5 overflow-hidden rounded-md p-0 ')
+    expect(block).toContain('kiosk: "min-h-24 flex-col justify-center gap-2 rounded-lg px-2 py-3 ')
     const button = read("./button.tsx")
     expect(button).toContain("border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:ring-4 aria-invalid:ring-destructive/10")
     expect(button).toContain('{ variant: "field", className: "rounded-(--control-radius)" }')
@@ -73,7 +74,7 @@ describe("kontrol ölçeği — e-santral (mobil 44px / masaüstü 36px)", () =>
     // Vitrin her boyutu gösterir.
     const page = read("../../app/design/page.tsx")
     expect(page).toContain('data-testid="button-sizes"')
-    for (const size of ["inline", "row", "tile"]) expect(page).toContain(`size="${size}"`)
+    for (const size of ["inline", "row", "tile", "kiosk"]) expect(page).toContain(`size="${size}"`)
   })
 
   /**
