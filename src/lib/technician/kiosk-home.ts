@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client"
+import { istanbulDayStart } from "@/lib/istanbul-time"
 import type { TechnicianOrderRow } from "@/lib/technician/queries"
 
 export type KioskOrderGroups = {
@@ -49,5 +51,19 @@ export function groupKioskOrders(
     mine: sortOrders(mineOrders),
     others: sortOrders(others),
     drafts: [...draftsById.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  }
+}
+
+/** "Bugün biten": İstanbul gününün başından beri tamamlanan işler (#904 sınıfı). */
+export function completedTodayWhere(
+  workshopId: string,
+  now: Date,
+  technicianId?: string
+): Prisma.ServiceOrderWhereInput {
+  return {
+    workshopId,
+    ...(technicianId ? { assignedTechnicianId: technicianId } : {}),
+    status: { in: ["ready_for_delivery", "delivered"] },
+    completedAt: { gte: istanbulDayStart(now) },
   }
 }

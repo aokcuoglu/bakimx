@@ -7,7 +7,7 @@ import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/comp
 import { prisma } from "@/lib/db"
 import { TechnicianDashboard } from "@/components/technician/technician-dashboard"
 import {
-  getRecentCompletedTechnicianOrders,
+  getCompletedTodayTechnicianOrders,
   getTechnicianDashboardStats,
   getTechnicianOrders,
 } from "@/lib/technician/queries"
@@ -83,7 +83,7 @@ export default async function TechnicianPage({
   const [stats, orders, recentCompletedOrders] = await Promise.all([
     getTechnicianDashboardStats(user.workshopId, selectedTechnicianId, scopeToTechnician),
     getTechnicianOrders(user.workshopId, technicianFilter),
-    getRecentCompletedTechnicianOrders(user.workshopId, technicianFilter),
+    getCompletedTodayTechnicianOrders(user.workshopId, technicianFilter),
   ])
 
   return (

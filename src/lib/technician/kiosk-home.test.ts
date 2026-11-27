@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { groupKioskOrders } from "@/lib/technician/kiosk-home"
+import { completedTodayWhere, groupKioskOrders } from "@/lib/technician/kiosk-home"
 import type { TechnicianOrderRow } from "@/lib/technician/queries"
 
 let seq = 0
@@ -58,5 +58,24 @@ describe("groupKioskOrders", () => {
     const groups = groupKioskOrders([], [a, b], null)
     expect(groups.mine).toEqual([])
     expect(groups.others).toHaveLength(2)
+  })
+})
+
+describe("completedTodayWhere", () => {
+  test("TR 00:30 bugünün başlangıcını verir", () => {
+    const where = completedTodayWhere("w", new Date("2026-11-27T21:30:00Z"))
+    expect(where.completedAt).toEqual({ gte: new Date("2026-11-27T21:00:00Z") })
+  })
+
+  test("TR dün 23:30 hâlâ önceki günün sınırında", () => {
+    const where = completedTodayWhere("w", new Date("2026-11-27T20:30:00Z"))
+    expect(where.completedAt).toEqual({ gte: new Date("2026-11-26T21:00:00Z") })
+  })
+
+  test("workshopId her zaman var, technicianId yoksa anahtar da yok", () => {
+    const where = completedTodayWhere("w", new Date())
+    expect(where.workshopId).toBe("w")
+    expect("assignedTechnicianId" in where).toBe(false)
+    expect(completedTodayWhere("w", new Date(), "t").assignedTechnicianId).toBe("t")
   })
 })
