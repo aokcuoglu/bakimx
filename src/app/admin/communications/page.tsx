@@ -44,7 +44,7 @@ export default async function AdminCommunicationsPage({ searchParams }: { search
             <h2 className="text-sm font-semibold text-foreground">İletişim gönderimleri</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">Tüm kanallardaki iletişim denemeleri sayfalanır ve filtrelenir.</p>
           </div>
-          <form method="get" className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/60 px-3 py-2">
+          <form method="get" className="flex flex-wrap items-center gap-2 rounded-md bg-muted/60 px-3 py-2">
             <Filter className="size-4 text-muted-foreground" aria-hidden="true" />
             <label><span className="sr-only">İş yeri</span><FilterSelect name="workshopId" defaultValue={sp.workshopId ?? ""} placeholder="Tüm iş yerleri" size="sm" className="w-44" autoSubmit options={[{ value: "", label: "Tüm iş yerleri" }, ...workshops.map((workshop) => ({ value: workshop.id, label: workshop.name }))]} /></label>
             <label><span className="sr-only">Kanal</span><FilterSelect name="type" defaultValue={sp.type ?? ""} placeholder="Tüm kanallar" size="sm" className="w-36" autoSubmit options={[{ value: "", label: "Tüm kanallar" }, { value: "sms", label: "SMS" }, { value: "whatsapp", label: "WhatsApp" }, { value: "email", label: "E-posta" }]} /></label>
