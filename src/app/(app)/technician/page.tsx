@@ -1,13 +1,8 @@
-import Link from "next/link"
 import { getAppData } from "@/app/(app)/data"
 import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
-import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { surface } from "@/components/dashboard/surface"
-import { cn } from "@/lib/utils"
 import { prisma } from "@/lib/db"
-import { TechnicianKioskHome } from "@/components/technician/technician-dashboard"
+import { TechnicianEmptyState, TechnicianKioskHome } from "@/components/technician/technician-dashboard"
 import { groupKioskOrders } from "@/lib/technician/kiosk-home"
 import {
   getCompletedTodayTechnicianOrders,
@@ -54,23 +49,7 @@ export default async function TechnicianPage({
   if (canSelectTechnician && !focusTechnicianId) {
     return (
       <AppShell workshopName={workshop?.name}>
-        <div className="space-y-5 sm:space-y-6">
-          {/* Telefonda PageFrame başlığı gizli (desktopOnly); tek h1 burada. */}
-          <h1 className={cn(surface.heroTitle, "lg:hidden")}>Teknisyen Paneli</h1>
-          <Card>
-            <CardHeader>
-              <CardTitle>Henüz teknisyen kaydı yok</CardTitle>
-              <CardDescription>Ayarlar &gt; Ekip sayfasından bir teknisyen ekleyin</CardDescription>
-            </CardHeader>
-            <CardFooter className="justify-center border-t-0 bg-transparent">
-              <Button variant="foreground" asChild>
-                <Link href="/settings/team">
-                  Ekip Sayfasına Git
-                </Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
+        <TechnicianEmptyState />
       </AppShell>
     )
   }

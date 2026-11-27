@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
   Item,
@@ -271,5 +271,25 @@ function OrderCard({
         </ItemActions>
       </Link>
     </Item>
+  )
+}
+
+/** Teknisyen kaydı olmayan atölye: telefonda tek h1 burada (PageFrame başlığı lg+). */
+export function TechnicianEmptyState() {
+  return (
+    <div className="space-y-5 sm:space-y-6">
+      <h1 className={cn(surface.heroTitle, "lg:hidden")}>Teknisyen Paneli</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>Henüz teknisyen kaydı yok</CardTitle>
+          <CardDescription>Ayarlar &gt; Ekip sayfasından bir teknisyen ekleyin</CardDescription>
+        </CardHeader>
+        <CardFooter className="justify-center border-t-0 bg-transparent">
+          <Button variant="foreground" asChild>
+            <Link href="/settings/team">Ekip Sayfasına Git</Link>
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   )
 }
