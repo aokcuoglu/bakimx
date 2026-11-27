@@ -3,7 +3,10 @@ import type { CommunicationResult, SMSProvider } from "../types"
 
 const DEFAULT_API_URL = "https://api.netgsm.com.tr/sms/rest/v2/send"
 const REQUEST_TIMEOUT_MS = 10_000
-/** Netgsm standart SMS üst sınırı (TR karakter kümesi, birleştirilmiş). */
+/**
+ * Uzun mesaj üst sınırı — yaklaşık değer (TR karakter kümesinde birleştirilmiş
+ * SMS'in pratik tavanı). Aşan mesaj kırpılmaz, reddedilir.
+ */
 export const NETGSM_MAX_MESSAGE_LENGTH = 912
 
 /**
@@ -77,7 +80,11 @@ export class NetgsmProvider implements SMSProvider {
 
       const data = await response.json().then(
         (body: unknown) => (body && typeof body === "object" ? (body as { code?: unknown; jobid?: unknown }) : null),
-        () => null,
+        (error: unknown) => {
+          // Gövde okunurken zaman aşımı "beklenmeyen yanıt" diye yutulmasın.
+          if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) throw error
+          return null
+        },
       )
 
       const code = data && data.code != null ? String(data.code) : undefined

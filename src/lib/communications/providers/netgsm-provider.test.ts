@@ -105,6 +105,16 @@ describe("NetgsmProvider", () => {
     expect(result).toEqual({ success: false, error: "Netgsm: istek zaman aşımına uğradı" })
   })
 
+  test("gövde okunurken zaman aşımı da zaman aşımı sayılır", async () => {
+    stubFetch(() => {
+      const response = new Response("{}", { status: 200 })
+      response.json = () => Promise.reject(new DOMException("timed out", "TimeoutError"))
+      return response
+    })
+    const result = await new NetgsmProvider().sendSMS("5321112233", "x")
+    expect(result).toEqual({ success: false, error: "Netgsm: istek zaman aşımına uğradı" })
+  })
+
   test("ağ hatası ham mesajı taşımaz", async () => {
     stubFetch(() => {
       throw new Error("connect ECONNREFUSED s3cret-pass")
