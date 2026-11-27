@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { readFileSync, readdirSync, statSync } from "node:fs"
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
 import ts from "typescript"
 
@@ -24,6 +24,8 @@ const SCANNED_DIRS = [
   "parts",
   "suppliers",
   "purchases",
+  "intake",
+  "damage",
 ].flatMap((name) => [
   join(SRC, "components", name),
   join(SRC, "app", "(app)", name),
@@ -124,6 +126,8 @@ export function findNestedRadiusOffenders(source: string, fileName = "x.tsx"): n
 test("kapla aynı köşeyi taşıyan iç kutu yok (iç köşe her zaman dıştan küçük)", () => {
   const offenders: string[] = []
   for (const dir of SCANNED_DIRS) {
+    // components/<ad> ile app/(app)/<ad> her özellikte birlikte bulunmaz (ör. kabul yalnız components/'te)
+    if (!existsSync(dir)) continue
     for (const file of tsxFiles(dir)) {
       const path = relative(SRC, file)
       if (path in ALLOWLIST) continue
