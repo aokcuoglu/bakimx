@@ -101,6 +101,28 @@ export function limitActivityRows<T extends GroupableActivity>(days: ActivityDay
   return out
 }
 
+/**
+ * `limitActivityRows`ın tamamlayıcısı: ilk `limit` satırdan SONRAKİ satırlar.
+ * Bir gün sınırda bölünürse devam eden günün `continued` bayrağı true olur
+ * (başlığı ilk parçada zaten çizildi).
+ */
+export function restActivityRows<T extends GroupableActivity>(
+  days: ActivityDay<T>[],
+  limit: number,
+): (ActivityDay<T> & { continued: boolean })[] {
+  const out: (ActivityDay<T> & { continued: boolean })[] = []
+  let skip = limit
+  for (const day of days) {
+    if (skip >= day.rows.length) {
+      skip -= day.rows.length
+      continue
+    }
+    out.push({ ...day, rows: day.rows.slice(skip), continued: skip > 0 })
+    skip = 0
+  }
+  return out
+}
+
 export function countActivityRows<T extends GroupableActivity>(days: ActivityDay<T>[]): number {
   return days.reduce((n, d) => n + d.rows.length, 0)
 }

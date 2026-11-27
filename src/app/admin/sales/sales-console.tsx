@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import type { z } from "zod"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -861,41 +862,46 @@ function LeadCard({
       )}
 
       {/* Activity Summary */}
-      <div className="flex items-center justify-between text-xs">
-        <Button
-          type="button"
-          onClick={() => setShowActivities(!showActivities)}
-          variant="link"
-          size="inline"
-          className="gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <FileText className="h-3 w-3" />
-          {lead.activities.length} görüşme
-          <span className="text-muted-foreground-strong">{showActivities ? "▲" : "▼"}</span>
-        </Button>
-        {lead.activities.length > 0 && (
-          <span className="text-xs text-muted-foreground">
-            Son: {formatDateTime(lead.activities[0].occurredAt)}
-          </span>
-        )}
-      </div>
-
-      {showActivities && lead.activities.length > 0 && (
-        <div className="space-y-2 rounded-md bg-muted/50 p-3">
-          {lead.activities.map((a) => {
-            const Icon = activityIcons[a.type] ?? FileText
-            return (
-              <div key={a.id} className="flex items-start gap-2">
-                <Icon className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-foreground">{a.summary}</p>
-                  <p className="text-xs text-muted-foreground">{formatDateTime(a.occurredAt)}</p>
-                </div>
-              </div>
-            )
-          })}
+      <Collapsible open={showActivities} onOpenChange={setShowActivities} className="space-y-3">
+        <div className="flex items-center justify-between text-xs">
+          <CollapsibleTrigger asChild>
+            <Button
+              type="button"
+              variant="link"
+              size="inline"
+              className="gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <FileText className="h-3 w-3" />
+              {lead.activities.length} görüşme
+              <span aria-hidden className="text-muted-foreground-strong">{showActivities ? "▲" : "▼"}</span>
+            </Button>
+          </CollapsibleTrigger>
+          {lead.activities.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              Son: {formatDateTime(lead.activities[0].occurredAt)}
+            </span>
+          )}
         </div>
-      )}
+
+        {lead.activities.length > 0 && (
+          <CollapsibleContent>
+            <div className="space-y-2 rounded-md bg-muted/50 p-3">
+              {lead.activities.map((a) => {
+                const Icon = activityIcons[a.type] ?? FileText
+                return (
+                  <div key={a.id} className="flex items-start gap-2">
+                    <Icon className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-foreground">{a.summary}</p>
+                      <p className="text-xs text-muted-foreground">{formatDateTime(a.occurredAt)}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </CollapsibleContent>
+        )}
+      </Collapsible>
 
       {/* Activity Input */}
       {canManagePipeline && lead.status !== "won" && <div className="flex gap-2">
