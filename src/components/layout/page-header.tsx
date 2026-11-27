@@ -63,7 +63,7 @@ export function PageHeaderView({
   const reserveTitle = header.title === ""
 
   return (
-    <header data-slot="page-header" data-tour={header.tourId} className={styles.header}>
+    <header data-slot="page-header" data-tour={header.tourId} className={cn(styles.header, header.desktopOnly && "max-lg:hidden")}>
       <PageTrail crumbs={crumbs} back={header.back} />
       <div className={styles.row}>
         <h1
@@ -76,7 +76,7 @@ export function PageHeaderView({
           {reserveTitle ? "\u00a0" : header.title}
         </h1>
         {(primaryAction || secondaryActions.length > 0) && (
-          <div className={cn(styles.actions, header.desktopActionsOnly && "max-lg:hidden")}>
+          <div className={styles.actions}>
             {secondaryActions.length > 0 && (
               <div className={styles.secondary}>
                 {secondaryActions.map((action) => (

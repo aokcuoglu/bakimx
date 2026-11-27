@@ -28,7 +28,7 @@ import { StatusBadge } from "@/components/shared/status-badge"
 import { TechnicianQuickActions } from "@/components/technician/technician-quick-actions"
 // e-santral yazı ölçeği: /dashboard ile aynı başlık/bölüm sınıfları.
 import { surface } from "@/components/dashboard/surface"
-import { formatTrDayMonthTime } from "@/lib/format-date"
+import { formatTrDayMonthTime, formatTrTime } from "@/lib/format-date"
 import { Plate } from "@/components/shared/plate"
 
 // Telefonda tek sütun, masaüstünde iki sütun.
@@ -93,14 +93,17 @@ export function TechnicianKioskHome({
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className={surface.heroTitle}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:justify-end">
+        {/* Telefonda sayfa başlığı selamdır; lg+'da başlık PageFrame'dedir (alt
+            başlığı aynı selam), burada yalnız CSS ile gizlenir — erişilebilirlik
+            ağacında her genişlikte tek h1 kalır. */}
+        <h1 className={cn(surface.heroTitle, "lg:hidden")}>
           {heading}
           <span className={surface.panelMeta}>· {groups.mine.length} iş</span>
-        </h2>
+        </h1>
         {canSelectTechnician && (
           <Select value={optimisticId ?? undefined} onValueChange={handleTechnicianChange}>
-            <SelectTrigger aria-label="Teknisyen seç">
+            <SelectTrigger aria-label="Teknisyen seç" className="w-full sm:w-64">
               <SelectValue placeholder="Teknisyen seç" />
             </SelectTrigger>
             <SelectContent>
@@ -122,10 +125,10 @@ export function TechnicianKioskHome({
         className={cn("space-y-5 sm:space-y-6", isPending && "pointer-events-none")}
       >
         <section aria-labelledby="technician-mine-title" className="space-y-3">
-          <h3 id="technician-mine-title" className={cn(surface.panelTitle, "flex items-center gap-2 px-3")}>
+          <h2 id="technician-mine-title" className={cn(surface.panelTitle, "flex items-center gap-2 px-3")}>
             İşlerim
             <CountBadge count={groups.mine.length} />
-          </h3>
+          </h2>
           {groups.mine.length === 0 ? (
             <Card>
               <CardContent className="space-y-1 py-8 text-center">
@@ -151,7 +154,7 @@ export function TechnicianKioskHome({
           defaultOpen={groups.mine.length === 0}
         />
         <KioskGroup title="Taslak" orders={groups.drafts} showTechnician />
-        <KioskGroup title="Bugün biten" orders={completedToday} showTechnician />
+        <KioskGroup title="Bugün biten" orders={completedToday} showTechnician showCompletedTime />
       </div>
     </div>
   )
@@ -161,17 +164,19 @@ function KioskGroup({
   title,
   orders,
   showTechnician,
+  showCompletedTime,
   defaultOpen,
 }: {
   title: string
   orders: TechnicianOrderRow[]
   showTechnician?: boolean
+  showCompletedTime?: boolean
   defaultOpen?: boolean
 }) {
   if (orders.length === 0) return null
   return (
     <Collapsible defaultOpen={defaultOpen} className="space-y-3">
-      <h3>
+      <h2>
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
@@ -185,11 +190,11 @@ function KioskGroup({
             <ChevronRight aria-hidden="true" className="transition-transform" />
           </Button>
         </CollapsibleTrigger>
-      </h3>
+      </h2>
       <CollapsibleContent>
         <ItemGroup className={ORDER_GRID}>
           {orders.map((order) => (
-            <OrderCard key={order.id} order={order} showTechnician={showTechnician} />
+            <OrderCard key={order.id} order={order} showTechnician={showTechnician} showCompletedTime={showCompletedTime} />
           ))}
         </ItemGroup>
       </CollapsibleContent>
@@ -197,7 +202,15 @@ function KioskGroup({
   )
 }
 
-function OrderCard({ order, showTechnician }: { order: TechnicianOrderRow; showTechnician?: boolean }) {
+function OrderCard({
+  order,
+  showTechnician,
+  showCompletedTime,
+}: {
+  order: TechnicianOrderRow
+  showTechnician?: boolean
+  showCompletedTime?: boolean
+}) {
   const { completed, total } = order.checklistProgress
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0
   return (
@@ -241,16 +254,14 @@ function OrderCard({ order, showTechnician }: { order: TechnicianOrderRow; showT
               <span className="flex items-center gap-1.5 tabular-nums">
                 <ListChecks className="size-4 shrink-0" aria-hidden="true" />
                 {completed}/{total} kontrol
-                <Progress
-                  value={percent}
-                  aria-label="Kontrol listesi ilerlemesi"
-                  className="w-12"
-                />
+                <Progress value={percent} aria-hidden="true" className="w-12" />
               </span>
             )}
             <span className="ml-auto flex items-center gap-1.5 tabular-nums">
               <Clock className="size-4 shrink-0" aria-hidden="true" />
-              {formatTrDayMonthTime(order.createdAt)}
+              {showCompletedTime && order.completedAt
+                ? `Bitti ${formatTrTime(order.completedAt)}`
+                : `Kabul ${formatTrDayMonthTime(order.createdAt)}`}
             </span>
           </div>
         </ItemContent>

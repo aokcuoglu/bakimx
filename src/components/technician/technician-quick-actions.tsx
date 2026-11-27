@@ -32,9 +32,9 @@ export const TECHNICIAN_QUICK_ACTIONS: readonly QuickAction[] = [
 ]
 
 export function TechnicianQuickActions() {
+  // lg+ masaüstünde aynı iki işlem sayfa başlığındadır (page-headers.ts); büyük
+  // kiosk tuşları yalnız telefonda/tablette çizilir.
   return (
-    // lg+ masaüstünde aynı iki işlem sayfa başlığındadır (page-headers.ts); büyük
-// kiosk tuşları yalnız telefonda/tablette çizilir.
     <nav aria-label="Hızlı işlemler" className="grid grid-cols-2 gap-3 lg:hidden">
       {TECHNICIAN_QUICK_ACTIONS.map((action) => {
         const Icon = action.icon

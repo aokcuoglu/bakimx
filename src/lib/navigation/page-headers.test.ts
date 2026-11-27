@@ -21,10 +21,10 @@ describe("page-headers (#823)", () => {
     expect(hrefs.filter((h) => !hasPageHeader(h))).toEqual([])
     expect(Object.keys(PAGE_HEADERS).sort()).toEqual([...hrefs].sort())
   })
-  test("Teknisyen Paneli: başlık ve iki düğme yalnız masaüstünde, kabul panel akışında", () => {
+  test("Teknisyen Paneli: çerçeve yalnız masaüstünde, kabul panel akışında", () => {
     const h = resolvePageHeader("/technician", ALL)!
     expect(h.title).toBe("Teknisyen Paneli")
-    expect(h.desktopActionsOnly).toBe(true)
+    expect(h.desktopOnly).toBe(true)
     expect(h.primaryAction?.label).toBe("Araç Kabul")
     const link = new URL(h.primaryAction!.href, "http://x")
     expect(isSidebarlessRoute(link.pathname, link.searchParams)).toBe(true)

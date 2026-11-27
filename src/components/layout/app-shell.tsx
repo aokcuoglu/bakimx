@@ -89,14 +89,13 @@ const APP_NAV_TEXT = "h-7 text-sm leading-5 font-medium tracking-[-0.005em]"
 
 // These pages already introduce themselves in their content. The mobile bar
 // keeps the brand mark there; list and utility pages use the bar for context.
-const MOBILE_CONTENT_HEADING_PATHS = new Set([
-  "/orders/new",
-  "/technician",
-])
+const MOBILE_CONTENT_HEADING_PATHS = new Set(["/orders/new"])
 
+// Cmd/Ctrl+B (ui/sidebar.tsx) sidebar'sız rotalarda <lg'de de kapalı Sheet'i açabilir;
+// kiosk klavyesiz kullanıldığı için bilinçli olarak kabul edildi.
 // Masaüstünde (lg+) üst bar yoktur: sayfa başlığı içerikte durur. Bar yalnız
 // sidebar kapalıyken açma düğmesi için, mobil/tablette (<lg) menü düğmesi ve
-// logo için, sidebar'sız teknisyen ekranlarında da hesap/çıkış için kalır.
+// logo için, sidebar'sız teknisyen ekranlarında (<lg) hesap/çıkış için kalır.
 
 // Menü sayfası olmadığı hâlde görünür başlığı yalnız bardaydı.
 const BAR_TITLE_ONLY_PATHS = new Set(["/cashbox/payments/new", "/customers/balances"])
@@ -293,6 +292,7 @@ function AppHeader({
   // görünümüdür (bkz. lib/sidebarless-route.ts); lg+ tam kabuk kalır.
   const sidebarless = isSidebarlessRoute(pathname, searchParams)
   const homeHref = isTechRole ? "/technician" : "/dashboard"
+  const { isMobile, state: sidebarState } = useSidebar()
 
   return (
     <header
@@ -309,8 +309,9 @@ function AppHeader({
     >
       <div className="relative flex h-full w-full flex-nowrap items-center gap-2 px-4">
         {/* Sidebar açıkken kontrol menü başlığındadır; kapalıyken burada görünür. */}
-        {sidebarless ? (
-          // Telefon/tablet (<lg) kiosk: menü düğmesi yok, dönüş logodan.
+        {sidebarless && !contentOwnsTitle ? (
+          // Telefon/tablet (<lg) kiosk: menü düğmesi yok, dönüş logodan. Başlığı
+          // içerikte olan sayfada ortadaki logo zaten tablette de durur (tek logo).
           <Link href={homeHref} aria-label="BakimX" className="hidden items-center md:flex lg:hidden">
             <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
           </Link>
@@ -339,7 +340,7 @@ function AppHeader({
         )}
 
         {headerTitle && !contentOwnsTitle && (
-          // Masaüstünde başlık içerikte (AppShell); sidebar'sız ekranda bar kalır.
+          // Masaüstünde (lg+) başlık içerikte (AppShell/PageFrame).
           <h1 className={cn("hidden min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:flex", "lg:hidden", shellStyles.headerTitle)}>
             {HeaderIcon ? <HeaderIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
             <span className="truncate">{headerTitle}</span>
@@ -347,7 +348,9 @@ function AppHeader({
         )}
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          {isTechRole ? <div className="lg:hidden"><TechnicianNotificationsBell /></div> : null}
+          {/* Zil yalnız bar gerçekten görünürken (<lg ya da lg+'da sidebar kapalı) kurulur;
+              sidebar açıkken kendi zili menüdedir, ikinci bir yoklama başlamaz. */}
+          {isTechRole && (isMobile || sidebarState === "collapsed") ? <TechnicianNotificationsBell /> : null}
           {sidebarless && isTechRole ? <div className="flex items-center gap-1 lg:hidden"><SidebarlessAccountActions /></div> : null}
         </div>
       </div>
@@ -355,8 +358,8 @@ function AppHeader({
   )
 }
 
-// Sidebar'sız ekranda teknisyenin hesap ve çıkış yolu. Telefonda "Profil" alt
-// gezintide durduğu için yalnız geniş ekranda gösterilir; çıkış her genişlikte.
+// Sidebar'sız (<lg) ekranda teknisyenin hesap ve çıkış yolu; lg+'da bunlar
+// sidebar'dadır, bu yüzden çağrı yerinde `lg:hidden` sarılır.
 function SidebarlessAccountActions() {
   return (
     <>

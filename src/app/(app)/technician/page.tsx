@@ -83,8 +83,17 @@ export default async function TechnicianPage({
   ])
   const groups = groupKioskOrders(mine, workshopOrders, focusTechnicianId)
 
+  // lg+ PageFrame alt başlığı = kiosk selamı (telefonda başlık içerikte kalır).
+  const focusName = technicians.find((t) => t.id === focusTechnicianId)?.fullName
+  const who = canSelectTechnician
+    ? (focusName ?? "Teknisyen")
+    : user.firstName
+      ? `Merhaba ${user.firstName}`
+      : "Merhaba"
+  const subtitle = `${who} · ${groups.mine.length} iş`
+
   return (
-    <AppShell workshopName={workshop?.name}>
+    <AppShell workshopName={workshop?.name} subtitle={subtitle}>
       <TechnicianKioskHome
         technicians={technicians.map((t) => ({ id: t.id, fullName: t.fullName, role: t.role }))}
         focusTechnicianId={focusTechnicianId}

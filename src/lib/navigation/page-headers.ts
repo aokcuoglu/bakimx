@@ -29,8 +29,8 @@ export type PageHeaderConfig = {
   actions?: readonly PageAction[]
   /** Başlık kökünün data-tour değeri. */
   tourId?: string
-  /** Düğmeler yalnız lg+'da çizilir (telefonda içerik aynı işlemleri kendi sunar). */
-  desktopActionsOnly?: boolean
+  /** Başlık çerçevesinin tamamı (yol, h1, açıklama, düğmeler) yalnız lg+'da çizilir; telefonda içerik başlığı kendisi taşır. */
+  desktopOnly?: boolean
 }
 
 export type Crumb = { label: string; href?: string }
@@ -71,7 +71,7 @@ export type ResolvedPageHeader = {
   primaryAction?: PageAction
   secondaryActions: PageAction[]
   tourId?: string
-  desktopActionsOnly?: boolean
+  desktopOnly?: boolean
 }
 
 /** Kabul, açıldığı sayfaya döner (#842): `back` geri bağlantısını belirler. */
@@ -98,10 +98,11 @@ export const PAGE_HEADERS: Readonly<Record<string, PageHeaderConfig>> = {
     actions: [{ ...newIntakeFrom("/dashboard"), tourId: "welcome-cta" }],
   },
   "/technician": {
-    desktopActionsOnly: true,
+    desktopOnly: true,
+    dynamicSubtitle: true,
     actions: [
       { label: "Araç Kabul", href: TECHNICIAN_INTAKE_HREF, icon: Plus, primary: true },
-      { label: "Parça Ara", href: "/technician/parts", icon: PackageSearch },
+      { label: "Parça Ara", href: "/technician/parts", icon: PackageSearch, feature: "partsInventory" },
     ],
   },
   "/orders": { actions: [newIntakeFrom("/orders")] },
@@ -341,6 +342,6 @@ export function resolvePageHeader(
     primaryAction,
     secondaryActions: actions.filter((a) => a !== primaryAction),
     tourId: config.tourId,
-    desktopActionsOnly: config.desktopActionsOnly,
+    desktopOnly: config.desktopOnly,
   }
 }
