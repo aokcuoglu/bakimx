@@ -86,7 +86,7 @@ export function eagerPrefetchTarget(v: {
 /**
  * Ön yükleme bağlamı: yalnız parça kataloğu (`partsCatalog`) yetkisi olan
  * atölye için. Kota tek başına kapı değildir (#827): yalnız `vinLookup` açık
- * atölyede taban kota 15.000, admin'in `extraVinQuota` verdiği düz Servis
+ * atölyede taban kota 1.000 (hesap genelinde), admin'in `extraVinQuota` verdiği düz Servis
  * Paketi atölyede de cap > 0 olur — ama `tecdocRouteGuard` o katalogu kilitli
  * tutar; ücretli TecDoc çağrısı yapılmamalı. Yetki yoksa null.
  */

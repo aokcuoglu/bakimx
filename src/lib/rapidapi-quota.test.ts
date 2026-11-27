@@ -164,10 +164,7 @@ const orgWorkshop = (id: string, extraVinQuota: number) => ({
 })
 
 test("organizasyonlu şubeler tek kotayı paylaşır; ek kota toplanır, kilit organizasyon başına (#829)", async () => {
-  const members = [
-    { id: "b1", extraVinQuota: 1 },
-    { id: "b2", extraVinQuota: 1 },
-  ]
+  const members = [orgWorkshop("b1", 1), orgWorkshop("b2", 1)]
   let query: unknown
   const scopeDb = {
     workshop: {
@@ -201,4 +198,41 @@ test("organizasyonsuz atölyede ek sorgu atılmaz (#829)", async () => {
   const scopeDb = { workshop: { findMany: async () => { throw new Error("sorgu atılmamalı") } } }
   const context = await resolveWorkshopQuotaContext({ ...orgWorkshop("solo", 3), organizationId: null }, scopeDb)
   expect(context).toMatchObject({ scopeWorkshopIds: ["solo"], lockScope: "solo", extraVinQuota: 3, baseQuota: 1_000 })
+})
+
+const FUTURE = new Date("2099-01-01T00:00:00.000Z")
+const trialBranch = (id: string) => ({
+  ...orgWorkshop(id, 0),
+  planTier: "pro" as const,
+  subscriptionStatus: "trialing" as const,
+  trialEndsAt: FUTURE,
+  currentPeriodEnd: null,
+  addons: [] as string[],
+})
+const plainBranch = (id: string) => ({ ...orgWorkshop(id, 0), addons: [] as string[] })
+
+test("karma şubelerde taban kota en yükseğidir; iki çağıran da aynı tavanı görür (#829)", async () => {
+  const members = [trialBranch("t"), orgWorkshop("p", 0)]
+  const scopeDb = { workshop: { findMany: async () => members } }
+  const fromTrial = await resolveWorkshopQuotaContext(members[0], scopeDb)
+  const fromPaid = await resolveWorkshopQuotaContext(members[1], scopeDb)
+  expect(fromTrial.baseQuota).toBe(15_000)
+  expect(fromPaid.baseQuota).toBe(15_000)
+  expect(fromTrial.workshopCount).toBe(2)
+})
+
+test("ek özelliği olmayan şube, hesabın diğer şubesindeki hakkı alır (#829)", async () => {
+  const members = [plainBranch("a"), orgWorkshop("b", 0)]
+  const scopeDb = { workshop: { findMany: async () => members } }
+  const ctx = await resolveWorkshopQuotaContext(members[0], scopeDb)
+  expect(ctx.baseQuota).toBe(1_000)
+})
+
+test("müşteri olmayan çağıran da taban kotaya katılır; tek atölyede workshopCount 1", async () => {
+  const caller = orgWorkshop("hq", 0)
+  const ctx = await resolveWorkshopQuotaContext(caller, { workshop: { findMany: async () => [plainBranch("a")] } })
+  expect(ctx.baseQuota).toBe(1_000)
+  expect(ctx.workshopCount).toBe(2)
+  const solo = await resolveWorkshopQuotaContext({ ...caller, organizationId: null })
+  expect(solo.workshopCount).toBe(1)
 })

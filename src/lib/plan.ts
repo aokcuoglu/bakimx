@@ -103,7 +103,7 @@ export const PLAN_SEATS: Record<PlanTier, number> = {
 }
 
 /**
- * Per-tier monthly VIN/katalog kotası (atölye başına). Ek kota Workshop.extraVinQuota ile eklenir.
+ * Per-tier monthly VIN/katalog kotası (hesap genelinde, şubeler paylaşır — #829). Ek kota Workshop.extraVinQuota ile eklenir.
  * Şaseden parça (VIN + parça kataloğu) Servis Paketi'ne dahil olmayan bir ek
  * özellik olduğu için `pro` kotası 0'dır (#782). Ek özelliği `addons` ile
  * açılmış atölyenin taban kotası {@link getVinLookupBaseQuota}'dadır (#827).
