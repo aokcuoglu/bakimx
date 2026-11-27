@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Camera, ChevronRight, Coins, Info, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { PLAN_SEATS, type PlanState } from "@/lib/plan"
+import type { PlanState } from "@/lib/plan"
 import { PHOTO_UPLOAD_POLICY } from "@/lib/plans-catalog"
 import { summarizeSeatUsage, usagePercent } from "@/lib/billing/usage"
 import type { WorkshopQuotaUsage } from "@/lib/rapidapi-quota"
@@ -44,7 +44,7 @@ export function BillingUsagePanel({ plan, seatUsage, extraSeats, quota, canPurch
   canPurchase: boolean
   onManageSeats: () => void
 }) {
-  const seats = summarizeSeatUsage({ ...seatUsage, includedSeats: PLAN_SEATS[plan.accessTier], extraSeats })
+  const seats = summarizeSeatUsage({ ...seatUsage, includedSeats: plan.includedSeats, extraSeats })
   return (
     <section id="kullanim" aria-label="Paket kullanımı" className="scroll-mt-24 border-t">
       <div className="grid gap-5 p-4 sm:grid-cols-3 sm:p-5">

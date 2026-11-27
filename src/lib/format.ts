@@ -4,6 +4,7 @@
  */
 
 import { formatKurus } from "@/lib/money"
+import { parseIstanbulDate } from "@/lib/istanbul-time"
 
 const NUMBER_FORMATTER = new Intl.NumberFormat("tr-TR")
 
@@ -126,15 +127,14 @@ export function inputDateToTr(v: string): string {
 }
 
 /**
- * GG.AA.YYYY (dd.MM.yyyy) tarih seçici değerini gerçek Date'e çevirir (yerel gün
- * başı). Tanınmayan/eksik girdi null döner. Dış alım (purchasedAt) gibi DateTime
+ * GG.AA.YYYY (dd.MM.yyyy) tarih seçici değerini gerçek Date'e çevirir (İstanbul gün
+ * başı, #933). Tanınmayan, eksik ya da takvimde olmayan (31.02) girdi null döner. Dış alım (purchasedAt) gibi DateTime
  * kolonlarına yazarken kullanılır.
  */
 export function trDateToDate(v: string | null | undefined): Date | null {
   const iso = trDateToInput(v)
   if (!iso) return null
-  const d = new Date(`${iso}T00:00:00`)
-  return Number.isNaN(d.getTime()) ? null : d
+  return parseIstanbulDate(iso)
 }
 
 /**

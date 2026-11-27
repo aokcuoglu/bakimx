@@ -4,6 +4,7 @@ import { apiErrorResponse } from "@/lib/api-errors"
 import { prisma } from "@/lib/db"
 import {
   activateWorkshopForUser,
+  ensureMembership,
   ensureWorkshopOrganization,
 } from "@/lib/membership"
 import { isLoginCodeConflict, workshopCodeCandidate } from "@/lib/workshop-code"
@@ -135,6 +136,13 @@ export async function POST(request: Request) {
             select: { id: true, name: true, loginCode: true },
           })
 
+          // Kaynak atölyedeki koltuk korunur; değiştirici ana atölyeye dönebilsin (#900).
+          await ensureMembership({
+            userId: user.id,
+            workshopId: source.id,
+            role: "owner",
+            tx,
+          })
           await activateWorkshopForUser({
             userId: user.id,
             workshopId: branch.id,

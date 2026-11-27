@@ -25,7 +25,7 @@ test("araç ekleme aksiyonu vurgulu bir buton olarak kalır", () => {
   // Yükseklik ezmesi BAK-150'de kaldırıldı; ölçek artık Button varyantından
   // geliyor (docs/ui-control-sizing.md). Burada korunan şey aksiyonun
   // görünürlüğü: vurgulu, ikonlu ve ayrı bir kontrol olması.
-  expect(FORM).toContain('className="text-primary"')
+  expect(FORM).toContain('variant="tint-ghost"')
   expect(FORM).toContain("Bu müşteriye yeni araç ekle")
 })
 
