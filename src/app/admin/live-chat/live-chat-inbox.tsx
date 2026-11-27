@@ -145,9 +145,9 @@ function ThreadPanelLoading() {
         </div>
       </div>
       <div className="flex flex-1 flex-col justify-end gap-3 px-3 py-4">
-        <Skeleton className="h-14 w-3/5 rounded-xl" />
-        <Skeleton className="ml-auto h-12 w-2/5 rounded-xl" />
-        <Skeleton className="h-16 w-4/5 rounded-xl" />
+        <Skeleton className="h-14 w-3/5 rounded-md" />
+        <Skeleton className="ml-auto h-12 w-2/5 rounded-md" />
+        <Skeleton className="h-16 w-4/5 rounded-md" />
       </div>
       <div className="border-t p-3">
         <Skeleton className="h-14 w-full rounded-md" />
@@ -244,7 +244,7 @@ function ThreadPanel({ thread, filter }: { thread: ThreadDetail; filter: InboxFi
         {thread.messages.map((message) => {
           if (message.sender === "system") {
             return (
-              <p key={message.id} className="rounded-lg bg-muted/60 px-3 py-1.5 text-xs text-muted-foreground">
+              <p key={message.id} className="rounded-md bg-muted/60 px-3 py-1.5 text-xs text-muted-foreground">
                 {message.body}
               </p>
             )
@@ -254,7 +254,7 @@ function ThreadPanel({ thread, filter }: { thread: ThreadDetail; filter: InboxFi
             <div key={message.id} className={cn("flex", isAgent ? "justify-end" : "justify-start")}>
               <div
                 className={cn(
-                  "max-w-[85%] rounded-xl px-3 py-2",
+                  "max-w-[85%] rounded-md px-3 py-2",
                   isAgent ? "bg-navy text-navy-foreground" : "border bg-muted/40 text-foreground",
                 )}
               >
