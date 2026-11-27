@@ -157,7 +157,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
       <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-navy-foreground shrink-0">
+            <div className="size-12 rounded-md bg-navy flex items-center justify-center text-navy-foreground shrink-0">
               <BellRing className="size-5" />
             </div>
             <div className="min-w-0">
@@ -351,7 +351,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               <CardContent className="pt-0">
                 <Link
                   href={`/appointments/${reminder.createdAppointment.id}`}
-                  className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted transition-colors"
+                  className="flex items-center gap-3 rounded-md border border-border p-3 hover:bg-muted transition-colors"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground">
@@ -379,9 +379,9 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             <CardContent className="pt-0">
               <Link
                 href={`/customers/${reminder.customer.id}`}
-                className="flex items-center gap-3 rounded-lg p-2 -m-2 hover:bg-muted transition-colors"
+                className="flex items-center gap-3 rounded-md p-2 -m-2 hover:bg-muted transition-colors"
               >
-                <div className="size-10 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
+                <div className="size-10 rounded-md bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
                   <User className="size-4" />
                 </div>
                 <div className="min-w-0">
@@ -404,9 +404,9 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             <CardContent className="pt-0">
               <Link
                 href={`/vehicles/${reminder.vehicle.id}`}
-                className="flex items-center gap-3 rounded-lg p-2 -m-2 hover:bg-muted transition-colors"
+                className="flex items-center gap-3 rounded-md p-2 -m-2 hover:bg-muted transition-colors"
               >
-                <div className="size-10 rounded-lg bg-navy text-navy-foreground flex items-center justify-center shrink-0">
+                <div className="size-10 rounded-md bg-navy text-navy-foreground flex items-center justify-center shrink-0">
                   <Car className="size-4" />
                 </div>
                 <div className="min-w-0">

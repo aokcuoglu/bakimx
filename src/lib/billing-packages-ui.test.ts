@@ -36,7 +36,7 @@ test("faturalandırma kullanımı gerçek hakları ve Lite boş durumunu göster
   const source = read("src/components/billing/billing-usage-panel.tsx")
   expect(source).toContain("Paketinizde bulunmuyor")
   expect(source.toLocaleLowerCase("tr-TR")).not.toContain("depolama yüzdesi")
-  expect(source).toContain("PLAN_SEATS[plan.accessTier]")
+  expect(source).toContain("plan.includedSeats")
   expect(source).toContain("quota.used")
 })
 

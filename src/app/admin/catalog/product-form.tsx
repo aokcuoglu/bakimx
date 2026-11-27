@@ -557,7 +557,7 @@ export function CatalogProductForm({
                 control={form.control}
                 name="backorderable"
                 render={({ field }) => (
-                  <FormItem className="rounded-lg border px-3 py-2">
+                  <FormItem className="rounded-md border px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <FormLabel>Siparişe açık</FormLabel>
@@ -574,7 +574,7 @@ export function CatalogProductForm({
                 control={form.control}
                 name="isActive"
                 render={({ field }) => (
-                  <FormItem className="rounded-lg border px-3 py-2">
+                  <FormItem className="rounded-md border px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <FormLabel>Aktif</FormLabel>

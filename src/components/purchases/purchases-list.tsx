@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Eye, PackageSearch } from "lucide-react"
+import { formatTrDate } from "@/lib/format-date"
 
 export type PurchaseRow = {
   id: string
@@ -38,7 +39,7 @@ function formatDate(iso: string | null): string {
   const d = new Date(iso)
   return Number.isNaN(d.getTime())
     ? "—"
-    : d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })
+    : formatTrDate(d)
 }
 
 /**

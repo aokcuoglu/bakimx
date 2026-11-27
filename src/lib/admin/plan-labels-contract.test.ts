@@ -56,7 +56,12 @@ describe("admin ve satış paket etiketleri tek kaynaktan gelir (#830)", () => {
     const source = read("src/app/admin/actions.ts")
     expect(source).toContain("if (!isSalePlanTier(tier))")
     // Önceki paket ve süresiz Lite izi denetim kaydına yazılır.
-    expect(source).toContain("JSON.stringify(planActivationAuditMetadata(current, tier, status))")
+    expect(source).toContain('JSON.stringify(planActivationAuditMetadata(current, tier, "active", period))')
+    // Dönem ya da açık süresiz seçimi sunucuda doğrulanır ve yazılır (#1040).
+    expect(source).toContain("manualPlanActivationSchema.safeParse(")
+    expect(source).toContain("billingCycle: period.billingCycle")
+    expect(source).toContain("currentPeriodEnd: period.currentPeriodEnd")
+    expect(source).toContain("dönem ortasında değiştirilemez")
     expect(source).not.toMatch(/const\s+TIERS\b/)
   })
 })

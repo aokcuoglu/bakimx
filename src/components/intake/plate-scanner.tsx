@@ -72,7 +72,7 @@ function PlateCaptureGuide() {
           alt="Örnek: aracın önü, plaka net görünüyor"
           width={480}
           height={270}
-          className="aspect-video w-28 shrink-0 rounded-lg object-cover ring-1 ring-white/20 min-[380px]:w-32"
+          className="aspect-video w-28 shrink-0 rounded-md object-cover ring-1 ring-white/20 min-[380px]:w-32"
         />
         <div className="min-w-0">
           <p className="text-lg leading-tight font-semibold">Aracın önünü çekin</p>

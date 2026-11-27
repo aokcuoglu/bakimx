@@ -7,6 +7,14 @@ export interface PlanActivationAuditMetadata {
   previousStatus: string
   /** Yalnız ezilen satır süresiz Lite hakkı taşıyorsa yazılır. */
   hadLifetimeLite?: true
+  /** Seçilen dönem (`monthly` / `yearly`); süresiz erişimde yazılmaz. */
+  cycle?: string
+  /** Yazılan dönem bitişi (ISO); süresiz erişimde yazılmaz. */
+  periodEndsAt?: string
+  /** Yalnız süresiz erişim açıkça seçildiyse yazılır (#1040). */
+  indefinite?: true
+  /** Ezilen önceki dönem bitişi (ISO). */
+  previousPeriodEndsAt?: string
 }
 
 /**
@@ -15,9 +23,10 @@ export interface PlanActivationAuditMetadata {
  * geçirdiğinde iz kalsın, gerekirse geri kurulabilsin (#830).
  */
 export function planActivationAuditMetadata(
-  previous: { planTier: string; subscriptionStatus: string; liteFreeGrantedAt?: Date | null },
+  previous: { planTier: string; subscriptionStatus: string; liteFreeGrantedAt?: Date | null; currentPeriodEnd?: Date | null },
   tier: string,
   status: string,
+  period: { billingCycle: string | null; currentPeriodEnd: Date | null },
 ): PlanActivationAuditMetadata {
   return {
     tier,
@@ -25,5 +34,9 @@ export function planActivationAuditMetadata(
     previousTier: previous.planTier,
     previousStatus: previous.subscriptionStatus,
     ...(hasLifetimeLite(previous) ? { hadLifetimeLite: true as const } : {}),
+    ...(period.billingCycle && period.currentPeriodEnd
+      ? { cycle: period.billingCycle, periodEndsAt: period.currentPeriodEnd.toISOString() }
+      : { indefinite: true as const }),
+    ...(previous.currentPeriodEnd ? { previousPeriodEndsAt: previous.currentPeriodEnd.toISOString() } : {}),
   }
 }
