@@ -270,7 +270,7 @@ function BrandDialog({
               control={form.control}
               name="isActive"
               render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border px-3 py-2">
+                <FormItem className="flex items-center justify-between rounded-md border px-3 py-2">
                   <div>
                     <FormLabel>Aktif</FormLabel>
                     <FormDescription>Pasif marka seçicilerde “pasif” etiketiyle görünür.</FormDescription>
