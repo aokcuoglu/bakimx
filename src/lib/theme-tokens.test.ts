@@ -680,3 +680,46 @@ test("tek başına opacity-* durağan öğede kullanılmaz", () => {
     .map((e) => `${e.file} → ${e.className}`)
   expect(stale).toEqual([])
 })
+
+/**
+ * `Badge` tonlu varyantlarının (`destructive`, `*-tint`) metni, rozetin KENDİ
+ * dolgusu üstünde — kart, sayfa ve `bg-muted` yüzeylerinin üçünde, iki temada —
+ * AA geçer (#1021). Dolgu opaklığı `badge.tsx`ten okunur; koyu temada
+ * `dark:bg-<ton>/N` varsa o, yoksa açık temadaki `bg-<ton>/N` geçerlidir.
+ * `destructive` varyantı koyu temada `/20` kullanırken tint varyantları `/10`
+ * ile ölçülmüştü; `/20` dolgu `bg-muted` üstünde 4.5:1'in altına iniyordu.
+ */
+test("Badge tonlu varyantları her yüzeyde ve iki temada AA geçer", () => {
+  const source = readFileSync(join(SRC, "components", "ui", "badge.tsx"), "utf8")
+  const failures: string[] = []
+  let measured = 0
+
+  for (const m of source.matchAll(/^\s+(?:"([\w-]+)"|(destructive)):\s*\n?\s*"([^"]+)"/gm)) {
+    const variant = m[1] ?? m[2]
+    const classes = m[3].split(/\s+/)
+    if (variant !== "destructive" && !variant.endsWith("-tint")) continue
+    const text = classes.map((c) => /^text-(success|warning|destructive|primary)-strong$/.exec(c)?.[1]).find(Boolean)
+    const light = classes.map((c) => /^bg-(success|warning|destructive|primary)\/(\d+)$/.exec(c)).find(Boolean)
+    const dark = classes.map((c) => /^dark:bg-(success|warning|destructive|primary)\/(\d+)$/.exec(c)).find(Boolean)
+    if (!text || !light) {
+      failures.push(`${variant}: metin/dolgu ayrıştırılamadı`)
+      continue
+    }
+    for (const which of ["root", "dark"] as const) {
+      const vars = themeBlock(which)
+      const fill = which === "dark" && dark ? dark : light
+      const alpha = Number(fill[2]) / 100
+      for (const surfaceName of ["card", "background", "muted"]) {
+        const ground = mixSrgb(toRgb(vars[surfaceName]), toRgb(vars[fill[1]]), alpha)
+        const ratio = contrastRgb(ground, toRgb(vars[`${text}-strong`]))
+        measured++
+        if (ratio < 4.5) {
+          failures.push(`${which === "root" ? "açık" : "koyu"}/${variant} ${surfaceName} üzerinde ${ratio.toFixed(2)}:1`)
+        }
+      }
+    }
+  }
+
+  expect(measured).toBe(5 * 2 * 3)
+  expect(failures).toEqual([])
+})

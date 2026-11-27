@@ -1,5 +1,6 @@
 "use client"
 
+import { StatusPill } from "@/components/shared/status-badge"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -11,7 +12,6 @@ import { Plate } from "@/components/shared/plate"
 import { APPOINTMENT_STATUS, type AppointmentStatusKey, REMINDER_STATUS } from "@/lib/constants"
 import { customerDisplayName } from "@/lib/format"
 import { formatDateTime } from "@/lib/utils-client"
-import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   updateAppointmentStatusAction,
@@ -311,14 +311,7 @@ export function AppointmentDetail({
               </div>
               <div className="pt-2 border-t">
                 <span className="text-xs text-muted-foreground block mb-1">Hatırlatma</span>
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full border font-medium whitespace-nowrap h-6 px-2.5 text-xs",
-                    reminderInfo?.color || "bg-muted text-muted-foreground border-border"
-                  )}
-                >
-                  {reminderInfo?.label || appointment.reminderStatus}
-                </span>
+                <StatusPill label={reminderInfo?.label || appointment.reminderStatus} tone={reminderInfo?.tone} size="md" />
                 <p className="text-[11px] text-muted-foreground mt-2">
                   Hatırlatma entegrasyonu yakında. Bu sürümde gerçek SMS/WhatsApp gönderimi yapılmaz.
                 </p>

@@ -171,7 +171,7 @@ function PartsRequestCard({
   onCancel: () => void
 }) {
   const [isPending, startTransition] = useTransition()
-  const status = (PARTS_REQUEST_STATUS as Record<string, { label: string; color: string }>)[request.status]
+  const status = (PARTS_REQUEST_STATUS as Record<string, { label: string }>)[request.status]
   const converted = request.convertedAt != null
   const cancelled = request.status === "cancelled"
   const decided = converted || cancelled

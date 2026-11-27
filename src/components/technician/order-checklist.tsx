@@ -1,5 +1,7 @@
 "use client"
 
+import { statusToneBadgeVariant } from "@/lib/status-tone"
+import { Badge } from "@/components/ui/badge"
 import { useCallback, useEffect, useOptimistic, useRef, useState, useTransition } from "react"
 import type { RefObject } from "react"
 import {
@@ -393,9 +395,9 @@ function ChecklistSection({
       {/* Dar ekranda toplu işlem düğmeleri alt satıra sarar; kart kenarından
           taşmaz (390px'te "Tümünü işaretle" kırpılıyordu, #889). */}
       <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className={cn("inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-medium", info.color)}>
+        <Badge variant={statusToneBadgeVariant(info.tone)} className="rounded-md text-[11px]">
           {info.label}
-        </span>
+        </Badge>
         <span className="text-xs tabular-nums text-muted-foreground">
           {done}/{items.length}
         </span>
