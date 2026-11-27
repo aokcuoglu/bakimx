@@ -1,45 +1,15 @@
 /**
- * Hero'daki ask bar ile asistan arasındaki ince köprü (BAK-81).
+ * Asistanı kök `layout.tsx`teki `SiteAssistant`e dışarıdan uyandıran ince
+ * köprü (BAK-81, BAK-99).
  *
- * Neden bir store: `SiteAssistant` kök `layout.tsx`te, ask bar ise `/`
- * sayfasının hero'sunda duruyor. İkisinin ortak bir React ebeveyni yok; layout'u
- * bir context sağlayıcıyla sarmak `{children}` ağacının tamamını gereksizce
- * istemci sınırına yaklaştırırdı. `useSyncExternalStore` deseni bu depoda zaten
+ * Neden bir store: `SiteAssistant` kök `layout.tsx`te, tetikleyen sayfalar ise
+ * ağacın başka yerinde. Ortak bir React ebeveyni yok; layout'u bir context
+ * sağlayıcıyla sarmak `{children}` ağacının tamamını gereksizce istemci
+ * sınırına yaklaştırırdı. `useSyncExternalStore` deseni bu depoda zaten
  * kullanılıyor (bkz. `FAQSection`in hash aboneliği).
- *
- * Akış tek yönlü değil, iki uçlu ve küçük:
- *   ask bar → asistan : `requestAssistantAnswers(query)`
- *   ask bar → launcher: `setAskBarVisible(...)`  (FAB ile ask bar aynı anda durmaz)
- *   asistan → ask bar : `setAssistantPanelOpen(...)` (`aria-expanded` için)
  */
-
-/**
- * Panel düğümünün `id`si — `HeroAskBar` buna `aria-controls` ile işaret eder.
- *
- * Neden panelin kendi dosyasında değil: tek bir dizi sabiti için `HeroAskBar`,
- * `assistant-panel.tsx`i statik olarak import ediyordu ve o modül tüm görünümleri
- * (canlı sohbet doğrulaması üzerinden `zod` dahil) landing'in ilk yüküne
- * sokuyordu. Panelin `next/dynamic` ile ayrılması bu YÜZDEN yetmiyordu —
- * ask bar ikinci bir statik yol açık bırakıyordu (BAK-165). Köprü ikisinin de
- * bağımlılıksız ortak zemini.
- */
-export const ASSISTANT_PANEL_ID = "site-assistant-panel";
-
-export type AssistantRequest = {
-  query: string;
-  /**
-   * Aynı soru iki kez sorulduğunda da paneli yeniden açabilmek için artan
-   * sayaç. Yalnız `query` karşılaştırmak ikinci tıklamayı sessizce yutardı.
-   */
-  nonce: number;
-};
 
 export type AssistantBridgeState = {
-  request: AssistantRequest | null;
-  /** Hero'daki ask bar şu an ekranda mı? */
-  askBarVisible: boolean;
-  /** Asistan paneli açık mı? */
-  panelOpen: boolean;
   /**
    * `/destek/<token>` sayfası paneli canlı destek görünümünde açmak istiyor
    * (BAK-99). Aynı sayfaya iki kez girilse de açılabilsin diye yine sayaç.
@@ -48,14 +18,10 @@ export type AssistantBridgeState = {
 };
 
 const INITIAL: AssistantBridgeState = Object.freeze({
-  request: null,
-  askBarVisible: false,
-  panelOpen: false,
   resumeNonce: 0,
 });
 
 let state: AssistantBridgeState = INITIAL;
-let nonce = 0;
 let resumeNonce = 0;
 
 const listeners = new Set<() => void>();
@@ -86,14 +52,6 @@ export function getServerAssistantBridge(): AssistantBridgeState {
   return INITIAL;
 }
 
-/** Ask bar'dan gelen soru — asistan bunu görüp cevap görünümünü açar. */
-export function requestAssistantAnswers(query: string): void {
-  const trimmed = query.trim();
-  if (trimmed.length === 0) return;
-  nonce += 1;
-  emit({ ...state, request: { query: trimmed, nonce } });
-}
-
 /**
  * E-postadaki bağlantıdan gelindi: paneli doğrudan sohbet görünümünde aç.
  * Görüşme anahtarını çağıran `localStorage`a ÖNCEDEN yazmış olmalı — panel
@@ -104,20 +62,9 @@ export function requestLiveChatResume(): void {
   emit({ ...state, resumeNonce });
 }
 
-export function setAskBarVisible(visible: boolean): void {
-  if (state.askBarVisible === visible) return;
-  emit({ ...state, askBarVisible: visible });
-}
-
-export function setAssistantPanelOpen(open: boolean): void {
-  if (state.panelOpen === open) return;
-  emit({ ...state, panelOpen: open });
-}
-
 /** Yalnız testler için: modül seviyesindeki durumu başa alır. */
 export function resetAssistantBridge(): void {
   state = INITIAL;
-  nonce = 0;
   resumeNonce = 0;
   listeners.clear();
 }

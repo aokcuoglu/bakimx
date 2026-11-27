@@ -105,7 +105,7 @@ export default function RootLayout({
           <CookieConsent />
           <MarketingAnalytics />
           <Toaster />
-          <SiteAssistant aiEnabled={process.env.LANDING_ASSISTANT_AI === "on"} />
+          <SiteAssistant />
         </TooltipProvider>
       </body>
     </html>
