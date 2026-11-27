@@ -14,12 +14,12 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Araç kabulünü hızlandırabilir miyim?",
     answer:
-      "Evet. Ruhsatı fotoğrafladığınızda plaka, marka, model, şasi ve model yılı otomatik dolar. Siz yalnızca bilgileri kontrol edip onaylarsınız.",
+      "Evet. Plakayı okutup zorunlu fotoğrafları tek akışta çekersiniz. Ruhsat okuma ek özelliği açıksa plaka, marka, model, şasi ve model yılı da otomatik dolar; siz yalnızca bilgileri kontrol edip onaylarsınız.",
   },
   {
     question: "Araca uygun parçayı nasıl bulurum?",
     answer:
-      "Ruhsattaki şasi numarası araç modeline eşlenir. Katalogda yalnızca o araca uyan parçaları görür, kendi tedarikçi alış fiyatlarınızı karşılaştırabilirsiniz.",
+      "Şaseden parça bulma Servis Paketi'ne dahil olmayan bir ek özelliktir; denemede açıktır. Açıkken şasi numarası araç modeline eşlenir ve katalogda yalnızca o araca uyan parçaları görürsünüz. Kendi tedarikçi alış fiyatlarınızı ayrıca kaydedip karşılaştırabilirsiniz.",
   },
   {
     question: "İş emrini ve müşteri iletişimini nasıl takip ederim?",

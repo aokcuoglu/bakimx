@@ -14,7 +14,7 @@ describe("Parça & İşçilik kabuğu (#849)", () => {
   })
 
   test("table/cards display'i yalnız iki sınırlı kapsayıcı bandında yazılır", () => {
-    const band = css.match(/@container \(min-width: 52rem\) and \(max-width: 61\.99rem\) \{([\s\S]*?)\n\}/)
+    const band = css.match(/@container \(min-width: 54rem\) and \(max-width: 61\.99rem\) \{([\s\S]*?)\n\}/)
     expect(band).not.toBeNull()
     const outside = css.replace(band![0], "")
     for (const hook of ["table", "cards"]) {
