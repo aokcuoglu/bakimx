@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ReminderStatusBadge, ReminderTypeBadge } from "@/components/reminders/reminder-status-badge"
@@ -148,7 +149,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
   }
 
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <Collapsible open={showPostpone} onOpenChange={setShowPostpone} className="space-y-5 sm:space-y-6">
       {actionError ? (
         <Alert variant="destructive"><AlertDescription>{actionError}</AlertDescription></Alert>
       ) : null}
@@ -193,15 +194,12 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                   {actionLoading ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
                   <span className="hidden sm:inline">Tamamlandı</span>
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="compact"
-                  onClick={() => setShowPostpone(!showPostpone)}
-                >
-                  <Clock className="size-4" />
-                  <span className="hidden sm:inline">Ertele</span>
-                </Button>
+                <CollapsibleTrigger asChild>
+                  <Button type="button" variant="outline" size="compact" aria-label="Ertele">
+                    <Clock className="size-4" />
+                    <span className="hidden sm:inline">Ertele</span>
+                  </Button>
+                </CollapsibleTrigger>
               </>
             ) : null}
             {!isTerminal ? (
@@ -250,7 +248,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
         ) : null}
       </header>
 
-      {showPostpone ? (
+      <CollapsibleContent>
         <Card className="border-warning/20 bg-warning/5">
           <CardHeader>
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -282,7 +280,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             </form>
           </CardContent>
         </Card>
-      ) : null}
+      </CollapsibleContent>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">
@@ -465,7 +463,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
           </div>
         </aside>
       </div>
-    </div>
+    </Collapsible>
   )
 }
 

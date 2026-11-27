@@ -78,7 +78,7 @@ import {
   START_REMINDER_CATEGORIES,
   COMPLETE_REMINDER_CATEGORIES,
 } from "@/lib/technician/gates"
-import { formatTrDate } from "@/lib/format-date"
+import { formatTrDate, formatTrDateTime, formatTrTime } from "@/lib/format-date"
 
 /**
  * Teknisyen DTO'sundaki kalem. `OrderItem` ofis düzenleyicisinin sözleşmesidir
@@ -442,7 +442,7 @@ export function TechnicianOrderDetail({
           <AlertTitle>İşçilik sürüyor</AlertTitle>
           <AlertDescription className="flex flex-wrap items-center gap-2">
             <span>
-              {new Date(activeLabor.startTime).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })} başlangıç
+              {formatTrTime(activeLabor.startTime)} başlangıç
             </span>
             {!locked && <StopLaborButton orderId={order.id} className="ml-auto" />}
           </AlertDescription>
@@ -1398,7 +1398,7 @@ function InternalNotesSection({
           <div className="flex-1 min-w-0">
             <p className="text-sm text-foreground whitespace-pre-wrap">{note.content}</p>
             <p className="text-[10px] text-muted-foreground mt-1">
-              {new Date(note.createdAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+              {formatTrDateTime(note.createdAt)}
             </p>
           </div>
           {!locked && (

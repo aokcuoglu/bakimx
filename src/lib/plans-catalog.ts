@@ -115,8 +115,9 @@ export function getPlanPackage(tier: PlanTier): PlanPackage | undefined {
 
 /**
  * Pakete dahil OLMAYAN, ileride uygulama içinden ayrıca satılacak yetenekler.
- * Fiyatları henüz belirlenmedi — bilinçli olarak fiyat alanı yok; kilitli
- * yüzeyler "yakında satın alınabilir / bizimle iletişime geçin" der.
+ * Fiyatlar TRY, KDV dahil (#829 sahip kararı); yıllık 10 × aylık. Fiyatı
+ * `null` olan satırlar satışta değildir — kilitli yüzeyler "yakında / bizimle
+ * iletişime geçin" der.
  */
 export type AddonCatalogItem = {
   key: AddonFeature | "aiAssistant"
@@ -129,6 +130,16 @@ export type AddonCatalogItem = {
    * kapı kodda tanımlı olsa bile ekranı henüz yoksa "Etkin" demek yanıltır (#879).
    */
   shipped: boolean
+  /** Aylık fiyat (TRY, KDV dahil); `null` = fiyatlanmadı. */
+  monthlyPrice: number | null
+  /** Yıllık fiyat (TRY, KDV dahil); `null` = fiyatlanmadı. */
+  yearlyPrice: number | null
+  /** Birim: hesap geneli ya da ek şube başına. */
+  unit: "account" | "extraBranch"
+  /** Fiyata dahil kullanım notu. */
+  includedUsage: string | null
+  /** Uygulama içinden sipariş verilebilir mi (yuva zorlaması gelene dek multiBranch kapalı). */
+  purchasable: boolean
 }
 
 export const ADDON_CATALOG: readonly AddonCatalogItem[] = [
@@ -138,6 +149,11 @@ export const ADDON_CATALOG: readonly AddonCatalogItem[] = [
     description: "Şase numarasından aracı tanıyın, uyumlu parçaları katalogdan bulun.",
     features: ["vinLookup", "partsCatalog"],
     shipped: true,
+    monthlyPrice: 399,
+    yearlyPrice: 3990,
+    unit: "account",
+    includedUsage: "1.000 sorgu/ay, hesap genelinde",
+    purchasable: true,
   },
   {
     key: "aiAssistant",
@@ -145,6 +161,11 @@ export const ADDON_CATALOG: readonly AddonCatalogItem[] = [
     description: "Arıza ve bakım kararlarında yapay zekâ destekli öneriler.",
     features: [],
     shipped: false,
+    monthlyPrice: null,
+    yearlyPrice: null,
+    unit: "account",
+    includedUsage: null,
+    purchasable: false,
   },
   {
     key: "ocrIntake",
@@ -152,6 +173,11 @@ export const ADDON_CATALOG: readonly AddonCatalogItem[] = [
     description: "Ruhsat fotoğrafından müşteri ve araç alanlarını otomatik doldurun.",
     features: ["ocrIntake"],
     shipped: true,
+    monthlyPrice: 249,
+    yearlyPrice: 2490,
+    unit: "account",
+    includedUsage: "Adil kullanım: 1.000 tarama/ay",
+    purchasable: true,
   },
   {
     key: "eInvoice",
@@ -159,6 +185,11 @@ export const ADDON_CATALOG: readonly AddonCatalogItem[] = [
     description: "e-Fatura ve e-Arşiv işlemlerini BakımX içinde tamamlayın.",
     features: ["eInvoice"],
     shipped: false,
+    monthlyPrice: null,
+    yearlyPrice: null,
+    unit: "account",
+    includedUsage: null,
+    purchasable: false,
   },
   {
     key: "multiBranch",
@@ -166,6 +197,11 @@ export const ADDON_CATALOG: readonly AddonCatalogItem[] = [
     description: "Birden fazla şubeyi tek hesaptan yönetin.",
     features: ["multiBranch"],
     shipped: true,
+    monthlyPrice: 749,
+    yearlyPrice: 7490,
+    unit: "extraBranch",
+    includedUsage: "Ek şube başına",
+    purchasable: false,
   },
 ]
 
