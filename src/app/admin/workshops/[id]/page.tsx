@@ -324,6 +324,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
               extraVinQuota={workshop.extraVinQuota}
               addonBaseQuota={ADDON_VIN_LOOKUP_QUOTA}
               allUnlockedReason={allUnlockedReason}
+              branchCount={workshop.organizationId ? await prisma.workshop.count({ where: { organizationId: workshop.organizationId, kind: "customer" } }) : 1}
             />
           ) : (
             <>

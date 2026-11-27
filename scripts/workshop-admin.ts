@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
 import { ADDON_FEATURES, computeTrialEnd, normalizeAddons, TRIAL_BUSINESS_DAYS } from "../src/lib/plan"
 import { diffAddons, workshopAddonsSchema, type AddonsDiff } from "../src/lib/validations/workshop-addons"
+import { planAddonFanOut, resolveAddonTargets, type AddonTargetClient } from "../src/lib/admin/addon-targets"
 import { addPeriod } from "../src/lib/billing/period"
 import { buildPoolConfig } from "../src/lib/pg-connection"
 
@@ -256,30 +257,39 @@ async function listAddons(idOrEmail?: string) {
 async function setAddons(idOrEmail: string, args: SetAddonsArgs) {
   const id = await resolveWorkshopId(idOrEmail)
   if (!id) return fail(`İş yeri bulunamadı: ${idOrEmail}`)
-  const workshop = await prisma.workshop.findUnique({ where: { id }, select: { addons: true } })
-  if (!workshop) return fail(`İş yeri bulunamadı: ${idOrEmail}`)
-  const plan = planAddonsChange(workshop.addons, args.addons)
-  if (plan.noop) return console.log(`Değişiklik yok: ${id} (${plan.after.join(",") || "—"})`)
-  const summary = `+[${plan.added.join(",")}] -[${plan.removed.join(",")}] → [${plan.after.join(",")}]`
+  // Ek özellikler hesap başınadır (#829): organizasyonun tüm müşteri şubelerine yayılır.
+  const targets = await resolveAddonTargets(prisma as unknown as AddonTargetClient, id)
+  if (!targets) return fail(`İş yeri bulunamadı: ${idOrEmail}`)
+  const plan = planAddonFanOut(targets, args.addons)
+  const after = normalizeAddons(args.addons)
+  if (plan.noop) return console.log(`Değişiklik yok: ${plan.workshopIds.join(",")} (${after.join(",") || "—"})`)
+  const summary = plan.entries
+    .map(({ id: wid, diff }) => `${wid}: +[${diff.added.join(",")}] -[${diff.removed.join(",")}] → [${diff.after.join(",")}]`)
+    .join("\n")
   if (!args.apply) {
-    console.log(`KURU ÇALIŞTIRMA (yazılmadı): ${id} ${summary}\nUygulamak için --apply ekleyin.`)
+    console.log(`KURU ÇALIŞTIRMA (yazılmadı):\n${summary}\nUygulamak için --apply ekleyin.`)
     return
   }
-  const { before, after, added, removed } = plan
   await prisma.$transaction([
-    prisma.workshop.update({ where: { id }, data: { addons: after } }),
-    prisma.auditLog.create({
-      data: {
-        workshopId: id,
-        actorUserId: null,
-        entityType: "Workshop",
-        entityId: id,
-        action: "admin_addons_set",
-        metadataJson: JSON.stringify({ before, after, added, removed, source: "cli" }),
-      },
-    }),
+    prisma.workshop.updateMany({ where: { id: { in: plan.workshopIds }, kind: "customer" }, data: { addons: after } }),
+    ...plan.entries.map(({ id: wid, diff }) =>
+      prisma.auditLog.create({
+        data: {
+          workshopId: wid,
+          actorUserId: null,
+          entityType: "Workshop",
+          entityId: wid,
+          action: "admin_addons_set",
+          metadataJson: JSON.stringify({
+            ...diff,
+            ...(plan.workshopIds.length > 1 ? { workshopIds: plan.workshopIds } : {}),
+            source: "cli",
+          }),
+        },
+      }),
+    ),
   ])
-  console.log(`✅ Ek özellikler güncellendi: ${id} ${summary}`)
+  console.log(`✅ Ek özellikler güncellendi:\n${summary}`)
 }
 
 function fail(msg: string) {

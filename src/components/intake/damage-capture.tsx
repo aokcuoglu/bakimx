@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { CheckCircle2, Loader2 } from "lucide-react"
+import { formatTrDateTime } from "@/lib/format-date"
 
 type DamageMark = DamageRecord
 
@@ -161,7 +162,7 @@ export function DamageCapture({ intakeFormId, vehicle, readOnly = false, reloadK
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             {marks.length ? `${marks.length} hasar kaydı` : inspectionStatus === "no_visible_damage" ? <><CheckCircle2 className="size-4 text-success-strong" aria-hidden="true" />Kontrol edildi, görünür hasar gözlenmedi</> : "Kontrol kaydı yok"}
-            {inspectedAt && <span>· {new Date(inspectedAt).toLocaleString("tr-TR")}</span>}
+            {inspectedAt && <span>· {formatTrDateTime(inspectedAt)}</span>}
           </p>
           {!readOnly && <div className="flex flex-wrap items-center gap-2">
             {modalMetadata ? (
