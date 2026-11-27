@@ -43,6 +43,8 @@ export interface AdminOrderRow {
   workshopName: string
   type: string
   planTier: string
+  /** `describeBillingOrder` başlığı: paket adı ya da "Ek özellik: …" (#829). */
+  orderLabel: string
   billingCycle: string
   amountLabel: string
   reference: string
@@ -309,7 +311,7 @@ function OrderRow({ o, canConfirm }: { o: AdminOrderRow; canConfirm: boolean }) 
         <div className="min-w-0 text-sm">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-foreground">{o.workshopName}</span>
-            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px]">{planLabel(o.planTier)} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}</span>
+            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px]">{o.orderLabel} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}</span>
             <MethodBadge method={o.method} />
             <span className="font-semibold text-foreground">{o.amountLabel}</span>
           </div>
@@ -440,7 +442,7 @@ function RecentOrderRow({ o }: { o: AdminOrderRow }) {
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-foreground">{o.workshopName}</span>
             <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-              {planLabel(o.planTier)} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}
+              {o.orderLabel} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}
             </span>
             <Badge variant="outline" className={cn("text-[11px]", statusTone)}>
               {ORDER_STATUS_LABELS[o.status] ?? o.status}

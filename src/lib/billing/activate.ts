@@ -4,6 +4,7 @@ import { AuditLogAction } from "@/lib/audit"
 import { addPeriod, periodStartFrom } from "@/lib/billing/period"
 import { createCommissionDraftForBillingOrderTx } from "@/lib/sales/commission"
 import { getSeatLimit } from "@/lib/plan"
+import { activateAddonOrder } from "@/lib/billing/activate-addon"
 import { selectSeatAdjustment } from "@/lib/billing/seat-adjustment"
 
 export type SeatAdjustmentResult = {
@@ -39,6 +40,8 @@ export async function activateBillingOrder(
   const order = await prisma.billingOrder.findUnique({ where: { id: orderId } })
   if (!order) return { ok: false, error: "Sipariş bulunamadı." }
   if (order.status !== "pending_payment") return { ok: false, error: "Bu sipariş zaten işlenmiş." }
+  // #829: ek özellik siparişi paketi/dönemi değiştirmez; ayrı etkinleştirme yolu.
+  if (order.type === "addon") return activateAddonOrder(order, opts)
   // #782: ücretsiz paket yok. Kampanyadan kalmış bekleyen bir Lite siparişi
   // onaylanarak yeni bir süresiz Lite hesabı açılamaz. Etkin eski Lite
   // atölyelerinin hakkı (liteFreeGrantedAt) bu yoldan değişmez.

@@ -8,7 +8,7 @@ import { isTamiConfigured } from "@/lib/tami/config"
 import { alertTamiMisconfigOnce, isCardPaymentBlocked } from "@/lib/tami/misconfig-alert"
 import { TamiError, sanitizeForLog } from "@/lib/tami/errors"
 import { buildTamiPaymentBody } from "@/lib/tami/request-builder"
-import { getPlanPackage } from "@/lib/plans-catalog"
+import { describeBillingOrder } from "@/lib/billing/addon-pricing"
 import { cardSchema } from "@/lib/billing/card-schema"
 import {
   generateProviderOrderId,
@@ -146,8 +146,7 @@ export async function POST(request: Request) {
   // 6) TAMI 3DS auth çağrısı — gövde tek doğruluk kaynağı buildTamiPaymentBody'den
   // gelir (canlı sandbox'ta doğrulanan gerçek wire şeması); tutar order.amountMinor'dan
   // türetilir (client'tan asla).
-  const planLabel = getPlanPackage(order.planTier)?.name ?? order.planTier
-  const cycleLabel = order.billingCycle === "monthly" ? "Aylık" : "Yıllık"
+  const described = describeBillingOrder(order)
   const auth = buildTamiPaymentBody({
     orderId: providerOrderId,
     amountMinor: order.amountMinor,
@@ -169,7 +168,7 @@ export async function POST(request: Request) {
       address: snap("address") || workshop.address || undefined,
       companyName: snap("invoiceTitle") || workshop.name,
     },
-    basketItemName: `${planLabel} · ${cycleLabel}`,
+    basketItemName: `${described.title} · ${described.cycleLabel}`,
   })
 
   try {

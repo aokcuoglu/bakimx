@@ -104,7 +104,7 @@ export async function createBillingOrder(input: {
   const discountedAmountMinor = getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps)
   const previousOrder = type === "upgrade" || type === "downgrade"
     ? await prisma.billingOrder.findFirst({
-        where: { workshopId: workshop.id, status: "confirmed" },
+        where: { workshopId: workshop.id, status: "confirmed", type: { not: "addon" } },
         orderBy: [{ confirmedAt: "desc" }, { createdAt: "desc" }],
         select: { billingSnapshot: true },
       })
