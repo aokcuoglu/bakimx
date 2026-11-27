@@ -121,6 +121,35 @@ export function formatTrShortDate(input: DateInput): string {
   return format(shortDateFormatter, input)
 }
 
+const monthShortFormatter = new Intl.DateTimeFormat("tr-TR", {
+  timeZone: TR_TIME_ZONE,
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+})
+
+function monthShortParts(input: DateInput): Partial<Record<Intl.DateTimeFormatPartTypes, string>> | null {
+  const date = typeof input === "string" ? new Date(input) : input
+  if (Number.isNaN(date.getTime())) return null
+  const parts: Partial<Record<Intl.DateTimeFormatPartTypes, string>> = {}
+  for (const part of monthShortFormatter.formatToParts(date)) parts[part.type] = part.value
+  return parts
+}
+
+/** 05 Kas 2026 (gün iki haneli; tablo/rozet satırları) */
+export function formatTrPaddedMediumDate(input: DateInput): string {
+  const p = monthShortParts(input)
+  return p ? `${p.day} ${p.month} ${p.year}` : INVALID
+}
+
+/** 05 Kas 09:00 (yıl yok; gün iki haneli) */
+export function formatTrPaddedDayMonthShortTime(input: DateInput): string {
+  const p = monthShortParts(input)
+  return p ? `${p.day} ${p.month} ${p.hour}:${p.minute}` : INVALID
+}
+
 /** 25 Kas 2026 */
 export function formatTrMediumDate(input: DateInput): string {
   return format(mediumDateFormatter, input)
