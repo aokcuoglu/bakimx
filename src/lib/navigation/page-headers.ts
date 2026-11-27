@@ -1,8 +1,9 @@
 import type { LucideIcon } from "lucide-react"
-import { BarChart3, Plus, Wallet } from "lucide-react"
+import { BarChart3, PackageSearch, Plus, Wallet } from "lucide-react"
 import type { UserRole } from "@prisma/client"
 import { newIntakeHref } from "@/lib/intake/entry-links"
 import type { GatedFeature } from "@/lib/plan"
+import { TECHNICIAN_INTAKE_HREF } from "@/lib/sidebarless-route"
 import { actorCan, type Permission } from "@/lib/roles"
 import { isRouteAllowedForTechnician, isTechnicianRestrictedRole } from "@/lib/technician-route-access"
 import { NAV_GROUPS, type NavGroup, type NavItem } from "./app-nav"
@@ -28,6 +29,8 @@ export type PageHeaderConfig = {
   actions?: readonly PageAction[]
   /** Başlık kökünün data-tour değeri. */
   tourId?: string
+  /** Düğmeler yalnız lg+'da çizilir (telefonda içerik aynı işlemleri kendi sunar). */
+  desktopActionsOnly?: boolean
 }
 
 export type Crumb = { label: string; href?: string }
@@ -68,6 +71,7 @@ export type ResolvedPageHeader = {
   primaryAction?: PageAction
   secondaryActions: PageAction[]
   tourId?: string
+  desktopActionsOnly?: boolean
 }
 
 /** Kabul, açıldığı sayfaya döner (#842): `back` geri bağlantısını belirler. */
@@ -92,6 +96,13 @@ export const PAGE_HEADERS: Readonly<Record<string, PageHeaderConfig>> = {
     dynamicSubtitle: true,
     tourId: "welcome-banner",
     actions: [{ ...newIntakeFrom("/dashboard"), tourId: "welcome-cta" }],
+  },
+  "/technician": {
+    desktopActionsOnly: true,
+    actions: [
+      { label: "Araç Kabul", href: TECHNICIAN_INTAKE_HREF, icon: Plus, primary: true },
+      { label: "Parça Ara", href: "/technician/parts", icon: PackageSearch },
+    ],
   },
   "/orders": { actions: [newIntakeFrom("/orders")] },
   "/customers": {
@@ -330,5 +341,6 @@ export function resolvePageHeader(
     primaryAction,
     secondaryActions: actions.filter((a) => a !== primaryAction),
     tourId: config.tourId,
+    desktopActionsOnly: config.desktopActionsOnly,
   }
 }

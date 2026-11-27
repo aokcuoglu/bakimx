@@ -76,7 +76,7 @@ export function PageHeaderView({
           {reserveTitle ? "\u00a0" : header.title}
         </h1>
         {(primaryAction || secondaryActions.length > 0) && (
-          <div className={styles.actions}>
+          <div className={cn(styles.actions, header.desktopActionsOnly && "max-lg:hidden")}>
             {secondaryActions.length > 0 && (
               <div className={styles.secondary}>
                 {secondaryActions.map((action) => (

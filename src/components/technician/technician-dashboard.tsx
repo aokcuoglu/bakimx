@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ChevronRight, Car } from "lucide-react"
+import { ChevronRight, Clock, ListChecks, MessageSquareText, User, UserX } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useTransition } from "react"
 import { cn } from "@/lib/utils"
@@ -12,6 +12,7 @@ import type { TechnicianOrderRow } from "@/lib/technician/queries"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import { Card, CardContent } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -27,7 +28,19 @@ import { StatusBadge } from "@/components/shared/status-badge"
 import { TechnicianQuickActions } from "@/components/technician/technician-quick-actions"
 // e-santral yazı ölçeği: /dashboard ile aynı başlık/bölüm sınıfları.
 import { surface } from "@/components/dashboard/surface"
+import { formatTrDayMonthTime } from "@/lib/format-date"
 import { Plate } from "@/components/shared/plate"
+
+// Telefonda tek sütun, masaüstünde iki sütun.
+const ORDER_GRID = "gap-3 lg:grid lg:grid-cols-2"
+
+function CountBadge({ count }: { count: number }) {
+  return (
+    <Badge variant="secondary" className="tabular-nums">
+      {count}
+    </Badge>
+  )
+}
 
 type TechnicianInfo = { id: string; fullName: string; role: string }
 
@@ -101,6 +114,7 @@ export function TechnicianKioskHome({
         )}
       </div>
 
+      {/* Telefon/tablet: büyük kiosk tuşları. lg+'da aynı işlemler sayfa başlığındadır. */}
       <TechnicianQuickActions />
 
       <div
@@ -108,9 +122,9 @@ export function TechnicianKioskHome({
         className={cn("space-y-5 sm:space-y-6", isPending && "pointer-events-none")}
       >
         <section aria-labelledby="technician-mine-title" className="space-y-3">
-          <h3 id="technician-mine-title" className={surface.panelTitle}>
+          <h3 id="technician-mine-title" className={cn(surface.panelTitle, "flex items-center gap-2 px-3")}>
             İşlerim
-            <span className={surface.panelMeta}>({groups.mine.length})</span>
+            <CountBadge count={groups.mine.length} />
           </h3>
           {groups.mine.length === 0 ? (
             <Card>
@@ -122,7 +136,7 @@ export function TechnicianKioskHome({
               </CardContent>
             </Card>
           ) : (
-            <ItemGroup className="gap-3">
+            <ItemGroup className={ORDER_GRID}>
               {groups.mine.map((order) => (
                 <OrderCard key={order.id} order={order} />
               ))}
@@ -164,18 +178,16 @@ function KioskGroup({
             size="row"
             className="w-full justify-between [&[data-state=open]>svg]:rotate-90"
           >
-            <span className="flex items-center gap-2">
+            <span className={cn(surface.panelTitle, "flex items-center gap-2")}>
               {title}
-              <Badge variant="secondary" className="tabular-nums">
-                {orders.length}
-              </Badge>
+              <CountBadge count={orders.length} />
             </span>
             <ChevronRight aria-hidden="true" className="transition-transform" />
           </Button>
         </CollapsibleTrigger>
       </h3>
       <CollapsibleContent>
-        <ItemGroup className="gap-3">
+        <ItemGroup className={ORDER_GRID}>
           {orders.map((order) => (
             <OrderCard key={order.id} order={order} showTechnician={showTechnician} />
           ))}
@@ -187,10 +199,11 @@ function KioskGroup({
 
 function OrderCard({ order, showTechnician }: { order: TechnicianOrderRow; showTechnician?: boolean }) {
   const { completed, total } = order.checklistProgress
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0
   return (
-    <Item asChild className="min-h-11 bg-card">
+    <Item asChild className="min-h-11 flex-nowrap items-stretch bg-card">
       <Link href={`/technician/orders/${order.id}`}>
-        <ItemContent>
+        <ItemContent className="min-w-0 gap-2">
           <ItemHeader className="flex-wrap">
             <Plate plate={order.plate} size="lg" />
             <span className="flex flex-wrap items-center justify-end gap-1.5">
@@ -200,25 +213,46 @@ function OrderCard({ order, showTechnician }: { order: TechnicianOrderRow; showT
               )}
             </span>
           </ItemHeader>
-          <ItemTitle className="flex items-center gap-2 text-base font-semibold">
-            <Car className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <ItemTitle className="text-base font-semibold">
             <span className="line-clamp-1">
               {order.brand} {order.model}
             </span>
           </ItemTitle>
           {order.customerComplaint && (
-            <ItemDescription className="line-clamp-2">{order.customerComplaint}</ItemDescription>
-          )}
-          {(total > 0 || showTechnician) && (
-            <ItemDescription className="flex flex-wrap items-center gap-x-3">
-              {total > 0 && (
-                <span className="tabular-nums">
-                  {completed}/{total} kontrol
-                </span>
-              )}
-              {showTechnician && <span>{order.technicianName ?? "Atanmamış"}</span>}
+            <ItemDescription className="flex items-start gap-1.5">
+              <MessageSquareText className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+              <span className="line-clamp-2">{order.customerComplaint}</span>
             </ItemDescription>
           )}
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-2.5 text-sm text-muted-foreground">
+            {showTechnician &&
+              (order.technicianName ? (
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <User className="size-4 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{order.technicianName}</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 font-medium text-warning-strong">
+                  <UserX className="size-4 shrink-0" aria-hidden="true" />
+                  Usta atanmadı
+                </span>
+              ))}
+            {total > 0 && (
+              <span className="flex items-center gap-1.5 tabular-nums">
+                <ListChecks className="size-4 shrink-0" aria-hidden="true" />
+                {completed}/{total} kontrol
+                <Progress
+                  value={percent}
+                  aria-label="Kontrol listesi ilerlemesi"
+                  className="w-12"
+                />
+              </span>
+            )}
+            <span className="ml-auto flex items-center gap-1.5 tabular-nums">
+              <Clock className="size-4 shrink-0" aria-hidden="true" />
+              {formatTrDayMonthTime(order.createdAt)}
+            </span>
+          </div>
         </ItemContent>
         <ItemActions>
           <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />

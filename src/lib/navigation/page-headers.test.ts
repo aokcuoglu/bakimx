@@ -16,11 +16,19 @@ import {
 const ALL = { enabledFeatures: ["quotes", "appointments", "automatedReminders", "ocrIntake", "partsInventory", "procurement", "cashbox", "analytics", "reports", "communications", "team"] as const, actor: { role: "owner" as const } }
 
 describe("page-headers (#823)", () => {
-  test("sidebar'sız /technician dışında her menü yolu kayıtlı", () => {
+  test("her menü yolu kayıtlı", () => {
     const hrefs = NAV_GROUPS.flatMap((g) => g.items.flatMap((i) => [i.href, ...(i.children ?? []).map((c) => c.href)]))
-      .filter((h) => h !== "/technician")
     expect(hrefs.filter((h) => !hasPageHeader(h))).toEqual([])
     expect(Object.keys(PAGE_HEADERS).sort()).toEqual([...hrefs].sort())
+  })
+  test("Teknisyen Paneli: başlık ve iki düğme yalnız masaüstünde, kabul panel akışında", () => {
+    const h = resolvePageHeader("/technician", ALL)!
+    expect(h.title).toBe("Teknisyen Paneli")
+    expect(h.desktopActionsOnly).toBe(true)
+    expect(h.primaryAction?.label).toBe("Araç Kabul")
+    const link = new URL(h.primaryAction!.href, "http://x")
+    expect(isSidebarlessRoute(link.pathname, link.searchParams)).toBe(true)
+    expect(h.secondaryActions.map((a) => a.href)).toEqual(["/technician/parts"])
   })
   test("üst seviye: Bölüm › Sayfa, bölüm bağlantısız", () => {
     const h = resolvePageHeader("/orders", ALL)!
@@ -260,9 +268,12 @@ describe("alt sayfa başlıkları (#855)", () => {
       .filter(([route, pattern]) => pattern !== undefined && pattern !== route)
     expect(captured).toEqual([])
   })
-  test("kayıtlı hiçbir yol sidebar'sız değil (?from=technician dahil)", () => {
+  // /technician telefonda sidebar'sız kiosktur ama lg+ tam kabukla ve PageFrame
+  // başlığıyla çizilir (#1046); başka hiçbir kayıtlı yol sidebar'sız olmaz.
+  test("/technician dışında kayıtlı hiçbir yol sidebar'sız değil (?from=technician dahil)", () => {
     const fromTechnician = new URLSearchParams("from=technician")
     const paths = [...Object.keys(PAGE_HEADERS), ...Object.keys(SUB_PAGE_HEADERS)].map((p) => p.replaceAll("[id]", "x1"))
+      .filter((p) => p !== "/technician")
     expect(paths.filter((p) => isSidebarlessRoute(p, fromTechnician))).toEqual([])
   })
 })
