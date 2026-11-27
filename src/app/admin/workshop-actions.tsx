@@ -117,7 +117,7 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
             {paidPeriod ? (
               <div className="rounded-md bg-muted p-3 text-sm space-y-1">
                 <p>Aktif paket: <strong>{planLabel(w.planTier)}</strong></p>
-                <p>Dönem bitişi: <strong>{new Date(w.currentPeriodEnd!).toLocaleDateString("tr-TR")}</strong></p>
+                <p>Dönem bitişi: <strong>{formatTrDate(w.currentPeriodEnd!)}</strong></p>
                 <p className="text-muted-foreground-strong">Ödenmiş dönem boyunca paket değiştirilemez; yenileme için faturalandırma akışını kullanın.</p>
               </div>
             ) : (
