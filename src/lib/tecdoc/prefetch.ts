@@ -3,7 +3,7 @@ import { getTecdocProvider } from "./provider"
 import { getVehicleCategories, getArticlesByCategory } from "./catalog"
 import { TecdocError } from "./types"
 import type { CategoryNode } from "./types"
-import { getWorkshopQuotaContext, type WorkshopQuotaContext, type WorkshopQuotaFields } from "@/lib/rapidapi-quota"
+import { resolveWorkshopQuotaContext, type WorkshopQuotaContext, type WorkshopQuotaFields } from "@/lib/rapidapi-quota"
 import { hasWorkshopFeature } from "@/lib/plan"
 
 /**
@@ -88,13 +88,13 @@ export function eagerPrefetchTarget(v: {
  * atölye için. Kota tek başına kapı değildir (#827): yalnız `vinLookup` açık
  * atölyede taban kota 15.000, admin'in `extraVinQuota` verdiği düz Servis
  * Paketi atölyede de cap > 0 olur — ama `tecdocRouteGuard` o katalogu kilitli
- * tutar; ücretli TecDoc çağrısı yapılmamalı. Yetki yoksa null. SAF.
+ * tutar; ücretli TecDoc çağrısı yapılmamalı. Yetki yoksa null.
  */
-export function prefetchQuotaContext(
+export async function prefetchQuotaContext(
   workshop: WorkshopQuotaFields,
-): WorkshopQuotaContext | null {
+): Promise<WorkshopQuotaContext | null> {
   if (!hasWorkshopFeature(workshop, "partsCatalog")) return null
-  return getWorkshopQuotaContext(workshop)
+  return resolveWorkshopQuotaContext(workshop)
 }
 
 /**
@@ -112,7 +112,7 @@ export async function prefetchCommonVehicleParts(
 ): Promise<void> {
   try {
     if (!Number.isInteger(vehicleTypeId) || vehicleTypeId <= 0) return
-    const quotaContext = prefetchQuotaContext(workshop)
+    const quotaContext = await prefetchQuotaContext(workshop)
     if (!quotaContext) return
     if (getTecdocProvider().name === "mock") return
 

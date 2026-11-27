@@ -65,10 +65,10 @@ export function BillingUsagePanel({ plan, seatUsage, extraSeats, quota, canPurch
           <div className="mt-auto pt-5"><Button asChild variant="outline" size="sm"><Link href="/settings/billing/record-usage">Kullanım <ChevronRight className="size-3.5" /></Link></Button></div>
         </div>
         <div className="flex min-w-0 flex-col">
-          <UsageHeading title="Krediler" icon={Coins} description={canPurchase ? "VIN ve TecDoc sorguları aynı aylık katalog hakkını kullanır. Kullanım her ayın başında yenilenir." : "VIN ve TecDoc aynı aylık hakkı kullanır. Paket değişikliği için yöneticinizle görüşün."} />
+          <UsageHeading title="Krediler" icon={Coins} description={canPurchase ? "VIN ve TecDoc sorguları hesabın tüm şubeleriyle paylaşılan aynı aylık katalog hakkını kullanır. Kullanım her ayın başında yenilenir." : "VIN ve TecDoc, hesap genelinde paylaşılan aynı aylık hakkı kullanır. Paket değişikliği için yöneticinizle görüşün."} />
           <div className="mt-4">
             {quota.totalCap > 0 ? (
-              <><p className="text-sm font-semibold tabular-nums">{quota.used.toLocaleString("tr-TR")} <span className="font-normal text-muted-foreground">/ {quota.totalCap.toLocaleString("tr-TR")}</span></p><Meter label="Aylık katalog kredisi kullanımı" used={quota.used} limit={quota.totalCap} /></>
+              <><p className="text-sm font-semibold tabular-nums">{quota.used.toLocaleString("tr-TR")} <span className="font-normal text-muted-foreground">/ {quota.totalCap.toLocaleString("tr-TR")}</span></p><Meter label="Aylık katalog kredisi kullanımı" used={quota.used} limit={quota.totalCap} /><p className="mt-1.5 text-xs text-muted-foreground">Hesap genelinde, tüm şubeler için</p></>
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">Paketinizde bulunmuyor</p>

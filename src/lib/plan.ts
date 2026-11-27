@@ -529,11 +529,12 @@ export function getEnabledFeatures(workshop: WorkshopEntitlementFields): GatedFe
 
 /**
  * Ek özellik (`vinLookup` ya da `partsCatalog`) atölye bazında açıldığında
- * gelen aylık taban katalog kotası. TİCARİ bir sayı: bugün `premium` profilinin
- * kotasıyla aynı tutuldu; #829'da fiyat tablosundaki "Dahil kullanım" ile
- * yeniden tanımlanacak — değişecek tek yer burası.
+ * gelen aylık taban katalog kotası: hesap genelinde 1.000 sorgu (#829) —
+ * hesabın tüm şubeleri aynı kotayı paylaşır (`rapidapi-quota.ts`). TİCARİ sayı.
+ * Deneme (`premium` profili) bundan bağımsızdır: {@link VIN_LOOKUP_QUOTA}.premium
+ * 15.000 kalır; {@link getVinLookupBaseQuota} ikisinin büyüğünü alır.
  */
-export const ADDON_VIN_LOOKUP_QUOTA = VIN_LOOKUP_QUOTA.premium
+export const ADDON_VIN_LOOKUP_QUOTA = 1_000
 
 /**
  * Atölyenin aylık taban katalog kotası (ek kota `extraVinQuota` HARİÇ):

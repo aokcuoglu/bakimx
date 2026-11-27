@@ -264,7 +264,7 @@ export async function setWorkshopAddons(workshopId: string, addons: unknown): Pr
 
   const workshop = await prisma.workshop.findFirst({
     where: { id: workshopId, kind: "customer" },
-    select: { addons: true },
+    select: { addons: true, organizationId: true },
   })
   if (!workshop) return { ok: false, error: "İş yeri bulunamadı." }
 
@@ -272,14 +272,23 @@ export async function setWorkshopAddons(workshopId: string, addons: unknown): Pr
   const diff = diffAddons(workshop.addons, next)
   if (diff.added.length === 0 && diff.removed.length === 0) return { ok: true }
 
-  await prisma.workshop.update({ where: { id: workshopId }, data: { addons: next } })
+  // Ek özellikler hesap başınadır (#829): organizasyonun tüm müşteri
+  // şubelerine yayılır (tek updateMany = tek deyim, atomik).
+  const targets = workshop.organizationId
+    ? await prisma.workshop.findMany({
+        where: { organizationId: workshop.organizationId, kind: "customer" },
+        select: { id: true },
+      })
+    : []
+  const workshopIds = targets.length > 0 ? targets.map((target) => target.id) : [workshopId]
+  await prisma.workshop.updateMany({ where: { id: { in: workshopIds }, kind: "customer" }, data: { addons: next } })
   await AuditLogAction(
     workshopId,
     ctx.user.id,
     "Workshop",
     workshopId,
     "admin_addons_set",
-    JSON.stringify(diff),
+    JSON.stringify(workshopIds.length > 1 ? { ...diff, workshopIds } : diff),
   )
   revalidatePath(`/admin/workshops/${workshopId}`, "page")
   return { ok: true }

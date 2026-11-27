@@ -14,12 +14,22 @@ export interface WorkshopQuotaContext {
    * (`getVinLookupBaseQuota`, #827). Ek kota (`extraVinQuota`) HARİÇ.
    */
   baseQuota: number
+  /** Hesap genelindeki `extraVinQuota` toplamı. */
   extraVinQuota: number
+  /**
+   * Kotayı paylaşan atölyeler (#829): organizasyonsuz atölye tek başınadır;
+   * aksi halde organizasyonun tüm `customer` şubeleri. Sunucuda, oturum
+   * atölyesinin `organizationId`'sinden çözülür.
+   */
+  scopeWorkshopIds: string[]
+  /** Advisory lock anahtarı: organizasyon id'si, yoksa atölye id'si. */
+  lockScope: string
 }
 
 export type WorkshopQuotaFields = Pick<
   Workshop,
   | "id"
+  | "organizationId"
   | "planTier"
   | "subscriptionStatus"
   | "approvalStatus"
@@ -29,11 +39,46 @@ export type WorkshopQuotaFields = Pick<
   | "addons"
 >
 
-export function getWorkshopQuotaContext(workshop: WorkshopQuotaFields): WorkshopQuotaContext {
+export interface QuotaScopeClient {
+  workshop: {
+    findMany(args: Prisma.WorkshopFindManyArgs): Promise<{ id: string; extraVinQuota: number | null }[]>
+  }
+}
+
+/**
+ * Kota bağlamını çözer. Ek özellikler tüm şubelere yayıldığı için atölyenin
+ * kendi hakkı hesabın hakkıdır; ek kota hesap genelinde toplanır. Organizasyonu
+ * olmayan atölye için ek sorgu yoktur.
+ */
+export async function resolveWorkshopQuotaContext(
+  workshop: WorkshopQuotaFields,
+  db: QuotaScopeClient = prisma as unknown as QuotaScopeClient,
+): Promise<WorkshopQuotaContext> {
+  const baseQuota = getVinLookupBaseQuota(workshop)
+  const ownExtra = Math.max(0, workshop.extraVinQuota ?? 0)
+  if (workshop.organizationId == null) {
+    return {
+      workshopId: workshop.id,
+      baseQuota,
+      extraVinQuota: ownExtra,
+      scopeWorkshopIds: [workshop.id],
+      lockScope: workshop.id,
+    }
+  }
+  const members = await db.workshop.findMany({
+    where: { organizationId: workshop.organizationId, kind: "customer" },
+    select: { id: true, extraVinQuota: true },
+  })
+  const scope = new Set<string>([workshop.id, ...members.map((m) => m.id)])
+  const extraVinQuota = members.some((m) => m.id === workshop.id)
+    ? members.reduce((sum, m) => sum + Math.max(0, m.extraVinQuota ?? 0), 0)
+    : ownExtra + members.reduce((sum, m) => sum + Math.max(0, m.extraVinQuota ?? 0), 0)
   return {
     workshopId: workshop.id,
-    baseQuota: getVinLookupBaseQuota(workshop),
-    extraVinQuota: Math.max(0, workshop.extraVinQuota ?? 0),
+    baseQuota,
+    extraVinQuota,
+    scopeWorkshopIds: [...scope],
+    lockScope: workshop.organizationId,
   }
 }
 
@@ -105,9 +150,10 @@ export interface QuotaReservationDatabase {
 /**
  * Atomically reserves one tenant call before the upstream request begins.
  *
- * The PostgreSQL transaction advisory lock is scoped to workshop + UTC month.
- * Concurrent VIN/TecDoc misses for the same tenant therefore serialize around
- * count + insert and can never pass the cap together. The row commits before
+ * The PostgreSQL transaction advisory lock is scoped to account (organization,
+ * or the lone workshop) + UTC month, and usage is counted across every branch of
+ * the account (#829). Concurrent VIN/TecDoc misses for the same account
+ * therefore serialize around count + insert and can never pass the cap together. The row commits before
  * the provider call, so upstream failures remain charged exactly as billed.
  */
 export async function reserveWorkshopQuota(
@@ -118,13 +164,13 @@ export async function reserveWorkshopQuota(
 ): Promise<void> {
   const cap = workshopMonthlyCap(context.baseQuota, context.extraVinQuota)
   const { monthStart, renewsAt } = quotaMonthWindow(now)
-  const lockKey = `workshop-quota:${context.workshopId}:${monthStart.toISOString().slice(0, 7)}`
+  const lockKey = `workshop-quota:${context.lockScope}:${monthStart.toISOString().slice(0, 7)}`
 
   await database.$transaction(async (tx) => {
     await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`)
     const used = await tx.quotaUsage.count({
       where: {
-        workshopId: context.workshopId,
+        workshopId: { in: context.scopeWorkshopIds },
         createdAt: { gte: monthStart, lt: renewsAt },
       },
     })
@@ -192,7 +238,7 @@ export async function getWorkshopQuotaUsage(
   const groups = await prisma.quotaUsage.groupBy({
     by: ["source"],
     where: {
-      workshopId: context.workshopId,
+      workshopId: { in: context.scopeWorkshopIds },
       createdAt: { gte: monthStart, lt: renewsAt },
     },
     _count: { _all: true },
