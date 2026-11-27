@@ -47,6 +47,12 @@ const REMOVED_PATHS = [
   "src/lib/landing/announcement.ts",
   "public/landing/screens/dashboard.png",
   "public/landing/hero-video-poster.jpg",
+  // Landing asistanının AI-yanıt zinciri; ask bar kolu #982'de kalktı, sunucu tarafı #1020'de.
+  "src/app/api/assistant",
+  "src/lib/landing/assistant-ai.ts",
+  "src/lib/landing/assistant-answers.ts",
+  "src/lib/landing/assistant-provider.ts",
+  "src/lib/landing/assistant-timeout.ts",
 ]
 
 const REMOVED_REFERENCES = [
@@ -78,6 +84,9 @@ const REMOVED_REFERENCES = [
   "lite_registered",
   "announcementDismissScript",
   "HeroWorkshop",
+  // Landing asistanı AI-yanıt zinciri (#1020).
+  "LANDING_ASSISTANT_AI",
+  "/api/assistant/ask",
 ]
 
 function collectFiles(dir: string, files: string[] = []): string[] {
@@ -106,7 +115,6 @@ test("aktif kaynak ve yapılandırmada kaldırılan özelliklere referans kalmaz
     join(ROOT, "README.md"),
     join(ROOT, "prisma", "schema.prisma"),
     join(ROOT, ".env.example"),
-    join(ROOT, ".env.local.example"),
     join(ROOT, "Dockerfile"),
     join(ROOT, ".github", "workflows", "deploy-dev-aws.yml"),
     join(ROOT, ".github", "workflows", "deploy-prod-aws.yml"),

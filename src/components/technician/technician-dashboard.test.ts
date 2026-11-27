@@ -16,8 +16,12 @@ describe("teknisyen kiosk ana ekranı", () => {
   test("hızlı işlemler Button asChild + size=\"xl\" ve doğru hedefler", () => {
     expect(quickActions).toContain("asChild")
     expect(quickActions).toContain('size="xl"')
-    expect(quickActions).toContain("/orders/new?entry=plate&from=technician")
+    expect(quickActions).toContain("TECHNICIAN_INTAKE_HREF")
     expect(quickActions).toContain("/technician/parts")
+  })
+
+  test("büyük hızlı tuşlar yalnız lg altında (masaüstünde sayfa başlığında)", () => {
+    expect(quickActions).toContain("lg:hidden")
   })
 
   test("iş kartı teknisyen iş ekranına gider", () => {

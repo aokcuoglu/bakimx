@@ -2,6 +2,7 @@ import Link from "next/link"
 import type { LucideIcon } from "lucide-react"
 import { ClipboardPlus, PackageSearch } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { TECHNICIAN_INTAKE_HREF } from "@/lib/sidebarless-route"
 
 type QuickAction = {
   href: string
@@ -17,7 +18,7 @@ type QuickAction = {
 export const TECHNICIAN_QUICK_ACTIONS: readonly QuickAction[] = [
   {
     // Doğrudan plaka aramasıyla açılır (bkz. parseEntryMethod).
-    href: "/orders/new?entry=plate&from=technician",
+    href: TECHNICIAN_INTAKE_HREF,
     title: "Araç Kabul",
     icon: ClipboardPlus,
     variant: "default",
@@ -31,8 +32,10 @@ export const TECHNICIAN_QUICK_ACTIONS: readonly QuickAction[] = [
 ]
 
 export function TechnicianQuickActions() {
+  // lg+ masaüstünde aynı iki işlem sayfa başlığındadır (page-headers.ts); büyük
+  // kiosk tuşları yalnız telefonda/tablette çizilir.
   return (
-    <nav aria-label="Hızlı işlemler" className="grid grid-cols-2 gap-3">
+    <nav aria-label="Hızlı işlemler" className="grid grid-cols-2 gap-3 lg:hidden">
       {TECHNICIAN_QUICK_ACTIONS.map((action) => {
         const Icon = action.icon
         return (
