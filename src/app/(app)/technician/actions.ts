@@ -189,41 +189,6 @@ export async function unassignTechnicianAction(orderId: string) {
   return { success: true }
 }
 
-export async function startWorkAction(orderId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
-  const { user } = await requireWritableWorkshop("order.status")
-
-  const order = await prisma.serviceOrder.findFirst({
-    where: { id: orderId, workshopId: user.workshopId },
-  })
-  if (!order) return { error: "Araç kabulü bulunamadı" }
-  if (!canTransitionOrder(order.status as OrderStatus, "in_progress")) {
-    return { error: "Bu durum geçişine izin verilmiyor" }
-  }
-
-  // Kontrol listesi burada BİLİNÇLİ olarak okunmuyor: eksik kontrol maddesi
-  // artık tamire başlamayı engellemiyor (BAK-24, gerekçe `gates.ts` başında).
-  await prisma.serviceOrder.updateMany({
-    where: { id: orderId, workshopId: user.workshopId },
-    data: { status: "in_progress" },
-  })
-
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "work_started")
-
-  await addTimelineEvent({
-    workshopId: user.workshopId,
-    intakeFormId: order.intakeFormId,
-    eventType: "work_started",
-    description: "Tamire başlandı",
-  })
-
-  revalidatePath(`/technician/orders/${orderId}`)
-  revalidatePath("/technician")
-  revalidatePath(`/orders/${orderId}`)
-  revalidatePath("/orders")
-  return { success: true }
-}
-
 /**
  * Kiosk "İşi Başlat / Devam Et" tuşu: durum Serviste'ye geçer VE işçilik sayacı
  * başlar — tek transaction, biri yazılıp öteki kalmaz. İş kuralı kardeşleriyle
