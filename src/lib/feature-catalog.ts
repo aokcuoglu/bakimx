@@ -23,11 +23,18 @@ const PRO_DEFAULT = {
   ],
 }
 
+/** Henüz yayında olmayan ek özellik: satın alma kullanıma açılınca gelir. */
+const ADDON_SOON_BENEFITS = [
+  "Servis Paketi'nin üzerine ayrıca eklenir",
+  "Kullanıma açıldığında uygulama içinden satın alınabilir",
+  "Kayıtlarınız silinmez, açıldığında kaldığınız yerden devam",
+] as const
+
 const ADDON_DEFAULT = {
   kind: "addon" as const,
   benefits: [
     "Servis Paketi'nin üzerine ayrıca eklenir",
-    "Fiyatı netleşince uygulama içinden satın alınabilir",
+    "Ayarlar → Paketler'den ek özellik olarak satın alınır",
     "Kayıtlarınız silinmez, açıldığında kaldığınız yerden devam",
   ],
 }
@@ -168,6 +175,7 @@ export const FEATURE_CATALOG: Record<GatedFeature, FeatureDefinition> = {
   },
   eInvoice: {
     ...ADDON_DEFAULT,
+    benefits: ADDON_SOON_BENEFITS,
     name: "e-Fatura",
     title: "e-Fatura işlemlerini BakımX içinde tamamlayın",
     description: "Entegrasyon kullanıma açıldığında ek özellik olarak sunulacaktır.",
@@ -211,10 +219,10 @@ export function lockedFeatureLabels(feature: GatedFeature): LockedFeatureLabels 
 }
 
 /**
- * Ek özellik için destek hattına giden hazır WhatsApp mesajı. Satın alma akışı
- * gelene kadar (#827) kilitli ek özelliğin tek eylemi bu iletişimdir; sayfa
- * kilidi (`FeatureUpgradeActions`) ve satır içi not (`AddonLockedNote`) aynı
- * cümleyi kullanır.
+ * Ek özellik için destek hattına giden hazır WhatsApp mesajı. Satın alınabilen
+ * ek özelliklerde birincil yol Ayarlar → Paketler'dir (#829); bu mesaj satın
+ * alınamayanlar (çoklu şube, yayında olmayanlar) içindir. Sayfa kilidi
+ * (`FeatureUpgradeActions`) ve satır içi not (`AddonLockedNote`) aynı cümleyi kullanır.
  */
 export function addonContactMessage(feature: GatedFeature): string {
   return `Merhaba, BakımX ${FEATURE_CATALOG[feature].name} ek özelliği hakkında bilgi almak istiyorum.`

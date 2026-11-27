@@ -4,14 +4,25 @@ import { PendingPaymentNotice } from "@/components/billing/pending-payment-notic
 import { getAccountBillingContext } from "@/lib/billing/account-context"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import { resolveAddonRowViews } from "@/lib/billing/addon-row-state"
+import { isAddonOrderKey } from "@/lib/billing/addon-pricing"
 import { getReferralDiscountBps } from "@/lib/billing/referral-discount"
 
 export const metadata = { title: "Paketler" }
 
-export default async function SettingsPlansPage() {
-  const { workshop, plan, ownedTier, planName, pendingOrder, seatUsage, canPurchase } = await getAccountBillingContext()
+export default async function SettingsPlansPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ addon?: string | string[] }>
+}) {
+  const { addon } = await searchParams
+  const { workshop, plan, ownedTier, planName, pendingOrder, seatUsage, canPurchase, isAccountWorkshop } =
+    await getAccountBillingContext()
 
-  const addonViews = resolveAddonRowViews(workshop)
+  const addonViews = resolveAddonRowViews(workshop, { isAccountWorkshop })
+  // `?addon=<anahtar>` kilitli yüzeylerden gelir; yalnız gerçekten satın alınabilirse pencere açılır.
+  const requested = Array.isArray(addon) ? addon[0] : addon
+  const initialAddon =
+    canPurchase && isAddonOrderKey(requested) && addonViews[requested].state === "purchasable" ? requested : undefined
 
   return (
     <AppShell pageTitle="Paketler" wide workshopName={workshop.name}>
@@ -25,6 +36,7 @@ export default async function SettingsPlansPage() {
         }} />}
         <BillingPlanManager
           addonViews={addonViews}
+          initialAddon={initialAddon}
           ownedTier={ownedTier}
           currentPlanName={planName}
           currentCycle={workshop.billingCycle}

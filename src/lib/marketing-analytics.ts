@@ -56,16 +56,17 @@ export type MarketingEventPayloads = {
   purchase_submitted: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle; payment_method: "card" | "havale" }
   feature_paywall_viewed: Common & {
     feature_id: string
-    current_tier: PlanTier
+    /** Atölye bağlamı olmayan satır içi ek özellik notunda yoktur. */
+    current_tier?: PlanTier
     kind: FeatureKind
     placement: FeaturePlacement
   }
   feature_upgrade_clicked: Common & {
     feature_id: string
-    current_tier: PlanTier
+    current_tier?: PlanTier
     kind: FeatureKind
     placement: FeaturePlacement
-    destination: "checkout" | "plans" | "contact"
+    destination: "checkout" | "plans" | "contact" | "addon_purchase"
   }
 }
 

@@ -90,6 +90,16 @@ describe("marketing analytics contract", () => {
     } as never)
     expect(payload).toEqual({ feature_id: "appointments", current_tier: "lite", kind: "package", placement: "inline" })
   })
+
+  test("satır içi ek özellik notu atölye paketi olmadan ölçülür (#829)", () => {
+    const payload = sanitizeMarketingPayload("feature_upgrade_clicked", {
+      feature_id: "vinLookup",
+      kind: "addon",
+      placement: "inline",
+      destination: "addon_purchase",
+    })
+    expect(payload).toEqual({ feature_id: "vinLookup", kind: "addon", placement: "inline", destination: "addon_purchase" })
+  })
 })
 
 

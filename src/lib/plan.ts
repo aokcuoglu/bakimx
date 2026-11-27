@@ -554,11 +554,11 @@ export function getEffectiveSeatLimit(
 }
 
 /**
- * Ek özellik kilidinde gösterilen metin — uygulama içi satın alma henüz yok
- * (#782); bugün ek özellik admin tarafından atölye bazında açılır (#827).
+ * Ek özellik kilidinde gösterilen metin (#829): fiyatlı ek özellikler Ayarlar →
+ * Paketler'den satın alınır; fiyatsız olanlar için iletişim yolu açık kalır.
  */
 export const ADDON_LOCKED_MESSAGE =
-  "Bu özellik pakete dahil değildir; ek özellik olarak yakında satın alınabilecek. Bilgi için bizimle iletişime geçin."
+  "Bu özellik pakete dahil değildir; Ayarlar → Paketler'den ek özellik olarak satın alabilirsiniz. Bilgi için bizimle iletişime geçin."
 
 /** Pakette olan ama eski (Lite/Başlangıç) satırda kapalı özelliğin metni. */
 export const PACKAGE_FEATURE_LOCKED_MESSAGE = "Bu özellik paketinizde bulunmuyor."

@@ -422,7 +422,7 @@ test("a pending workshop does not gain trial entitlements before approval", () =
   expect(hasWorkshopFeature(pending, "multiBranch")).toBe(false)
 })
 
-test("ek özellik kilidi satın alma sayfasına değil iletişime yönlendirir; kod sabit kalır", () => {
+test("ek özellik kilidi Ayarlar → Paketler'e ve iletişime yönlendirir; kod sabit kalır", () => {
   try {
     assertFeature(wsFields({ planTier: "pro" }), "vinLookup")
     throw new Error("expected throw")
@@ -434,7 +434,7 @@ test("ek özellik kilidi satın alma sayfasına değil iletişime yönlendirir; 
     expect(locked.requiredTier).toBe("premium")
     expect(locked.message).toBe(ADDON_LOCKED_MESSAGE)
     expect(locked.message).toBe(
-      "Bu özellik pakete dahil değildir; ek özellik olarak yakında satın alınabilecek. Bilgi için bizimle iletişime geçin.",
+      "Bu özellik pakete dahil değildir; Ayarlar → Paketler'den ek özellik olarak satın alabilirsiniz. Bilgi için bizimle iletişime geçin.",
     )
   }
 })

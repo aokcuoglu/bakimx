@@ -274,7 +274,7 @@ export function PurchaseWizard({
                         </div>
                       </section>
                       <p className="text-xs leading-5 text-muted-foreground">
-                        Ek özellikler ({ADDON_CATALOG.map((addon) => addon.name).join(", ")}) pakete dahil değildir; yakında uygulama içinden ayrıca alınabilecek.
+                        Ek özellikler ({ADDON_CATALOG.map((addon) => addon.name).join(", ")}) pakete dahil değildir; Ayarlar → Paketler’den ek özellik olarak satın alabilirsiniz.
                       </p>
                       {!isPublic && excessSeatCount > 0 && seatUsage && (
                         <Alert variant="warning">
