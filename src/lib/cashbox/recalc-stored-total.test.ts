@@ -6,9 +6,17 @@ type Written = { where: unknown; data: Record<string, unknown> }
 
 function fakeTx(order: Record<string, unknown> | null) {
   const writes: Written[] = []
+  const calls: string[] = []
   const tx = {
+    $queryRaw: async (strings: TemplateStringsArray) => {
+      calls.push(`lock:${strings.join("?")}`)
+      return []
+    },
     serviceOrder: {
-      findFirst: async () => order,
+      findFirst: async () => {
+        calls.push("read")
+        return order
+      },
       updateMany: async (args: Written) => {
         writes.push(args)
         return { count: 1 }
@@ -16,7 +24,7 @@ function fakeTx(order: Record<string, unknown> | null) {
     },
     collectionPayment: { findMany: async () => [] },
   } as unknown as Prisma.TransactionClient
-  return { tx, writes }
+  return { tx, writes, calls }
 }
 
 const item = (totalPrice: number | null) => ({ totalPrice, unitPrice: totalPrice, quantity: 1, type: "labor", includeVat: true })
@@ -40,6 +48,14 @@ describe("recalcOrderPayment — saklanan toplam (#831)", () => {
     const { tx, writes } = fakeTx({ paymentStatus: "unpaid", discountAmount: null, taxRate: null, items: [item(null)] })
     await recalcOrderPayment(tx, "order-1", "ws-1")
     expect(writes[0].data.grandTotal).toBeNull()
+  })
+
+  test("ilk iş sipariş satırını FOR UPDATE ile kilitlemek (okumadan önce)", async () => {
+    const { tx, calls } = fakeTx({ paymentStatus: "unpaid", discountAmount: null, taxRate: null, items: [item(100)] })
+    await recalcOrderPayment(tx, "order-1", "ws-1")
+    expect(calls[0]).toContain("FOR UPDATE")
+    expect(calls[0]).toContain('"workshopId"')
+    expect(calls[1]).toBe("read")
   })
 
   test("sipariş bulunamazsa hiçbir şey yazılmaz", async () => {

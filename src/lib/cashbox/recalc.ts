@@ -17,6 +17,11 @@ export async function recalcOrderPayment(
   serviceOrderId: string,
   workshopId: string
 ): Promise<{ statusChanged: boolean; newStatus: string } | null> {
+  // Satırı kilitle: eşzamanlı iki kalem eklemesi READ COMMITTED altında birbirinin
+  // kalemini görmeden toplam yazar ve saklanan `grandTotal` eksik kalırdı. Kilit
+  // işlem sonuna dek tutulur, ikinci çağrı birincinin kalemini görür (#831).
+  // `tx` gerçek bir işlem istemcisi olmak ZORUNDA (global prisma'da FOR UPDATE anlamsız).
+  await tx.$queryRaw`SELECT "id" FROM "ServiceOrder" WHERE "id" = ${serviceOrderId} AND "workshopId" = ${workshopId} FOR UPDATE`
   const order = await tx.serviceOrder.findFirst({
     where: { id: serviceOrderId, workshopId },
     include: { items: { select: ORDER_TOTALS_ITEM_SELECT } },

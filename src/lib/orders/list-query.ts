@@ -86,7 +86,10 @@ function nullsLast(desc: boolean) {
  * - Durum / Ödeme: enum bildirim sırası = iş akışı sırası (Taslak → … → İptal),
  *   etiketin alfabesi değil. Etiket alfabesi bir iş sırası taşımazdı.
  * - Müşteri: `Customer.fullName` (bireyselde ad soyad, kurumsalda firma adı —
- *   ekranda gösterilen adın saklı hâli). Harf sırası veritabanının
+ *   ekranda gösterilen adın saklı hâli). Kolon boş olabilir (adı hiç girilmemiş
+ *   ya da `fullName` yazmayan bir oluşturma yolundan gelen kayıt; ekranda
+ *   ad+soyad ya da "Müşteri" yedeği çizilir) — bu satırlar `nulls: last` ile
+ *   sona düşer, yedek ada göre yer almaz. Harf sırası veritabanının
  *   harmanlamasıdır (Türkçe Ç/Ö/Ş/İ için tam `tr` sırası değil).
  * - İş No: `workOrderNo` metni; numarası boş eski kayıtlar (ekranda `BX-…`
  *   yedek numarası) sona düşer.
