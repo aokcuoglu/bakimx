@@ -67,6 +67,8 @@ model Workshop {
   // buraya yazacak. Self-serve paket yenilemesi (`activate.ts`) bu alana
   // dokunmaz.
   addons             String[]               @default([])
+  // #829: satın alınmış (ücretli) ek özellik anahtarları, hesap atölyesinde. Admin anahtarı `addons`'tan ayrıdır.
+  paidAddons         String[]               @default([])
 
   acquisitionSource    AcquisitionSource @default(unknown)
   acquisitionAdvisorId String?
@@ -235,6 +237,8 @@ model BillingOrder {
   confirmedByEmail String?
   periodStart      DateTime?
   periodEnd        DateTime?
+  // #829: type=addon siparişlerinde kalem satırları (AddonOrderLine[]).
+  addonLines       Json?
 
   paymentTransactions PaymentTransaction[]
 
@@ -252,6 +256,7 @@ enum BillingOrderType {
   upgrade
   downgrade
   renewal
+  addon
 }
 
 enum BillingOrderStatus {

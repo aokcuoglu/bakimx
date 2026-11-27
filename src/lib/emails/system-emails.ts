@@ -215,6 +215,8 @@ export function paymentReceiptEmail(p: {
   maskedPan: string | null
   periodEnd: Date
   reference: string
+  /** Ek özellik makbuzu: "Paket" / "Yeni dönem bitişi" yerine ek özellik etiketleri. */
+  isAddon?: boolean
 }): BuiltEmail {
   const ws = escapeHtml(p.workshopName)
   const planLabel = escapeHtml(p.planLabel)
@@ -233,11 +235,11 @@ export function paymentReceiptEmail(p: {
       bodyHtml:
         `<p style="margin:0 0 12px;">Merhaba,</p>` +
         `<p style="margin:0 0 12px;"><strong>${ws}</strong> için ödemeniz başarıyla alındı.</p>` +
-        `<p style="margin:0 0 4px;"><strong>Paket:</strong> ${planLabel} (${cycleLabel})</p>` +
+        `<p style="margin:0 0 4px;"><strong>${p.isAddon ? "Ek özellik" : "Paket"}:</strong> ${planLabel} (${cycleLabel})</p>` +
         `<p style="margin:0 0 4px;"><strong>Tutar:</strong> ${amount}</p>` +
         maskedPanHtml +
         `<p style="margin:0 0 4px;"><strong>Referans:</strong> ${reference}</p>` +
-        `<p style="margin:0 0 12px;"><strong>Yeni dönem bitişi:</strong> ${periodEndFormatted}</p>`,
+        `<p style="margin:0 0 12px;"><strong>${p.isAddon ? "Geçerlilik bitişi" : "Yeni dönem bitişi"}:</strong> ${periodEndFormatted}</p>`,
       footerNote: "Bu bir bilgilendirme makbuzudur; yasal fatura ayrıca düzenlenir.",
     }),
   }

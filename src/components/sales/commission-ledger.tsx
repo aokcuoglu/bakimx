@@ -76,6 +76,7 @@ const TYPE_LABELS: Record<BillingOrderType, string> = {
   upgrade: "Yükseltme",
   downgrade: "Paket düşürme",
   renewal: "Yenileme",
+  addon: "Ek özellik",
 }
 
 export function CommissionLedger({
