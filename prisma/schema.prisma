@@ -950,6 +950,11 @@ model ServiceOrder {
   estimatedDeliveryAt  DateTime?
   discountAmount       Int? // kuruş
   taxRate              Int? // bps (2000 = %20)
+  /// Saklanan genel toplam (kuruş) — YALNIZ liste sıralaması içindir (#831).
+  /// Gösterim hâlâ kalemlerden hesaplanır (`calculateOrderTotals`); bu kolon
+  /// `recalcOrderPayment` ile her kalem/indirim/KDV yazımında yenilenir.
+  /// `null` = hiç fiyatlı kalem yok (listede "—").
+  grandTotal           Int?
   notes                String?
   /// Fatura entegrasyonu yok — kullanıcı kendi fatura uygulamasından okuyup elle girer.
   /// Bu iki alan, teslim edilmiş iş emrinde de yazılabilir (bkz. updateOrderInvoiceAction);

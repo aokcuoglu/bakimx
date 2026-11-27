@@ -27,10 +27,3 @@ export const ORDER_LIST_COLUMN_LABELS: Record<(typeof ORDER_LIST_DATA_COLUMN_ORD
   delivery: "Tahmini teslim",
   technician: "Teknisyen",
 }
-
-/** Kolon filtresi. Türkçe İ/i ayrımını `toLocaleLowerCase("tr")` ile korur. */
-export function matchesColumnFilter(haystack: string, query: unknown): boolean {
-  const q = String(query ?? "").trim().toLocaleLowerCase("tr")
-  if (!q) return true
-  return haystack.toLocaleLowerCase("tr").includes(q)
-}

@@ -13,6 +13,7 @@ import {
   partsRequestEditSchema,
   partsRequestSchema,
 } from "@/lib/validations/technician"
+import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { partsRequestToItemFields, partsRequestTypeLabel } from "@/lib/orders/parts-request-item"
 import { canTransitionOrder, isOrderLocked } from "@/lib/status-transitions"
 import { seedChecklistFromTemplate } from "@/lib/technician/checklist-seed"
@@ -1101,6 +1102,8 @@ export async function convertPartsRequestToOrderItemAction(requestId: string) {
         ...partsRequestToItemFields(request),
       },
     })
+    // Yeni kalem toplamı değiştirir (saklanan toplam — liste sıralaması, #831).
+    await recalcOrderPayment(tx, request.serviceOrderId, user.workshopId)
     return true
   })
   if (!converted) return { error: "Bu talep zaten kaleme eklendi" }

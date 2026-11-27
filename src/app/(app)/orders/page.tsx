@@ -10,13 +10,14 @@ import { FilterSelect } from "@/components/shared/filter-select"
 import { OrderFiltersDisclosure } from "@/components/orders/order-filters-disclosure"
 import { NEW_INTAKE_HREF } from "@/lib/intake/entry-links"
 import {
+  buildOrderListOrderBy,
   buildOrderListWhere,
   buildOrderSearchWhere,
   nextOrderListLimit,
   ORDER_LIST_MAX_ROWS,
-  ORDER_LIST_ORDER_BY,
   ORDER_LIST_SELECT,
   resolveOrderListLimit,
+  resolveOrderListSort,
   toOrderListRow,
 } from "@/lib/orders/list-query"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
@@ -38,6 +39,8 @@ export default async function OrdersPage({
     invoice?: string
     delivery?: string
     limit?: string
+    sort?: string
+    dir?: string
   }>
 }) {
   const params = await searchParams
@@ -52,6 +55,8 @@ export default async function OrdersPage({
   const deliveryFilter = resolveDeliveryFilter(params.delivery)
   // Büyüyen pencere: en yeni `limit` kayıt yüklenir (#803).
   const limit = resolveOrderListLimit(params.limit)
+  // Kolon sıralaması sunucuda: tüm kayıtlar üzerinde, `id` ile kararlı (#831).
+  const sort = resolveOrderListSort(params.sort, params.dir)
 
   const { user, workshop } = await getAppData()
   // Usta filtresi, atölyenin kendi usta listesine karşı doğrulanır; client'tan
@@ -75,7 +80,7 @@ export default async function OrdersPage({
     prisma.serviceOrder.findMany({
       where,
       select: ORDER_LIST_SELECT,
-      orderBy: ORDER_LIST_ORDER_BY,
+      orderBy: buildOrderListOrderBy(sort),
       take: limit,
     }),
     prisma.serviceOrder.count({ where }),
@@ -116,6 +121,7 @@ export default async function OrdersPage({
           activeDelivery={deliveryFilter.value}
           technicians={technicians}
           searchQuery={q}
+          sort={sort}
           toolbar={
             // Sabit anahtar: anahtarsız hâliyle OrderList'te React "unique key"
             // uyarısı veriyordu (#717; e2e/order-list-keys.e2e.ts). `key={q}`

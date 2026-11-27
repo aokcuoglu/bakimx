@@ -4,6 +4,8 @@ import { useEffect } from "react"
 import Link from "next/link"
 import { ArrowRight, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { addonPurchaseHref, purchasableAddonKeyForFeature } from "@/lib/billing/addon-purchase"
+import { formatAddonMinor, getAddonPriceMinor } from "@/lib/billing/addon-pricing"
 import { addonContactMessage, type FeatureDefinition } from "@/lib/feature-catalog"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import type { GatedFeature, PlanTier } from "@/lib/plan"
@@ -20,8 +22,9 @@ type Props = {
 /**
  * Kilitli özelliğin eylemleri (#782).
  *  - `package`: özellik Servis Paketi'nde var (eski Lite/Başlangıç satırı) → paketi satın al.
- *  - `addon`: pakete dahil değil ve henüz satılmıyor → /checkout'a GÖNDERME; tek
- *    birincil eylem iletişim, yanında "yakında satın alınabilir" notu.
+ *  - `addon`: pakete dahil değil → /checkout'a GÖNDERME. Fiyatlı ve satılan ek
+ *    özellikte birincil eylem Ayarlar → Paketler'deki satın alma penceresidir
+ *    (#829); satılmayanlarda iletişim.
  */
 export function FeatureUpgradeActions({ feature, currentTier, kind, placement, compact }: Props) {
   useEffect(() => {
@@ -33,7 +36,7 @@ export function FeatureUpgradeActions({ feature, currentTier, kind, placement, c
     })
   }, [currentTier, feature, kind, placement])
 
-  function trackClick(destination: "checkout" | "plans" | "contact") {
+  function trackClick(destination: "checkout" | "plans" | "contact" | "addon_purchase") {
     trackMarketingEvent("feature_upgrade_clicked", {
       feature_id: feature,
       current_tier: currentTier,
@@ -46,6 +49,22 @@ export function FeatureUpgradeActions({ feature, currentTier, kind, placement, c
   const size = compact ? "sm" : "lg"
 
   if (kind === "addon") {
+    const purchaseKey = purchasableAddonKeyForFeature(feature)
+    if (purchaseKey) {
+      return (
+        <div className={compact ? "flex flex-col gap-2 sm:items-start" : "flex flex-col items-center gap-2"}>
+          <Button variant="foreground" asChild size={size}>
+            <Link href={addonPurchaseHref(purchaseKey)} onClick={() => trackClick("addon_purchase")}>
+              Satın al
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Ek özellik — {formatAddonMinor(getAddonPriceMinor(purchaseKey, "monthly"))}/ay · KDV dahil
+          </p>
+        </div>
+      )
+    }
     const message = addonContactMessage(feature)
     return (
       <div className={compact ? "flex flex-col gap-2 sm:items-start" : "flex flex-col items-center gap-2"}>
@@ -60,7 +79,7 @@ export function FeatureUpgradeActions({ feature, currentTier, kind, placement, c
             Bizimle iletişime geçin
           </Link>
         </Button>
-        <p className="text-xs text-muted-foreground">Ek özellik — yakında uygulama içinden satın alınabilecek.</p>
+        <p className="text-xs text-muted-foreground">Ek özellik — henüz uygulama içinden satın alınamıyor.</p>
       </div>
     )
   }

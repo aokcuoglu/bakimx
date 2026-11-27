@@ -1,21 +1,22 @@
-import type { ColumnFiltersState, SortingState, VisibilityState } from "@tanstack/react-table"
+import type { VisibilityState } from "@tanstack/react-table"
 import { ORDER_LIST_DATA_COLUMN_ORDER } from "./list-columns"
 
+/**
+ * `?view=` yalnız istemci tablo ayarını (kolon görünürlüğü) taşır. Sıralama
+ * sunucuda (`?sort=&dir=`), kolon araması kaldırıldı (#831); eski bağlantılardaki
+ * `sorting` / `columnFilters` anahtarları sessizce yok sayılır.
+ */
 export type OrderListState = {
-  sorting: SortingState
-  columnFilters: ColumnFiltersState
   columnVisibility: VisibilityState
 }
 
 export function readOrderListState(raw: string | null): OrderListState {
-  const defaults: OrderListState = { sorting: [], columnFilters: [], columnVisibility: { delivery: false } }
+  const defaults: OrderListState = { columnVisibility: { delivery: false } }
   if (!raw) return defaults
   try {
     const parsed = JSON.parse(raw)
     const validId = (id: unknown) => ORDER_LIST_DATA_COLUMN_ORDER.some((column) => column === id)
     return {
-      sorting: Array.isArray(parsed.sorting) ? parsed.sorting.filter((item: { id?: unknown; desc?: unknown } | null) => item && validId(item.id) && typeof item.desc === "boolean") : [],
-      columnFilters: Array.isArray(parsed.columnFilters) ? parsed.columnFilters.filter((item: { id?: unknown; value?: unknown } | null) => item && validId(item.id) && typeof item.value === "string") : [],
       columnVisibility: { delivery: false, ...Object.fromEntries(Object.entries(parsed.columnVisibility ?? {}).filter(([id, value]) => validId(id) && typeof value === "boolean")) },
     }
   } catch {

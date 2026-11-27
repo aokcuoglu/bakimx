@@ -2,12 +2,15 @@ import { describe, expect, test } from "bun:test"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
+import { ORDER_LIST_DATA_COLUMN_ORDER } from "./list-columns"
 import {
+  buildOrderListOrderBy,
   buildOrderListWhere,
   buildOrderSearchWhere,
   nextOrderListLimit,
   ORDER_LIST_SELECT,
   resolveOrderListLimit,
+  resolveOrderListSort,
   toOrderListRow,
 } from "./list-query"
 
@@ -126,4 +129,48 @@ test("sayfa sorgusu sınırlıdır ve tam satır/include çekmez", () => {
   expect(page).toContain("take:")
   expect(page).not.toContain("items: true")
   expect(page).not.toContain("include:")
+})
+
+describe("resolveOrderListSort", () => {
+  test("geçerli kolon ve yön çözülür; yön yoksa artan", () => {
+    expect(resolveOrderListSort("total", "desc")).toEqual({ column: "total", desc: true })
+    expect(resolveOrderListSort("customer", undefined)).toEqual({ column: "customer", desc: false })
+    expect(resolveOrderListSort("customer", "bogus")).toEqual({ column: "customer", desc: false })
+  })
+  test("bilinmeyen kolon (ör. actions, ham alan adı) varsayılan sıraya düşer", () => {
+    for (const raw of [undefined, "", "actions", "grandTotal", "id; drop table", "__proto__"]) {
+      expect(resolveOrderListSort(raw, "desc")).toBeNull()
+    }
+  })
+})
+
+describe("buildOrderListOrderBy", () => {
+  test("sıralama yoksa en yeni önce (createdAt, id)", () => {
+    expect(buildOrderListOrderBy(null)).toEqual([{ createdAt: "desc" }, { id: "desc" }])
+  })
+
+  test("her kolon kararlı bağlayıcıyla biter: createdAt desc sonra id desc", () => {
+    for (const column of ORDER_LIST_DATA_COLUMN_ORDER) {
+      for (const desc of [false, true]) {
+        const orderBy = buildOrderListOrderBy({ column, desc })
+        expect(orderBy).toHaveLength(3)
+        expect(orderBy.slice(1)).toEqual([{ createdAt: "desc" }, { id: "desc" }])
+      }
+    }
+  })
+
+  test("kolon → birincil anahtar eşlemesi", () => {
+    const primary = (column: (typeof ORDER_LIST_DATA_COLUMN_ORDER)[number], desc: boolean) => buildOrderListOrderBy({ column, desc })[0]
+    expect(primary("total", true)).toEqual({ grandTotal: { sort: "desc", nulls: "last" } })
+    expect(primary("total", false)).toEqual({ grandTotal: { sort: "asc", nulls: "last" } })
+    expect(primary("dates", true)).toEqual({ createdAt: "desc" })
+    expect(primary("delivery", false)).toEqual({ estimatedDeliveryAt: { sort: "asc", nulls: "last" } })
+    expect(primary("status", false)).toEqual({ status: "asc" })
+    expect(primary("payment", true)).toEqual({ paymentStatus: "desc" })
+    expect(primary("invoice", false)).toEqual({ invoiceNo: { sort: "asc", nulls: "last" } })
+    expect(primary("workOrderNo", false)).toEqual({ workOrderNo: { sort: "asc", nulls: "last" } })
+    expect(primary("vehicle", false)).toEqual({ intakeForm: { vehicle: { plate: "asc" } } })
+    expect(primary("customer", true)).toEqual({ intakeForm: { vehicle: { customer: { fullName: { sort: "desc", nulls: "last" } } } } })
+    expect(primary("technician", false)).toEqual({ assignedTechnician: { fullName: "asc" } })
+  })
 })

@@ -22,3 +22,21 @@ export function buildOrderLoadMoreSearch(current: URLSearchParams, nextLimit: nu
   params.set("limit", String(nextLimit))
   return params
 }
+
+/**
+ * Kolon sıralaması: yalnız `sort`/`dir` değişir, `limit` ilk sayfaya döner
+ * (yeni sıralamanın başından başlanır); filtreler ve `view` korunur. `null` =
+ * varsayılan sıra (en yeni önce).
+ */
+export function buildOrderSortSearch(current: URLSearchParams, sort: { column: string; desc: boolean } | null): URLSearchParams {
+  const params = new URLSearchParams(current)
+  params.delete("limit")
+  if (sort) {
+    params.set("sort", sort.column)
+    params.set("dir", sort.desc ? "desc" : "asc")
+  } else {
+    params.delete("sort")
+    params.delete("dir")
+  }
+  return params
+}

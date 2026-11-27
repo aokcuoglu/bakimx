@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import { ADDON_CATALOG } from "@/lib/plans-catalog"
 import { DEFAULT_ADDON_ROW_VIEWS, resolveAddonRowViews } from "@/lib/billing/addon-row-state"
 
@@ -121,4 +121,46 @@ test("yayımlanmamış ek özellik her durumda yakında", () => {
     expect(v.eInvoice.state).toBe("comingSoon")
     expect(v.aiAssistant.state).toBe("comingSoon")
   }
+})
+
+describe("satın alma bağlamı (#829)", () => {
+  const paid = { currentPeriodEnd: future() }
+  const account = { isAccountWorkshop: true }
+
+  test("açık ücretli dönem + hesap atölyesi: fiyatlı kapılı satırlar satın alınabilir", () => {
+    const v = resolveAddonRowViews(ws(paid), account)
+    expect(v.vinLookup.state).toBe("purchasable")
+    expect(v.ocrIntake.state).toBe("purchasable")
+  })
+
+  test("çoklu şube fiyatlı ama satılmaz: iletişim", () => {
+    expect(resolveAddonRowViews(ws(paid), account).multiBranch.state).toBe("contact")
+  })
+
+  test("yayında olmayan satır yakında kalır", () => {
+    const v = resolveAddonRowViews(ws(paid), account)
+    expect(v.aiAssistant.state).toBe("comingSoon")
+    expect(v.eInvoice.state).toBe("comingSoon")
+  })
+
+  test("şube (hesap atölyesi değil): ana şubeden yönetilir", () => {
+    const v = resolveAddonRowViews(ws(paid), { isAccountWorkshop: false })
+    expect(v.vinLookup.state).toBe("notAccount")
+    expect(v.multiBranch.state).toBe("contact")
+  })
+
+  test("ücretli dönem yok (dönem bitti, dönem tarihi yok): önce paket", () => {
+    expect(resolveAddonRowViews(ws({ currentPeriodEnd: past() }), account).ocrIntake.state).toBe("needsPackage")
+    expect(resolveAddonRowViews(ws({ currentPeriodEnd: null }), account).ocrIntake.state).toBe("needsPackage")
+    expect(resolveAddonRowViews(ws({ ...paid, subscriptionStatus: "past_due" }), account).ocrIntake.state).toBe("needsPackage")
+  })
+
+  test("etkin ve denemede açık satırlar satın alınabilir olmaz", () => {
+    expect(resolveAddonRowViews(ws({ ...paid, addons: ["ocrIntake"] }), account).ocrIntake.state).toBe("active")
+    expect(resolveAddonRowViews(trial(), account).ocrIntake.state).toBe("trial")
+  })
+
+  test("bağlamsız çağrı eski davranışı korur", () => {
+    expect(resolveAddonRowViews(ws(paid)).ocrIntake.state).toBe("locked")
+  })
 })

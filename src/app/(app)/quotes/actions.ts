@@ -13,6 +13,7 @@ import { generateUniqueWorkOrderNo } from "@/lib/work-order-number"
 import { AuditLogAction } from "@/lib/audit"
 import { notifyQuoteReady } from "@/lib/communications/triggers"
 import { calculateOrderTotals } from "@/lib/totals"
+import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { reserveStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 
 async function requireAuth() {
@@ -297,6 +298,10 @@ export async function convertQuoteToWorkOrderAction(formData: FormData) {
         )
       }
     }
+
+    // Kalemler yazıldı: saklanan toplam (liste sıralaması, #831) ve ödeme
+    // alanları aynı işlemde türetilir.
+    await recalcOrderPayment(tx, createdOrder.id, workshopId)
 
     await tx.quote.update({
       where: { id: quoteId },
