@@ -191,7 +191,6 @@ const ALLOWLIST: Record<string, string> = {
   "components/intake/registration-camera-scanner.tsx": "RegistrationCameraScanner'ın tanımı",
   "components/intake/smart-capture-registration.tsx":
     "yalnız /smart-capture/registration'da çizilir; sayfa getFeaturePaywall(\"ocrIntake\") ile kilitli",
-  "components/parts/vin-link-prompt.tsx": "parça sekmesi bu PR'ın kapsamı dışında — #853",
 }
 
 test("istisna listesindeki her dosya hâlâ var (bayat istisna kalmasın)", () => {

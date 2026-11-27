@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { DEFERRED_MOUNT_EVENT } from "@/components/shared/defer-until-visible"
 import {
   isOrderSectionId,
+  lastHashSegment,
   sectionForLegacyTab,
   sectionUrl,
   urlWithout,
@@ -13,12 +14,13 @@ import {
 
 /**
  * Bölümün kaydırma hedefi: aynı `data-section`ı taşıyan bloklardan görünür
- * olan en üstteki. Telefonda ray `display:contents` olduğu için ray kartları
- * akışın parçasıdır (Ödeme bölümü fiyat kartıyla başlar); iki kolonda yapışkan
- * raydaki kartlar hedef olmaz, ana kolondaki blok seçilir.
+ * olan en üstteki. Ray kartları ana kolonda da `.inline` yuvasında durur (#966):
+ * tek kolonda ray gizlidir, kartlar akışın parçasıdır (Ödeme bölümü fiyat
+ * kartıyla başlar); iki kolonda yapışkan raydaki kartlar hedef olmaz, ana
+ * kolondaki blok seçilir.
  */
 function findSectionTarget(root: HTMLElement, rail: HTMLElement | null, id: OrderSectionId): HTMLElement | null {
-  const railIsColumn = rail ? getComputedStyle(rail).display !== "contents" : false
+  const railIsColumn = rail ? rail.getClientRects().length > 0 : false
   let target: HTMLElement | null = null
   let targetTop = Number.POSITIVE_INFINITY
   for (const block of root.querySelectorAll<HTMLElement>(`[data-section="${id}"]`)) {
@@ -115,7 +117,7 @@ export function useOrderSectionScroll(
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
-    const hash = window.location.hash.slice(1)
+    const hash = lastHashSegment(window.location.hash)
     const tab = new URLSearchParams(window.location.search).get("tab")
     const id = sectionForLegacyTab(tab) ?? (isOrderSectionId(hash) ? hash : null)
     if (tab !== null) {

@@ -4,6 +4,7 @@ import { join } from "node:path"
 import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./accordion"
+import { stripComments } from "@/lib/testing/strip-comments"
 
 type Variant = "default" | "card" | "disclosure"
 
@@ -113,7 +114,7 @@ describe("Accordion görünümleri (#926)", () => {
   test("iç kapsayıcı Radix içerik yüksekliğine sabitlenmez", () => {
     // Yorumdaki gerekçe kalır; sınıf dizgelerinde değişken geçmez.
     const source = readFileSync(join(import.meta.dir, "accordion.tsx"), "utf8")
-    const code = source.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "")
+    const code = stripComments(source)
     expect(code).not.toContain("h-(--radix-accordion-content-height)")
     expect(source).toContain("BİLİNÇLİ OLARAK ALMIYORUZ")
 
