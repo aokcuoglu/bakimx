@@ -1,9 +1,9 @@
 import { istanbulDayStart } from "@/lib/istanbul-time"
 
 /**
- * Hatırlatma listesindeki tarih filtresinin (`dateFilter`) gün sınırları. Hem
- * sunucu sorgusu (`getRemindersList`) hem istemci listesi aynı pencereyi
- * kullanır; günler Türkiye takvimine göredir, sürecin saat diliminden bağımsız
+ * Hatırlatma listesindeki tarih filtresinin (`dateFilter`) gün sınırları. Filtre
+ * istemcide (`reminder-list.tsx`) uygulanır; sunucu sorgusu (`getRemindersList`)
+ * tüm listeyi verir (#935). Günler Türkiye takvimine göredir, sürecin saat diliminden bağımsız
  * (#904): UTC'de koşan bir sunucuda "bugün" TR 03:00'te başlamaz.
  *
  *   "today" → bugünün başı .. yarının başı
