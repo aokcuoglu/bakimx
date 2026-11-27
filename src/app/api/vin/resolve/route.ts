@@ -3,7 +3,7 @@ import { z } from "zod/v4"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { featureLockedMessage, getPlanState, hasWorkshopFeature } from "@/lib/plan"
 import { assertWritableOr403 } from "@/lib/plan-guard"
-import { getWorkshopQuotaContext } from "@/lib/rapidapi-quota"
+import { resolveWorkshopQuotaContext } from "@/lib/rapidapi-quota"
 import { rateLimit } from "@/lib/rate-limit"
 import { resolveVinToCatalog } from "@/lib/vin/resolve"
 import { VinLookupError, isValidVin } from "@/lib/vin/types"
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     const resolution = await resolveVinToCatalog(
       body.vin,
       body.hints ?? {},
-      getWorkshopQuotaContext(workshop),
+      await resolveWorkshopQuotaContext(workshop),
     )
     return NextResponse.json(resolution)
   } catch (err) {

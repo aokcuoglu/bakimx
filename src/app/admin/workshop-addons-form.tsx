@@ -40,6 +40,8 @@ interface WorkshopAddonsFormProps {
    * geçerli olan budur.
    */
   allUnlockedReason?: "trial" | "premium"
+  /** Hesabın müşteri şubesi sayısı; birden fazlaysa değişiklik hepsine uygulanır (#829). */
+  branchCount?: number
 }
 
 const UNLOCKED_NOTES: Record<NonNullable<WorkshopAddonsFormProps["allUnlockedReason"]>, string> = {
@@ -63,6 +65,7 @@ export function WorkshopAddonsForm({
   extraVinQuota,
   addonBaseQuota,
   allUnlockedReason,
+  branchCount = 1,
 }: WorkshopAddonsFormProps) {
   const [isPending, startTransition] = useTransition()
   const [serverError, setServerError] = useState("")
@@ -127,6 +130,10 @@ export function WorkshopAddonsForm({
           <Info className="size-4" />
           <AlertDescription>{UNLOCKED_NOTES[allUnlockedReason]}</AlertDescription>
         </Alert>
+      )}
+
+      {branchCount > 1 && (
+        <p className="text-xs text-muted-foreground">Değişiklik hesabın tüm şubelerine uygulanır.</p>
       )}
 
       <Form {...form}>
