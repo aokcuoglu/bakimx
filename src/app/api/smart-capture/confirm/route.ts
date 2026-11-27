@@ -12,7 +12,7 @@ import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
 import type { RuhsatHints } from "@/lib/vin/types"
 import type { Customer, Prisma, Vehicle } from "@prisma/client"
 import { classifyCustomerTaxIdentity } from "@/lib/ocr/customer-tax-identity"
-import { getWorkshopQuotaContext } from "@/lib/rapidapi-quota"
+import { resolveWorkshopQuotaContext } from "@/lib/rapidapi-quota"
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : ""
@@ -313,6 +313,7 @@ export async function POST(request: Request) {
           where: { id: user.workshopId },
           select: {
             id: true,
+            organizationId: true,
             planTier: true,
             subscriptionStatus: true,
             approvalStatus: true,
@@ -324,7 +325,7 @@ export async function POST(request: Request) {
           },
         })
         if (workshop != null && hasWorkshopFeature(workshop, "vinLookup")) {
-          const quotaContext = getWorkshopQuotaContext(workshop)
+          const quotaContext = await resolveWorkshopQuotaContext(workshop)
           const resolution = await resolveVinToCatalog(
             vin,
             buildVinHints(ocrLog.extractedJson, modelYear),
