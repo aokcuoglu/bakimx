@@ -5,10 +5,10 @@ import { AppShell } from "@/components/layout/app-shell"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { prisma } from "@/lib/db"
-import { TechnicianDashboard } from "@/components/technician/technician-dashboard"
+import { TechnicianKioskHome } from "@/components/technician/technician-dashboard"
+import { groupKioskOrders } from "@/lib/technician/kiosk-home"
 import {
   getCompletedTodayTechnicianOrders,
-  getTechnicianDashboardStats,
   getTechnicianOrders,
 } from "@/lib/technician/queries"
 import {
@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic"
 export default async function TechnicianPage({
   searchParams,
 }: {
-  searchParams: Promise<{ technician?: string; mine?: string }>
+  searchParams: Promise<{ technician?: string }>
 }) {
   const paywall = await getFeaturePaywall("team")
   if (paywall) return paywall
@@ -38,17 +38,17 @@ export default async function TechnicianPage({
 
   // Yönetici hesapları da birleşik personel yapısında bir teknisyen kaydına
   // bağlıdır; bu bağ ekip içinden başka birini seçmelerini engellemez. Saha
-  // rollerinde seçim yoktur; KPI'lar kendi atamalarını, liste ise atölyenin
-  // tüm iş emirlerini gösterir (BAK-157).
+  // rollerinde seçim yoktur: odak kendisidir (kaydı yoksa ya da pasifse boş),
+  // atölyenin geri kalanı yine listelenir (BAK-157).
   const canSelectTechnician = canSelectAnyTechnician(user.role)
-  const selectedTechnicianId = resolveSelectedTechnicianId(
-    canSelectTechnician
-      ? params[TECHNICIAN_PARAM]
-      : user.technicianId,
-    technicians.map((t) => t.id)
-  )
+  const technicianIds = technicians.map((t) => t.id)
+  const focusTechnicianId = canSelectTechnician
+    ? resolveSelectedTechnicianId(params[TECHNICIAN_PARAM], technicianIds)
+    : user.technicianId && technicianIds.includes(user.technicianId)
+      ? user.technicianId
+      : null
 
-  if (!selectedTechnicianId) {
+  if (canSelectTechnician && !focusTechnicianId) {
     return (
       <AppShell workshopName={workshop?.name} pageTitle="Servis Yönetimi">
         <div className="space-y-5 sm:space-y-6">
@@ -74,34 +74,27 @@ export default async function TechnicianPage({
     )
   }
 
-  // Saha rolleri varsayılan olarak atölyenin tüm araç kabullerini görür;
-  // "Bana atananlar" anahtarı (`?mine=1`) KPI'ları ve listeleri kendi
-  // atamalarına daraltır. Yönetici görünümü seçili teknisyene bağlı kalır.
-  const onlyAssignedToMe = !canSelectTechnician && params.mine === "1"
-  const scopeToTechnician = canSelectTechnician || onlyAssignedToMe
-  const technicianFilter = scopeToTechnician ? selectedTechnicianId : undefined
-  const [stats, orders, recentCompletedOrders] = await Promise.all([
-    getTechnicianDashboardStats(user.workshopId, selectedTechnicianId, scopeToTechnician),
-    getTechnicianOrders(user.workshopId, technicianFilter),
-    getCompletedTodayTechnicianOrders(user.workshopId, technicianFilter),
+  const [mine, workshopOrders, completedToday] = await Promise.all([
+    focusTechnicianId
+      ? getTechnicianOrders(user.workshopId, focusTechnicianId)
+      : Promise.resolve([]),
+    getTechnicianOrders(user.workshopId),
+    getCompletedTodayTechnicianOrders(
+      user.workshopId,
+      canSelectTechnician ? focusTechnicianId ?? undefined : undefined
+    ),
   ])
+  const groups = groupKioskOrders(mine, workshopOrders, focusTechnicianId)
 
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Servis Yönetimi">
-      <TechnicianDashboard
-        technicians={technicians.map((t) => ({
-          id: t.id,
-          fullName: t.fullName,
-          phone: t.phone,
-          role: t.role,
-          isActive: t.isActive,
-        }))}
-        selectedTechnicianId={selectedTechnicianId}
+      <TechnicianKioskHome
+        technicians={technicians.map((t) => ({ id: t.id, fullName: t.fullName, role: t.role }))}
+        focusTechnicianId={focusTechnicianId}
         canSelectTechnician={canSelectTechnician}
-        onlyAssignedToMe={onlyAssignedToMe}
-        stats={stats}
-        orders={orders}
-        recentCompletedOrders={recentCompletedOrders}
+        greetingName={user.firstName}
+        groups={groups}
+        completedToday={completedToday}
       />
     </AppShell>
   )

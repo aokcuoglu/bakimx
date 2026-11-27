@@ -7,82 +7,11 @@ import {
 } from "@/lib/technician/order-visibility"
 import { UNASSIGNED_IN_SERVICE_WHERE } from "@/lib/orders/unassigned-in-service"
 import { completedTodayWhere } from "@/lib/technician/kiosk-home"
-import { istanbulDayBounds, istanbulDayStart } from "@/lib/istanbul-time"
+import { istanbulDayStart } from "@/lib/istanbul-time"
 
 type OStat = import("@prisma/client").OrderStatus
 
 const NOT_DELIVERED_CANCELLED: OStat[] = ["delivered", "cancelled"]
-
-export interface TechnicianDashboardStats {
-  assignedToMe: number
-  inProgress: number
-  waiting: number
-  completed: number
-  todayDelivery: number
-}
-
-/**
- * `assignedToMe` her zaman verilen teknisyenin sayısıdır. Diğer KPI'lar
- * `scopeToTechnician` kapalıyken atölyenin tüm araç kabullerini sayar —
- * teknisyen panelindeki "Bana atananlar" anahtarı kapalı olduğunda.
- */
-export async function getTechnicianDashboardStats(
-  workshopId: string,
-  technicianId: string,
-  scopeToTechnician = true
-): Promise<TechnicianDashboardStats> {
-  const scope = scopeToTechnician ? { assignedTechnicianId: technicianId } : {}
-  // "Bugün" Türkiye takvimine göre (#904) — süreç TZ'sinden bağımsız.
-  const { start: today, end: tomorrow } = istanbulDayBounds()
-
-  const [
-    assignedToMe,
-    inProgress,
-    waiting,
-    completed,
-    todayDelivery,
-  ] = await Promise.all([
-    prisma.serviceOrder.count({
-      where: {
-        workshopId,
-        assignedTechnicianId: technicianId,
-        status: { notIn: NOT_DELIVERED_CANCELLED },
-      },
-    }),
-    prisma.serviceOrder.count({
-      where: {
-        workshopId,
-        ...scope,
-        status: "in_progress",
-      },
-    }),
-    prisma.serviceOrder.count({
-      where: {
-        workshopId,
-        ...scope,
-        status: { in: ["approved", "waiting_parts"] },
-      },
-    }),
-    prisma.serviceOrder.count({
-      where: {
-        workshopId,
-        ...scope,
-        status: "delivered",
-        completedAt: { gte: today },
-      },
-    }),
-    prisma.serviceOrder.count({
-      where: {
-        workshopId,
-        ...scope,
-        estimatedDeliveryAt: { gte: today, lt: tomorrow },
-        status: { notIn: NOT_DELIVERED_CANCELLED },
-      },
-    }),
-  ])
-
-  return { assignedToMe, inProgress, waiting, completed, todayDelivery }
-}
 
 export interface TechnicianOrderRow {
   id: string

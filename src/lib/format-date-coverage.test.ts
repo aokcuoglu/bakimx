@@ -83,7 +83,6 @@ const PENDING_MIGRATION: Record<string, string> = {
   "components/quotes/quote-list.tsx": "#875",
   "components/site-assistant/views/live-chat-view.tsx": "#875",
   "components/technician/labor-session-card.tsx": "#875",
-  "components/technician/technician-dashboard.tsx": "#875",
   "components/technician/technician-order-detail.tsx": "#875",
   "components/vehicles/public-vehicle-passport.tsx": "#875",
   "lib/blog/format.ts": "#875",
