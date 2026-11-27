@@ -2,6 +2,7 @@
 
 import { Shield, Lock, Users, CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 type WorkshopData = {
   id: string
@@ -42,17 +43,13 @@ export function SecurityInfo({ workshop, user }: { workshop: WorkshopData; user:
             </div>
           </div>
 
-          <div className="p-4 rounded-md bg-primary/10 border border-primary/20">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="size-5 text-primary shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-sm font-semibold text-foreground">Veri İzolasyonu Aktif</h4>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Tüm verileriniz iş yerinize özel olarak izole edilmiştir. Diğer iş yerleri verilerinize erişemez.
-                </p>
-              </div>
-            </div>
-          </div>
+          <Alert variant="info" role="status">
+            <CheckCircle2 />
+            <AlertTitle>Veri İzolasyonu Aktif</AlertTitle>
+            <AlertDescription>
+              Tüm verileriniz iş yerinize özel olarak izole edilmiştir. Diğer iş yerleri verilerinize erişemez.
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
 

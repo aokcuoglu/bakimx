@@ -339,7 +339,7 @@ export function IntakeWizard({
 
         <div className="min-w-0 space-y-6">
           {source === "registration" && selectedCustomerId && selectedVehicleId && (
-            <Alert className="border-primary/30 bg-primary/5 text-primary">
+            <Alert variant="info" role="status">
               <Check className="size-4" />
               <AlertDescription>Ruhsattan kaydedilen müşteri ve araç seçildi. Kabul detaylarından devam edin.</AlertDescription>
             </Alert>

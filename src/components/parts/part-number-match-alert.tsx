@@ -2,6 +2,7 @@
 
 import { Loader2, PackageSearch, Store, TriangleAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Alert } from "@/components/ui/alert"
 import {
   purchaseMatchKey,
   purchaseMatchNote,
@@ -38,7 +39,7 @@ export function PartNumberMatchAlert({
   if (matches.length === 0) return null
 
   return (
-    <div className="space-y-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5">
+    <Alert variant="warning" role="status" className="space-y-2">
       <div className="flex items-start justify-between gap-2">
         <p className="flex items-center gap-1.5 text-xs font-medium text-warning-strong">
           <TriangleAlert className="size-3.5 shrink-0" />
@@ -63,7 +64,7 @@ export function PartNumberMatchAlert({
           <MatchRow key={purchaseMatchKey(match)} match={match} onApply={() => onApply(match)} />
         ))}
       </div>
-    </div>
+    </Alert>
   )
 }
 

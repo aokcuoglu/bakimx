@@ -571,7 +571,7 @@ function PurchaseMarginNotice({ rows }: { rows: Row[] }) {
   const message = purchaseMarginNoticeMessage(rows)
   if (!message) return null
   return (
-    <Alert variant="warning" className="border-warning/20 bg-warning/10">
+    <Alert variant="warning" role="status">
       <AlertTriangle />
       <AlertTitle className="text-xs font-medium text-pretty">{message}</AlertTitle>
     </Alert>

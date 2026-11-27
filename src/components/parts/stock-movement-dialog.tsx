@@ -8,6 +8,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { createStockMovementAction } from "@/app/(app)/parts/actions"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Loader2, Package } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export function StockMovementDialog({
   partId,
@@ -74,7 +75,9 @@ export function StockMovementDialog({
           </p>
 
           {error && (
-            <div className="p-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive-strong text-xs">{error}</div>
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           <div className="space-y-2">

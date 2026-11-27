@@ -27,6 +27,7 @@ import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 import { normalizePlate } from "@/lib/format"
 import { findExactPlateMatch, type ExistingVehicleMatch } from "@/lib/search/exact-plate-match"
 import type { UnifiedResult } from "@/lib/search/unified-results"
+import { Alert } from "@/components/ui/alert"
 
 export type InlineCreateResult = {
   customerId: string
@@ -379,7 +380,7 @@ export function InlineCreateModal({
           </div>
 
           {existingMatch && (
-            <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 space-y-2">
+            <Alert variant="warning" role="status" className="space-y-2">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="size-4 text-warning-strong mt-0.5 shrink-0" />
                 <div className="min-w-0 text-sm">
@@ -390,7 +391,7 @@ export function InlineCreateModal({
               <Button variant="foreground" type="button" size="sm" className="w-full" onClick={selectExisting}>
                 <Car className="size-4 mr-1" /> Bu aracı seç
               </Button>
-            </div>
+            </Alert>
           )}
 
           {/* Detailed ruhsat fields */}

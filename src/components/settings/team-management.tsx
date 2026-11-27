@@ -25,7 +25,7 @@ import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   Dialog,
   DialogContent,
@@ -234,7 +234,8 @@ export function TeamManagement({
       <div>
 
       {canManage && atLimit && (
-        <div className="mb-4 p-3 rounded-lg border border-warning/20 bg-warning/10 text-sm text-warning-strong">
+        <Alert variant="warning" role="status" className="mb-4">
+          <AlertDescription>
           Koltuk limitiniz dolu ({seatUsed}/{seatLimit}).
           {seatLimit <= 1 ? (
             <>
@@ -259,7 +260,8 @@ export function TeamManagement({
               .
             </>
           )}
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {error && (
@@ -269,9 +271,9 @@ export function TeamManagement({
       )}
 
       {lastInviteUrl && (
-        <div className="mb-4 p-3 rounded-lg border border-primary/20 bg-primary/5 text-sm">
-          <p className="font-medium text-foreground mb-1.5">Davet oluşturuldu 🎉</p>
-          <p className="text-muted-foreground text-xs mb-2">
+        <Alert variant="info" role="status" className="mb-4">
+          <AlertTitle>Davet oluşturuldu 🎉</AlertTitle>
+          <p className="text-xs mb-2">
             Davet bağlantısını kişiye iletin (e-posta da gönderildi). 7 gün geçerlidir.
           </p>
           <div className="flex items-center gap-2">
@@ -287,7 +289,7 @@ export function TeamManagement({
               {copied ? "Kopyalandı" : "Kopyala"}
             </Button>
           </div>
-        </div>
+        </Alert>
       )}
 
       <Dialog
@@ -564,15 +566,15 @@ export function TeamManagement({
         <div className="mt-5 space-y-2" aria-label="Hesabı eksik personel">
           <h4 className="text-sm font-semibold text-foreground">Hesabı tamamlanacak personel</h4>
           {accountMissingPersonnel.map((person) => (
-            <div
+            <Alert
               key={person.id}
-              role="alert"
-              className="flex items-start gap-3 rounded-lg border border-warning/20 bg-warning/10 p-3"
+              variant="warning"
+              className="flex items-start gap-3"
             >
-              <TriangleAlert className="mt-0.5 size-5 shrink-0 text-warning-strong" />
+              <TriangleAlert className="mt-0.5 size-5 shrink-0" />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">{person.fullName}</p>
-                <p className="text-xs text-warning-strong">
+                <p className="text-sm font-medium">{person.fullName}</p>
+                <p className="text-xs">
                   Bu eski personel kaydının giriş hesabı yok. Yanlış kişiye iş geçmişi bağlanmaması için otomatik eşleştirilmedi.
                 </p>
                 {canManage && localAssignable.length > 0 && (
@@ -591,7 +593,7 @@ export function TeamManagement({
                   </Button>
                 )}
               </div>
-            </div>
+            </Alert>
           ))}
         </div>
       )}

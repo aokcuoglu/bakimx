@@ -18,6 +18,7 @@ import {
   suggestPhotoPhase,
 } from "@/lib/technician/photo-upload"
 import { compressImageForUpload } from "@/lib/image/compress-image"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 /**
  * Teknisyen ekranında fotoğraf ekleme — iş emri ekranındaki akışın mobil
@@ -188,9 +189,9 @@ export function TechnicianPhotoUpload({
       >
         <div className="space-y-3 py-1">
           {error && (
-            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
-              {error}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           <div className="space-y-1.5">

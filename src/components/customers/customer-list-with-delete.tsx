@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Trash2 } from "lucide-react"
 import { CustomerList, type CustomerRow } from "@/components/customers/customer-list"
 import { deleteCustomerAction } from "@/app/(app)/customers/actions"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export function CustomerListWithDelete({
   customers,
@@ -40,9 +41,9 @@ export function CustomerListWithDelete({
   return (
     <div className="space-y-2">
       {error ? (
-        <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive-strong">
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       ) : null}
       <CustomerList
         customers={customers}
