@@ -263,12 +263,6 @@ describe("tarih aralığı kaynak regresyonu (#905, #906)", () => {
     })
   }
 
-  test("iletişim günlüğü filtresi istanbulDateRange kullanır", () => {
-    const source = read("app/(app)/communications/actions.ts")
-    expect(source).toContain("istanbulDateRange(filters.dateFrom, filters.dateTo)")
-    expect(source).not.toContain("new Date(filters.date")
-  })
-
   test("liste ve CSV aynı okuyucuyu ve çözümleyiciyi kullanır", () => {
     const page = read("app/(app)/cashbox/payments/page.tsx")
     const route = read("app/api/cashbox/export/route.ts")

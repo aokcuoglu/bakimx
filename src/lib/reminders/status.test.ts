@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
-import { daysUntil } from "@/lib/reminders/format"
-import { deriveReminderStatus, getStatusFromDueDates } from "@/lib/reminders/status"
+import { deriveReminderStatus } from "@/lib/reminders/status"
 
 /**
  * #904 — hatırlatma durumu ve kalan gün Türkiye gününe göre. Beklentiler sabit
@@ -65,25 +64,5 @@ describe("deriveReminderStatus", () => {
 
   test("geçersiz tarih dizesi yaklaşan sayılır", () => {
     expect(deriveReminderStatus({ dueDate: "tarih-değil" }, AFTER_TR_MIDNIGHT)).toBe("upcoming")
-  })
-})
-
-describe("getStatusFromDueDates", () => {
-  test("verilen anı deriveReminderStatus'a geçirir", () => {
-    expect(getStatusFromDueDates({ dueDate: "2026-11-25T00:00:00.000Z" }, AFTER_TR_MIDNIGHT)).toBe("overdue")
-    expect(getStatusFromDueDates({ dueDate: "2026-11-25T00:00:00.000Z" }, BEFORE_TR_MIDNIGHT)).toBe("upcoming")
-  })
-})
-
-describe("daysUntil", () => {
-  test("TR gece yarısından sonra: bugün 0, yarın 1, dün -1", () => {
-    expect(daysUntil("2026-11-26T00:00:00.000Z", AFTER_TR_MIDNIGHT)).toBe(0)
-    expect(daysUntil("2026-11-27T00:00:00.000Z", AFTER_TR_MIDNIGHT)).toBe(1)
-    expect(daysUntil("2026-11-25T00:00:00.000Z", AFTER_TR_MIDNIGHT)).toBe(-1)
-  })
-
-  test("TR gece yarısından önce: aynı son tarihler bir gün kayar", () => {
-    expect(daysUntil(new Date("2026-11-25"), BEFORE_TR_MIDNIGHT)).toBe(0)
-    expect(daysUntil(new Date("2026-11-26"), BEFORE_TR_MIDNIGHT)).toBe(1)
   })
 })

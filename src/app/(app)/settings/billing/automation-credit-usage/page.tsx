@@ -5,7 +5,7 @@ import { CreditPeriodSelect } from "@/components/billing/credit-period-select"
 import { CreditQuotaDialog } from "@/components/billing/credit-quota-dialog"
 import { getAccountBillingContext } from "@/lib/billing/account-context"
 import { prisma } from "@/lib/db"
-import { getWorkshopQuotaContext, getWorkshopQuotaUsage, quotaMonthWindow } from "@/lib/rapidapi-quota"
+import { resolveWorkshopQuotaContext, getWorkshopQuotaUsage, quotaMonthWindow } from "@/lib/rapidapi-quota"
 
 export const metadata = { title: "Krediler" }
 
@@ -21,12 +21,12 @@ export default async function CreditUsagePage({ searchParams }: { searchParams: 
   const requested = (await searchParams).period
   const selected = periods.find((period) => period.value === requested) ?? periods[0]
   const { monthStart, renewsAt } = quotaMonthWindow(selected.date)
-  const context = getWorkshopQuotaContext(workshop)
+  const context = await resolveWorkshopQuotaContext(workshop)
   const current = selected.value === periods[0].value
   const [groups, currentUsage] = await Promise.all([
     prisma.quotaUsage.groupBy({
       by: ["source"],
-      where: { workshopId: workshop.id, createdAt: { gte: monthStart, lt: renewsAt } },
+      where: { workshopId: { in: context.scopeWorkshopIds }, createdAt: { gte: monthStart, lt: renewsAt } },
       _count: { _all: true },
     }),
     getWorkshopQuotaUsage(context, now),

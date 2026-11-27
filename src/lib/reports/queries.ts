@@ -261,47 +261,6 @@ export async function getLongestDurationOrders(
   return result.slice(0, limit)
 }
 
-export async function getFilteredOrders(
-  workshopId: string,
-  options: {
-    dateFrom?: Date
-    /** Aralık sonu, HARİÇ (`lt`). */
-    dateEnd?: Date
-    technicianId?: string
-    status?: string
-    customerId?: string
-    limit?: number
-  } = {}
-) {
-  const { dateFrom, dateEnd, technicianId, status, customerId, limit = 10 } = options
-  const where: import("@prisma/client").Prisma.ServiceOrderWhereInput = { workshopId }
-  if (dateFrom || dateEnd) {
-    where.createdAt = {
-      ...(dateFrom ? { gte: dateFrom } : {}),
-      ...(dateEnd ? { lt: dateEnd } : {}),
-    }
-  }
-  if (technicianId) where.assignedTechnicianId = technicianId
-  if (status) where.status = status as import("@prisma/client").OrderStatus
-  if (customerId) where.intakeForm = { customerId }
-
-  return prisma.serviceOrder.findMany({
-    where,
-    include: {
-      assignedTechnician: { select: { id: true, fullName: true } },
-      intakeForm: {
-        include: {
-          customer: { select: { id: true, firstName: true, lastName: true, fullName: true, companyName: true, type: true, phone: true } },
-          vehicle: { select: { plate: true, brand: true, model: true } },
-        },
-      },
-      items: { select: ORDER_TOTALS_ITEM_SELECT },
-    },
-    orderBy: { createdAt: "desc" },
-    take: limit,
-  })
-}
-
 // ─── Customer Report ─────────────────────────────────────────────
 
 export interface CustomerReportStats {

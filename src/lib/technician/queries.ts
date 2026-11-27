@@ -7,7 +7,6 @@ import {
 } from "@/lib/technician/order-visibility"
 import { UNASSIGNED_IN_SERVICE_WHERE } from "@/lib/orders/unassigned-in-service"
 import { completedTodayWhere } from "@/lib/technician/kiosk-home"
-import { istanbulDayStart } from "@/lib/istanbul-time"
 
 type OStat = import("@prisma/client").OrderStatus
 
@@ -198,37 +197,4 @@ export async function getUnassignedOrderCount(workshopId: string): Promise<numbe
   return prisma.serviceOrder.count({
     where: { workshopId, ...UNASSIGNED_IN_SERVICE_WHERE },
   })
-}
-
-export async function getManagerTechnicianOverview(workshopId: string) {
-  const technicians = await prisma.technician.findMany({
-    where: { workshopId, isActive: true },
-    include: {
-      assignedOrders: {
-        where: { status: { notIn: NOT_DELIVERED_CANCELLED } },
-        select: {
-          id: true,
-          status: true,
-          estimatedDeliveryAt: true,
-          createdAt: true,
-        },
-      },
-    },
-    orderBy: { fullName: "asc" },
-  })
-
-  const today = istanbulDayStart()
-
-  return technicians.map((t) => ({
-    id: t.id,
-    fullName: t.fullName,
-    phone: t.phone,
-    role: t.role,
-    activeJobs: t.assignedOrders.length,
-    inProgressJobs: t.assignedOrders.filter((o) => o.status === "in_progress").length,
-    delayedJobs: t.assignedOrders.filter(
-      (o) => o.estimatedDeliveryAt && o.estimatedDeliveryAt < today && o.status !== "delivered" && o.status !== "cancelled"
-    ).length,
-    completedToday: 0,
-  }))
 }

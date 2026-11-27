@@ -79,6 +79,7 @@ import type { OrderStatus } from "@prisma/client"
 import type { OrderItem } from "@/components/orders/order-management-panel"
 import { useAddonAccess, useTecdocTypeId } from "@/components/billing/addon-access"
 import { CatalogLockedNote } from "@/components/parts/tecdoc-part-picker"
+import { formatTrDateTime } from "@/lib/format-date"
 import { PartSearchInput } from "@/components/parts/part-search-input"
 import { PartAttributeField } from "@/components/parts/part-attribute-field"
 import { TecdocPartPicker, type PickerVehicle } from "@/components/parts/tecdoc-part-picker"
@@ -2126,9 +2127,7 @@ function DoneBadge({ completedAt, className }: { completedAt?: string | null; cl
   if (!completedAt) return null
   // Tür kolonu dar; damga ad kolonunun altında kendi satırında durur (çipler arasına
   // sıkışınca satır kayıyordu). Zaman damgası ofisin "ne zaman bitti" sorusunu karşılar.
-  const stamp = new Date(completedAt).toLocaleString("tr-TR", {
-    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
-  })
+  const stamp = formatTrDateTime(completedAt)
   return (
     <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium text-success-strong", className)}>
       <Check className="size-3 shrink-0" />
