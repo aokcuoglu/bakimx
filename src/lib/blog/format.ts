@@ -1,7 +1,5 @@
-export function formatBlogDate(iso: string, locale = "tr-TR"): string {
-  return new Intl.DateTimeFormat(locale, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(iso))
+import { formatTrLongDate } from "@/lib/format-date"
+
+export function formatBlogDate(iso: string): string {
+  return formatTrLongDate(iso)
 }

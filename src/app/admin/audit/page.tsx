@@ -8,6 +8,7 @@ import { FilterSelect } from "@/components/shared/filter-select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { auditActionLabel } from "@/lib/admin/activity-labels"
 import { AuditLogDetailDialog } from "./audit-log-detail-dialog"
+import { formatTrDate } from "@/lib/format-date"
 
 export const metadata = { title: "Denetim Kayıtları · Yönetim" }
 
@@ -193,7 +194,7 @@ export default async function AdminAuditPage({
                       {log.actorUser ? (log.actorUser.email ?? log.actorUser.username ?? "—") : "sistem"}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
-                      {log.createdAt.toLocaleDateString("tr-TR")}
+                      {formatTrDate(log.createdAt)}
                     </TableCell>
                   </TableRow>
                 ))}

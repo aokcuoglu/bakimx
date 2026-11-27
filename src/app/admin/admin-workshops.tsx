@@ -46,7 +46,7 @@ const APPROVAL_LABELS: Record<string, string> = { pending: "Onay bekliyor", appr
 const SUB_LABELS: Record<string, string> = { trialing: "Denemede", active: "Aktif", past_due: "Ödeme gecikti", canceled: "İptal" }
 
 function Row({ w, canManage }: { w: AdminWorkshopRow; canManage: boolean }) {
-  const trial = w.trialEndsAt ? new Date(w.trialEndsAt).toLocaleDateString("tr-TR") : null
+  const trial = w.trialEndsAt ? formatTrDate(w.trialEndsAt) : null
 
   return (
     <div className="rounded-lg border bg-card p-4">
