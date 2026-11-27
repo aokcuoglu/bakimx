@@ -48,11 +48,14 @@ export function OrderItemsChecklist({
   items,
   locked,
   onError,
+  onEditItem,
 }: {
   orderId: string
   items: OrderItemRow[]
   locked: boolean
   onError?: (msg: string) => void
+  /** Verilirse satır gövdesi düzenlemeyi açar; tik yalnız soldaki kutudan atılır. */
+  onEditItem?: (itemId: string) => void
 }) {
   const [, startTransition] = useTransition()
   const [optimisticItems, patchOptimistic] = useOptimistic(
@@ -201,8 +204,8 @@ export function OrderItemsChecklist({
         <p className="text-sm text-muted-foreground">Bu araç kabulünde henüz parça veya işçilik kalemi yok.</p>
       ) : (
         <div className="space-y-3">
-          <ItemGroup title="Parçalar" items={parts} locked={locked} busyIds={busyIds} flashIds={flashIds} onToggle={toggle} />
-          <ItemGroup title="İşçilik" items={labor} locked={locked} busyIds={busyIds} flashIds={flashIds} onToggle={toggle} />
+          <ItemGroup title="Parçalar" items={parts} locked={locked} busyIds={busyIds} flashIds={flashIds} onToggle={toggle} onEdit={onEditItem} />
+          <ItemGroup title="İşçilik" items={labor} locked={locked} busyIds={busyIds} flashIds={flashIds} onToggle={toggle} onEdit={onEditItem} />
         </div>
       )}
     </div>
@@ -210,7 +213,7 @@ export function OrderItemsChecklist({
 }
 
 function ItemGroup({
-  title, items, locked, busyIds, flashIds, onToggle,
+  title, items, locked, busyIds, flashIds, onToggle, onEdit,
 }: {
   title: string
   items: OrderItemRow[]
@@ -218,6 +221,7 @@ function ItemGroup({
   busyIds: ReadonlySet<string>
   flashIds: ReadonlySet<string>
   onToggle: (item: OrderItemRow) => void
+  onEdit?: (itemId: string) => void
 }) {
   if (items.length === 0) return null
   const done = items.filter((i) => i.completedAt).length
@@ -239,44 +243,24 @@ function ItemGroup({
               ? formatTRY(Math.round(item.unitPrice * item.quantity))
               : "—"
 
-          return (
-            <Button
-              key={item.id}
-              type="button"
-              variant="ghost"
-              size="row"
-              disabled={isBusy || locked}
-              aria-pressed={isDone}
-              onClick={() => onToggle(item)}
+          const tick = (
+            <span
+              key={isDone ? "done" : "todo"}
               className={cn(
-                "group w-full gap-2.5",
-                // Sunucu yanıtı beklenirken satır kilitli ama SOLUK DEĞİL:
-                // iyimser tik zaten göründüğü için soluklaştırmak "işlem geri
-                // alındı" gibi okunuyordu.
-                "disabled:cursor-default disabled:opacity-100 disabled:hover:bg-transparent",
-                // İşaretlendiği an kısa bir yeşil parlama — hangi satıra
-                // dokunulduğu, toplu tamamlamada da tek tek görünür.
-                isFlashing && isDone && "motion-safe:animate-item-done",
+                "shrink-0 inline-flex motion-safe:transition-transform motion-safe:duration-150",
+                !locked && !isBusy && "motion-safe:group-active:scale-90",
+                isFlashing && isDone && "motion-safe:animate-check-pop",
               )}
             >
-              {/* Tik anında gelir; `key` durum değişince değişir ki pop animasyonu
-                  her işaretlemede baştan çalışsın. */}
-              <span
-                key={isDone ? "done" : "todo"}
-                className={cn(
-                  "shrink-0 inline-flex motion-safe:transition-transform motion-safe:duration-150",
-                  // Basılı tutarken kutu içeri gider — dokunuşun kaydedildiği
-                  // sunucu yanıtından ÖNCE hissedilsin diye.
-                  !locked && !isBusy && "motion-safe:group-active:scale-90",
-                  isFlashing && isDone && "motion-safe:animate-check-pop",
-                )}
-              >
-                {isDone
-                  ? <CheckSquare className="size-5 text-success-strong" />
-                  : <Square className="size-5 text-muted-foreground" />}
-              </span>
+              {isDone
+                ? <CheckSquare className="size-5 text-success-strong" />
+                : <Square className="size-5 text-muted-foreground" />}
+            </span>
+          )
 
-              <span className="flex-1 min-w-0">
+          const body = (
+            <>
+              <span className="flex-1 min-w-0 text-left">
                 <span className={cn(
                   "block truncate text-sm transition-colors duration-300",
                   isDone ? "text-success-strong" : "text-foreground",
@@ -293,6 +277,61 @@ function ItemGroup({
                 {item.quantity > 1 && <span className="mr-1.5 text-xs text-muted-foreground">×{item.quantity}</span>}
                 {price}
               </span>
+            </>
+          )
+
+          const rowClass = cn(
+            "group w-full gap-2.5",
+            // Sunucu yanıtı beklenirken satır kilitli ama SOLUK DEĞİL:
+            // iyimser tik zaten göründüğü için soluklaştırmak "işlem geri
+            // alındı" gibi okunuyordu.
+            "disabled:cursor-default disabled:opacity-100 disabled:hover:bg-transparent",
+            // İşaretlendiği an kısa bir yeşil parlama.
+            isFlashing && isDone && "motion-safe:animate-item-done",
+          )
+
+          if (onEdit) {
+            return (
+              <div key={item.id} className={cn("flex items-center", isFlashing && isDone && "motion-safe:animate-item-done")}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={isBusy || locked}
+                  aria-pressed={isDone}
+                  aria-label={isDone ? `${item.name} yapıldı, geri al` : `${item.name} yapıldı olarak işaretle`}
+                  onClick={() => onToggle(item)}
+                  className="group disabled:cursor-default disabled:opacity-100 disabled:hover:bg-transparent"
+                >
+                  {tick}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="row"
+                  disabled={locked}
+                  onClick={() => onEdit(item.id)}
+                  className="min-w-0 flex-1 gap-2.5 disabled:cursor-default disabled:opacity-100 disabled:hover:bg-transparent"
+                >
+                  {body}
+                </Button>
+              </div>
+            )
+          }
+
+          return (
+            <Button
+              key={item.id}
+              type="button"
+              variant="ghost"
+              size="row"
+              disabled={isBusy || locked}
+              aria-pressed={isDone}
+              onClick={() => onToggle(item)}
+              className={rowClass}
+            >
+              {tick}
+              {body}
             </Button>
           )
         })}
