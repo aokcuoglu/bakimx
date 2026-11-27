@@ -113,8 +113,7 @@ export function EntryVehicleFields({
     const c = confidence[key]
     return c !== undefined && c !== null && c < LOW_CONFIDENCE_THRESHOLD
   }
-  const fieldClass = (key: string) =>
-    lowConf(key) ? "border-warning/40 bg-warning/10 focus-visible:border-warning" : ""
+  const tone = (key: string) => (lowConf(key) ? "warning" : "default")
   const warn = (key: string) => lowConf(key) && <AlertTriangle className="size-3 text-warning-strong" />
 
   const coreFields = (
@@ -125,7 +124,7 @@ export function EntryVehicleFields({
             <Input
               value={fields.plate}
               onChange={(e) => onFieldChange("plate", e.target.value.toUpperCase())}
-              className={fieldClass("plate")}
+              tone={tone("plate")}
               placeholder="34 ABC 123"
             />
           </div>
@@ -143,7 +142,7 @@ export function EntryVehicleFields({
             value={fields.modelYear}
             onChange={(e) => onFieldChange("modelYear", e.target.value.replace(/\D/g, ""))}
             inputMode="numeric"
-            className={fieldClass("modelYear")}
+            tone={tone("modelYear")}
             placeholder="2023"
           />
         </div>
@@ -178,7 +177,7 @@ export function EntryVehicleFields({
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1">Tipi {warn("vehicleType")}</Label>
               <Select value={fields.vehicleType} onValueChange={(v) => onFieldChange("vehicleType", v)}>
-                <SelectTrigger className={`w-full ${fieldClass("vehicleType")}`}>
+                <SelectTrigger className="w-full" tone={tone("vehicleType")}>
                   <SelectValue placeholder="Seçiniz" />
                 </SelectTrigger>
                 <SelectContent>
@@ -207,7 +206,8 @@ export function EntryVehicleFields({
                 <Input
                   value={fields.vin}
                   onChange={(e) => onFieldChange("vin", e.target.value.toUpperCase())}
-                  className={`min-w-44 flex-1 ${fieldClass("vin")}`.trim()}
+                  className="min-w-44 flex-1"
+                  tone={tone("vin")}
                   placeholder="17 haneli şase numarası"
                 />
                 {vinLookup && (
@@ -266,7 +266,7 @@ export function EntryVehicleFields({
               <Input
                 value={fields.engineNo}
                 onChange={(e) => onFieldChange("engineNo", e.target.value.toUpperCase())}
-                className={fieldClass("engineNo")}
+                tone={tone("engineNo")}
               />
             </div>
             <div className="space-y-1.5">
@@ -282,7 +282,7 @@ export function EntryVehicleFields({
               <DatePicker
                 value={fields.firstRegistrationDate}
                 onChange={(v) => onFieldChange("firstRegistrationDate", v)}
-                className={fieldClass("firstRegistrationDate")}
+                tone={tone("firstRegistrationDate")}
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">

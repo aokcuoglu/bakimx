@@ -5,6 +5,7 @@ import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { yieldEscapeToBaseUIPopup } from "@/components/ui/base-ui-popup"
+import { useOpenerFocus } from "@/hooks/use-opener-focus"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
@@ -54,17 +55,23 @@ function DialogContent({
   children,
   showCloseButton = true,
   onEscapeKeyDown,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
   overlayClassName?: string
 }) {
+  const openerFocus = useOpenerFocus(onOpenAutoFocus, onCloseAutoFocus)
+
   return (
     <DialogPortal>
       <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         onEscapeKeyDown={(event) => yieldEscapeToBaseUIPopup(event, onEscapeKeyDown)}
+        onOpenAutoFocus={openerFocus.onOpenAutoFocus}
+        onCloseAutoFocus={openerFocus.onCloseAutoFocus}
         className={cn(
           "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-[var(--radius-dialog)] bg-popover p-4 text-sm text-popover-foreground border border-border shadow-[var(--shadow-dialog)] ring-[3px] ring-popover/60 duration-150 motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none outline-none sm:max-w-lg data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
           className

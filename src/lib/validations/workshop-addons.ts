@@ -29,6 +29,13 @@ export const extraVinQuotaSchema = z
       .max(100_000, "Ek kota en fazla 100.000 olabilir."),
   )
 
+/** Admin'in elle verdiği ek koltuk sayısı (`Workshop.extraSeats`); 0–500 tam sayı. */
+export const extraSeatsSchema = z
+  .number({ error: "Geçersiz ek koltuk sayısı." })
+  .int("Geçersiz ek koltuk sayısı.")
+  .min(0, "Geçersiz ek koltuk sayısı.")
+  .max(500, "Geçersiz ek koltuk sayısı.")
+
 /** Admin formunun değerleri: anahtar başına aç/kapa + ek kota. */
 export const workshopAddonsFormSchema = z.object({
   addons: z.object(

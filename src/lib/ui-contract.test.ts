@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
 import ts from "typescript"
 import { PAGE_HEADERS, SUB_PAGE_HEADERS } from "./navigation/page-headers"
+import { stripComments } from "@/lib/testing/strip-comments"
 
 const SRC = join(import.meta.dir, "..")
 const SCOPES = [
@@ -136,13 +137,6 @@ test("yönetim yüzeylerinde sabit durum rengi yok", () => {
  * ve o gerçekten beyaz zeminde siyah metindir, tema değişkeni değil.
  */
 const RAW_PALETTE_EXCEPTIONS: { file: string; line: number; reason: string }[] = [
-  // macOS pencere düğmelerinin birebir taklidi: kırmızı/sarı/yeşil daireler bir
-  // durum göstermiyor, tarayıcı çerçevesinin kendisini çiziyorlar (landing
-  // sayfası ürün görseli). Token'a bağlamak resmi bozar, dekoratif oldukları
-  // için kontrast şartı da yok.
-  { file: "components/sections/DeviceFrame.tsx", line: 5, reason: "macOS pencere düğmesi taklidi (dekoratif)" },
-  { file: "components/sections/DeviceFrame.tsx", line: 6, reason: "macOS pencere düğmesi taklidi (dekoratif)" },
-  { file: "components/sections/DeviceFrame.tsx", line: 7, reason: "macOS pencere düğmesi taklidi (dekoratif)" },
 ]
 
 test("src içinde ham palet rengi yok", () => {
@@ -438,7 +432,7 @@ test("Radix overlay'leri ilk Escape'i açık Base UI popup'ına bırakıyor", ()
   // Radix'in tek kaçış kapısı `preventDefault`; `stopPropagation` işe yaramaz
   // (olay capture fazında Radix'e zaten ulaşmıştır). Yorumda geçen ANLATIM bulgu
   // değil — yalnız kodda çağrılması yanlış.
-  const code = helper.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
+  const code = stripComments(helper)
   expect(code).toContain("event.preventDefault()")
   expect(code).not.toContain("stopPropagation")
 

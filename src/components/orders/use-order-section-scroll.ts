@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { DEFERRED_MOUNT_EVENT } from "@/components/shared/defer-until-visible"
 import {
   isOrderSectionId,
+  lastHashSegment,
   sectionForLegacyTab,
   sectionUrl,
   urlWithout,
@@ -116,7 +117,7 @@ export function useOrderSectionScroll(
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
-    const hash = window.location.hash.slice(1)
+    const hash = lastHashSegment(window.location.hash)
     const tab = new URLSearchParams(window.location.search).get("tab")
     const id = sectionForLegacyTab(tab) ?? (isOrderSectionId(hash) ? hash : null)
     if (tab !== null) {

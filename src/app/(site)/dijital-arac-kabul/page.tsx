@@ -34,7 +34,7 @@ export const metadata: Metadata = publicPageMetadata({
 })
 
 const steps = [
-  { title: "Ruhsatı okutun", description: "Ruhsatı fotoğraflayın; plaka, marka/model ve şasi bilgisi otomatik doldurulsun.", icon: ScanLine },
+  { title: "Plakayı okutun", description: "Aracın plakasını kameraya gösterin; kayıtlı araç varsa bulunur, yoksa yeni kayıt açılır. Ruhsat okuma ek özelliktir.", icon: ScanLine },
   { title: "Araç & müşteri bilgisini onaylayın", description: "Kilometre ve yakıt seviyesini işaretleyin, müşteri şikayetini kaydedin.", icon: UserCheck },
   { title: "Kabul fotoğraflarını çekin", description: "Ön, arka, yan ve gösterge fotoğraflarını çekin; eksik zorunlu kareler ayrıca listelenir.", icon: Camera },
   { title: "Hasarı şemada işaretleyin", description: "Araç şemasında hasarlı bölgeye tıklayın, türünü ve derecesini seçin.", icon: AlertTriangle },
@@ -70,7 +70,7 @@ export default function DijitalAracKabulPage() {
           <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:px-8 lg:py-24">
             <div>
               <p className="mb-4 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-primary-strong">
-                Ruhsat, fotoğraf ve hasar tek kayıtta
+                Plaka, fotoğraf ve hasar tek kayıtta
               </p>
               <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
                 {DIJITAL_ARAC_KABUL_H1}
@@ -96,12 +96,12 @@ export default function DijitalAracKabulPage() {
                   <span className="font-mono text-xs font-medium text-muted-foreground">ARAÇ KABUL · ÖRNEK EKRAN</span>
                   <span className="flex items-center gap-1.5 text-xs font-medium text-success-strong">
                     <span className="size-2 rounded-full bg-success" aria-hidden="true" />
-                    Ruhsat okundu
+                    Örnek kabul kaydı
                   </span>
                 </div>
                 <Image
                   src="/landing/screens/digital-intake-vehicle-info.png"
-                  alt="BakımX ruhsattan otomatik dolan araç ve kabul bilgileri ekranı"
+                  alt="BakımX araç ve kabul bilgileri ekranı"
                   width={1000}
                   height={1000}
                   className="h-auto w-full"
@@ -172,7 +172,7 @@ export default function DijitalAracKabulPage() {
                 <h2 id="uygunluk-baslik" className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Dijital araç kabul kimler için uygun?</h2>
                 <p className="mt-5 text-base leading-7 text-muted-foreground">Araç kabulünü kağıt form, ayrı fotoğraf uygulamaları veya WhatsApp yazışmaları arasında dağınık yürütmek yerine tek kayıtta toplamak isteyen oto servisler için uygundur.</p>
                 <ul className="mt-7 space-y-4">
-                  {["Kabul kaydını ve fotoğrafları tek yerde tutmak isteyenler", "Hasarı teslimden önce kanıtla belgelemek isteyenler", "Ruhsat bilgisini elle yazmak yerine otomatik doldurmak isteyenler"].map((item) => (
+                  {["Kabul kaydını ve fotoğrafları tek yerde tutmak isteyenler", "Hasarı teslimden önce kanıtla belgelemek isteyenler", "Araç kaydını elle yazmak yerine plakadan başlatmak isteyenler"].map((item) => (
                     <li key={item} className="flex gap-3 text-sm leading-6 sm:text-base">
                       <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-success/15 text-success-strong"><Check className="size-4" aria-hidden="true" /></span>
                       {item}
@@ -187,7 +187,7 @@ export default function DijitalAracKabulPage() {
                   <div className="rounded-xl border bg-background p-5">
                     <MonitorSmartphone className="size-6 text-primary-strong" aria-hidden="true" />
                     <h4 className="mt-4 font-semibold">Telefondan çalışır</h4>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">Ruhsat okuma, fotoğraf ve hasar adımları telefon ekranında tamamlanır.</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">Plaka okuma, fotoğraf ve hasar adımları telefon ekranında tamamlanır.</p>
                   </div>
                   <div className="rounded-xl border bg-background p-5">
                     <ShieldCheck className="size-6 text-primary-strong" aria-hidden="true" />

@@ -24,8 +24,6 @@ import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningT
  * böylece çağrı yeri ezmesi sarmalayıcı üzerinden de yakalanır.
  *
  * Bilinen kör noktalar (taranmaz; gerekçeleri yerinde yazılı):
- * - Sabite ya da fonksiyona çıkarılmış sınıf: `fieldClass("plate")`
- *   (entry-vehicle-fields, inline-create-modal — OCR düşük güven uyarı tonu).
  *
  * #889 — düğmeler (`Button`, `InputGroupButton` ve onlara `className` ileten
  * sarmalayıcılar) aynı tarayıcıyla, kendi kural setiyle (`BUTTON_FORBIDDEN`)
@@ -392,13 +390,6 @@ export const EXCEPTIONS: readonly Exception[] = [
     allow: ["p-1"],
     reason:
       'type="color" renk kuyusu: p-1 rengi çerçeveden ayırır. Yükseklik bileşenden, genişlik w-(--control-h) ile kare.',
-  },
-  {
-    file: "components/intake/smart-capture-registration.tsx",
-    tag: "Input",
-    allow: ["bg-warning/10"],
-    reason:
-      "OCR düşük güven durumu: uyarı tonu bir durum rengi, ölçü değil (entry-vehicle-fields ve inline-create-modal aynı tonu fieldClass ile verir).",
   },
   {
     file: "components/layout/global-search-box.tsx",

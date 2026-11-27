@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { Autocomplete, AutocompleteInput, AutocompleteInputGroup } from "./autocomplete"
 import { Combobox, ComboboxInput } from "./combobox"
+import { fieldToneClasses } from "./field-tone"
 import { Input } from "./input"
 import { InputGroup, InputGroupInput } from "./input-group"
 
@@ -57,7 +58,9 @@ describe("Input appearance", () => {
     expect(c).toContain("bg-card")
     expect(attr(tag, "data-appearance")).toBeNull()
     expect(decode(attr(tag, "class") ?? "")).toBe(
-      "h-(--control-h) w-full min-w-0 rounded-(--control-radius) border border-input bg-card px-(--field-px) py-1 text-(length:--control-fs) tracking-[-0.01em] transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/10 dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/20 data-[size=sm]:[--control-h:var(--control-h-sm)] data-[size=compact]:[--control-h:var(--control-h-xs)] data-[size=compact]:[--control-fs:var(--control-fs-field-xs)] data-[size=compact]:[--field-px:var(--control-px-xs)] data-[size=lg]:[--control-h:var(--control-h-lg)]"
+      "h-(--control-h) w-full min-w-0 rounded-(--control-radius) border border-input bg-card px-(--field-px) py-1 text-(length:--control-fs) tracking-[-0.01em] transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/10 dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/20 data-[size=sm]:[--control-h:var(--control-h-sm)] data-[size=compact]:[--control-h:var(--control-h-xs)] data-[size=compact]:[--control-fs:var(--control-fs-field-xs)] data-[size=compact]:[--field-px:var(--control-px-xs)] data-[size=lg]:[--control-h:var(--control-h-lg)] " +
+        // OCR düşük güven tonu (#953): yalnız `data-tone="warning"` iken etkin.
+        fieldToneClasses
     )
   })
 })
