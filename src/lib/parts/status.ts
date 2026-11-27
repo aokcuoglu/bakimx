@@ -9,10 +9,10 @@ export type StockStatus = "in_stock" | "critical" | "out_of_stock" | "inactive"
  * Nötr iki durumun sönüklüğü artık renkle değil, dolgusuz/gri yüzeyle veriliyor.
  */
 export const STOCK_STATUS = {
-  in_stock: { label: "Stokta", color: "bg-success/10 text-success-strong border-success/20" },
-  critical: { label: "Kritik Stokta", color: "bg-destructive/10 text-destructive-strong border-destructive/20" },
-  out_of_stock: { label: "Stokta Yok", color: "bg-muted text-foreground border-border" },
-  inactive: { label: "Pasif", color: "bg-muted/50 text-muted-foreground border-border" },
+  in_stock: { label: "Stokta", tone: "success" },
+  critical: { label: "Kritik Stokta", tone: "destructive" },
+  out_of_stock: { label: "Stokta Yok", tone: "neutral" },
+  inactive: { label: "Pasif", tone: "neutral" },
 } as const
 
 export function getStockStatus(stockQty: number, criticalStockQty: number, isActive: boolean): StockStatus {

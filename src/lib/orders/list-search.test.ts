@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { buildOrderFilterSearch, buildOrderLoadMoreSearch } from "./list-search"
+import { buildOrderFilterSearch, buildOrderLoadMoreSearch, buildOrderSortSearch } from "./list-search"
 
 const form = (values: Record<string, string>) => ({ get: (name: string) => values[name] ?? null })
 
@@ -23,5 +23,22 @@ describe("buildOrderLoadMoreSearch", () => {
     expect(out.get("status")).toBe("approved")
     expect(out.get("view")).toBe("{}")
     expect(out.get("delivery")).toBe("overdue")
+  })
+})
+
+describe("buildOrderSortSearch", () => {
+  test("sort/dir yazılır, limit düşer, filtre ve view korunur", () => {
+    const out = buildOrderSortSearch(new URLSearchParams("limit=300&status=approved&view=%7B%7D"), { column: "total", desc: true })
+    expect(out.get("sort")).toBe("total")
+    expect(out.get("dir")).toBe("desc")
+    expect(out.has("limit")).toBe(false)
+    expect(out.get("status")).toBe("approved")
+    expect(out.get("view")).toBe("{}")
+  })
+  test("null sıralamayı temizler", () => {
+    const out = buildOrderSortSearch(new URLSearchParams("sort=total&dir=asc&q=34"), null)
+    expect(out.has("sort")).toBe(false)
+    expect(out.has("dir")).toBe(false)
+    expect(out.get("q")).toBe("34")
   })
 })

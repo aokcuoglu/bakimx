@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { BottomSheet } from "@/components/shared/bottom-sheet"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import surface from "@/components/dashboard/surface.module.css"
 import { Input, type InputAppearance } from "@/components/ui/input"
@@ -225,6 +226,7 @@ export function PartsLaborEditor({
   flash, onAdd, onCell, onRemove,
   onSaveRow,
   addingType: addingTypeProp, onAddingTypeChange, onAddDialogCloseAutoFocus,
+  addSurface = "dialog", hideAddToolbar = false, editRequest,
   compactRows = false,
 }: {
   rows: Row[]
@@ -266,6 +268,18 @@ export function PartsLaborEditor({
   /** Dışarıdan açılan ekleme modalı kapanınca odağı açan öğeye döndürür (#913). */
   onAddDialogCloseAutoFocus?: (event: Event) => void
   /**
+   * Ekleme yüzeyi: ofis `"dialog"` (varsayılan, değişmez); teknisyen telefonda
+   * `"sheet"` (alttan sayfa). İki yüzey AYNI composer'ları çizer.
+   */
+  addSurface?: "dialog" | "sheet"
+  /** Yerleşik "Parça ekle / İşçilik ekle" düğme şeridini çizme (kutucuklar tetikler). */
+  hideAddToolbar?: boolean
+  /**
+   * Dışarıdan "şu satırı düzenle" isteği. Her istek yeni bir nesnedir; aynı
+   * satıra ikinci dokunuş da yeniden açar.
+   */
+  editRequest?: { rowId: string } | null
+  /**
    * Dar kapsayıcıda kart yerine iki satırlık kompakt satır (#968): ad + tutar /
    * "adet × birim fiyat", tüm aksiyonlar tek ⋯ menüsünde. Yalnız iş emri sayfası
    * verir; teklif ve teknisyen ekranı kartı korur.
@@ -278,6 +292,13 @@ export function PartsLaborEditor({
   const addingType = addingTypeProp !== undefined ? addingTypeProp : ownAddingType
   const setAddingType = onAddingTypeChange ?? setOwnAddingType
   const [editingRow, setEditingRow] = useState<Row | null>(null)
+  // Dışarıdan gelen düzenleme isteği render sırasında işlenir (effect'te setState yok).
+  const [handledEditRequest, setHandledEditRequest] = useState<typeof editRequest>(null)
+  if (editRequest && editRequest !== handledEditRequest) {
+    setHandledEditRequest(editRequest)
+    const requested = rows.find((row) => row.id === editRequest.rowId)
+    if (requested && onSaveRow && !locked) setEditingRow(requested)
+  }
   const editDialogRef = useRef<HTMLDivElement>(null)
   // Radix ilk odağı DOM sırasındaki ilk tabbable'a (kaynak rozeti → tooltip açılır, ilk
   // Escape yalnız onu kapatırdı) verir. Klavyeli cihazda odak ilk DÜZENLENEBİLİR alana gider;
@@ -327,6 +348,23 @@ export function PartsLaborEditor({
     [taxRateBps, vatPerLine, defaultVatLiable, documentTaxSet, onApplyStandardTax]
   )
 
+  const addTitle = addingType === "iscilik" ? "İşçilik ekle" : "Parça ekle"
+  const addDescription = "Yeni kalem araç kabulüne Ekle seçilince kaydedilir."
+  const addComposer = (
+    <>
+      {addingType === "parca" && <UnifiedPartComposer vehicle={vehicle} onAdd={async (draft) => {
+        const added = await onAdd(draft)
+        if (added) setAddingType(null)
+        return added
+      }} disabled={loading} onShowDetail={setDetail} />}
+      {addingType === "iscilik" && <LaborComposer onAdd={async (draft) => {
+        const added = await onAdd(draft)
+        if (added) setAddingType(null)
+        return added
+      }} disabled={loading} catalog={laborCatalog} allowExternal={allowExternalLabor} modalLayout />}
+    </>
+  )
+
   const headCls = "text-xs font-medium uppercase tracking-wide text-muted-foreground"
   const optionsTypeId = useTecdocTypeId(vehicle?.catalogVehicleTypeId)
 
@@ -343,7 +381,7 @@ export function PartsLaborEditor({
         (teklif formu ~730px) yatay kaydırmalı tablo yerine kart düzeni çıkar. */}
     <div className="@container min-w-0 space-y-4" data-pl="root">
       {/* İş emrinde ekleme modalı, teklif editöründe mevcut inline composer. */}
-      {!locked && onSaveRow && (
+      {!locked && onSaveRow && !hideAddToolbar && (
         <div className="flex flex-wrap gap-2" data-pl="toolbar">
           <Button variant="outline" onClick={() => setAddingType("parca")}><PackagePlus className="size-4" /> Parça ekle</Button>
           <Button variant="outline" onClick={() => setAddingType("iscilik")}><Wrench className="size-4" /> İşçilik ekle</Button>
@@ -378,24 +416,26 @@ export function PartsLaborEditor({
         </Tabs>
       )}
 
+      {addSurface === "sheet" ? (
+        <BottomSheet
+          open={addingType != null}
+          onOpenChange={(open) => { if (!open) setAddingType(null) }}
+          title={addTitle}
+          description={addDescription}
+        >
+          {addComposer}
+        </BottomSheet>
+      ) : (
       <Dialog open={addingType != null} onOpenChange={(open) => { if (!open) setAddingType(null) }}>
         <DialogContent className="sm:max-w-2xl" onCloseAutoFocus={onAddDialogCloseAutoFocus}>
           <DialogHeader>
-            <DialogTitle>{addingType === "iscilik" ? "İşçilik ekle" : "Parça ekle"}</DialogTitle>
-            <DialogDescription>Yeni kalem araç kabulüne Ekle seçilince kaydedilir.</DialogDescription>
+            <DialogTitle>{addTitle}</DialogTitle>
+            <DialogDescription>{addDescription}</DialogDescription>
           </DialogHeader>
-          {addingType === "parca" && <UnifiedPartComposer vehicle={vehicle} onAdd={async (draft) => {
-            const added = await onAdd(draft)
-            if (added) setAddingType(null)
-            return added
-          }} disabled={loading} onShowDetail={setDetail} />}
-          {addingType === "iscilik" && <LaborComposer onAdd={async (draft) => {
-            const added = await onAdd(draft)
-            if (added) setAddingType(null)
-            return added
-          }} disabled={loading} catalog={laborCatalog} allowExternal={allowExternalLabor} modalLayout />}
+          {addComposer}
         </DialogContent>
       </Dialog>
+      )}
 
       {!locked && <Separator />}
 
@@ -587,6 +627,7 @@ function PurchaseMarginNotice({ rows }: { rows: Row[] }) {
 export function PartsLaborGrid({
   orderId, status, items, vehicle, onError, loading, laborCatalog, taxRateBps, onApplyStandardTax,
   allowExternalLabor = true, addingType, onAddingTypeChange, onAddDialogCloseAutoFocus,
+  addSurface, hideAddToolbar, editRequest,
   compactRows,
 }: {
   orderId: string
@@ -611,6 +652,10 @@ export function PartsLaborGrid({
   addingType?: PartsAddType | null
   onAddingTypeChange?: (type: PartsAddType | null) => void
   onAddDialogCloseAutoFocus?: (event: Event) => void
+  /** Ekleme yüzeyi ve dış düzenleme isteği; bkz. `PartsLaborEditor`. */
+  addSurface?: "dialog" | "sheet"
+  hideAddToolbar?: boolean
+  editRequest?: { rowId: string } | null
   /** Dar kapsayıcıda iki satırlık kompakt kalem satırı (#968); bkz. `PartsLaborEditor`. */
   compactRows?: boolean
 }) {
@@ -816,6 +861,9 @@ export function PartsLaborGrid({
       addingType={addingType}
       onAddingTypeChange={onAddingTypeChange}
       onAddDialogCloseAutoFocus={onAddDialogCloseAutoFocus}
+      addSurface={addSurface}
+      hideAddToolbar={hideAddToolbar}
+      editRequest={editRequest}
       compactRows={compactRows}
     />
   )

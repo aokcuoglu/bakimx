@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import {
+  formatAddonMinor,
   addonFeaturesFor,
   computeAddonProrationMinor,
   describeBillingOrder,
@@ -76,6 +77,14 @@ test("describeBillingOrder paket ve ek özellik", () => {
   const two = describeBillingOrder({ type: "addon", planTier: "pro", billingCycle: "monthly", addonLines: [line, { ...line, key: "ocrIntake" }] })
   expect(two.title).toBe("Ek özellik")
   expect(two.lines).toHaveLength(2)
+})
+
+test("formatAddonMinor: tam liralar kuruşsuz, kuruş yalnız sıfır değilse", () => {
+  const norm = (v: string) => v.replace(/\s/g, " ")
+  expect(norm(formatAddonMinor(39_900))).toBe("₺399")
+  expect(norm(formatAddonMinor(399_000))).toBe("₺3.990")
+  expect(norm(formatAddonMinor(21_280))).toBe("₺212,80")
+  expect(norm(formatAddonMinor(21_250))).toBe("₺212,50")
 })
 
 describe("ek özellik uygunluğu (#829)", () => {

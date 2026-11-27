@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useTransition, type ChangeEvent, type FormEvent, type MouseEvent } from "react"
 import { useRouter } from "next/navigation"
-import { buildOrderFilterSearch, buildOrderLoadMoreSearch } from "@/lib/orders/list-search"
+import { buildOrderFilterSearch, buildOrderLoadMoreSearch, buildOrderSortSearch } from "@/lib/orders/list-search"
 
 /** Keep the toolbar mounted while the server applies the list filters. */
 export function useOrderListNavigation(searchQuery: string) {
@@ -63,6 +63,13 @@ export function useOrderListNavigation(searchQuery: string) {
     startLoadMore(() => router.replace(`/orders?${params}`, { scroll: false }))
   }
 
+  /** Kolon sıralaması sunucuda uygulanır: adres güncellenir, liste baştan gelir. */
+  function setSort(sort: { column: string; desc: boolean } | null) {
+    cancelSearch()
+    const params = buildOrderSortSearch(new URLSearchParams(window.location.search), sort)
+    startTransition(() => router.replace(`/orders${params.size ? `?${params}` : ""}`, { scroll: false }))
+  }
+
   function onChange(event: ChangeEvent<HTMLDivElement>) {
     const input = event.target
     if (!(input instanceof HTMLInputElement) || input.name !== "q" || !input.form) return
@@ -91,5 +98,5 @@ export function useOrderListNavigation(searchQuery: string) {
     startTransition(() => router.push(`${url.pathname}${url.search}`, { scroll: false }))
   }
 
-  return { rootRef, isPending, isLoadingMore, loadMore, onChange, onSubmit, onClick }
+  return { rootRef, isPending, isLoadingMore, loadMore, setSort, onChange, onSubmit, onClick }
 }

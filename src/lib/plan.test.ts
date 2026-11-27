@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { ADDON_CATALOG } from "@/lib/plans-catalog"
 import {
   hasFeature,
   hasWorkshopFeature,
@@ -23,7 +24,9 @@ import {
   assertFeature,
   PlanFeatureLockedError,
   ADDON_FEATURES,
+  ADDON_CONTACT_LOCKED_MESSAGE,
   ADDON_LOCKED_MESSAGE,
+  CONTACT_ONLY_ADDON_FEATURES,
   SALE_PLAN_TIERS,
   TRIAL_INCLUDES_ADDONS,
   isAddonFeature,
@@ -422,7 +425,7 @@ test("a pending workshop does not gain trial entitlements before approval", () =
   expect(hasWorkshopFeature(pending, "multiBranch")).toBe(false)
 })
 
-test("ek özellik kilidi satın alma sayfasına değil iletişime yönlendirir; kod sabit kalır", () => {
+test("ek özellik kilidi Ayarlar → Paketler'e ve iletişime yönlendirir; kod sabit kalır", () => {
   try {
     assertFeature(wsFields({ planTier: "pro" }), "vinLookup")
     throw new Error("expected throw")
@@ -434,7 +437,7 @@ test("ek özellik kilidi satın alma sayfasına değil iletişime yönlendirir; 
     expect(locked.requiredTier).toBe("premium")
     expect(locked.message).toBe(ADDON_LOCKED_MESSAGE)
     expect(locked.message).toBe(
-      "Bu özellik pakete dahil değildir; ek özellik olarak yakında satın alınabilecek. Bilgi için bizimle iletişime geçin.",
+      "Bu özellik pakete dahil değildir. Ayarlar → Paketler’den ek özellik olarak satın alabilirsiniz.",
     )
   }
 })
@@ -451,6 +454,9 @@ test("eski satırda kapalı paket özelliği 'paketinizde bulunmuyor' der", () =
     expect(locked.message).toBe("Bu özellik paketinizde bulunmuyor.")
   }
   expect(featureLockedMessage("ocrIntake")).toBe(ADDON_LOCKED_MESSAGE)
+  expect(featureLockedMessage("multiBranch")).toBe(ADDON_CONTACT_LOCKED_MESSAGE)
+  expect(featureLockedMessage("eInvoice")).toBe(ADDON_CONTACT_LOCKED_MESSAGE)
+  expect(featureLockedMessage("eInvoice")).not.toContain("satın alabilirsiniz")
   expect(featureLockedMessage("cashbox")).toBe("Bu özellik paketinizde bulunmuyor.")
 })
 
@@ -525,4 +531,9 @@ test("getVinLookupBaseQuota: pro 0, vinLookup ya da partsCatalog 1.000 (hesap ge
   expect(getVinLookupBaseQuota(wsFields({ addons: ["partsCatalog"] }))).toBe(1_000)
   expect(getVinLookupBaseQuota(wsFields({ addons: ["ocrIntake"] }))).toBe(0)
   expect(getVinLookupBaseQuota(wsFields({ planTier: "premium" }))).toBe(15_000)
+})
+
+test("satılmayan ek özellik kapıları ADDON_CATALOG'daki purchasable:false ile aynı", () => {
+  const catalogContactOnly = ADDON_CATALOG.filter((a) => !a.purchasable).flatMap((a) => [...a.features])
+  expect([...CONTACT_ONLY_ADDON_FEATURES].sort()).toEqual(catalogContactOnly.sort())
 })

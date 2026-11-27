@@ -1,4 +1,6 @@
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
+import { statusToneBadgeVariant, type StatusTone } from "@/lib/status-tone"
+import { Badge } from "@/components/ui/badge"
 import type { DelayedJobRow } from "@/lib/analytics/queries"
 import Link from "next/link"
 import { formatTRY } from "@/lib/format"
@@ -11,10 +13,10 @@ function daysLabel(days: number): string {
   return `${days} gün`
 }
 
-function statusBadge(status: string): { label: string; color: string } | null {
+function statusBadge(status: string): { label: string; tone: StatusTone } | null {
   const s = ORDER_STATUS[status as keyof typeof ORDER_STATUS]
   if (!s) return null
-  return { label: s.label, color: s.color }
+  return { label: s.label, tone: s.tone }
 }
 
 export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
@@ -60,9 +62,9 @@ export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
                       {job.workOrderNo}
                     </Link>
                     {badge && (
-                      <span className={`ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${badge.color}`}>
+                      <Badge variant={statusToneBadgeVariant(badge.tone)} className="ml-2 rounded-md px-1.5 text-[10px]">
                         {badge.label}
-                      </span>
+                      </Badge>
                     )}
                   </TableCell>
                   <TableCell className="px-4 py-2">

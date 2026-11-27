@@ -4,9 +4,10 @@ for (const width of [390, 1440]) {
   test(`live order search and filters keep the toolbar mounted at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.goto("/api/auth/dev-login?redirect=/orders")
-    const search = page.getByRole("textbox", { name: "İş emri ara", exact: true })
-    const results = page.getByLabel("İş emri sonuçları", { exact: true })
+    const search = page.getByRole("textbox", { name: "Araç kabulü ara", exact: true })
+    const results = page.getByLabel("Araç kabul sonuçları", { exact: true })
     await expect(search).toBeVisible()
+    await page.getByRole("button", { name: "Filtreler", exact: false }).click()
     await search.evaluate((input) => { input.dataset.mountMarker = "original" })
     let documentRequests = 0
     page.on("request", (request) => {
@@ -22,15 +23,15 @@ for (const width of [390, 1440]) {
     })
     await search.fill("no-match-live-724")
     await expect(results).toHaveAttribute("aria-busy", "true")
-    await expect(results.getByRole("status", { name: "İş emirleri yükleniyor…" })).toBeVisible()
-    await expect(results.getByRole("status", { name: "İş emirleri yükleniyor…" })).toBeInViewport()
+    await expect(results.getByRole("status", { name: "Araç kabulleri yükleniyor…" })).toBeVisible()
+    await expect(results.getByRole("status", { name: "Araç kabulleri yükleniyor…" })).toBeInViewport()
     await expect(search).toBeFocused()
     await expect(search).toHaveAttribute("data-mount-marker", "original")
     await page.screenshot({ path: test.info().outputPath(`orders-${width}-loading.png`) })
     releaseResponse()
     await expect(page).toHaveURL(/q=no-match-live-724/)
     await expect(results).toHaveAttribute("aria-busy", "false")
-    await expect(page.getByText("Filtrelere uyan iş emri bulunamadı", { exact: true })).toBeVisible()
+    await expect(page.getByText("Filtrelere uyan araç kabulü bulunamadı", { exact: true })).toBeVisible()
 
     // No Enter: the server must actually return matching rows as text changes.
     await search.fill("34")
@@ -63,8 +64,9 @@ for (const width of [390, 1440]) {
 
 test("a pending search does not restore old text or erase a newer filter selection", async ({ page }) => {
   await page.goto("/api/auth/dev-login?redirect=/orders")
-  const search = page.getByRole("textbox", { name: "İş emri ara", exact: true })
+  const search = page.getByRole("textbox", { name: "Araç kabulü ara", exact: true })
   await expect(search).toBeVisible()
+  await page.getByRole("button", { name: "Filtreler", exact: false }).click()
   let releaseResponse!: () => void
   const responseGate = new Promise<void>((resolve) => { releaseResponse = resolve })
   await page.route("**/orders?**", async (route) => {
@@ -72,7 +74,7 @@ test("a pending search does not restore old text or erase a newer filter selecti
     await route.continue()
   })
   await search.fill("old-search-724")
-  await expect(page.getByLabel("İş emri sonuçları", { exact: true })).toHaveAttribute("aria-busy", "true")
+  await expect(page.getByLabel("Araç kabul sonuçları", { exact: true })).toHaveAttribute("aria-busy", "true")
   await search.fill("34")
   releaseResponse()
   await expect(page).toHaveURL(/q=34/)
@@ -84,7 +86,7 @@ test("a pending search does not restore old text or erase a newer filter selecti
   await expect(page).toHaveURL(/q=no-match-final-724/)
   await expect(page).toHaveURL(/payment=unpaid/)
   await expect(search).toHaveValue("no-match-final-724")
-  await expect(page.getByText("Filtrelere uyan iş emri bulunamadı", { exact: true })).toBeVisible()
+  await expect(page.getByText("Filtrelere uyan araç kabulü bulunamadı", { exact: true })).toBeVisible()
   await search.fill("pending-clear-724")
   await page.getByRole("link", { name: "Temizle", exact: true }).click()
   await expect(page).toHaveURL(/\/orders$/)

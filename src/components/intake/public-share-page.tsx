@@ -1,5 +1,6 @@
 "use client"
 
+import { StatusPill } from "@/components/shared/status-badge"
 import { VehicleDamageMap } from "@/components/damage/vehicle-damage-map"
 import type { BodyType } from "@/components/damage/vehicle-geometry"
 import { useState } from "react"
@@ -182,9 +183,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
         {/* Status banner */}
         <div className="flex items-center justify-between print:hidden">
           <h2 className="text-lg font-semibold">Araç Kabul Detayı</h2>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusInfo?.color || "bg-muted text-muted-foreground"}`}>
-            {statusInfo?.label || intakeForm.status}
-          </span>
+          <StatusPill label={statusInfo?.label || intakeForm.status} tone={statusInfo?.tone} size="md" />
         </div>
 
         <div className="hidden print:flex print:items-center print:justify-between">

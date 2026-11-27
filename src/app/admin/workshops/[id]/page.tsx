@@ -268,8 +268,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
             <div className="space-y-1.5">
               <p className="text-xs text-muted-foreground">Temsilci</p>
               <Badge
-                variant="outline"
-                className={acquisitionAdvisorName ? "bg-primary/10 text-primary-strong" : "bg-muted text-muted-foreground"}
+                variant={acquisitionAdvisorName ? "primary-tint" : "secondary"}
               >
                 {acquisitionAdvisorName ?? "Atanmadı"}
               </Badge>
@@ -307,7 +306,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
                 <TableRow key={u.id}>
                   <TableCell className={cn("max-w-48 truncate font-medium", !u.isActive && "text-muted-foreground line-through")}>{u.email ?? u.username ?? "—"}</TableCell>
                   <TableCell><Badge variant="outline" className="bg-muted text-muted-foreground">{ROLE_LABELS[u.role]}</Badge></TableCell>
-                  <TableCell><Badge variant="outline" className={u.isActive ? "bg-success/10 text-success-strong" : "bg-destructive/10 text-destructive-strong"}>{u.isActive ? "Aktif" : "Pasif"}</Badge></TableCell>
+                  <TableCell><Badge variant={u.isActive ? "success-tint" : "destructive-tint"}>{u.isActive ? "Aktif" : "Pasif"}</Badge></TableCell>
                   <TableCell className="text-right">{(canManageTeam || (canSendReset && u.isActive && u.email)) && <WorkshopUserActions workshopId={workshop.id} user={{ id: u.id, email: u.email, isActive: u.isActive, role: u.role }} canManage={canManageTeam} canSendReset={canSendReset} />}</TableCell>
                 </TableRow>
               ))}</TableBody>
@@ -386,15 +385,14 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
                       <TableCell className="text-right font-medium">{formatMinor(order.amountMinor)}</TableCell>
                       <TableCell>
                         <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[11px]",
+                          variant={
                             order.status === "confirmed"
-                              ? "bg-success/10 text-success-strong"
+                              ? "success-tint"
                               : order.status === "cancelled"
-                                ? "bg-muted text-muted-foreground"
-                                : "bg-warning/10 text-warning-strong",
-                          )}
+                                ? "secondary"
+                                : "warning-tint"
+                          }
+                          className="text-[11px]"
                         >
                           {ORDER_STATUS_LABELS[order.status] ?? order.status}
                         </Badge>

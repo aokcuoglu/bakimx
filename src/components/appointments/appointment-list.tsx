@@ -1,5 +1,6 @@
 "use client"
 
+import { StatusPill } from "@/components/shared/status-badge"
 import Link from "next/link"
 import { AppointmentStatusBadge } from "@/components/appointments/appointment-status-badge"
 import { Plate } from "@/components/shared/plate"
@@ -48,13 +49,7 @@ type StatusCounts = {
 
 function ReminderStatusBadge({ status }: { status: string }) {
   const info = REMINDER_STATUS[status as keyof typeof REMINDER_STATUS]
-  const label = info?.label || status
-  const color = info?.color || "bg-muted text-muted-foreground border-border"
-  return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full border font-medium whitespace-nowrap h-5 px-2 text-[11px]", color)}>
-      {label}
-    </span>
-  )
+  return <StatusPill label={info?.label || status} tone={info?.tone} />
 }
 
 export function AppointmentList({

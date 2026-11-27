@@ -13,6 +13,7 @@ import {
   partsRequestEditSchema,
   partsRequestSchema,
 } from "@/lib/validations/technician"
+import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { partsRequestToItemFields, partsRequestTypeLabel } from "@/lib/orders/parts-request-item"
 import { canTransitionOrder, isOrderLocked } from "@/lib/status-transitions"
 import { seedChecklistFromTemplate } from "@/lib/technician/checklist-seed"
@@ -21,15 +22,87 @@ import {
   countIncompleteItems,
   completeWorkBlockMessage,
 } from "@/lib/technician/gates"
-import type { OrderStatus } from "@prisma/client"
+import {
+  closeOpenSessions,
+  decideStart,
+  type ClosedLaborSession,
+} from "@/lib/technician/labor-session-close"
+import type { OrderStatus, Prisma } from "@prisma/client"
 
 const ORDER_LOCKED_ERROR = "Teslim edilmiş veya iptal edilmiş araç kabulü düzenlenemez"
 
 /** Talebin fiziksel teslimat akışı; `cancelled` bu akışın dışında bir karardır. */
 const PHYSICAL_PARTS_REQUEST_STATUSES: readonly string[] = ["requested", "prepared", "delivered"]
 
+const STATUS_RACED_ERROR = "Durum bu sırada değişti, sayfayı yenileyin"
+
 const PARTS_REQUEST_CANCELLED_ERROR = "Bu talep iptal edilmiş; önce iptali geri alın"
 const PARTS_REQUEST_CONVERTED_ERROR = "Bu talep kaleme eklendi; değişiklik araç kabul kalemi üzerinden yapılır"
+
+/**
+ * Açık işçilik oturumlarını kapatır. `tx` hem `prisma` hem transaction
+ * istemcisi olabilir; çağıran kendi atomikliğini kurar. Karar mantığı
+ * `closeOpenSessions`'tadır (testli); burada yalnız Prisma bağlanır.
+ * Denetim kaydı çağıranın işidir ve commit'ten SONRA yazılır.
+ */
+function closeActiveLaborSession(
+  tx: Prisma.TransactionClient,
+  workshopId: string,
+  orderId: string,
+  note?: string | null,
+) {
+  return closeOpenSessions(
+    {
+      listOpen: () =>
+        tx.laborSession.findMany({
+          where: { serviceOrderId: orderId, workshopId, endTime: null },
+          select: { id: true, startTime: true },
+        }),
+      closeOne: async (id, data) =>
+        (await tx.laborSession.updateMany({ where: { id, workshopId, endTime: null }, data })).count,
+    },
+    new Date(),
+    note,
+  )
+}
+
+async function auditLaborStopped(
+  workshopId: string,
+  userId: string,
+  orderId: string,
+  sessions: ClosedLaborSession[],
+) {
+  for (const c of sessions) await auditOneLaborStopped(workshopId, userId, orderId, c)
+}
+
+function auditOneLaborStopped(
+  workshopId: string,
+  userId: string,
+  orderId: string,
+  c: ClosedLaborSession,
+) {
+  return AuditLogAction(
+    workshopId,
+    userId,
+    "LaborSession",
+    c.sessionId,
+    "labor_session_stopped",
+    JSON.stringify({
+      startTime: c.startTime.toISOString(),
+      endTime: c.endTime.toISOString(),
+      durationMinutes: c.durationMinutes,
+      note: c.note,
+    }),
+    orderId,
+  )
+}
+
+function revalidateWorkOrder(orderId: string) {
+  revalidatePath(`/technician/orders/${orderId}`)
+  revalidatePath("/technician")
+  revalidatePath(`/orders/${orderId}`)
+  revalidatePath("/orders")
+}
 
 export async function assignTechnicianAction(orderId: string, technicianId: string) {
   const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
@@ -109,7 +182,15 @@ export async function unassignTechnicianAction(orderId: string) {
   return { success: true }
 }
 
-export async function startWorkAction(orderId: string) {
+/**
+ * Kiosk "İşi Başlat / Devam Et" tuşu: durum Serviste'ye geçer VE işçilik sayacı
+ * başlar — tek transaction, biri yazılıp öteki kalmaz. İş kuralı kardeşleriyle
+ * aynı (`canTransitionOrder`, kilit); yeni kural yok.
+ *
+ * Çift dokunuş: sipariş satırı `FOR UPDATE` ile kilitlenir, ikinci istek ilkini
+ * bekler ve açık oturumu görür → hata değil `timerStarted: false`.
+ */
+export async function startWorkWithTimerAction(orderId: string) {
   const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
   const { user } = await requireWritableWorkshop("order.status")
 
@@ -117,31 +198,72 @@ export async function startWorkAction(orderId: string) {
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "Araç kabulü bulunamadı" }
-  if (!canTransitionOrder(order.status as OrderStatus, "in_progress")) {
-    return { error: "Bu durum geçişine izin verilmiyor" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  const outcome = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "ServiceOrder" WHERE id = ${orderId} AND "workshopId" = ${user.workshopId} FOR UPDATE`
+
+    // Kilit alındıktan sonra güncel durum okunur: bekleyen istek başka bir
+    // oturumun yazdığı durumu görür.
+    const fresh = await tx.serviceOrder.findFirst({
+      where: { id: orderId, workshopId: user.workshopId },
+      select: { status: true },
+    })
+    if (!fresh) return { error: "Araç kabulü bulunamadı" } as const
+
+    const hasActive =
+      (await tx.laborSession.findFirst({
+        where: { serviceOrderId: orderId, workshopId: user.workshopId, endTime: null },
+        select: { id: true },
+      })) != null
+    const decision = decideStart(fresh.status, hasActive)
+    if ("error" in decision) return { error: decision.error } as const
+
+    const statusChanged = decision.statusChanged
+    if (statusChanged) {
+      const moved = await tx.serviceOrder.updateMany({
+        where: { id: orderId, workshopId: user.workshopId, status: fresh.status },
+        data: { status: "in_progress" },
+      })
+      if (moved.count === 0) return { error: STATUS_RACED_ERROR } as const
+    }
+
+    if (!decision.createSession) return { statusChanged, timerStarted: false, session: null } as const
+    const session = await tx.laborSession.create({
+      data: { workshopId: user.workshopId, serviceOrderId: orderId, startTime: new Date() },
+    })
+    return { statusChanged, timerStarted: true, session } as const
+  })
+
+  if ("error" in outcome) return { error: outcome.error }
+
+  if (outcome.statusChanged) {
+    await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "work_started")
+    await addTimelineEvent({
+      workshopId: user.workshopId,
+      intakeFormId: order.intakeFormId,
+      eventType: "work_started",
+      description: "Tamire başlandı",
+    })
+  }
+  if (outcome.timerStarted && outcome.session) {
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "LaborSession",
+      outcome.session.id,
+      "labor_session_started",
+      JSON.stringify({ startTime: outcome.session.startTime.toISOString() }),
+      orderId,
+    )
   }
 
-  // Kontrol listesi burada BİLİNÇLİ olarak okunmuyor: eksik kontrol maddesi
-  // artık tamire başlamayı engellemiyor (BAK-24, gerekçe `gates.ts` başında).
-  await prisma.serviceOrder.updateMany({
-    where: { id: orderId, workshopId: user.workshopId },
-    data: { status: "in_progress" },
-  })
-
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "work_started")
-
-  await addTimelineEvent({
-    workshopId: user.workshopId,
-    intakeFormId: order.intakeFormId,
-    eventType: "work_started",
-    description: "Tamire başlandı",
-  })
-
-  revalidatePath(`/technician/orders/${orderId}`)
-  revalidatePath("/technician")
-  revalidatePath(`/orders/${orderId}`)
-  revalidatePath("/orders")
-  return { success: true }
+  revalidateWorkOrder(orderId)
+  return {
+    success: true as const,
+    statusChanged: outcome.statusChanged,
+    timerStarted: outcome.timerStarted,
+  }
 }
 
 export async function holdWorkAction(orderId: string) {
@@ -156,10 +278,19 @@ export async function holdWorkAction(orderId: string) {
     return { error: "Bu durum geçişine izin verilmiyor" }
   }
 
-  await prisma.serviceOrder.updateMany({
-    where: { id: orderId, workshopId: user.workshopId },
-    data: { status: "waiting_parts" },
+  // Parça bekleyen işte sayaç akmamalı: durum ve sayaç kapatma tek transaction.
+  // Koşullu yazma (`status: order.status`): iki sekmeden gelen çakışan geçiş
+  // sessizce ezilmez; kaybeden hata alır ve denetim/zaman çizelgesi yazılmaz.
+  const outcome = await prisma.$transaction(async (tx) => {
+    const moved = await tx.serviceOrder.updateMany({
+      where: { id: orderId, workshopId: user.workshopId, status: order.status },
+      data: { status: "waiting_parts" },
+    })
+    if (moved.count === 0) return null
+    return closeActiveLaborSession(tx, user.workshopId, orderId)
   })
+  if (!outcome) return { error: STATUS_RACED_ERROR }
+  if (outcome.status === "closed") await auditLaborStopped(user.workshopId, user.id, orderId, outcome.sessions)
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "work_on_hold")
 
@@ -198,13 +329,20 @@ export async function completeWorkAction(orderId: string) {
   const completeBlock = completeWorkBlockMessage(countIncompleteItems(items))
   if (completeBlock) return { error: completeBlock }
 
-  await prisma.serviceOrder.updateMany({
-    where: { id: orderId, workshopId: user.workshopId },
-    data: {
-      status: "ready_for_delivery",
-      completedAt: new Date(),
-    },
+  // Biten işte açık sayaç kalmamalı: durum + completedAt + sayaç kapatma tek transaction.
+  const outcome = await prisma.$transaction(async (tx) => {
+    const moved = await tx.serviceOrder.updateMany({
+      where: { id: orderId, workshopId: user.workshopId, status: order.status },
+      data: {
+        status: "ready_for_delivery",
+        completedAt: new Date(),
+      },
+    })
+    if (moved.count === 0) return null
+    return closeActiveLaborSession(tx, user.workshopId, orderId)
   })
+  if (!outcome) return { error: STATUS_RACED_ERROR }
+  if (outcome.status === "closed") await auditLaborStopped(user.workshopId, user.id, orderId, outcome.sessions)
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "work_completed")
 
@@ -674,47 +812,6 @@ export async function updatePartsRequestStatusAction(requestId: string, status: 
   return { success: true }
 }
 
-export async function startLaborSessionAction(orderId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
-  const { user } = await requireWritableWorkshop("order.status")
-
-  const order = await prisma.serviceOrder.findFirst({
-    where: { id: orderId, workshopId: user.workshopId },
-  })
-  if (!order) return { error: "Araç kabulü bulunamadı" }
-  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
-
-  const activeSession = await prisma.laborSession.findFirst({
-    where: { serviceOrderId: orderId, workshopId: user.workshopId, endTime: null },
-  })
-  if (activeSession) return { error: "Zaten aktif bir işçilik oturumu var" }
-
-  const created = await prisma.laborSession.create({
-    data: {
-      workshopId: user.workshopId,
-      serviceOrderId: orderId,
-      startTime: new Date(),
-    },
-  })
-
-  // BAK-138: Sayaç olayları da denetim kaydına düşer. Gerekçe: kayıt sonradan
-  // elle düzeltilebiliyor; "saat sayaçtan mı geldi, elle mi girildi" sorusunun
-  // cevabı yalnız bu satırlar varsa kalıcı olur.
-  await AuditLogAction(
-    user.workshopId,
-    user.id,
-    "LaborSession",
-    created.id,
-    "labor_session_started",
-    JSON.stringify({ startTime: created.startTime.toISOString() }),
-    orderId,
-  )
-
-  revalidatePath(`/technician/orders/${orderId}`)
-  revalidatePath(`/orders/${orderId}`)
-  return { success: true }
-}
-
 /**
  * Sayacı durdurur. `note` opsiyoneldir — teknisyen "bu sürede ne yaptım"ı
  * bitirirken yazabilir, boş bırakıp sonradan da ekleyebilir (BAK-138).
@@ -726,47 +823,16 @@ export async function stopLaborSessionAction(orderId: string, note?: string) {
   const parsed = laborSessionNoteSchema.safeParse({ note: note ?? "" })
   if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Geçersiz açıklama" }
 
-  const activeSession = await prisma.laborSession.findFirst({
-    where: { serviceOrderId: orderId, workshopId: user.workshopId, endTime: null },
-  })
-  if (!activeSession) return { error: "Aktif işçilik oturumu bulunamadı" }
+  const closed = await closeActiveLaborSession(prisma, user.workshopId, orderId, parsed.data.note)
+  if (closed.status === "none") return { error: "Aktif işçilik oturumu bulunamadı" }
+  // Koşullu yazma: iki sekmeden aynı anda "Durdur" basılırsa ikincisi kaybeder.
+  if (closed.status === "raced") return { error: "İşçilik bu sırada durduruldu, sayfayı yenileyin" }
 
-  const now = new Date()
-  const durationMs = now.getTime() - activeSession.startTime.getTime()
-  const durationMinutes = Math.round(durationMs / 60000)
-  const cleanNote = parsed.data.note?.trim() || null
-
-  // Koşullu yazma (`endTime: null`): iki sekmeden aynı anda "Durdur" basılırsa
-  // ikincisi kaybeder ve bitmiş bir kaydın saati sessizce ezilmez.
-  const stopped = await prisma.laborSession.updateMany({
-    where: { id: activeSession.id, workshopId: user.workshopId, endTime: null },
-    data: {
-      endTime: now,
-      durationMinutes,
-      // Not YALNIZ doluysa yazılır: boş gönderim var olan bir notu silmesin.
-      ...(cleanNote ? { note: cleanNote } : {}),
-    },
-  })
-  if (stopped.count === 0) return { error: "İşçilik bu sırada durduruldu, sayfayı yenileyin" }
-
-  await AuditLogAction(
-    user.workshopId,
-    user.id,
-    "LaborSession",
-    activeSession.id,
-    "labor_session_stopped",
-    JSON.stringify({
-      startTime: activeSession.startTime.toISOString(),
-      endTime: now.toISOString(),
-      durationMinutes,
-      note: cleanNote,
-    }),
-    orderId,
-  )
+  await auditLaborStopped(user.workshopId, user.id, orderId, closed.sessions)
 
   revalidatePath(`/technician/orders/${orderId}`)
   revalidatePath(`/orders/${orderId}`)
-  return { success: true, durationMinutes }
+  return { success: true, durationMinutes: closed.sessions.reduce((n, c) => n + c.durationMinutes, 0) }
 }
 
 /**
@@ -1036,6 +1102,8 @@ export async function convertPartsRequestToOrderItemAction(requestId: string) {
         ...partsRequestToItemFields(request),
       },
     })
+    // Yeni kalem toplamı değiştirir (saklanan toplam — liste sıralaması, #831).
+    await recalcOrderPayment(tx, request.serviceOrderId, user.workshopId)
     return true
   })
   if (!converted) return { error: "Bu talep zaten kaleme eklendi" }

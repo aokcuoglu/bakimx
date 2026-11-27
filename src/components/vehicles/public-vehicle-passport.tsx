@@ -1,5 +1,7 @@
 "use client"
 
+import { statusToneBadgeVariant } from "@/lib/status-tone"
+import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
@@ -302,13 +304,13 @@ export function PublicVehiclePassportPage({
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       {wo.workOrderNo && <span className="font-mono text-xs font-semibold text-muted-foreground">{wo.workOrderNo}</span>}
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ORDER_STATUS[wo.status as keyof typeof ORDER_STATUS]?.color || "bg-muted text-muted-foreground"}`}>
+                      <Badge variant={statusToneBadgeVariant(ORDER_STATUS[wo.status as keyof typeof ORDER_STATUS]?.tone)}>
                         {wo.statusLabel}
-                      </span>
+                      </Badge>
                       {wo.paymentStatusLabel && passportToken.showPaymentStatus && wo.paymentStatus && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PAYMENT_STATUS[wo.paymentStatus as keyof typeof PAYMENT_STATUS]?.color || "bg-muted text-muted-foreground"}`}>
+                        <Badge variant={statusToneBadgeVariant(PAYMENT_STATUS[wo.paymentStatus as keyof typeof PAYMENT_STATUS]?.tone)}>
                           {wo.paymentStatusLabel}
-                        </span>
+                        </Badge>
                       )}
                     </div>
                     <span className="text-xs text-muted-foreground">{fmtDate(wo.createdAt)}</span>
@@ -404,10 +406,10 @@ export function PublicVehiclePassportPage({
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-foreground">{r.title}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-foreground rounded-full border border-primary/20">{r.typeLabel}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${MAINTENANCE_REMINDER_STATUS[r.status as keyof typeof MAINTENANCE_REMINDER_STATUS]?.color || "bg-muted text-muted-foreground border-border"}`}>
+                      <Badge variant="primary-tint" className="text-[10px]">{r.typeLabel}</Badge>
+                      <Badge variant={statusToneBadgeVariant(MAINTENANCE_REMINDER_STATUS[r.status as keyof typeof MAINTENANCE_REMINDER_STATUS]?.tone)} className="text-[10px]">
                         {r.statusLabel}
-                      </span>
+                      </Badge>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                       {r.dueDate && <span className="inline-flex items-center gap-1"><Calendar className="size-3" />{fmtDate(r.dueDate)}</span>}

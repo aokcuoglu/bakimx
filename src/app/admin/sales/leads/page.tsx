@@ -154,8 +154,7 @@ export default async function SalesLeadsPage({
                   <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><UserRound className="size-3.5" />{lead.contactName}</p>
                 </div>
                 <Badge
-                  variant={lead.status === "lost" ? "destructive" : "outline"}
-                  className={lead.status === "won" ? "border-success/20 bg-success/10 text-success-strong" : undefined}
+                  variant={lead.status === "lost" ? "destructive" : lead.status === "won" ? "success-tint" : "outline"}
                 >
                   {STATUS_LABELS[lead.status]}
                 </Badge>
