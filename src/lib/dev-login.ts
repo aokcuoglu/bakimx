@@ -32,3 +32,29 @@ export function safeRedirectPath(raw: string | null, fallback = "/dashboard"): s
   if (raw.includes("\\")) return fallback
   return raw
 }
+
+export type DevLoginTarget =
+  | { kind: "email"; email: string }
+  | { kind: "username"; username: string; workshopCode: string }
+  | { kind: "invalid"; error: string }
+
+/**
+ * Hangi kullanıcıyla oturum açılacağı. `username` verilirse gerçek girişteki
+ * gibi `(iş yeri giriş kodu, kullanıcı adı)` ikilisiyle çözülür — kullanıcı
+ * adları yalnız tenant içinde benzersizdir, bu yüzden `code` zorunludur.
+ * `username` yoksa eski `email` yolu aynen çalışır.
+ */
+export function parseDevLoginTarget(params: URLSearchParams): DevLoginTarget {
+  const username = (params.get("username") || "").trim().toLowerCase()
+  if (username) {
+    const workshopCode = (params.get("code") || "").trim().toLowerCase()
+    if (!workshopCode) {
+      return { kind: "invalid", error: "username ile birlikte code (iş yeri giriş kodu) gerekli." }
+    }
+    return { kind: "username", username, workshopCode }
+  }
+  return {
+    kind: "email",
+    email: (params.get("email") || "admin@bakimx.com").trim().toLowerCase(),
+  }
+}
