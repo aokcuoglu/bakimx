@@ -36,6 +36,7 @@ const ALLOWLIST: Record<string, string> = {
   "components/vehicles/public-vehicle-passport.tsx": "herkese açık sayfa — #920 dilim 5",
   "components/vehicles/ruhsattan-oku.tsx": "etkileşimli ruhsat okuma paneli (kamera/dosya), uyarı değil",
   "components/technician/technician-order-detail.tsx": "not satırı (liste öğesi), uyarı değil",
+  "components/technician/work-screen/work-details.tsx": "iç not satırı (silme düğmeli liste öğesi), uyarı değil",
   "components/technician/purchase-form-sheet.tsx": "bağlı kalem özeti ve OCR öneri paneli (etkileşimli), uyarı değil",
   "components/billing/purchase-wizard.tsx": "seçili paket kartı (seçili-durum vurgusu), uyarı değil",
 }
