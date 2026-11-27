@@ -16,7 +16,7 @@ import { formatTrLongDate } from "@/lib/format-date"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { TRIAL_INCLUDES_ADDONS } from "@/lib/plan"
 import { getReferralDiscountBps } from "@/lib/billing/referral-discount"
-import { getWorkshopQuotaContext, getWorkshopQuotaUsage } from "@/lib/rapidapi-quota"
+import { resolveWorkshopQuotaContext, getWorkshopQuotaUsage } from "@/lib/rapidapi-quota"
 import { Alert } from "@/components/ui/alert"
 
 export const metadata = { title: "Faturalandırma" }
@@ -31,7 +31,7 @@ export default async function SettingsBillingPage({ searchParams }: {
   const { user, workshop, plan, ownedTier, planName, pendingOrder, seatUsage, canPurchase } = await getAccountBillingContext()
   const sp = await searchParams
   const [quota, orders] = await Promise.all([
-    getWorkshopQuotaUsage(getWorkshopQuotaContext(workshop)),
+    resolveWorkshopQuotaContext(workshop).then((context) => getWorkshopQuotaUsage(context)),
     prisma.billingOrder.findMany({
       where: { workshopId: workshop.id, status: "confirmed" },
       orderBy: { confirmedAt: "desc" },

@@ -49,14 +49,8 @@ const INTENTIONAL: Record<string, string> = {
   "components/ui/calendar.tsx": "takvim ilkeli; günleri ve ay adlarını kullanıcının yerel saatinde çizer",
 }
 
-/** Henüz `@/lib/format-date`'e geçmemiş çağrılar. Boşaldıkça silinir. */
-const PENDING_MIGRATION: Record<string, string> = {
-  "app/admin/sales/sales-console.tsx": "#875",
-  "app/admin/workshop-actions.tsx": "#875",
-  "components/intake/damage-capture.tsx": "#875",
-  "components/orders/parts-labor-grid.tsx": "#875",
-  "components/technician/technician-order-detail.tsx": "#875",
-}
+/** Henüz `@/lib/format-date`'e geçmemiş çağrılar. Boşaldıkça silinir (#875: şu an boş). */
+const PENDING_MIGRATION: Record<string, string> = {}
 
 /** `(`'ten başlayıp dengeli kapanan `)`'e kadar olan metni verir. */
 function balancedArgs(source: string, openIndex: number): string {

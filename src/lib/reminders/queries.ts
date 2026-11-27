@@ -1,6 +1,4 @@
 import { prisma } from "@/lib/db"
-import { istanbulDayStart } from "@/lib/istanbul-time"
-import { resolveReminderDueWindow } from "@/lib/reminders/date-filter"
 
 export type ReminderRow = {
   id: string
@@ -78,7 +76,6 @@ export async function getRemindersList(workshopId: string, filters?: {
   status?: string
   type?: string
   search?: string
-  dateFilter?: string
 }): Promise<ReminderRow[]> {
   const where: Record<string, unknown> = { workshopId }
 
@@ -88,17 +85,6 @@ export async function getRemindersList(workshopId: string, filters?: {
   if (filters?.type) {
     where.type = filters.type
   }
-  if (filters?.dateFilter) {
-    // Gün sınırları Türkiye takvimine göre (#904) — süreç TZ'sinden bağımsız.
-    const window = resolveReminderDueWindow(filters.dateFilter)
-    if (window) {
-      where.dueDate = window
-    } else if (filters.dateFilter === "overdue") {
-      where.dueDate = { lt: istanbulDayStart() }
-      where.status = { notIn: ["completed", "cancelled"] }
-    }
-  }
-
   if (filters?.search) {
     const q = filters.search
     where.OR = [
