@@ -139,6 +139,19 @@ metin `text-muted-foreground-strong`. `on-photo-scrim` — fotoğraf üstünde
 yüzen galeri okları: `bg-black/60` (`on-photo`'nun %10 beyazı aydınlık
 fotoğrafta okunmaz).
 
+**Ton variant'ları, dilim 3** (#1003): `tint-ghost` — satır içi birincil eylem
+(ekle, değiştir, aç): çerçevesiz, `text-primary-strong`, hover `bg-primary/10`.
+`success-ghost` — satır içi tamamla / onayla: `text-success-strong`, hover
+`bg-success/10`. Çağrı yerinde `variant="ghost"` + `text-primary` /
+`text-success-strong` yazılmaz (kapı: öneksiz ya da kırılım / koyu önekli
+`text-primary(-strong)` / `text-success(-strong)`; `hover:` ve `data-[state=on]:`
+durum renkleri serbest). Menü satırı: yıkıcı `DropdownMenuItem`
+`variant="destructive"` yazar, `text-destructive-strong` / `data-highlighted:`
+elle yazılmaz. Yıkıcı hover kontrastı ölçüldü: `destructive` açık hover `/14`,
+koyuda dinlenme ve hover `/10`; `destructive-outline` koyu hover `/10` (eski
+`/20` ve `/30` bg-muted üstünde 3.4–4.0:1 idi). Ölçüm (kart / sayfa / bg-muted,
+hover dahil): açık 5.06 / 4.57 / 4.65, koyu 5.65 / 6.22 / 4.60.
+
 **Button `row`** satırları variant'tan bağımsız aynı çerçeve kutusundadır
 (kenarlıksız variant'lar şeffaf 1px çerçeve alır): seçili `secondary` satır
 `outline` komşularından kısa kalmaz, seçim değişince satır kaymaz. Hayalet

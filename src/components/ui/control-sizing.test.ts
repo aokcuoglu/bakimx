@@ -143,6 +143,25 @@ describe("kontrol ölçeği — e-santral (mobil 44px / masaüstü 36px)", () =>
     expect(page).toContain('variant="on-photo-scrim"')
   })
 
+  /** #1003 — dilim 3: renkli hayalet variant'lar ve yıkıcı hover kontrastı. */
+  test("dilim 3: tint-ghost / success-ghost tanımlı ve çerçevesiz, yıkıcı hover kontrastı korunur (#1003)", () => {
+    const button = read("./button.tsx")
+    for (const key of ['"tint-ghost":', '"success-ghost":']) expect(button).toContain(`        ${key}`)
+    const noBorder = button.slice(button.indexOf("const NO_BORDER_VARIANTS"), button.indexOf("] as const"))
+    expect(noBorder).toContain('"tint-ghost",')
+    expect(noBorder).toContain('"success-ghost",')
+    // Ölçüm: -strong metin yıkıcı hover zemininde kart / sayfa / bg-muted üstünde
+    // açıkta /14'ü, koyuda /10'u aşan dolguyla 4.5:1'in altına iner.
+    for (const key of ['        destructive:\n', '"destructive-outline":']) {
+      const start = button.indexOf(key)
+      const body = button.slice(start, button.indexOf("\n", button.indexOf('",', start)))
+      expect(body).not.toMatch(/hover:bg-destructive\/(?:2|3)\d/)
+      expect(body).not.toMatch(/dark:(?:hover:)?bg-destructive\/(?:1[1-9]|[2-9]\d)/)
+    }
+    const page = read("../../app/design/page.tsx")
+    for (const variant of ["tint-ghost", "success-ghost"]) expect(page).toContain(`["${variant}", `)
+  })
+
   test("Input, Select, Textarea ve InputGroup değişkenden ölçülür", () => {
     for (const file of ["./input.tsx", "./select.tsx", "./textarea.tsx", "./input-group.tsx"]) {
       expect(read(file)).not.toMatch(/(?:sm|md|lg|xl):(?:h|min-h|px|pl|pr|text|rounded)-/)

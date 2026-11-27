@@ -493,10 +493,10 @@ export function OrderPaymentCard({
           </p>
         ) : totals.discountAmount === 0 && totals.taxAmount === 0 ? (
           <Button
-            variant="ghost"
+            variant="tint-ghost"
             onClick={() => setEditingMeta(true)}
             size="sm"
-            className="w-full text-primary hover:text-primary"
+            className="w-full"
           >
             <Plus className="size-3.5 mr-1" /> İndirim / KDV ekle
           </Button>
