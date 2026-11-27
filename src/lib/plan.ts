@@ -341,7 +341,7 @@ export function normalizeAddons(addons: readonly string[] | null | undefined): A
 export interface PlanState {
   /** Persisted billing tier. */
   tier: PlanTier
-  /** Entitlement tier used by feature, seat and quota checks. Trials resolve to TRIAL_ACCESS_TIER. */
+  /** Entitlement tier used by feature and quota checks. Trials resolve to TRIAL_ACCESS_TIER. Seats do NOT follow it — use `includedSeats` / `getEffectiveSeatLimit` (#938). */
   accessTier: PlanTier
   /** Seats included before `extraSeats`. Active trials get TRIAL_SEAT_LIMIT, not the trial tier's seats. */
   includedSeats: number
