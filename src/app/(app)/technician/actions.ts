@@ -21,7 +21,11 @@ import {
   countIncompleteItems,
   completeWorkBlockMessage,
 } from "@/lib/technician/gates"
-import { workPrimaryAction } from "@/lib/technician/work-screen"
+import {
+  closeOpenSessions,
+  decideStart,
+  type ClosedLaborSession,
+} from "@/lib/technician/labor-session-close"
 import type { OrderStatus, Prisma } from "@prisma/client"
 
 const ORDER_LOCKED_ERROR = "Teslim edilmiş veya iptal edilmiş araç kabulü düzenlenemez"
@@ -29,60 +33,48 @@ const ORDER_LOCKED_ERROR = "Teslim edilmiş veya iptal edilmiş araç kabulü d�
 /** Talebin fiziksel teslimat akışı; `cancelled` bu akışın dışında bir karardır. */
 const PHYSICAL_PARTS_REQUEST_STATUSES: readonly string[] = ["requested", "prepared", "delivered"]
 
+const STATUS_RACED_ERROR = "Durum bu sırada değişti, sayfayı yenileyin"
+
 const PARTS_REQUEST_CANCELLED_ERROR = "Bu talep iptal edilmiş; önce iptali geri alın"
 const PARTS_REQUEST_CONVERTED_ERROR = "Bu talep kaleme eklendi; değişiklik araç kabul kalemi üzerinden yapılır"
 
-type ClosedLaborSession = {
-  sessionId: string
-  startTime: Date
-  endTime: Date
-  durationMinutes: number
-  note: string | null
-}
-
 /**
- * Açık işçilik oturumunu kapatır (varsa). `tx` hem `prisma` hem transaction
- * istemcisi olabilir; çağıran kendi atomikliğini kurar. Koşullu yazma
- * (`endTime: null`): eşzamanlı iki kapatmadan yalnız biri kazanır, bitmiş bir
- * kaydın saati ezilmez — kaybeden `"raced"` alır.
- * Denetim kaydı (`labor_session_stopped`) çağıranın işidir ve commit'ten SONRA yazılır.
+ * Açık işçilik oturumlarını kapatır. `tx` hem `prisma` hem transaction
+ * istemcisi olabilir; çağıran kendi atomikliğini kurar. Karar mantığı
+ * `closeOpenSessions`'tadır (testli); burada yalnız Prisma bağlanır.
+ * Denetim kaydı çağıranın işidir ve commit'ten SONRA yazılır.
  */
-async function closeActiveLaborSession(
+function closeActiveLaborSession(
   tx: Prisma.TransactionClient,
   workshopId: string,
   orderId: string,
   note?: string | null,
-): Promise<{ status: "none" } | { status: "raced" } | ({ status: "closed" } & ClosedLaborSession)> {
-  const active = await tx.laborSession.findFirst({
-    where: { serviceOrderId: orderId, workshopId, endTime: null },
-  })
-  if (!active) return { status: "none" }
-
-  const now = new Date()
-  const durationMinutes = Math.round((now.getTime() - active.startTime.getTime()) / 60000)
-  const cleanNote = note?.trim() || null
-
-  const stopped = await tx.laborSession.updateMany({
-    where: { id: active.id, workshopId, endTime: null },
-    data: {
-      endTime: now,
-      durationMinutes,
-      // Not YALNIZ doluysa yazılır: boş gönderim var olan bir notu silmesin.
-      ...(cleanNote ? { note: cleanNote } : {}),
+) {
+  return closeOpenSessions(
+    {
+      listOpen: () =>
+        tx.laborSession.findMany({
+          where: { serviceOrderId: orderId, workshopId, endTime: null },
+          select: { id: true, startTime: true },
+        }),
+      closeOne: async (id, data) =>
+        (await tx.laborSession.updateMany({ where: { id, workshopId, endTime: null }, data })).count,
     },
-  })
-  if (stopped.count === 0) return { status: "raced" }
-  return {
-    status: "closed",
-    sessionId: active.id,
-    startTime: active.startTime,
-    endTime: now,
-    durationMinutes,
-    note: cleanNote,
-  }
+    new Date(),
+    note,
+  )
 }
 
-function auditLaborStopped(
+async function auditLaborStopped(
+  workshopId: string,
+  userId: string,
+  orderId: string,
+  sessions: ClosedLaborSession[],
+) {
+  for (const c of sessions) await auditOneLaborStopped(workshopId, userId, orderId, c)
+}
+
+function auditOneLaborStopped(
   workshopId: string,
   userId: string,
   orderId: string,
@@ -223,26 +215,19 @@ export async function startWorkWithTimerAction(orderId: string) {
         where: { serviceOrderId: orderId, workshopId: user.workshopId, endTime: null },
         select: { id: true },
       })) != null
-    // Açık sayaç + Serviste = "pause" durumu: çift dokunuş burada hata değil,
-    // aşağıda `timerStarted: false` ile döner.
-    if (workPrimaryAction(fresh.status, hasActive, true) === null) {
-      return { error: "Bu durum geçişine izin verilmiyor" } as const
-    }
+    const decision = decideStart(fresh.status, hasActive)
+    if ("error" in decision) return { error: decision.error } as const
 
-    let statusChanged = false
-    if (fresh.status !== "in_progress") {
-      if (!canTransitionOrder(fresh.status as OrderStatus, "in_progress")) {
-        return { error: "Bu durum geçişine izin verilmiyor" } as const
-      }
+    const statusChanged = decision.statusChanged
+    if (statusChanged) {
       const moved = await tx.serviceOrder.updateMany({
         where: { id: orderId, workshopId: user.workshopId, status: fresh.status },
         data: { status: "in_progress" },
       })
-      if (moved.count === 0) return { error: "Durum bu sırada değişti, sayfayı yenileyin" } as const
-      statusChanged = true
+      if (moved.count === 0) return { error: STATUS_RACED_ERROR } as const
     }
 
-    if (hasActive) return { statusChanged, timerStarted: false, session: null } as const
+    if (!decision.createSession) return { statusChanged, timerStarted: false, session: null } as const
     const session = await tx.laborSession.create({
       data: { workshopId: user.workshopId, serviceOrderId: orderId, startTime: new Date() },
     })
@@ -293,14 +278,18 @@ export async function holdWorkAction(orderId: string) {
   }
 
   // Parça bekleyen işte sayaç akmamalı: durum ve sayaç kapatma tek transaction.
-  const closed = await prisma.$transaction(async (tx) => {
-    await tx.serviceOrder.updateMany({
-      where: { id: orderId, workshopId: user.workshopId },
+  // Koşullu yazma (`status: order.status`): iki sekmeden gelen çakışan geçiş
+  // sessizce ezilmez; kaybeden hata alır ve denetim/zaman çizelgesi yazılmaz.
+  const outcome = await prisma.$transaction(async (tx) => {
+    const moved = await tx.serviceOrder.updateMany({
+      where: { id: orderId, workshopId: user.workshopId, status: order.status },
       data: { status: "waiting_parts" },
     })
+    if (moved.count === 0) return null
     return closeActiveLaborSession(tx, user.workshopId, orderId)
   })
-  if (closed.status === "closed") await auditLaborStopped(user.workshopId, user.id, orderId, closed)
+  if (!outcome) return { error: STATUS_RACED_ERROR }
+  if (outcome.status === "closed") await auditLaborStopped(user.workshopId, user.id, orderId, outcome.sessions)
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "work_on_hold")
 
@@ -340,17 +329,19 @@ export async function completeWorkAction(orderId: string) {
   if (completeBlock) return { error: completeBlock }
 
   // Biten işte açık sayaç kalmamalı: durum + completedAt + sayaç kapatma tek transaction.
-  const closed = await prisma.$transaction(async (tx) => {
-    await tx.serviceOrder.updateMany({
-      where: { id: orderId, workshopId: user.workshopId },
+  const outcome = await prisma.$transaction(async (tx) => {
+    const moved = await tx.serviceOrder.updateMany({
+      where: { id: orderId, workshopId: user.workshopId, status: order.status },
       data: {
         status: "ready_for_delivery",
         completedAt: new Date(),
       },
     })
+    if (moved.count === 0) return null
     return closeActiveLaborSession(tx, user.workshopId, orderId)
   })
-  if (closed.status === "closed") await auditLaborStopped(user.workshopId, user.id, orderId, closed)
+  if (!outcome) return { error: STATUS_RACED_ERROR }
+  if (outcome.status === "closed") await auditLaborStopped(user.workshopId, user.id, orderId, outcome.sessions)
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "work_completed")
 
@@ -820,47 +811,6 @@ export async function updatePartsRequestStatusAction(requestId: string, status: 
   return { success: true }
 }
 
-export async function startLaborSessionAction(orderId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/technician/feature-auth")
-  const { user } = await requireWritableWorkshop("order.status")
-
-  const order = await prisma.serviceOrder.findFirst({
-    where: { id: orderId, workshopId: user.workshopId },
-  })
-  if (!order) return { error: "Araç kabulü bulunamadı" }
-  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
-
-  const activeSession = await prisma.laborSession.findFirst({
-    where: { serviceOrderId: orderId, workshopId: user.workshopId, endTime: null },
-  })
-  if (activeSession) return { error: "Zaten aktif bir işçilik oturumu var" }
-
-  const created = await prisma.laborSession.create({
-    data: {
-      workshopId: user.workshopId,
-      serviceOrderId: orderId,
-      startTime: new Date(),
-    },
-  })
-
-  // BAK-138: Sayaç olayları da denetim kaydına düşer. Gerekçe: kayıt sonradan
-  // elle düzeltilebiliyor; "saat sayaçtan mı geldi, elle mi girildi" sorusunun
-  // cevabı yalnız bu satırlar varsa kalıcı olur.
-  await AuditLogAction(
-    user.workshopId,
-    user.id,
-    "LaborSession",
-    created.id,
-    "labor_session_started",
-    JSON.stringify({ startTime: created.startTime.toISOString() }),
-    orderId,
-  )
-
-  revalidatePath(`/technician/orders/${orderId}`)
-  revalidatePath(`/orders/${orderId}`)
-  return { success: true }
-}
-
 /**
  * Sayacı durdurur. `note` opsiyoneldir — teknisyen "bu sürede ne yaptım"ı
  * bitirirken yazabilir, boş bırakıp sonradan da ekleyebilir (BAK-138).
@@ -877,11 +827,11 @@ export async function stopLaborSessionAction(orderId: string, note?: string) {
   // Koşullu yazma: iki sekmeden aynı anda "Durdur" basılırsa ikincisi kaybeder.
   if (closed.status === "raced") return { error: "İşçilik bu sırada durduruldu, sayfayı yenileyin" }
 
-  await auditLaborStopped(user.workshopId, user.id, orderId, closed)
+  await auditLaborStopped(user.workshopId, user.id, orderId, closed.sessions)
 
   revalidatePath(`/technician/orders/${orderId}`)
   revalidatePath(`/orders/${orderId}`)
-  return { success: true, durationMinutes: closed.durationMinutes }
+  return { success: true, durationMinutes: closed.sessions.reduce((n, c) => n + c.durationMinutes, 0) }
 }
 
 /**

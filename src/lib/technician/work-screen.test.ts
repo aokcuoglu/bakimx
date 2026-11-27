@@ -7,9 +7,21 @@ import {
   workScreenTiles,
 } from "./work-screen"
 
-const usta = workScreenPermissions({ role: "usta" })
-const staff = workScreenPermissions({ role: "staff" })
-const cirak = workScreenPermissions({ role: "cirak" })
+const usta = workScreenPermissions({ role: "usta" }, true)
+const staff = workScreenPermissions({ role: "staff" }, true)
+const cirak = workScreenPermissions({ role: "cirak" }, true)
+
+describe("workScreenPermissions — procurement özelliği", () => {
+  test("özellik yoksa parts.purchase olsa da Dış Parça görünmez", () => {
+    const noFeature = workScreenPermissions({ role: "usta" }, false)
+    expect(noFeature.canPurchase).toBe(false)
+    expect(workScreenTiles(noFeature, false)).not.toContain("purchase")
+  })
+
+  test("özellik var ama izin yoksa da görünmez", () => {
+    expect(workScreenPermissions({ role: "cirak", teamPermissions: [] }, true).canPurchase).toBe(false)
+  })
+})
 
 describe("workScreenTiles", () => {
   test("usta ve staff altı kutucuğu sırayla görür", () => {

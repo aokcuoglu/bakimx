@@ -66,7 +66,7 @@ export function TechnicianPartsLaborSection({
     return (
       <Alert>
         <Wrench />
-        <AlertTitle>Kalem ekleme yetkiniz yok</AlertTitle>
+        <AlertTitle>Kalem ekleme yetkin yok</AlertTitle>
         <AlertDescription>{REQUEST_ONLY_MESSAGE}</AlertDescription>
       </Alert>
     )
@@ -77,7 +77,7 @@ export function TechnicianPartsLaborSection({
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-foreground">Parçalar &amp; İşçilikler</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">Kaleme dokunarak düzenleyin; eklemek için yukarıdaki kutucukları kullanın.</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Kaleme dokunarak düzenle; eklemek için yukarıdaki kutucukları kullan.</p>
         </div>
         <span className="shrink-0 text-sm font-medium tabular-nums text-muted-foreground">{items.length} kalem</span>
       </div>

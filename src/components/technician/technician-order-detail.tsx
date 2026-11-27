@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, ListChecks, Package, Pause, Play } from "lucide-react"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { toast } from "sonner"
 import { useOrderSync } from "@/hooks/use-order-sync"
 import { BottomSheet } from "@/components/shared/bottom-sheet"
@@ -16,6 +17,7 @@ import { fuelTypeLabel } from "@/lib/constants"
 import { holdWorkAction, completeWorkAction, startWorkWithTimerAction } from "@/app/(app)/technician/actions"
 import { LaborSessionCard, StopLaborButton } from "@/components/technician/labor-session-card"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { findUndecidedPartsRequests } from "@/lib/orders/parts-request-guard"
@@ -40,7 +42,8 @@ import {
   type WorkScreenPermissions,
   type WorkTileKey,
 } from "@/lib/technician/work-screen"
-import { formatTrTime } from "@/lib/format-date"
+import { missingRequiredPhotoTypes } from "@/lib/technician/photo-upload"
+import { ElapsedTimer } from "@/components/technician/work-screen/elapsed-timer"
 import { PurchaseCards } from "@/components/technician/work-screen/purchase-cards"
 import { WorkTileGrid } from "@/components/technician/work-screen/work-tile-grid"
 import { WorkSheets, type WorkSheetState } from "@/components/technician/work-screen/work-sheets"
@@ -48,6 +51,7 @@ import {
   CustomerBlock,
   DamageMarks,
   InternalNotesSection,
+  LatestInternalNote,
   OrderTotals,
   PhotoSection,
 } from "@/components/technician/work-screen/work-details"
@@ -77,6 +81,7 @@ export function TechnicianOrderDetail({
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
+  const [holdDialogOpen, setHoldDialogOpen] = useState(false)
   const [sheet, setSheet] = useState<WorkSheetState>(null)
   const [addingType, setAddingType] = useState<PartsAddType | null>(null)
   const [editRequest, setEditRequest] = useState<{ rowId: string } | null>(null)
@@ -85,6 +90,8 @@ export function TechnicianOrderDetail({
   const checklistRef = useRef<HTMLDivElement>(null)
 
   const { canEditOrder, canChangeStatus } = permissions
+  // Telefonda alttan sayfa, lg+ masaüstünde pencere (parça/işçilik ekleme yüzeyiyle aynı ayrım).
+  const isMobile = useIsMobile()
 
   // BAK-140: ofis personeli/dış alım bu iş emrine parça eklediğinde teknisyen
   // sayfayı yenilemeden görsün.
@@ -148,6 +155,16 @@ export function TechnicianOrderDetail({
   const completeBlockedMessage = completeWorkBlockMessage(countIncompleteItems(order.items))
 
   const itemsDone = order.items.filter((i) => i.completedAt).length
+
+  // Zorunlu fotoğraf ipucu: eksik tür sayısı Fotoğraf kutucuğunda rozet olur.
+  const missingPhotoCount = missingRequiredPhotoTypes(order.photos.map((p) => p.type)).length
+  const tileBadges = missingPhotoCount > 0 ? { photo: `${missingPhotoCount} eksik` } : undefined
+
+  const detailsSummary = [
+    "Detaylar",
+    galleryPhotos.length > 0 ? `${galleryPhotos.length} fotoğraf` : null,
+    order.internalNotes.length > 0 ? `${order.internalNotes.length} not` : null,
+  ].filter(Boolean).join(" · ")
 
   function handleTile(tile: WorkTileKey) {
     if (tile === "part") setAddingType("parca")
@@ -213,6 +230,8 @@ export function TechnicianOrderDetail({
     startTransition(async () => {
       const res = await holdWorkAction(order.id)
       if (res && "error" in res && res.error) toast.error(res.error)
+      else toast.success("Parça bekliyor olarak işaretlendi.")
+      setHoldDialogOpen(false)
       router.refresh()
     })
   }
@@ -226,6 +245,32 @@ export function TechnicianOrderDetail({
       router.refresh()
     })
   }
+
+  const checklistRow = (
+    <Button
+      variant="outline"
+      size="row"
+      className="w-full justify-between"
+      onClick={() => setChecklistSheetOpen(true)}
+    >
+      <span className="flex items-center gap-2">
+        <ListChecks />
+        Araç Kontrolü
+      </span>
+      <span className="tabular-nums text-muted-foreground">{checklistDone}/{liveChecklist.length}</span>
+    </Button>
+  )
+
+  const checklistList = (
+    <OrderChecklist
+      orderId={order.id}
+      state={checklist}
+      locked={locked || !canEditOrder}
+      open={checklistOpen}
+      onOpenChange={setChecklistOpen}
+      containerRef={checklistRef}
+    />
+  )
 
   const vehicleLine = [
     `${order.vehicle.brand} ${order.vehicle.model}`,
@@ -266,7 +311,7 @@ export function TechnicianOrderDetail({
         <Alert>
           <AlertTitle>Bu araç kabulü salt okunur</AlertTitle>
           <AlertDescription>
-            Bu araç kabulü {order.status === "cancelled" ? "iptal edildi" : "teslim edildi"}. Bilgiler değiştirilemez; inceleyebilirsiniz.
+            Bu araç kabulü {order.status === "cancelled" ? "iptal edildi" : "teslim edildi"}. Bilgiler değiştirilemez; inceleyebilirsin.
           </AlertDescription>
         </Alert>
       )}
@@ -281,15 +326,26 @@ export function TechnicianOrderDetail({
         </Alert>
       )}
 
+      <LatestInternalNote note={order.internalNotes[0]} />
+
       <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-6 lg:space-y-0">
         <div className="min-w-0 space-y-4">
-          {primaryAction === "pause" && activeLabor && (
+          {activeLabor && !locked && canChangeStatus && (
             <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card p-4">
-              <div className="flex items-center gap-2 text-sm text-success-strong">
-                <span className="size-2 rounded-full bg-success motion-safe:animate-pulse" />
-                <span>İşçilik sürüyor · {formatTrTime(activeLabor.startTime)} başlangıç</span>
-              </div>
-              <StopLaborButton orderId={order.id} label="Ara Ver" size="xl" variant="outline" className="w-full sm:w-auto" />
+              <ElapsedTimer startTime={activeLabor.startTime} />
+              {primaryAction === "pause" ? (
+                <StopLaborButton
+                  orderId={order.id}
+                  label="Ara Ver"
+                  mode="pause"
+                  size="xl"
+                  variant="foreground"
+                  className="w-full sm:w-auto"
+                />
+              ) : (
+                // Teslime hazır gibi birincil eylemin olmadığı durumlarda da açık sayaç durdurulabilir.
+                <StopLaborButton orderId={order.id} label="Sayacı Durdur" size="xl" className="w-full sm:w-auto" />
+              )}
             </section>
           )}
 
@@ -301,13 +357,15 @@ export function TechnicianOrderDetail({
           )}
 
           {canHold && (
-            <Button variant="ghost" size="row" className="w-full justify-center" onClick={handleHoldWork} disabled={isPending}>
-              <Pause />
-              Parça bekliyor
-            </Button>
+            <div className="pt-2">
+              <Button variant="ghost" size="row" className="w-full justify-center" onClick={() => setHoldDialogOpen(true)} disabled={isPending}>
+                <Pause />
+                Parça bekliyor
+              </Button>
+            </div>
           )}
 
-          <WorkTileGrid tiles={tiles} onSelect={handleTile} />
+          <WorkTileGrid tiles={tiles} onSelect={handleTile} badges={tileBadges} />
 
           <section className="space-y-3 rounded-xl bg-card p-4">
             <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
@@ -317,6 +375,9 @@ export function TechnicianOrderDetail({
               orderId={order.id}
               items={order.items}
               locked={locked}
+              canToggle={canEditOrder}
+              hideHeading
+              emptyMessage={tiles.length > 0 ? "Yukarıdaki kutucuklardan ekle." : "Henüz kalem yok."}
               onEditItem={canEditOrder && !locked ? handleEditItem : undefined}
             />
             {order.totals.hasAnyPrice && <OrderTotals totals={order.totals} taxRate={order.taxRate} />}
@@ -347,6 +408,9 @@ export function TechnicianOrderDetail({
             onEditLabor={openLaborEdit}
           />
 
+          {/* Telefonda okuma sırası: Yapılacaklar → Araç Kontrolü → İşi Bitir → Detaylar. */}
+          <div className="lg:hidden">{checklistRow}</div>
+
           {canComplete && (
             <div className="space-y-2">
               {completeBlockedMessage && (
@@ -367,23 +431,12 @@ export function TechnicianOrderDetail({
         </div>
 
         <div className="min-w-0 space-y-4">
-          <Button
-            variant="outline"
-            size="row"
-            className="w-full justify-between"
-            onClick={() => setChecklistSheetOpen(true)}
-          >
-            <span className="flex items-center gap-2">
-              <ListChecks />
-              Araç Kontrolü
-            </span>
-            <span className="tabular-nums text-muted-foreground">{checklistDone}/{liveChecklist.length}</span>
-          </Button>
+          <div className="max-lg:hidden">{checklistRow}</div>
 
           <Collapsible className="rounded-xl bg-card">
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="row" className="group w-full justify-between">
-                Detaylar
+                {detailsSummary}
                 <ChevronDown className="transition-transform group-data-[state=open]:rotate-180" />
               </Button>
             </CollapsibleTrigger>
@@ -391,17 +444,15 @@ export function TechnicianOrderDetail({
               <CustomerBlock customer={order.customer} />
               <DamageMarks marks={order.damageMarks} />
               <div>
-                <PhotoSection label="Onarım Öncesi" photos={beforePhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
-                <PhotoSection label="Onarım Sırasında" photos={duringPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
-                <PhotoSection label="Onarım Sonrası" photos={afterPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+                <PhotoSection label="Onarım Öncesi" photos={beforePhotos} canDelete={!locked && canEditOrder} onDeleted={() => router.refresh()} />
+                <PhotoSection label="Onarım Sırasında" photos={duringPhotos} canDelete={!locked && canEditOrder} onDeleted={() => router.refresh()} />
+                <PhotoSection label="Onarım Sonrası" photos={afterPhotos} canDelete={!locked && canEditOrder} onDeleted={() => router.refresh()} />
                 {galleryPhotos.length === 0 && <p className="text-sm text-muted-foreground">Henüz fotoğraf eklenmedi.</p>}
               </div>
-              <InternalNotesSection notes={order.internalNotes} locked={locked} />
+              <InternalNotesSection notes={order.internalNotes} locked={locked} canDelete={canEditOrder} />
               <LaborSessionCard
-                orderId={order.id}
                 sessions={order.laborSessions}
                 locked={locked}
-                canStart={false}
                 canEdit={canEditOrder}
               />
             </CollapsibleContent>
@@ -422,24 +473,40 @@ export function TechnicianOrderDetail({
         defaultTechnicianId={order.assignedTechnicianId}
       />
 
-      <BottomSheet open={checklistSheetOpen} onOpenChange={setChecklistSheetOpen} title="Araç Kontrolü">
-        <div className="pb-4">
-          <OrderChecklist
-            orderId={order.id}
-            state={checklist}
-            locked={locked}
-            open={checklistOpen}
-            onOpenChange={setChecklistOpen}
-            containerRef={checklistRef}
-          />
-        </div>
-      </BottomSheet>
+      {isMobile ? (
+        <BottomSheet open={checklistSheetOpen} onOpenChange={setChecklistSheetOpen} title="Araç Kontrolü">
+          <div className="pb-4">{checklistList}</div>
+        </BottomSheet>
+      ) : (
+        <Dialog open={checklistSheetOpen} onOpenChange={setChecklistSheetOpen}>
+          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Araç Kontrolü</DialogTitle>
+              <DialogDescription>Kontrol maddelerini işaretle.</DialogDescription>
+            </DialogHeader>
+            {checklistList}
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <AlertDialog open={holdDialogOpen} onOpenChange={setHoldDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Parça bekleniyor olarak işaretlensin mi?</AlertDialogTitle>
+            <AlertDialogDescription>Sayaç durur. Parça gelince “Devam Et” ile sürdürebilirsin.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={handleHoldWork} disabled={isPending}>Parça bekliyor</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>İş tamamlandı olarak işaretlensin mi?</AlertDialogTitle>
-            <AlertDialogDescription>Bu işlem araç kabulünü kilitler. Devam etmek istediğinize emin misiniz?</AlertDialogDescription>
+            <AlertDialogDescription>Bu işlem araç kabulünü kilitler. Devam etmek istediğine emin misin?</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Vazgeç</AlertDialogCancel>

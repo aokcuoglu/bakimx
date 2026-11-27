@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Camera, ImageOff, Loader2, Phone, StickyNote, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatTRY } from "@/lib/format"
@@ -10,6 +12,10 @@ import { resolvePhotoSrc } from "@/lib/photos/photo-src"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
 import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Item, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item"
 import { deleteInternalNoteAction } from "@/app/(app)/technician/actions"
 
@@ -208,10 +214,51 @@ export function PhotoThumbnail({ src, label, onOpen }: { src: string; label: str
   )
 }
 
-export function InternalNotesSection({ notes, locked }: { notes: WorkInternalNote[]; locked: boolean }) {
-  const [, startTransition] = useTransition()
+/** Detaylar kapalıyken bile görünen en yeni iç not (2 satır kırpılır). */
+export function LatestInternalNote({ note }: { note: WorkInternalNote | undefined }) {
+  if (!note) return null
+  return (
+    <section className="flex items-start gap-2 rounded-xl bg-card p-4">
+      <StickyNote className="mt-0.5 size-4 shrink-0 text-warning-strong" aria-hidden />
+      <div className="min-w-0 flex-1">
+        <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Son not</h2>
+        <p className="mt-1 line-clamp-2 text-sm break-words whitespace-pre-wrap text-foreground">{note.content}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{formatTrDateTime(note.createdAt)}</p>
+      </div>
+    </section>
+  )
+}
+
+export function InternalNotesSection({
+  notes,
+  locked,
+  canDelete,
+}: {
+  notes: WorkInternalNote[]
+  locked: boolean
+  /** `order.edit` — sunucudaki silme kapısının UI'daki ikizi. */
+  canDelete: boolean
+}) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [pendingDelete, setPendingDelete] = useState<WorkInternalNote | null>(null)
 
   if (notes.length === 0) return null
+
+  function confirmDelete() {
+    if (!pendingDelete) return
+    const id = pendingDelete.id
+    startTransition(async () => {
+      const res = await deleteInternalNoteAction(id)
+      if (res && "error" in res && res.error) {
+        toast.error(res.error)
+        return
+      }
+      toast.success("Not silindi.")
+      setPendingDelete(null)
+      router.refresh()
+    })
+  }
 
   return (
     <div className="space-y-2">
@@ -221,26 +268,44 @@ export function InternalNotesSection({ notes, locked }: { notes: WorkInternalNot
           <StickyNote className="mt-0.5 size-4 shrink-0 text-warning-strong" />
           <div className="min-w-0 flex-1">
             <p className="whitespace-pre-wrap text-sm text-foreground">{note.content}</p>
-            <p className="mt-1 text-[10px] text-muted-foreground">{formatTrDateTime(note.createdAt)}</p>
+            <p className="mt-1 text-xs text-muted-foreground-strong">{formatTrDateTime(note.createdAt)}</p>
           </div>
-          {!locked && (
+          {!locked && canDelete && (
             <Button
               type="button"
               variant="destructive-ghost"
               size="icon"
               aria-label="İç notu sil"
-              onClick={() => {
-                startTransition(async () => {
-                  await deleteInternalNoteAction(note.id)
-                })
-              }}
+              disabled={isPending}
+              onClick={() => setPendingDelete(note)}
               className="text-warning-strong"
             >
-              <Trash2 className="size-3.5" />
+              {isPending && pendingDelete?.id === note.id ? <Loader2 className="animate-spin" /> : <Trash2 className="size-3.5" />}
             </Button>
           )}
         </div>
       ))}
+
+      <AlertDialog open={pendingDelete != null} onOpenChange={(o) => { if (!o && !isPending) setPendingDelete(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Not silinsin mi?</AlertDialogTitle>
+            <AlertDialogDescription>Bu iç not kalıcı olarak silinir.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isPending}
+              onClick={(e) => {
+                e.preventDefault()
+                confirmDelete()
+              }}
+            >
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

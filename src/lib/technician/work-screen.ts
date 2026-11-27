@@ -19,14 +19,22 @@ export type WorkScreenPermissions = {
   canAddPhoto: boolean
 }
 
-export function workScreenPermissions(actor: {
-  role: UserRole
-  teamPermissions?: readonly string[] | null
-}): WorkScreenPermissions {
+/**
+ * `hasProcurement`: atölyenin planı `procurement` özelliğini içeriyor mu
+ * (`hasWorkshopFeature(workshop, "procurement")`). Dış parça sunucuda hem izni
+ * hem özelliği ister; ikisi de yoksa kutucuk "bas, hata al" olurdu.
+ */
+export function workScreenPermissions(
+  actor: {
+    role: UserRole
+    teamPermissions?: readonly string[] | null
+  },
+  hasProcurement: boolean,
+): WorkScreenPermissions {
   return {
     canEditOrder: actorCan(actor, "order.edit"),
     canChangeStatus: actorCan(actor, "order.status"),
-    canPurchase: actorCan(actor, "parts.purchase"),
+    canPurchase: hasProcurement && actorCan(actor, "parts.purchase"),
     canAddPhoto: actorCan(actor, "records.create"),
   }
 }

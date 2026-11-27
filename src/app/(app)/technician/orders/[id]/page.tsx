@@ -12,6 +12,7 @@ import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ensureChecklistSeeded } from "@/lib/technician/checklist-seed"
 import { getLaborCatalog } from "@/lib/labor/queries"
+import { hasWorkshopFeature } from "@/lib/plan"
 import { workScreenPermissions } from "@/lib/technician/work-screen"
 import { technicianOrderDetailWhere } from "@/lib/technician/order-visibility"
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
@@ -311,7 +312,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
         laborCatalog={laborCatalog}
         // Kutucuk görünürlüğü, birincil eylem ve düzenleyici izni tek yerden:
         // sunucu kapıları ayrıca action'larda durur (bkz. work-screen.ts).
-        permissions={workScreenPermissions(user)}
+        permissions={workScreenPermissions(user, !!workshop && hasWorkshopFeature(workshop, "procurement"))}
       />
     </AppShell>
   )

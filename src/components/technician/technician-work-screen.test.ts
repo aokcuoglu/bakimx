@@ -39,7 +39,10 @@ describe("teknisyen iş ekranı (kiosk)", () => {
   })
 
   test("Parça bekliyor tek yerde, bitirme kapısı ve onayı korunur", () => {
-    expect(orchestrator.split("Parça bekliyor").length - 1).toBe(1)
+    // Tek tetikleyici: onay penceresini açan tek düğme, beklemeye alma tek yerde çağrılır.
+    expect(orchestrator.split("setHoldDialogOpen(true)").length - 1).toBe(1)
+    expect(orchestrator.split("holdWorkAction(").length - 1).toBe(1)
+    expect(orchestrator).toContain("Parça bekleniyor olarak işaretlensin mi?")
     expect(orchestrator).toContain("completeWorkBlockMessage(")
     expect(orchestrator).toContain("AlertDialog")
     expect(orchestrator).toContain("İş tamamlandı olarak işaretlensin mi?")
@@ -83,5 +86,30 @@ describe("iş ekranı server action'ları", () => {
 
   test("eski startWorkAction kaldırıldı", () => {
     expect(actions).not.toMatch(/export async function startWorkAction\b/)
+  })
+
+  test("bekle/bitir durumu koşullu yazar: çakışan geçiş sessizce ezilmez", () => {
+    for (const name of ["holdWorkAction", "completeWorkAction"]) {
+      const src = block(actions, `export async function ${name}`)
+      expect(src).toContain("status: order.status")
+      expect(src).toContain("moved.count === 0")
+    }
+  })
+
+  test("kullanılmayan başlat düğmesi ve action'ı kaldırıldı", () => {
+    expect(actions).not.toMatch(/export async function startLaborSessionAction\b/)
+    expect(read("labor-session-card.tsx")).not.toContain("İşçilik Başlat")
+  })
+
+  test("açık sayaç, birincil eylemden bağımsız durdurulabilir (teslime hazır dahil)", () => {
+    expect(orchestrator).toContain("activeLabor && !locked && canChangeStatus")
+    expect(orchestrator).toContain("Sayacı Durdur")
+  })
+
+  test("çırak (order.edit yok) tik, kontrol ve silme göremez", () => {
+    expect(orchestrator).toContain("canToggle={canEditOrder}")
+    expect(orchestrator).toContain("canDelete={!locked && canEditOrder}")
+    expect(orchestrator).toContain("canDelete={canEditOrder}")
+    expect(orchestrator).toContain("locked || !canEditOrder")
   })
 })

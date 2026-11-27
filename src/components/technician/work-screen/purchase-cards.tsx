@@ -192,18 +192,18 @@ function PurchaseCard({
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border pt-2">
-        <span className="inline-flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
+        <span className="inline-flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
           <Store className="size-3 shrink-0" />
           <span className="truncate">{item.supplierName || "Tedarikçi belirtilmedi"}</span>
         </span>
         {item.purchasedAt && (
-          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
             <CalendarDays className="size-3 shrink-0" />
             {formatTrDate(item.purchasedAt)}
           </span>
         )}
         {item.tecdocArticleId != null && (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary-strong">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary-strong">
             Katalog parçası
           </span>
         )}
@@ -213,7 +213,7 @@ function PurchaseCard({
             <Button
               type="button"
               variant="ghost"
-              size="icon-sm"
+              size="icon"
               onClick={onEdit}
               aria-label={`${item.name} — dışarıdan alınan parçayı düzenle`}
               className="text-muted-foreground hover:text-foreground"
@@ -295,12 +295,12 @@ function ExternalLaborCard({
         </div>
         {item.note && <p className="mt-0.5 break-words text-xs text-muted-foreground">{item.note}</p>}
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border pt-2">
-          <span className="inline-flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
+          <span className="inline-flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
             <Store className="size-3 shrink-0" />
             <span className="truncate">{item.supplierName || "Tedarikçi belirtilmedi"}</span>
           </span>
           {(item.purchasedAt || item.createdAt) && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
               <CalendarDays className="size-3 shrink-0" />
               {formatTrDate(item.purchasedAt ?? item.createdAt)}
             </span>
@@ -311,7 +311,7 @@ function ExternalLaborCard({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon-sm"
+                  size="icon"
                   onClick={onEdit}
                   aria-label={`${item.name} — dış işçilik kaydını düzenle`}
                   className="text-muted-foreground hover:text-foreground"
@@ -323,7 +323,7 @@ function ExternalLaborCard({
                 <Button
                   type="button"
                   variant="destructive-ghost"
-                  size="icon-sm"
+                  size="icon"
                   onClick={() => setConfirmOpen(true)}
                   aria-label={`${item.name} — dış işçilik kaydını sil`}
                   className="shrink-0 text-muted-foreground"
@@ -390,7 +390,7 @@ function PurchaseDeleteButton({ item, orderId }: { item: TechnicianOrderItem; or
       <Button
         type="button"
         variant="destructive-ghost"
-        size="icon-sm"
+        size="icon"
         onClick={() => setOpen(true)}
         aria-label={`${item.name} — dışarıdan alınan parçayı sil`}
         className="text-muted-foreground"
