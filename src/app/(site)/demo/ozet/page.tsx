@@ -27,7 +27,7 @@ export default function DemoSummaryPage() {
       <section className="border-y py-8 print:py-5">
         <h2 className="text-2xl font-semibold">Bir araçla üç adım</h2>
         <ol className="mt-5 space-y-5">
-          {["Ruhsatı okutun; araç bilgilerini kontrol ederek kabulü başlatın.", "Şikâyet, fotoğraf, parça ve işçiliği aynı iş emrinde toplayın.", "Müşteriye güvenli takip linkini gönderin; işlem sürecini birlikte takip edin."].map((item, i) => <li key={item} className="flex gap-4"><span className="font-mono text-sm text-muted-foreground">0{i + 1}</span><span className="leading-7">{item}</span></li>)}
+          {["Plakayı okutun; araç bilgilerini kontrol ederek kabulü başlatın.", "Şikâyet, fotoğraf, parça ve işçiliği aynı iş emrinde toplayın.", "Müşteriye güvenli takip linkini gönderin; işlem sürecini birlikte takip edin."].map((item, i) => <li key={item} className="flex gap-4"><span className="font-mono text-sm text-muted-foreground">0{i + 1}</span><span className="leading-7">{item}</span></li>)}
         </ol>
       </section>
       <section className="py-8 print:py-5">

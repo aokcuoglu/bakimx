@@ -175,7 +175,6 @@ export function HeroLeadForm({
                       autoComplete={autoComplete}
                       type={name === "phone" ? "tel" : "text"}
                       placeholder={placeholder}
-                      className="h-7 rounded-[8px] bg-card"
                     />
                   </FormControl>
                   <FormMessage />
@@ -217,7 +216,7 @@ export function HeroLeadForm({
                       <SelectTrigger
                         ref={field.ref}
                         onBlur={field.onBlur}
-                        className="h-8 w-full rounded-[9px] bg-card data-[size=default]:h-8"
+                        className="w-full"
                       >
                         <SelectValue placeholder={placeholder} />
                       </SelectTrigger>
@@ -249,7 +248,7 @@ export function HeroLeadForm({
                   <Textarea
                     {...field}
                     placeholder="Servisinizde neyi kolaylaştırmak istersiniz?"
-                    className="min-h-24 rounded-xl bg-card"
+                    className="min-h-24"
                   />
                 </FormControl>
                 <FormMessage />
@@ -259,9 +258,9 @@ export function HeroLeadForm({
         )}
         <Button
           variant="navy"
-          size="xl"
+          size="lg"
           type="submit"
-          className="h-7 w-full"
+          className="w-full"
           disabled={form.formState.isSubmitting}
         >
           {form.formState.isSubmitting ? (
