@@ -1,5 +1,6 @@
 import { PAYMENT_STATUS } from "@/lib/constants"
 import { subKurus } from "@/lib/money"
+import type { StatusTone } from "@/lib/status-tone"
 
 export type PaymentMethodKey = "cash" | "credit_card" | "bank_transfer" | "other"
 export type PaymentStatusKey = "unpaid" | "partial" | "paid" | "overpaid" | "cancelled"
@@ -12,11 +13,11 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethodKey, string> = {
   other: "Diğer",
 }
 
-export const PAYMENT_METHOD_COLORS: Record<PaymentMethodKey, string> = {
-  cash: "bg-success/10 text-foreground border-success/20",
-  credit_card: "bg-primary/10 text-foreground border-primary/20",
-  bank_transfer: "bg-primary/10 text-foreground border-primary/20",
-  other: "bg-muted text-foreground border-border",
+export const PAYMENT_METHOD_TONES: Record<PaymentMethodKey, StatusTone> = {
+  cash: "success",
+  credit_card: "primary",
+  bank_transfer: "primary",
+  other: "neutral",
 }
 
 export const COLLECTION_STATUS_LABELS: Record<CollectionStatusKey, string> = {
@@ -25,17 +26,17 @@ export const COLLECTION_STATUS_LABELS: Record<CollectionStatusKey, string> = {
   refunded: "İade",
 }
 
-export const COLLECTION_STATUS_COLORS: Record<CollectionStatusKey, string> = {
-  completed: "bg-success/10 text-foreground border-success/20",
-  cancelled: "bg-destructive/10 text-foreground border-destructive/20",
-  refunded: "bg-warning/10 text-foreground border-warning/20",
+export const COLLECTION_STATUS_TONES: Record<CollectionStatusKey, StatusTone> = {
+  completed: "success",
+  cancelled: "destructive",
+  refunded: "warning",
 }
 
-export const EXTENDED_PAYMENT_STATUS: Record<PaymentStatusKey, { label: string; color: string }> = {
+export const EXTENDED_PAYMENT_STATUS: Record<PaymentStatusKey, { label: string; tone: StatusTone }> = {
   unpaid: PAYMENT_STATUS.unpaid,
   partial: PAYMENT_STATUS.partial,
   paid: PAYMENT_STATUS.paid,
-  overpaid: { label: "Fazla Ödeme", color: "bg-primary/10 text-foreground border-primary/20" },
+  overpaid: { label: "Fazla Ödeme", tone: "primary" },
   cancelled: PAYMENT_STATUS.cancelled,
 }
 

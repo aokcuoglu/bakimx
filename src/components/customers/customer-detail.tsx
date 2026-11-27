@@ -1,5 +1,6 @@
 "use client"
 
+import { StatusPill } from "@/components/shared/status-badge"
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import {
@@ -408,14 +409,7 @@ export function CustomerDetail({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <Plate plate={i.vehicle.plate} />
-                            <span
-                              className={cn(
-                                "inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border",
-                                intakeStatus?.color || "bg-muted text-foreground border-border"
-                              )}
-                            >
-                              {intakeStatus?.label || i.status}
-                            </span>
+                            <StatusPill label={intakeStatus?.label || i.status} tone={intakeStatus?.tone} />
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">{i.customerComplaint}</p>
                         </div>

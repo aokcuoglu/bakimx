@@ -1,5 +1,6 @@
 "use client"
 
+import { StatusPill } from "@/components/shared/status-badge"
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -695,36 +696,28 @@ function EmptyState({ icon: Icon, text }: { icon: React.ComponentType<{ classNam
 function StatusBadge({ status }: { status: string }) {
   const info = ORDER_STATUS[status as keyof typeof ORDER_STATUS]
   return (
-    <span className={`inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border ${info?.color || "bg-muted text-foreground border-border"}`}>
-      {info?.label || status}
-    </span>
+    <StatusPill label={info?.label || status} tone={info?.tone} />
   )
 }
 
 function PaymentStatusBadge({ status }: { status: string }) {
   const info = PAYMENT_STATUS[status as keyof typeof PAYMENT_STATUS]
   return (
-    <span className={`inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border ${info?.color || "bg-muted text-muted-foreground border-border"}`}>
-      {info?.label || status}
-    </span>
+    <StatusPill label={info?.label || status} tone={info?.tone} />
   )
 }
 
 function ReminderStatusBadge({ status }: { status: string }) {
   const info = MAINTENANCE_REMINDER_STATUS[status as keyof typeof MAINTENANCE_REMINDER_STATUS]
   return (
-    <span className={`inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border ${info?.color || "bg-muted text-foreground border-border"}`}>
-      {info?.label || status}
-    </span>
+    <StatusPill label={info?.label || status} tone={info?.tone} />
   )
 }
 
 function ReminderTypeBadge({ type }: { type: string }) {
   const info = MAINTENANCE_REMINDER_TYPES[type as keyof typeof MAINTENANCE_REMINDER_TYPES]
   return (
-    <span className="inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium bg-primary/10 text-primary-strong border border-primary/20">
-      {info?.label || type}
-    </span>
+    <StatusPill label={info?.label || type} tone="primary" />
   )
 }
 

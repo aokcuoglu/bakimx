@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils"
+import { StatusPill } from "@/components/shared/status-badge"
 
 export function SupplierStatusBadge({
   isActive,
@@ -9,21 +9,12 @@ export function SupplierStatusBadge({
   size?: "sm" | "md"
   className?: string
 }) {
-  const label = isActive ? "Aktif" : "Pasif"
-  const color = isActive
-    ? "bg-success/10 text-success-strong border-success/20"
-    : "bg-muted text-muted-foreground border-border"
-
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full border font-medium whitespace-nowrap",
-        size === "sm" ? "h-5 px-2 text-[11px]" : "h-6 px-2.5 text-xs",
-        color,
-        className
-      )}
-    >
-      {label}
-    </span>
+    <StatusPill
+      label={isActive ? "Aktif" : "Pasif"}
+      tone={isActive ? "success" : "neutral"}
+      size={size}
+      className={className}
+    />
   )
 }

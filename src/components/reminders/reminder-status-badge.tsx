@@ -1,3 +1,5 @@
+import { StatusPill } from "@/components/shared/status-badge"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { MAINTENANCE_REMINDER_STATUS, type MaintenanceReminderStatusKey } from "@/lib/constants"
 
@@ -11,20 +13,7 @@ export function ReminderStatusBadge({
   className?: string
 }) {
   const info = MAINTENANCE_REMINDER_STATUS[status as MaintenanceReminderStatusKey]
-  const label = info?.label || status
-  const color = info?.color || "bg-muted text-foreground border-border"
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full border font-medium whitespace-nowrap",
-        size === "sm" ? "h-5 px-2 text-[11px]" : "h-6 px-2.5 text-xs",
-        color,
-        className
-      )}
-    >
-      {label}
-    </span>
-  )
+  return <StatusPill label={info?.label || status} tone={info?.tone} size={size} className={className} />
 }
 
 export function ReminderTypeBadge({
@@ -45,13 +34,8 @@ export function ReminderTypeBadge({
     other: "Diğer",
   }
   return (
-    <span
-      className={cn(
-        "inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border bg-muted text-muted-foreground border-border whitespace-nowrap",
-        className
-      )}
-    >
+    <Badge variant="secondary" className={cn("h-5 px-2 text-[11px]", className)}>
       {labels[type] || type}
-    </span>
+    </Badge>
   )
 }

@@ -38,32 +38,32 @@ export const VEHICLE_ZONES = {
 } as const
 
 export const INTAKE_STATUS = {
-  draft: { label: "Taslak", color: "bg-muted text-foreground" },
-  waiting_approval: { label: "Onay bekleniyor", color: "bg-warning/10 text-foreground" },
-  approved: { label: "Onaylandı", color: "bg-success/10 text-foreground" },
-  in_progress: { label: "İşlemde", color: "bg-primary/10 text-foreground" },
-  ready_for_delivery: { label: "Teslimat için hazır", color: "bg-primary/10 text-foreground" },
-  delivered: { label: "Teslim edildi", color: "bg-success/10 text-foreground" },
-  cancelled: { label: "İptal", color: "bg-destructive/10 text-foreground" },
+  draft: { label: "Taslak", tone: "neutral" },
+  waiting_approval: { label: "Onay bekleniyor", tone: "warning" },
+  approved: { label: "Onaylandı", tone: "success" },
+  in_progress: { label: "İşlemde", tone: "primary" },
+  ready_for_delivery: { label: "Teslimat için hazır", tone: "primary" },
+  delivered: { label: "Teslim edildi", tone: "success" },
+  cancelled: { label: "İptal", tone: "destructive" },
 } as const
 
 export const ORDER_STATUS = {
-  draft: { label: "Taslak", color: "bg-muted text-foreground border-border" },
-  waiting_approval: { label: "Onay Bekliyor", color: "bg-warning/10 text-foreground border-warning/20" },
-  approved: { label: "Onaylandı", color: "bg-success/10 text-foreground border-success/20" },
-  in_progress: { label: "Devam Ediyor", color: "bg-primary/10 text-foreground border-primary/20" },
-  waiting_parts: { label: "Parça Bekliyor", color: "bg-warning/10 text-foreground border-warning/20" },
-  ready_for_delivery: { label: "Teslime Hazır", color: "bg-primary/10 text-foreground border-primary/20" },
-  delivered: { label: "Teslim Edildi", color: "bg-success/10 text-foreground border-success/20" },
-  cancelled: { label: "İptal", color: "bg-destructive/10 text-foreground border-destructive/20" },
+  draft: { label: "Taslak", tone: "neutral" },
+  waiting_approval: { label: "Onay Bekliyor", tone: "warning" },
+  approved: { label: "Onaylandı", tone: "success" },
+  in_progress: { label: "Devam Ediyor", tone: "primary" },
+  waiting_parts: { label: "Parça Bekliyor", tone: "warning" },
+  ready_for_delivery: { label: "Teslime Hazır", tone: "primary" },
+  delivered: { label: "Teslim Edildi", tone: "success" },
+  cancelled: { label: "İptal", tone: "destructive" },
 } as const
 
 export const PAYMENT_STATUS = {
-  unpaid: { label: "Ödenmedi", color: "bg-destructive/10 text-foreground border-destructive/20" },
-  partial: { label: "Kısmi ödeme", color: "bg-warning/10 text-foreground border-warning/20" },
-  paid: { label: "Ödendi", color: "bg-success/10 text-foreground border-success/20" },
-  overpaid: { label: "Fazla Ödeme", color: "bg-primary/10 text-foreground border-primary/20" },
-  cancelled: { label: "İptal", color: "bg-muted text-foreground border-border" },
+  unpaid: { label: "Ödenmedi", tone: "destructive" },
+  partial: { label: "Kısmi ödeme", tone: "warning" },
+  paid: { label: "Ödendi", tone: "success" },
+  overpaid: { label: "Fazla Ödeme", tone: "primary" },
+  cancelled: { label: "İptal", tone: "neutral" },
 } as const
 
 export const ORDER_STATUS_ORDER: readonly OrderStatusKey[] = [
@@ -159,17 +159,17 @@ export const PHOTO_PHASE_SHORT_LABELS: Record<PhotoPhaseKey, string> = {
 }
 
 export const CUSTOMER_TYPES = {
-  individual: { label: "Bireysel", color: "bg-primary/10 text-foreground border-primary/20" },
-  corporate: { label: "Kurumsal", color: "bg-secondary text-secondary-foreground border-border" },
+  individual: { label: "Bireysel", tone: "primary" },
+  corporate: { label: "Kurumsal", tone: "neutral" },
 } as const
 
 export type CustomerTypeKey = keyof typeof CUSTOMER_TYPES
 
 export const CUSTOMER_TAGS = {
-  standard: { label: "Standart", color: "bg-muted text-foreground border-border" },
-  vip: { label: "VIP", color: "bg-warning/10 text-foreground border-warning/20" },
-  risky: { label: "Riskli", color: "bg-destructive/10 text-foreground border-destructive/20" },
-  fleet: { label: "Filo", color: "bg-primary/10 text-foreground border-primary/20" },
+  standard: { label: "Standart", tone: "neutral" },
+  vip: { label: "VIP", tone: "warning" },
+  risky: { label: "Riskli", tone: "destructive" },
+  fleet: { label: "Filo", tone: "primary" },
 } as const
 
 export type CustomerTagKey = keyof typeof CUSTOMER_TAGS
@@ -186,9 +186,9 @@ export const CUSTOMER_SOURCES = {
 export type CustomerSourceKey = keyof typeof CUSTOMER_SOURCES
 
 export const CUSTOMER_PRICE_GROUPS = {
-  standard: { label: "Standart", color: "bg-muted text-foreground border-border" },
-  discounted: { label: "İndirimli", color: "bg-success/10 text-foreground border-success/20" },
-  fleet: { label: "Filo", color: "bg-primary/10 text-foreground border-primary/20" },
+  standard: { label: "Standart", tone: "neutral" },
+  discounted: { label: "İndirimli", tone: "success" },
+  fleet: { label: "Filo", tone: "primary" },
 } as const
 
 export type CustomerPriceGroupKey = keyof typeof CUSTOMER_PRICE_GROUPS
@@ -278,45 +278,45 @@ export function tecdocFuelToFormValue(fuel: string | null): string {
 }
 
 export const QUOTE_STATUS = {
-  draft: { label: "Taslak", color: "bg-muted text-foreground border-border" },
-  sent: { label: "Gönderildi", color: "bg-primary/10 text-foreground border-primary/20" },
-  accepted: { label: "Kabul Edildi", color: "bg-success/10 text-foreground border-success/20" },
-  rejected: { label: "Reddedildi", color: "bg-destructive/10 text-foreground border-destructive/20" },
-  expired: { label: "Süresi Doldu", color: "bg-warning/10 text-foreground border-warning/20" },
-  converted: { label: "Araç Kabulüne Çevrildi", color: "bg-primary/10 text-foreground border-primary/20" },
-  cancelled: { label: "İptal", color: "bg-muted text-foreground border-border" },
+  draft: { label: "Taslak", tone: "neutral" },
+  sent: { label: "Gönderildi", tone: "primary" },
+  accepted: { label: "Kabul Edildi", tone: "success" },
+  rejected: { label: "Reddedildi", tone: "destructive" },
+  expired: { label: "Süresi Doldu", tone: "warning" },
+  converted: { label: "Araç Kabulüne Çevrildi", tone: "primary" },
+  cancelled: { label: "İptal", tone: "neutral" },
 } as const
 
 export type QuoteStatusKey = keyof typeof QUOTE_STATUS
 
 export const APPOINTMENT_STATUS = {
-  scheduled: { label: "Planlandı", color: "bg-primary/10 text-foreground border-primary/20" },
-  confirmed: { label: "Onaylandı", color: "bg-success/10 text-foreground border-success/20" },
-  arrived: { label: "Geldi", color: "bg-primary/10 text-foreground border-primary/20" },
-  converted: { label: "Araç Kabulüne Çevrildi", color: "bg-primary/10 text-foreground border-primary/20" },
-  completed: { label: "Tamamlandı", color: "bg-success/10 text-foreground border-success/20" },
-  cancelled: { label: "İptal", color: "bg-muted text-foreground border-border" },
-  no_show: { label: "Gelmedi", color: "bg-destructive/10 text-foreground border-destructive/20" },
+  scheduled: { label: "Planlandı", tone: "primary" },
+  confirmed: { label: "Onaylandı", tone: "success" },
+  arrived: { label: "Geldi", tone: "primary" },
+  converted: { label: "Araç Kabulüne Çevrildi", tone: "primary" },
+  completed: { label: "Tamamlandı", tone: "success" },
+  cancelled: { label: "İptal", tone: "neutral" },
+  no_show: { label: "Gelmedi", tone: "destructive" },
 } as const
 
 export type AppointmentStatusKey = keyof typeof APPOINTMENT_STATUS
 
 export const REMINDER_STATUS = {
-  none: { label: "Yok", color: "bg-muted text-foreground border-border" },
-  pending: { label: "Bekliyor", color: "bg-warning/10 text-foreground border-warning/20" },
-  sent: { label: "Gönderildi", color: "bg-success/10 text-foreground border-success/20" },
-  failed: { label: "Başarısız", color: "bg-destructive/10 text-foreground border-destructive/20" },
+  none: { label: "Yok", tone: "neutral" },
+  pending: { label: "Bekliyor", tone: "warning" },
+  sent: { label: "Gönderildi", tone: "success" },
+  failed: { label: "Başarısız", tone: "destructive" },
 } as const
 
 export type ReminderStatusKey = keyof typeof REMINDER_STATUS
 
 export const MAINTENANCE_REMINDER_STATUS = {
-  upcoming: { label: "Yaklaşan", color: "bg-primary/10 text-foreground border-primary/20" },
-  due_soon: { label: "Yaklaşıyor", color: "bg-warning/10 text-foreground border-warning/20" },
-  overdue: { label: "Gecikmiş", color: "bg-destructive/10 text-foreground border-destructive/20" },
-  completed: { label: "Tamamlandı", color: "bg-success/10 text-foreground border-success/20" },
-  postponed: { label: "Ertelendi", color: "bg-primary/10 text-foreground border-primary/20" },
-  cancelled: { label: "İptal", color: "bg-muted text-foreground border-border" },
+  upcoming: { label: "Yaklaşan", tone: "primary" },
+  due_soon: { label: "Yaklaşıyor", tone: "warning" },
+  overdue: { label: "Gecikmiş", tone: "destructive" },
+  completed: { label: "Tamamlandı", tone: "success" },
+  postponed: { label: "Ertelendi", tone: "primary" },
+  cancelled: { label: "İptal", tone: "neutral" },
 } as const
 
 export type MaintenanceReminderStatusKey = keyof typeof MAINTENANCE_REMINDER_STATUS
@@ -345,63 +345,63 @@ export const MAINTENANCE_CHANNELS = {
 export type MaintenanceChannelKey = keyof typeof MAINTENANCE_CHANNELS
 
 export const SUPPLIER_STATUS = {
-  active: { label: "Aktif", color: "bg-success/10 text-foreground border-success/20" },
-  passive: { label: "Pasif", color: "bg-muted text-foreground border-border" },
+  active: { label: "Aktif", tone: "success" },
+  passive: { label: "Pasif", tone: "neutral" },
 } as const
 
 export type SupplierStatusKey = keyof typeof SUPPLIER_STATUS
 
 export const TECHNICIAN_ROLES = {
-  usta: { label: "Usta", color: "bg-warning/10 text-foreground border-warning/20" },
-  cirak: { label: "Çırak", color: "bg-warning/10 text-foreground border-warning/20" },
-  teknisyen: { label: "Teknisyen", color: "bg-primary/10 text-foreground border-primary/20" },
-  servis_danismani: { label: "Servis Danışmanı", color: "bg-secondary text-secondary-foreground border-border" },
-  yonetici: { label: "Yönetici", color: "bg-success/10 text-foreground border-success/20" },
+  usta: { label: "Usta", tone: "warning" },
+  cirak: { label: "Çırak", tone: "warning" },
+  teknisyen: { label: "Teknisyen", tone: "primary" },
+  servis_danismani: { label: "Servis Danışmanı", tone: "neutral" },
+  yonetici: { label: "Yönetici", tone: "success" },
 } as const
 
 export type TechnicianRoleKey = keyof typeof TECHNICIAN_ROLES
 
 export const CHECKLIST_CATEGORIES = {
-  inspection: { label: "Kontrol", color: "bg-primary/10 text-foreground border-primary/20" },
-  repair: { label: "Onarım", color: "bg-warning/10 text-foreground border-warning/20" },
-  delivery: { label: "Teslim", color: "bg-success/10 text-foreground border-success/20" },
+  inspection: { label: "Kontrol", tone: "primary" },
+  repair: { label: "Onarım", tone: "warning" },
+  delivery: { label: "Teslim", tone: "success" },
 } as const
 
 export type ChecklistCategoryKey = keyof typeof CHECKLIST_CATEGORIES
 
 export const PARTS_REQUEST_STATUS = {
-  requested: { label: "Talep Edildi", color: "bg-warning/10 text-foreground border-warning/20" },
-  prepared: { label: "Hazırlandı", color: "bg-primary/10 text-foreground border-primary/20" },
-  delivered: { label: "Teslim Edildi", color: "bg-success/10 text-foreground border-success/20" },
-  cancelled: { label: "İptal Edildi", color: "bg-destructive/10 text-foreground border-destructive/20" },
+  requested: { label: "Talep Edildi", tone: "warning" },
+  prepared: { label: "Hazırlandı", tone: "primary" },
+  delivered: { label: "Teslim Edildi", tone: "success" },
+  cancelled: { label: "İptal Edildi", tone: "destructive" },
 } as const
 
 export type PartsRequestStatusKey = keyof typeof PARTS_REQUEST_STATUS
 
 export const TECHNICIAN_ORDER_STATUSES = {
-  waiting: { label: "Bekliyor", color: "bg-muted text-foreground border-border", icon: "clock" },
-  in_progress: { label: "İşlemde", color: "bg-primary/10 text-foreground border-primary/20", icon: "wrench" },
-  completed: { label: "Tamamlandı", color: "bg-success/10 text-foreground border-success/20", icon: "check-circle" },
+  waiting: { label: "Bekliyor", tone: "neutral", icon: "clock" },
+  in_progress: { label: "İşlemde", tone: "primary", icon: "wrench" },
+  completed: { label: "Tamamlandı", tone: "success", icon: "check-circle" },
 } as const
 
 export const REPAIR_PHOTO_PHASES = {
-  before_repair: { label: "Onarım Öncesi", color: "bg-destructive/10 text-foreground" },
-  during_repair: { label: "Onarım Sırasında", color: "bg-warning/10 text-foreground" },
-  after_repair: { label: "Onarım Sonrası", color: "bg-success/10 text-foreground" },
+  before_repair: { label: "Onarım Öncesi", tone: "destructive" },
+  during_repair: { label: "Onarım Sırasında", tone: "warning" },
+  after_repair: { label: "Onarım Sonrası", tone: "success" },
 } as const
 
 export const COMMUNICATION_TYPES = {
-  sms: { label: "SMS", color: "bg-success/10 text-foreground" },
-  whatsapp: { label: "WhatsApp", color: "bg-success/10 text-foreground" },
-  email: { label: "E-posta", color: "bg-primary/10 text-foreground" },
+  sms: { label: "SMS", tone: "success" },
+  whatsapp: { label: "WhatsApp", tone: "success" },
+  email: { label: "E-posta", tone: "primary" },
 } as const
 
 export type CommunicationTypeKey = keyof typeof COMMUNICATION_TYPES
 
 export const COMMUNICATION_STATUSES = {
-  sent: { label: "Gönderildi", color: "bg-success/10 text-foreground border-success/20" },
-  failed: { label: "Başarısız", color: "bg-destructive/10 text-foreground border-destructive/20" },
-  pending: { label: "Bekliyor", color: "bg-warning/10 text-foreground border-warning/20" },
+  sent: { label: "Gönderildi", tone: "success" },
+  failed: { label: "Başarısız", tone: "destructive" },
+  pending: { label: "Bekliyor", tone: "warning" },
 } as const
 
 export type CommunicationStatusKey = keyof typeof COMMUNICATION_STATUSES

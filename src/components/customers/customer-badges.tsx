@@ -1,4 +1,6 @@
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { statusToneBadgeVariant } from "@/lib/status-tone"
 import {
   CUSTOMER_TYPES,
   CUSTOMER_TAGS,
@@ -12,38 +14,38 @@ export function CustomerTypeBadge({ type, className }: { type: string; className
   const info = CUSTOMER_TYPES[type as CustomerTypeKey]
   if (!info) {
     return (
-      <span className={cn("inline-flex items-center h-5 px-2 rounded-full border bg-muted text-muted-foreground border-border text-xs font-medium", className)}>
-      —
-    </span>
+      <Badge variant="secondary" className={className}>
+        —
+      </Badge>
     )
   }
   return (
-    <span className={cn("inline-flex items-center h-5 px-2 rounded-full border text-xs font-medium", info.color, className)}>
+    <Badge variant={statusToneBadgeVariant(info.tone)} className={className}>
       {info.label}
-    </span>
+    </Badge>
   )
 }
 
 export function CustomerTagBadge({ tag, className }: { tag: string | null | undefined; className?: string }) {
   if (!tag) {
     return (
-      <span className={cn("inline-flex items-center h-5 px-2 rounded-full border bg-muted text-muted-foreground border-border text-[11px] font-medium", className)}>
+      <Badge variant="secondary" className={cn("text-[11px]", className)}>
         —
-      </span>
+      </Badge>
     )
   }
   const info = CUSTOMER_TAGS[tag as CustomerTagKey]
   if (!info) {
     return (
-      <span className={cn("inline-flex items-center h-5 px-2 rounded-full border bg-muted text-muted-foreground border-border text-[11px] font-medium", className)}>
+      <Badge variant="secondary" className={cn("text-[11px]", className)}>
         {tag}
-      </span>
+      </Badge>
     )
   }
   return (
-    <span className={cn("inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-medium", info.color, className)}>
+    <Badge variant={statusToneBadgeVariant(info.tone)} className={cn("text-[11px]", className)}>
       {info.label}
-    </span>
+    </Badge>
   )
 }
 
@@ -52,8 +54,8 @@ export function PriceGroupBadge({ group, className }: { group: string | null | u
   const info = CUSTOMER_PRICE_GROUPS[group as CustomerPriceGroupKey]
   if (!info) return null
   return (
-    <span className={cn("inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-medium", info.color, className)}>
+    <Badge variant={statusToneBadgeVariant(info.tone)} className={cn("text-[11px]", className)}>
       {info.label}
-    </span>
+    </Badge>
   )
 }

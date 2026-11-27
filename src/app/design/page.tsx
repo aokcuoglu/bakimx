@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { StatusBadge, PaymentBadge, CollectionStatusBadge } from "@/components/shared/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,6 +31,7 @@ import { PRIVATE_ROBOTS, brandedTitle } from "@/lib/seo"
 import { MarketingKitShowcase } from "./marketing-kit"
 import { RecordPatterns } from "./record-patterns"
 import { ColorCard } from "./copyable-swatch"
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
@@ -581,6 +583,20 @@ export default function DesignSystemPage() {
               <Badge variant="warning-tint">warning-tint</Badge>
               <Badge variant="destructive-tint">destructive-tint</Badge>
               <Badge variant="primary-tint">primary-tint</Badge>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3" data-testid="status-badge-surfaces">
+              {(["bg-card", "bg-background", "bg-muted"] as const).map((surface) => (
+                <div key={surface} className={cn("flex flex-wrap items-center gap-1.5 rounded-md border border-border p-2", surface)}>
+                  {Object.keys(ORDER_STATUS).map((key) => (
+                    <StatusBadge key={key} status={key} />
+                  ))}
+                  {Object.keys(PAYMENT_STATUS).map((key) => (
+                    <PaymentBadge key={key} status={key} />
+                  ))}
+                  <CollectionStatusBadge status="refunded" />
+                  <Badge variant="destructive">destructive</Badge>
+                </div>
+              ))}
             </div>
           </div>
           <div className="space-y-3 rounded-lg border border-border bg-card p-4" data-testid="selector-sizes">
