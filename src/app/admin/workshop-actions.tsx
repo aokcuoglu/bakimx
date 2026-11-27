@@ -12,6 +12,7 @@ import {
   setWorkshopExtraSeats,
 } from "@/app/admin/actions"
 import { isSalePlanTier, PLAN_LABELS, PLAN_SEATS, planLabel } from "@/lib/plan"
+import { formatTrDate } from "@/lib/format-date"
 
 /** Elle etkinleştirme her zaman tek satış paketine yapılır (#782, #830). Ek
  *  özellikler pakete değil, iş yeri detayındaki anahtarlara bağlıdır (#827). */
@@ -101,7 +102,7 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
             {paidPeriod ? (
               <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
                 <p>Aktif paket: <strong>{planLabel(w.planTier)}</strong></p>
-                <p>Dönem bitişi: <strong>{new Date(w.currentPeriodEnd!).toLocaleDateString("tr-TR")}</strong></p>
+                <p>Dönem bitişi: <strong>{formatTrDate(w.currentPeriodEnd!)}</strong></p>
                 <p className="text-muted-foreground-strong">Ödenmiş dönem boyunca paket değiştirilemez; yenileme için faturalandırma akışını kullanın.</p>
               </div>
             ) : (

@@ -42,6 +42,7 @@ import { Phone, Mail, MessageSquare, FileText, MapPin, Clock, Users, TrendingUp,
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { formatTrPaddedDayMonthShortTime, formatTrPaddedMediumDate } from "@/lib/format-date"
 
 type Lead = {
   id: string
@@ -160,11 +161,11 @@ function getStatusConfig(status: string) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric" })
+  return formatTrPaddedMediumDate(iso)
 }
 
 function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleDateString("tr-TR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+  return formatTrPaddedDayMonthShortTime(iso)
 }
 
 function isExpired(iso: string) {

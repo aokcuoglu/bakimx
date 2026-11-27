@@ -21,6 +21,7 @@ import { PurchaseFormSheet } from "@/components/technician/purchase-form-sheet"
 import type { PickerVehicle } from "@/components/parts/tecdoc-part-picker"
 import { compressImageForUpload } from "@/lib/image/compress-image"
 import { toast } from "sonner"
+import { formatTrDate } from "@/lib/format-date"
 
 export type PurchaseDetailItem = {
   id: string
@@ -49,8 +50,7 @@ function isoToTr(iso: string | null): string {
 /** dd.MM.yyyy / ISO → tr-TR görüntü. */
 function displayDate(iso: string | null): string {
   if (!iso) return "—"
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("tr-TR")
+  return formatTrDate(iso)
 }
 
 /**
