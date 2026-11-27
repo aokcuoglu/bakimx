@@ -4,6 +4,7 @@ import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { surface } from "@/components/dashboard/surface"
 import { prisma } from "@/lib/db"
 import { TechnicianKioskHome } from "@/components/technician/technician-dashboard"
 import { groupKioskOrders } from "@/lib/technician/kiosk-home"
@@ -51,12 +52,9 @@ export default async function TechnicianPage({
 
   if (canSelectTechnician && !focusTechnicianId) {
     return (
-      <AppShell workshopName={workshop?.name} pageTitle="Servis Yönetimi">
+      <AppShell workshopName={workshop?.name} pageTitle="Servis Yönetimi" constrained>
         <div className="space-y-5 sm:space-y-6">
-          <div>
-            <h2 className="text-page-title text-foreground">Servis Yönetimi</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">İş atamalarınızı ve görevlerinizi yönetin</p>
-          </div>
+          <h2 className={surface.heroTitle}>Servis Yönetimi</h2>
           <Card>
             <CardHeader>
               <CardTitle>Henüz teknisyen kaydı yok</CardTitle>
@@ -88,7 +86,7 @@ export default async function TechnicianPage({
   const groups = groupKioskOrders(mine, workshopOrders, focusTechnicianId)
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Servis Yönetimi">
+    <AppShell workshopName={workshop?.name} pageTitle="Servis Yönetimi" constrained>
       <TechnicianKioskHome
         technicians={technicians.map((t) => ({ id: t.id, fullName: t.fullName, role: t.role }))}
         focusTechnicianId={focusTechnicianId}

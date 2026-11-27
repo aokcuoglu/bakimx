@@ -70,11 +70,19 @@ export function TechnicianKioskHome({
     })
   }
 
+  // Yönetici kendi adıyla karşılanmaz: başlık seçili teknisyeni gösterir.
+  const focusName = technicians.find((t) => t.id === optimisticId)?.fullName
+  const heading = canSelectTechnician
+    ? (focusName ?? "Teknisyen")
+    : greetingName
+      ? `Merhaba ${greetingName}`
+      : "Merhaba"
+
   return (
     <div className="space-y-5 sm:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className={surface.heroTitle}>
-          {greetingName ? `Merhaba ${greetingName}` : "Merhaba"}
+          {heading}
           <span className={surface.panelMeta}>· {groups.mine.length} iş</span>
         </h2>
         {canSelectTechnician && (
@@ -97,7 +105,7 @@ export function TechnicianKioskHome({
 
       <div
         aria-busy={isPending}
-        className={cn("space-y-5 transition-opacity sm:space-y-6", isPending && "opacity-60 pointer-events-none")}
+        className={cn("space-y-5 sm:space-y-6", isPending && "pointer-events-none")}
       >
         <section aria-labelledby="technician-mine-title" className="space-y-3">
           <h3 id="technician-mine-title" className={surface.panelTitle}>
@@ -108,7 +116,9 @@ export function TechnicianKioskHome({
             <Card>
               <CardContent className="space-y-1 py-8 text-center">
                 <p className="text-base font-semibold text-foreground">Sana atanmış iş yok</p>
-                <p className="text-sm text-muted-foreground">Atölyedeki diğer işler aşağıda</p>
+                <p className="text-sm text-muted-foreground">
+                  {groups.others.length > 0 ? "Atölyedeki diğer işler aşağıda" : "Şu an açık iş yok"}
+                </p>
               </CardContent>
             </Card>
           ) : (
@@ -120,7 +130,12 @@ export function TechnicianKioskHome({
           )}
         </section>
 
-        <KioskGroup title="Atölyedeki diğer işler" orders={groups.others} showTechnician />
+        <KioskGroup
+          title="Atölyedeki diğer işler"
+          orders={groups.others}
+          showTechnician
+          defaultOpen={groups.mine.length === 0}
+        />
         <KioskGroup title="Taslak" orders={groups.drafts} showTechnician />
         <KioskGroup title="Bugün biten" orders={completedToday} showTechnician />
       </div>
@@ -132,27 +147,33 @@ function KioskGroup({
   title,
   orders,
   showTechnician,
+  defaultOpen,
 }: {
   title: string
   orders: TechnicianOrderRow[]
   showTechnician?: boolean
+  defaultOpen?: boolean
 }) {
   if (orders.length === 0) return null
   return (
-    <Collapsible className="space-y-3">
-      <CollapsibleTrigger asChild>
-        <Button
-          variant="outline"
-          size="row"
-          className="w-full justify-between [&[data-state=open]>svg]:rotate-90"
-        >
-          <span className={surface.panelTitle}>
-            {title}
-            <span className={surface.panelMeta}>({orders.length})</span>
-          </span>
-          <ChevronRight aria-hidden="true" className="transition-transform" />
-        </Button>
-      </CollapsibleTrigger>
+    <Collapsible defaultOpen={defaultOpen} className="space-y-3">
+      <h3>
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            size="row"
+            className="w-full justify-between [&[data-state=open]>svg]:rotate-90"
+          >
+            <span className="flex items-center gap-2">
+              {title}
+              <Badge variant="secondary" className="tabular-nums">
+                {orders.length}
+              </Badge>
+            </span>
+            <ChevronRight aria-hidden="true" className="transition-transform" />
+          </Button>
+        </CollapsibleTrigger>
+      </h3>
       <CollapsibleContent>
         <ItemGroup className="gap-3">
           {orders.map((order) => (
@@ -167,17 +188,15 @@ function KioskGroup({
 function OrderCard({ order, showTechnician }: { order: TechnicianOrderRow; showTechnician?: boolean }) {
   const { completed, total } = order.checklistProgress
   return (
-    <Item asChild className="min-h-11 cursor-pointer bg-card shadow-xs hover:bg-muted/60">
+    <Item asChild className="min-h-11 bg-card">
       <Link href={`/technician/orders/${order.id}`}>
         <ItemContent>
           <ItemHeader className="flex-wrap">
             <Plate plate={order.plate} size="lg" />
             <span className="flex flex-wrap items-center justify-end gap-1.5">
-              <StatusBadge status={order.status} size="lg" className="text-sm" />
+              <StatusBadge status={order.status} size="md" />
               {order.hasActiveLabor && (
-                <Badge variant="outline" className="h-7 border-success/20 bg-success/10 px-3 text-sm text-success-strong">
-                  İşçilik
-                </Badge>
+                <Badge variant="outline">İşçilik sürüyor</Badge>
               )}
             </span>
           </ItemHeader>
@@ -185,9 +204,11 @@ function OrderCard({ order, showTechnician }: { order: TechnicianOrderRow; showT
             <Car className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             <span className="line-clamp-1">
               {order.brand} {order.model}
-              {order.customerComplaint ? ` · ${order.customerComplaint}` : ""}
             </span>
           </ItemTitle>
+          {order.customerComplaint && (
+            <ItemDescription className="line-clamp-2">{order.customerComplaint}</ItemDescription>
+          )}
           {(total > 0 || showTechnician) && (
             <ItemDescription className="flex flex-wrap items-center gap-x-3">
               {total > 0 && (
