@@ -288,7 +288,7 @@ export function SalesLeadDetail({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl font-bold text-foreground sm:text-2xl">{lead.businessName}</h1>
-              <Badge variant={lead.status === "lost" ? "destructive" : "outline"} className={lead.status === "won" ? "border-success/20 bg-success/10 text-success-strong" : undefined}>
+              <Badge variant={lead.status === "lost" ? "destructive" : lead.status === "won" ? "success-tint" : "outline"}>
                 {lead.status === "won" ? "Kazanıldı" : lead.status === "lost" ? "Kaybedildi" : STATUS_OPTIONS.find(([key]) => key === lead.status)?.[1] ?? lead.status}
               </Badge>
             </div>

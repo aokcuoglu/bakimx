@@ -15,6 +15,10 @@ export const internalNoteSchema = z.object({
   content: z.string().min(1, "Not içeriği zorunludur").max(2000),
 })
 
+/** İş ekranındaki "Not" sayfasının formu — serviceOrderId sayfadan gelir. */
+export const internalNoteFormSchema = internalNoteSchema.pick({ content: true })
+export type InternalNoteFormInput = z.infer<typeof internalNoteFormSchema>
+
 /**
  * Talep tipi (BAK-105). `part` varsayılandır — tip alanı hiç gönderilmezse
  * bugünkü davranış aynen korunur.

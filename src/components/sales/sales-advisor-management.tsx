@@ -196,7 +196,7 @@ export function SalesAdvisorManagement({
                   <TableCell>
                     {advisor.disabledAt
                       ? <Badge variant="outline">Erişim kapalı</Badge>
-                      : <Badge variant="outline" className="bg-success/10 text-success-strong">Etkin</Badge>}
+                      : <Badge variant="success-tint">Etkin</Badge>}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{formatDateTime(advisor.createdAt)}</TableCell>
                   <TableCell className="text-right">

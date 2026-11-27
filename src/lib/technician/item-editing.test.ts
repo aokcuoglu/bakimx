@@ -41,3 +41,14 @@ test("teknisyen bölümü ofis düzenleyicisini paylaşır, kopyasını yazmaz",
   expect(source).toContain('from "@/components/orders/parts-labor-grid"')
   expect(source).toContain("<PartsLaborGrid")
 })
+
+test("iş ekranı ekleme yüzeyini ve araç çubuğunu seçer; ofis varsayılanı değişmez", () => {
+  const section = readFileSync("src/components/technician/technician-parts-labor-section.tsx", "utf8")
+  expect(section).toContain("hideAddToolbar")
+  expect(section).toContain('addSurface={isMobile ? "sheet" : "dialog"}')
+
+  const grid = readFileSync("src/components/orders/parts-labor-grid.tsx", "utf8")
+  // Ofis çağrı yerleri hiçbir şey vermez: varsayılan merkez pencere kalır.
+  expect(grid).toContain('addSurface = "dialog"')
+  expect(grid).toContain("hideAddToolbar = false")
+})
