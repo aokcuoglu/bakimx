@@ -231,6 +231,7 @@ export function BillingPlanManager({
             trialDaysLeft={trialDaysLeft}
             referralDiscountBps={referralDiscountBps}
             addonViews={addonViews}
+            addonNotice={addonNotice}
             onPurchaseAddon={setAddonDialogKey}
             onSelectPlan={choosePlan}
             onManagePlan={() => openManage()}
