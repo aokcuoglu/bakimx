@@ -22,6 +22,7 @@ import type {
   AdminOrderWorkshopOption,
   OrderStatusFilter,
 } from "@/app/admin/catalog/orders/data"
+import { formatTrDateTime } from "@/lib/format-date"
 
 /**
  * Gelen sipariş taleplerinin listesi ve durum geçişleri (BAK-60).
@@ -188,7 +189,7 @@ export function OrdersList({
                       </Badge>
                       <span className="text-sm font-medium text-foreground">{order.workshopName}</span>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(order.createdAt).toLocaleString("tr-TR")}
+                        {formatTrDateTime(order.createdAt)}
                       </span>
                       {order.hasShortfall && order.status !== "cancelled" && (
                         <span className="flex items-center gap-1 text-xs text-warning-strong">

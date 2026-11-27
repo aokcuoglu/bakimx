@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AddPlatformAdminForm } from "@/app/admin/admins/add-admin-form"
 import { PlatformAdminRow } from "@/app/admin/admins/admin-row-actions"
+import { formatTrDate, formatTrDateTime } from "@/lib/format-date"
 
 export const metadata = { title: "Yöneticiler · Yönetim" }
 
@@ -101,10 +102,10 @@ export default async function AdminAdminsPage() {
                       workshopName: a.user.workshop.name,
                       userActive: a.user.isActive,
                       isSelf: a.user.id === ctx.user.id,
-                      createdAtLabel: a.createdAt.toLocaleDateString("tr-TR"),
+                      createdAtLabel: formatTrDate(a.createdAt),
                       createdByEmail: a.createdBy?.email ?? null,
                       sessionsValidFromLabel:
-                        a.sessionsValidFrom?.toLocaleString("tr-TR") ?? null,
+                        a.sessionsValidFrom ? formatTrDateTime(a.sessionsValidFrom) : null,
                     }}
                   />
                 ))}

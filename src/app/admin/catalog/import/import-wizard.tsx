@@ -27,6 +27,7 @@ import type { CatalogBrandOption } from "@/app/admin/catalog/data"
 import type { CatalogImportHistoryRow } from "@/app/admin/catalog/import/data"
 import { cancelBakimxCatalogImportAction } from "@/app/admin/catalog/import/actions"
 import type { ImportActionError, ImportApplyResult, ImportPreviewResult, ImportPreviewRow } from "@/lib/catalog/bakimx-import-service"
+import { formatTrDateTime } from "@/lib/format-date"
 
 /**
  * İçe aktarma sihirbazı: **dosya seç → ön izle → uygula.**
@@ -626,7 +627,7 @@ function ImportHistory({ rows }: { rows: CatalogImportHistoryRow[] }) {
                 <TableCell className="text-right tabular-nums">{row.skippedCount}</TableCell>
                 <TableCell className="text-right tabular-nums">{row.errorCount}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">
-                  {new Date(row.appliedAt ?? row.createdAt).toLocaleString("tr-TR")}
+                  {formatTrDateTime(row.appliedAt ?? row.createdAt)}
                 </TableCell>
               </TableRow>
             ))}
