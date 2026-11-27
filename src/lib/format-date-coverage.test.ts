@@ -55,7 +55,6 @@ const PENDING_MIGRATION: Record<string, string> = {
   "app/admin/workshop-actions.tsx": "#875",
   "components/intake/damage-capture.tsx": "#875",
   "components/orders/parts-labor-grid.tsx": "#875",
-  "components/purchases/purchase-detail-dialog.tsx": "#875",
   "components/technician/technician-order-detail.tsx": "#875",
 }
 
