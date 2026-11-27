@@ -43,6 +43,7 @@ import { Phone, Mail, MessageSquare, FileText, MapPin, Clock, Users, TrendingUp,
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { istanbulDayKey } from "@/lib/istanbul-time"
 
 type Lead = {
   id: string
@@ -998,7 +999,7 @@ function DiscountCodeSection({
 
   function openExpiryEditor(code: DiscountCode) {
     setEditingCode(code)
-    setExpiryDate(format(new Date(code.expiresAt), "yyyy-MM-dd"))
+    setExpiryDate(istanbulDayKey(new Date(code.expiresAt)))
     setCalendarOpen(false)
   }
 
