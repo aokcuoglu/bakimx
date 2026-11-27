@@ -250,9 +250,8 @@ export function AppointmentCreateForm({
               <div className="flex justify-end">
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="tint-ghost"
                   size="sm"
-                  className="text-primary"
                   onClick={() => setVehicleModalOpen(true)}
                 >
                   <Plus className="size-4" />

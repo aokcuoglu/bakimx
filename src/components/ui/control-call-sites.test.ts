@@ -160,6 +160,9 @@ export const ACCORDION_CONTROLS = ["Accordion", "AccordionItem", "AccordionTrigg
 /** Açılır bölüm (#950): kendi kural setiyle taranır. */
 export const COLLAPSIBLE_CONTROLS = ["Collapsible", "CollapsibleTrigger", "CollapsibleContent"] as const
 
+/** Menü satırı (#1003): yıkıcı ton bileşenin `variant="destructive"`ından gelir. */
+export const MENU_ITEM_CONTROLS = ["DropdownMenuItem"] as const
+
 export const CONTROLS = [
   ...FIELD_CONTROLS,
   ...BUTTON_CONTROLS,
@@ -167,6 +170,7 @@ export const CONTROLS = [
   ...TAB_CONTROLS,
   ...ACCORDION_CONTROLS,
   ...COLLAPSIBLE_CONTROLS,
+  ...MENU_ITEM_CONTROLS,
 ] as const
 
 type Control = (typeof CONTROLS)[number]
@@ -179,6 +183,8 @@ const usesButtonRules = (name: string) =>
 const usesAccordionRules = (name: string) => (ACCORDION_CONTROLS as readonly string[]).includes(name)
 
 const usesCollapsibleRules = (name: string) => (COLLAPSIBLE_CONTROLS as readonly string[]).includes(name)
+
+const usesMenuItemRules = (name: string) => (MENU_ITEM_CONTROLS as readonly string[]).includes(name)
 
 type Family = {
   /** Raporda görünen ad. */
@@ -231,6 +237,15 @@ export const FORBIDDEN: readonly Family[] = [
 ]
 
 /**
+ * Menü satırı (#1003): yıkıcı satır `variant="destructive"` yazar; bileşen
+ * metin, ikon ve odak/vurgu zeminini kendisi verir. `text-destructive-strong`,
+ * `data-highlighted:text-…` ya da `bg-destructive/N` elle yazılmaz.
+ */
+export const MENU_ITEM_FORBIDDEN: readonly Family[] = [
+  { name: 'yıkıcı ton → variant="destructive"', pattern: /^(?:text-destructive(?:-strong)?|bg-destructive(?:\/(?:\d+|\[[^\]]+\]))?)$/ },
+]
+
+/**
  * Düğme ailesinin yasak sınıfları (#889). Form kontrollerinden farkı: yatay
  * dolgu, durum rengi ve tonu, yüzen gölge, `border-dashed`, vurgu halkası
  * serbest; `h-full` / `size-full` (hücreyi dolduran düğme) yerleşimdir.
@@ -259,6 +274,12 @@ export const BUTTON_FORBIDDEN: readonly Family[] = [
   // TabsTrigger'da bu variant'lar yoktur: gerekçeli istisna ister (fuel-gauge). Gri dinlenen satır
   // simgesi `variant="destructive-ghost"` + `className="text-muted-foreground"`.
   { name: 'yıkıcı ton → variant="destructive-ghost" / "destructive-outline"', pattern: /^(?:text-destructive(?:-strong)?|bg-destructive(?:\/(?:\d+|\[[^\]]+\]))?)$/ },
+  // Dilim 3 (#1003): renkli hayalet eylem. Birincil / başarı metni her önekte
+  // variant'tan gelir (`variant="tint-ghost"` / `"success-ghost"`). Dinlenme
+  // rengi taranır (öneksiz, kırılım / koyu önekli); `hover:text-primary` ve
+  // `data-[state=on]:text-primary-strong` gibi durum renkleri serbest kalır.
+  { name: 'birincil metin → variant="tint-ghost" / "tint"', pattern: /^text-primary(?:-strong)?$/, when: "base" },
+  { name: 'başarı metni → variant="success-ghost"', pattern: /^text-success(?:-strong)?$/, when: "base" },
   { name: 'uyarı ton → variant="warning-tint"', pattern: /^(?:bg|border)-warning(?:-foreground)?(?:\/(?:\d+|\[[^\]]+\]))?$/ },
   { name: 'fotoğraf üstü ton → variant="on-photo" / "on-photo-ghost" / "on-photo-scrim"', pattern: /^(?:bg|border)-(?:white|black)(?:\/(?:\d+|\[[^\]]+\]))?$/ },
 ]
@@ -331,7 +352,9 @@ export function violations(tag: Pick<JsxOpeningTag, "name" | "classLiterals" | "
   const button = usesButtonRules(tag.name)
   const accordion = usesAccordionRules(tag.name)
   const collapsible = usesCollapsibleRules(tag.name)
-  const families = collapsible
+  const families = usesMenuItemRules(tag.name)
+    ? MENU_ITEM_FORBIDDEN
+    : collapsible
     ? COLLAPSIBLE_FORBIDDEN
     : accordion
       ? ACCORDION_FORBIDDEN
@@ -724,6 +747,32 @@ describe("form kontrolleri, düğmeler ve akordeon çağrı yerinde ezilmez (#88
       '<Button variant="tint" size="default">',
       '<CarouselPrevious size="icon" variant="on-photo-scrim" className="left-2" />',
       '<Button variant="outline" className="hover:bg-primary/10 text-warning-strong">',
+    ]
+    for (const source of good) {
+      for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])
+    }
+  })
+
+  test("düğme tonu dilim 3: renkli hayalet eylem ve menü satırı yıkıcı tonu variant'tan gelir (#1003)", () => {
+    const bad = [
+      '<Button variant="ghost" className="text-primary">',
+      '<Button variant="ghost" className="gap-1 text-primary hover:text-primary">',
+      '<Button variant="ghost" className="text-success-strong">',
+      '<DropdownMenuItem className="gap-2 text-destructive-strong data-highlighted:text-destructive-strong">',
+      '<DropdownMenuItem className="focus:bg-destructive/10">',
+    ]
+    for (const source of bad) {
+      const tags = jsxOpeningTags(source, CONTROLS)
+      expect(tags.length).toBeGreaterThan(0)
+      expect(violations(tags[0])).not.toEqual([])
+    }
+
+    const good = [
+      '<Button variant="tint-ghost" size="sm" className="gap-1.5">',
+      '<Button variant="success-ghost" size="sm">',
+      '<Button variant="link" className="text-muted-foreground hover:text-primary">',
+      '<DropdownMenuItem variant="destructive" className="gap-2">',
+      '<DropdownMenuItem className="gap-2" onClick={onEdit}>',
     ]
     for (const source of good) {
       for (const tag of jsxOpeningTags(source, CONTROLS)) expect(violations(tag)).toEqual([])
