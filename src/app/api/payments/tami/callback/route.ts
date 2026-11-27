@@ -89,6 +89,7 @@ async function sendReceiptEmail(orderId: string, maskedPan: string | null, refer
       maskedPan,
       periodEnd: order.periodEnd,
       reference: reference ?? orderId,
+      isAddon: order.type === "addon",
     })
 
     await sendSystemEmail({

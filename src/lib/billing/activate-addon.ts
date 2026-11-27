@@ -1,4 +1,4 @@
-import type { BillingOrder, Prisma } from "@prisma/client"
+import { Prisma, type BillingOrder } from "@prisma/client"
 import { AuditLogAction } from "@/lib/audit"
 import { prisma } from "@/lib/db"
 import { addonFeaturesFor, parseAddonOrderLines } from "@/lib/billing/addon-pricing"
@@ -53,6 +53,11 @@ export async function activateAddonOrder(
       if (claimed.count === 0) throw new Error("ALREADY_PROCESSED")
 
       const { workshopIds } = await resolveBillingAccount(account, tx)
+      // Şube satırları da kilitlenir (sıralı id): eşzamanlı yazımlar okunan `addons`
+      // üzerinden birbirini ezmesin. Hesap satırı zaten yukarıda kilitli; sıra
+      // sabit olduğundan kilit sırası çakışmaz.
+      const lockIds = [...new Set(workshopIds)].sort()
+      await tx.$queryRaw`SELECT id FROM "Workshop" WHERE id IN (${Prisma.join(lockIds)}) ORDER BY id FOR UPDATE`
       const targets = await tx.workshop.findMany({
         where: { id: { in: workshopIds } },
         select: { id: true, addons: true },

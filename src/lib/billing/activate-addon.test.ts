@@ -24,10 +24,12 @@ let orderStatus = "pending_payment"
 let claimWrites: Record<string, unknown>[] = []
 let audits: string[] = []
 let lockedIds: string[] = []
+let branchLockIds: string[] = []
 
 const tx = {
-  $queryRaw: async (_s: TemplateStringsArray, id: string) => {
-    lockedIds.push(id)
+  $queryRaw: async (_s: TemplateStringsArray, arg: unknown) => {
+    if (typeof arg === "string") lockedIds.push(arg)
+    else branchLockIds.push(...((arg as { values: string[] }).values))
     return []
   },
   workshop: {
@@ -98,6 +100,7 @@ beforeEach(() => {
   claimWrites = []
   audits = []
   lockedIds = []
+  branchLockIds = []
 })
 
 describe("activateAddonOrder", () => {
@@ -127,6 +130,8 @@ describe("activateAddonOrder", () => {
     expect(workshops[0].extraSeats).toBe(0)
     expect(claimWrites[0]).toMatchObject({ status: "confirmed", periodEnd: FUTURE, confirmedByEmail: "tami" })
     expect(lockedIds).toEqual(["w1"])
+    expect(branchLockIds).toEqual([...branchLockIds].sort())
+    expect(branchLockIds).toContain("w1")
   })
 
   test("ikinci çağrı talebi kaybeder (idempotent) ve tekrar yazmaz", async () => {

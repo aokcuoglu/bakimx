@@ -16,6 +16,7 @@ import type { BillingCycle } from "@prisma/client"
 import type { PlanTier } from "@/lib/plan"
 import { actorCan } from "@/lib/roles"
 import { canCancelPendingCardOrder } from "@/lib/billing/cancellation"
+import { releaseExpiredAddonOrders } from "@/lib/billing/release-expired-addon-orders"
 
 /**
  * Creates a pending-payment BillingOrder for the current workshop (upgrade /
@@ -52,11 +53,11 @@ export async function createBillingOrder(input: {
   // Tekrar mükerrer talebi engelle: aynı workshop'un zaten bekleyen bir siparişi
   // varsa (hesap üzerinden) VEYA aynı vergi/TC no ile başka bir workshop'un
   // bekleyen siparişi varsa (kimlik üzerinden) yeni talep oluşturulamaz.
+  const pendingScope = { OR: [{ workshopId: workshop.id }, { workshop: { taxNumber: data.taxNumber } }] }
+  // Dönemi bitmiş, canlı ödemesi olmayan ek özellik siparişi yenilemeyi kilitlemesin (#829).
+  await releaseExpiredAddonOrders(pendingScope)
   const duplicatePending = await prisma.billingOrder.findFirst({
-    where: {
-      status: "pending_payment",
-      OR: [{ workshopId: workshop.id }, { workshop: { taxNumber: data.taxNumber } }],
-    },
+    where: { status: "pending_payment", ...pendingScope },
     select: { workshopId: true },
   })
   if (duplicatePending) {

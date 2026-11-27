@@ -247,11 +247,13 @@ export default async function PaymentResultPage({
   } else if (err === "config") {
     errorMessage =
       "Kart ödemesi şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin veya bizimle iletişime geçin."
+  } else if (err === "period") {
+    errorMessage = "Paket döneminiz sona ermiş; ek özellik için önce paketinizi yenileyin. Kartınızdan tahsilat yapılmadı."
   }
 
   // Yapılandırma hatasında kart yeniden-deneme panelini gösterme — deneme yine
   // aynı guard'a takılır; kullanıcıya "iletişime geçin" ipucu daha doğru.
-  const canRetryCard = order.method === "card" && err !== "config"
+  const canRetryCard = order.method === "card" && err !== "config" && err !== "period"
 
   return (
     <Shell>

@@ -190,3 +190,23 @@ test("verifyEmailEmail: firstName yoksa 'Yetkili' kullanılır", () => {
   const built = verifyEmailEmail({ verifyUrl: "https://x/y" })
   expect(built.html).toContain("Yetkili")
 })
+
+test("paymentReceiptEmail: ek özellik makbuzu ek özellik etiketlerini kullanır (#829)", () => {
+  const base = {
+    workshopName: "Usta Oto",
+    planLabel: "Ek özellik: Şaseden parça",
+    cycleLabel: "Aylık",
+    amountMinor: 10000,
+    maskedPan: null,
+    periodEnd: new Date("2026-08-06T00:00:00.000Z"),
+    reference: "REF-9",
+  }
+  const addon = paymentReceiptEmail({ ...base, isAddon: true })
+  expect(addon.html).toContain("Ek özellik:</strong>")
+  expect(addon.html).toContain("Geçerlilik bitişi")
+  expect(addon.html).not.toContain("Yeni dönem bitişi")
+  expect(addon.html).not.toContain("Paket:")
+  const pkg = paymentReceiptEmail(base)
+  expect(pkg.html).toContain("Paket:")
+  expect(pkg.html).toContain("Yeni dönem bitişi")
+})
