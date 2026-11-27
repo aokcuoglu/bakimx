@@ -19,10 +19,8 @@ import {
   Item,
   ItemActions,
   ItemContent,
-  ItemDescription,
   ItemGroup,
   ItemHeader,
-  ItemTitle,
 } from "@/components/ui/item"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { TechnicianQuickActions } from "@/components/technician/technician-quick-actions"
@@ -226,16 +224,19 @@ function OrderCard({
               )}
             </span>
           </ItemHeader>
-          <ItemTitle className="text-base font-semibold">
+          {/* line-clamp, kendi display'ini (-webkit-box) ister: flex/ItemTitle ile
+              birleşince satır kutusu 10px'e kırpılıyordu. Kırpma yalnız metin
+              düğümünde; simge dışarıda, satırlar kutuya sığmayınca küçülmez. */}
+          <p className="shrink-0 text-base leading-snug font-semibold text-foreground">
             <span className="line-clamp-1">
               {order.brand} {order.model}
             </span>
-          </ItemTitle>
+          </p>
           {order.customerComplaint && (
-            <ItemDescription className="flex items-start gap-1.5">
+            <div className="flex shrink-0 items-start gap-1.5 text-sm leading-normal text-muted-foreground">
               <MessageSquareText className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              <span className="line-clamp-2">{order.customerComplaint}</span>
-            </ItemDescription>
+              <p className="line-clamp-2 min-w-0">{order.customerComplaint}</p>
+            </div>
           )}
           <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-2.5 text-sm text-muted-foreground">
             {showTechnician &&

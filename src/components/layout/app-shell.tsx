@@ -407,7 +407,7 @@ function AppSidebar({
   const pathname = usePathname()
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
   const inSettings = isSettingsPath(pathname)
-  const { isMobile, setOpenMobile } = useSidebar()
+  const { isMobile, state, setOpenMobile } = useSidebar()
 
   const visibleGroups = (isTechRole ? TECHNICIAN_NAV_GROUPS : NAV_GROUPS).map((group) => ({
     ...group,
@@ -474,7 +474,9 @@ function AppSidebar({
             </div>
           ) : null}
           {isTechRole ? (
-            !isMobile ? <TechnicianNotificationsBell /> : null
+            // Daraltılmış (offcanvas) sidebar ekran dışıdır; zil o zaman bardadır.
+            // Her an tek zil kurulu: ikisi birden iki yoklama demektir.
+            !isMobile && state === "expanded" ? <TechnicianNotificationsBell /> : null
           ) : (
             <Tooltip>
               <TooltipTrigger asChild>
