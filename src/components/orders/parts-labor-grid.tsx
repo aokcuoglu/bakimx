@@ -63,7 +63,7 @@ import { formatItemAddedMessage } from "@/lib/orders/item-added-message"
 import { kurusToLira, parseTRYToKurus } from "@/lib/money"
 import { evaluateMoneyExpression } from "@/lib/money-expression"
 import { isDivisibleOrderItemUnit, ORDER_ITEM_UNIT_LABELS, ORDER_ITEM_UNITS } from "@/lib/orders/quantity"
-import { effectiveTaxBps, lineVatKurus } from "@/lib/orders/line-vat"
+import { lineVatKurus, rowTaxBps } from "@/lib/orders/line-vat"
 import {
   needsMarkup,
   purchaseMarginHint,
@@ -131,8 +131,13 @@ type OnShowDetail = (req: DetailRequest) => void
  * ve mobil kart aynı değeri buradan okur — on hücreden prop geçirmek yerine.
  */
 type VatState = {
-  /** Satır KDV ipucunda kullanılan oran (bps) — belgenin oranı, yoksa standart %20. */
+  /** Satır KDV ipucunda kullanılan oran (bps) — belgenin GERÇEK oranı; yoksa 0 (totals.ts ile aynı). */
   taxBps: number
+  /**
+   * Yeni (henüz tick'lenmemiş/kaydedilmemiş) satırın önizleme oranı: tick belgeye
+   * standart %20'yi yazacaksa %20, aksi hâlde `taxBps`.
+   */
+  pendingTaxBps: number
   /** Satır başına KDV tick'i bu belgede anlamlı mı (teklifte değil — bkz. QuoteItemsEditor). */
   perLine: boolean
   /**
@@ -149,7 +154,8 @@ type VatState = {
 }
 
 const VatContext = createContext<VatState>({
-  taxBps: effectiveTaxBps(null),
+  taxBps: 0,
+  pendingTaxBps: 0,
   perLine: true,
   defaultLiable: false,
   ensureDocumentTax: () => {},
@@ -310,7 +316,8 @@ export function PartsLaborEditor({
   const documentTaxSet = (taxRateBps ?? 0) > 0
   const vat = useMemo<VatState>(
     () => ({
-      taxBps: effectiveTaxBps(taxRateBps),
+      taxBps: rowTaxBps(taxRateBps, false),
+      pendingTaxBps: rowTaxBps(taxRateBps, vatPerLine && !!onApplyStandardTax),
       perLine: vatPerLine,
       defaultLiable: defaultVatLiable,
       ensureDocumentTax: () => {
@@ -504,7 +511,15 @@ export function PartsLaborEditor({
             <DialogDescription>Değişiklikler Kaydet seçilince araç kabulüne uygulanır.</DialogDescription>
           </DialogHeader>
           {editingRow && (
-            <VatContext.Provider value={{ ...vat, ensureDocumentTax: () => {} }}>
+            <VatContext.Provider
+              value={{
+                ...vat,
+                // Kaydet, özgün satır tabi değilken tick'i belgeye %20 yazar —
+                // önizleme de aynısını göstersin (saveEditedRow koşuluyla aynı).
+                taxBps: originalRow?.includeVat === false ? vat.pendingTaxBps : vat.taxBps,
+                ensureDocumentTax: () => {},
+              }}
+            >
               <MobilePartRow
                 row={editingRow}
                 orderId={orderId}
@@ -965,7 +980,7 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog, modalLayou
   const [submitting, setSubmitting] = useState(false)
   const onCell: OnCell = (_row, patch) => setDraft((d) => ({ ...d, ...patch }))
   // İşçilikte araç bağı yok; useRowEditor yalnız fiyat/toplam mantığı için.
-  const ed = useRowEditor(draft, undefined, false, onCell)
+  const ed = useRowEditor(draft, undefined, false, onCell, true)
   const isExternal = mode === "external_labor"
 
   async function submit() {
@@ -1452,7 +1467,14 @@ function VatHint({ vatKurus, className, included }: { vatKurus: number; classNam
 
 // ── Satır-editör paylaşılan mantığı ─────────────────────────────────────────
 // Masaüstü <tr>, mobil kart VE composer aynı state/işleyicileri bu hook'tan alır.
-function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: boolean, onCell: OnCell) {
+function useRowEditor(
+  row: Row,
+  vehicle: PickerVehicle | undefined,
+  locked: boolean,
+  onCell: OnCell,
+  /** Composer: yeni satırın önizlemesi tick'in belgeye yazacağı oranı gösterir. */
+  pending = false
+) {
   const isPart = row.type === "part"
   const editable = !locked
   // Katalogdan seçilmiş parçanın KİMLİĞİ (parça no / marka / kategori) kilitlidir:
@@ -1483,7 +1505,8 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   // Toplam'da karşılığı vardır: net tutar Ara Toplam'a, `vatKurus` ise (tick
   // açıksa) KDV satırına gider. İki rakam da aynı `includeVat` bayrağından
   // beslenir; #354'ün kaldırdığı kopukluk bu yüzden geri gelmiyor.
-  const { taxBps } = useVat()
+  const vatCtx = useVat()
+  const taxBps = pending ? vatCtx.pendingTaxBps : vatCtx.taxBps
   const vatLiable = row.includeVat !== false
   const vatKurus = vatLiable ? lineVatKurus(lineTotal, taxBps) : null
 

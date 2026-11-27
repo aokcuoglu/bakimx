@@ -248,9 +248,8 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                 <div className="flex justify-start">
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="tint-ghost"
                     size="sm"
-                    className="text-primary"
                     onClick={() => setCustomerModalOpen(true)}
                   >
                     <Plus className="size-4" />

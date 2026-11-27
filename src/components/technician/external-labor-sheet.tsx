@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { parseTRYToKurus } from "@/lib/money"
+import { formatTrDate } from "@/lib/format-date"
 
 /**
  * "Dış İşçilik Ekle" — teknisyenin araca dışarıda yaptırdığı işçiliği (rot
@@ -59,7 +60,7 @@ function isoToTr(iso: string | null): string {
   if (!iso) return ""
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ""
-  return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`
+  return formatTrDate(date)
 }
 
 /** Kart üzerindeki kalem simgesi — dış işçilik kaydını düzenler. */
@@ -173,7 +174,7 @@ function ExternalLaborSheet({
 
         <div className="space-y-3 py-1">
           {error && (
-            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
               {error}
             </p>
           )}

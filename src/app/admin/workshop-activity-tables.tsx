@@ -187,7 +187,7 @@ export function WorkshopActivityTables({ workshopId }: { workshopId: string }) {
           />
         </Filters>
       </div>
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-hidden rounded-md border">
         <Table aria-busy={auditPending}>
           <TableHeader><TableRow><TableHead>İşlem</TableHead><TableHead>Yapan</TableHead><TableHead className="text-right">Tarih</TableHead></TableRow></TableHeader>
           <TableBody>
@@ -234,7 +234,7 @@ export function WorkshopActivityTables({ workshopId }: { workshopId: string }) {
           />
         </Filters>
       </div>
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-hidden rounded-md border">
         <Table aria-busy={communicationPending}>
           <TableHeader><TableRow><TableHead>Tür</TableHead><TableHead>Kayıt</TableHead><TableHead>Durum</TableHead><TableHead className="text-right">Tarih</TableHead></TableRow></TableHeader>
           <TableBody>

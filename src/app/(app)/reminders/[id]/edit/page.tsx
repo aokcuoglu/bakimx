@@ -3,6 +3,7 @@ import { getFeaturePaywall } from "@/lib/feature-page-access"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
+import { reminderDateInputValue } from "@/lib/reminders/dates"
 import { ReminderCreateForm } from "@/components/reminders/reminder-create-form"
 
 export const metadata = { title: "Bakım Hatırlatmasını Düzenle" }
@@ -57,10 +58,10 @@ export default async function EditReminderPage({ params }: { params: Promise<{ i
             vehicleId: reminder.vehicleId,
             title: reminder.title,
             type: reminder.type,
-            dueDate: reminder.dueDate ? reminder.dueDate.toISOString().slice(0, 10) : "",
+            dueDate: reminderDateInputValue(reminder.dueDate),
             dueMileage: reminder.dueMileage?.toString() || "",
             currentMileage: reminder.currentMileage?.toString() || "",
-            lastServiceDate: reminder.lastServiceDate ? reminder.lastServiceDate.toISOString().slice(0, 10) : "",
+            lastServiceDate: reminderDateInputValue(reminder.lastServiceDate),
             lastServiceMileage: reminder.lastServiceMileage?.toString() || "",
             reminderDaysBefore: reminder.reminderDaysBefore?.toString() || "",
             reminderKmBefore: reminder.reminderKmBefore?.toString() || "",
