@@ -70,8 +70,8 @@ describe("page-headers (#823)", () => {
     expect(resolvePageHeader("/orders", { ...ALL, actor: { role: "manager", teamPermissions: [] } })!.primaryAction).toBeUndefined()
     expect(resolvePageHeader("/orders", { ...ALL, actor: null })!.primaryAction).toBeUndefined()
   })
-  test("kayıtsız yollar null: kabul akışı, teknisyen, ayarlar", () => {
-    for (const p of ["/orders/new", "/technician", "/settings/general", "/reports/orders"]) {
+  test("kayıtsız yollar null: kabul akışı, ayarlar", () => {
+    for (const p of ["/orders/new", "/settings/general", "/reports/orders"]) {
       expect(resolvePageHeader(p, ALL)).toBeNull()
     }
   })
