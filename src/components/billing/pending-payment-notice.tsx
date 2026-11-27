@@ -26,7 +26,7 @@ export function PendingPaymentNotice({ order, canPurchase = false }: { order: Pe
 
   return (
     <>
-    <Alert variant="warning" className="flex flex-col gap-3 border-warning/20 bg-warning/5 px-3 py-2.5 text-foreground sm:flex-row sm:items-center sm:justify-between">
+    <Alert variant="warning" role="status" className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-start gap-2.5">
         <Clock className="mt-0.5 size-4 shrink-0 text-warning-strong" aria-hidden="true" />
         <div className="min-w-0">

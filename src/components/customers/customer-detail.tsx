@@ -45,6 +45,7 @@ import { cn } from "@/lib/utils"
 import type { ReminderRow } from "@/lib/reminders/queries"
 import { newIntakeHref } from "@/lib/intake/entry-links"
 import styles from "./customer-detail.module.css"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 type Vehicle = {
   id: string
@@ -207,13 +208,11 @@ export function CustomerDetail({
           </div>
         </div>
         {customer.riskNote ? (
-          <div className="mt-3 rounded-md border border-destructive/20 bg-destructive/10 text-foreground px-3 py-2 text-sm flex items-start gap-2">
-            <AlertTriangle className="size-4 mt-0.5 shrink-0" />
-            <div>
-              <p className="font-medium">Risk / Uyarı Notu</p>
-              <p className="mt-0.5">{customer.riskNote}</p>
-            </div>
-          </div>
+          <Alert variant="destructive" className="mt-3" role="status">
+            <AlertTriangle />
+            <AlertTitle>Risk / Uyarı Notu</AlertTitle>
+            <AlertDescription>{customer.riskNote}</AlertDescription>
+          </Alert>
         ) : null}
       </header>
 
@@ -503,18 +502,18 @@ export function CustomerDetail({
             </SectionCard>
           ) : null}
 
-          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 space-y-2">
-            <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Tehlikeli Bölge</p>
-            <p className="text-xs text-muted-foreground">
+          <Alert variant="destructive" role="group" className="space-y-2 p-3">
+            <AlertTitle className="text-xs uppercase tracking-wider">Tehlikeli Bölge</AlertTitle>
+            <AlertDescription className="text-xs">
               Müşteriyi silmek ilişkili araç ve kabul/araç kabul kayıtlarını otomatik silmez. Önce ilişkili kayıtları silmeniz gerekir.
-            </p>
+            </AlertDescription>
             <DeleteCustomerButton
               customerId={customer.id}
               customerLabel={displayName}
               variant="destructive"
               size="sm"
             />
-          </div>
+          </Alert>
         </aside>
       </div>
     </div>

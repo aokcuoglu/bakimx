@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Alert } from "@/components/ui/alert"
 import {
   salesAdvisorInviteSchema,
   type SalesAdvisorInviteValues,
@@ -159,13 +160,13 @@ export function SalesAdvisorManagement({
         </Form>
 
         {inviteUrl && (
-          <div className="mt-4 flex flex-col gap-2 rounded-md border border-success/20 bg-success/10 p-3 sm:flex-row sm:items-center">
+          <Alert variant="success" role="status" className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
             <p className="min-w-0 flex-1 truncate text-sm text-success-strong">{inviteUrl}</p>
             <Button type="button" variant="outline" size="sm" onClick={copyInvite}>
               {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
               {copied ? "Kopyalandı" : "Bağlantıyı kopyala"}
             </Button>
-          </div>
+          </Alert>
         )}
       </section>
 

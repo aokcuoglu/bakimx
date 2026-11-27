@@ -22,6 +22,7 @@ import { purchaseMatchFields, type PurchaseMatch } from "@/lib/parts/purchase-ma
 import { compressImageForUpload } from "@/lib/image/compress-image"
 import { toast } from "sonner"
 import { formatTrDate } from "@/lib/format-date"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export type TechnicianInfo = { id: string; fullName: string; role: string }
 export type SupplierInfo = { id: string; name: string }
@@ -357,9 +358,9 @@ export function PurchaseFormSheet({
 
         <div className="space-y-3 py-1">
           {error && (
-            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
-              {error}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           <div className="space-y-1">

@@ -24,6 +24,7 @@ import {
 } from "@/lib/customers/duplicate-phone"
 import { CityDistrictFields } from "@/components/shared/forms/city-district-fields"
 import { TaxIdentityFields } from "@/components/shared/forms/tax-identity-fields"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 type CustomerHit = Extract<UnifiedResult, { kind: "customer" }>
 const SEARCH_ENDPOINT = "/api/search/customer-vehicle"
@@ -237,14 +238,14 @@ export function CustomerSearchOrCreate({
           </CollapsibleContent>
         </Collapsible>
         {duplicates.length > 0 ? (
-          <div className="space-y-2 rounded-sm border border-warning/40 bg-warning/10 p-2.5">
-            <p className="text-sm text-foreground">
+          <Alert variant="warning" role="status" className="space-y-2">
+            <AlertDescription>
               {duplicates.length === 1 ? (
                 <>Bu telefon <span className="font-medium">{duplicates[0].label}</span> adlı müşteriye ait. Mevcut kaydı seçebilir veya yine de yeni müşteri oluşturabilirsiniz.</>
               ) : (
                 <>Bu telefon {duplicates.length} müşteriye ait. Mevcut kayıtlardan birini seçebilir veya yine de yeni müşteri oluşturabilirsiniz.</>
               )}
-            </p>
+            </AlertDescription>
             {duplicates.map((customer) => (
               <Button
                 key={customer.id}
@@ -257,7 +258,7 @@ export function CustomerSearchOrCreate({
                 <User className="size-4 mr-1" /> {customer.label} müşterisini seç
               </Button>
             ))}
-          </div>
+          </Alert>
         ) : error ? (
           <p className="text-sm text-destructive-strong">{error}</p>
         ) : null}

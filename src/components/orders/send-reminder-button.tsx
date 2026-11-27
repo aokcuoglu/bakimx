@@ -5,6 +5,7 @@ import { Send, Loader2, CheckCircle2, AlertCircle, MessageSquare } from "lucide-
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { formatTRY } from "@/lib/format"
+import { Alert } from "@/components/ui/alert"
 
 type ReminderResult = {
   sms?: { success: boolean; error?: string }
@@ -61,7 +62,7 @@ export function SendReminderButton({
       </Button>
 
       {result && (
-        <div className="rounded-md border border-success/20 bg-success/10 p-3 space-y-1">
+        <Alert variant="success" role="status" className="space-y-1">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="size-4 text-success-strong" />
             {/* `text-success-foreground` DEĞİL: o token dolu yeşil zemin için
@@ -80,7 +81,7 @@ export function SendReminderButton({
           >
             Kapat
           </Button>
-        </div>
+        </Alert>
       )}
 
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>

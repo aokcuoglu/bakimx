@@ -10,6 +10,7 @@ import { PaymentMethodBadge, CollectionStatusBadge, PaymentBadge } from "@/compo
 import { CancelCollectionButton } from "@/components/cashbox/collection-cancel-button"
 import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { ArrowLeft, Receipt, Calendar, User, FileText, Hash, MessageSquare, CreditCard, Banknote, Info, AlertTriangle } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 const methodIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   cash: Banknote,
@@ -95,13 +96,11 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
             <CancelCollectionButton collectionId={collection.id} />
           )}
           {collection.status === "cancelled" && collection.cancellationReason && (
-            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 space-y-2">
-              <h3 className="text-sm font-semibold text-destructive-strong flex items-center gap-2">
-                <AlertTriangle className="size-4" />
-                İptal Bilgisi
-              </h3>
-              <p className="text-sm text-destructive-strong">{collection.cancellationReason}</p>
-            </div>
+            <Alert variant="destructive" role="status">
+              <AlertTriangle />
+              <AlertTitle>İptal Bilgisi</AlertTitle>
+              <AlertDescription>{collection.cancellationReason}</AlertDescription>
+            </Alert>
           )}
         </div>
 

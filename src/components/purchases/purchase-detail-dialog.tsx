@@ -22,6 +22,7 @@ import type { PickerVehicle } from "@/components/parts/tecdoc-part-picker"
 import { compressImageForUpload } from "@/lib/image/compress-image"
 import { toast } from "sonner"
 import { formatTrDate } from "@/lib/format-date"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export type PurchaseDetailItem = {
   id: string
@@ -174,9 +175,9 @@ export function PurchaseDetailDialog({
         </DialogHeader>
 
         {error && (
-          <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
-            {error}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         {editing ? (

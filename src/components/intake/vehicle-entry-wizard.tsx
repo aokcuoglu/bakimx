@@ -988,7 +988,7 @@ export function VehicleEntryWizard({
   )
 
   const conflictsBox = conflicts.length > 0 ? (
-    <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
+    <Alert variant="warning" role="status" className="space-y-2">
       <p className="flex items-start gap-2 text-sm font-medium text-foreground">
         <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning-strong" />
         Ruhsattan okunan bilgi girdiğinizden farklı — girdiğiniz değer korundu.
@@ -1005,7 +1005,7 @@ export function VehicleEntryWizard({
           </Button>
         </div>
       ))}
-    </div>
+    </Alert>
   ) : null
 
   return (
@@ -1201,7 +1201,7 @@ export function VehicleEntryWizard({
             onModelChange={(v) => { setField("model", v); setCatalogIds((p) => ({ brandId: p.brandId })) }}
           />
           {duplicate && (
-            <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
+            <Alert variant="warning" role="status" className="space-y-2">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning-strong" />
                 <div className="min-w-0 text-sm">
@@ -1212,7 +1212,7 @@ export function VehicleEntryWizard({
               <Button variant="foreground" type="button" size="sm" className="w-full" onClick={() => selectExisting(duplicate)}>
                 <Car className="mr-1 size-4" /> Bu aracı seç
               </Button>
-            </div>
+            </Alert>
           )}
           {/*
             Araç bu atölyede yeni ama BAŞKA servislerde kayıtlı olabilir (BAK-77).
@@ -1346,7 +1346,7 @@ export function VehicleEntryWizard({
             />
           )}
           {plateStatus === "mismatch" && photoPlate && (
-            <div role="alert" className="space-y-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
+            <Alert variant="warning" className="space-y-3">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning-strong" />
                 <div className="min-w-0 space-y-1 text-sm">
@@ -1365,7 +1365,7 @@ export function VehicleEntryWizard({
                   Vazgeç
                 </Button>
               </div>
-            </div>
+            </Alert>
           )}
           <IntakeOwnerCard
             value={ownerForm}

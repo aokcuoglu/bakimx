@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Check, Copy, MessageCircle, Printer, TriangleAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Dialog,
   DialogContent,
@@ -124,13 +125,13 @@ export function MemberCredentialsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="rounded-md border border-warning/20 bg-warning/10 p-3 flex items-start gap-2">
-          <TriangleAlert className="size-4 text-warning-strong shrink-0 mt-0.5" />
-          <p className="text-xs text-warning-strong leading-relaxed">
+        <Alert variant="warning" role="status">
+          <TriangleAlert />
+          <AlertDescription>
             Geçici şifre yalnız bu ekranda görünür. Pencereyi kapattıktan sonra bir daha
             görüntülenemez — kaybolursa yeni bir şifre üretmeniz gerekir.
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
 
         <dl className="rounded-md border border-border divide-y divide-border">
           {rows.map((row) => (

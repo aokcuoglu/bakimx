@@ -10,6 +10,7 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { parseTRYToKurus } from "@/lib/money"
 import { formatTrDate } from "@/lib/format-date"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 /**
  * "Dış İşçilik Ekle" — teknisyenin araca dışarıda yaptırdığı işçiliği (rot
@@ -174,9 +175,9 @@ export function ExternalLaborSheet({
 
         <div className="space-y-3 py-1">
           {error && (
-            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
-              {error}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           <div className="space-y-1">

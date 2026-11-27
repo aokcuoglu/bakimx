@@ -13,6 +13,7 @@ import type { OcrFieldConfidence, OcrProviderName } from "@/lib/ocr/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 import { prepareRegistrationImage } from "@/lib/ocr/prepare-registration-image"
 import { formatPhoneTR } from "@/lib/format"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 type Step = "upload" | "processing" | "confirm" | "saving"
 
@@ -226,14 +227,14 @@ export function SmartCaptureRegistration() {
         </Card>
 
         {saveResult.warnings && saveResult.warnings.length > 0 && (
-          <div className="rounded-lg border border-warning/20 bg-warning/10 p-4 space-y-1">
+          <Alert variant="warning" className="space-y-1">
             {saveResult.warnings.map((w, i) => (
-              <p key={i} className="text-sm text-foreground flex items-start gap-2">
-                <AlertTriangle className="size-4 text-warning-strong shrink-0 mt-0.5" />
+              <p key={i} className="flex items-start gap-2 text-sm">
+                <AlertTriangle className="size-4 shrink-0 mt-0.5" />
                 {w}
               </p>
             ))}
-          </div>
+          </Alert>
         )}
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -353,23 +354,21 @@ export function SmartCaptureRegistration() {
   if ((step === "confirm" || step === "saving") && ocrResult) {
     return (
       <div className="space-y-5">
-        <div className="rounded-lg border border-warning/20 bg-warning/10 p-4 flex items-start gap-3">
-          <AlertTriangle className="size-5 text-warning-strong shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-foreground">
-              Ruhsat okuma sonucu otomatik öneridir. Lütfen bilgileri kontrol edip onaylayın.
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Hatalı alanları düzelttikten sonra &quot;Onayla ve Kaydet&quot; butonuna basın.
-            </p>
-          </div>
-        </div>
+        <Alert variant="warning">
+          <AlertTriangle />
+          <AlertTitle>
+            Ruhsat okuma sonucu otomatik öneridir. Lütfen bilgileri kontrol edip onaylayın.
+          </AlertTitle>
+          <AlertDescription>
+            Hatalı alanları düzelttikten sonra &quot;Onayla ve Kaydet&quot; butonuna basın.
+          </AlertDescription>
+        </Alert>
 
         {ocrProvider && (
-          <div className="rounded-lg border border-primary/20 bg-primary/10 p-3 flex items-center gap-2 text-sm text-foreground">
-            <Info className="size-4 text-primary shrink-0" />
-            <span>Okuma servisi: <strong>{PROVIDER_LABELS[ocrProvider] || ocrProvider}</strong></span>
-          </div>
+          <Alert variant="info" role="status">
+            <Info />
+            <AlertDescription>Okuma servisi: <strong>{PROVIDER_LABELS[ocrProvider] || ocrProvider}</strong></AlertDescription>
+          </Alert>
         )}
 
         {imagePreview && (
@@ -438,7 +437,9 @@ export function SmartCaptureRegistration() {
         </Card>
 
         {error && (
-          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm">{error}</div>
+          <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
         )}
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -487,7 +488,9 @@ export function SmartCaptureRegistration() {
         />
       )}
       {error && (
-        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm">{error}</div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <Card>
