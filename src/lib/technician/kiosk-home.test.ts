@@ -52,6 +52,14 @@ describe("groupKioskOrders", () => {
     expect(groups.mine.map((o) => o.id)).toEqual(["l", "p", "w"])
   })
 
+  test("teslime hazır iş hiçbir açık grupta görünmez", () => {
+    const r = row({ id: "r", status: "ready_for_delivery", assignedTechnicianId: "t1" })
+    const groups = groupKioskOrders([r], [r], "t1")
+    expect(groups.mine).toEqual([])
+    expect(groups.others).toEqual([])
+    expect(groups.drafts).toEqual([])
+  })
+
   test("odak yoksa İşlerim boş, atölye işleri görünür", () => {
     const a = row({})
     const b = row({})

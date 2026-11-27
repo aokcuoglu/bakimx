@@ -13,7 +13,7 @@ import {
 } from "@/lib/technician/queries"
 import {
   canSelectAnyTechnician,
-  resolveSelectedTechnicianId,
+  resolveKioskFocusTechnicianId,
   TECHNICIAN_PARAM,
 } from "@/lib/technician/selected-technician"
 
@@ -42,11 +42,12 @@ export default async function TechnicianPage({
   // atölyenin geri kalanı yine listelenir (BAK-157).
   const canSelectTechnician = canSelectAnyTechnician(user.role)
   const technicianIds = technicians.map((t) => t.id)
-  const focusTechnicianId = canSelectTechnician
-    ? resolveSelectedTechnicianId(params[TECHNICIAN_PARAM], technicianIds)
-    : user.technicianId && technicianIds.includes(user.technicianId)
-      ? user.technicianId
-      : null
+  const focusTechnicianId = resolveKioskFocusTechnicianId({
+    canSelect: canSelectTechnician,
+    requested: params[TECHNICIAN_PARAM],
+    ownTechnicianId: user.technicianId,
+    activeIds: technicianIds,
+  })
 
   if (canSelectTechnician && !focusTechnicianId) {
     return (

@@ -11,6 +11,13 @@ export type KioskOrderGroups = {
 // Taslak ve onay bekleyen kabuller eski panelde de "Taslak İşler"deydi.
 const DRAFT_STATUSES = ["draft", "waiting_approval"]
 
+// Tamamlanan iş yalnız "Bugün biten"de görünür; açık iş listeleri
+// (`technicianOrderListWhere`) teslim/iptal dışını getirdiği için
+// `ready_for_delivery` buradan süzülür.
+function isDone(order: TechnicianOrderRow): boolean {
+  return order.status === "ready_for_delivery"
+}
+
 function isDraft(order: TechnicianOrderRow): boolean {
   return DRAFT_STATUSES.includes(order.status)
 }
@@ -34,10 +41,10 @@ function sortOrders(orders: TechnicianOrderRow[]): TechnicianOrderRow[] {
 export function groupKioskOrders(
   mine: TechnicianOrderRow[],
   workshop: TechnicianOrderRow[],
-  // Çağıran odak teknisyenine göre `mine`'ı zaten süzdü; imza yalnız niyeti taşır.
+  // Odak yoksa İşlerim boş kalır (`mine` ne gelirse gelsin).
   focusTechnicianId: string | null
 ): KioskOrderGroups {
-  const mineOrders = focusTechnicianId ? mine.filter((o) => !isDraft(o)) : []
+  const mineOrders = focusTechnicianId ? mine.filter((o) => !isDraft(o) && !isDone(o)) : []
   const mineIds = new Set(mineOrders.map((o) => o.id))
 
   const draftsById = new Map<string, TechnicianOrderRow>()
@@ -45,7 +52,7 @@ export function groupKioskOrders(
     if (isDraft(o)) draftsById.set(o.id, o)
   }
 
-  const others = workshop.filter((o) => !isDraft(o) && !mineIds.has(o.id))
+  const others = workshop.filter((o) => !isDraft(o) && !isDone(o) && !mineIds.has(o.id))
 
   return {
     mine: sortOrders(mineOrders),
