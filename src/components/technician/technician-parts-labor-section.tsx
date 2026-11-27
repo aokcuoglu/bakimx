@@ -3,8 +3,9 @@
 import { useState } from "react"
 import { toast } from "sonner"
 import { Wrench } from "lucide-react"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { PartsLaborGrid } from "@/components/orders/parts-labor-grid"
+import { PartsLaborGrid, type PartsAddType } from "@/components/orders/parts-labor-grid"
 import type { OrderItem } from "@/components/orders/order-management-panel"
 import type { PickerVehicle } from "@/components/parts/tecdoc-part-picker"
 import type { LaborCatalogRow } from "@/lib/labor/types"
@@ -38,6 +39,9 @@ export function TechnicianPartsLaborSection({
   laborCatalog,
   taxRateBps,
   canEditOrder,
+  addingType,
+  onAddingTypeChange,
+  editRequest,
 }: {
   orderId: string
   status: string
@@ -47,8 +51,16 @@ export function TechnicianPartsLaborSection({
   taxRateBps: number | null
   /** `order.edit` izni — sunucu kapısının UI'daki ikizi (bkz. item-editing.ts). */
   canEditOrder: boolean
+  /** Kutucuklar ekleme yüzeyini dışarıdan açar (iş ekranı). */
+  addingType: PartsAddType | null
+  onAddingTypeChange: (type: PartsAddType | null) => void
+  /** "Yapılacaklar" satırına dokunma → o kalemin düzenleme penceresi. */
+  editRequest: { rowId: string } | null
 }) {
   const [loading, setLoading] = useState(false)
+  // Telefonda alttan sayfa, lg+ masaüstünde ortalanmış pencere. Yüzey yalnız
+  // etkileşimle açıldığı için hidrasyonda yanlış yüzey görünmez.
+  const isMobile = useIsMobile()
 
   if (technicianItemEditorMode(canEditOrder) === "request-only") {
     return (
@@ -61,17 +73,11 @@ export function TechnicianPartsLaborSection({
   }
 
   return (
-    <section className="relative rounded-xl border border-border bg-primary/[0.04] p-4 pt-5">
-      <span className="absolute -top-2 left-4 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-        Kullanılan Kalemler
-      </span>
-      <div className="mb-4 flex items-start justify-between gap-3">
+    <section className="rounded-xl bg-card p-4">
+      <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <Wrench className="size-4 text-muted-foreground" />
-            Kullanılan Parçalar &amp; İşçilikler
-          </h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">Araç kabulüne eklenen kalemleri buradan düzenleyin.</p>
+          <h2 className="text-sm font-semibold text-foreground">Parçalar &amp; İşçilikler</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">Kaleme dokunarak düzenleyin; eklemek için yukarıdaki kutucukları kullanın.</p>
         </div>
         <span className="shrink-0 text-sm font-medium tabular-nums text-muted-foreground">{items.length} kalem</span>
       </div>
@@ -88,6 +94,11 @@ export function TechnicianPartsLaborSection({
         laborCatalog={laborCatalog}
         taxRateBps={taxRateBps}
         allowExternalLabor={false}
+        hideAddToolbar
+        addSurface={isMobile ? "sheet" : "dialog"}
+        addingType={addingType}
+        onAddingTypeChange={onAddingTypeChange}
+        editRequest={editRequest}
       />
     </section>
   )

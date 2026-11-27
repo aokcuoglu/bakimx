@@ -40,4 +40,4 @@ export function technicianItemEditorMode(canEditOrder: boolean): TechnicianItemE
 
 /** `request-only` modda gösterilen gerekçe — kullanıcıyı çalışan yola yönlendirir. */
 export const REQUEST_ONLY_MESSAGE =
-  "Araç kabulüne doğrudan kalem ekleme yetkiniz yok. Ofis ekibi kalemleri işler; \"Dış Alımlar\" sekmesinden parça alımı kaydedebilirsiniz."
+  "Araç kabulüne doğrudan kalem ekleme yetkiniz yok. Ofis ekibi kalemleri işler; \"Dış Parça\" kutucuğundan parça alımı kaydedebilirsiniz."

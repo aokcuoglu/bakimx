@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Info,
+  Wrench,
 } from "lucide-react"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -563,6 +564,10 @@ export default function DesignSystemPage() {
               </Button>
               <Button variant="secondary" size="tile" className="aspect-[4/3] w-full justify-center text-muted-foreground">
                 tile · görsel karosu
+              </Button>
+              <Button variant="outline" size="kiosk" className="w-full">
+                <Wrench />
+                kiosk · iş ekranı kutucuğu
               </Button>
             </div>
             <div className="flex flex-wrap items-center gap-2">

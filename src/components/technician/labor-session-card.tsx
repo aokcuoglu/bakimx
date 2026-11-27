@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, type ComponentProps } from "react"
 import { Pencil, Play, Timer } from "lucide-react"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
@@ -77,9 +77,15 @@ function toDatetimeLocalValue(iso: string): string {
 export function StopLaborButton({
   orderId,
   className,
+  label = "Durdur",
+  size = "lg",
+  variant = "destructive",
 }: {
   orderId: string
   className?: string
+  label?: string
+  size?: ComponentProps<typeof Button>["size"]
+  variant?: ComponentProps<typeof Button>["variant"]
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -109,13 +115,13 @@ export function StopLaborButton({
   return (
     <>
       <Button
-        variant="destructive"
-        size="lg"
+        variant={variant}
+        size={size}
         onClick={() => setOpen(true)}
         disabled={isPending}
         className={className}
       >
-        <Timer /> Durdur
+        <Timer /> {label}
       </Button>
 
       <Dialog
@@ -347,7 +353,7 @@ export function LaborSessionCard({
   }
 
   return (
-    <Card className="bg-primary/[0.04]">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-1.5">
           <Timer className="size-4 text-muted-foreground" />
