@@ -8,17 +8,21 @@ import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { getPlanPackage } from "@/lib/plans-catalog"
+import { describeBillingOrder } from "@/lib/billing/addon-pricing"
 import { formatMinor } from "@/lib/billing/pricing"
 import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
 import { CancelPendingOrderButton } from "@/components/billing/pending-order-actions"
 
-type PendingOrder = Pick<BillingOrder, "planTier" | "billingCycle" | "amountMinor" | "method" | "reference">
+/** `type`/`addonLines` verilmezse paket siparişi sayılır; ek özellik siparişi ikisini de geçirmelidir (#829). */
+type PendingOrder = Pick<BillingOrder, "planTier" | "billingCycle" | "amountMinor" | "method" | "reference"> &
+  Partial<Pick<BillingOrder, "type" | "addonLines">>
 
 export function PendingPaymentNotice({ order, canPurchase = false }: { order: PendingOrder; canPurchase?: boolean }) {
   const [paymentOpen, setPaymentOpen] = useState(false)
-  const planName = getPlanPackage(order.planTier)?.name ?? order.planTier
-  const cycleLabel = order.billingCycle === "monthly" ? "Aylık" : "Yıllık"
+  const described = describeBillingOrder({ ...order, type: order.type ?? "new_purchase" })
+  const planName = described.title
+  const cycleLabel = described.cycleLabel
+  const isAddon = order.type === "addon"
 
   return (
     <>
@@ -31,7 +35,7 @@ export function PendingPaymentNotice({ order, canPurchase = false }: { order: Pe
           <p className="mt-0.5 text-xs text-muted-foreground-strong">
             {order.method === "card"
               ? "Kart ödemeniz henüz tamamlanmadı."
-              : <>Havale açıklamasına <span className="font-medium">{order.reference}</span> yazın; ödeme teyit edilince paketiniz aktifleşecek.</>}
+              : <>Havale açıklamasına <span className="font-medium">{order.reference}</span> yazın; ödeme teyit edilince {isAddon ? "ek özelliğiniz" : "paketiniz"} aktifleşecek.</>}
           </p>
         </div>
       </div>

@@ -19,3 +19,11 @@ test("geçersiz girdiler reddedilir", () => {
   expect(bad({ items: [{ key: "vinLookup", quantity: 1 }, { key: "vinLookup", quantity: 2 }] })).toBe(false)
   expect(bad({ items: [{ key: "vinLookup", quantity: 1 }], taxNumber: "123" })).toBe(false)
 })
+
+test("hesap lisansı kalemleri tek adet; şube kalemi çok adetli olabilir (#829)", () => {
+  const ok = (items: object[]) => addonOrderSchema.safeParse({ ...base, items }).success
+  expect(ok([{ key: "vinLookup", quantity: 2 }])).toBe(false)
+  expect(ok([{ key: "ocrIntake", quantity: 3 }])).toBe(false)
+  expect(ok([{ key: "vinLookup", quantity: 1 }, { key: "ocrIntake", quantity: 1 }])).toBe(true)
+  expect(ok([{ key: "multiBranch", quantity: 3 }])).toBe(true)
+})
