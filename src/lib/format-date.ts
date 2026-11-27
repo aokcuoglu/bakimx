@@ -107,7 +107,13 @@ export function formatTrDateTime(input: DateInput): string {
 
 /** 25.11 09:00 (yıl yok; yakın tarihli liste satırları) */
 export function formatTrDayMonthTime(input: DateInput): string {
-  return format(dayMonthTimeFormatter, input)
+  const date = typeof input === "string" ? new Date(input) : input
+  if (Number.isNaN(date.getTime())) return INVALID
+  // Yılsız gün-ay ayırıcısı ICU sürümüne göre değişiyor (lokal "25.11", CI'daki
+  // ICU "25/11" basıyor); parçalardan kurup ayırıcıyı sabitliyoruz.
+  const parts: Partial<Record<Intl.DateTimeFormatPartTypes, string>> = {}
+  for (const part of dayMonthTimeFormatter.formatToParts(date)) parts[part.type] = part.value
+  return `${parts.day}.${parts.month} ${parts.hour}:${parts.minute}`
 }
 
 /** 25 Kas */
