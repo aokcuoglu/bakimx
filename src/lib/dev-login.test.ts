@@ -26,3 +26,22 @@ test("yönlendirme yalnız aynı origin yoluna izin verir", () => {
   expect(safeRedirectPath("https://evil.com")).toBe("/dashboard")
   expect(safeRedirectPath("/\\evil.com")).toBe("/dashboard")
 })
+
+import { parseDevLoginTarget } from "./dev-login"
+
+test("e-posta yolu varsayılanıyla çalışmaya devam eder", () => {
+  expect(parseDevLoginTarget(new URLSearchParams(""))).toEqual({ kind: "email", email: "admin@bakimx.com" })
+  expect(parseDevLoginTarget(new URLSearchParams("email=A@B.com"))).toEqual({ kind: "email", email: "a@b.com" })
+})
+
+test("username + code kullanıcı adı yoluna çözülür", () => {
+  expect(parseDevLoginTarget(new URLSearchParams("username=Usta1&code=Demo"))).toEqual({
+    kind: "username",
+    username: "usta1",
+    workshopCode: "demo",
+  })
+})
+
+test("username code'suz geçersizdir", () => {
+  expect(parseDevLoginTarget(new URLSearchParams("username=usta1")).kind).toBe("invalid")
+})

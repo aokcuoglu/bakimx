@@ -255,7 +255,7 @@ export function CalendarView({
                       <Link
                         key={event.id}
                         href={getEventLink(event)}
-                        className={cn("block rounded-lg border p-2 text-xs transition-colors hover:shadow-sm", config.bgColor)}
+                        className={cn("block rounded-md border p-2 text-xs transition-colors hover:shadow-sm", config.bgColor)}
                       >
                         <div className="flex items-center gap-1 mb-0.5">
                           <Icon className={cn("size-3 shrink-0", config.color)} />
@@ -304,7 +304,7 @@ export function CalendarView({
                   <Link
                     key={event.id}
                     href={getEventLink(event)}
-                    className={cn("flex items-start gap-3 rounded-lg border p-3 transition-colors hover:shadow-sm", config.bgColor)}
+                    className={cn("flex items-start gap-3 rounded-md border p-3 transition-colors hover:shadow-sm", config.bgColor)}
                   >
                     <Icon className={cn("size-5 shrink-0 mt-0.5", config.color)} />
                     <div className="flex-1 min-w-0">

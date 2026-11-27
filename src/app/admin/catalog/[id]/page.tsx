@@ -6,6 +6,7 @@ import { CatalogProductForm } from "@/app/admin/catalog/product-form"
 import { formatCatalogAuditChanges } from "@/lib/catalog/bakimx-catalog"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatTrDateTime } from "@/lib/format-date"
 
 export const metadata = { title: "Ürün Detayı · Yönetim" }
 
@@ -76,11 +77,11 @@ export default async function EditCatalogProductPage(props: { params: Promise<{ 
           ) : (
             <ul className="space-y-2">
               {audit.map((entry) => (
-                <li key={entry.id} className="rounded-lg border bg-card p-3">
+                <li key={entry.id} className="rounded-md border bg-card p-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">{AUDIT_ACTION_LABELS[entry.action] ?? entry.action}</Badge>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(entry.createdAt).toLocaleString("tr-TR")} · {entry.actorLabel}
+                      {formatTrDateTime(entry.createdAt)} · {entry.actorLabel}
                     </span>
                   </div>
                   <ul className="mt-1.5 space-y-0.5 text-sm text-muted-foreground">

@@ -208,7 +208,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                 />
 
                 {selectedVehicle ? (
-                  <div className="rounded-lg border border-border bg-muted p-3 space-y-1">
+                  <div className="rounded-md border border-border bg-muted p-3 space-y-1">
                     <div className="flex items-center gap-2">
                       <Plate plate={selectedVehicle.plate} />
                       <span className="text-sm font-medium text-foreground">{selectedVehicle.brand} {selectedVehicle.model}</span>

@@ -17,6 +17,7 @@ import { GroupedPhotoGallery } from "@/components/intake/grouped-photo-gallery"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { WorkshopContactBlock } from "@/components/shared/workshop-contact-block"
 import type { WorkshopPublicContact } from "@/lib/workshop-contact"
+import { formatTrDate } from "@/lib/format-date"
 
 type SafeIntakeData = {
   status: string
@@ -170,7 +171,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
               </div>
             </div>
             <div className="text-right text-sm text-muted-foreground">
-              <p>{new Date(intakeForm.createdAt).toLocaleDateString("tr-TR")}</p>
+              <p>{formatTrDate(intakeForm.createdAt)}</p>
               <p className="text-xs italic">BakimX ile oluşturuldu</p>
             </div>
           </div>
@@ -191,7 +192,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
             Durum: {statusInfo?.label || intakeForm.status}
           </span>
           <span className="text-xs text-muted-foreground">
-            {new Date(intakeForm.createdAt).toLocaleDateString("tr-TR")}
+            {formatTrDate(intakeForm.createdAt)}
           </span>
         </div>
 
@@ -251,9 +252,9 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                 <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{intakeForm.customerComplaint}</p>
               </div>
               <div className="flex flex-wrap gap-x-4 text-xs text-muted-foreground pt-2 border-t border-border">
-                <span className="flex items-center gap-1"><Calendar className="size-3" /> Kayıt: {new Date(intakeForm.createdAt).toLocaleDateString("tr-TR")}</span>
+                <span className="flex items-center gap-1"><Calendar className="size-3" /> Kayıt: {formatTrDate(intakeForm.createdAt)}</span>
                 {intakeForm.approvedAt && (
-                  <span className="flex items-center gap-1"><CheckCircle2 className="size-3" /> Onay: {new Date(intakeForm.approvedAt).toLocaleDateString("tr-TR")}</span>
+                  <span className="flex items-center gap-1"><CheckCircle2 className="size-3" /> Onay: {formatTrDate(intakeForm.approvedAt)}</span>
                 )}
               </div>
             </div>
@@ -316,7 +317,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                 {intakeForm.approvals[0].approvedAt && (
                   <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                     <Calendar className="size-3" />
-                    {new Date(intakeForm.approvals[0].approvedAt).toLocaleDateString("tr-TR")}
+                    {formatTrDate(intakeForm.approvals[0].approvedAt)}
                   </div>
                 )}
               </div>
@@ -531,8 +532,8 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
           <span className="text-xs text-muted-foreground print:text-muted-foreground">ile oluşturuldu</span>
           <span className="text-xs text-muted-foreground/40 print:text-muted-foreground">•</span>
           <span className="text-xs text-muted-foreground print:text-muted-foreground">
-            <span className="print:hidden">{new Date(shareLink.createdAt).toLocaleDateString("tr-TR")}</span>
-            <span className="hidden print:inline">{new Date(shareLink.createdAt).toLocaleDateString("tr-TR")}</span>
+            <span className="print:hidden">{formatTrDate(shareLink.createdAt)}</span>
+            <span className="hidden print:inline">{formatTrDate(shareLink.createdAt)}</span>
           </span>
         </div>
       </main>

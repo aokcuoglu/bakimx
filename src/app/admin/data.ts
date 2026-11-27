@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin-workshop-filters"
 import { INTERNAL_OPERATIONS_WORKSHOP_ID } from "@/lib/workshop-kind"
 import { istanbulMonthStart } from "@/lib/istanbul-time"
+import { formatTrDate } from "@/lib/format-date"
 
 export interface WorkshopListResult {
   rows: AdminWorkshopRow[]
@@ -408,7 +409,7 @@ export async function getBillingData(): Promise<BillingData> {
       name: w.name,
       planTier: w.planTier,
       billingCycle: w.billingCycle ?? null,
-      periodEnd: end.toLocaleDateString("tr-TR"),
+      periodEnd: formatTrDate(end),
       daysLeft: Math.max(0, Math.ceil((end.getTime() - now) / 86_400_000)),
     }
   })

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { communicationStatusLabel } from "@/lib/communications/status-labels"
 import { communicationTemplateLabel } from "@/lib/communications/template-labels"
 import { cn } from "@/lib/utils"
+import { formatTrDate } from "@/lib/format-date"
 
 export type CommunicationRow = { id: string; workshopId: string; workshopName: string; type: string; recipient: string; templateKey: string | null; provider: string; status: string; reason: string | null; sentAt: string; entityType: string | null; entityId: string | null }
 const statusClass = (status: string) => status === "sent" ? "bg-success/10 text-success-strong" : status === "failed" ? "bg-destructive/10 text-destructive-strong" : status === "skipped" ? "bg-muted text-muted-foreground" : "bg-warning/10 text-warning-strong"
@@ -30,7 +31,7 @@ export function CommunicationLogTable({ rows }: { rows: CommunicationRow[] }) {
             <TableCell className="text-muted-foreground">{channelLabel(row.type)}</TableCell>
             <TableCell><p className="font-medium text-foreground">{communicationTemplateLabel(row.templateKey)}</p><p className="text-xs text-muted-foreground">{row.recipient || "Alıcı bilgisi yok"} · {row.workshopName}</p></TableCell>
             <TableCell><Badge variant="outline" className={cn("text-[11px]", statusClass(row.status))}>{communicationStatusLabel(row.status)}</Badge>{row.reason && <p className="mt-1 max-w-64 truncate text-xs text-muted-foreground">{row.reason}</p>}</TableCell>
-            <TableCell className="text-right text-muted-foreground">{new Date(row.sentAt).toLocaleDateString("tr-TR")}</TableCell>
+            <TableCell className="text-right text-muted-foreground">{formatTrDate(row.sentAt)}</TableCell>
           </TableRow>)}</TableBody>
         </Table>
       </div>
