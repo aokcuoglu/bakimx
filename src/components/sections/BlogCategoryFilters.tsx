@@ -134,21 +134,21 @@ export function BlogCategoryFilters({
         className="gap-0"
       >
         <div className="border-x border-t border-(--blog-rail) p-5 lg:p-10">
-        <TabsList
-          variant="line"
-          size="control"
-          className="w-full flex-wrap justify-start gap-2"
-          aria-label="Yazı kategorileri"
-        >
-          <TabsTrigger value="all">
-            #Tümü
-          </TabsTrigger>
-          {BLOG_CATEGORIES.map((category) => (
-            <TabsTrigger key={category} value={category}>
-              #{BLOG_CATEGORY_LABELS[category]}
+          <TabsList
+            variant="line"
+            size="control"
+            className="w-full flex-wrap justify-start gap-2"
+            aria-label="Yazı kategorileri"
+          >
+            <TabsTrigger value="all">
+              #Tümü
             </TabsTrigger>
-          ))}
-        </TabsList>
+            {BLOG_CATEGORIES.map((category) => (
+              <TabsTrigger key={category} value={category}>
+                #{BLOG_CATEGORY_LABELS[category]}
+              </TabsTrigger>
+            ))}
+          </TabsList>
         </div>
 
         {(["all", ...BLOG_CATEGORIES] as const).map((value) => (

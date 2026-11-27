@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
-import { relative, sep } from "node:path"
+import { existsSync } from "node:fs"
+import { join, relative, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningTag } from "./jsx-source-scan"
 
@@ -849,6 +850,13 @@ describe("form kontrolleri, düğmeler ve akordeon çağrı yerinde ezilmez (#88
       const tags = jsxOpeningTags(source, CONTROLS)
       expect(tags.length).toBeGreaterThan(0)
       expect(violations(tags[0])).not.toEqual([])
+    }
+  })
+
+  test("tarama components/sections/ dosyalarına gerçekten ulaşır; SECTION_EXCEPTIONS'ta bayat anahtar yok (#1000)", () => {
+    expect(scan().controls.some((tag) => tag.file.startsWith("components/sections/"))).toBe(true)
+    for (const file of Object.keys(SECTION_EXCEPTIONS)) {
+      expect(existsSync(join(SRC, file))).toBe(true)
     }
   })
 
