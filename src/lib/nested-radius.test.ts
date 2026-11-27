@@ -24,6 +24,12 @@ const SCANNED_DIRS = [
   "parts",
   "suppliers",
   "purchases",
+  "technician",
+  "quotes",
+  "appointments",
+  "reminders",
+  "communications",
+  "analytics",
 ].flatMap((name) => [
   join(SRC, "components", name),
   join(SRC, "app", "(app)", name),
