@@ -90,14 +90,13 @@ const APP_NAV_TEXT = "h-7 text-sm leading-5 font-medium tracking-[-0.005em]"
 
 // These pages already introduce themselves in their content. The mobile bar
 // keeps the brand mark there; list and utility pages use the bar for context.
-const MOBILE_CONTENT_HEADING_PATHS = new Set([
-  "/orders/new",
-  "/technician",
-])
+const MOBILE_CONTENT_HEADING_PATHS = new Set(["/orders/new"])
 
+// Cmd/Ctrl+B (ui/sidebar.tsx) sidebar'sız rotalarda <lg'de de kapalı Sheet'i açabilir;
+// kiosk klavyesiz kullanıldığı için bilinçli olarak kabul edildi.
 // Masaüstünde (lg+) üst bar yoktur: sayfa başlığı içerikte durur. Bar yalnız
 // sidebar kapalıyken açma düğmesi için, mobil/tablette (<lg) menü düğmesi ve
-// logo için, sidebar'sız teknisyen ekranlarında da hesap/çıkış için kalır.
+// logo için, sidebar'sız teknisyen ekranlarında (<lg) hesap/çıkış için kalır.
 
 // Menü sayfası olmadığı hâlde görünür başlığı yalnız bardaydı.
 const BAR_TITLE_ONLY_PATHS = new Set(["/cashbox/payments/new", "/customers/balances"])
@@ -167,7 +166,7 @@ export function AppShell({
   if (hasPageHeader(pathname)) {
     return <PageFrame subtitle={subtitle} recordTitle={recordTitle}>{inner(children)}</PageFrame>
   }
-  const titleMode = pageTitle && !isSidebarlessRoute(pathname) ? desktopTitleMode(pathname) : "none"
+  const titleMode = pageTitle ? desktopTitleMode(pathname) : "none"
   // Yalnız masaüstünde (lg+) çizilir; altında başlık bardadır.
   const desktopTitle = titleMode === "none" ? null : (
     // cn() değil: tailwind-merge özel `text-page-title`ı renk sınıfı sanıp
@@ -207,10 +206,7 @@ export function AppShellChrome({
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
   const [searchOpen, setSearchOpen] = useState(false)
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const inSettings = isSettingsPath(pathname)
-  // Teknisyen paneli ve oradan açılan akışlar (bkz. lib/sidebarless-route.ts).
-  const hideSidebar = isSidebarlessRoute(pathname, searchParams)
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
   const primaryNavigation = (isTechRole ? TECHNICIAN_NAV_GROUPS : NAV_GROUPS)
     .flatMap((group) => group.items.flatMap((item) => [
@@ -232,24 +228,24 @@ export function AppShellChrome({
     <SetPageHeaderContext.Provider value={setPageHeader}>
       <SidebarProvider defaultOpen={!initialSidebarCollapsed}>
         <ScrollToTopOnNavigate />
-        {hideSidebar ? null : (
-          <AppSidebar
-            enabledFeatures={enabledFeatures}
-            userIdentity={userIdentity}
-            planStatus={planStatus}
-            workspace={workspace}
-            showGlobalSearch={pageHeader.showGlobalSearch ?? true}
-            topBannerVisible={topBannerVisible}
-            onOpenSearch={() => setSearchOpen(true)}
-          />
-        )}
+        {/* Sidebar sidebar'sız rotalarda da kurulur: lg+ masaüstü kabı CSS'te
+            `hidden lg:block`; <lg'de kapalı bir Sheet'tir ve tetikleyicisi
+            (`AppHeader`) o rotalarda çizilmez — hidrasyon sıçraması yok. */}
+        <AppSidebar
+          enabledFeatures={enabledFeatures}
+          userIdentity={userIdentity}
+          planStatus={planStatus}
+          workspace={workspace}
+          showGlobalSearch={pageHeader.showGlobalSearch ?? true}
+          topBannerVisible={topBannerVisible}
+          onOpenSearch={() => setSearchOpen(true)}
+        />
         {/* `--app-sticky-top` (app-shell.module.css `.inset`): sayfa içi yapışkan
             öğelerin üst barın, deneme şeridinin ve taklit bandının altında durduğu
             ofset. Üst bar da aynı değişkenlerle yapışır (`shellStyles.bar`). */}
         <SidebarInset
           className={cn("min-h-screen bg-background", shellStyles.inset)}
           data-top-banner={topBannerVisible ? "" : undefined}
-          data-sidebarless={hideSidebar ? "" : undefined}
         >
           <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} />
           <PageHeaderAccessContext.Provider value={headerAccess}>
@@ -293,8 +289,11 @@ function AppHeader({
   const contentOwnsTitle = hasPageHeader(pathname)
   const showMobileTitle =
     headerTitle && !contentOwnsTitle && !isSettingsPath(pathname) && !MOBILE_CONTENT_HEADING_PATHS.has(pathname)
+  // Teknisyen paneli ve oradan açılan akışlar telefonda (<lg) sidebar'sız kiosk
+  // görünümüdür (bkz. lib/sidebarless-route.ts); lg+ tam kabuk kalır.
   const sidebarless = isSidebarlessRoute(pathname, searchParams)
   const homeHref = isTechRole ? "/technician" : "/dashboard"
+  const { isMobile, state: sidebarState } = useSidebar()
 
   return (
     <header
@@ -306,22 +305,26 @@ function AppHeader({
         "sticky z-30 flex h-[58px] items-center border-b border-border bg-background lg:h-12",
         shellStyles.header,
         shellStyles.bar,
-        !sidebarless && "lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden",
+        "lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden",
       )}
     >
       <div className="relative flex h-full w-full flex-nowrap items-center gap-2 px-4">
         {/* Sidebar açıkken kontrol menü başlığındadır; kapalıyken burada görünür. */}
-        {sidebarless ? (
-          <Link href={homeHref} aria-label="BakimX" className="hidden items-center md:flex">
+        {sidebarless && !contentOwnsTitle ? (
+          // Telefon/tablet (<lg) kiosk: menü düğmesi yok, dönüş logodan. Başlığı
+          // içerikte olan sayfada ortadaki logo zaten tablette de durur (tek logo).
+          <Link href={homeHref} aria-label="BakimX" className="hidden items-center md:flex lg:hidden">
             <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
           </Link>
-        ) : (
-          <SidebarTrigger
-            data-tour="sidebar-trigger"
-            size="icon"
-            className="-ml-2 [&_svg:not([class*='size-'])]:size-[22px] md:[&_svg:not([class*='size-'])]:size-4 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden"
-          />
-        )}
+        ) : null}
+        <SidebarTrigger
+          data-tour="sidebar-trigger"
+          size="icon"
+          className={cn(
+            "-ml-2 [&_svg:not([class*='size-'])]:size-[22px] md:[&_svg:not([class*='size-'])]:size-4 lg:group-data-[sidebar-state=expanded]/sidebar-wrapper:hidden",
+            sidebarless && "max-lg:hidden",
+          )}
+        />
 
         {showMobileTitle ? (
           <h1 className={cn("min-w-0 flex-1 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:hidden", shellStyles.headerTitle)}>
@@ -338,24 +341,26 @@ function AppHeader({
         )}
 
         {headerTitle && !contentOwnsTitle && (
-          // Masaüstünde başlık içerikte (AppShell); sidebar'sız ekranda bar kalır.
-          <h1 className={cn("hidden min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:flex", !sidebarless && "lg:hidden", shellStyles.headerTitle)}>
+          // Masaüstünde (lg+) başlık içerikte (AppShell/PageFrame).
+          <h1 className={cn("hidden min-w-0 items-center gap-2 truncate text-sm font-semibold leading-5 tracking-[-0.07px] text-foreground md:flex", "lg:hidden", shellStyles.headerTitle)}>
             {HeaderIcon ? <HeaderIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
             <span className="truncate">{headerTitle}</span>
           </h1>
         )}
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          {isTechRole ? <div className={sidebarless ? undefined : "lg:hidden"}><TechnicianNotificationsBell /></div> : null}
-          {sidebarless && isTechRole ? <SidebarlessAccountActions /> : null}
+          {/* Zil yalnız bar gerçekten görünürken (<lg ya da lg+'da sidebar kapalı) kurulur;
+              sidebar açıkken kendi zili menüdedir, ikinci bir yoklama başlamaz. */}
+          {isTechRole && (isMobile || sidebarState === "collapsed") ? <TechnicianNotificationsBell /> : null}
+          {sidebarless && isTechRole ? <div className="flex items-center gap-1 lg:hidden"><SidebarlessAccountActions /></div> : null}
         </div>
       </div>
     </header>
   )
 }
 
-// Sidebar'sız ekranda teknisyenin hesap ve çıkış yolu. Telefonda "Profil" alt
-// gezintide durduğu için yalnız geniş ekranda gösterilir; çıkış her genişlikte.
+// Sidebar'sız (<lg) ekranda teknisyenin hesap ve çıkış yolu; lg+'da bunlar
+// sidebar'dadır, bu yüzden çağrı yerinde `lg:hidden` sarılır.
 function SidebarlessAccountActions() {
   return (
     <>
@@ -403,7 +408,7 @@ function AppSidebar({
   const pathname = usePathname()
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
   const inSettings = isSettingsPath(pathname)
-  const { isMobile, setOpenMobile } = useSidebar()
+  const { isMobile, state, setOpenMobile } = useSidebar()
 
   const visibleGroups = (isTechRole ? TECHNICIAN_NAV_GROUPS : NAV_GROUPS).map((group) => ({
     ...group,
@@ -470,7 +475,9 @@ function AppSidebar({
             </div>
           ) : null}
           {isTechRole ? (
-            !isMobile ? <TechnicianNotificationsBell /> : null
+            // Daraltılmış (offcanvas) sidebar ekran dışıdır; zil o zaman bardadır.
+            // Her an tek zil kurulu: ikisi birden iki yoklama demektir.
+            !isMobile && state === "expanded" ? <TechnicianNotificationsBell /> : null
           ) : (
             <Tooltip>
               <TooltipTrigger asChild>
