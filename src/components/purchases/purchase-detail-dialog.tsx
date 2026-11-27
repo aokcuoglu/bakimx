@@ -175,7 +175,7 @@ export function PurchaseDetailDialog({
         </DialogHeader>
 
         {error && (
-          <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+          <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
             {error}
           </p>
         )}
@@ -218,7 +218,7 @@ export function PurchaseDetailDialog({
               {previewUrl ? (
                 <div>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={previewUrl} alt="Yeni foto" className="w-full max-h-48 object-contain rounded-lg border border-border bg-muted" />
+                  <img src={previewUrl} alt="Yeni foto" className="w-full max-h-48 object-contain rounded-md border border-border bg-muted" />
                   <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => onPickFile(null)}>
                     <Trash2 className="size-3.5" />
                     Kaldır
@@ -256,7 +256,7 @@ export function PurchaseDetailDialog({
                 <img
                   src={`/api/photos?id=${item.purchasePhotoId}`}
                   alt="Parça kutusu"
-                  className="w-full max-h-56 object-contain rounded-lg border border-border bg-muted"
+                  className="w-full max-h-56 object-contain rounded-md border border-border bg-muted"
                 />
                 {editable && (
                   <PhotoDeleteButton

@@ -14,6 +14,7 @@ import {
   tecdocFuelToFormValue,
 } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { AlertTriangle, Car, ChevronDown, Loader2, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import { VehicleBrandModelPicker } from "@/components/vehicles/vehicle-brand-model-picker"
@@ -237,8 +238,8 @@ export function InlineCreateModal({
     return c !== undefined && c !== null && c < LOW_CONFIDENCE_THRESHOLD
   }
 
-  function fieldClass(key: string): string {
-    return lowConf(key) ? "border-warning/40 bg-warning/10 focus-visible:border-warning" : ""
+  function tone(key: string): "warning" | "default" {
+    return lowConf(key) ? "warning" : "default"
   }
 
   // Kart: mevcut aracı, DB'deki gerçek sahibiyle seç. onCreated picker'a araç
@@ -362,11 +363,11 @@ export function InlineCreateModal({
           <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
             <div className="min-w-0 space-y-1">
               <Label className="flex items-center gap-1">Plaka * {lowConf("plate") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-              <Input value={fields.plate} onChange={(e) => setField("plate", e.target.value.toUpperCase())} className={fieldClass("plate")} />
+              <Input value={fields.plate} onChange={(e) => setField("plate", e.target.value.toUpperCase())} tone={tone("plate")} />
             </div>
             <div className="min-w-0 space-y-1">
               <Label className="flex items-center gap-1">Yıl {lowConf("modelYear") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-              <Input value={fields.modelYear} onChange={(e) => setField("modelYear", e.target.value)} inputMode="numeric" className={fieldClass("modelYear")} />
+              <Input value={fields.modelYear} onChange={(e) => setField("modelYear", e.target.value)} inputMode="numeric" tone={tone("modelYear")} />
             </div>
             <VehicleBrandModelPicker
               brand={fields.brand}
@@ -393,109 +394,112 @@ export function InlineCreateModal({
           )}
 
           {/* Detailed ruhsat fields */}
-          <Button
-            type="button"
-            variant="outline"
-            size="row"
-            onClick={() => setShowDetails((s) => !s)}
-            className="w-full min-w-0 justify-between gap-2 text-foreground"
-          >
-            <span className="min-w-0">Ruhsat / teknik bilgiler (opsiyonel)</span>
-            <ChevronDown className={`size-4 shrink-0 transition-transform ${showDetails ? "rotate-180" : ""}`} />
-          </Button>
+          <Collapsible open={showDetails} onOpenChange={setShowDetails}>
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="row"
+                className="w-full min-w-0 justify-between gap-2 text-foreground"
+              >
+                <span className="min-w-0">Ruhsat / teknik bilgiler (opsiyonel)</span>
+                <ChevronDown className={`size-4 shrink-0 transition-transform ${showDetails ? "rotate-180" : ""}`} />
+              </Button>
+            </CollapsibleTrigger>
 
-          {showDetails && (
-            <div className="grid grid-cols-2 gap-2 rounded-lg border border-border p-3">
-              <div className="min-w-0 space-y-1 col-span-2">
-                <Label>Ticari Adı</Label>
-                <Input value={fields.commercialName} onChange={(e) => setField("commercialName", e.target.value)} />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <Label className="flex items-center gap-1">Tipi {lowConf("vehicleType") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-                <Select value={fields.vehicleType} onValueChange={(v) => setField("vehicleType", v)}>
-                  <SelectTrigger className={`w-full min-w-0 ${fieldClass("vehicleType")}`}>
-                    <SelectValue placeholder="Seçiniz" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {VEHICLE_TYPES.filter((t) => t.value).map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="min-w-0 space-y-1">
-                <Label>Yakıt Cinsi</Label>
-                <Select value={fields.fuelType} onValueChange={(v) => setField("fuelType", v)}>
-                  <SelectTrigger className="w-full min-w-0">
-                    <SelectValue placeholder="Seçiniz" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {VEHICLE_FUEL_TYPES.map((ft) => (
-                      <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="min-w-0 space-y-1 col-span-2">
-                <Label className="flex items-center gap-1">Şase no {lowConf("vin") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-                <div className="flex flex-wrap gap-2">
-                  <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className={`min-w-40 flex-1 ${fieldClass("vin")}`} />
-                  {entitlements.vinLookup && (
-                    <VinResolveButton
-                      loading={vinResolve.loading}
-                      disabled={!isValidVin(fields.vin)}
-                      onClick={() =>
-                        vinResolve.resolve(fields.vin, {
-                          engineDisplacement: fields.engineDisplacement || undefined,
-                          enginePower: fields.enginePower || undefined,
-                          fuelType: fields.fuelType || undefined,
-                          firstRegistrationDate: fields.firstRegistrationDate || undefined,
-                          modelYear: fields.modelYear ? Number(fields.modelYear) || undefined : undefined,
-                        })
-                      }
+            <CollapsibleContent>
+              <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-border p-3">
+                <div className="min-w-0 space-y-1 col-span-2">
+                  <Label>Ticari Adı</Label>
+                  <Input value={fields.commercialName} onChange={(e) => setField("commercialName", e.target.value)} />
+                </div>
+                <div className="min-w-0 space-y-1">
+                  <Label className="flex items-center gap-1">Tipi {lowConf("vehicleType") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
+                  <Select value={fields.vehicleType} onValueChange={(v) => setField("vehicleType", v)}>
+                    <SelectTrigger className="w-full min-w-0" tone={tone("vehicleType")}>
+                      <SelectValue placeholder="Seçiniz" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VEHICLE_TYPES.filter((t) => t.value).map((t) => (
+                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="min-w-0 space-y-1">
+                  <Label>Yakıt Cinsi</Label>
+                  <Select value={fields.fuelType} onValueChange={(v) => setField("fuelType", v)}>
+                    <SelectTrigger className="w-full min-w-0">
+                      <SelectValue placeholder="Seçiniz" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VEHICLE_FUEL_TYPES.map((ft) => (
+                        <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="min-w-0 space-y-1 col-span-2">
+                  <Label className="flex items-center gap-1">Şase no {lowConf("vin") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className="min-w-40 flex-1" tone={tone("vin")} />
+                    {entitlements.vinLookup && (
+                      <VinResolveButton
+                        loading={vinResolve.loading}
+                        disabled={!isValidVin(fields.vin)}
+                        onClick={() =>
+                          vinResolve.resolve(fields.vin, {
+                            engineDisplacement: fields.engineDisplacement || undefined,
+                            enginePower: fields.enginePower || undefined,
+                            fuelType: fields.fuelType || undefined,
+                            firstRegistrationDate: fields.firstRegistrationDate || undefined,
+                            modelYear: fields.modelYear ? Number(fields.modelYear) || undefined : undefined,
+                          })
+                        }
+                      />
+                    )}
+                  </div>
+                  {!entitlements.vinLookup && entitlements.showAddonUpsell && <AddonLockedNote feature="vinLookup" />}
+                  {vinResolve.loading && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Loader2 className="size-3 animate-spin" /> Şase sorgulanıyor…
+                    </p>
+                  )}
+                  <VinResolveNotice notice={vinResolve.notice} unconfigured={vinResolve.unconfigured} />
+                  {vinResolve.error && <p className="text-xs text-destructive-strong">{vinResolve.error}</p>}
+                  {vinResolve.locked && <VinLockedNotice currentTier={vinResolve.lockedTier} />}
+                  {vinResolve.candidates.length > 0 && (
+                    <VinCandidateList
+                      candidates={vinResolve.candidates}
+                      selectedId={catalogIds.vehicleTypeId ?? null}
+                      onSelect={(c) => vinResolve.applyCandidate(c)}
+                      onDismiss={() => vinResolve.reset()}
                     />
                   )}
                 </div>
-                {!entitlements.vinLookup && entitlements.showAddonUpsell && <AddonLockedNote feature="vinLookup" />}
-                {vinResolve.loading && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Loader2 className="size-3 animate-spin" /> Şase sorgulanıyor…
-                  </p>
-                )}
-                <VinResolveNotice notice={vinResolve.notice} unconfigured={vinResolve.unconfigured} />
-                {vinResolve.error && <p className="text-xs text-destructive-strong">{vinResolve.error}</p>}
-                {vinResolve.locked && <VinLockedNotice currentTier={vinResolve.lockedTier} />}
-                {vinResolve.candidates.length > 0 && (
-                  <VinCandidateList
-                    candidates={vinResolve.candidates}
-                    selectedId={catalogIds.vehicleTypeId ?? null}
-                    onSelect={(c) => vinResolve.applyCandidate(c)}
-                    onDismiss={() => vinResolve.reset()}
-                  />
-                )}
+                <div className="min-w-0 space-y-1 col-span-2 sm:col-span-1">
+                  <Label className="flex items-center gap-1">Motor No {lowConf("engineNo") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
+                  <Input value={fields.engineNo} onChange={(e) => setField("engineNo", e.target.value.toUpperCase())} tone={tone("engineNo")} />
+                </div>
+                <div className="min-w-0 space-y-1">
+                  <Label>Silindir Hacmi</Label>
+                  <Input value={fields.engineDisplacement} onChange={(e) => setField("engineDisplacement", e.target.value)} placeholder="1598" />
+                </div>
+                <div className="min-w-0 space-y-1">
+                  <Label>Motor Gücü</Label>
+                  <Input value={fields.enginePower} onChange={(e) => setField("enginePower", e.target.value)} placeholder="85 kW" />
+                </div>
+                <div className="min-w-0 space-y-1 col-span-2 sm:col-span-1">
+                  <Label className="flex items-center gap-1">İlk Tescil Tarihi {lowConf("firstRegistrationDate") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
+                  <DatePicker value={fields.firstRegistrationDate} onChange={(v) => setField("firstRegistrationDate", v)} tone={tone("firstRegistrationDate")} />
+                </div>
+                <div className="min-w-0 space-y-1 col-span-2">
+                  <Label>Muayene Geçerlilik Tarihi</Label>
+                  <DatePicker value={fields.inspectionValidUntil} onChange={(v) => setField("inspectionValidUntil", v)} />
+                </div>
               </div>
-              <div className="min-w-0 space-y-1 col-span-2 sm:col-span-1">
-                <Label className="flex items-center gap-1">Motor No {lowConf("engineNo") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-                <Input value={fields.engineNo} onChange={(e) => setField("engineNo", e.target.value.toUpperCase())} className={fieldClass("engineNo")} />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <Label>Silindir Hacmi</Label>
-                <Input value={fields.engineDisplacement} onChange={(e) => setField("engineDisplacement", e.target.value)} placeholder="1598" />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <Label>Motor Gücü</Label>
-                <Input value={fields.enginePower} onChange={(e) => setField("enginePower", e.target.value)} placeholder="85 kW" />
-              </div>
-              <div className="min-w-0 space-y-1 col-span-2 sm:col-span-1">
-                <Label className="flex items-center gap-1">İlk Tescil Tarihi {lowConf("firstRegistrationDate") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-                <DatePicker value={fields.firstRegistrationDate} onChange={(v) => setField("firstRegistrationDate", v)} className={fieldClass("firstRegistrationDate")} />
-              </div>
-              <div className="min-w-0 space-y-1 col-span-2">
-                <Label>Muayene Geçerlilik Tarihi</Label>
-                <DatePicker value={fields.inspectionValidUntil} onChange={(v) => setField("inspectionValidUntil", v)} />
-              </div>
-            </div>
-          )}
+            </CollapsibleContent>
+          </Collapsible>
 
           {error && <p className="text-sm text-destructive-strong">{error}</p>}
 

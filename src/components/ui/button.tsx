@@ -3,6 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { fieldToneClasses } from "./field-tone"
 
 // e-santral kalıbı (docs/design-pattern-esantral.md): düz mavi dolgu, gölge yok.
 const primaryFill = "bg-primary text-primary-foreground hover:bg-primary/90"
@@ -22,6 +23,10 @@ const NO_BORDER_VARIANTS = [
   "link",
   "tint",
   "on-photo-ghost",
+  "destructive-ghost",
+  "on-photo-scrim",
+  "tint-ghost",
+  "success-ghost",
 ] as const
 
 // Basılma efekti `translate` değil `transform` yazar (#819): call-site'lar
@@ -45,8 +50,11 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
           "text-muted-foreground hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:text-muted-foreground dark:hover:bg-muted/50",
+        // Ölçüm (#1003; kart / sayfa / bg-muted, hover dahil): açık hover /20
+        // 4.54 / 4.12 / 4.20 idi, /14 ile 5.1 / 4.6 / 4.7; koyu /20 + hover /30
+        // bg-muted'da 3.4'e iniyordu, koyuda dinlenme ve hover /10 (4.59 muted).
         destructive:
-          "bg-destructive/10 text-destructive-strong hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+          "bg-destructive/10 text-destructive-strong hover:bg-destructive/14 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:hover:bg-destructive/10 dark:focus-visible:ring-destructive/40",
         success:
           "bg-success text-success-foreground hover:bg-success/90 focus-visible:ring-success/20",
         warning:
@@ -55,14 +63,13 @@ const buttonVariants = cva(
         // Değer seçen Popover tetikleyicisi (tarih seçiciler) alan gibi görünür:
         // Input / SelectTrigger ile aynı çerçeve, zemin, ağırlık ve odak halkası;
         // köşe aşağıdaki compoundVariants'ta (#889).
-        field:
-          "border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:ring-4 aria-invalid:ring-destructive/10 dark:bg-input/30 dark:aria-invalid:ring-destructive/20",
+        field: `border border-input bg-card font-normal text-foreground focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:ring-4 aria-invalid:ring-destructive/10 dark:bg-input/30 dark:aria-invalid:ring-destructive/20 ${fieldToneClasses}`,
         // Ton variant'ları (#925): çağrı yerinde `border-destructive/*`,
         // `bg-primary/N` ya da `bg-white/*` yazılmasın diye ton buradan gelir,
         // className'den değil.
         // İkincil yıkıcı eylem (İptal, Pasif Yap): outline çerçevesi, kırmızı ton.
         "destructive-outline":
-          "border border-destructive/20 bg-card text-destructive-strong hover:bg-destructive/10 aria-expanded:bg-destructive/10 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-input/30 dark:hover:bg-destructive/20 dark:focus-visible:ring-destructive/40",
+          "border border-destructive/20 bg-card text-destructive-strong hover:bg-destructive/10 aria-expanded:bg-destructive/10 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-input/30 dark:hover:bg-destructive/10 dark:focus-visible:ring-destructive/40",
         // Birincil tonlu seçili / önerilen eylem. Metin -strong: tonlu zeminde
         // çıplak text-primary AA'yı geçmez (BAK-160). Ölçüm (#925; kart /
         // sayfa / bg-muted): açık /10 6.06 / 5.46 / 5.59, hover /20
@@ -70,6 +77,29 @@ const buttonVariants = cva(
         // kalır: /20 bg-muted'da 4.05, /13 4.48'e iniyor, geçen en yüksek /12
         // ise /10'dan gözle ayırt edilmiyor (ΔE_OK ≈ 0.01).
         tint: "bg-primary/10 text-primary-strong hover:bg-primary/20 aria-expanded:bg-primary/20 dark:hover:bg-primary/10 dark:aria-expanded:bg-primary/10",
+        // Dilim 2 (#928). Satır içi yıkıcı eylem (sil, kaldır, iptal): çerçevesiz,
+        // dinlenirken kırmızı. Satır çöp kutusu gibi gri dinlenmesi gerekenler
+        // çağrı yerinde `text-muted-foreground` verir (twMerge tonu düşürür);
+        // hover'da kırmızı geri gelir. Koyu hover /20 yok: -strong metin
+        // bg-muted üstünde AA'nın altına iner.
+        "destructive-ghost":
+          "text-destructive-strong hover:bg-destructive/10 hover:text-destructive-strong aria-expanded:bg-destructive/10 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+        // Dilim 3 (#1003). Renkli hayalet eylem: çerçevesiz, dinlenirken birincil
+        // (satır içi "ekle / değiştir / aç") ya da başarı tonunda (tamamla / onayla);
+        // hover'da aynı tonun /10 zemini. Metin -strong: tonlu hover zemininde
+        // çıplak text-primary AA'yı geçmez (BAK-160).
+        "tint-ghost":
+          "text-primary-strong hover:bg-primary/10 hover:text-primary-strong aria-expanded:bg-primary/10 focus-visible:border-primary/40 focus-visible:ring-primary/20",
+        "success-ghost":
+          "text-success-strong hover:bg-success/10 hover:text-success-strong aria-expanded:bg-success/10 focus-visible:border-success/40 focus-visible:ring-success/20",
+        // Dikkat isteyen ama engellemeyen seçim (düşük güvenli OCR önerisi):
+        // sarı çerçeveli, sarı tonlu zemin, -strong metin.
+        "warning-tint":
+          "border border-warning/40 bg-warning/10 text-warning-strong hover:bg-warning/20 aria-expanded:bg-warning/20 focus-visible:border-warning focus-visible:ring-warning/20 dark:hover:bg-warning/15 dark:aria-expanded:bg-warning/15",
+        // Fotoğraf üstünde yüzen galeri okları: koyu yarı saydam zemin, aydınlık
+        // fotoğrafta da okunur (on-photo'nun %10 beyazı okunmaz).
+        "on-photo-scrim":
+          "bg-black/60 text-white hover:bg-black/80 hover:text-white focus-visible:ring-white/40",
         // Fotoğraf / kamera katmanı üstünde (siyah zemin) çerçeveli ve hayalet düğme.
         "on-photo":
           "border border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white focus-visible:border-white focus-visible:ring-white/40",

@@ -336,7 +336,7 @@ export function PlanPackages({
                 </div>
                 <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-primary">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-primary">
                       <Hexagon className="size-4" aria-hidden="true" />
                     </span>
                     <div className="min-w-0">
@@ -364,8 +364,8 @@ export function PlanPackages({
                     {hasCommittedCycle && (
                       <Button
                         type="button"
-                        variant="ghost"
-                        className="shrink-0 text-primary"
+                        variant="tint-ghost"
+                        className="shrink-0"
                         onClick={() => {
                           const next = stripCycle === "yearly" ? "monthly" : "yearly"
                           if (onRequestCycleChange) onRequestCycleChange(next)

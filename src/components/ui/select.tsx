@@ -4,6 +4,8 @@ import * as React from "react"
 import { Select as SelectPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { resolveSelectValueChange } from "@/lib/ui/select-value-change"
+import { fieldToneClasses, type FieldTone } from "./field-tone"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
 /**
@@ -19,6 +21,11 @@ import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
  * yorumlar, yani boş seçimde tetikleyicide yine filtre etiketi ("Durum",
  * "Bakım Türü") görünür — üç bitişik filtrenin üçünün birden "Tümü" yazması
  * bu sayede olmaz.
+ *
+ * Koruma (#907): kontrollü değer doluyken `SelectItem`'dan gelmeyen ham `""`
+ * gizli yerel select'in sahte yayımıdır ("satır içi oluştur → seç" akışında
+ * seçenek ve değer aynı render'da verilince) ve yutulur; gerçek "seçim yok"
+ * her zaman nöbetçi değerle gelir.
  */
 const EMPTY_VALUE = "__bakimx-empty__"
 
@@ -31,8 +38,12 @@ function Select({
       data-slot="select"
       onValueChange={
         onValueChange &&
-        ((value: string) =>
-          onValueChange(value === EMPTY_VALUE ? "" : value))
+        ((value: string) => {
+          // Gizli yerel select'in sahte "" yayımını yutar (#907,
+          // lib/ui/select-value-change.ts).
+          const next = resolveSelectValueChange(value, props.value, EMPTY_VALUE)
+          if (next !== null) onValueChange(next)
+        })
       }
       {...props}
     />
@@ -61,17 +72,21 @@ function SelectValue({
 function SelectTrigger({
   className,
   size = "default",
+  tone = "default",
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default" | "compact"
+  tone?: FieldTone
 }) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
+      data-tone={tone === "default" ? undefined : tone}
       className={cn(
         "flex w-fit items-center justify-between gap-1.5 rounded-(--control-radius) border border-input bg-card py-0 pr-3 pl-(--field-px) text-(length:--control-fs) font-normal leading-5 tracking-[-0.01em] whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/10 data-placeholder:text-muted-foreground data-[size=default]:h-(--control-h) data-[size=sm]:h-(--control-h-sm) data-[size=compact]:h-(--control-h-xs) data-[size=compact]:text-(length:--control-fs-xs) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        fieldToneClasses,
         className
       )}
       {...props}

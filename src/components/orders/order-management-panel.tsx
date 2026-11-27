@@ -20,7 +20,7 @@ import { liraToKurus, percentToBps, applyDiscountKurus, applyTaxBps, addKurus } 
 import { PAYMENT_METHOD_LABELS } from "@/lib/cashbox/status"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
-import { formatChainAmount, orderTotalsChain } from "@/lib/orders/totals-chain"
+import { formatChainAmount, orderTotalsChain, totalsChainText } from "@/lib/orders/totals-chain"
 import type { PaymentMethodKey } from "@/lib/cashbox/status"
 import type {
   TechnicianChecklistItem,
@@ -258,6 +258,8 @@ export function PartsLaborCard({
   onAddingTypeChange,
   rememberAddOpener,
   onAddDialogCloseAutoFocus,
+  totals,
+  onNavigateToPayment,
 }: {
   orderId: string
   status: string
@@ -284,6 +286,13 @@ export function PartsLaborCard({
    */
   rememberAddOpener?: (opener: HTMLElement | null) => void
   onAddDialogCloseAutoFocus?: (event: Event) => void
+  /**
+   * Sayfanın tek toplam kaynağı (`order.totals`). Verilirse tek kolonda Kalemler'in
+   * sonunda Genel Toplam satırı çıkar; iki kolonda para raydaki Ödeme kartındadır (#967).
+   */
+  totals?: Totals
+  /** Toplam satırının "Ödeme" bağlantısı: Ödeme bölümüne kaydırır. */
+  onNavigateToPayment?: () => void
 }) {
   const canAdd = !isOrderLocked(status as OrderStatus)
   const addMenuTriggerRef = useRef<HTMLButtonElement>(null)
@@ -342,9 +351,50 @@ export function PartsLaborCard({
           addingType={addingType}
           onAddingTypeChange={onAddingTypeChange}
           onAddDialogCloseAutoFocus={onAddDialogCloseAutoFocus}
+          compactRows
         />
       </div>
+      {totals?.hasAnyPrice && (
+        <ItemsTotalFooter totals={totals} taxRateBps={taxRateBps ?? null} onNavigateToPayment={onNavigateToPayment} />
+      )}
     </DetailPanel>
+  )
+}
+
+/**
+ * Tek kolonda (telefon / dar içerik) Kalemler'in sonundaki yapışkan olmayan toplam
+ * (#967). Rakamlar Ödeme kartıyla AYNI kaynaktan gelir (`order.totals`, zincir
+ * `orderTotalsChain`) — burada hiçbir şey yeniden hesaplanmaz. İki kolonda (içerik
+ * ≥780px, `@container detail`) ray zaten Ödeme kartını gösterdiği için gizlenir;
+ * eşik order-detail.module.css'teki iki kolon geçişiyle aynıdır.
+ */
+function ItemsTotalFooter({ totals, taxRateBps, onNavigateToPayment }: {
+  totals: Totals
+  taxRateBps: number | null
+  onNavigateToPayment?: () => void
+}) {
+  const chainText = totalsChainText(orderTotalsChain(totals, taxRateBps))
+  return (
+    <div className={cn(detail.block, "flex items-start justify-between gap-3 @min-[780px]/detail:hidden")} data-testid="items-total">
+      <div className="min-w-0 space-y-0.5">
+        <p className="text-[15px] leading-5 text-muted-foreground">
+          Genel Toplam{" "}
+          <span className="font-semibold tabular-nums text-foreground">{formatTRY(totals.grandTotal)}</span>
+        </p>
+        {chainText && <p className="text-[13px] leading-[18px] tabular-nums text-muted-foreground">{chainText}</p>}
+      </div>
+      <Button asChild variant="link" size="inline" className="shrink-0">
+        <a
+          href="#odeme"
+          onClick={(event) => {
+            event.preventDefault()
+            onNavigateToPayment?.()
+          }}
+        >
+          Ödeme
+        </a>
+      </Button>
+    </div>
   )
 }
 
@@ -366,13 +416,7 @@ export function OrderPaymentCard({
   paidAmount,
   remainingAmount,
   locked,
-  editingMeta,
   setEditingMeta,
-  metaDraft,
-  setMetaDraft,
-  saveMeta,
-  loading,
-  error,
   showCashbox = true,
   onCollect,
 }: {
@@ -383,13 +427,7 @@ export function OrderPaymentCard({
   paidAmount: number
   remainingAmount: number
   locked: boolean
-  editingMeta: boolean
   setEditingMeta: (b: boolean) => void
-  metaDraft: PricingMetaDraft
-  setMetaDraft: (v: PricingMetaDraft) => void
-  saveMeta: () => void
-  loading: boolean
-  error?: string
   showCashbox?: boolean
   /**
    * Tahsilat alınabiliyorsa; hızlı işlemdeki "Tahsilat al" ile aynı pencere.
@@ -401,7 +439,6 @@ export function OrderPaymentCard({
   // Fiyat girilmeden alınmış avans da görünür; kalan ancak toplam varken anlamlı.
   const showPaid = showCashbox && (totals.hasAnyPrice || paidAmount > 0)
   return (
-    <>
     <DetailPanel title="Ödeme Özeti" aside={showCashbox && <OrderPaymentPill status={paymentStatus} />}>
       {totals.hasAnyPrice ? (
         <div className={cn(detail.block, "space-y-2")}>
@@ -456,10 +493,10 @@ export function OrderPaymentCard({
           </p>
         ) : totals.discountAmount === 0 && totals.taxAmount === 0 ? (
           <Button
-            variant="ghost"
+            variant="tint-ghost"
             onClick={() => setEditingMeta(true)}
             size="sm"
-            className="w-full text-primary hover:text-primary"
+            className="w-full"
           >
             <Plus className="size-3.5 mr-1" /> İndirim / KDV ekle
           </Button>
@@ -475,6 +512,34 @@ export function OrderPaymentCard({
         )}
       </div>
     </DetailPanel>
+  )
+}
+
+/**
+ * "İndirim ve KDV düzenle" penceresi (#966). Ödeme kartı iki yuvada render
+ * edildiği için (dar düzende ana kolon, iki kolonda ray) durumlu pencere
+ * kartın içinde kalamaz: sayfada tek kopya, kartlardan bağımsız.
+ */
+export function OrderPricingDialog({
+  totals,
+  editingMeta,
+  setEditingMeta,
+  metaDraft,
+  setMetaDraft,
+  saveMeta,
+  loading,
+  error,
+}: {
+  totals: Totals
+  editingMeta: boolean
+  setEditingMeta: (b: boolean) => void
+  metaDraft: PricingMetaDraft
+  setMetaDraft: (v: PricingMetaDraft) => void
+  saveMeta: () => void
+  loading: boolean
+  error?: string
+}) {
+  return (
     <Dialog open={editingMeta} onOpenChange={(open) => { if (!loading) setEditingMeta(open) }}>
       <DialogContent>
         <DialogHeader>
@@ -500,7 +565,6 @@ export function OrderPaymentCard({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-    </>
   )
 }
 

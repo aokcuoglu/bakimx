@@ -1193,7 +1193,7 @@ export function VehicleEntryWizard({
             onFieldChange={setField}
             confidence={confidence}
             showDetails={showDetails}
-            onToggleDetails={() => setShowDetails((s) => !s)}
+            onShowDetailsChange={setShowDetails}
             vinResolve={vinResolve}
             vinLookup={entitlements.vinLookup}
             showAddonUpsell={entitlements.showAddonUpsell}
@@ -1247,9 +1247,9 @@ export function VehicleEntryWizard({
             {entitlements.ocrIntake && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="tint-ghost"
                 size="sm"
-                className="shrink-0 gap-1.5 text-primary"
+                className="shrink-0 gap-1.5"
                 onClick={() => setScanner("registration")}
               >
                 <Camera className="size-4" /> Ruhsatı çek
@@ -1263,7 +1263,7 @@ export function VehicleEntryWizard({
             onFieldChange={setField}
             confidence={confidence}
             showDetails={showDetails}
-            onToggleDetails={() => setShowDetails((s) => !s)}
+            onShowDetailsChange={setShowDetails}
             vinResolve={vinResolve}
             vinLookup={entitlements.vinLookup}
             showAddonUpsell={entitlements.showAddonUpsell}
@@ -1298,9 +1298,9 @@ export function VehicleEntryWizard({
             {!duplicate && (entitlements.ocrIntake ? (
               <Button
                 type="button"
-                variant="ghost"
+                variant="tint-ghost"
                 size="sm"
-                className="gap-1.5 text-primary"
+                className="gap-1.5"
                 onClick={() => setScanner("registration")}
               >
                 <ScanLine className="size-4" /> Ruhsattan doldur

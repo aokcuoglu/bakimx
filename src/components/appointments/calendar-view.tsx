@@ -8,7 +8,8 @@ import { CalendarDays, ChevronLeft, ChevronRight, Clock, Truck, BellRing, Refres
 import { checkRemindersAction } from "@/app/(app)/calendar/actions"
 import { Button } from "@/components/ui/button"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
-import { formatTrTime } from "@/lib/format-date"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { eventStartLabel, eventTimeRangeLabel } from "@/lib/calendar/event-time"
 import {
   dayKeysInView,
   dayOfMonth,
@@ -29,6 +30,7 @@ interface CalendarViewItem {
   type: "appointment" | "delivery" | "maintenance_reminder"
   startAt: string
   endAt?: string
+  allDay?: boolean
   status?: string
   customerName?: string
   vehiclePlate?: string
@@ -104,43 +106,45 @@ export function CalendarView({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Button type="button" variant="ghost" size="icon" onClick={() => go(optimistic.view, shiftCalendarDay(optimistic.view, optimistic.date, "prev"))} aria-label="Önceki">
-            <ChevronLeft className="size-5" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => go(optimistic.view, istanbulTodayKey())}>
-            Bugün
-          </Button>
-          <Button type="button" variant="ghost" size="icon" onClick={() => go(optimistic.view, shiftCalendarDay(optimistic.view, optimistic.date, "next"))} aria-label="Sonraki">
-            <ChevronRight className="size-5" />
-          </Button>
-          <span className="text-base font-semibold text-foreground ml-2">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <div className="flex items-center gap-1">
+            <Button type="button" variant="ghost" size="icon" onClick={() => go(optimistic.view, shiftCalendarDay(optimistic.view, optimistic.date, "prev"))} aria-label="Önceki">
+              <ChevronLeft className="size-5" />
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => go(optimistic.view, istanbulTodayKey())}>
+              Bugün
+            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={() => go(optimistic.view, shiftCalendarDay(optimistic.view, optimistic.date, "next"))} aria-label="Sonraki">
+              <ChevronRight className="size-5" />
+            </Button>
+          </div>
+          <span className="min-w-0 text-base font-semibold text-foreground">
             {optimistic.view === "month" ? formatMonthTitle(optimistic.date) : formatDayTitle(optimistic.date)}
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-lg border border-border overflow-hidden">
-            {(["day", "week", "month"] as CalendarViewMode[]).map((v) => {
-              const labels: Record<CalendarViewMode, string> = { day: "Günlük", week: "Haftalık", month: "Aylık" }
-              return (
-                <Button
-                  key={v}
-                  type="button"
-                  size="sm"
-                  variant={optimistic.view === v ? "secondary" : "ghost"}
-                  onClick={() => go(v, optimistic.date)}
-                >
-                  {labels[v]}
-                </Button>
-              )
-            })}
-          </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <ToggleGroup
+            type="single"
+            variant="segment"
+            size="control"
+            aria-label="Takvim görünümü"
+            className="w-full sm:w-fit"
+            value={optimistic.view}
+            onValueChange={(v) => {
+              if (v) go(v as CalendarViewMode, optimistic.date)
+            }}
+          >
+            <ToggleGroupItem value="day" className="flex-1 sm:flex-none">Günlük</ToggleGroupItem>
+            <ToggleGroupItem value="week" className="flex-1 sm:flex-none">Haftalık</ToggleGroupItem>
+            <ToggleGroupItem value="month" className="flex-1 sm:flex-none">Aylık</ToggleGroupItem>
+          </ToggleGroup>
 
           <Button
             type="button"
             variant="warning"
+            className="w-full sm:w-auto"
             onClick={handleCheckReminders}
             disabled={checking}
           >
@@ -207,7 +211,7 @@ export function CalendarView({
                             href={getEventLink(event)}
                             className={cn("block text-[10px] leading-tight px-1 py-0.5 rounded truncate", config.bgColor, config.color)}
                           >
-                            {formatTrTime(event.startAt)} {event.title}
+                            {eventStartLabel(event)} {event.title}
                           </Link>
                         )
                       })}
@@ -223,7 +227,8 @@ export function CalendarView({
           </div>
         </div>
       ) : view === "week" ? (
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-x-auto">
+         <div className="min-w-224 md:min-w-0">
           <div className="grid grid-cols-7 border-b border-border">
             {dayKeys.map((dayKey) => {
               const today = dayKey === todayKey
@@ -250,13 +255,13 @@ export function CalendarView({
                       <Link
                         key={event.id}
                         href={getEventLink(event)}
-                        className={cn("block rounded-lg border p-2 text-xs transition-colors hover:shadow-sm", config.bgColor)}
+                        className={cn("block rounded-md border p-2 text-xs transition-colors hover:shadow-sm", config.bgColor)}
                       >
                         <div className="flex items-center gap-1 mb-0.5">
                           <Icon className={cn("size-3 shrink-0", config.color)} />
-                          <span className={cn("font-semibold truncate", config.color)}>{formatTrTime(event.startAt)}</span>
+                          <span className={cn("font-semibold truncate", config.color)}>{eventStartLabel(event)}</span>
                         </div>
-                        <div className="font-medium text-foreground truncate">{event.title}</div>
+                        <div className="font-medium text-foreground line-clamp-2 break-words">{event.title}</div>
                         {event.vehiclePlate && (
                           <div className="text-muted-foreground mt-0.5 font-mono">{event.vehiclePlate}</div>
                         )}
@@ -272,6 +277,7 @@ export function CalendarView({
               )
             })}
           </div>
+         </div>
         </div>
       ) : (
         <div className="rounded-lg border border-border bg-card overflow-hidden">
@@ -298,7 +304,7 @@ export function CalendarView({
                   <Link
                     key={event.id}
                     href={getEventLink(event)}
-                    className={cn("flex items-start gap-3 rounded-lg border p-3 transition-colors hover:shadow-sm", config.bgColor)}
+                    className={cn("flex items-start gap-3 rounded-md border p-3 transition-colors hover:shadow-sm", config.bgColor)}
                   >
                     <Icon className={cn("size-5 shrink-0 mt-0.5", config.color)} />
                     <div className="flex-1 min-w-0">
@@ -310,8 +316,7 @@ export function CalendarView({
                       </div>
                       <div className="flex items-center gap-1 mt-0.5 text-sm text-muted-foreground">
                         <Clock className="size-3.5" />
-                        <span>{formatTrTime(event.startAt)}</span>
-                        {event.endAt && <span> — {formatTrTime(event.endAt)}</span>}
+                        <span>{eventTimeRangeLabel(event)}</span>
                       </div>
                       {event.vehiclePlate && (
                         <span className="inline-block mt-1 text-xs font-mono bg-card text-foreground px-1.5 py-0.5 rounded">

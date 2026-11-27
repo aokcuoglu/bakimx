@@ -103,7 +103,7 @@ export default function AracKabulFormuPage() {
               </div>
               <Image
                 src="/landing/screens/digital-intake-vehicle-info.png"
-                alt="BakımX ruhsattan otomatik dolan araç ve kabul bilgileri ekranı"
+                alt="BakımX araç ve kabul bilgileri ekranı"
                 width={1000}
                 height={1000}
                 className="h-auto w-full"
@@ -173,7 +173,7 @@ export default function AracKabulFormuPage() {
               </p>
               <div className="mt-8 grid gap-4 sm:grid-cols-3">
                 {[
-                  { href: "/dijital-arac-kabul", title: "Dijital araç kabul", text: "Ruhsat okuma, kabul fotoğrafları ve hasar kaydı akışını inceleyin." },
+                  { href: "/dijital-arac-kabul", title: "Dijital araç kabul", text: "Plaka okuma, kabul fotoğrafları ve hasar kaydı akışını inceleyin." },
                   { href: "/dijital-arac-kabul#ekranlar-baslik", title: "Hasar kaydı ve fotoğraf kanıtı", text: "Hasarın araç şemasında nasıl işaretlendiğini gerçek ekranda görün." },
                   { href: "/oto-servis-programi", title: "Oto servis programı", text: "Araç kabulden teslimata bütün servis akışına genel bakış." },
                 ].map((item) => (

@@ -1,25 +1,25 @@
 export const DIJITAL_ARAC_KABUL_PATH = "/dijital-arac-kabul" as const
 
-export const DIJITAL_ARAC_KABUL_TITLE = "Dijital Araç Kabul: Ruhsat, Fotoğraf ve Hasar Kaydı"
+export const DIJITAL_ARAC_KABUL_TITLE = "Dijital Araç Kabul: Plaka, Fotoğraf ve Hasar Kaydı"
 
-export const DIJITAL_ARAC_KABUL_H1 = "Dijital araç kabulle ruhsatı okutun, kabul kaydını telefondan tamamlayın"
+export const DIJITAL_ARAC_KABUL_H1 = "Dijital araç kabulle plakayı okutun, fotoğraf ve hasarı telefondan kayda alın"
 
 export const DIJITAL_ARAC_KABUL_DESCRIPTION =
-  "Dijital araç kabul: ruhsatı okutun, bilgiler otomatik dolsun; fotoğrafları çekin, hasarı araç şemasında işaretleyin. BakımX'i 7 iş günü ücretsiz deneyin."
+  "Dijital araç kabul: plakayı okutun, fotoğrafları çekin, hasarı şemada işaretleyin. Ruhsat okuma ek özelliktir. BakımX'i 7 iş günü ücretsiz deneyin."
 
 export const DIJITAL_ARAC_KABUL_INTRO =
-  "Dijital araç kabul; ruhsatı okutarak araç ve müşteri bilgisini otomatik doldurduğunuz, zorunlu kabul fotoğraflarını çektiğiniz ve hasarı araç şeması üzerinde işaretlediğiniz kayıt sürecidir. BakımX'te bu adımlar tek sihirbazda ilerler: kağıt form veya ayrı bir uygulama gerekmez, kayıt aynı anda iş emrine bağlanır ve ekip aracın kabul durumunu telefondan görür."
+  "Dijital araç kabul; plakayı okutarak araç kaydını açtığınız, zorunlu kabul fotoğraflarını çektiğiniz ve hasarı araç şeması üzerinde işaretlediğiniz kayıt sürecidir. BakımX'te bu adımlar tek sihirbazda ilerler: kağıt form veya ayrı bir uygulama gerekmez, kayıt aynı anda iş emrine bağlanır ve ekip aracın kabul durumunu telefondan görür. Ruhsat okuma, araç bilgilerini otomatik doldurmak isteyenler için ek özellik olarak sunulur."
 
 export const DIJITAL_ARAC_KABUL_FAQS = [
   {
     question: "Dijital araç kabul ne işe yarar?",
     answer:
-      "Ruhsat okuma, araç/müşteri bilgisi, kabul fotoğrafları ve hasar işaretlerini tek kayıtta toplar. Araç servise girerken hangi durumda olduğu kanıtla birlikte kayda geçer ve iş emrine otomatik bağlanır.",
+      "Plaka okuma, araç/müşteri bilgisi, kabul fotoğrafları ve hasar işaretlerini tek kayıtta toplar. Araç servise girerken hangi durumda olduğu kanıtla birlikte kayda geçer ve iş emrine otomatik bağlanır.",
   },
   {
-    question: "Ruhsat okuma gerçekten otomatik mi çalışıyor?",
+    question: "Ruhsat okuma pakete dahil mi, nasıl çalışıyor?",
     answer:
-      "Ruhsatı fotoğrafladığınızda plaka, marka/model, şase numarası ve model yılı gibi alanlar otomatik doldurulur; düşük güvenle okunan alanlar kaydetmeden önce kontrol için işaretlenir.",
+      "Ruhsat okuma Servis Paketi'ne dahil olmayan bir ek özelliktir; ücretsiz denemede açıktır. Açıkken ruhsatı fotoğrafladığınızda plaka, marka/model, şase numarası ve model yılı gibi alanlar doldurulur; düşük güvenle okunan alanlar kaydetmeden önce kontrol için işaretlenir. Plaka okuma, fotoğraf ve hasar adımları pakete dahildir.",
   },
   {
     question: "Kabul fotoğraflarında hangi açılar zorunlu?",

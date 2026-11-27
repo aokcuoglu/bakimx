@@ -83,6 +83,31 @@ export async function ensureWorkshopOrganization(
   return org.id
 }
 
+/**
+ * Guarantee the user keeps a seat in a workshop they already act in, without
+ * touching `User.workshopId`. Creates the row only when missing and never
+ * re-activates or re-roles an existing one. Branch creation calls this for the
+ * source workshop so the switcher can always return to it (#900).
+ */
+export async function ensureMembership(input: {
+  userId: string
+  workshopId: string
+  role: UserRole
+  tx?: Prisma.TransactionClient
+}) {
+  const db = input.tx ?? prisma
+  await db.workshopMembership.upsert({
+    where: { userId_workshopId: { userId: input.userId, workshopId: input.workshopId } },
+    create: {
+      userId: input.userId,
+      workshopId: input.workshopId,
+      role: input.role,
+      isActive: true,
+    },
+    update: {},
+  })
+}
+
 /** Upsert membership and mirror User.workshopId/role (last-active). */
 export async function activateWorkshopForUser(input: {
   userId: string

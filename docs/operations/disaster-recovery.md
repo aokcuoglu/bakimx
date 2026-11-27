@@ -242,6 +242,7 @@ denenir — gerçek bir olayda elimizde olacak olan odur.
 | Tarih | Ortam | Kaynak | Geri yükleme süresi | Sonuç |
 |---|---|---|---|---|
 | 2026-08-19 | prod | `rds:bakimx-prod-db-2026-08-19-02-10` (02:10 UTC otomatik) | **6 dk 58 sn** (12:07:08 → 12:14:06 UTC) | ✅ Başarılı |
+| 2026-11-27 | prod | `rds:bakimx-prod-db-2026-11-27-02-10` (02:10 UTC otomatik) | **9 dk 41 sn** | ✅ Başarılı |
 
 **2026-08-19 tatbikatının bulguları (ilk tatbikat, BAK-120):**
 
@@ -266,6 +267,23 @@ denenir — gerçek bir olayda elimizde olacak olan odur.
   kurtarmada bu adım §4.5'te zaten var.
 - **Maliyet:** geçici instance ~10 dk yaşadı; `db.t4g.small` + 20 GB için birkaç
   sentlik mertebe (tahmin, faturaya bakılmadı).
+
+**2026-11-27 tatbikatının bulguları (çeyreklik tekrar, #732):**
+
+- Geçici instance `bakimx-dr-drill-20261127-1822`, kaynakla aynı sınıf
+  (`db.t4g.small`), subnet ve SG ile açıldı; tatbikat sonunda silindi ve
+  `bakimx-dr-drill*` sorgusu boş döndü. Kaynak `bakimx-prod-db`'ye dokunulmadı
+  (`available`, `DeletionProtection: true`).
+- `dr-verify.ts` tüm kontrollerden geçti: bağlantı 1174 ms, 88 migration kesintisiz,
+  yarım/geri alınmış ya da kodun tanımadığı migration yok. Veri hacmi ilk
+  tatbikattan bu yana büyüdü: 13 atölye, 20 kullanıcı, 428 iş emri, 1439 fotoğraf
+  kaydı, ~12 bin denetim kaydı.
+- **Süre 6 dk 58 sn → 9 dk 41 sn:** veri büyümesiyle uyumlu, RTO bütçesinin
+  (≤ 4 saat, §2) çok içinde.
+- **Ölçülen RPO:** en taze satır `AuditLog` 2026-11-26T12:30Z, snapshot
+  2026-11-27T02:10Z: snapshot bir önceki günün tüm yazmalarını taşıyor.
+- Script, `dev`'de olup prod'da henüz olmayan 1 migration'ı (`20261125180000_workshop_addons`)
+  bilgi notu olarak listeledi. Sebep prod release'inin `dev`'in gerisinde olması; arıza değil.
 
 ---
 

@@ -973,7 +973,7 @@ function PurchasesSection({
 
       {empty ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-primary/[0.04] px-4 py-10 text-center">
-          <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary-strong">
+          <span className="flex size-12 items-center justify-center rounded-md bg-primary/10 text-primary-strong">
             <ShoppingCart className="size-6" />
           </span>
           <p className="text-sm font-semibold text-foreground">Henüz dış alım yok</p>
@@ -1089,7 +1089,7 @@ function PurchaseCard({
             />
           </div>
         ) : (
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary-strong">
             <Package className="size-4" />
           </span>
         )}
@@ -1227,7 +1227,7 @@ function ExternalLaborCard({
     <>
       <div className="rounded-xl border border-border bg-primary/[0.04] p-2.5">
         <div className="flex gap-2.5">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning-strong">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-warning/10 text-warning-strong">
             <Wrench className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
@@ -1272,11 +1272,11 @@ function ExternalLaborCard({
               {deletable && (
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="destructive-ghost"
                   size="icon-sm"
                   onClick={() => setConfirmOpen(true)}
                   aria-label={`${item.name} — dış işçilik kaydını sil`}
-                  className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong"
+                  className="shrink-0 text-muted-foreground"
                 >
                   <Trash2 className="size-4" />
                 </Button>
@@ -1346,11 +1346,11 @@ function PurchaseDeleteButton({
     <>
       <Button
         type="button"
-        variant="ghost"
+        variant="destructive-ghost"
         size="icon-sm"
         onClick={() => setOpen(true)}
         aria-label={`${item.name} — dışarıdan alınan parçayı sil`}
-        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong"
+        className="text-muted-foreground"
       >
         <Trash2 className="size-4" />
       </Button>
@@ -1404,7 +1404,7 @@ function InternalNotesSection({
           {!locked && (
             <Button
               type="button"
-              variant="ghost"
+              variant="destructive-ghost"
               size="icon"
               aria-label="İç notu sil"
               onClick={() => {
@@ -1412,7 +1412,7 @@ function InternalNotesSection({
                   await deleteInternalNoteAction(note.id)
                 })
               }}
-              className="text-warning-strong hover:text-destructive-strong md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              className="text-warning-strong md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
             >
               <Trash2 className="size-3.5" />
             </Button>

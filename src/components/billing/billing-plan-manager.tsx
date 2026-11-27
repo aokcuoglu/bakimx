@@ -324,7 +324,7 @@ export function BillingPlanManager({
                     <CheckCircle2 className="size-7 text-success-strong" aria-hidden="true" />
                     <div><h3 className="text-lg font-semibold">Havale talebiniz oluşturuldu</h3><p className="text-sm text-muted-foreground">Ödemeniz teyit edilince paketiniz güncellenecek.</p></div>
                   </div>
-                  <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 rounded-lg border bg-muted/30 p-4 text-sm">
+                  <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 rounded-md border bg-muted/30 p-4 text-sm">
                     <dt className="text-muted-foreground">Tutar</dt><dd className="font-semibold">{formatMinor(done.amountMinor)}</dd>
                     <dt className="text-muted-foreground">Alıcı</dt><dd>{havale.accountTitle}</dd>
                     <dt className="text-muted-foreground">Banka</dt><dd>{havale.bank}</dd>
@@ -357,7 +357,7 @@ export function BillingPlanManager({
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(submit)} className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(290px,0.85fr)]">
                     <div className="space-y-5">
-                      <section className="rounded-xl border p-4 sm:p-5">
+                      <section className="rounded-md border p-4 sm:p-5">
                         <div className="flex items-center justify-between gap-3"><div><p className="text-xs text-muted-foreground">Seçilen paket</p><h3 className="mt-1 text-lg font-semibold">{pkg?.name}</h3></div><Badge variant="outline">{pkg?.seats} kullanıcı dahil</Badge></div>
                         <p className="mt-2 text-sm text-muted-foreground">{pkg?.tagline}</p>
                         <div className="mt-5"><BillingCycleToggle value={cycle} onChange={(value) => form.setValue("cycle", value)} yearlyHint="2 ay bedava" /></div>
@@ -368,7 +368,7 @@ export function BillingPlanManager({
                         Bu paket {getSeatLimit(tier, extraSeats)} koltuk destekliyor. Ödeme teyidinde {excessSeats} fazla kullanıcı veya davet devre dışı bırakılacak. Kayıt geçmişleri silinmeyecek.
                       </AlertDescription></Alert>}
                       {canPurchase && !hasPendingOrder && (
-                        <section className="space-y-4 rounded-xl border p-4 sm:p-5">
+                        <section className="space-y-4 rounded-md border p-4 sm:p-5">
                           <div><h3 className="font-semibold">Fatura bilgileri</h3><p className="text-xs text-muted-foreground">Sipariş oluşturulurken mevcut iş yerinize kaydedilir.</p></div>
                           <FormField control={form.control} name="invoiceTitle" render={({ field }) => <FormItem><FormLabel>Fatura ünvanı</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>} />
                           <div className="grid gap-4 sm:grid-cols-2">
@@ -378,7 +378,7 @@ export function BillingPlanManager({
                         </section>
                       )}
                     </div>
-                    <aside className="space-y-5 rounded-xl border bg-muted/30 p-4 sm:p-5" aria-label="Ödeme özeti">
+                    <aside className="space-y-5 rounded-md border bg-muted/30 p-4 sm:p-5" aria-label="Ödeme özeti">
                       <div><h3 className="font-semibold">Ödeme özeti</h3><p className="mt-1 text-xs text-muted-foreground">{pkg?.name} · {periodLabel} dönem</p></div>
                       <dl className="space-y-3 border-b pb-4 text-sm">
                         <div className="flex justify-between gap-3"><dt>Liste tutarı</dt><dd className="font-medium">{formatMinor(catalogAmount)}</dd></div>

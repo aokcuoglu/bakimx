@@ -8,6 +8,7 @@ test("deneme kalan iş gününü gösterir ve satıştan kalkan paket adını an
     trialEndsAt: new Date(Date.now() + 10 * 86_400_000), currentPeriodEnd: null,
   })
   expect(plan.accessTier).toBe(TRIAL_ACCESS_TIER)
+  expect(plan.includedSeats).toBe(5)
   const status = getSidebarPlanStatus(plan, "Servis Paketi")
   expect(status.title).toMatch(/iş günü kaldı/)
   expect(status.detail).toBe("Ücretsiz deneme")
@@ -20,7 +21,7 @@ test("active Lite and expiring paid subscriptions have distinct status", () => {
     planTier: "lite", subscriptionStatus: "active", approvalStatus: "approved",
     trialEndsAt: null, currentPeriodEnd: null, liteFreeGrantedAt: new Date(),
   })
-  expect(getSidebarPlanStatus(lite, "Lite (eski)")).toMatchObject({ title: "Lite · ücretsiz", action: "İncele" })
+  expect(getSidebarPlanStatus(lite, "Lite (eski)")).toMatchObject({ title: "Lite · ücretsiz", detail: "Servis Paketi'ne geçebilirsiniz", action: "İncele" })
 
   const pro = getPlanState({
     planTier: "pro", subscriptionStatus: "active", approvalStatus: "approved",

@@ -19,8 +19,10 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { confirmBillingOrder, cancelBillingOrder, retryStuckActivation } from "@/app/admin/actions"
 import { planLabel } from "@/lib/plan"
+import { formatTrDate, formatTrDateTime } from "@/lib/format-date"
 
 /** Bir kartlı ödeme denemesinin (PaymentTransaction) admin'e görünen özeti —
  *  TAMI destek talebi için correlationId dahil. Kart verisi (PAN/CVV) asla
@@ -211,18 +213,14 @@ function PaymentAttempts({ txns }: { txns: AdminTxnRow[] }) {
   if (txns.length === 0) return null
 
   return (
-    <div className="mt-2">
-      <Button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        variant="link"
-        size="inline"
-        aria-expanded={open}
-      >
-        {open ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-        <span className="text-xs">Ödeme denemeleri ({txns.length})</span>
-      </Button>
-      {open && (
+    <Collapsible open={open} onOpenChange={setOpen} className="mt-2">
+      <CollapsibleTrigger asChild>
+        <Button type="button" variant="link" size="inline">
+          {open ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+          <span className="text-xs">Ödeme denemeleri ({txns.length})</span>
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
         <div className="mt-2">
           <div className="hidden md:block rounded-lg border border-border bg-background overflow-hidden">
             <table className="w-full text-xs">
@@ -238,7 +236,7 @@ function PaymentAttempts({ txns }: { txns: AdminTxnRow[] }) {
               <tbody className="divide-y divide-border">
                 {txns.map((t) => (
                   <tr key={t.id}>
-                    <td className="px-3 py-2 whitespace-nowrap">{new Date(t.createdAt).toLocaleString("tr-TR")}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{formatTrDateTime(t.createdAt)}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{TXN_STATUS_LABELS[t.status] ?? t.status}</td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       {t.cardBrand ?? "—"}
@@ -256,7 +254,7 @@ function PaymentAttempts({ txns }: { txns: AdminTxnRow[] }) {
               <div key={t.id} className="rounded-lg border border-border bg-background p-2.5 text-xs space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-foreground">{TXN_STATUS_LABELS[t.status] ?? t.status}</span>
-                  <span className="text-muted-foreground">{new Date(t.createdAt).toLocaleString("tr-TR")}</span>
+                  <span className="text-muted-foreground">{formatTrDateTime(t.createdAt)}</span>
                 </div>
                 {(t.cardBrand || t.maskedPan) && (
                   <p className="text-muted-foreground">
@@ -270,8 +268,8 @@ function PaymentAttempts({ txns }: { txns: AdminTxnRow[] }) {
             ))}
           </div>
         </div>
-      )}
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }
 
@@ -396,7 +394,7 @@ function StuckTxnRow({ r }: { r: AdminStuckTxnRow }) {
             )}
             İşlem: <CopyMono value={r.providerOrderId} />
           </p>
-          <p className="text-muted-foreground">{new Date(r.createdAt).toLocaleString("tr-TR")} tarihinden beri &quot;callback_received&quot;</p>
+          <p className="text-muted-foreground">{formatTrDateTime(r.createdAt)} tarihinden beri &quot;callback_received&quot;</p>
           {error && <p className="text-destructive-strong mt-1">{error}</p>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -454,7 +452,7 @@ function RecentOrderRow({ o }: { o: AdminOrderRow }) {
         </div>
 
         <div className="flex items-start justify-between gap-3 sm:block sm:text-right">
-          <div className="rounded-lg bg-primary/10 px-3 py-2 text-left sm:text-right">
+          <div className="rounded-md bg-primary/10 px-3 py-2 text-left sm:text-right">
             <p className="text-[11px] font-medium text-primary-strong">Tahsil edilen</p>
             <p className="text-xl font-bold tracking-tight text-primary-strong">{o.amountLabel}</p>
           </div>
@@ -465,13 +463,13 @@ function RecentOrderRow({ o }: { o: AdminOrderRow }) {
       <div className="mt-4 grid gap-2 border-t pt-3 text-xs sm:grid-cols-3">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <MethodBadge method={o.method} />
-          <span>{new Date(o.createdAt).toLocaleDateString("tr-TR")}</span>
+          <span>{formatTrDate(o.createdAt)}</span>
         </div>
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <CalendarClock className="size-3.5" />
           {o.periodEnd ? (
             <span>
-              Bitiş: {new Date(o.periodEnd).toLocaleDateString("tr-TR")}
+              Bitiş: {formatTrDate(o.periodEnd)}
               {o.daysLeft != null && ` · ${o.daysLeft} gün`}
             </span>
           ) : (

@@ -1,11 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SiteAssistant } from "@/components/site-assistant/site-assistant"
-import { announcementDismissScript } from "@/lib/landing/announcement"
 import { SITE_URL, BRAND_NAME, DEFAULT_OG_IMAGE, HOME_TITLE, TITLE_TEMPLATE, TWITTER_HANDLE } from "@/lib/seo"
 import { MarketingAnalytics } from "@/components/analytics/marketing-analytics"
 import { CookieConsent } from "@/components/cookie-consent/cookie-consent"
@@ -85,11 +83,6 @@ export default function RootLayout({
       className={`${geistMono.variable} antialiased`}
     >
       <head>
-        <Script
-          id="announcement-dismiss"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: announcementDismissScript() }}
-        />
         {/*
           JS kapalıyken kaydırma animasyonlarını tamamen devre dışı bırakır
           (BAK-165). `Reveal` gizliliği sunucuda basar — titremeyi önlemek
@@ -112,7 +105,7 @@ export default function RootLayout({
           <CookieConsent />
           <MarketingAnalytics />
           <Toaster />
-          <SiteAssistant aiEnabled={process.env.LANDING_ASSISTANT_AI === "on"} />
+          <SiteAssistant />
         </TooltipProvider>
       </body>
     </html>

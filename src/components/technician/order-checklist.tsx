@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { CHECKLIST_CATEGORIES } from "@/lib/constants"
@@ -415,11 +416,11 @@ function ChecklistSection({
             </Button>
             <Button
               type="button"
-              variant="ghost"
+              variant="tint-ghost"
               size="xs"
               onClick={() => state.completeCategory(category)}
               disabled={remaining === 0 || bulkPending}
-              className="gap-1 text-primary hover:text-primary"
+              className="gap-1"
             >
               {bulkPending ? <BrandSpinner size={12} className="!flex-row !gap-0" /> : <ListChecks className="size-3" />}
               Tümünü işaretle
@@ -511,12 +512,12 @@ function ChecklistRow({
       {!locked && (
         <Button
           type="button"
-          variant="ghost"
+          variant="destructive-ghost"
           size="icon"
           aria-label={`"${item.description}" maddesini bu araç kabulünden sil`}
           onClick={() => state.remove(item)}
           disabled={isBusy}
-          className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+          className="shrink-0 text-muted-foreground md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
         >
           <Trash2 className="size-4" />
         </Button>
@@ -541,24 +542,17 @@ function RemovedChecklistItems({
   state: ChecklistState
   locked: boolean
 }) {
-  const [show, setShow] = useState(false)
-
   if (items.length === 0) return null
 
   return (
-    <div className="mt-3 border-t border-border pt-2">
-      <Button
-        type="button"
-        variant="ghost"
-        size="xs"
-        onClick={() => setShow((v) => !v)}
-        aria-expanded={show}
-        className="px-1.5 text-muted-foreground"
-      >
-        Silinen maddeler ({items.length})
-      </Button>
-      {show && (
-        <ul className="mt-1 space-y-1">
+    <Collapsible className="mt-3 border-t border-border pt-2">
+      <CollapsibleTrigger asChild>
+        <Button type="button" variant="ghost" size="xs" className="px-1.5 text-muted-foreground">
+          Silinen maddeler ({items.length})
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <ul className="mt-1 space-y-1 px-1">
           {items.map((item) => (
             <li key={item.id} className="flex items-center gap-2 py-1">
               <span className="min-w-0 flex-1 text-sm text-muted-foreground line-through">
@@ -567,12 +561,12 @@ function RemovedChecklistItems({
               {!locked && (
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="tint-ghost"
                   size="xs"
                   disabled={state.busyIds.has(item.id)}
                   aria-label={`"${item.description}" maddesini geri al`}
                   onClick={() => state.restore(item)}
-                  className="shrink-0 text-primary"
+                  className="shrink-0"
                 >
                   <Undo2 className="size-3.5" />
                   Geri al
@@ -581,8 +575,8 @@ function RemovedChecklistItems({
             </li>
           ))}
         </ul>
-      )}
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }
 

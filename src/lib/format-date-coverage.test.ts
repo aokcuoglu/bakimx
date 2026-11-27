@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs"
 import { join } from "node:path"
+import { stripComments } from "@/lib/testing/strip-comments"
 
 /**
  * #861 — tarih/saat biçimlemesi saat dilimi vermeden yapılamaz.
@@ -50,43 +51,11 @@ const INTENTIONAL: Record<string, string> = {
 
 /** Henüz `@/lib/format-date`'e geçmemiş çağrılar. Boşaldıkça silinir. */
 const PENDING_MIGRATION: Record<string, string> = {
-  "app/admin/active-impersonations.tsx": "#875",
-  "app/admin/admin-billing.tsx": "#875",
-  "app/admin/admin-requests.tsx": "#875",
-  "app/admin/admin-workshops.tsx": "#875",
-  "app/admin/admins/page.tsx": "#875",
-  "app/admin/audit/page.tsx": "#875",
-  "app/admin/catalog/[id]/page.tsx": "#875",
-  "app/admin/catalog/import/import-wizard.tsx": "#875",
-  "app/admin/catalog/orders/orders-list.tsx": "#875",
-  "app/admin/communications/communication-log-table.tsx": "#875",
-  "app/admin/data.ts": "#875",
-  "app/admin/health/page.tsx": "#875",
-  "app/admin/live-chat/live-chat-inbox.tsx": "#875",
   "app/admin/sales/sales-console.tsx": "#875",
-  "app/admin/status/status-incident-console.tsx": "#875",
   "app/admin/workshop-actions.tsx": "#875",
-  "app/admin/workshop-activity-tables.tsx": "#875",
-  "app/admin/workshops/[id]/page.tsx": "#875",
-  "components/billing/manage-plan-dialog.tsx": "#875",
-  "components/communications/communication-log-list.tsx": "#875",
-  "components/damage/vehicle-damage-map.tsx": "#875",
-  "components/intake/approval-timeline.tsx": "#875",
   "components/intake/damage-capture.tsx": "#875",
-  "components/intake/public-share-page.tsx": "#875",
-  "components/orders/order-activity-log.tsx": "#875",
-  "components/orders/order-list.tsx": "#875",
   "components/orders/parts-labor-grid.tsx": "#875",
-  "components/orders/parts-request-panel.tsx": "#875",
-  "components/parts/supplier-price-dialog.tsx": "#875",
-  "components/purchases/purchases-list.tsx": "#875",
-  "components/quotes/quote-list.tsx": "#875",
-  "components/site-assistant/views/live-chat-view.tsx": "#875",
-  "components/technician/labor-session-card.tsx": "#875",
-  "components/technician/technician-dashboard.tsx": "#875",
   "components/technician/technician-order-detail.tsx": "#875",
-  "components/vehicles/public-vehicle-passport.tsx": "#875",
-  "lib/blog/format.ts": "#875",
 }
 
 /** `(`'ten başlayıp dengeli kapanan `)`'e kadar olan metni verir. */
@@ -118,14 +87,6 @@ function receiverBefore(source: string, dotIndex: number): string {
   }
   const receiver = source.slice(i + 1, dotIndex)
   return /\bnew\s+$/.test(source.slice(0, i + 1)) ? `new ${receiver}` : receiver
-}
-
-/** Yorumları aynı uzunlukta boşlukla değiştirir; satır numaraları korunur. */
-function stripComments(source: string): string {
-  const blank = (text: string) => text.replace(/[^\n]/g, " ")
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, blank)
-    .replace(/^([ \t]*)\/\/[^\n]*/gm, (match) => blank(match))
 }
 
 const USE_CLIENT = /^(?:\s|\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)*["']use client["']/
@@ -220,6 +181,12 @@ describe("findDateFormatViolations", () => {
     expect(findDateFormatViolations(`"use client"\n\n${importLine}`)).toEqual([])
     expect(findDateFormatViolations(`// açıklama\n'use client'\n${importLine}`)).toEqual([])
     expect(findDateFormatViolations(`import { tr } from "date-fns/locale"\n`)).toEqual([])
+  })
+
+  test("dizedeki /* sonrasını taramadan düşürmez (#941)", () => {
+    expect(
+      findDateFormatViolations('<Input accept="image/*" />\nconst a = d.toLocaleDateString("tr-TR")\n{/* c */}'),
+    ).toHaveLength(1)
   })
 
   test("ihlalin satır numarasını verir", () => {
