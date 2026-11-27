@@ -4,6 +4,7 @@ import {
   formatTodayTr,
   formatTrDate,
   formatTrDateTime,
+  formatTrDayMonthTime,
   formatTrLongDate,
   formatTrMediumDate,
   formatTrShortDate,
@@ -31,6 +32,7 @@ describe("Europe/Istanbul biçimleyicileri", () => {
     expect(formatTrDate(LATE_NIGHT)).toBe("25.11.2026")
     expect(formatTrDateTime(LATE_NIGHT)).toBe("25.11.2026 01:30")
     expect(formatTrTime(LATE_NIGHT)).toBe("01:30")
+    expect(formatTrDayMonthTime(LATE_NIGHT)).toBe("25.11 01:30")
     expect(trDayKey(LATE_NIGHT)).toBe("2026-11-25")
     expect(formatTrShortDate(LATE_NIGHT)).toBe("25 Kas")
     expect(formatTrMediumDate(LATE_NIGHT)).toBe("25 Kas 2026")
@@ -42,6 +44,7 @@ describe("Europe/Istanbul biçimleyicileri", () => {
       formatTrDate,
       formatTrTime,
       formatTrDateTime,
+      formatTrDayMonthTime,
       formatTrShortDate,
       formatTrMediumDate,
       formatTrLongDate,

@@ -50,6 +50,7 @@ import {
   reopenPartsRequestAction,
   updatePartsRequestAction,
 } from "@/app/(app)/technician/actions"
+import { formatTrDate } from "@/lib/format-date"
 
 export interface PartsRequestRow {
   id: string
@@ -219,7 +220,7 @@ function PartsRequestCard({
           {request.note && <p className="mt-0.5 text-xs text-muted-foreground break-words">{request.note}</p>}
           <p className="mt-0.5 text-xs text-muted-foreground">
             {request.requestedByName ? `${request.requestedByName} · ` : ""}
-            {new Date(request.createdAt).toLocaleDateString("tr-TR")}
+            {formatTrDate(request.createdAt)}
             {request.tecdocArticleId != null && " · Katalog parçası"}
           </p>
           {cancelled && request.cancelReason && (
