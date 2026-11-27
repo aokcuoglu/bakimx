@@ -19,6 +19,17 @@
   min-width: 0;
 }
 
+/*
+ * Yalnız lg+ (64rem) çizilen başlık (`desktopOnly`). Modül CSS'i katmansızdır ve
+ * Tailwind v4 yardımcı sınıflarını (katmanlı) ezer; bu yüzden `max-lg:hidden`
+ * `.header { display: flex }`e yenilir — gizleme burada, aynı katmanda yazılır.
+ */
+@media (max-width: 63.999rem) {
+  .desktopOnly {
+    display: none;
+  }
+}
+
 .row {
   display: flex;
   flex-direction: column;
