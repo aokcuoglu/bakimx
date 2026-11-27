@@ -230,7 +230,7 @@ export function PublicVehiclePassportPage({
         {/* Vehicle & Customer */}
         <div className="bg-card border border-border rounded-lg p-4 print:border print:border-border">
           <div className="flex items-start gap-3">
-            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-navy-foreground shrink-0">
+            <div className="size-12 rounded-md bg-navy flex items-center justify-center text-navy-foreground shrink-0">
               <Car className="size-5" />
             </div>
             <div className="flex-1 min-w-0">
@@ -297,7 +297,7 @@ export function PublicVehiclePassportPage({
             </h3>
             <div className="space-y-3">
               {workOrders.map((wo, idx) => (
-                <div key={idx} className="border border-border rounded-lg p-3">
+                <div key={idx} className="border border-border rounded-md p-3">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       {wo.workOrderNo && <span className="font-mono text-xs font-semibold text-muted-foreground">{wo.workOrderNo}</span>}
