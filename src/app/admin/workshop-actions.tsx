@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react"
 import { useForm, useWatch } from "react-hook-form"
-import { Check, X, Loader2, Minus, Plus } from "lucide-react"
+import { Check, X, Loader2, Minus, Plus, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -156,14 +157,17 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
                     control={form.control}
                     name="indefinite"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                      <FormItem className="flex min-h-11 flex-row items-center gap-2 space-y-0 md:min-h-0">
                         <FormControl>
                           <Checkbox
                             checked={field.value}
                             disabled={pending}
                             onCheckedChange={(checked) => {
                               field.onChange(checked === true)
-                              if (checked === true) form.setValue("cycle", undefined, { shouldValidate: false })
+                              if (checked === true) {
+                                form.setValue("cycle", undefined, { shouldValidate: false })
+                                form.clearErrors("cycle")
+                              }
                             }}
                           />
                         </FormControl>
@@ -172,11 +176,11 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
                     )}
                   />
                   {indefinite ? (
-                    <p className="rounded-md bg-warning/10 p-2 text-xs text-warning-strong">
+                    <p className="rounded-sm bg-warning/10 p-2 text-xs text-warning-strong">
                       Bu iş yeri yenileme/ödeme ekranına hiç düşmez; seçim denetim kaydına işlenir.
                     </p>
                   ) : cycle ? (
-                    <p className="rounded-md bg-muted p-2 text-xs text-muted-foreground-strong">
+                    <p className="rounded-sm bg-muted p-2 text-xs text-muted-foreground-strong">
                       Dönem bitişi: {formatTrDate(addPeriod(new Date(), cycle))}
                     </p>
                   ) : null}
@@ -197,7 +201,12 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
                 {pending && <Loader2 className="animate-spin" />}Koltukları kaydet
               </Button>
             </div>
-            {error && <p className="text-sm text-destructive-strong" role="alert">{error}</p>}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="size-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Kapat</Button>
               {!paidPeriod && (
@@ -209,7 +218,7 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
           </DialogContent>
         </Dialog>}
       </div>
-      {error && <p className="text-sm text-destructive-strong">{error}</p>}
+      {error && !open && <p className="text-sm text-destructive-strong">{error}</p>}
     </div>
   )
 }

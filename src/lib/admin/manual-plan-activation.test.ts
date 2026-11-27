@@ -31,5 +31,7 @@ test("isIndefiniteAccess: yalnız aktif ve bitişsiz ya da süresiz Lite", () =>
   expect(isIndefiniteAccess({ subscriptionStatus: "active", currentPeriodEnd: "2026-12-01T00:00:00Z" })).toBe(false)
   expect(isIndefiniteAccess({ subscriptionStatus: "active", currentPeriodEnd: "2026-12-01T00:00:00Z", lifetimeLite: true })).toBe(true)
   expect(isIndefiniteAccess({ subscriptionStatus: "trialing", currentPeriodEnd: null })).toBe(false)
+  // Süresiz Lite hakkı kayıtlı durumdan bağımsız süresizdir.
+  expect(isIndefiniteAccess({ subscriptionStatus: "trialing", currentPeriodEnd: null, lifetimeLite: true })).toBe(true)
   expect(isIndefiniteAccess({ subscriptionStatus: "canceled", currentPeriodEnd: null })).toBe(false)
 })

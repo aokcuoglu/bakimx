@@ -240,10 +240,10 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
           <Field
             label="Dönem bitişi"
             value={
-              workshop.currentPeriodEnd
-                ? workshop.currentPeriodEnd.toLocaleDateString("tr-TR")
-                : isIndefiniteAccess({ ...workshop, lifetimeLite: hasLifetimeLite(workshop) })
-                  ? "Süresiz"
+              isIndefiniteAccess({ ...workshop, lifetimeLite: hasLifetimeLite(workshop) })
+                ? "Süresiz"
+                : workshop.currentPeriodEnd
+                  ? workshop.currentPeriodEnd.toLocaleDateString("tr-TR")
                   : null
             }
           />

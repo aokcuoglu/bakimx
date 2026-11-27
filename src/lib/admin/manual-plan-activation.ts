@@ -19,11 +19,11 @@ export function resolveManualActivationPeriod(input: ManualPlanActivationInput, 
   return { billingCycle: input.cycle, currentPeriodEnd }
 }
 
-/** Aktif ve dönem bitişsiz (ya da süresiz Lite) iş yeri süresiz erişimdedir. */
+/** Süresiz Lite hakkı (durumdan bağımsız) ya da aktif ve dönem bitişsiz iş yeri süresiz erişimdedir. */
 export function isIndefiniteAccess(w: {
   subscriptionStatus: string
   currentPeriodEnd?: string | Date | null
   lifetimeLite?: boolean
 }): boolean {
-  return w.subscriptionStatus === "active" && (!!w.lifetimeLite || !w.currentPeriodEnd)
+  return !!w.lifetimeLite || (w.subscriptionStatus === "active" && !w.currentPeriodEnd)
 }
