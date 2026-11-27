@@ -110,9 +110,6 @@ function callArguments(source: string, openIndex: number): string[] {
 /** `"…T09:00"` / `` `${d}T23:59:59.999` `` — son eki `Z` ya da ofset olmayan dize/şablon. */
 const OFFSETLESS_DATETIME_LITERAL = /^(["'`]).*\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?\1$|^(["'`]).*\}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?\2$/
 
-/** `"…T09:00"` / `` `${d}T23:59:59.999` `` — son eki `Z` ya da ofset olmayan dize/şablon. */
-const OFFSETLESS_DATETIME_LITERAL = /^(["'`]).*\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?\1$|^(["'`]).*\}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?\2$/
-
 /** Kaynak metindeki süreç-saati gece yarısı ihlallerini `satır → kod` olarak döndürür. */
 export function findLocalMidnightViolations(rawSource: string): string[] {
   const source = stripComments(rawSource)
