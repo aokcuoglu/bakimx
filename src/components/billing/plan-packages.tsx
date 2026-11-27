@@ -364,8 +364,8 @@ export function PlanPackages({
                     {hasCommittedCycle && (
                       <Button
                         type="button"
-                        variant="ghost"
-                        className="shrink-0 text-primary"
+                        variant="tint-ghost"
+                        className="shrink-0"
                         onClick={() => {
                           const next = stripCycle === "yearly" ? "monthly" : "yearly"
                           if (onRequestCycleChange) onRequestCycleChange(next)

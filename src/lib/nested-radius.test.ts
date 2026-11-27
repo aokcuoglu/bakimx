@@ -24,11 +24,24 @@ const SCANNED_DIRS = [
   "parts",
   "suppliers",
   "purchases",
+  "technician",
+  "quotes",
+  "appointments",
+  "reminders",
+  "communications",
+  "analytics",
 ].flatMap((name) => [
   join(SRC, "components", name),
   join(SRC, "app", "(app)", name),
 ])
 
+// Ad eşlemesine uymayan yüzeyler (#920 dilim 4: yönetim, satış, site asistanı, canlı destek)
+const EXTRA_SCANNED_DIRS = [
+  join(SRC, "app", "admin"),
+  join(SRC, "components", "sales"),
+  join(SRC, "components", "site-assistant"),
+  join(SRC, "app", "(site)", "destek"),
+]
 // Paylaşılan durum bileşenleri, /design galerisi ve herkese açık paylaşım sayfası (#920 dilim 5).
 // Pazarlama/landing (`components/sections`, `components/public`) kapsam dışıdır.
 const PUBLIC_SLICE_DIRS = [join(SRC, "components", "shared"), join(SRC, "app", "design")]
@@ -129,7 +142,7 @@ export function findNestedRadiusOffenders(source: string, fileName = "x.tsx"): n
 test("kapla aynı köşeyi taşıyan iç kutu yok (iç köşe her zaman dıştan küçük)", () => {
   const offenders: string[] = []
   const files = [
-    ...[...SCANNED_DIRS, ...PUBLIC_SLICE_DIRS].filter((dir) => existsSync(dir)).flatMap((dir) => tsxFiles(dir)),
+    ...[...SCANNED_DIRS, ...EXTRA_SCANNED_DIRS, ...PUBLIC_SLICE_DIRS].filter((dir) => existsSync(dir)).flatMap((dir) => tsxFiles(dir)),
     ...PUBLIC_SLICE_FILES.filter((file) => existsSync(file)),
   ]
   for (const file of files) {
