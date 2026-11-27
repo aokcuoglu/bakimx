@@ -79,6 +79,17 @@ halkayı grupta çizer ve iç denetimin `data-slot`'una bağlı değildir
 (`has-[input:focus-visible]`); `InputGroupInput` slot'unu props'tan sonra
 yazar.
 
+**Görünüm (`appearance`, #952)** ölçüden bağımsızdır ve kontrolün kendi
+prop'udur. `Input`: `ghost` (çerçevesiz saydam; satır hover/odakta çerçeve),
+`inline` (metin gibi; odakta dolgu + çerçeve). `InputGroup`: `ghost`, `quiet`
+(saydam + soluk metin, hover'da hafif zemin) ve `soft` (hafif dolgulu çip).
+Kurallar: görünümü kullanan satır/kap `group/field-row` taşır; varyant sınıfları
+taban literalinden SONRA gelir; `data-[appearance=…]:` ile biçimlenmez
+(`data-appearance` yalnız QA kancasıdır); çağrı yerinde ata seçicisi
+(`[&_input]:…`) ya da `!` kullanılmaz. İleten sarmalayıcılar:
+`AutocompleteInputGroup`, `ComboboxInput`, `PartAttributeField`,
+`OrderItemUnitCombobox`.
+
 **iOS yakınlaştırması:** iOS Safari 16px altındaki metin girdisine odaklanınca
 sayfayı yakınlaştırır. Bu yüzden `compact` girdinin metni telefonda 16px'te
 kalır, yalnız md+ 14px'e iner (`--control-fs-field-xs`). `--control-fs-xs`
@@ -116,6 +127,18 @@ ayrılmıyor). `on-photo` — fotoğraf / kamera katmanı (siyah
 zemin) üstünde çerçeveli düğme (`bg-white/10`, `border-white/30`);
 `on-photo-ghost` aynı zeminde hayalet düğme.
 
+**Ton variant'ları, dilim 2** (#928): `destructive-ghost` — satır içi yıkıcı
+eylem (sil, kaldır, iptal): çerçevesiz, dinlenirken `text-destructive-strong`,
+hover `bg-destructive/10`; koyu hover `/20` yoktur (`-strong` metin
+`bg-muted`'da AA'nın altına iner). Satır çöp kutusu gibi gri dinlenmesi
+gereken yerler `variant="destructive-ghost"` + `className="text-muted-foreground"`
+yazar: twMerge variant'ın dinlenme rengini düşürür, `hover:text-destructive-strong`
+kalır. `warning-tint` — dikkat isteyen seçim (düşük güvenli OCR önerisi):
+`border-warning/40 bg-warning/10 text-warning-strong`; tonlu zeminde ikincil
+metin `text-muted-foreground-strong`. `on-photo-scrim` — fotoğraf üstünde
+yüzen galeri okları: `bg-black/60` (`on-photo`'nun %10 beyazı aydınlık
+fotoğrafta okunmaz).
+
 **Button `row`** satırları variant'tan bağımsız aynı çerçeve kutusundadır
 (kenarlıksız variant'lar şeffaf 1px çerçeve alır): seçili `secondary` satır
 `outline` komşularından kısa kalmaz, seçim değişince satır kaymaz. Hayalet
@@ -150,12 +173,13 @@ Ekipler, ekip detayı, katalog içe aktarma önizlemesi. Varsayılanlar (`line`
   masaüstüdür: iş emri tablosu kolon başlığının sıralama menüsü (tablo yalnız
   lg+) ve tasarım vitrininin kayıt kalıbı (yoğun `line` örneği). İş emri
   detayının sayfa sekmeleri #911'de kalktı.
-- Pazarlama bölümleri (`components/sections/`: `RuhsatDemoSection` segment,
-  `BlogCategoryFilters` `line`) varsayılanın üstüne kendi `--mk-*` ölçeğini
-  kurar; varsayılanı çevirmek o yüzeyleri sessizce değiştirirdi. Segment
-  sekmenin seçili tetikleyicisi ise primitive'de `bg-card`'dır (gri rayda
-  beyaz kart); bu renk düzeltmesi `/dijital-arac-kabul`'daki
-  `RuhsatDemoSection` segmentini de bilerek değiştirir.
+- Pazarlama kiti (`components/marketing/`) kendi `--mk-*` ölçeğini taşır ve
+  kapı dışındadır. `components/sections/` altındaki dosyalar da varsayılan
+  olarak kapı dışıdır (örnek: `BlogCategoryFilters` `line` sekmesi);
+  `RuhsatDemoSection` (#929) artık `TabsList size="control"` kullanır ve
+  `HeroLeadForm`, `ContactPage`, `demo-ocr-upload` ile birlikte kapı
+  kapsamındadır (CTA'lar `Button size="lg"`). Segment sekmenin seçili
+  tetikleyicisi primitive'de `bg-card`'dır (gri rayda beyaz kart).
 - `ui/` primitive'leri registry'ye yakın kalır; yeni eklenen upstream bileşen
   ve örnek kod varsayılan ölçüyle gelir.
 - Varsayılanın telefona sızmasını kapı engeller:
@@ -291,11 +315,15 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
   `detail` — tarayıcı yalnız dosyadaki `*.module.css` içe aktarımını tanır)
   taranmaz — sabite boyut sınıfı yazılmaz, `className` JSX'te `cn(...)` ile
   verilir.
-  Ton da variant'tan gelir (#925): öneksiz (ya da kırılım / tema önekli)
-  `border-destructive/*` → `variant="destructive-outline"`, `bg-primary/N` →
-  `variant="tint"`, her önekte `bg-white|black/*` / `border-white|black/*` →
-  `variant="on-photo"` / `"on-photo-ghost"`; `hover:bg-destructive/10`,
-  `hover:bg-primary/10` gibi durum tonları serbest kalır.
+  Ton da variant'tan gelir (#925, #928): öneksiz (ya da kırılım / tema önekli)
+  `border-destructive/*` → `variant="destructive-outline"`, `bg|border-primary/N`
+  → `variant="tint"`; HER önekte `text-destructive(-strong)` / `bg-destructive(/N)`
+  → `"destructive-ghost"` / `"destructive-outline"`, `bg|border-warning(/N)` →
+  `"warning-tint"`, `bg|border-white|black/*` → `"on-photo"` / `"on-photo-ghost"`
+  / `"on-photo-scrim"`; `hover:bg-primary/10` gibi birincil durum tonları
+  serbest kalır. Gerekçeli istisnalar `control-call-sites.test.ts`
+  `EXCEPTIONS`'ta (taklit modu bandı, fotoğraf sil dairesi, satır içi iptal
+  bağlantısı, yakıt çubuğu).
 - `ToggleGroupItem` / `TabsTrigger` / `TabsList` üzerinde `!` ile yükseklik
   ezilmez (`h-7!`). Telefonda tek başına duran eylem düğmesi `default` ya da
   üstüdür; `sm/xs/compact` yoğun satır ve araç çubuğu içindir.
@@ -323,6 +351,16 @@ istisnalar dosyadaki `ALLOWLIST`te gerekçesiyle durur.
   halka rengi — `card` kenarlıksız olduğu için durum tonu halka rengiyle
   (`ring-warning/30`, `ring-success/30`) —, durum zemini (`bg-primary/[0.04]`),
   `scroll-mt-*`. Kapı: `control-call-sites.test.ts` → `ACCORDION_FORBIDDEN`.
+- Açılır bölüm (#950): `Collapsible`, `CollapsibleTrigger` ve
+  `CollapsibleContent` açılış etiketinde animasyon (`animate-*`), taşma
+  (`overflow-*`), yükseklik (`h-*` — `h-full` hariç —, `min-h-*`, `max-h-*`) ve
+  çıplak `hidden` taşımaz; açma/kapama animasyonu ve gizleme primitive'dedir
+  (`keepMounted` kapalıyken DOM'da tutar). Dolgu, kenarlık ve zemin
+  `CollapsibleContent`'e DEĞİL iç kapsayıcıya verilir — aksi hâlde yükseklik
+  animasyonu dolgu+kenarlık kadar bir değerde takılır, 0'a kapanmaz; odak halkası
+  da böylece kırpılmaz. `CollapsibleTrigger` her zaman `asChild` ile
+  mevcut `Button`'ı sarar ve `className` taşımaz. Kapı:
+  `control-call-sites.test.ts` → `COLLAPSIBLE_FORBIDDEN`.
 
 Matrisi `src/components/ui/control-sizing.test.ts`,
 `src/components/ui/control-call-sites.test.ts` ve

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs"
 import { join } from "node:path"
+import { stripComments } from "@/lib/testing/strip-comments"
 
 /**
  * #861 — tarih/saat biçimlemesi saat dilimi vermeden yapılamaz.
@@ -74,7 +75,6 @@ const PENDING_MIGRATION: Record<string, string> = {
   "components/intake/approval-timeline.tsx": "#875",
   "components/intake/damage-capture.tsx": "#875",
   "components/intake/public-share-page.tsx": "#875",
-  "components/orders/order-activity-log.tsx": "#875",
   "components/orders/order-list.tsx": "#875",
   "components/orders/parts-labor-grid.tsx": "#875",
   "components/orders/parts-request-panel.tsx": "#875",
@@ -118,14 +118,6 @@ function receiverBefore(source: string, dotIndex: number): string {
   }
   const receiver = source.slice(i + 1, dotIndex)
   return /\bnew\s+$/.test(source.slice(0, i + 1)) ? `new ${receiver}` : receiver
-}
-
-/** Yorumları aynı uzunlukta boşlukla değiştirir; satır numaraları korunur. */
-function stripComments(source: string): string {
-  const blank = (text: string) => text.replace(/[^\n]/g, " ")
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, blank)
-    .replace(/^([ \t]*)\/\/[^\n]*/gm, (match) => blank(match))
 }
 
 const USE_CLIENT = /^(?:\s|\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)*["']use client["']/
@@ -220,6 +212,12 @@ describe("findDateFormatViolations", () => {
     expect(findDateFormatViolations(`"use client"\n\n${importLine}`)).toEqual([])
     expect(findDateFormatViolations(`// açıklama\n'use client'\n${importLine}`)).toEqual([])
     expect(findDateFormatViolations(`import { tr } from "date-fns/locale"\n`)).toEqual([])
+  })
+
+  test("dizedeki /* sonrasını taramadan düşürmez (#941)", () => {
+    expect(
+      findDateFormatViolations('<Input accept="image/*" />\nconst a = d.toLocaleDateString("tr-TR")\n{/* c */}'),
+    ).toHaveLength(1)
   })
 
   test("ihlalin satır numarasını verir", () => {

@@ -341,7 +341,7 @@ function KpiStat({ label, value, icon: Icon, accent, accentBg }: {
      <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
       <div className="flex items-center justify-between mb-1">
         <span className="text-[10px] sm:text-xs font-medium text-muted-foreground truncate">{label}</span>
-        <div className={`size-7 sm:size-9 rounded-lg ${accentBg} flex items-center justify-center`}>
+        <div className={`size-7 sm:size-9 rounded-md ${accentBg} flex items-center justify-center`}>
           <Icon className={`size-3.5 sm:size-4 ${accent}`} />
         </div>
       </div>

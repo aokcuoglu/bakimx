@@ -117,55 +117,73 @@ export function PhotoPhaseMatrix({
 
         {PHOTO_PHASE_ORDER.map((key) => {
           const visibleRows = readOnly ? filledRows(key) : rows
+          const filledList = visibleRows.filter((row) => cellOf(row, key).photos.length > 0)
+          const emptyList = visibleRows.filter((row) => cellOf(row, key).photos.length === 0)
           return (
             <TabsContent key={key} value={key} className="@container">
               {visibleRows.length === 0 ? (
                 <p className="text-[15px] leading-5 text-muted-foreground">Bu aşamada fotoğraf yok</p>
               ) : (
-                <ul className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
-                  {visibleRows.map((row) => {
-                    const cell = cellOf(row, key)
-                    const cover = cell.photos.find((p) => p.fileUrl) ?? cell.photos[0]
-                    return (
-                      <li key={row.type} className="min-w-0 space-y-1">
-                        {cover ? (
-                          <FilledTile
-                            photo={cover}
-                            label={`${row.label} · ${PHOTO_PHASE_SHORT_LABELS[key]}`}
-                            onOpen={(opener) => {
-                              compareOpenerRef.current = opener
-                              setCompareRow(row)
-                            }}
-                          />
-                        ) : (
-                          <EmptyTile
-                            label={`${row.label} · ${PHOTO_PHASE_SHORT_LABELS[key]}`}
-                            onAdd={(opener) => onAdd?.(row.type, key, opener)}
-                          />
-                        )}
-                        <TileCaption
-                          label={row.label}
-                          hint={cell.photos.length > 1 ? `${cell.photos.length} fotoğraf` : !cover && row.required ? "Zorunlu" : null}
-                        />
-                      </li>
-                    )
-                  })}
-                  {onAddOther ? (
-                    <li className="min-w-0 space-y-1">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="tile"
-                        onClick={(event) => onAddOther(key, event.currentTarget)}
-                        className={cn(TILE, "text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring")}
-                      >
-                        <Plus className="size-4" />
-                        <span className="text-xs font-medium">Fotoğraf ekle</span>
-                      </Button>
-                      <TileCaption label="Diğer" hint="Ruhsat, şase…" />
-                    </li>
-                  ) : null}
-                </ul>
+                <div className="space-y-3">
+                  {filledList.length > 0 && (
+                    <ul className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
+                      {filledList.map((row) => {
+                        const cell = cellOf(row, key)
+                        const cover = cell.photos.find((p) => p.fileUrl) ?? cell.photos[0]
+                        return (
+                          <li key={row.type} className="min-w-0 space-y-1">
+                            <FilledTile
+                              photo={cover}
+                              label={`${row.label} · ${PHOTO_PHASE_SHORT_LABELS[key]}`}
+                              onOpen={(opener) => {
+                                compareOpenerRef.current = opener
+                                setCompareRow(row)
+                              }}
+                            />
+                            <TileCaption
+                              label={row.label}
+                              hint={cell.photos.length > 1 ? `${cell.photos.length} fotoğraf` : null}
+                            />
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                  {/* Boş açılar kare değil kompakt "ekle" çipi (#967): çekilmemiş
+                      her açı bir fotoğraf karesi kadar yer tutup sayfayı uzatıyordu. */}
+                  {(emptyList.length > 0 || onAddOther) && (
+                    <div className="space-y-1.5">
+                      {emptyList.length > 0 && (
+                        <p className="text-xs text-muted-foreground">Eklenmemiş açılar · {emptyList.length}</p>
+                      )}
+                      <ul className="flex flex-wrap gap-2">
+                        {emptyList.map((row) => (
+                          <li key={row.type}>
+                            <EmptyChip
+                              label={row.label}
+                              required={row.required}
+                              ariaLabel={`${row.label} · ${PHOTO_PHASE_SHORT_LABELS[key]} fotoğrafı ekle${row.required ? " (zorunlu)" : ""}`}
+                              onAdd={(opener) => onAdd?.(row.type, key, opener)}
+                            />
+                          </li>
+                        ))}
+                        {onAddOther ? (
+                          <li>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={(event) => onAddOther(key, event.currentTarget)}
+                            >
+                              <Plus />
+                              Fotoğraf ekle
+                            </Button>
+                          </li>
+                        ) : null}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               )}
             </TabsContent>
           )
@@ -223,17 +241,22 @@ function TileCaption({ label, hint }: { label: string; hint: string | null }) {
   )
 }
 
-function EmptyTile({ label, onAdd }: { label: string; onAdd: (opener: HTMLElement) => void }) {
+function EmptyChip({ label, required, ariaLabel, onAdd }: {
+  label: string
+  required: boolean
+  ariaLabel: string
+  onAdd: (opener: HTMLElement) => void
+}) {
   return (
     <Button
       type="button"
-      variant="secondary"
-      size="tile"
+      variant={required ? "tint" : "secondary"}
+      size="sm"
       onClick={(event) => onAdd(event.currentTarget)}
-      aria-label={`${label} fotoğrafı ekle`}
-      className={cn(TILE, "text-muted-foreground hover:text-foreground hover:ring-2 hover:ring-ring")}
+      aria-label={ariaLabel}
     >
-      <Camera className="size-5" />
+      <Camera />
+      {label}
     </Button>
   )
 }

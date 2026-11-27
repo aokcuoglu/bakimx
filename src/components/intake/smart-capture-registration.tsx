@@ -419,7 +419,7 @@ export function SmartCaptureRegistration() {
                       onChange={(e) => handleInputChange(field.key, field.key === "phone" ? formatPhoneTR(e.target.value) : field.uppercase ? e.target.value.toUpperCase() : e.target.value)}
                       placeholder={field.placeholder}
                       required={field.required}
-                      className={lowConf ? "border-warning/30 bg-warning/10 focus:border-warning" : ""}
+                      tone={lowConf ? "warning" : "default"}
                     />
                     {field.helperText && (
                       <p className="text-xs text-muted-foreground">{field.helperText}</p>

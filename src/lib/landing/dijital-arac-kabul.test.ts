@@ -15,7 +15,9 @@ describe("dijital araç kabul arama niyeti sözleşmesi", () => {
     expect(DIJITAL_ARAC_KABUL_H1.toLocaleLowerCase("tr")).toContain("dijital araç kabul")
     expect(DIJITAL_ARAC_KABUL_DESCRIPTION.toLocaleLowerCase("tr")).toContain("dijital araç kabul")
     expect(firstSixtyWords.toLocaleLowerCase("tr")).toContain("dijital araç kabul")
-    expect(firstSixtyWords).toContain("ruhsatı okutarak")
+    expect(firstSixtyWords).toContain("plakayı okutarak")
+    expect(DIJITAL_ARAC_KABUL_INTRO).toContain("ek özellik")
+    expect(DIJITAL_ARAC_KABUL_DESCRIPTION).toContain("ek özellik")
   })
 
   test("ana sayfa ve kategori sayfasıyla H1 çakışmaz", () => {

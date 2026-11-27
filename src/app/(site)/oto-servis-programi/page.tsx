@@ -206,7 +206,7 @@ export default function OtoServisProgramiPage() {
             </div>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               {[
-                { href: "/dijital-arac-kabul", title: "Dijital araç kabul", text: "Ruhsat, kabul fotoğrafları ve hasar kaydı akışını inceleyin." },
+                { href: "/dijital-arac-kabul", title: "Dijital araç kabul", text: "Plaka okuma, kabul fotoğrafları ve hasar kaydı akışını inceleyin." },
                 { href: "/is-emri-programi", title: "İş emri programı", text: "İş, parça, işçilik ve onay takibinin ayrıntılarını görün." },
                 { href: "/fiyatlar", title: "Paketler ve fiyatlar", text: "Güncel paket kapsamlarını ve KDV dahil fiyatları karşılaştırın." },
                 { href: "/karsilastir/defter-excel-oto-servis-programi", title: "Defter, Excel ve program karşılaştırması", text: "Kayıt yöntemlerini dengeli ölçütlerle karşılaştırın." },

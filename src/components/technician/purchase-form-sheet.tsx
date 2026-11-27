@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Camera, Link2Off, Pencil, Plus, Send, Trash2 } from "lucide-react"
+import { AlertTriangle, Camera, Link2Off, Pencil, Plus, Send, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -595,16 +595,18 @@ export function PurchaseFormSheet({
                             <Button
                               key={pn.value}
                               type="button"
-                              variant="outline"
+                              variant={low ? "warning-tint" : "outline"}
                               size="sm"
                               onClick={() => onSkuChange(pn.value)}
-                              title={low ? "Düşük okuma güveni — kontrol edin" : undefined}
-                              className={
-                                "touch-manipulation " +
-                                (low ? "border-warning/40 bg-warning/10 text-warning-strong" : "")
-                              }
+                              className="touch-manipulation"
                             >
-                              <span className="text-muted-foreground">{pn.label}</span>
+                              {low ? (
+                                <>
+                                  <AlertTriangle aria-hidden="true" />
+                                  <span className="sr-only">düşük güven</span>
+                                </>
+                              ) : null}
+                              <span className={low ? "text-muted-foreground-strong" : "text-muted-foreground"}>{pn.label}</span>
                               <span className="text-border">·</span>
                               {pn.value}
                             </Button>

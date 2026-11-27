@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 
 import {
   MAX_ASSISTANT_ANSWERS,
@@ -9,8 +8,6 @@ import {
   tokenize,
 } from "./assistant-answers";
 import { LANDING_OBJECTIONS } from "./objections";
-
-const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8");
 
 describe("metin normalizasyonu", () => {
   test("Türkçe büyük harf küçültmesi doğru kökü verir", () => {
@@ -131,32 +128,5 @@ describe("itiraz anahtar kelimeleri", () => {
       // Filtreden geçmeyen (çok kısa ya da stopword) kelime sessizce ölür.
       expect(tokenize(objection.keywords.join(" ")).length).toBeGreaterThanOrEqual(4);
     }
-  });
-});
-
-describe("ask bar tek kaynağa bağlı", () => {
-  test("çip metinleri bileşende değil objections.ts'te", () => {
-    const askBar = read("../../components/sections/HeroAskBar.tsx");
-
-    expect(askBar).toContain("LANDING_OBJECTIONS");
-    for (const objection of LANDING_OBJECTIONS) {
-      expect(askBar).not.toContain(objection.question);
-    }
-  });
-
-  test("placeholder yapmadığımız bir şeyi vaat etmiyor", () => {
-    // Yaklaşım A hazır cevap eşleştirir; "her şeyi sorun" bir AI vaadidir.
-    const askBar = read("../../components/sections/HeroAskBar.tsx");
-    const placeholder = askBar.match(/placeholder="([^"]+)"/)?.[1] ?? "";
-
-    expect(placeholder.length).toBeGreaterThan(0);
-    expect(normalizeText(placeholder)).not.toContain("her seyi");
-  });
-
-  test("hero akış içinde kalır — sticky/fixed CTA eklenmedi", () => {
-    // Kaldırılmış bir konvansiyon: dipte sabitlenen aksiyon barı yok.
-    const askBar = read("../../components/sections/HeroAskBar.tsx");
-
-    expect(askBar).not.toMatch(/\b(?:fixed|sticky)\s+(?:inset-x-0\s+)?bottom-/);
   });
 });

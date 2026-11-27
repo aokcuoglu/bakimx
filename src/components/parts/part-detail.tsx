@@ -172,7 +172,7 @@ export function PartDetail({ part }: { part: PartType }) {
               ) : (
                 <div className="space-y-1.5">
                   {part.movements.slice(0, 20).map((m) => (
-                    <div key={m.id} className="flex items-center justify-between p-2.5 bg-muted rounded-lg text-sm">
+                    <div key={m.id} className="flex items-center justify-between p-2.5 bg-muted rounded-md text-sm">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className={cn("text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded", movementColors[m.type] || "bg-muted text-muted-foreground")}>
                           {movementLabels[m.type] || m.type}
@@ -226,7 +226,7 @@ export function PartDetail({ part }: { part: PartType }) {
                 <div className="space-y-1.5">
                   {part.supplierPrices.map((sp) => (
                     <Link key={sp.id} href={`/suppliers/${sp.supplierId}`}>
-                      <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-muted text-sm hover:bg-muted/70 transition-colors">
+                      <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted text-sm hover:bg-muted/70 transition-colors">
                         <div className="min-w-0">
                           <span className="font-medium text-foreground truncate block">{sp.supplierName}</span>
                           {sp.supplierSku && (

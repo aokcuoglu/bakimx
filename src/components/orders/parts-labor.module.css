@@ -2,7 +2,7 @@
    Yalnız PartsLaborCard `.skin` sarar; teklif formu ve teknisyen ekranı aynı
    ızgarayı kullanır ama bu kuralları görmez. Kancalar grid'deki data-pl
    özniteliğidir (TooltipTrigger kendi data-slot'unu yazdığı için data-slot
-   değil). `!important` yardımcı sınıflar (META_FIELD_*) ezilemez; denenmez. */
+   değil). Hayalet alan görünümü Input / InputGroup `appearance` varyantından gelir (#952). */
 .skin {
   --pl-sep: var(--dash-sep, var(--border));
   --pl-hover: var(--dash-hover, var(--muted));
@@ -32,7 +32,7 @@
   border: 0;
 }
 
-/* table ve cards: display YAZMA (hidden / @min-[52rem]:block geçişi bozulur) */
+/* table ve cards: display YAZMA (hidden / @min-[54rem]:block geçişi bozulur) */
 .skin [data-pl="table"] {
   border: 0;
   border-radius: 0;
@@ -152,10 +152,11 @@
   letter-spacing: normal;
 }
 
-/* Tablo ~52rem'de başlar ama sabit kolonlar (160+112+96+64+144+112+96 ≈ 784px)
-   ad kolonuna 48px bırakır. Ad kolonu ≥~200px olana dek (784 + 200 ≈ 62rem)
-   kart düzeni sürer. Taban kurallara display YAZILMAZ; yalnız bu bantta. */
-@container (min-width: 52rem) and (max-width: 61.99rem) {
+/* Tablo ~54rem'de başlar ama sabit kolonlar (160+112+96+64+144+112+120 ≈ 808px;
+   işlem kolonu üç ikon sığsın diye 96→120, #967) ad kolonuna 56px bırakır. Ad
+   kolonu ≥~184px olana dek (62rem = 992px) kart düzeni sürer. Taban kurallara
+   display YAZILMAZ; yalnız bu bantta. */
+@container (min-width: 54rem) and (max-width: 61.99rem) {
   .skin [data-pl="table"] {
     display: none;
   }
