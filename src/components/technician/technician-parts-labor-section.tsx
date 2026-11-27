@@ -27,7 +27,8 @@ import {
  * `onApplyStandardTax` BİLİNÇLİ olarak bağlanmaz. O bir fiyatlandırma kararıdır
  * ve iş emri meta ucundan geçer (`/api/orders/<id>/meta`); sahadaki teknisyenin
  * bir kalem eklerken belgenin vergi oranını sessizce değiştirmesi beklenmez.
- * Satırın "+₺X KDV" ipucu standart orandan (%20) okunmaya devam eder.
+ * Belgede KDV oranı yoksa satırda KDV ipucu/brüt tutar görünmez (totals.ts
+ * ile aynı: oran yoksa KDV 0); oranı olan belgede satır o orandan okunur.
  */
 export function TechnicianPartsLaborSection({
   orderId,
