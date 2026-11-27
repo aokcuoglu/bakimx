@@ -93,7 +93,8 @@ export function isSalePlanTier(value: unknown): value is SalePlanTier {
 }
 
 // Included login seats per plan tier. getPlanState resolves active trials to
-// TRIAL_ACCESS_TIER, regardless of the stored sales/default tier.
+// TRIAL_ACCESS_TIER, regardless of the stored sales/default tier; koltuk sayısı
+// ise deneme için TRIAL_SEAT_LIMIT'tir (#938).
 export const PLAN_SEATS: Record<PlanTier, number> = {
   lite: 1,
   starter: 1,
@@ -261,6 +262,13 @@ export const TRIAL_INCLUDES_ADDONS = true
 export const TRIAL_ACCESS_TIER: PlanTier = TRIAL_INCLUDES_ADDONS ? "premium" : "pro"
 
 /**
+ * Deneme süresince dahil koltuk sayısı — Servis Paketi ile aynı (#938).
+ * Özellik profili ({@link TRIAL_ACCESS_TIER}) ile koltuk sayısı ayrı kararlardır:
+ * deneme ek özellikleri açabilir ama paketten fazla kullanıcı vermez.
+ */
+export const TRIAL_SEAT_LIMIT = PLAN_SEATS.pro
+
+/**
  * Lowest purchasable/legacy tier which owns a capability. Add-on'lar paket
  * olarak yalnız `premium` erişim profiliyle (deneme / elle verilen) açılır;
  * atölye bazında `Workshop.addons` ile de açılabilirler (#827) — bu tablo o
@@ -335,6 +343,8 @@ export interface PlanState {
   tier: PlanTier
   /** Entitlement tier used by feature, seat and quota checks. Trials resolve to TRIAL_ACCESS_TIER. */
   accessTier: PlanTier
+  /** Seats included before `extraSeats`. Active trials get TRIAL_SEAT_LIMIT, not the trial tier's seats. */
+  includedSeats: number
   isApproved: boolean
   isTrialing: boolean
   trialEndsAt: Date | null
@@ -411,6 +421,7 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
   return {
     tier,
     accessTier: hasAccess && isTrialing ? TRIAL_ACCESS_TIER : tier,
+    includedSeats: hasAccess && isTrialing ? TRIAL_SEAT_LIMIT : PLAN_SEATS[tier],
     isApproved,
     isTrialing,
     trialEndsAt,
@@ -539,7 +550,7 @@ export function getVinLookupBaseQuota(workshop: WorkshopEntitlementFields): numb
 export function getEffectiveSeatLimit(
   workshop: WorkshopPlanFields & { extraSeats?: number | null }
 ): number {
-  return getSeatLimit(getPlanState(workshop).accessTier, workshop.extraSeats ?? 0)
+  return getPlanState(workshop).includedSeats + Math.max(0, workshop.extraSeats ?? 0)
 }
 
 /**
