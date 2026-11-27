@@ -1,7 +1,8 @@
 import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
-import { computeTrialEnd, TRIAL_BUSINESS_DAYS } from "../src/lib/plan"
+import { ADDON_FEATURES, computeTrialEnd, normalizeAddons, TRIAL_BUSINESS_DAYS } from "../src/lib/plan"
+import { diffAddons, workshopAddonsSchema, type AddonsDiff } from "../src/lib/validations/workshop-addons"
 import { addPeriod } from "../src/lib/billing/period"
 import { buildPoolConfig } from "../src/lib/pg-connection"
 
@@ -14,6 +15,8 @@ import { buildPoolConfig } from "../src/lib/pg-connection"
  *   bun run workshop reject  <workshopId|ownerEmail>
  *   bun run workshop set-plan <workshopId|ownerEmail> <starter|pro|premium> [status] [--cycle monthly|yearly] [--ends-in <gün>]
  *   bun run workshop set-seats <workshopId|ownerEmail> <ek_koltuk_sayısı>
+ *   bun run workshop addons [workshopId|ownerEmail]
+ *   bun run workshop set-addons <workshopId|ownerEmail> <özellik,özellik|none> [--apply]
  *
  * `approve` flips the workshop to approved AND starts the 7-business-day trial.
  */
@@ -93,6 +96,37 @@ export function resolvePaidPeriod(
         ? addPeriod(now, cycle as Cycle)
         : new Date(now.getTime() + endsInDays * DAY_MS),
   }
+}
+
+export type SetAddonsArgs = { addons: ReturnType<typeof normalizeAddons>; apply: boolean }
+
+/**
+ * `set-addons` argümanlarını ayrıştırır: `<özellik,özellik|none>` + `--apply`.
+ * Liste zod şemasıyla doğrulanır, `normalizeAddons` ile tekilleştirilir.
+ * `--apply` yoksa yazım yapılmaz (kuru çalıştırma) — bu script prod'a bağlanabilir.
+ */
+export function parseSetAddonsArgs(
+  list: string | undefined,
+  flags: string[]
+): { args: SetAddonsArgs; error: null } | { args: null; error: string } {
+  if (list === undefined) return { args: null, error: "Kullanım: set-addons <workshopId|ownerEmail> <özellik,özellik|none> [--apply]" }
+  let apply = false
+  for (const flag of flags) {
+    if (flag === "--apply") apply = true
+    else return { args: null, error: `Bilinmeyen seçenek: ${flag}` }
+  }
+  const names = list === "none" ? [] : list.split(",").map((n) => n.trim())
+  const parsed = workshopAddonsSchema.safeParse(names)
+  if (!parsed.success) {
+    return { args: null, error: `Geçersiz ek özellik: ${list} (${ADDON_FEATURES.join(", ")}, none)` }
+  }
+  return { args: { addons: normalizeAddons(parsed.data), apply }, error: null }
+}
+
+/** Mevcut ve hedef listeden değişiklik planı; boş fark = yazılacak bir şey yok. */
+export function planAddonsChange(current: readonly string[], next: readonly string[]): AddonsDiff & { noop: boolean } {
+  const diff = diffAddons(current, next)
+  return { ...diff, noop: diff.added.length === 0 && diff.removed.length === 0 }
 }
 
 /** Resolve a workshop by its id or by an owner's e-mail. */
@@ -205,6 +239,49 @@ async function setSeats(idOrEmail: string, nStr: string) {
   console.log(`✅ Ek koltuk güncellendi: ${id} → +${n} ek koltuk`)
 }
 
+async function listAddons(idOrEmail?: string) {
+  const id = idOrEmail ? await resolveWorkshopId(idOrEmail) : undefined
+  if (idOrEmail && !id) return fail(`İş yeri bulunamadı: ${idOrEmail}`)
+  const workshops = await prisma.workshop.findMany({
+    where: id ? { id } : undefined,
+    orderBy: { createdAt: "desc" },
+    select: { id: true, name: true, addons: true },
+  })
+  for (const w of workshops) {
+    const addons = normalizeAddons(w.addons)
+    console.log(`${w.id}  ${addons.length ? addons.join(",") : "—"}  | ${w.name}`)
+  }
+}
+
+async function setAddons(idOrEmail: string, args: SetAddonsArgs) {
+  const id = await resolveWorkshopId(idOrEmail)
+  if (!id) return fail(`İş yeri bulunamadı: ${idOrEmail}`)
+  const workshop = await prisma.workshop.findUnique({ where: { id }, select: { addons: true } })
+  if (!workshop) return fail(`İş yeri bulunamadı: ${idOrEmail}`)
+  const plan = planAddonsChange(workshop.addons, args.addons)
+  if (plan.noop) return console.log(`Değişiklik yok: ${id} (${plan.after.join(",") || "—"})`)
+  const summary = `+[${plan.added.join(",")}] -[${plan.removed.join(",")}] → [${plan.after.join(",")}]`
+  if (!args.apply) {
+    console.log(`KURU ÇALIŞTIRMA (yazılmadı): ${id} ${summary}\nUygulamak için --apply ekleyin.`)
+    return
+  }
+  const { before, after, added, removed } = plan
+  await prisma.$transaction([
+    prisma.workshop.update({ where: { id }, data: { addons: after } }),
+    prisma.auditLog.create({
+      data: {
+        workshopId: id,
+        actorUserId: null,
+        entityType: "Workshop",
+        entityId: id,
+        action: "admin_addons_set",
+        metadataJson: JSON.stringify({ before, after, added, removed, source: "cli" }),
+      },
+    }),
+  ])
+  console.log(`✅ Ek özellikler güncellendi: ${id} ${summary}`)
+}
+
 function fail(msg: string) {
   console.error(`❌ ${msg}`)
   process.exitCode = 1
@@ -247,6 +324,15 @@ async function main() {
       if (!arg || tier === undefined) return fail("Kullanım: set-seats <workshopId|ownerEmail> <ek_koltuk_sayısı>")
       await setSeats(arg, tier)
       break
+    case "addons":
+      await listAddons(arg)
+      break
+    case "set-addons": {
+      const parsed = parseSetAddonsArgs(tier, flags)
+      if (!arg || parsed.args === null) return fail(parsed.error ?? "Kullanım: set-addons <workshopId|ownerEmail> <özellik,özellik|none> [--apply]")
+      await setAddons(arg, parsed.args)
+      break
+    }
     default:
       console.log(
         [
@@ -258,8 +344,12 @@ async function main() {
           "              [--cycle monthly|yearly]  ücretli dönemi de yaz (bitiş = şimdi + 1 ay/yıl)",
           "              [--ends-in <gün>]         dönem sonunu elle ayarla (0/negatif = süresi dolmuş)",
           "  set-seats <workshopId|ownerEmail> <ek_koltuk_sayısı>",
+          "  addons    [workshopId|ownerEmail]   ek özellikleri listele",
+          `  set-addons <workshopId|ownerEmail> <${ADDON_FEATURES.join(",")}|none> [--apply]`,
+          "              --apply olmadan yalnız planı yazdırır (kuru çalıştırma)",
           "",
-          "Örnek: bun run workshop set-plan usta@atolye.com premium active --cycle yearly",
+          "Örnek: bun run workshop set-plan usta@atolye.com pro active --cycle yearly",
+          "Örnek: bun run workshop set-addons usta@atolye.com vinLookup,eInvoice --apply",
           "Örnek: bun run workshop set-plan usta@atolye.com pro active --cycle monthly --ends-in 3",
         ].join("\n")
       )

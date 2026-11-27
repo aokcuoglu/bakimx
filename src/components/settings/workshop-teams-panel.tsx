@@ -179,7 +179,7 @@ export function WorkshopTeamsPanel({
                   <FormItem className="min-w-0 gap-1">
                     <FormLabel className="text-xs font-medium text-muted-foreground">Ekip adı</FormLabel>
                     <div className="flex min-w-0 items-center gap-2">
-                      <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-warning-strong">
+                      <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-card text-warning-strong">
                         <Settings2 className="size-4" />
                       </span>
                       <FormControl><Input {...field} placeholder="Ekip adını girin" maxLength={40} /></FormControl>

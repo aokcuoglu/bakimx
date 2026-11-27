@@ -48,6 +48,14 @@ const FIELD_LABELS: Record<string, string> = {
   sizeBytes: "Dosya boyutu",
 }
 
+/** Abonelik durumu değerleri (`SubscriptionStatus`) — denetim ekranında ham değer yerine okunur ad. */
+const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
+  trialing: "Denemede",
+  active: "Aktif",
+  past_due: "Ödeme gecikti",
+  canceled: "İptal",
+}
+
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
@@ -86,6 +94,11 @@ export function formatAuditValue(value: unknown, key = ""): string {
 
   // Paket alanları (`tier`, `previousTier`, `planTier`…) okunur adla gösterilir.
   if (/(?:^|\.)tier$|Tier$/.test(key) && typeof value === "string") return planLabel(value)
+
+  // `status` / `previousStatus` abonelik durumunu taşır (`admin_plan_activated`, #955).
+  if (/(?:^|\.)(?:status|previousStatus)$/.test(key) && typeof value === "string" && value in SUBSCRIPTION_STATUS_LABELS) {
+    return SUBSCRIPTION_STATUS_LABELS[value]
+  }
 
   if (key.endsWith("At") && typeof value === "string") {
     const date = new Date(value)

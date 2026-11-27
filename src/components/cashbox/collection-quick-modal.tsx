@@ -287,7 +287,7 @@ export function CollectionQuickModal({
               )}
             />
 
-            <div className="rounded-lg border bg-muted/50 p-3 space-y-1.5">
+            <div className="rounded-md border bg-muted/50 p-3 space-y-1.5">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Genel Toplam</span>
                 <span className="font-medium text-foreground">{formatTRY(grandTotal)}</span>

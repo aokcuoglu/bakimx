@@ -89,7 +89,7 @@ export function WorkshopEntryQR({
         <div className="flex flex-col items-center gap-3">
           <p className="text-xs font-medium text-muted-foreground">QR Kod</p>
           <div className="inline-flex flex-col items-center gap-2">
-            <div className="bg-white p-3 rounded-lg border border-border">
+            <div className="bg-white p-3 rounded-md border border-border">
               {mounted && entryUrl ? (
                 <QRCodeSVG
                   value={entryUrl}
@@ -108,7 +108,7 @@ export function WorkshopEntryQR({
 
         <div className="flex flex-col gap-3">
           <p className="text-xs font-medium text-muted-foreground">Bağlantı Bilgisi</p>
-          <div className="rounded-lg border border-border divide-y divide-border">
+          <div className="rounded-md border border-border divide-y divide-border">
             <div className="flex items-baseline justify-between gap-3 px-3 py-2.5">
               <dt className="text-xs text-muted-foreground">İş Yeri Kodu</dt>
               <dd className="text-sm font-semibold font-mono text-foreground">{loginCode}</dd>

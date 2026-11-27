@@ -12,7 +12,19 @@ import ts from "typescript"
 
 const SRC = join(import.meta.dir, "..")
 
-const SCANNED_DIRS = ["orders", "dashboard", "customers", "vehicles"].flatMap((name) => [
+const SCANNED_DIRS = [
+  "orders",
+  "dashboard",
+  "customers",
+  "vehicles",
+  "settings",
+  "billing",
+  "cashbox",
+  "reports",
+  "parts",
+  "suppliers",
+  "purchases",
+].flatMap((name) => [
   join(SRC, "components", name),
   join(SRC, "app", "(app)", name),
 ])

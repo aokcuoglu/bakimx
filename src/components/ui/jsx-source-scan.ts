@@ -86,16 +86,22 @@ function ownerOf(node: ts.Node): string | null {
   return null
 }
 
-/** `source` içindeki, adı `names` listesinde olan JSX açılış etiketleri. */
-export function jsxOpeningTags(source: string, names: readonly string[], fileName = "scan.tsx"): JsxOpeningTag[] {
-  const wanted = new Set(names)
+/** `source` içindeki, `accept(etiketAdı, propAdları)` kabul eden JSX açılış etiketleri. */
+function scanOpeningTags(
+  source: string,
+  fileName: string,
+  accept: (name: string, attributeNames: string[]) => boolean
+): JsxOpeningTag[] {
   const file = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
   const cssModules = cssModuleImports(file)
   const tags: JsxOpeningTag[] = []
   const visit = (node: ts.Node) => {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
       const name = node.tagName.getText(file)
-      if (wanted.has(name)) {
+      const attributeNames = node.attributes.properties
+        .filter(ts.isJsxAttribute)
+        .map((prop) => prop.name.getText(file))
+      if (accept(name, attributeNames)) {
         const attributes = new Map<string, string>()
         const info: ClassInfo = { classLiterals: [], cssModuleRefs: [], forwardsClassName: false }
         for (const prop of node.attributes.properties) {
@@ -118,6 +124,22 @@ export function jsxOpeningTags(source: string, names: readonly string[], fileNam
   }
   visit(file)
   return tags
+}
+
+/** `source` içindeki, adı `names` listesinde olan JSX açılış etiketleri. */
+export function jsxOpeningTags(source: string, names: readonly string[], fileName = "scan.tsx"): JsxOpeningTag[] {
+  const wanted = new Set(names)
+  return scanOpeningTags(source, fileName, (name) => wanted.has(name))
+}
+
+/** `source` içindeki, `attributes`ten en az birini taşıyan JSX açılış etiketleri (etiket adından bağımsız). */
+export function jsxTagsWithAttribute(
+  source: string,
+  attributes: readonly string[],
+  fileName = "scan.tsx"
+): JsxOpeningTag[] {
+  const wanted = new Set(attributes)
+  return scanOpeningTags(source, fileName, (_name, attributeNames) => attributeNames.some((attr) => wanted.has(attr)))
 }
 
 /**

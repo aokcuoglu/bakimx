@@ -22,7 +22,7 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
           <h3 className="text-base font-semibold text-foreground">Takvim Sağlayıcısı</h3>
         </div>
 
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted border border-border">
+        <div className="flex items-center gap-3 p-3 rounded-md bg-muted border border-border">
           <div className="flex-1">
             <div className="text-sm font-medium text-foreground">Aktif Sağlayıcı</div>
             <div className="text-sm text-muted-foreground mt-0.5">
@@ -35,7 +35,7 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
         </div>
 
         <div className="grid gap-3">
-          <div className="flex items-start gap-3 p-3 rounded-lg border border-border">
+          <div className="flex items-start gap-3 p-3 rounded-md border border-border">
             {settings.provider === "mock" ? (
               <CheckCircle2 className="size-5 text-success-strong shrink-0 mt-0.5" />
             ) : (
@@ -52,7 +52,7 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
             </div>
           </div>
 
-          <div className="flex items-start gap-3 p-3 rounded-lg border border-border">
+          <div className="flex items-start gap-3 p-3 rounded-md border border-border">
             {settings.provider === "google" && settings.googleConfigured ? (
               <CheckCircle2 className="size-5 text-success-strong shrink-0 mt-0.5" />
             ) : settings.provider === "google" && !settings.googleConfigured ? (
@@ -100,7 +100,7 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
             Takvim sağlayıcısını değiştirmek için <code className="px-1 py-0.5 rounded bg-muted text-foreground text-xs font-mono">.env.local</code> dosyasında
             aşağıdaki değişkenleri ayarlayın:
           </p>
-          <pre className="bg-muted text-foreground p-3 rounded-lg text-xs overflow-x-auto">
+          <pre className="bg-muted text-foreground p-3 rounded-md text-xs overflow-x-auto">
 {`# Takvim Sağlayıcısı — mock (varsayılan) veya google
 CALENDAR_PROVIDER=mock
 

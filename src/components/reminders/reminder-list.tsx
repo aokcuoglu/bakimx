@@ -297,9 +297,8 @@ export function ReminderList({ initialReminders, stats }: Props) {
                             ) : null}
                             {r.status !== "cancelled" && r.status !== "completed" ? (
                               <Button
-                                variant="ghost"
+                                variant="destructive-ghost"
                                 size="sm"
-                                className="text-destructive-strong"
                                 onClick={() => handleAction("cancel", r.id)}
                                 disabled={actionLoading === r.id}
                               >
