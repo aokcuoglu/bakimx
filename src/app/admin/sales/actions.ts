@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
+import { parseIstanbulDate } from "@/lib/istanbul-time"
 import { isUniqueConstraintError } from "@/lib/prisma-errors"
 import { getSalesAccess, assertSalesLeadAccess, salesLeadScope } from "@/lib/sales/access"
 import {
@@ -728,8 +729,10 @@ export async function updateSalesDiscountCode(id: string, input: unknown): Promi
 
   const parsed = salesDiscountCodeUpdateSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz geçerlilik tarihi." }
-  const expiresAt = new Date(`${parsed.data.expiresAt}T23:59:59.999`)
-  if (Number.isNaN(expiresAt.getTime())) return { ok: false, error: "Geçersiz geçerlilik tarihi." }
+  const expiryDayStart = parseIstanbulDate(parsed.data.expiresAt)
+  if (!expiryDayStart) return { ok: false, error: "Geçersiz geçerlilik tarihi." }
+  // İstanbul gününün son milisaniyesi (ertesi gün 00:00 - 1 ms).
+  const expiresAt = new Date(expiryDayStart.getTime() + 24 * 60 * 60 * 1000 - 1)
   if (discountCode.disabledAt) return { ok: false, error: "Pasif kodun süresi değiştirilemez." }
   if (discountCode.usedAt) return { ok: false, error: "Kullanılmış kodun süresi değiştirilemez." }
 

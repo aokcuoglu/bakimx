@@ -1277,24 +1277,13 @@ export async function updateOrderInvoiceAction(orderId: string, formData: FormDa
     return { error: "İptal edilmiş araç kabulüne fatura bilgisi girilemez" }
   }
 
-  // `trDateToDate` takvim geçerliliğini KONTROL ETMEZ: "31.02.2026" Invalid Date
-  // üretmez, sessizce 03.03.2026'ya taşar. Şema yalnız GG.AA.YYYY biçimine baktığı
-  // için bu sessiz bozulmayı burada kapatıyoruz — çevrilen tarihin parçaları girdiyle
-  // birebir aynı değilse tarih geçersizdir. (DatePicker böyle bir değer üretemez;
-  // koruma doğrudan API'ye POST eden çağrılar içindir.)
+  // Şema yalnız GG.AA.YYYY biçimine bakar; `trDateToDate` takvimde olmayan günü
+  // ("31.02.2026") null döndürür, sessizce 03.03'e taşmaz. (DatePicker böyle bir
+  // değer üretemez; koruma doğrudan API'ye POST eden çağrılar içindir.)
   let invoiceDate: Date | null = null
   if (parsed.data.invoiceDate) {
-    const [day, month, year] = parsed.data.invoiceDate.split(".").map(Number)
-    const converted = trDateToDate(parsed.data.invoiceDate)
-    if (
-      !converted ||
-      converted.getDate() !== day ||
-      converted.getMonth() + 1 !== month ||
-      converted.getFullYear() !== year
-    ) {
-      return { error: "Geçerli bir tarih seçiniz" }
-    }
-    invoiceDate = converted
+    invoiceDate = trDateToDate(parsed.data.invoiceDate)
+    if (!invoiceDate) return { error: "Geçerli bir tarih seçiniz" }
   }
 
   const invoiceNo = parsed.data.invoiceNo || null
