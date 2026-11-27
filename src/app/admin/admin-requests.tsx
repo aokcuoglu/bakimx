@@ -158,7 +158,7 @@ function DemoRequestRow({ r, canManage }: { r: AdminDemoRequestRow; canManage: b
         isNew ? "border-primary/30 shadow-sm" : "border-border/60"
       )}
     >
-      {isNew && <div className="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-primary" />}
+      {isNew && <div className="absolute inset-y-0 left-0 w-1 rounded-l-md bg-primary" />}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-2">

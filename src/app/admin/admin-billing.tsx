@@ -452,7 +452,7 @@ function RecentOrderRow({ o }: { o: AdminOrderRow }) {
         </div>
 
         <div className="flex items-start justify-between gap-3 sm:block sm:text-right">
-          <div className="rounded-lg bg-primary/10 px-3 py-2 text-left sm:text-right">
+          <div className="rounded-md bg-primary/10 px-3 py-2 text-left sm:text-right">
             <p className="text-[11px] font-medium text-primary-strong">Tahsil edilen</p>
             <p className="text-xl font-bold tracking-tight text-primary-strong">{o.amountLabel}</p>
           </div>

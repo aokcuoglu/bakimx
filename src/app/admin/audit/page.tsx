@@ -128,7 +128,7 @@ export default async function AdminAuditPage({
             <h2 className="text-sm font-semibold text-foreground">Denetim işlemleri</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">Platformdaki yönetici işlemleri sayfalanır ve filtrelenir.</p>
           </div>
-          <form method="get" className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/60 px-3 py-2">
+          <form method="get" className="flex flex-wrap items-center gap-2 rounded-md bg-muted/60 px-3 py-2">
             <Filter className="size-4 text-muted-foreground" aria-hidden="true" />
             <label>
               <span className="sr-only">İş yeri</span>
@@ -158,7 +158,7 @@ export default async function AdminAuditPage({
         {logs.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">Bu filtreyle eşleşen işlem yok.</p>
         ) : (
-          <div className="overflow-hidden rounded-lg border">
+          <div className="overflow-hidden rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>

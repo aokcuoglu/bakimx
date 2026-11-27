@@ -77,7 +77,7 @@ export default async function EditCatalogProductPage(props: { params: Promise<{ 
           ) : (
             <ul className="space-y-2">
               {audit.map((entry) => (
-                <li key={entry.id} className="rounded-lg border bg-card p-3">
+                <li key={entry.id} className="rounded-md border bg-card p-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">{AUDIT_ACTION_LABELS[entry.action] ?? entry.action}</Badge>
                     <span className="text-xs text-muted-foreground">
