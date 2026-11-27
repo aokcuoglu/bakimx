@@ -127,6 +127,15 @@ test("KDV tick'i açılınca satırda KDV tutarı gösterilir VE belgeye oran ya
   expect(GRID).toContain("if (liable) ensureDocumentTax()")
 })
 
+test("satır KDV oranı belgenin gerçek oranıdır; %20'ye sessiz düşmez (#1007)", () => {
+  expect(GRID).not.toContain("effectiveTaxBps(")
+  expect(GRID).toContain("taxBps: rowTaxBps(taxRateBps, false)")
+  expect(GRID).toContain("pendingTaxBps: rowTaxBps(taxRateBps, vatPerLine && !!onApplyStandardTax)")
+  // İşçilik composer'ı yeni satırın önizlemesini tick'in yazacağı oranla gösterir.
+  expect(GRID).toContain("useRowEditor(draft, undefined, false, onCell, true)")
+  expect(GRID).toContain("const grossLineTotal = lineTotal == null ? null : lineTotal + (vatKurus ?? 0)")
+})
+
 test("teklif tarafında satır KDV tick'i GÖSTERİLMEZ", () => {
   // `QuoteItem`'da `includeVat` kolonu yok: tick kaydedilemez ve teklif
   // toplamına yansımaz. Kaydedilemeyen kontrolü göstermek kullanıcıya yalandır.

@@ -410,14 +410,14 @@ export function SalesConsole({
               <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">Öncelik sırası</p>
               <h2 id="focus-queue-title" className="mt-1 text-lg font-semibold text-foreground">Bugünün odağı</h2>
             </div>
-            <div className="flex size-9 items-center justify-center rounded-xl bg-warning/10 text-warning-strong">
+            <div className="flex size-9 items-center justify-center rounded-md bg-warning/10 text-warning-strong">
               <Target className="size-4" />
             </div>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">Yaklaşan takipler ve ilerlemeye en yakın fırsatlar.</p>
           <div className="mt-4 space-y-2">
             {focusLeads.length === 0 ? (
-              <div className="rounded-xl border border-dashed p-5 text-center">
+              <div className="rounded-md border border-dashed p-5 text-center">
                 <CheckCircle2 className="mx-auto size-6 text-success-strong" />
                 <p className="mt-2 text-sm font-medium text-foreground">Takip kuyruğu temiz</p>
                 <p className="mt-1 text-xs text-muted-foreground">Yeni bir şirket adayı ekleyerek başlayın.</p>
@@ -433,7 +433,7 @@ export function SalesConsole({
                   onClick={() => focusLead(lead)}
                   className="w-full"
                 >
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold text-muted-foreground-strong">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-semibold text-muted-foreground-strong">
                     {String(index + 1).padStart(2, "0")}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -696,7 +696,7 @@ function SalesMetric({
           <p className="text-xs font-medium text-muted-foreground">{label}</p>
           <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-foreground sm:text-3xl">{value}</p>
         </div>
-        <div className={cn("flex size-9 items-center justify-center rounded-xl", toneClass)}>
+        <div className={cn("flex size-9 items-center justify-center rounded-md", toneClass)}>
           <Icon className="size-4" />
         </div>
       </div>
@@ -734,7 +734,7 @@ function MonthlyTargetProgress({ performance }: {
         {metrics.map((metric) => {
           const percent = metric.target > 0 ? Math.min(100, Math.round((metric.actual / metric.target) * 100)) : 0
           return (
-            <div key={metric.label} className="rounded-xl bg-muted/50 p-3">
+            <div key={metric.label} className="rounded-md bg-muted/50 p-3">
               <p className="text-xs text-muted-foreground-strong">{metric.label}</p>
               <p className="mt-1 font-semibold tabular-nums text-foreground">{metric.actual} / {metric.target || "—"}</p>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background" role="progressbar" aria-label={`${metric.label} hedef ilerlemesi`} aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
@@ -743,7 +743,7 @@ function MonthlyTargetProgress({ performance }: {
             </div>
           )
         })}
-        <div className="rounded-xl bg-primary/10 p-3 text-primary-strong">
+        <div className="rounded-md bg-primary/10 p-3 text-primary-strong">
           <p className="text-xs">KDV hariç net satış</p>
           <p className="mt-1 font-semibold tabular-nums text-foreground">{formatMinor(performance.row.actual.netSalesMinor)}</p>
           <p className="mt-0.5 text-xs">Hedef {performance.row.target.netSalesMinor > 0 ? formatMinor(performance.row.target.netSalesMinor) : "tanımlanmadı"}</p>
@@ -880,7 +880,7 @@ function LeadCard({
       </div>
 
       {showActivities && lead.activities.length > 0 && (
-        <div className="space-y-2 rounded-lg bg-muted/50 p-3">
+        <div className="space-y-2 rounded-md bg-muted/50 p-3">
           {lead.activities.map((a) => {
             const Icon = activityIcons[a.type] ?? FileText
             return (
@@ -1127,7 +1127,7 @@ function DiscountCodeSection({
         </Form>
 
         {generatedCode && (
-          <div className="mt-4 rounded-xl border border-success/20 bg-success/10 p-4 text-success-strong">
+          <div className="mt-4 rounded-md border border-success/20 bg-success/10 p-4 text-success-strong">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-medium">Paylaşıma hazır</p>

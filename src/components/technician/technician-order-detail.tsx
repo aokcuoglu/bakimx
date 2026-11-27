@@ -973,7 +973,7 @@ function PurchasesSection({
 
       {empty ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-primary/[0.04] px-4 py-10 text-center">
-          <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary-strong">
+          <span className="flex size-12 items-center justify-center rounded-md bg-primary/10 text-primary-strong">
             <ShoppingCart className="size-6" />
           </span>
           <p className="text-sm font-semibold text-foreground">Henüz dış alım yok</p>
@@ -1089,7 +1089,7 @@ function PurchaseCard({
             />
           </div>
         ) : (
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary-strong">
             <Package className="size-4" />
           </span>
         )}
@@ -1227,7 +1227,7 @@ function ExternalLaborCard({
     <>
       <div className="rounded-xl border border-border bg-primary/[0.04] p-2.5">
         <div className="flex gap-2.5">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning-strong">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-warning/10 text-warning-strong">
             <Wrench className="size-4" />
           </span>
           <div className="min-w-0 flex-1">

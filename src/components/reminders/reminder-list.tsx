@@ -276,18 +276,16 @@ export function ReminderList({ initialReminders, stats }: Props) {
                             {r.status === "upcoming" || r.status === "due_soon" || r.status === "overdue" ? (
                               <>
                                 <Button
-                                  variant="ghost"
+                                  variant="success-ghost"
                                   size="sm"
-                                  className="text-success-strong"
                                   onClick={() => handleAction("complete", r.id)}
                                   disabled={actionLoading === r.id}
                                 >
                                   {actionLoading === r.id ? <Loader2 className="size-3 animate-spin" /> : "Tamamla"}
                                 </Button>
                                 <Button
-                                  variant="ghost"
+                                  variant="tint-ghost"
                                   size="sm"
-                                  className="text-primary"
                                   onClick={() => handleAction("create-appointment", r.id)}
                                   disabled={actionLoading === r.id}
                                 >
@@ -318,7 +316,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                   <Link
                     key={r.id}
                     href={`/reminders/${r.id}`}
-                    className="block rounded-lg border border-border bg-card p-4 hover:border-border transition-colors"
+                    className="block rounded-md border border-border bg-card p-4 hover:border-border transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="min-w-0 flex-1">
@@ -349,18 +347,16 @@ export function ReminderList({ initialReminders, stats }: Props) {
                       {r.status === "upcoming" || r.status === "due_soon" || r.status === "overdue" ? (
                         <>
                           <Button
-                            variant="ghost"
+                            variant="success-ghost"
                             size="sm"
-                            className="text-success-strong"
                             onClick={(e) => { e.preventDefault(); handleAction("complete", r.id) }}
                             disabled={actionLoading === r.id}
                           >
                             Tamamla
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="tint-ghost"
                             size="sm"
-                            className="text-primary"
                             onClick={(e) => { e.preventDefault(); handleAction("create-appointment", r.id) }}
                             disabled={actionLoading === r.id}
                           >
