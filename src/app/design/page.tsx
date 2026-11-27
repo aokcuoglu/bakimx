@@ -495,6 +495,8 @@ export default function DesignSystemPage() {
                 ["destructive-outline", "Destructive outline — ikincil yıkıcı eylem (İptal, Pasif Yap)"],
                 ["destructive-ghost", "Destructive ghost — satır içi sil / kaldır / iptal"],
                 ["tint", "Tint — birincil tonlu seçili / önerilen eylem"],
+                ["tint-ghost", "Tint ghost — satır içi birincil eylem (ekle, değiştir)"],
+                ["success-ghost", "Success ghost — satır içi tamamla / onayla"],
                 ["warning-tint", "Warning tint — dikkat isteyen seçim (düşük güvenli OCR önerisi)"],
                 ["success", "Success"],
                 ["warning", "Warning"],

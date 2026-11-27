@@ -357,7 +357,7 @@ export function PurchaseFormSheet({
 
         <div className="space-y-3 py-1">
           {error && (
-            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
               {error}
             </p>
           )}
@@ -410,7 +410,7 @@ export function PurchaseFormSheet({
           </div>
 
           {link && (
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+            <div className="flex items-center justify-between gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
               <span className="text-xs font-medium text-primary">{link.label}</span>
               <Button
                 type="button"
@@ -512,7 +512,7 @@ export function PurchaseFormSheet({
                 {previewUrl ? (
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={previewUrl} alt="Parça kutusu" className="w-full max-h-48 object-contain rounded-lg border border-border bg-muted" />
+                    <img src={previewUrl} alt="Parça kutusu" className="w-full max-h-48 object-contain rounded-md border border-border bg-muted" />
                     <Button
                       type="button"
                       variant="outline"
@@ -539,19 +539,19 @@ export function PurchaseFormSheet({
               </div>
 
               {ocrLoading && (
-                <div className="flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/40 py-6">
+                <div className="flex items-center justify-center rounded-md border border-dashed border-border bg-muted/40 py-6">
                   <BrandSpinner size={36} label="Kutu okunuyor…" />
                 </div>
               )}
 
               {ocrError && !ocrLoading && (
-                <p className="text-xs text-muted-foreground bg-muted/50 border border-border rounded-lg px-3 py-2">
+                <p className="text-xs text-muted-foreground bg-muted/50 border border-border rounded-md px-3 py-2">
                   {ocrError}
                 </p>
               )}
 
               {ocrResult && !ocrLoading && (
-                <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+                <div className="space-y-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5">
                   <p className="text-xs font-medium text-primary">Kutudan okunan öneriler</p>
 
                   {ocrResult.partName.value && (

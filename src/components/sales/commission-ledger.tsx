@@ -154,7 +154,7 @@ function CommissionCard({ commission, canManage }: { commission: Commission; can
         </dl>
 
         {commission.adjustmentReason && (
-          <div className="rounded-lg bg-muted p-3 text-sm">
+          <div className="rounded-md bg-muted p-3 text-sm">
             <span className="font-medium text-foreground">Düzeltme gerekçesi:</span>{" "}
             <span className="text-muted-foreground-strong">{commission.adjustmentReason}</span>
           </div>

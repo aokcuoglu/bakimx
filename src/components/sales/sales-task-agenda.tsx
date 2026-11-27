@@ -65,7 +65,7 @@ export function SalesTaskAgenda({ tasks, canManage }: { tasks: AgendaTask[]; can
       </div>
 
       {tasks.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+        <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
           Bugün için planlanmış veya gecikmiş görev yok.
         </div>
       ) : (
@@ -77,9 +77,9 @@ export function SalesTaskAgenda({ tasks, canManage }: { tasks: AgendaTask[]; can
                 {bucket.label} <Badge variant="secondary">{bucket.items.length}</Badge>
               </h3>
               {bucket.items.length === 0 ? (
-                <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">Kayıt yok.</p>
+                <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">Kayıt yok.</p>
               ) : bucket.items.map((task) => (
-                <article key={task.id} className="rounded-lg border bg-background p-3">
+                <article key={task.id} className="rounded-md border bg-background p-3">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <Button asChild variant="link" size="inline">

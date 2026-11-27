@@ -7,6 +7,7 @@ import { ActionsMenu, MobileActionsMenu } from "@/components/shared/actions-menu
 import { formatTRY, customerDisplayName } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { newIntakeHref } from "@/lib/intake/entry-links"
+import { formatTrDate } from "@/lib/format-date"
 
 type QuoteRow = {
   id: string
@@ -26,7 +27,7 @@ type QuoteRow = {
 type StatusCounts = Record<string, number>
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })
+  return formatTrDate(iso)
 }
 
 export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: QuoteRow[]; counts: StatusCounts; activeStatus: string; search: string }) {
