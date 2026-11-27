@@ -2,11 +2,11 @@ import { getPlanPriceMinor } from "@/lib/billing/pricing"
 import type { PlanTier } from "@/lib/plan"
 import type { BillingCycle } from "@prisma/client"
 
-const DAY_MS = 86_400_000
+export const DAY_MS = 86_400_000
 // Nominal cycle lengths used for crediting the unused portion of the current
 // plan. Approximate (months vary) — the credit is a goodwill adjustment, not an
 // accounting-exact figure.
-const CYCLE_DAYS: Record<BillingCycle, number> = { monthly: 30, yearly: 365 }
+export const CYCLE_DAYS: Record<BillingCycle, number> = { monthly: 30, yearly: 365 }
 
 /**
  * Amount (kuruş) to charge for a mid-cycle UPGRADE. The unused portion of the

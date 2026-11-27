@@ -41,10 +41,20 @@ test("paket öne çıkanları ek özellik içermez, plaka okumayı içerir", () 
   for (const addon of ADDON_CATALOG) expect(highlights).not.toContain(addon.name)
 })
 
-test("ek özellik kataloğu fiyat taşımaz ve her ek özellik kapısını kapsar", () => {
+test("ek özellik kataloğu sözleşme alanlarını taşır ve her ek özellik kapısını kapsar", () => {
   for (const addon of ADDON_CATALOG) {
-    expect(Object.keys(addon).sort()).toEqual(["description", "features", "key", "name", "shipped"])
-    expect(JSON.stringify(addon)).not.toMatch(/price|₺|TL/i)
+    expect(Object.keys(addon).sort()).toEqual([
+      "description",
+      "features",
+      "includedUsage",
+      "key",
+      "monthlyPrice",
+      "name",
+      "purchasable",
+      "shipped",
+      "unit",
+      "yearlyPrice",
+    ])
   }
   const covered = new Set(ADDON_CATALOG.flatMap((addon) => addon.features))
   expect([...ADDON_FEATURES].every((feature) => covered.has(feature))).toBe(true)
@@ -88,4 +98,14 @@ test("fotoğraf açıklama değerleri gerçek yükleme sözleşmesinden türetil
     maxPerSelection: 3,
     maxActivePerWorkOrder: 30,
   })
+})
+
+test("satılabilir ek özelliklerin fiyatı var; yıllık = 10 × aylık", () => {
+  for (const item of ADDON_CATALOG) {
+    if (item.purchasable) {
+      expect(item.monthlyPrice).not.toBeNull()
+      expect(item.yearlyPrice).toBe((item.monthlyPrice ?? 0) * 10)
+    }
+    if (item.monthlyPrice === null) expect(item.purchasable).toBe(false)
+  }
 })

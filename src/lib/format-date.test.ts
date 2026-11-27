@@ -4,8 +4,11 @@ import {
   formatTodayTr,
   formatTrDate,
   formatTrDateTime,
+  formatTrDayMonthTime,
   formatTrLongDate,
   formatTrMediumDate,
+  formatTrPaddedDayMonthShortTime,
+  formatTrPaddedMediumDate,
   formatTrShortDate,
   formatTrTime,
   trDayKey,
@@ -31,6 +34,7 @@ describe("Europe/Istanbul biçimleyicileri", () => {
     expect(formatTrDate(LATE_NIGHT)).toBe("25.11.2026")
     expect(formatTrDateTime(LATE_NIGHT)).toBe("25.11.2026 01:30")
     expect(formatTrTime(LATE_NIGHT)).toBe("01:30")
+    expect(formatTrDayMonthTime(LATE_NIGHT)).toBe("25.11 01:30")
     expect(trDayKey(LATE_NIGHT)).toBe("2026-11-25")
     expect(formatTrShortDate(LATE_NIGHT)).toBe("25 Kas")
     expect(formatTrMediumDate(LATE_NIGHT)).toBe("25 Kas 2026")
@@ -42,6 +46,7 @@ describe("Europe/Istanbul biçimleyicileri", () => {
       formatTrDate,
       formatTrTime,
       formatTrDateTime,
+      formatTrDayMonthTime,
       formatTrShortDate,
       formatTrMediumDate,
       formatTrLongDate,
@@ -83,5 +88,32 @@ describe("utils-client yeniden ihracı", () => {
   test("aynı fonksiyon referansı", () => {
     expect(formatDate).toBe(formatTrDate)
     expect(formatDateTime).toBe(formatTrDateTime)
+  })
+})
+
+describe("formatTrPadded* (satış konsolu biçimleri, #875)", () => {
+  const SINGLE_DIGIT = "2026-11-05T06:00:00Z" // TR 05 Kas 09:00
+
+  test("gün iki haneli, ay kısa", () => {
+    expect(formatTrPaddedMediumDate(SINGLE_DIGIT)).toBe("05 Kas 2026")
+    expect(formatTrPaddedDayMonthShortTime(SINGLE_DIGIT)).toBe("05 Kas 09:00")
+  })
+
+  test("eski toLocaleDateString çıktısıyla aynı (Istanbul'a sabitlenmiş)", () => {
+    for (const iso of [SINGLE_DIGIT, MORNING, LATE_NIGHT]) {
+      const d = new Date(iso)
+      const tz = "Europe/Istanbul"
+      expect(formatTrPaddedMediumDate(iso)).toBe(
+        d.toLocaleDateString("tr-TR", { timeZone: tz, day: "2-digit", month: "short", year: "numeric" }),
+      )
+      expect(formatTrPaddedDayMonthShortTime(iso)).toBe(
+        d.toLocaleDateString("tr-TR", { timeZone: tz, day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
+      )
+    }
+  })
+
+  test("geçersiz tarihte tire", () => {
+    expect(formatTrPaddedMediumDate("x")).toBe("—")
+    expect(formatTrPaddedDayMonthShortTime("x")).toBe("—")
   })
 })

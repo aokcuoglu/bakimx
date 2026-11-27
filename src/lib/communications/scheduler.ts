@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db"
 import { formatTrDate, formatTrTime } from "@/lib/format-date"
 import { notifyAppointmentReminder, notifyMaintenanceReminder } from "@/lib/communications/triggers"
 import { appointmentDayWord } from "@/lib/communications/reminder-day"
+import { ageReminderStatuses } from "@/lib/reminders/aging"
 import { reminderDaysUntil } from "@/lib/reminders/dates"
 import { formatReminderType } from "@/lib/reminders/format"
 import { getPlanState, hasWorkshopFeature, type GatedFeature } from "@/lib/plan"
@@ -34,10 +35,14 @@ async function eligibleWorkshopIds(feature: GatedFeature, workshopId?: string): 
 
 export async function processAppointmentReminders(workshopId?: string): Promise<SchedulerResult> {
   const result: SchedulerResult = { processed: 0, sent: 0, failed: 0, errors: [] }
+  const now = new Date()
+
+  // Kayıtlı durum yalnız oluşturma/düzenlemede hesaplanıyordu (#932); gönderimden
+  // önce yaşlandır ki aşağıdaki `status === "overdue"` dalı güncel kaydı görsün.
+  await ageReminderStatuses(workshopId, now)
+
   const workshopIds = await eligibleWorkshopIds("automatedReminders", workshopId)
   if (workshopIds.length === 0) return result
-
-  const now = new Date()
   const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
   const appointments = await prisma.appointment.findMany({

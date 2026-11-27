@@ -39,6 +39,7 @@ import { useOrderListNavigation } from "@/components/orders/use-order-list-navig
 import type { OrderListSort } from "@/lib/orders/list-query"
 import { ACTIVE_ORDER_FILTER } from "@/lib/orders/status-filter"
 import type { OrderListRow } from "@/lib/orders/list-query"
+import { formatTrDate } from "@/lib/format-date"
 
 type OrderRow = OrderListRow
 
@@ -63,7 +64,7 @@ type KpiConfig = {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })
+  return formatTrDate(iso)
 }
 
 function customerName(c: OrderRow["customer"]): string {

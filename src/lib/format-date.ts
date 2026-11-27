@@ -47,6 +47,14 @@ const shortDateFormatter = new Intl.DateTimeFormat("tr-TR", {
   month: "short",
 })
 
+const dayMonthTimeFormatter = new Intl.DateTimeFormat("tr-TR", {
+  timeZone: TR_TIME_ZONE,
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+})
+
 const mediumDateFormatter = new Intl.DateTimeFormat("tr-TR", {
   timeZone: TR_TIME_ZONE,
   dateStyle: "medium",
@@ -97,9 +105,49 @@ export function formatTrDateTime(input: DateInput): string {
   return format(dateTimeFormatter, input)
 }
 
+/** 25.11 09:00 (yıl yok; yakın tarihli liste satırları) */
+export function formatTrDayMonthTime(input: DateInput): string {
+  const date = typeof input === "string" ? new Date(input) : input
+  if (Number.isNaN(date.getTime())) return INVALID
+  // Yılsız gün-ay ayırıcısı ICU sürümüne göre değişiyor (lokal "25.11", CI'daki
+  // ICU "25/11" basıyor); parçalardan kurup ayırıcıyı sabitliyoruz.
+  const parts: Partial<Record<Intl.DateTimeFormatPartTypes, string>> = {}
+  for (const part of dayMonthTimeFormatter.formatToParts(date)) parts[part.type] = part.value
+  return `${parts.day}.${parts.month} ${parts.hour}:${parts.minute}`
+}
+
 /** 25 Kas */
 export function formatTrShortDate(input: DateInput): string {
   return format(shortDateFormatter, input)
+}
+
+const monthShortFormatter = new Intl.DateTimeFormat("tr-TR", {
+  timeZone: TR_TIME_ZONE,
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+})
+
+function monthShortParts(input: DateInput): Partial<Record<Intl.DateTimeFormatPartTypes, string>> | null {
+  const date = typeof input === "string" ? new Date(input) : input
+  if (Number.isNaN(date.getTime())) return null
+  const parts: Partial<Record<Intl.DateTimeFormatPartTypes, string>> = {}
+  for (const part of monthShortFormatter.formatToParts(date)) parts[part.type] = part.value
+  return parts
+}
+
+/** 05 Kas 2026 (gün iki haneli; tablo/rozet satırları) */
+export function formatTrPaddedMediumDate(input: DateInput): string {
+  const p = monthShortParts(input)
+  return p ? `${p.day} ${p.month} ${p.year}` : INVALID
+}
+
+/** 05 Kas 09:00 (yıl yok; gün iki haneli) */
+export function formatTrPaddedDayMonthShortTime(input: DateInput): string {
+  const p = monthShortParts(input)
+  return p ? `${p.day} ${p.month} ${p.hour}:${p.minute}` : INVALID
 }
 
 /** 25 Kas 2026 */

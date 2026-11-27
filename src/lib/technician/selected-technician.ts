@@ -36,3 +36,19 @@ export function resolveSelectedTechnicianId(
 
   return technicianIds[0]
 }
+
+/**
+ * Kiosk ana ekranının odak teknisyeni ("İşlerim" kimin işi). Yönetici seçebilir
+ * (tanınmayan/boş değer ilk aktif teknisyene düşer); saha rolü yalnız kendi
+ * aktif kaydına bağlıdır, `requested` yok sayılır.
+ */
+export function resolveKioskFocusTechnicianId(input: {
+  canSelect: boolean
+  requested: string | null | undefined
+  ownTechnicianId: string | null
+  activeIds: readonly string[]
+}): string | null {
+  if (input.canSelect) return resolveSelectedTechnicianId(input.requested, input.activeIds)
+  const own = input.ownTechnicianId
+  return own && input.activeIds.includes(own) ? own : null
+}
