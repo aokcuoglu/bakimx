@@ -3,7 +3,7 @@ import { getSession } from "@/lib/session"
 import { isAdminEmail } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { generateReceiptHtml } from "@/lib/billing/receipt"
-import { getPlanPackage } from "@/lib/plans-catalog"
+import { describeBillingOrder } from "@/lib/billing/addon-pricing"
 import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -35,10 +35,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!isOwner && !isAdminEmail(me?.email)) notFound()
 
   const snap = (order.billingSnapshot ?? {}) as { invoiceTitle?: string; taxNumber?: string; taxOffice?: string; address?: string }
+  const described = describeBillingOrder(order)
   const html = generateReceiptHtml({
     reference: order.reference,
-    planName: getPlanPackage(order.planTier)?.name ?? order.planTier,
-    cycleLabel: order.billingCycle === "monthly" ? "Aylık" : "Yıllık",
+    lines: described.lines,
+    cycleLabel: described.cycleLabel,
     amountMinor: order.amountMinor,
     confirmedAt: order.confirmedAt,
     workshopName: order.workshop.name,

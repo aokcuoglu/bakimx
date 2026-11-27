@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import { releaseExpiredAddonOrders } from "@/lib/billing/release-expired-addon-orders"
 import { INTERNAL_OPERATIONS_WORKSHOP_ID } from "@/lib/workshop-kind"
 import { getPlanState } from "@/lib/plan"
 import { getPlanPackage } from "@/lib/plans-catalog"
@@ -378,6 +379,17 @@ export async function sweepStalePaymentArtifacts(): Promise<LifecycleSweepResult
   } catch (error) {
     result.failed++
     result.errors.push(`stale-pending-order: ${error instanceof Error ? error.message : "Bilinmeyen hata"}`)
+  }
+
+  // (b2) Dönemi bitmiş ek özellik siparişleri (kart/havale) → cancelled; canlı
+  // ödeme işlemi olanlar korunur (bkz. isReleasableExpiredAddonOrder).
+  try {
+    const released = await releaseExpiredAddonOrders({ workshop: { kind: "customer" } }, now)
+    result.processed += released
+    result.sent += released
+  } catch (error) {
+    result.failed++
+    result.errors.push(`expired-addon-order: ${error instanceof Error ? error.message : "Bilinmeyen hata"}`)
   }
 
   // (c) callback_received stuck → founder alert (dedup per transaction)

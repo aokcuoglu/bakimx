@@ -13,7 +13,7 @@ import { formatMinor } from "@/lib/billing/pricing"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import { prisma } from "@/lib/db"
 import { formatTrLongDate } from "@/lib/format-date"
-import { getPlanPackage } from "@/lib/plans-catalog"
+import { describeBillingOrder } from "@/lib/billing/addon-pricing"
 import { TRIAL_INCLUDES_ADDONS } from "@/lib/plan"
 import { getReferralDiscountBps } from "@/lib/billing/referral-discount"
 import { resolveWorkshopQuotaContext, getWorkshopQuotaUsage } from "@/lib/rapidapi-quota"
@@ -53,6 +53,8 @@ export default async function SettingsBillingPage({ searchParams }: {
           </div>
         )}
         {pendingOrder && <PendingPaymentNotice canPurchase={canPurchase} order={{
+          type: pendingOrder.type,
+          addonLines: pendingOrder.addonLines,
           planTier: pendingOrder.planTier,
           billingCycle: pendingOrder.billingCycle,
           amountMinor: pendingOrder.amountMinor,
@@ -135,7 +137,7 @@ export default async function SettingsBillingPage({ searchParams }: {
                   <TableHead scope="col" className="px-3 text-right">Durum</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>{orders.map((order) => <TableRow key={order.id}>
-                  <TableCell className="px-3"><span className="block font-mono text-xs">{order.reference}</span><span className="text-xs text-muted-foreground">{getPlanPackage(order.planTier)?.name ?? order.planTier} · {order.method === "card" ? "Kart" : order.method === "havale" ? "Havale/EFT" : "Manuel"}</span></TableCell>
+                  <TableCell className="px-3"><span className="block font-mono text-xs">{order.reference}</span><span className="text-xs text-muted-foreground">{describeBillingOrder(order).title} · {order.method === "card" ? "Kart" : order.method === "havale" ? "Havale/EFT" : "Manuel"}</span></TableCell>
                   <TableCell className="font-medium">{formatMinor(order.amountMinor)}</TableCell>
                   <TableCell>{formatDate(order.confirmedAt)}</TableCell>
                   <TableCell className="px-3 text-right"><Badge variant="outline" className="border-success/20 bg-success/10 text-success-strong">Ödendi</Badge><Button asChild variant="ghost" size="compact"><Link href={`/api/billing/orders/${order.id}/receipt`} target="_blank" rel="noopener noreferrer">Makbuz</Link></Button></TableCell>
