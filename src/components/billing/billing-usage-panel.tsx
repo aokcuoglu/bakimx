@@ -73,7 +73,7 @@ export function BillingUsagePanel({ plan, seatUsage, extraSeats, quota, canPurch
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">Paketinizde bulunmuyor</p>
-                <p className="mt-1.5 text-xs text-muted-foreground">Şaseden parça ek özelliktir; yakında uygulama içinden satın alınabilecek.</p>
+                <p className="mt-1.5 text-xs text-muted-foreground">Şaseden parça ek özelliktir; Ayarlar → Paketler’den satın alabilirsiniz.</p>
               </>
             )}
           </div>
