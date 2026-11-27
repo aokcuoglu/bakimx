@@ -9,11 +9,8 @@ import { CarFront, ChevronDown, CircleCheck, CircleX, FileWarning, MessageCircle
 import {
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
   useReactTable,
   type ColumnDef,
-  type ColumnFiltersState,
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table"
@@ -33,12 +30,13 @@ import { ActionsMenu, MobileActionsMenu } from "@/components/shared/actions-menu
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatTRY } from "@/lib/format"
-import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
-import { matchesColumnFilter, ORDER_LIST_COLUMN_LABELS, ORDER_LIST_DATA_COLUMN_ORDER } from "@/lib/orders/list-columns"
+import { PAYMENT_STATUS } from "@/lib/constants"
+import { ORDER_LIST_COLUMN_LABELS, ORDER_LIST_DATA_COLUMN_ORDER } from "@/lib/orders/list-columns"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { useOrderListNavigation } from "@/components/orders/use-order-list-navigation"
+import type { OrderListSort } from "@/lib/orders/list-query"
 import { ACTIVE_ORDER_FILTER } from "@/lib/orders/status-filter"
 import type { OrderListRow } from "@/lib/orders/list-query"
 import { formatTrDate } from "@/lib/format-date"
@@ -72,21 +70,6 @@ function formatDate(iso: string) {
 function customerName(c: OrderRow["customer"]): string {
   if (c.type === "corporate") return c.companyName || "Kurumsal Müşteri"
   return c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "Müşteri"
-}
-
-function statusSearch(order: OrderRow): string {
-  const status = ORDER_STATUS[order.status as keyof typeof ORDER_STATUS]?.label ?? order.status
-  return status
-}
-
-function invoiceSearch(order: OrderRow): string {
-  const value = (order.invoiceNo || "").trim()
-  if (value) return value
-  return order.invoiceMissing ? "Fatura yok" : ""
-}
-
-function technicianSearch(order: OrderRow): string {
-  return order.assignedTechnicianName?.trim() || "Atanmamış"
 }
 
 /**
@@ -124,11 +107,6 @@ function openRowTarget(event: MouseEvent<HTMLTableRowElement>, href: string, pus
   }
   if (event.button !== 0 || event.shiftKey || event.altKey) return
   push(href)
-}
-
-function textFilter<T>(read: (row: T) => string) {
-  return (row: { original: T }, _columnId: string, value: unknown) =>
-    matchesColumnFilter(read(row.original), value)
 }
 
 function PaymentText({ status }: { status: string }) {
@@ -200,6 +178,7 @@ export function OrderList({
   activeDelivery = "",
   technicians = [],
   searchQuery = "",
+  sort = null,
   totalCount,
   nextLimit,
   maxRows,
@@ -215,6 +194,8 @@ export function OrderList({
   activeDelivery?: string
   technicians?: AssignableTechnician[]
   searchQuery?: string
+  /** Sunucunun uyguladığı kolon sıralaması (`?sort=&dir=`); null = en yeni önce. */
+  sort?: OrderListSort | null
   /** Filtrelere uyan toplam kayıt (yüklenen `orders` bunun en yeni dilimi olabilir). */
   totalCount: number
   /** Bir sonraki `?limit=` değeri; yüklenecek kayıt yok ya da tavandaysa null. */
@@ -223,7 +204,7 @@ export function OrderList({
   toolbar?: ReactNode
   emptyState?: ReactNode
 }) {
-  const { rootRef, isPending, isLoadingMore, loadMore, onChange, onSubmit, onClick } = useOrderListNavigation(searchQuery)
+  const { rootRef, isPending, isLoadingMore, loadMore, setSort, onChange, onSubmit, onClick } = useOrderListNavigation(searchQuery)
   const router = useRouter()
   const kpiConfigs: KpiConfig[] = [
     { key: "active", label: "Aktif", count: kpis.active, filterValue: ACTIVE_ORDER_FILTER, icon: Wrench, accent: "info" },
@@ -241,11 +222,13 @@ export function OrderList({
     activeTechnician ? `technician=${encodeURIComponent(activeTechnician)}` : "",
     activeInvoice ? `invoice=${encodeURIComponent(activeInvoice)}` : "",
     activeDelivery ? `delivery=${encodeURIComponent(activeDelivery)}` : "",
+    sort ? `sort=${sort.column}&dir=${sort.desc ? "desc" : "asc"}` : "",
   ].filter(Boolean)
 
   const searchParams = useSearchParams()
   const view = searchParams.get("view")
-  const { sorting, columnFilters, columnVisibility } = useMemo(() => readOrderListState(view), [view])
+  const { columnVisibility } = useMemo(() => readOrderListState(view), [view])
+  const sorting = useMemo<SortingState>(() => (sort ? [{ id: sort.column, desc: sort.desc }] : []), [sort])
   const listHref = `/orders${searchParams.size ? `?${searchParams}` : ""}`
   if (view) keptFilters.push(`view=${encodeURIComponent(view)}`)
 
@@ -264,7 +247,6 @@ export function OrderList({
         id: "workOrderNo",
         accessorFn: (order) => order.workOrderNo,
         header: ({ column }) => <OrderTableColumnHeader column={column} title="İş No" />,
-        filterFn: textFilter((order) => order.workOrderNo),
         cell: ({ row, table }) => (
           <Link
             href={orderDetailHref(row.original.id, listHrefOf(table))}
@@ -278,7 +260,6 @@ export function OrderList({
         id: "vehicle",
         accessorFn: (order) => `${order.vehicle.plate} ${order.vehicle.brand} ${order.vehicle.model}`,
         header: ({ column }) => <OrderTableColumnHeader column={column} title="Araç" />,
-        filterFn: textFilter((order) => `${order.vehicle.plate} ${order.vehicle.brand} ${order.vehicle.model}`),
         cell: ({ row }) => {
           const order = row.original
           return (
@@ -292,7 +273,6 @@ export function OrderList({
         id: "customer",
         accessorFn: (order) => `${customerName(order.customer)} ${order.customer.phone}`,
         header: ({ column }) => <OrderTableColumnHeader column={column} title="Müşteri" />,
-        filterFn: textFilter((order) => `${customerName(order.customer)} ${order.customer.phone}`),
         cell: ({ row }) => {
           const order = row.original
           const name = customerName(order.customer)
@@ -305,35 +285,26 @@ export function OrderList({
       },
       status: {
         id: "status",
-        accessorFn: statusSearch,
-        header: ({ column }) => <OrderTableColumnHeader column={column} title="Durum" />,
-        filterFn: textFilter(statusSearch),
+        accessorFn: (order) => order.status,
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Durum" kind="stage" />,
         cell: ({ row }) => <DashOrderStatus status={row.original.status} />,
       },
       payment: {
         id: "payment",
         accessorFn: (order) => PAYMENT_STATUS[order.paymentStatus as keyof typeof PAYMENT_STATUS]?.label ?? order.paymentStatus,
-        header: ({ column }) => <OrderTableColumnHeader column={column} title="Ödeme" />,
-        filterFn: textFilter((order) => PAYMENT_STATUS[order.paymentStatus as keyof typeof PAYMENT_STATUS]?.label ?? order.paymentStatus),
+        header: ({ column }) => <OrderTableColumnHeader column={column} title="Ödeme" kind="stage" />,
         cell: ({ row }) => <PaymentText status={row.original.paymentStatus} />,
       },
       invoice: {
         id: "invoice",
-        accessorFn: invoiceSearch,
+        accessorFn: (order) => order.invoiceNo,
         header: ({ column }) => <OrderTableColumnHeader column={column} title="Fatura" />,
-        filterFn: textFilter(invoiceSearch),
         cell: ({ row }) => <InvoiceCell invoiceNo={row.original.invoiceNo} missing={row.original.invoiceMissing} />,
       },
       total: {
         id: "total",
         accessorFn: (order) => (order.hasPrice ? order.grandTotal : null),
-        sortingFn: (a, b) => {
-          const left = a.original.hasPrice ? a.original.grandTotal : Number.NEGATIVE_INFINITY
-          const right = b.original.hasPrice ? b.original.grandTotal : Number.NEGATIVE_INFINITY
-          return left - right
-        },
         header: ({ column }) => <OrderTableColumnHeader column={column} title="Toplam" align="right" kind="number" />,
-        filterFn: textFilter((order) => (order.hasPrice ? formatTRY(order.grandTotal) : "")),
         meta: { align: "right" },
         cell: ({ row }) => (
           <div className="text-right font-semibold text-foreground tabular-nums whitespace-nowrap">
@@ -345,22 +316,18 @@ export function OrderList({
         id: "dates",
         accessorFn: (order) => order.createdAt,
         header: ({ column }) => <OrderTableColumnHeader column={column} title="Giriş tarihi" kind="date" />,
-        filterFn: textFilter((order) => formatDate(order.createdAt)),
         cell: ({ row }) => <span className="whitespace-nowrap text-[13px] tabular-nums text-muted-foreground">{formatDate(row.original.createdAt)}</span>,
       },
       delivery: {
         id: "delivery",
         accessorFn: (order) => order.estimatedDeliveryAt,
-        sortUndefined: "last",
         header: ({ column }) => <OrderTableColumnHeader column={column} title="Tahmini teslim" kind="date" />,
-        filterFn: textFilter((order) => order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : ""),
         cell: ({ row }) => <span className="whitespace-nowrap text-[13px] tabular-nums text-muted-foreground">{row.original.estimatedDeliveryAt ? formatDate(row.original.estimatedDeliveryAt) : "—"}</span>,
       },
       technician: {
         id: "technician",
-        accessorFn: technicianSearch,
+        accessorFn: (order) => order.assignedTechnicianName,
         header: ({ column }) => <OrderTableColumnHeader column={column} title="Teknisyen" />,
-        filterFn: textFilter(technicianSearch),
         cell: ({ row }) => (
           <TechnicianAssign
             orderId={row.original.id}
@@ -381,7 +348,6 @@ export function OrderList({
         id: "actions",
         enableSorting: false,
         enableHiding: false,
-        enableColumnFilter: false,
         header: () => <span className="text-xs font-medium text-muted-foreground">İşlem</span>,
         cell: ({ row, table }) => (
           <div className="flex items-center justify-end">
@@ -402,20 +368,23 @@ export function OrderList({
   const table = useReactTable({
     data: orders,
     columns,
-    state: { sorting, columnFilters, columnVisibility },
-    onSortingChange: (updater: Updater<SortingState>) => updateView("sorting", updater),
-    onColumnFiltersChange: (updater: Updater<ColumnFiltersState>) => updateView("columnFilters", updater),
+    state: { sorting, columnVisibility },
+    // Sıralama ve filtre sunucuda; tablo yalnız gelen satırları çizer (#831).
+    manualSorting: true,
+    enableSortingRemoval: true,
+    onSortingChange: (updater: Updater<SortingState>) => {
+      const next = typeof updater === "function" ? updater(sorting) : updater
+      const [first] = next
+      setSort(first ? { column: first.id, desc: first.desc } : null)
+    },
     onColumnVisibilityChange: (updater: Updater<VisibilityState>) => updateView("columnVisibility", updater),
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getRowId: (order) => order.id,
     meta: { listHref },
   })
 
   const visibleOrders = table.getRowModel().rows.map((row) => row.original)
   const isTruncated = totalCount > orders.length
-  const hasLocalView = sorting.length > 0 || columnFilters.length > 0
   const footer =
     nextLimit !== null ? (
       <Button
@@ -433,7 +402,7 @@ export function OrderList({
       </Button>
     ) : isTruncated ? (
       <p className="text-sm text-muted-foreground">
-        En yeni {maxRows} kayıt gösteriliyor. Daha eskileri için arama veya filtre kullanın.
+        {sort ? `Sıralamanın ilk ${maxRows} kaydı gösteriliyor.` : `En yeni ${maxRows} kayıt gösteriliyor.`} Diğerleri için arama veya filtre kullanın.
       </p>
     ) : null
 
@@ -482,11 +451,6 @@ export function OrderList({
               {isTruncated && <span className="font-normal text-muted-foreground"> / {totalCount.toLocaleString("tr-TR")}</span>}{" "}
               <span className="font-normal text-muted-foreground">araç kabulü</span>
             </p>
-            {isTruncated && hasLocalView && (
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Sıralama ve kolon araması yalnız yüklenen {orders.length} kayıtta geçerli.
-              </p>
-            )}
           </div>
           <div className="flex items-center gap-2">
             {view && (
@@ -579,9 +543,7 @@ export function OrderList({
               ) : (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                    {isTruncated
-                      ? "Yüklenen kayıtlarda eşleşme yok — tüm kayıtlarda aramak için üstteki aramayı kullanın"
-                      : "Bu filtrelere uyan araç kabulü yok"}
+                    Bu filtrelere uyan araç kabulü yok
                   </TableCell>
                 </TableRow>
               )}
