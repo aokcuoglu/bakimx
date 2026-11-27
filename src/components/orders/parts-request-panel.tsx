@@ -276,7 +276,8 @@ function PartsRequestCard({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    className="gap-2 text-destructive-strong data-highlighted:text-destructive-strong"
+                    variant="destructive"
+                    className="gap-2"
                     onClick={onCancel}
                   >
                     <Ban className="size-4" />
