@@ -7,7 +7,8 @@ import type { WorkshopPublicContact } from "@/lib/workshop-contact"
 
 interface ReceiptData {
   reference: string
-  planName: string
+  /** `describeBillingOrder` çıktısı: paket tek satır (tutar = toplam), ek özellik kalem satırları. */
+  lines: { label: string; amountMinor: number | null }[]
   cycleLabel: string
   amountMinor: number
   confirmedAt: Date | null
@@ -42,7 +43,12 @@ export function generateReceiptHtml(d: ReceiptData): string {
   ${d.address ? `<p class="muted">${escapeHtml(d.address)}</p>` : ""}
   ${renderWorkshopContactHtml(d.contact, { fontSize: "12px", color: "#64748b" })}
   <table>
-    <tr><td>${escapeHtml(d.planName)} paketi (${escapeHtml(d.cycleLabel)})</td><td class="r">${escapeHtml(tl)}</td></tr>
+    ${d.lines
+      .map(
+        (l) =>
+          `<tr><td>${escapeHtml(l.label)} (${escapeHtml(d.cycleLabel)})</td><td class="r">${escapeHtml(l.amountMinor === null ? tl : formatTRY(l.amountMinor / 100))}</td></tr>`,
+      )
+      .join("\n    ")}
     <tr class="total"><td>Toplam (KDV dahil)</td><td class="r">${escapeHtml(tl)}</td></tr>
   </table>
   <p class="muted">Bu bir bilgilendirme makbuzudur; yasal fatura ayrıca düzenlenir.</p>

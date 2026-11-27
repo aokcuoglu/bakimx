@@ -12,7 +12,7 @@ import { founderAlertEmail, paymentReceiptEmail } from "@/lib/emails/system-emai
 import { sendEmailDirect } from "@/lib/communications/sender"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
 import { getAdminEmails } from "@/lib/admin"
-import { getPlanPackage } from "@/lib/plans-catalog"
+import { describeBillingOrder } from "@/lib/billing/addon-pricing"
 import { alertHashFailureOnce } from "@/lib/tami/hash-fail-alert"
 import { isCardPaymentBlocked } from "@/lib/tami/misconfig-alert"
 
@@ -60,7 +60,9 @@ async function sendReceiptEmail(orderId: string, maskedPan: string | null, refer
     const order = await prisma.billingOrder.findUnique({
       where: { id: orderId },
       select: {
+        type: true,
         planTier: true,
+        addonLines: true,
         billingCycle: true,
         amountMinor: true,
         periodEnd: true,
@@ -78,14 +80,16 @@ async function sendReceiptEmail(orderId: string, maskedPan: string | null, refer
     const to = owner?.email || order.workshop.email
     if (!to) return
 
+    const described = describeBillingOrder(order)
     const built = paymentReceiptEmail({
       workshopName: order.workshop.name,
-      planLabel: getPlanPackage(order.planTier)?.name ?? order.planTier,
-      cycleLabel: order.billingCycle === "monthly" ? "Aylık" : "Yıllık",
+      planLabel: described.title,
+      cycleLabel: described.cycleLabel,
       amountMinor: order.amountMinor,
       maskedPan,
       periodEnd: order.periodEnd,
       reference: reference ?? orderId,
+      isAddon: order.type === "addon",
     })
 
     await sendSystemEmail({
