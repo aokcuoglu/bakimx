@@ -485,7 +485,7 @@ export function IntakeWizard({
                 {/* #196 — aracı müşteri değil başkası getirdiyse kaydedilsin.
                     Opsiyonel ve akışı tıkamayacak şekilde en alta konuldu:
                     vakaların çoğunda müşteri aracı kendi getiriyor. */}
-                <div className="rounded-lg border border-border p-3 space-y-3">
+                <div className="rounded-md border border-border p-3 space-y-3">
                   <p className="text-sm font-medium text-foreground">Aracı getiren kişi</p>
                   <p className="text-xs text-muted-foreground">
                     Aracı müşterinin kendisi getirdiyse boş bırakın.
@@ -548,7 +548,7 @@ export function IntakeWizard({
                 {vehicleInfo ? (
                   <div className="space-y-4">
                     {/* Son kayıtlı km — vurgulu referans */}
-                    <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
+                    <div className="flex items-center gap-3 rounded-md border bg-muted/40 p-3">
                       <Gauge className="h-5 w-5 shrink-0 text-primary" />
                       <div>
                         <div className="text-xs text-muted-foreground">Son kayıtlı kilometre</div>
