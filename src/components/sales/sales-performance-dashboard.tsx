@@ -158,7 +158,7 @@ export function SalesPerformanceDashboard({ report }: { report: SalesPerformance
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
               {SALES_FUNNEL_STATUSES.map((status) => (
-                <div key={status} className="rounded-lg border bg-muted/50 p-3">
+                <div key={status} className="rounded-md border bg-muted/50 p-3">
                   <p className="text-xs text-muted-foreground-strong">{FUNNEL_LABELS[status]}</p>
                   <p className="mt-1 text-xl font-bold tabular-nums text-foreground">{summary.funnel[status]}</p>
                 </div>
@@ -179,7 +179,7 @@ function MetricCard({ icon: Icon, label, value, detail }: { icon: typeof Target;
   return (
     <Card size="sm">
       <CardContent className="flex items-start gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong"><Icon className="size-4" /></div>
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary-strong"><Icon className="size-4" /></div>
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">{label}</p>
           <p className="mt-0.5 truncate text-lg font-bold tabular-nums text-foreground">{value}</p>
@@ -202,7 +202,7 @@ function TrendCard({ row }: { row: SalesAdvisorPerformance }) {
         <div className="grid min-h-52 grid-cols-4 items-end gap-3 sm:grid-cols-5" aria-label="Haftalık satış performansı grafiği">
           {row.trend.map((bucket) => (
             <div key={bucket.key} className="flex min-w-0 flex-col items-center gap-2">
-              <div className="flex h-32 w-full max-w-20 items-end justify-center gap-1 rounded-lg bg-muted/50 px-2 pt-2">
+              <div className="flex h-32 w-full max-w-20 items-end justify-center gap-1 rounded-md bg-muted/50 px-2 pt-2">
                 <div className="w-3 rounded-t bg-primary" style={{ height: bucket.newLeads === 0 ? "0" : `${Math.max(4, (bucket.newLeads / maxActivity) * 100)}%` }} aria-label={`${bucket.newLeads} yeni aday`} />
                 <div className="w-3 rounded-t bg-success" style={{ height: bucket.qualifiedInteractions === 0 ? "0" : `${Math.max(4, (bucket.qualifiedInteractions / maxActivity) * 100)}%` }} aria-label={`${bucket.qualifiedInteractions} nitelikli görüşme`} />
               </div>
@@ -233,7 +233,7 @@ function Comparison({ rows }: { rows: SalesAdvisorPerformance[] }) {
       <CardContent>
         <div className="space-y-3 md:hidden">
           {rows.map((row) => (
-            <article key={row.advisorId} className="rounded-lg border p-3">
+            <article key={row.advisorId} className="rounded-md border p-3">
               <div className="flex items-center justify-between gap-2"><p className="font-medium text-foreground">{row.name}</p><Badge variant="secondary">{rateLabel(row.actual.closingRate)}</Badge></div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                 <ValuePair label="Aday" actual={row.actual.newLeads} target={row.target.newLeads} />

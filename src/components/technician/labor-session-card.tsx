@@ -30,6 +30,7 @@ import {
   stopLaborSessionAction,
   updateLaborSessionAction,
 } from "@/app/(app)/technician/actions"
+import { formatTrTime } from "@/lib/format-date"
 
 /**
  * Teknisyen panelindeki "İşçilik Süresi" bloğu (BAK-138).
@@ -53,7 +54,7 @@ export type TechnicianLaborSessionRow = {
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
+  return formatTrTime(iso)
 }
 
 /**

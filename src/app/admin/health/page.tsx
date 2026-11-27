@@ -4,6 +4,7 @@ import { getHealthDetail } from "@/lib/ops/health"
 import { getRapidApiUsage } from "@/lib/rapidapi-quota"
 import { getGoogleMapsUsageSnapshot } from "@/lib/sales/google-maps-usage.server"
 import { cn } from "@/lib/utils"
+import { formatTrDate, formatTrDateTime } from "@/lib/format-date"
 
 export const metadata = { title: "Sistem Sağlığı · Yönetim" }
 
@@ -61,7 +62,7 @@ export default async function AdminHealthPage() {
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Son çalışma</span>
             <span className="font-medium text-foreground">
-              {summary.cronLastRunAt ? summary.cronLastRunAt.toLocaleString("tr-TR") : "Hiç"}
+              {summary.cronLastRunAt ? formatTrDateTime(summary.cronLastRunAt) : "Hiç"}
             </span>
           </div>
           <div className="flex justify-between text-sm">
@@ -79,7 +80,7 @@ export default async function AdminHealthPage() {
             <div className="pt-1 space-y-1">
               {detail.cronRuns.map((r) => (
                 <div key={r.id} className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{r.startedAt.toLocaleString("tr-TR")}</span>
+                  <span>{formatTrDateTime(r.startedAt)}</span>
                   <span>
                     {r.sent} gönderildi · {r.failed} başarısız · {r.status}
                   </span>
@@ -230,7 +231,7 @@ export default async function AdminHealthPage() {
                   </div>
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Son olay: {lastEventAt ? lastEventAt.toLocaleString("tr-TR") : "Henüz çağrı yok"}
+                  Son olay: {lastEventAt ? formatTrDateTime(lastEventAt) : "Henüz çağrı yok"}
                 </p>
               </div>
             )
@@ -258,7 +259,7 @@ export default async function AdminHealthPage() {
                   {c.type} · {c.templateKey ?? "—"} · <span className="font-mono text-xs">{c.recipient}</span>
                 </span>
                 <span className="text-right text-xs text-muted-foreground">
-                  {c.errorMessage ?? "—"} · {c.sentAt.toLocaleDateString("tr-TR")}
+                  {c.errorMessage ?? "—"} · {formatTrDate(c.sentAt)}
                 </span>
               </div>
             ))}
@@ -273,7 +274,7 @@ export default async function AdminHealthPage() {
               <div key={r.id} className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-foreground">{r.jobType}</span>
                 <span className="text-xs text-muted-foreground">
-                  {r.failedCount} başarısız · {r.executedAt.toLocaleString("tr-TR")}
+                  {r.failedCount} başarısız · {formatTrDateTime(r.executedAt)}
                 </span>
               </div>
             ))}
@@ -288,7 +289,7 @@ export default async function AdminHealthPage() {
               <div key={s.id} className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-foreground">{s.provider}</span>
                 <span className="text-xs text-muted-foreground">
-                  {s.errorMessage ?? "—"} · {s.syncedAt.toLocaleDateString("tr-TR")}
+                  {s.errorMessage ?? "—"} · {formatTrDate(s.syncedAt)}
                 </span>
               </div>
             ))}

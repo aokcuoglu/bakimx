@@ -5,6 +5,8 @@ import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { planActivationAuditMetadata } from "@/lib/admin/plan-activation-audit"
+import { resolveManualActivationPeriod } from "@/lib/admin/manual-plan-activation"
+import { manualPlanActivationSchema } from "@/lib/validations/plan-activation"
 import { computeTrialEnd, hasLifetimeLite, isSalePlanTier, normalizeAddons } from "@/lib/plan"
 import { diffAddons, extraSeatsSchema, extraVinQuotaSchema, workshopAddonsSchema } from "@/lib/validations/workshop-addons"
 import { activateBillingOrder } from "@/lib/billing/activate"
@@ -83,8 +85,6 @@ async function sendOwnerDecisionEmail(
   }
 }
 
-const STATUSES = ["trialing", "active", "past_due", "canceled"] as const
-type SubStatus = (typeof STATUSES)[number]
 
 const DEMO_STATUSES: DemoRequestStatus[] = ["new", "contacted", "qualified", "converted", "archived"]
 const SUPPORT_STATUSES: SupportRequestStatus[] = ["new", "in_progress", "resolved", "archived"]
@@ -143,12 +143,13 @@ export async function rejectWorkshop(workshopId: string): Promise<Result> {
 export async function activateWorkshopPlan(
   workshopId: string,
   tier: string,
-  status: string = "active"
+  input: unknown,
 ): Promise<Result> {
   const ctx = await requireAdminCapability("manageWorkshops")
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
   if (!isSalePlanTier(tier)) return { ok: false, error: "Geçersiz paket." }
-  if (!STATUSES.includes(status as SubStatus)) return { ok: false, error: "Geçersiz durum." }
+  const parsed = manualPlanActivationSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz dönem." }
 
   const current = await prisma.workshop.findUnique({
     where: { id: workshopId },
@@ -161,11 +162,16 @@ export async function activateWorkshopPlan(
     return { ok: false, error: "Aktif ücretli abonelik dönem ortasında değiştirilemez. Yenileme/faturalandırma akışını kullanın." }
   }
 
+  // Dönem ya da açık "süresiz" seçimi yazılır (#1040); sessiz süresiz erişim yok.
+  const period = resolveManualActivationPeriod(parsed.data, new Date())
+
   await prisma.workshop.update({
     where: { id: workshopId },
     data: {
       planTier: tier,
-      subscriptionStatus: status as SubStatus,
+      subscriptionStatus: "active",
+      billingCycle: period.billingCycle,
+      currentPeriodEnd: period.currentPeriodEnd,
       approvalStatus: "approved",
       requestedPlanTier: null,
       planRequestedAt: null,
@@ -177,7 +183,7 @@ export async function activateWorkshopPlan(
     "Workshop",
     workshopId,
     "admin_plan_activated",
-    JSON.stringify(planActivationAuditMetadata(current, tier, status))
+    JSON.stringify(planActivationAuditMetadata(current, tier, "active", period))
   )
   revalidatePath("/admin", "layout")
   return { ok: true }
