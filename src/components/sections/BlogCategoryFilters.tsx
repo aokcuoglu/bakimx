@@ -133,29 +133,23 @@ export function BlogCategoryFilters({
         onValueChange={(value) => setFilter(value as FilterValue)}
         className="gap-0"
       >
-        <TabsList
-          variant="line"
-          className={styles.filters}
-          aria-label="Yazı kategorileri"
-        >
-          <TabsTrigger
-            value="all"
-            data-active={filter === "all"}
-            className={styles.filterChip}
+        <div className="border-x border-t border-(--blog-rail) p-5 lg:p-10">
+          <TabsList
+            variant="line"
+            size="control"
+            className="w-full flex-wrap justify-start gap-2"
+            aria-label="Yazı kategorileri"
           >
-            #Tümü
-          </TabsTrigger>
-          {BLOG_CATEGORIES.map((category) => (
-            <TabsTrigger
-              key={category}
-              value={category}
-              data-active={filter === category}
-              className={styles.filterChip}
-            >
-              #{BLOG_CATEGORY_LABELS[category]}
+            <TabsTrigger value="all">
+              #Tümü
             </TabsTrigger>
-          ))}
-        </TabsList>
+            {BLOG_CATEGORIES.map((category) => (
+              <TabsTrigger key={category} value={category}>
+                #{BLOG_CATEGORY_LABELS[category]}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
         {(["all", ...BLOG_CATEGORIES] as const).map((value) => (
           <TabsContent key={value} value={value} className="m-0">

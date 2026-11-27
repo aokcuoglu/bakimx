@@ -8,6 +8,7 @@ test("deneme kalan iş gününü gösterir ve satıştan kalkan paket adını an
     trialEndsAt: new Date(Date.now() + 10 * 86_400_000), currentPeriodEnd: null,
   })
   expect(plan.accessTier).toBe(TRIAL_ACCESS_TIER)
+  expect(plan.includedSeats).toBe(5)
   const status = getSidebarPlanStatus(plan, "Servis Paketi")
   expect(status.title).toMatch(/iş günü kaldı/)
   expect(status.detail).toBe("Ücretsiz deneme")

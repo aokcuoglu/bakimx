@@ -16,6 +16,7 @@ import {
   type OfferResponse, type Quote,
 } from "@/lib/parts/supplier-price-responses"
 import { transactionalAvailability } from "./supplier-offer-availability"
+import { formatTrDateTime } from "@/lib/format-date"
 
 type PartInfo = { name: string; sku?: string | null; brand?: string | null }
 type SelectedOffer = { product: GetirbakimExactProduct; offer: GetirbakimOffer }
@@ -172,7 +173,7 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
             <div className="flex justify-between gap-4"><dt>KDV</dt><dd className="tabular-nums">{formatTRY(quote.totals.vatKurus)}</dd></div>
             <div className="flex justify-between gap-4"><dt>Kargo (KDV dahil)</dt><dd className="tabular-nums">{quote.totals.shippingKurus === 0 ? "Ücretsiz" : formatTRY(quote.totals.shippingKurus)}</dd></div>
           </dl>
-          <div className="flex items-center justify-between gap-4"><div><p className="text-sm font-medium">Bağlayıcı toplam</p><p className="text-xs text-muted-foreground">KDV ve kargo dahil · {new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" }).format(new Date(quote.expiresAt))} tarihine kadar · Cari hesaba yazılır</p></div><p className="text-lg font-semibold tabular-nums">{formatTRY(quote.totals.grossKurus)}</p></div>
+          <div className="flex items-center justify-between gap-4"><div><p className="text-sm font-medium">Bağlayıcı toplam</p><p className="text-xs text-muted-foreground">KDV ve kargo dahil · {formatTrDateTime(quote.expiresAt)} tarihine kadar · Cari hesaba yazılır</p></div><p className="text-lg font-semibold tabular-nums">{formatTRY(quote.totals.grossKurus)}</p></div>
           {selected.product.discountBps > 0 ? <p className="text-xs text-success-strong">{formatDiscountPercent(selected.product.discountBps)} {GETIRBAKIM_SOURCE_LABEL} iskontosu bu fiyata dahildir.</p> : null}
           <p className="text-xs text-muted-foreground">Parçalar atölyenin Ayarlar › Genel sayfasındaki adresine gönderilir.</p>
           {orderId && orderItemId ? <Button variant="foreground" className="w-full" disabled={pending || procurementExists} onClick={() => void confirmPurchase()}>{pending ? "İşleniyor…" : "Bu fiyatla satın almayı onayla"}</Button> : <p className="text-xs text-muted-foreground">Satın alma yalnız araç kabul kaleminden başlatılabilir.</p>}
@@ -194,7 +195,7 @@ function OfferCard({ offer, quantity, selected, quoted, disabled, onSelect }: { 
   const transactional = transactionalAvailability(offer, quantity)
   const date = offer.lastSyncedAt ? new Date(offer.lastSyncedAt) : null
   const synced = date && Number.isFinite(date.getTime())
-    ? new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" }).format(date)
+    ? formatTrDateTime(date)
     : null
   return (
     <div className={`rounded-lg border bg-card p-3 ${selected ? "border-primary ring-2 ring-primary/20" : "border-border"}`}>

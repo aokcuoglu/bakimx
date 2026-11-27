@@ -1,4 +1,5 @@
 import { describe, expect, it, test } from "bun:test"
+import { lineVatKurus, rowTaxBps } from "@/lib/orders/line-vat"
 import { calculateOrderTotals, computeDiscountedTotals, calculateOrderTotalsFromMinimal, formatOrderSummary, formatTaxRate } from "@/lib/totals"
 
 test("decimal quantities round each line to integer kuruş", () => {
@@ -200,5 +201,23 @@ describe("computeDiscountedTotals (İndirim/KDV önizlemesi)", () => {
     // Eski önizleme tüm matrahı vergilendirirdi: (174690-10000)*%20 = 32938; doğrusu yalnız tabi payı.
     const saved = calculateOrderTotals(items, { discountAmount: 10000, taxRate: 2000 })
     expect(saved.taxAmount).toBeLessThan(32938)
+  })
+})
+
+describe("satır KDV gösterimi Genel Toplam ile tutar (#1007)", () => {
+  const row = { type: "part", name: "Parça", quantity: 1, unitPrice: null, totalPrice: 50_000 }
+
+  it("belgede oran yok: satır KDV'si 0, brüt = Genel Toplam", () => {
+    const t = calculateOrderTotals([row], { taxRate: null })
+    const vat = lineVatKurus(50_000, rowTaxBps(null, false)) ?? 0
+    expect(vat).toBe(t.grandTotal - t.subtotal)
+    expect(50_000 + vat).toBe(t.grandTotal)
+  })
+
+  it("belgede %20: satır KDV'si Genel Toplam - Ara Toplam", () => {
+    const t = calculateOrderTotals([row], { taxRate: 2000 })
+    const vat = lineVatKurus(50_000, rowTaxBps(2000, false)) ?? 0
+    expect(vat).toBe(t.grandTotal - t.subtotal)
+    expect(50_000 + vat).toBe(60_000)
   })
 })
