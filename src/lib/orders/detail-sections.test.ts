@@ -3,6 +3,7 @@ import {
   ORDER_SECTIONS,
   isOrderSectionId,
   pickActiveSection,
+  lastHashSegment,
   sectionForLegacyTab,
   sectionUrl,
   urlWithout,
@@ -100,5 +101,19 @@ describe("pickActiveSection", () => {
 
   test("boş liste ilk bölüme düşer", () => {
     expect(pickActiveSection([], 120)).toBe("ozet")
+  })
+})
+
+describe("#996 — derin bağlantı çözümü", () => {
+  test("bölüm kimliğiyle yazılan ?tab= de bölüme gider (Özet hariç)", () => {
+    expect(sectionForLegacyTab("odeme")).toBe("odeme")
+    expect(sectionForLegacyTab("kalemler")).toBe("kalemler")
+    expect(sectionForLegacyTab("ozet")).toBeNull()
+  })
+
+  test("önbellekten gelen çift hash'te son parçayı okur", () => {
+    expect(lastHashSegment("#odeme")).toBe("odeme")
+    expect(lastHashSegment("#kalemler#odeme")).toBe("odeme")
+    expect(lastHashSegment("")).toBe("")
   })
 })

@@ -33,6 +33,20 @@ const REMOVED_PATHS = [
   "src/components/sections/StandOutSection.tsx",
   // hero-slides.ts'in tek kullandığı görseller (#830).
   "public/landing/hero",
+  // Hiçbir yerde render edilmeyen eski landing bölümleri, duyuru barı ve varlıkları (#937).
+  "src/components/sections/hero-workshop.tsx",
+  "src/components/sections/HeroAskBar.tsx",
+  "src/components/sections/AnnouncementBar.tsx",
+  "src/components/sections/BeforeAfterSection.tsx",
+  "src/components/sections/SegmentsSection.tsx",
+  "src/components/sections/TrustOnboardingSection.tsx",
+  "src/components/sections/PartnersStrip.tsx",
+  "src/components/sections/FinalCTASection.tsx",
+  "src/components/sections/DemoFormSection.tsx",
+  "src/components/sections/DeviceFrame.tsx",
+  "src/lib/landing/announcement.ts",
+  "public/landing/screens/dashboard.png",
+  "public/landing/hero-video-poster.jpg",
 ]
 
 const REMOVED_REFERENCES = [
@@ -62,6 +76,8 @@ const REMOVED_REFERENCES = [
   "welcomeLiteEmail",
   "lite_cta_click",
   "lite_registered",
+  "announcementDismissScript",
+  "HeroWorkshop",
 ]
 
 function collectFiles(dir: string, files: string[] = []): string[] {

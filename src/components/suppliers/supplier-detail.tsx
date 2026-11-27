@@ -182,7 +182,7 @@ export function SupplierDetail({
                 <div className="space-y-1.5">
                   {supplier.parts.map((p) => (
                     <Link key={p.id} href={`/parts/${p.id}`}>
-                      <div className="flex items-center justify-between flex-wrap gap-y-1 p-2.5 bg-muted rounded-lg text-sm hover:bg-muted transition-colors">
+                      <div className="flex items-center justify-between flex-wrap gap-y-1 p-2.5 bg-muted rounded-md text-sm hover:bg-muted transition-colors">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="font-medium text-foreground truncate">{p.name}</span>
                           {p.isDefaultSupplier && (
@@ -225,7 +225,7 @@ export function SupplierDetail({
                 <div className="space-y-1.5">
                   {criticalParts.map((p) => (
                     <Link key={p.id} href={`/parts/${p.id}`}>
-                      <div className="flex items-center justify-between p-2.5 bg-destructive/10 rounded-lg text-sm hover:bg-destructive/20 transition-colors">
+                      <div className="flex items-center justify-between p-2.5 bg-destructive/10 rounded-md text-sm hover:bg-destructive/20 transition-colors">
                         <div className="flex items-center gap-2 min-w-0">
                           <AlertTriangle className="size-3.5 text-destructive-strong shrink-0" />
                           <span className="font-medium text-foreground truncate">{p.name}</span>

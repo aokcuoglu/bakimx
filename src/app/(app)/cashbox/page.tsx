@@ -121,7 +121,7 @@ function KpiCard({ label, value, icon: Icon, accent, accentBg }: { label: string
     <div className="rounded-lg border border-border bg-card p-3.5">
       <div className="flex items-center justify-between mb-1">
         <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider truncate">{label}</span>
-        <div className={`size-7 rounded-lg ${accentBg} flex items-center justify-center`}>
+        <div className={`size-7 rounded-md ${accentBg} flex items-center justify-center`}>
           <Icon className={`size-3.5 ${accent}`} />
         </div>
       </div>
@@ -307,7 +307,7 @@ function MethodBreakdownSection({ breakdown }: { breakdown: import("@/lib/cashbo
             return (
               <div key={b.method} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-7 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                  <div className="size-7 rounded-md bg-muted flex items-center justify-center shrink-0">
                     <Icon className="size-3.5 text-muted-foreground" />
                   </div>
                   <div className="min-w-0">

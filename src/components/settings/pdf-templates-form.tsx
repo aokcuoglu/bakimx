@@ -151,7 +151,7 @@ export function PdfTemplatesForm({ settings }: { settings: SettingsData }) {
                 </FormItem>
               )}
             />
-            <div className="p-3 rounded-lg bg-muted text-xs text-muted-foreground space-y-1">
+            <div className="p-3 rounded-md bg-muted text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">Kullanılabilir değişkenler:</p>
               <p>{"{{workOrderNo}}, {{workshopName}}, {{customerName}}, {{vehiclePlate}}, {{vehicleBrand}}, {{vehicleModel}}, {{date}}, {{customerComplaint}}, {{totalAmount}}"}</p>
               <p>{"{{#each items}}...{{/each}} — kalemler listesi"}</p>
@@ -194,7 +194,7 @@ export function PdfTemplatesForm({ settings }: { settings: SettingsData }) {
                 </FormItem>
               )}
             />
-            <div className="p-3 rounded-lg bg-muted text-xs text-muted-foreground space-y-1">
+            <div className="p-3 rounded-md bg-muted text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">Kullanılabilir değişkenler:</p>
               <p>{"{{workshopName}}, {{customerName}}, {{vehiclePlate}}, {{vehicleBrand}}, {{vehicleModel}}, {{lastMileage}}, {{lastServiceDate}}"}</p>
               <p>{"{{#each orders}}...{{/each}} — servis geçmişi listesi"}</p>
@@ -237,7 +237,7 @@ export function PdfTemplatesForm({ settings }: { settings: SettingsData }) {
                 </FormItem>
               )}
             />
-            <div className="p-3 rounded-lg bg-muted text-xs text-muted-foreground space-y-1">
+            <div className="p-3 rounded-md bg-muted text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">Kullanılabilir değişkenler:</p>
               <p>{"{{receiptNo}}, {{workshopName}}, {{customerName}}, {{date}}, {{amount}}, {{paymentMethod}}, {{workOrderNo}}, {{workshopPhone}}"}</p>
             </div>
