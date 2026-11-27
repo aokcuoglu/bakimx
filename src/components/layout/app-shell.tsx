@@ -12,6 +12,7 @@ import {
 } from "@/components/layout/workspace-switcher"
 import { SettingsNav } from "@/components/settings/settings-nav"
 import { SettingsTrail, SettingsTrailProvider } from "@/components/settings/settings-trail"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import settingsSidebarStyles from "@/components/settings/settings-sidebar.module.css"
 import shellStyles from "@/components/layout/app-shell.module.css"
 import { DashboardProductTour } from "@/components/dashboard/dashboard-product-tour"
@@ -615,50 +616,53 @@ function NavMenuItem({
 
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton
-        onClick={() => setExpanded(!expanded)}
-        isActive={isActive}
-        tooltip={isLocked && item.feature ? `${item.label} · ${lockedFeatureLabels(item.feature).description}` : item.label}
-        className={cn(APP_NAV_TEXT, isSoon && !isActive && "opacity-60")}
-      >
-        <Icon className="size-4" />
-        <span className="flex-1">{item.label}</span>
-        {isLocked && <LockKeyhole className="size-3.5 shrink-0" />}
-        {isLocked && (
-          <Badge variant="secondary" className="h-4 px-1.5 text-[9px] group-data-[collapsible=icon]:hidden">
-            {item.feature && <LockedBadgeText feature={item.feature} />}
-          </Badge>
-        )}
-        {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-      </SidebarMenuButton>
-      {expanded && (
-        <SidebarMenuSub>
-          <SidebarMenuSubItem>
-            <SidebarMenuSubButton asChild isActive={pathname === item.href} className="text-sm leading-5 tracking-[-0.005em]">
-              <Link href={item.href}>
-                <Icon className="size-3.5" />
-                <span>{item.label} Özeti</span>
-                {isLocked && <LockKeyhole className="size-3" />}
-              </Link>
-            </SidebarMenuSubButton>
-          </SidebarMenuSubItem>
-          {item.children!.map((child) => {
-            const ChildIcon = child.icon
-            const isChildActive = pathname === child.href || pathname.startsWith(`${child.href}/`)
-            return (
-              <SidebarMenuSubItem key={child.href}>
-                <SidebarMenuSubButton asChild isActive={isChildActive}>
-                  <Link href={child.href}>
-                    <ChildIcon className="size-3.5" />
-                    <span>{child.label}</span>
-                    {isLocked && <LockKeyhole className="size-3" />}
-                  </Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-            )
-          })}
-        </SidebarMenuSub>
-      )}
+      <Collapsible open={expanded} onOpenChange={setExpanded}>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton
+            isActive={isActive}
+            tooltip={isLocked && item.feature ? `${item.label} · ${lockedFeatureLabels(item.feature).description}` : item.label}
+            className={cn(APP_NAV_TEXT, isSoon && !isActive && "opacity-60")}
+          >
+            <Icon className="size-4" />
+            <span className="flex-1">{item.label}</span>
+            {isLocked && <LockKeyhole className="size-3.5 shrink-0" />}
+            {isLocked && (
+              <Badge variant="secondary" className="h-4 px-1.5 text-[9px] group-data-[collapsible=icon]:hidden">
+                {item.feature && <LockedBadgeText feature={item.feature} />}
+              </Badge>
+            )}
+            {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            <SidebarMenuSubItem>
+              <SidebarMenuSubButton asChild isActive={pathname === item.href} className="text-sm leading-5 tracking-[-0.005em]">
+                <Link href={item.href}>
+                  <Icon className="size-3.5" />
+                  <span>{item.label} Özeti</span>
+                  {isLocked && <LockKeyhole className="size-3" />}
+                </Link>
+              </SidebarMenuSubButton>
+            </SidebarMenuSubItem>
+            {item.children!.map((child) => {
+              const ChildIcon = child.icon
+              const isChildActive = pathname === child.href || pathname.startsWith(`${child.href}/`)
+              return (
+                <SidebarMenuSubItem key={child.href}>
+                  <SidebarMenuSubButton asChild isActive={isChildActive}>
+                    <Link href={child.href}>
+                      <ChildIcon className="size-3.5" />
+                      <span>{child.label}</span>
+                      {isLocked && <LockKeyhole className="size-3" />}
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              )
+            })}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </Collapsible>
     </SidebarMenuItem>
   )
 }

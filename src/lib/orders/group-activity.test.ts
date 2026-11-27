@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { countActivityRows, groupActivity, limitActivityRows, runTimeRange, summarizeRun } from "./group-activity"
+import { countActivityRows, groupActivity, limitActivityRows, restActivityRows, runTimeRange, summarizeRun } from "./group-activity"
 
 let n = 0
 const e = (at: string, actor = "Ali", action = "photo.add") => ({ id: `e${++n}`, at, actor, action })
@@ -134,4 +134,23 @@ test("summarizeRun: bilinmeyen eylemde etiketler farklıysa genel sayım", () =>
 test("runTimeRange: aynı dakikada tek saat, değilse aralık (eskiden yeniye)", () => {
   expect(runTimeRange([{ at: "2026-11-26T15:59:50Z" }, { at: "2026-11-26T15:59:10Z" }])).toBe("18:59")
   expect(runTimeRange([{ at: "2026-11-26T16:05:00Z" }, { at: "2026-11-26T15:59:10Z" }])).toBe("18:59–19:05")
+})
+
+test("restActivityRows limitActivityRows'un tamamlayıcısıdır; bölünen gün continued olur", () => {
+  const days = groupActivity(
+    [
+      e("2026-11-26T08:05:00Z", "Ali", "a.x"),
+      e("2026-11-26T08:04:00Z", "Veli", "b.x"),
+      e("2026-11-26T08:03:00Z", "Ali", "c.x"),
+      e("2026-11-25T08:00:00Z", "Ali", "d.x"),
+    ],
+    NOW,
+  )
+  const rest = restActivityRows(days, 2)
+  expect(rest.map((d) => [d.key, d.rows.length, d.continued])).toEqual([
+    ["2026-11-26", 1, true],
+    ["2026-11-25", 1, false],
+  ])
+  expect(countActivityRows(limitActivityRows(days, 2)) + countActivityRows(rest)).toBe(countActivityRows(days))
+  expect(restActivityRows(days, 4)).toEqual([])
 })
