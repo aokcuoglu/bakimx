@@ -16,7 +16,8 @@ import { DetailPanel, DetailPill, DetailEmpty, DetailItem, OrderPaymentPill, det
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import type { OrderStatusKey } from "@/lib/constants"
 import { formatTRY } from "@/lib/format"
-import { liraToKurus, percentToBps, applyDiscountKurus, applyTaxBps, addKurus } from "@/lib/money"
+import { liraToKurus, percentToBps } from "@/lib/money"
+import { computeDiscountedTotals } from "@/lib/totals"
 import { PAYMENT_METHOD_LABELS } from "@/lib/cashbox/status"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
@@ -102,6 +103,8 @@ export type Totals = {
   laborTotal: number
   externalLaborTotal: number
   subtotal: number
+  /** KDV'ye tabi kalemlerin net toplamı (önizleme için). */
+  taxableSubtotal: number
   discountAmount: number
   taxAmount: number
   grandTotal: number
@@ -539,6 +542,7 @@ export function OrderPricingDialog({
   loading: boolean
   error?: string
 }) {
+  const preview = previewDraftTotals(totals, metaDraft)
   return (
     <Dialog open={editingMeta} onOpenChange={(open) => { if (!loading) setEditingMeta(open) }}>
       <DialogContent>
@@ -556,8 +560,8 @@ export function OrderPricingDialog({
             <Label htmlFor="order-tax">KDV Oranı (%)</Label>
             <Input id="order-tax" type="number" min="0" max="100" step="0.1" value={metaDraft.taxRate} onChange={(e) => setMetaDraft({ ...metaDraft, taxRate: e.target.value })} placeholder="0" />
           </div>
-          <SummaryRow label="KDV Tutarı" value={totals.hasAnyPrice && (Number(metaDraft.taxRate) || 0) > 0 ? formatTRY(applyTaxBps(applyDiscountKurus(totals.subtotal, liraToKurus(Number(metaDraft.discountAmount) || 0)), percentToBps(Number(metaDraft.taxRate) || 0))) : "—"} muted />
-          <div className="border-t pt-2"><SummaryRow label="Genel Toplam" value={totals.hasAnyPrice ? formatTRY(calculatePreviewTotal(totals.subtotal, metaDraft)) : "—"} bold large /></div>
+          <SummaryRow label="KDV Tutarı" value={totals.hasAnyPrice && preview.taxAmount > 0 ? formatTRY(preview.taxAmount) : "—"} muted />
+          <div className="border-t pt-2"><SummaryRow label="Genel Toplam" value={totals.hasAnyPrice ? formatTRY(preview.grandTotal) : "—"} bold large /></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setEditingMeta(false)} disabled={loading}>İptal</Button>
@@ -568,11 +572,14 @@ export function OrderPricingDialog({
   )
 }
 
-// subtotal is kuruş; draft fields are TRY (lira) / percent. Preview only.
-function calculatePreviewTotal(subtotal: number, draft: { discountAmount: string; taxRate: string }) {
-  const afterDiscount = applyDiscountKurus(subtotal, liraToKurus(Number(draft.discountAmount) || 0))
-  const tax = applyTaxBps(afterDiscount, percentToBps(Number(draft.taxRate) || 0))
-  return addKurus(afterDiscount, tax)
+// Draft fields are TRY (lira) / percent. Preview only — same helper as the saved total.
+function previewDraftTotals(totals: Totals, draft: { discountAmount: string; taxRate: string }) {
+  return computeDiscountedTotals(
+    totals.subtotal,
+    totals.taxableSubtotal,
+    liraToKurus(Number(draft.discountAmount) || 0),
+    percentToBps(Number(draft.taxRate) || 0),
+  )
 }
 
 function SummaryRow({
