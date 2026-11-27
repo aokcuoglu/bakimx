@@ -8,6 +8,8 @@ import { WorkshopActions } from "@/app/admin/workshop-actions"
 import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisition-sources"
 import { planLabel } from "@/lib/plan"
 import { formatTrDate } from "@/lib/format-date"
+import { isIndefiniteAccess } from "@/lib/admin/manual-plan-activation"
+import { IndefiniteAccessBadge } from "@/app/admin/indefinite-access-badge"
 
 export interface AdminWorkshopRow {
   id: string
@@ -60,6 +62,7 @@ function Row({ w, canManage }: { w: AdminWorkshopRow; canManage: boolean }) {
             <Badge variant="outline" className={cn("text-[11px]", SUB_BADGE[w.subscriptionStatus] ?? "bg-muted")}>
               {SUB_LABELS[w.subscriptionStatus] ?? w.subscriptionStatus}
             </Badge>
+            {isIndefiniteAccess(w) && <IndefiniteAccessBadge />}
             <Badge variant="outline" className="text-[11px] bg-muted text-muted-foreground">
               {planLabel(w.planTier)}
             </Badge>
@@ -73,6 +76,7 @@ function Row({ w, canManage }: { w: AdminWorkshopRow; canManage: boolean }) {
             {w.ownerEmail ?? "—"}
             <span> · {ACQUISITION_SOURCE_LABELS[w.acquisitionSource] ?? w.acquisitionSource}</span>
             {trial && <span> · deneme bitiş: {trial}</span>}
+            {w.subscriptionStatus === "active" && w.currentPeriodEnd && <span> · dönem bitişi: {formatTrDate(w.currentPeriodEnd)}</span>}
           </p>
           <Link
             href={`/admin/workshops/${w.id}`}
