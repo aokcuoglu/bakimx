@@ -87,7 +87,7 @@ test("toplu tamamlama sunucu tarafında kiracı izolasyonunu korur", () => {
 })
 
 test("toplu kaldırma yalnız bu iş emrinin tamamlanan kalemlerini geri alır", () => {
-  expect(CHECKLIST).toContain("Tümünü kaldır")
+  expect(CHECKLIST).toContain("Tümünü geri al")
   expect(CHECKLIST).toContain("uncompleteAllOrderItemsAction")
 
   const start = ACTIONS.indexOf("export async function uncompleteAllOrderItemsAction")

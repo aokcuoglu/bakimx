@@ -949,3 +949,58 @@ describe("form kontrolleri, düğmeler ve akordeon çağrı yerinde ezilmez (#88
     expect(offenders).toEqual([])
   })
 })
+
+/**
+ * #1002 — durum rozetinin tonu `Badge` variant'ından gelir: `success-tint`,
+ * `warning-tint`, `destructive-tint`, `primary-tint`. Çağrı yeri elle
+ * `bg-success/10 text-success-strong` kurmaz; ton/çerçeve/koyu tema tek yerde
+ * (badge.tsx) ve kontrastı theme-tokens.test.ts ölçer.
+ */
+describe("Badge tonu variant'tan gelir (#1002)", () => {
+  const BADGE_TONE = /^(?:bg|border)-(?:success|warning|destructive|primary)\/(?:\d+|\[[^\]]+\])$/
+  const badgeHits = (tag: Pick<JsxOpeningTag, "classLiterals">) =>
+    tag.classLiterals.flatMap((literal) =>
+      literal
+        .split(/\s+/)
+        .filter(Boolean)
+        .filter((token) => BADGE_TONE.test(utilityCore(token)))
+    )
+
+  test("kapı elle yazılmış ton ezmesini yakalar, variant'a dokunmaz", () => {
+    const bad = [
+      '<Badge variant="outline" className="bg-success/10 text-success-strong">',
+      '<Badge className="border-warning/20 bg-warning/10">',
+      '<Badge variant="outline" className={ok ? "bg-primary/10" : "bg-destructive/10"}>',
+      `<Badge className="${"dark:bg-" + "success/20"}">`,
+    ]
+    for (const source of bad) {
+      const tags = jsxOpeningTags(source, ["Badge"])
+      expect(tags.length).toBeGreaterThan(0)
+      expect(badgeHits(tags[0])).not.toEqual([])
+    }
+    const good = [
+      '<Badge variant="success-tint" className="text-[11px]">',
+      '<Badge variant="outline" className="bg-muted text-muted-foreground">',
+      '<Badge variant={ok ? "primary-tint" : "warning-tint"}>',
+    ]
+    for (const source of good) {
+      for (const tag of jsxOpeningTags(source, ["Badge"])) expect(badgeHits(tag)).toEqual([])
+    }
+  })
+
+  test("Badge çağrı yerlerinde bg-/border-<ton>/N ezmesi yok: tint variant kullan", () => {
+    const offenders: string[] = []
+    eachTsx(
+      SRC,
+      (path, source) => {
+        const file = relative(SRC, path).split(sep).join("/")
+        for (const tag of jsxOpeningTags(source, ["Badge"], path)) {
+          const hits = badgeHits(tag)
+          if (hits.length) offenders.push(`${file}:${tag.line} <Badge> ${hits.join(", ")} (success-tint / warning-tint / destructive-tint / primary-tint variant'ını kullan)`)
+        }
+      },
+      (path) => `${relative(SRC, path)}${sep}`.startsWith(`components${sep}ui${sep}`)
+    )
+    expect(offenders).toEqual([])
+  })
+})

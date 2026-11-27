@@ -11,9 +11,9 @@ import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ensureChecklistSeeded } from "@/lib/technician/checklist-seed"
-import { actorCan } from "@/lib/roles"
 import { getLaborCatalog } from "@/lib/labor/queries"
-import { ORDER_ITEM_PERMISSION } from "@/lib/technician/item-editing"
+import { hasWorkshopFeature } from "@/lib/plan"
+import { workScreenPermissions } from "@/lib/technician/work-screen"
 import { technicianOrderDetailWhere } from "@/lib/technician/order-visibility"
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 
@@ -310,11 +310,9 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
         }))}
         suppliers={suppliers}
         laborCatalog={laborCatalog}
-        // İki eksende kullanılır: dış alım silme kuralının rol ekseni (BAK-83 —
-        // teslime hazır iş emrinde kaydı yalnız düzenleyebilenler kaldırır) ve
-        // "Parça & İşçilik" düzenleyicisinin görünürlüğü (BAK-141). İkisi de aynı
-        // izne (`order.edit`) dayanır; bkz. src/lib/technician/item-editing.ts.
-        canEditOrder={actorCan(user, ORDER_ITEM_PERMISSION)}
+        // Kutucuk görünürlüğü, birincil eylem ve düzenleyici izni tek yerden:
+        // sunucu kapıları ayrıca action'larda durur (bkz. work-screen.ts).
+        permissions={workScreenPermissions(user, !!workshop && hasWorkshopFeature(workshop, "procurement"))}
       />
     </AppShell>
   )

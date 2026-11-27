@@ -83,10 +83,12 @@ test("galeri filtresi ile grup filtresi birbirinin tümleyenidir", () => {
   expect(galleryIds.length + groupedIds.length).toBe(photos.length)
 })
 
-const DETAIL_SOURCE = readFileSync(
-  join(import.meta.dir, "../../components/technician/technician-order-detail.tsx"),
-  "utf8"
-)
+const DETAIL_SOURCE = [
+  "../../components/technician/technician-order-detail.tsx",
+  "../../components/technician/work-screen/purchase-cards.tsx",
+]
+  .map((file) => readFileSync(join(import.meta.dir, file), "utf8"))
+  .join("\n")
 
 test("teknisyen ekranı dış alım karelerini bu yardımcıdan okur", () => {
   expect(DETAIL_SOURCE).toContain("groupPurchasePhotos(order.photos)")

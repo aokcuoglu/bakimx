@@ -19,6 +19,7 @@ kullanıcı kararı 22 Kasım 2026. **Telefonda iOS dokunma ölçüsü, `md` (76
 | Button `inline` | metin boyu | metin boyu | satır içi bağlantı / eylem (#889): dolgu ve yükseklik yok, yazı boyutu ve satır yüksekliği çevreden (`text-[length:inherit]`); boyutu ata öğe ya da çocuk `<span>` verir |
 | Button `row` | en az 44px | en az 36px | çok satırlı liste satırı, seçenek kartı, bırakma alanı (#889): sola hizalı, metin kırılır, `px-3 py-2.5`, 8px köşe (`rounded-md`), 15 / 14px metin; genişliği çağrı yeri verir (`w-full`, `flex-1 min-w-0`) |
 | Button `tile` | içerik | içerik | görsel küçük resmi / fotoğraf ekle karosu (#889): dolgusuz, `flex-col`, taşanı kırpar, 8px köşe; oranı çağrı yeri verir (`aspect-square w-full`) |
+| Button `kiosk` | en az 96px | en az 96px | teknisyen iş ekranı kutucuğu (#1036): `flex-col`, ikon (24px) üstte, 15 / 14px etiket altta, 10px köşe (`rounded-lg`); eldivenli tek dokunuş için tek ölçek, genişliği çağrı yeri verir (`w-full`) |
 | Input / InputGroup `default` | 44px | 36px | 10px köşe (md+ 8px, `--control-radius`), 17px / 15px metin — her form, diyalog ve arama alanı |
 | Input / InputGroup `sm` | 36px | 32px | köşe ve metin `default` ile aynı — yoğun filtre araç çubuğu, tablo başlığı süzgeci |
 | Input / InputGroup `compact` | 32px | 28px | 16px / 14px metin (`--control-fs-field-xs`) — tablo satırı içi düzenleyici |
