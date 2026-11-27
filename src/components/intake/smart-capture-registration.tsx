@@ -239,7 +239,7 @@ export function SmartCaptureRegistration() {
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardContent className="flex items-start gap-3 py-5">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary-strong">
                 <User className="size-5" />
               </div>
               <div className="min-w-0">
@@ -257,7 +257,7 @@ export function SmartCaptureRegistration() {
 
           <Card>
             <CardContent className="flex items-start gap-3 py-5">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary-strong">
                 <Car className="size-5" />
               </div>
               <div className="min-w-0">
@@ -288,7 +288,7 @@ export function SmartCaptureRegistration() {
           <CardContent className="py-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary-strong">
                   <ClipboardList className="size-5" />
                 </div>
                 <div>
@@ -384,7 +384,7 @@ export function SmartCaptureRegistration() {
                 width={1200}
                 height={600}
                 unoptimized
-                className="max-h-48 rounded-lg border border-border object-contain"
+                className="max-h-48 rounded-md border border-border object-contain"
               />
             </CardContent>
           </Card>
@@ -513,7 +513,7 @@ export function SmartCaptureRegistration() {
             </div>
 
             <div
-              className="w-full max-w-md rounded-lg border-2 border-dashed border-border bg-muted/50 p-8 cursor-pointer hover:bg-muted/60 hover:bg-primary/5 transition-colors"
+              className="w-full max-w-md rounded-md border-2 border-dashed border-border bg-muted/50 p-8 cursor-pointer hover:bg-muted/60 hover:bg-primary/5 transition-colors"
               onClick={() => fileInputRef.current?.click()}
             >
               <div className="flex flex-col items-center gap-3">

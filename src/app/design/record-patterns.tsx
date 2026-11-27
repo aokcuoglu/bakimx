@@ -95,7 +95,7 @@ export function RecordPatterns() {
               <HighlightCard label="Son işlem" value="Bugün" />
             </div>
           </section>
-          <section className="space-y-2"><h4 className="text-sm font-medium text-muted-foreground">Hareketler</h4><div className="flex items-center gap-2 rounded-xl border p-3"><Activity className="size-4 text-muted-foreground" /><span>Örnek servis kaydı açıldı</span></div></section>
+          <section className="space-y-2"><h4 className="text-sm font-medium text-muted-foreground">Hareketler</h4><div className="flex items-center gap-2 rounded-md border p-3"><Activity className="size-4 text-muted-foreground" /><span>Örnek servis kaydı açıldı</span></div></section>
         </TabsContent>
         <TabsContent value="activity" className="min-h-64 p-5"><p>Örnek servis kaydı açıldı.</p></TabsContent>
         <TabsContent value="emails" className="min-h-64 p-5"><p className="text-muted-foreground">Henüz e-posta yok.</p></TabsContent>
