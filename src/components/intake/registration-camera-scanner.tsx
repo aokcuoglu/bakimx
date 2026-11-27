@@ -59,7 +59,7 @@ function RegistrationCaptureGuide() {
   return (
     <div className="mx-auto max-w-md rounded-xl bg-black/70 p-3 text-white ring-1 ring-white/15 backdrop-blur-md">
       <div className="flex items-center gap-3">
-        <span className="flex size-14 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/20">
+        <span className="flex size-14 shrink-0 items-center justify-center rounded-md bg-white/10 ring-1 ring-white/20">
           <ScanLine className="size-7" />
         </span>
         <div className="min-w-0">
