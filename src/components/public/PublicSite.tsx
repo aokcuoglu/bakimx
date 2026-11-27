@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { motion, useScroll } from "framer-motion";
-import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { ScrollToTopButton } from "@/components/site-assistant/scroll-to-top-button";
 import styles from "./public-site.module.css";
 
@@ -28,8 +26,6 @@ export function PublicSite({
   frame?: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null);
-  const reduced = usePrefersReducedMotion();
-  const { scrollYProgress } = useScroll();
   useEffect(() => {
     if (root.current) root.current.dataset.publicReady = "true";
   }, []);
@@ -42,13 +38,7 @@ export function PublicSite({
       data-landing={landing || undefined}
     >
       {landing && frame ? <div className={styles.landingFrame} aria-hidden="true" /> : null}
-      {!reduced && (
-        <motion.div
-          aria-hidden
-          className={styles.progress}
-          style={{ scaleX: scrollYProgress }}
-        />
-      )}
+      <div aria-hidden className={styles.progress} />
       <ScrollToTopButton />
       {children}
     </div>

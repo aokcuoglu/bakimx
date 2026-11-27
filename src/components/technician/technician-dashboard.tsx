@@ -32,6 +32,7 @@ import { TechnicianQuickActions } from "@/components/technician/technician-quick
 import { surface } from "@/components/dashboard/surface"
 import { Plate } from "@/components/shared/plate"
 import { DashboardPagination, useDashboardPage } from "@/components/dashboard/dashboard-pagination"
+import { trDayKey } from "@/lib/format-date"
 
 type DashboardFilter = "all" | "in_progress" | "waiting" | "completed" | "today_delivery"
 
@@ -154,14 +155,14 @@ export function TechnicianDashboard({
   const { page: completedPage, pageCount: completedPageCount, pageItems: completedPageItems, setPage: setCompletedPage } =
     useDashboardPage(recentCompletedOrders, 10)
 
-  const today = new Date().toLocaleDateString("en-CA")
+  const today = trDayKey(new Date())
   // Liste sunucudan zaten kapsamına göre gelir: saha rolünde anahtar kapalıyken
   // atölyenin tamamı, açıkken yalnız kendi atamaları; yöneticide seçili teknisyen.
   const selectedCompletedOrders = orders.filter((o) =>
-    o.status === "delivered" && o.completedAt && new Date(o.completedAt).toLocaleDateString("en-CA") === today
+    o.status === "delivered" && o.completedAt && trDayKey(o.completedAt) === today
   )
   const todayDeliveryOrders = orders.filter((o) =>
-    o.estimatedDeliveryAt && new Date(o.estimatedDeliveryAt).toLocaleDateString("en-CA") === today && !["delivered", "cancelled"].includes(o.status)
+    o.estimatedDeliveryAt && trDayKey(o.estimatedDeliveryAt) === today && !["delivered", "cancelled"].includes(o.status)
   )
 
   const visibleSections = activeFilter === "all"

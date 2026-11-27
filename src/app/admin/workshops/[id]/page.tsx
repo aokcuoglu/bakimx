@@ -31,6 +31,7 @@ import {
   type WorkshopDetailSearchParams,
   WORKSHOP_ORDER_PAGE_SIZE,
 } from "@/lib/admin/workshop-detail-query"
+import { formatTrDate } from "@/lib/format-date"
 
 export const metadata = { title: "İş Yeri Detayı · Yönetim" }
 
@@ -236,7 +237,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
           <Field label="Döngü" value={workshop.billingCycle ? CYCLE_LABELS[workshop.billingCycle] : null} />
           <Field
             label="Dönem bitişi"
-            value={workshop.currentPeriodEnd ? workshop.currentPeriodEnd.toLocaleDateString("tr-TR") : null}
+            value={workshop.currentPeriodEnd ? formatTrDate(workshop.currentPeriodEnd) : null}
           />
           <Field
             label="Talep edilen paket"
@@ -367,7 +368,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
                 <TableBody>
                   {orders.map((order) => (
                     <TableRow key={order.id}>
-                      <TableCell>{order.createdAt.toLocaleDateString("tr-TR")}</TableCell>
+                      <TableCell>{formatTrDate(order.createdAt)}</TableCell>
                       <TableCell className="font-medium">{planLabel(order.planTier)}</TableCell>
                       <TableCell>{CYCLE_LABELS[order.billingCycle] ?? order.billingCycle}</TableCell>
                       <TableCell className="text-right font-medium">{formatMinor(order.amountMinor)}</TableCell>

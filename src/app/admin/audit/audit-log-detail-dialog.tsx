@@ -74,7 +74,7 @@ export function AuditLogDetailDialog({
           <DialogDescription>Denetim kaydının bağlamı ve işlem sırasında kaydedilen değerler.</DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-3 rounded-lg border bg-muted/30 p-3 sm:grid-cols-2">
+        <div className="grid gap-3 rounded-md border bg-muted/30 p-3 sm:grid-cols-2">
           <ContextItem label="İş yeri" value={workshopName} />
           <ContextItem label="Yapan" value={actorLabel} />
           <ContextItem label="Tarih" value={dateLabel} />
@@ -87,7 +87,7 @@ export function AuditLogDetailDialog({
               <h3 id="audit-change-heading" className="font-semibold text-foreground">Değişiklik karşılaştırması</h3>
               <p className="text-xs text-muted-foreground">İşlemden önceki ve sonraki değerler alan bazında gösterilir.</p>
             </div>
-            <div className="overflow-hidden rounded-lg border">
+            <div className="overflow-hidden rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -113,7 +113,7 @@ export function AuditLogDetailDialog({
         {metadata.details.length > 0 && (
           <section className="space-y-2" aria-labelledby="audit-detail-heading">
             <h3 id="audit-detail-heading" className="font-semibold text-foreground">Ayrıntılar</h3>
-            <dl className="grid overflow-hidden rounded-lg border sm:grid-cols-2">
+            <dl className="grid overflow-hidden rounded-md border sm:grid-cols-2">
               {metadata.details.map((detail) => (
                 <div key={detail.key} className="min-w-0 space-y-1 border-b p-3 last:border-b-0 sm:border-r sm:even:border-r-0">
                   <dt className="text-xs text-muted-foreground">{detail.label}</dt>
@@ -127,7 +127,7 @@ export function AuditLogDetailDialog({
         {metadata.raw && (
           <section className="space-y-2" aria-labelledby="audit-raw-heading">
             <h3 id="audit-raw-heading" className="font-semibold text-foreground">Ham kayıt ayrıntısı</h3>
-            <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg border bg-muted/30 p-3 font-mono text-xs text-foreground">{metadata.raw}</pre>
+            <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-md border bg-muted/30 p-3 font-mono text-xs text-foreground">{metadata.raw}</pre>
           </section>
         )}
 

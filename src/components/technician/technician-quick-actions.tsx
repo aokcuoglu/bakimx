@@ -48,7 +48,7 @@ export function TechnicianQuickActions() {
           >
             <span
               data-slot="icon-box"
-              className="inline-flex size-12 shrink-0 items-center justify-center rounded-xl sm:size-14"
+              className="inline-flex size-12 shrink-0 items-center justify-center rounded-md sm:size-14"
             >
               <Icon className="size-6 sm:size-7" aria-hidden="true" />
             </span>

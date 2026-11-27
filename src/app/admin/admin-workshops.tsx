@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { WorkshopActions } from "@/app/admin/workshop-actions"
 import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisition-sources"
 import { planLabel } from "@/lib/plan"
+import { formatTrDate } from "@/lib/format-date"
 
 export interface AdminWorkshopRow {
   id: string
@@ -43,7 +44,7 @@ const APPROVAL_LABELS: Record<string, string> = { pending: "Onay bekliyor", appr
 const SUB_LABELS: Record<string, string> = { trialing: "Denemede", active: "Aktif", past_due: "Ödeme gecikti", canceled: "İptal" }
 
 function Row({ w, canManage }: { w: AdminWorkshopRow; canManage: boolean }) {
-  const trial = w.trialEndsAt ? new Date(w.trialEndsAt).toLocaleDateString("tr-TR") : null
+  const trial = w.trialEndsAt ? formatTrDate(w.trialEndsAt) : null
 
   return (
     <div className="rounded-lg border bg-card p-4">

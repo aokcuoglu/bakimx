@@ -37,6 +37,25 @@
   transform-origin: left;
   z-index: 60;
   pointer-events: none;
+  /* Okuma ilerlemesi: saf CSS kaydırma zaman çizelgesi (JS yok, framer-motion yok).
+     Desteklemeyen tarayıcıda çubuk gizli kalır — başlangıç ölçeği 0. */
+  transform: scaleX(0);
+  display: none;
+}
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .progress {
+      display: block;
+      animation: public-read-progress linear both;
+      animation-duration: auto;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+@keyframes public-read-progress {
+  to {
+    transform: scaleX(1);
+  }
 }
 .site :global(main) {
   overflow: clip;

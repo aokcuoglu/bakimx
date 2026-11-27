@@ -159,7 +159,7 @@ export function SalesAdvisorManagement({
         </Form>
 
         {inviteUrl && (
-          <div className="mt-4 flex flex-col gap-2 rounded-lg border border-success/20 bg-success/10 p-3 sm:flex-row sm:items-center">
+          <div className="mt-4 flex flex-col gap-2 rounded-md border border-success/20 bg-success/10 p-3 sm:flex-row sm:items-center">
             <p className="min-w-0 flex-1 truncate text-sm text-success-strong">{inviteUrl}</p>
             <Button type="button" variant="outline" size="sm" onClick={copyInvite}>
               {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
