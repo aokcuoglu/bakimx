@@ -25,6 +25,8 @@ const NO_BORDER_VARIANTS = [
   "on-photo-ghost",
   "destructive-ghost",
   "on-photo-scrim",
+  "tint-ghost",
+  "success-ghost",
 ] as const
 
 // Basılma efekti `translate` değil `transform` yazar (#819): call-site'lar
@@ -48,8 +50,11 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
           "text-muted-foreground hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:text-muted-foreground dark:hover:bg-muted/50",
+        // Ölçüm (#1003; kart / sayfa / bg-muted, hover dahil): açık hover /20
+        // 4.54 / 4.12 / 4.20 idi, /14 ile 5.1 / 4.6 / 4.7; koyu /20 + hover /30
+        // bg-muted'da 3.4'e iniyordu, koyuda dinlenme ve hover /10 (4.59 muted).
         destructive:
-          "bg-destructive/10 text-destructive-strong hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+          "bg-destructive/10 text-destructive-strong hover:bg-destructive/14 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:hover:bg-destructive/10 dark:focus-visible:ring-destructive/40",
         success:
           "bg-success text-success-foreground hover:bg-success/90 focus-visible:ring-success/20",
         warning:
@@ -64,7 +69,7 @@ const buttonVariants = cva(
         // className'den değil.
         // İkincil yıkıcı eylem (İptal, Pasif Yap): outline çerçevesi, kırmızı ton.
         "destructive-outline":
-          "border border-destructive/20 bg-card text-destructive-strong hover:bg-destructive/10 aria-expanded:bg-destructive/10 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-input/30 dark:hover:bg-destructive/20 dark:focus-visible:ring-destructive/40",
+          "border border-destructive/20 bg-card text-destructive-strong hover:bg-destructive/10 aria-expanded:bg-destructive/10 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-input/30 dark:hover:bg-destructive/10 dark:focus-visible:ring-destructive/40",
         // Birincil tonlu seçili / önerilen eylem. Metin -strong: tonlu zeminde
         // çıplak text-primary AA'yı geçmez (BAK-160). Ölçüm (#925; kart /
         // sayfa / bg-muted): açık /10 6.06 / 5.46 / 5.59, hover /20
@@ -79,6 +84,14 @@ const buttonVariants = cva(
         // bg-muted üstünde AA'nın altına iner.
         "destructive-ghost":
           "text-destructive-strong hover:bg-destructive/10 hover:text-destructive-strong aria-expanded:bg-destructive/10 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+        // Dilim 3 (#1003). Renkli hayalet eylem: çerçevesiz, dinlenirken birincil
+        // (satır içi "ekle / değiştir / aç") ya da başarı tonunda (tamamla / onayla);
+        // hover'da aynı tonun /10 zemini. Metin -strong: tonlu hover zemininde
+        // çıplak text-primary AA'yı geçmez (BAK-160).
+        "tint-ghost":
+          "text-primary-strong hover:bg-primary/10 hover:text-primary-strong aria-expanded:bg-primary/10 focus-visible:border-primary/40 focus-visible:ring-primary/20",
+        "success-ghost":
+          "text-success-strong hover:bg-success/10 hover:text-success-strong aria-expanded:bg-success/10 focus-visible:border-success/40 focus-visible:ring-success/20",
         // Dikkat isteyen ama engellemeyen seçim (düşük güvenli OCR önerisi):
         // sarı çerçeveli, sarı tonlu zemin, -strong metin.
         "warning-tint":

@@ -418,11 +418,11 @@ function ChecklistSection({
             </Button>
             <Button
               type="button"
-              variant="ghost"
+              variant="tint-ghost"
               size="xs"
               onClick={() => state.completeCategory(category)}
               disabled={remaining === 0 || bulkPending}
-              className="gap-1 text-primary hover:text-primary"
+              className="gap-1"
             >
               {bulkPending ? <BrandSpinner size={12} className="!flex-row !gap-0" /> : <ListChecks className="size-3" />}
               Tümünü işaretle
@@ -563,12 +563,12 @@ function RemovedChecklistItems({
               {!locked && (
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="tint-ghost"
                   size="xs"
                   disabled={state.busyIds.has(item.id)}
                   aria-label={`"${item.description}" maddesini geri al`}
                   onClick={() => state.restore(item)}
-                  className="shrink-0 text-primary"
+                  className="shrink-0"
                 >
                   <Undo2 className="size-3.5" />
                   Geri al
