@@ -1,9 +1,13 @@
-import { expect, test } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import {
   formatAddonMinor,
   addonFeaturesFor,
   computeAddonProrationMinor,
   describeBillingOrder,
+  evaluateAddonOrderEligibility,
+  isAddonPeriodOpen,
+  isPerBranchAddon,
+  isReleasableExpiredAddonOrder,
   getAddonPriceMinor,
   isAddonOrderKey,
   parseAddonOrderLines,
@@ -81,4 +85,64 @@ test("formatAddonMinor: tam liralar kuruşsuz, kuruş yalnız sıfır değilse",
   expect(norm(formatAddonMinor(399_000))).toBe("₺3.990")
   expect(norm(formatAddonMinor(21_280))).toBe("₺212,80")
   expect(norm(formatAddonMinor(21_250))).toBe("₺212,50")
+})
+
+describe("ek özellik uygunluğu (#829)", () => {
+  const ok = {
+    isAccountWorkshop: true,
+    subscriptionStatus: "active",
+    currentPeriodEnd: inDays(10),
+    now,
+    items: [{ key: "vinLookup" as const, owned: false }],
+    pending: null,
+  }
+  const reason = (over: Partial<typeof ok>) => {
+    const r = evaluateAddonOrderEligibility({ ...ok, ...over })
+    return r.ok ? "ok" : r.reason
+  }
+
+  test("her kapı kendi nedenini döndürür", () => {
+    expect(reason({})).toBe("ok")
+    expect(reason({ isAccountWorkshop: false })).toBe("not_account")
+    expect(reason({ subscriptionStatus: "trial" })).toBe("no_open_period")
+    expect(reason({ currentPeriodEnd: null })).toBe("no_open_period")
+    expect(reason({ currentPeriodEnd: inDays(-1) })).toBe("no_open_period")
+    expect(reason({ currentPeriodEnd: now })).toBe("no_open_period")
+    expect(reason({ items: [{ key: "vinLookup", owned: true }] })).toBe("already_owned")
+    expect(reason({ pending: "own" })).toBe("pending_own")
+    expect(reason({ pending: "tax" })).toBe("pending_tax")
+  })
+
+  test("hata iletileri Türkçe ve ürün adını taşır", () => {
+    const r = evaluateAddonOrderEligibility({ ...ok, items: [{ key: "vinLookup", owned: true }] })
+    expect(!r.ok && r.error).toBe("Şaseden parça zaten hesabınızda açık.")
+  })
+
+  test("birim katalogdan: yalnız şube kalemi çok adetli olabilir", () => {
+    expect(isPerBranchAddon("multiBranch")).toBe(true)
+    expect(isPerBranchAddon("vinLookup")).toBe(false)
+    expect(isPerBranchAddon("ocrIntake")).toBe(false)
+  })
+
+  test("dönemi bitmiş + canlı işlemsiz bekleyen ek özellik siparişi serbest bırakılır", () => {
+    const o = { type: "addon", status: "pending_payment" }
+    expect(isReleasableExpiredAddonOrder(o, inDays(-1), [], now)).toBe(true)
+    expect(isReleasableExpiredAddonOrder(o, null, [], now)).toBe(true)
+    expect(isReleasableExpiredAddonOrder(o, inDays(-1), [{ status: "failed" }, { status: "expired" }], now)).toBe(true)
+    // açık dönemde bekleyen sipariş eskisi gibi engeller
+    expect(isReleasableExpiredAddonOrder(o, inDays(5), [], now)).toBe(false)
+    // canlı / tamamlanmış kart işlemi varsa dokunulmaz
+    for (const status of ["initiated", "callback_received", "completed"]) {
+      expect(isReleasableExpiredAddonOrder(o, inDays(-1), [{ status }], now)).toBe(false)
+    }
+    // paket siparişi hiç serbest bırakılmaz
+    expect(isReleasableExpiredAddonOrder({ type: "renewal", status: "pending_payment" }, inDays(-1), [], now)).toBe(false)
+  })
+
+  test("isAddonPeriodOpen: yalnız aktif ve bitmemiş dönem", () => {
+    expect(isAddonPeriodOpen({ subscriptionStatus: "active", currentPeriodEnd: inDays(1) }, now)).toBe(true)
+    expect(isAddonPeriodOpen({ subscriptionStatus: "active", currentPeriodEnd: inDays(-1) }, now)).toBe(false)
+    expect(isAddonPeriodOpen({ subscriptionStatus: "trial", currentPeriodEnd: inDays(1) }, now)).toBe(false)
+    expect(isAddonPeriodOpen(null, now)).toBe(false)
+  })
 })

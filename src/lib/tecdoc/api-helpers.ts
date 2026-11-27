@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { featureLockedMessage, hasWorkshopFeature } from "@/lib/plan"
 import { rateLimit } from "@/lib/rate-limit"
-import { getWorkshopQuotaContext, type WorkshopQuotaContext } from "@/lib/rapidapi-quota"
+import { resolveWorkshopQuotaContext, type WorkshopQuotaContext } from "@/lib/rapidapi-quota"
 import { TecdocError } from "./types"
 
 /** Shared auth + feature gate + rate limit for the /api/tecdoc/* routes. */
@@ -26,7 +26,7 @@ export async function tecdocRouteGuard(): Promise<NextResponse | WorkshopQuotaCo
     )
   }
 
-  return getWorkshopQuotaContext(workshop)
+  return resolveWorkshopQuotaContext(workshop)
 }
 
 export function tecdocErrorResponse(err: unknown): NextResponse {

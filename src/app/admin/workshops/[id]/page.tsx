@@ -5,6 +5,7 @@ import { isIndefiniteAccess } from "@/lib/admin/manual-plan-activation"
 import { ArrowLeft, ChevronLeft, ChevronRight, Handshake } from "lucide-react"
 import { can, getAdminContext } from "@/lib/admin"
 import { prisma } from "@/lib/db"
+import { describeBillingOrder } from "@/lib/billing/addon-pricing"
 import { ADDON_VIN_LOOKUP_QUOTA, getEffectiveSeatLimit, getPlanState, hasLifetimeLite, normalizeAddons, planLabel } from "@/lib/plan"
 import { FEATURE_CATALOG } from "@/lib/feature-catalog"
 import { formatMinor } from "@/lib/billing/pricing"
@@ -323,6 +324,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
               extraVinQuota={workshop.extraVinQuota}
               addonBaseQuota={ADDON_VIN_LOOKUP_QUOTA}
               allUnlockedReason={allUnlockedReason}
+              branchCount={workshop.organizationId ? await prisma.workshop.count({ where: { organizationId: workshop.organizationId, kind: "customer" } }) : 1}
             />
           ) : (
             <>
@@ -379,7 +381,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
                   {orders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell>{formatTrDate(order.createdAt)}</TableCell>
-                      <TableCell className="font-medium">{planLabel(order.planTier)}</TableCell>
+                      <TableCell className="font-medium">{describeBillingOrder(order).title}</TableCell>
                       <TableCell>{CYCLE_LABELS[order.billingCycle] ?? order.billingCycle}</TableCell>
                       <TableCell className="text-right font-medium">{formatMinor(order.amountMinor)}</TableCell>
                       <TableCell>

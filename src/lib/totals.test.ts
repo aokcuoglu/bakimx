@@ -1,6 +1,6 @@
 import { describe, expect, it, test } from "bun:test"
 import { lineVatKurus, rowTaxBps } from "@/lib/orders/line-vat"
-import { calculateOrderTotals, calculateOrderTotalsFromMinimal, formatOrderSummary, formatTaxRate } from "@/lib/totals"
+import { calculateOrderTotals, computeDiscountedTotals, calculateOrderTotalsFromMinimal, formatOrderSummary, formatTaxRate } from "@/lib/totals"
 
 test("decimal quantities round each line to integer kuruş", () => {
   const totals = calculateOrderTotals([
@@ -182,6 +182,25 @@ describe("satır bazlı KDV", () => {
     expect(
       calculateOrderTotalsFromMinimal([minimal(40_000)], { taxRate: 2000 }).grandTotal,
     ).toBe(48_000)
+  })
+})
+
+describe("computeDiscountedTotals (İndirim/KDV önizlemesi)", () => {
+  test("karışık KDV'li/KDV'siz kalem + indirimde önizleme kayıtlı Genel Toplam ile aynı", () => {
+    const items = [
+      { type: "part", name: "a", quantity: 1, unitPrice: 100000, totalPrice: 100000, includeVat: true },
+      { type: "labor", name: "b", quantity: 1, unitPrice: 50000, totalPrice: 50000, includeVat: false },
+      { type: "part", name: "c", quantity: 2, unitPrice: 12345, totalPrice: 24690, includeVat: true },
+    ]
+    for (const [discount, rate] of [[0, 2000], [10000, 2000], [33333, 1000], [500000, 2000]]) {
+      const saved = calculateOrderTotals(items, { discountAmount: discount, taxRate: rate })
+      const preview = computeDiscountedTotals(saved.subtotal, saved.taxableSubtotal, discount, rate)
+      expect(preview.grandTotal).toBe(saved.grandTotal)
+      expect(preview.taxAmount).toBe(saved.taxAmount)
+    }
+    // Eski önizleme tüm matrahı vergilendirirdi: (174690-10000)*%20 = 32938; doğrusu yalnız tabi payı.
+    const saved = calculateOrderTotals(items, { discountAmount: 10000, taxRate: 2000 })
+    expect(saved.taxAmount).toBeLessThan(32938)
   })
 })
 

@@ -85,6 +85,22 @@ function taxableBaseKurus(subtotal: number, taxableSubtotal: number, discount: n
   return Math.max(0, taxableSubtotal - discountShare)
 }
 
+/**
+ * Belge indirimi + KDV oranından (kuruş / bps) toplam hesabı — tek kaynak.
+ * `calculateOrderTotals` ve İndirim/KDV penceresinin canlı önizlemesi AYNI
+ * fonksiyondan beslenir; böylece önizleme kaydedilen Genel Toplam'dan sapmaz.
+ */
+export function computeDiscountedTotals(
+  subtotal: number,
+  taxableSubtotal: number,
+  discountAmount: number,
+  taxRate: number,
+): { afterDiscount: number; taxAmount: number; grandTotal: number } {
+  const afterDiscount = applyDiscountKurus(subtotal, discountAmount)
+  const taxAmount = applyTaxBps(taxableBaseKurus(subtotal, taxableSubtotal, discountAmount), taxRate)
+  return { afterDiscount, taxAmount, grandTotal: addKurus(afterDiscount, taxAmount) }
+}
+
 /** Line total in kuruş: explicit totalPrice wins, else unitPrice * quantity. */
 function lineTotalKurus(item: MinimalLineItem): number {
   if (item.totalPrice != null && item.totalPrice > 0) return Math.trunc(item.totalPrice)
@@ -160,14 +176,9 @@ export function calculateOrderTotals(
   const externalLaborTotal = calculateGroupTotal(items, "external_labor")
   const subtotal = sumKurus([partsTotal, laborTotal, externalLaborTotal])
   const discountAmount = Math.max(0, Math.trunc(options.discountAmount ?? 0))
-  const afterDiscount = applyDiscountKurus(subtotal, discountAmount)
   const taxRate = Math.max(0, Math.trunc(options.taxRate ?? 0))
   const taxableSubtotal = sumKurus(items.filter(isVatLiable).map(lineTotalKurus))
-  const taxAmount = applyTaxBps(
-    taxableBaseKurus(subtotal, taxableSubtotal, discountAmount),
-    taxRate,
-  )
-  const grandTotal = addKurus(afterDiscount, taxAmount)
+  const { taxAmount, grandTotal } = computeDiscountedTotals(subtotal, taxableSubtotal, discountAmount, taxRate)
 
   return {
     partsTotal,

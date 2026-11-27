@@ -6,7 +6,7 @@ import { PurchaseWizard } from "@/components/billing/purchase-wizard"
 import { formatMinor } from "@/lib/billing/pricing"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import { prisma } from "@/lib/db"
-import { getPlanPackage } from "@/lib/plans-catalog"
+import { describeBillingOrder, isReleasableExpiredAddonOrder } from "@/lib/billing/addon-pricing"
 import { getPlanState, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
 import { Button } from "@/components/ui/button"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
@@ -40,12 +40,18 @@ export default async function CheckoutPage({
 
   // createBillingOrder da aynı kuralı sunucu tarafında zorunlu kılar; bu yalnızca
   // sihirbazın 3 adımını doldurup sonda reddedilmek yerine erken ve net bir mesaj verir.
-  const pendingOrder = workshop
-    ? await prisma.billingOrder.findFirst({
+  const pendingOrders = workshop
+    ? await prisma.billingOrder.findMany({
         where: { workshopId: workshop.id, status: "pending_payment" },
         orderBy: { createdAt: "desc" },
+        include: { paymentTransactions: { select: { status: true } } },
       })
-    : null
+    : []
+  // Dönemi bitmiş ek özellik siparişi paket yenilemeyi kilitlemez; createBillingOrder iptal eder (#829).
+  const pendingOrder =
+    pendingOrders.find(
+      (o) => !isReleasableExpiredAddonOrder(o, workshop?.currentPeriodEnd ?? null, o.paymentTransactions, new Date()),
+    ) ?? null
 
   // Planı bitmiş (paywall'a takılmış) workshop'lar /settings/billing'e YÖNLENDİRİLEMEZ:
   // /settings/billing (app) grubunda olduğu için layout onları anında çıkışa atar ve
@@ -54,7 +60,7 @@ export default async function CheckoutPage({
   const planLocked = workshop ? isPlanExpiredLock(getPlanState(workshop).lockReason) : false
 
   if (pendingOrder && planLocked) {
-    const pkg = getPlanPackage(pendingOrder.planTier)
+    const described = describeBillingOrder(pendingOrder)
     const isCard = pendingOrder.method === "card"
     return (
       <main className="min-h-[100dvh] bg-background flex items-center justify-center p-6">
@@ -66,7 +72,7 @@ export default async function CheckoutPage({
                 {isCard ? "Kart ödemenizi tamamlayın" : "Bekleyen bir ödemeniz var"}
               </h1>
               <p className="text-muted-foreground mt-1">
-                {pkg?.name} ({pendingOrder.billingCycle === "monthly" ? "Aylık" : "Yıllık"}) ·{" "}
+                {described.title} ({described.cycleLabel}) ·{" "}
                 {formatMinor(pendingOrder.amountMinor)}
               </p>
               {isCard ? (
@@ -78,7 +84,7 @@ export default async function CheckoutPage({
                 <p className="text-muted-foreground mt-2">
                   Havale açıklamasına{" "}
                   <span className="font-semibold text-foreground">{pendingOrder.reference}</span>{" "}
-                  yazıp ödemenizi yaptıysanız, teyit edilince paketiniz aktifleşecek. Onay beklerken
+                  yazıp ödemenizi yaptıysanız, teyit edilince {pendingOrder.type === "addon" ? "ek özelliğiniz" : "paketiniz"} aktifleşecek. Onay beklerken
                   yeni bir talep oluşturamazsınız.
                 </p>
               )}

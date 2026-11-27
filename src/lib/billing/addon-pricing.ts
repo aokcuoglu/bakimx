@@ -146,3 +146,97 @@ export function describeBillingOrder(o: {
   const title = /paket/i.test(name) ? name : `${name} paketi`
   return { title, cycleLabel, lines: [{ label: title, amountMinor: null }] }
 }
+
+/** Ek özellik ödemesi/aktivasyonu için paket dönemi açık mı (ücretli, bitmemiş)? */
+export function isAddonPeriodOpen(
+  account: { subscriptionStatus: string | null; currentPeriodEnd: Date | null } | null,
+  now: Date,
+): boolean {
+  return (
+    !!account &&
+    account.subscriptionStatus === "active" &&
+    !!account.currentPeriodEnd &&
+    account.currentPeriodEnd.getTime() > now.getTime()
+  )
+}
+
+/** Adet yalnız şube başına satılan kalemlerde birden fazla olabilir; hesap
+ *  lisansı (`unit: "account"`) tek adettir. Birim katalogdan türetilir. */
+export function isPerBranchAddon(key: AddonOrderKey): boolean {
+  return catalogItem(key).unit === "extraBranch"
+}
+
+export type AddonOrderEligibilityInput = {
+  isAccountWorkshop: boolean
+  subscriptionStatus: string | null
+  currentPeriodEnd: Date | null
+  now: Date
+  items: readonly { key: AddonOrderKey; owned: boolean }[]
+  /** Engelleyen bekleyen sipariş: kendi atölyesi, aynı vergi no'lu başka atölye ya da yok. */
+  pending: "own" | "tax" | null
+}
+
+export type AddonOrderEligibility =
+  | { ok: true }
+  | {
+      ok: false
+      reason: "not_account" | "no_open_period" | "not_purchasable" | "already_owned" | "pending_own" | "pending_tax"
+      error: string
+    }
+
+/** Ek özellik siparişi verilebilir mi? Saf karar; DB okumaları çağıranda. */
+export function evaluateAddonOrderEligibility(i: AddonOrderEligibilityInput): AddonOrderEligibility {
+  if (!i.isAccountWorkshop) {
+    return { ok: false, reason: "not_account", error: "Ek özellikler ana şubeden satın alınır." }
+  }
+  if (!isAddonPeriodOpen({ subscriptionStatus: i.subscriptionStatus, currentPeriodEnd: i.currentPeriodEnd }, i.now)) {
+    return {
+      ok: false,
+      reason: "no_open_period",
+      error: "Ek özellik almak için önce geçerli bir Servis Paketi dönemi gerekir.",
+    }
+  }
+  for (const item of i.items) {
+    const catalog = ADDON_CATALOG.find((a) => a.key === item.key)
+    if (!catalog?.purchasable) {
+      return { ok: false, reason: "not_purchasable", error: "Bu ek özellik şu an satın alınamaz." }
+    }
+    if (item.owned) {
+      return { ok: false, reason: "already_owned", error: `${catalog.name} zaten hesabınızda açık.` }
+    }
+  }
+  if (i.pending === "own") {
+    return {
+      ok: false,
+      reason: "pending_own",
+      error: "Zaten bekleyen bir talebiniz var. Ödemeniz onaylanana kadar yeni bir talep oluşturamazsınız.",
+    }
+  }
+  if (i.pending === "tax") {
+    return {
+      ok: false,
+      reason: "pending_tax",
+      error: "Bu vergi/TC kimlik numarasına ait bekleyen bir talep zaten var.",
+    }
+  }
+  return { ok: true }
+}
+
+const LIVE_TXN_STATUSES = new Set(["initiated", "callback_received", "completed"])
+
+/**
+ * Paket dönemi bitmiş ve canlı kart işlemi olmayan bekleyen ek özellik siparişi
+ * artık tamamlanamaz (aktivasyon PERIOD_ENDED ile reddeder); yenilemeyi ve yeni
+ * siparişi engellememeli. Canlı/tamamlanmış işlemi olan sipariş iptal EDİLMEZ:
+ * para çekilmiş olabilir, ilgili akış çözmeli.
+ */
+export function isReleasableExpiredAddonOrder(
+  order: { type: string; status: string },
+  workshopPeriodEnd: Date | null,
+  txns: ReadonlyArray<{ status: string }>,
+  now: Date,
+): boolean {
+  if (order.type !== "addon" || order.status !== "pending_payment") return false
+  if (workshopPeriodEnd && workshopPeriodEnd.getTime() > now.getTime()) return false
+  return !txns.some((t) => LIVE_TXN_STATUSES.has(t.status))
+}

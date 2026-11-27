@@ -37,6 +37,8 @@ export default async function SettingsPlansPage({
           amountMinor: pendingOrder.amountMinor,
           method: pendingOrder.method,
           reference: pendingOrder.reference,
+          type: pendingOrder.type,
+          addonLines: pendingOrder.addonLines,
         }} />}
         <BillingPlanManager
           addonViews={addonViews}
