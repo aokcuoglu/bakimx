@@ -44,11 +44,15 @@ const EXTRA_SCANNED_DIRS = [
   join(SRC, "components", "site-assistant"),
   join(SRC, "app", "(site)", "destek"),
 ]
+// Paylaşılan durum bileşenleri, /design galerisi ve herkese açık paylaşım sayfası (#920 dilim 5).
+// Pazarlama/landing (`components/sections`, `components/public`) kapsam dışıdır.
+const PUBLIC_SLICE_DIRS = [join(SRC, "components", "shared"), join(SRC, "app", "design")]
+const PUBLIC_SLICE_FILES = [join(SRC, "components", "intake", "public-share-page.tsx")]
 
 // `dosya: gerekçe` — bilinçli istisna. Gerekçesiz ekleme yapma.
 const ALLOWLIST: Record<string, string> = {
-  "components/vehicles/public-vehicle-passport.tsx":
-    "Herkese açık sayfa dilimine ertelendi (#898 dilim 2); ayrı yüzey, kendi değerlendirmesi",
+  "app/design/marketing-kit.tsx":
+    "Pazarlama ölçeği vitrini (--mk-*, [--radius:1rem]); uygulama köşe kuralı bu kutulara uygulanmaz",
 }
 
 const CONTAINER_TAGS = new Set([
@@ -139,17 +143,17 @@ export function findNestedRadiusOffenders(source: string, fileName = "x.tsx"): n
 
 test("kapla aynı köşeyi taşıyan iç kutu yok (iç köşe her zaman dıştan küçük)", () => {
   const offenders: string[] = []
-  for (const dir of [...SCANNED_DIRS, ...EXTRA_SCANNED_DIRS]) {
-    // components/<ad> ile app/(app)/<ad> her özellikte birlikte bulunmaz
-    if (!existsSync(dir)) continue
-    for (const file of tsxFiles(dir)) {
-      const path = relative(SRC, file)
-      if (path in ALLOWLIST) continue
-      for (const line of findNestedRadiusOffenders(readFileSync(file, "utf8"), file)) {
-        offenders.push(
-          `${path}:${line} — iç kutu kapla aynı köşede — \`rounded-md\` kullan (docs/ui-control-sizing.md → İç içe köşe)`
-        )
-      }
+  const files = [
+    ...[...SCANNED_DIRS, ...EXTRA_SCANNED_DIRS, ...PUBLIC_SLICE_DIRS].filter((dir) => existsSync(dir)).flatMap((dir) => tsxFiles(dir)),
+    ...PUBLIC_SLICE_FILES.filter((file) => existsSync(file)),
+  ]
+  for (const file of files) {
+    const path = relative(SRC, file)
+    if (path in ALLOWLIST) continue
+    for (const line of findNestedRadiusOffenders(readFileSync(file, "utf8"), file)) {
+      offenders.push(
+        `${path}:${line} — iç kutu kapla aynı köşede — \`rounded-md\` kullan (docs/ui-control-sizing.md → İç içe köşe)`
+      )
     }
   }
   expect(offenders).toEqual([])
