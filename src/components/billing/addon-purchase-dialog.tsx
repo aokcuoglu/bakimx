@@ -1,7 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 import { useForm, useWatch } from "react-hook-form"
 import { AlertTriangle, CreditCard, Landmark } from "lucide-react"
 import { createAddonOrder } from "@/app/(app)/billing/addon-actions"
@@ -15,8 +16,8 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { priceAddonOrder, type AddonOrderKey } from "@/lib/billing/addon-pricing"
-import { formatMinor } from "@/lib/billing/pricing"
+import { formatAddonMinor, priceAddonOrder, type AddonOrderKey } from "@/lib/billing/addon-pricing"
+import { PLAN_SECTION_ID } from "@/lib/billing/addon-purchase"
 import type { HavaleInfo } from "@/lib/billing/provider"
 import { formatTrDate } from "@/lib/format-date"
 import { ADDON_CATALOG } from "@/lib/plans-catalog"
@@ -56,6 +57,7 @@ export function AddonPurchaseDialog({
   havale: HavaleInfo
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const addon = ADDON_CATALOG.find((a) => a.key === addonKey)
   const [now] = useState(() => new Date())
   const [error, setError] = useState("")
@@ -92,8 +94,13 @@ export function AddonPurchaseDialog({
   const blocked = hasPendingOrder || pricing === null
 
   function handleOpenChange(next: boolean) {
+    if (!next && loading) return
     onOpenChange(next)
-    if (!next && done) router.refresh()
+    if (!next && done) {
+      // `?addon=` kalırsa yenilemede pencere yeniden açılır; adresi temizle.
+      router.replace(`${pathname}${window.location.hash}`, { scroll: false })
+      router.refresh()
+    }
   }
 
   async function submit(values: AddonOrderValues) {
@@ -115,7 +122,7 @@ export function AddonPurchaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto sm:max-w-lg">
+      <DialogContent className="gap-5 overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{done ? "Siparişiniz" : `${addon.name} satın al`}</DialogTitle>
           <DialogDescription>
@@ -144,8 +151,11 @@ export function AddonPurchaseDialog({
                 </AlertDescription></Alert>
               )}
               {pricing === null && !hasPendingOrder && (
-                <Alert variant="destructive"><AlertDescription>
-                  Açık bir ücretli dönem bulunamadı. Önce paketinizi yenileyin.
+                <Alert variant="destructive"><AlertDescription className="space-y-2">
+                  <span className="block">Açık bir ücretli dönem bulunamadı. Önce paketinizi yenileyin.</span>
+                  <Button asChild variant="outline">
+                    <Link href={`/settings/plans#${PLAN_SECTION_ID}`} onClick={() => handleOpenChange(false)}>Pakete git</Link>
+                  </Button>
                 </AlertDescription></Alert>
               )}
               {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
@@ -155,14 +165,14 @@ export function AddonPurchaseDialog({
                   <dl className="space-y-2 text-sm">
                     <div className="flex items-baseline justify-between gap-3">
                       <dt className="font-medium">Bugün ödenecek</dt>
-                      <dd className="text-lg font-semibold">{formatMinor(pricing.amountMinor)}</dd>
+                      <dd className="text-lg font-semibold">{formatAddonMinor(pricing.amountMinor)}</dd>
                     </div>
                     <div className="flex items-baseline justify-between gap-3">
-                      <dt className="text-muted-foreground">Sonraki dönemden itibaren</dt>
-                      <dd className="font-medium">{formatMinor(pricing.fullCycleAmountMinor)}/{cycleUnit}</dd>
+                      <dt className="text-muted-foreground-strong">Sonraki dönemden itibaren</dt>
+                      <dd className="font-medium">{formatAddonMinor(pricing.fullCycleAmountMinor)}/{cycleUnit}</dd>
                     </div>
                   </dl>
-                  <p className="text-xs leading-5 text-muted-foreground">
+                  <p className="text-xs leading-5 text-muted-foreground-strong">
                     Tutar, mevcut dönemin sonuna ({formatTrDate(periodEnd)}) kadar kalan güne göre hesaplandı. Tüm tutarlar KDV dahildir.
                     {addon.includedUsage && ` Dahil: ${addon.includedUsage}.`}
                   </p>

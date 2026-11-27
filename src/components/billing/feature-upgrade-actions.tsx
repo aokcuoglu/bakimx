@@ -5,8 +5,7 @@ import Link from "next/link"
 import { ArrowRight, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { addonPurchaseHref, purchasableAddonKeyForFeature } from "@/lib/billing/addon-purchase"
-import { getAddonPriceMinor } from "@/lib/billing/addon-pricing"
-import { formatMinor } from "@/lib/billing/pricing"
+import { formatAddonMinor, getAddonPriceMinor } from "@/lib/billing/addon-pricing"
 import { addonContactMessage, type FeatureDefinition } from "@/lib/feature-catalog"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import type { GatedFeature, PlanTier } from "@/lib/plan"
@@ -61,7 +60,7 @@ export function FeatureUpgradeActions({ feature, currentTier, kind, placement, c
             </Link>
           </Button>
           <p className="text-xs text-muted-foreground">
-            Ek özellik — {formatMinor(getAddonPriceMinor(purchaseKey, "monthly"))}/ay · KDV dahil
+            Ek özellik — {formatAddonMinor(getAddonPriceMinor(purchaseKey, "monthly"))}/ay · KDV dahil
           </p>
         </div>
       )

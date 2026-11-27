@@ -11,6 +11,20 @@ export function isAddonOrderKey(v: unknown): v is AddonOrderKey {
   return typeof v === "string" && (ADDON_ORDER_KEYS as readonly string[]).includes(v)
 }
 
+/**
+ * Ek özellik tutarı gösterimi (satır, pencere, kilit yüzeyi): tam liralar
+ * kuruşsuz ("₺399", "₺3.990"), kuruş yalnız sıfır değilse ("₺212,80").
+ */
+export function formatAddonMinor(minor: number): string {
+  const whole = minor % 100 === 0
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY",
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: whole ? 0 : 2,
+  }).format(minor / 100)
+}
+
 export type AddonOrderItem = { key: AddonOrderKey; quantity: number }
 export type AddonOrderLine = {
   key: AddonOrderKey

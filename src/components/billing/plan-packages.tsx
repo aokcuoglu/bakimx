@@ -5,6 +5,7 @@ import { PriceRoll } from "./price-roll"
 import { BillingCycleToggle } from "./billing-cycle-toggle"
 import Link from "next/link"
 import { ArrowUpRight, Check, CircleCheck, Hexagon, MessageCircle, Minus, Pencil, PlusCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,9 +28,10 @@ import {
   type PlanComparisonValue,
 } from "@/lib/plans-catalog"
 import { DEFAULT_ADDON_ROW_VIEWS, type AddonRowState, type AddonRowView, type AddonRowViews } from "@/lib/billing/addon-row-state"
-import { ADDON_SECTION_ID } from "@/lib/billing/addon-purchase"
-import { isAddonOrderKey, type AddonOrderKey } from "@/lib/billing/addon-pricing"
-import { FEATURE_CATALOG } from "@/lib/feature-catalog"
+import { ADDON_SECTION_ID, PLAN_SECTION_ID } from "@/lib/billing/addon-purchase"
+import { formatAddonMinor, isAddonOrderKey, type AddonOrderKey } from "@/lib/billing/addon-pricing"
+import type { AddonLandingReason } from "@/lib/billing/addon-landing"
+import { FEATURE_CATALOG, addonContactMessage } from "@/lib/feature-catalog"
 import { PLAN_SEATS, TRIAL_INCLUDES_ADDONS, type PlanTier, type SalePlanTier } from "@/lib/plan"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import { getSupportWhatsAppUrl } from "@/lib/support-whatsapp"
@@ -120,8 +122,13 @@ const ADDON_STATE_BADGE: Record<AddonRowState, { label: string; variant: "second
   comingSoon: { label: "Yakında", variant: "secondary" },
 }
 
-/** Fiyatsız satır (yayında olmayan ya da fiyatı belirlenmemiş) "Yakında" kalır. */
-function addonBadge(addon: AddonCatalogItem, view: AddonRowView) {
+/**
+ * Ayarlarda fiyatsız satır "Yakında" kalır. Herkese açık /fiyatlar yüzeyi
+ * fiyat ve satın alma durumunu göstermez (açık fiyat takibi #1054): kapalı
+ * satırlar orada "Yakında" der.
+ */
+function addonBadge(addon: AddonCatalogItem, view: AddonRowView, presentation: "public" | "settings") {
+  if (presentation === "public" && view.state === "locked") return ADDON_STATE_BADGE.comingSoon
   return view.state === "locked" && addon.monthlyPrice === null
     ? ADDON_STATE_BADGE.comingSoon
     : ADDON_STATE_BADGE[view.state]
@@ -132,9 +139,9 @@ function AddonPrice({ addon }: { addon: AddonCatalogItem }) {
   return (
     <>
       <p className="mt-1 text-xs font-medium leading-5 text-foreground">
-        ₺{addon.monthlyPrice.toLocaleString("tr-TR")}/ay · KDV dahil
+        {formatAddonMinor(addon.monthlyPrice * 100)}/ay · KDV dahil
         {addon.yearlyPrice !== null && (
-          <span className="font-normal text-muted-foreground"> · yıllık ₺{addon.yearlyPrice.toLocaleString("tr-TR")}</span>
+          <span className="font-normal text-muted-foreground-strong"> · {formatAddonMinor(addon.yearlyPrice * 100)}/yıl</span>
         )}
       </p>
       {addon.includedUsage && <p className="text-xs leading-5 text-muted-foreground">{addon.includedUsage}</p>}
@@ -143,8 +150,9 @@ function AddonPrice({ addon }: { addon: AddonCatalogItem }) {
 }
 
 /** Satırın altında, eylem düğmesi olmayan durumların açıklaması. */
-function addonStateNote(state: AddonRowState): string | null {
+function addonStateNote(state: AddonRowState, canPurchase: boolean): string | null {
   switch (state) {
+    case "purchasable": return canPurchase ? null : "Satın alma için yöneticinizle görüşün."
     case "notAccount": return "Ana şubeden yönetilir."
     case "needsPackage": return "Ek özellik için önce paketi satın alın."
     default: return null
@@ -155,13 +163,18 @@ function AddonRow({
   addon,
   view,
   action,
+  presentation,
+  canPurchase,
 }: {
   addon: AddonCatalogItem
   view: AddonRowView
   action?: React.ReactNode
+  presentation: "public" | "settings"
+  canPurchase: boolean
 }) {
-  const badge = addonBadge(addon, view)
-  const note = addonStateNote(view.state)
+  const isSettings = presentation === "settings"
+  const badge = addonBadge(addon, view, presentation)
+  const note = isSettings ? addonStateNote(view.state, canPurchase) : null
   const closed = addon.features.filter((f) => !view.openFeatures.includes(f))
   return (
     <li className="flex items-start gap-3 px-4 py-3">
@@ -172,7 +185,7 @@ function AddonRow({
           <Badge variant={badge.variant} className={badge.className}>{badge.label}</Badge>
         </div>
         <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{addon.description}</p>
-        <AddonPrice addon={addon} />
+        {isSettings && <AddonPrice addon={addon} />}
         {note && <p className="mt-1 text-xs font-medium leading-5 text-foreground">{note}</p>}
         {view.state === "partial" && (
           <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
@@ -190,8 +203,15 @@ function AddonList({
   headingId,
   views = DEFAULT_ADDON_ROW_VIEWS,
   renderAction,
+  presentation = "public",
+  canPurchase = false,
+  notice,
 }: {
   headingId: string
+  presentation?: "public" | "settings"
+  canPurchase?: boolean
+  /** `?addon=` ile gelindi ama pencere açılmadı: neden ve çıkış yolu. */
+  notice?: { reason: AddonLandingReason; message: string }
   views?: AddonRowViews
   /** Satır eylemi yuvası (ör. satın al); yoksa satır eylemsiz kalır. */
   renderAction?: (addon: AddonCatalogItem, view: AddonRowView) => React.ReactNode
@@ -202,7 +222,9 @@ function AddonList({
       <div className="space-y-1">
         <h3 id={headingId} className="text-sm font-semibold text-foreground">Pakete dahil olmayan ek özellikler</h3>
         <p className="text-xs leading-5 text-muted-foreground">
-          {hasTrialRow
+          {presentation === "public"
+            ? "Uygulama içinden ayrıca alınır; satın alma yakında açılacak."
+            : hasTrialRow
             ? "“Denemede açık” işaretli olanları deneme süresince kullanabilirsiniz; deneme bitince yalnız “Etkin” olanlar açık kalır."
             : <>
                 Servis Paketi’nin üzerine aylık ücretle eklenir; hesabınızdaki tüm şubelerde geçerlidir.
@@ -210,6 +232,18 @@ function AddonList({
               </>}
         </p>
       </div>
+      {notice && (
+        <Alert variant="warning">
+          <AlertDescription className="space-y-2">
+            <span className="block">{notice.message}</span>
+            {notice.reason === "needsPackage" && (
+              <Button asChild variant="outline">
+                <Link href={`#${PLAN_SECTION_ID}`}>Paketi görüntüle</Link>
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
       <ul className="divide-y rounded-xl bg-card shadow-[inset_0_0_0_1px_var(--border)]">
         {ADDON_CATALOG.map((addon) => (
           <AddonRow
@@ -217,6 +251,8 @@ function AddonList({
             addon={addon}
             view={views[addon.key]}
             action={renderAction?.(addon, views[addon.key])}
+            presentation={presentation}
+            canPurchase={canPurchase}
           />
         ))}
       </ul>
@@ -310,6 +346,7 @@ export function PlanPackages({
   referralDiscountBps = 0,
   addonViews,
   onPurchaseAddon,
+  addonNotice,
 }: {
   /** `public` = /fiyatlar marketing layout. `settings` = compact in-app layout. */
   presentation?: "public" | "settings"
@@ -335,6 +372,8 @@ export function PlanPackages({
   addonViews?: AddonRowViews
   /** "Satın al" tıklanınca satın alma penceresini açar; yoksa satır eylemsiz kalır. */
   onPurchaseAddon?: (key: AddonOrderKey) => void
+  /** Ek özellik bölümünün üstünde gösterilen açıklama (bkz. `resolveAddonLanding`). */
+  addonNotice?: { reason: AddonLandingReason; message: string }
 }) {
   const isPublic = presentation === "public"
   const [billing, setBilling] = useState<BillingCycle>(currentCycle ?? (isPublic ? "monthly" : "yearly"))
@@ -427,7 +466,7 @@ export function PlanPackages({
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="min-w-0 space-y-4">
-            <div className="rounded-xl bg-card p-4 shadow-[inset_0_0_0_1px_var(--border)]">
+            <div id={PLAN_SECTION_ID} className="scroll-mt-20 rounded-xl bg-card p-4 shadow-[inset_0_0_0_1px_var(--border)]">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold leading-5 text-foreground">{PACKAGE.name}</p>
@@ -456,13 +495,16 @@ export function PlanPackages({
             </div>
             <AddonList
               headingId={ADDON_SECTION_ID}
+              presentation="settings"
+              canPurchase={canPurchase}
+              notice={addonNotice}
               views={addonViews}
               renderAction={(addon, view) => {
                 if (!canPurchase) return null
                 if (view.state === "purchasable" && isAddonOrderKey(addon.key) && onPurchaseAddon) {
                   const key = addon.key
                   return (
-                    <Button type="button" variant="foreground" disabled={hasPendingOrder} onClick={() => onPurchaseAddon(key)}>
+                    <Button type="button" variant="foreground" onClick={() => onPurchaseAddon(key)}>
                       Satın al
                       <span className="sr-only"> {addon.name}</span>
                     </Button>
@@ -471,7 +513,7 @@ export function PlanPackages({
                 if (view.state === "contact") {
                   return (
                     <Button asChild variant="outline">
-                      <Link href={getSupportWhatsAppUrl(`Merhaba, BakımX ${addon.name} ek özelliği hakkında bilgi almak istiyorum.`)} target="_blank" rel="noopener noreferrer">
+                      <Link href={getSupportWhatsAppUrl(addonContactMessage(addon.features[0]))} target="_blank" rel="noopener noreferrer">
                         İletişime geçin
                         <span className="sr-only">: {addon.name}, yeni sekmede açılır</span>
                       </Link>

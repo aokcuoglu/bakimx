@@ -554,18 +554,29 @@ export function getEffectiveSeatLimit(
 }
 
 /**
- * Ek özellik kilidinde gösterilen metin (#829): fiyatlı ek özellikler Ayarlar →
- * Paketler'den satın alınır; fiyatsız olanlar için iletişim yolu açık kalır.
+ * Ek özellik kilidinde gösterilen metin (#829): uygulama içinden satın alınabilen
+ * ek özellikler Ayarlar → Paketler'den alınır.
  */
 export const ADDON_LOCKED_MESSAGE =
-  "Bu özellik pakete dahil değildir; Ayarlar → Paketler'den ek özellik olarak satın alabilirsiniz. Bilgi için bizimle iletişime geçin."
+  "Bu özellik pakete dahil değildir. Ayarlar → Paketler’den ek özellik olarak satın alabilirsiniz."
+
+/** Uygulama içinden satılmayan ek özelliğin kilit metni: tek yol iletişimdir. */
+export const ADDON_CONTACT_LOCKED_MESSAGE = "Bu özellik pakete dahil değildir. Bilgi için bizimle iletişime geçin."
+
+/**
+ * Uygulama içinden satın alınamayan ek özellik kapıları. `ADDON_CATALOG`
+ * (`purchasable: false`) ile aynı olmalıdır; plan.test.ts eşitliği doğrular
+ * (katalog bu dosyayı içe aktardığı için buradan okunamaz).
+ */
+export const CONTACT_ONLY_ADDON_FEATURES: readonly AddonFeature[] = ["eInvoice", "multiBranch"]
 
 /** Pakette olan ama eski (Lite/Başlangıç) satırda kapalı özelliğin metni. */
 export const PACKAGE_FEATURE_LOCKED_MESSAGE = "Bu özellik paketinizde bulunmuyor."
 
 /** API route'larının 403 `feature_locked` gövdesindeki tek kaynak metin. */
 export function featureLockedMessage(feature: GatedFeature): string {
-  return isAddonFeature(feature) ? ADDON_LOCKED_MESSAGE : PACKAGE_FEATURE_LOCKED_MESSAGE
+  if (!isAddonFeature(feature)) return PACKAGE_FEATURE_LOCKED_MESSAGE
+  return CONTACT_ONLY_ADDON_FEATURES.includes(feature) ? ADDON_CONTACT_LOCKED_MESSAGE : ADDON_LOCKED_MESSAGE
 }
 
 export class PlanFeatureLockedError extends Error {

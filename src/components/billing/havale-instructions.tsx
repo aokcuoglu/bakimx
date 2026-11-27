@@ -24,11 +24,11 @@ export function HavaleInstructions({
         <div><h3 className="text-lg font-semibold">Havale talebiniz oluşturuldu</h3><p className="text-sm text-muted-foreground">{subtitle}</p></div>
       </div>
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 rounded-md border bg-muted/30 p-4 text-sm">
-        <dt className="text-muted-foreground">Tutar</dt><dd className="font-semibold">{formatMinor(amountMinor)}</dd>
-        <dt className="text-muted-foreground">Alıcı</dt><dd>{havale.accountTitle}</dd>
-        <dt className="text-muted-foreground">Banka</dt><dd>{havale.bank}</dd>
-        <dt className="text-muted-foreground">IBAN</dt><dd className="break-all font-mono">{havale.iban}</dd>
-        <dt className="text-muted-foreground">Açıklama</dt><dd className="font-mono font-semibold">{reference}</dd>
+        <dt className="text-muted-foreground-strong">Tutar</dt><dd className="font-semibold">{formatMinor(amountMinor)}</dd>
+        <dt className="text-muted-foreground-strong">Alıcı</dt><dd>{havale.accountTitle}</dd>
+        <dt className="text-muted-foreground-strong">Banka</dt><dd>{havale.bank}</dd>
+        <dt className="text-muted-foreground-strong">IBAN</dt><dd className="break-all font-mono">{havale.iban}</dd>
+        <dt className="text-muted-foreground-strong">Açıklama</dt><dd className="font-mono font-semibold">{reference}</dd>
       </dl>
       <p className="text-sm text-muted-foreground">Havale açıklamasına referans kodunu yazın.</p>
       <Button type="button" variant="outline" onClick={onClose}>Sayfaya dön</Button>

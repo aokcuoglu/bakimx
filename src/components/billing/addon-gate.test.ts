@@ -30,7 +30,6 @@ test("kompakt not: satılmayan ek özellik yeni sekmede açılan destek bağlant
   expect(html).toContain("yeni sekmede açılır")
   expect(html).not.toContain("/settings/plans")
   // Rozet span'dır; not içinde blok öğe yok (p içinde div uyarısı çıkmasın).
-  // Rozet span'dır; not içinde blok öğe yok (p içinde div uyarısı çıkmasın).
   expect(html).not.toMatch(/<p[\s>]/)
 })
 

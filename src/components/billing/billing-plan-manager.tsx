@@ -18,6 +18,7 @@ import { BillingCycleToggle } from "./billing-cycle-toggle"
 import { PlanPackages } from "@/components/billing/plan-packages"
 import type { AddonRowViews } from "@/lib/billing/addon-row-state"
 import type { AddonOrderKey } from "@/lib/billing/addon-pricing"
+import type { AddonLandingReason } from "@/lib/billing/addon-landing"
 import { ManagePlanDialog } from "@/components/billing/manage-plan-dialog"
 import { BillingUsagePanel } from "@/components/billing/billing-usage-panel"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
@@ -67,6 +68,7 @@ export function BillingPlanManager({
   referralDiscountBps = 0,
   addonViews,
   initialAddon,
+  addonNotice,
   usage,
 }: {
   ownedTier: PlanTier | null
@@ -96,6 +98,8 @@ export function BillingPlanManager({
   addonViews?: AddonRowViews
   /** `?addon=` bağlantısından gelen: satın alma penceresi açık başlar. */
   initialAddon?: AddonOrderKey
+  /** `?addon=` geldi ama pencere açılmadıysa nedeni (ek özellik bölümünde uyarı). */
+  addonNotice?: { reason: AddonLandingReason; message: string }
   usage?: { plan: PlanState; quota: WorkshopQuotaUsage }
 }) {
   const router = useRouter()
@@ -298,13 +302,13 @@ export function BillingPlanManager({
         />
       )}
 
-      {addonDialogKey && currentCycle && currentPeriodEnd && (
+      {addonDialogKey && currentPeriodEnd && (
         <AddonPurchaseDialog
           key={addonDialogKey}
           addonKey={addonDialogKey}
           open
           onOpenChange={(next) => { if (!next) setAddonDialogKey(null) }}
-          billingCycle={currentCycle}
+          billingCycle={currentCycle ?? "monthly"}
           currentPeriodEnd={currentPeriodEnd}
           hasPendingOrder={hasPendingOrder}
           defaultInvoiceTitle={defaultInvoiceTitle}

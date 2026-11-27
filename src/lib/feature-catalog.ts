@@ -30,6 +30,13 @@ const ADDON_SOON_BENEFITS = [
   "Kayıtlarınız silinmez, açıldığında kaldığınız yerden devam",
 ] as const
 
+/** Uygulama içinden satılmayan ama fiyatı belli ek özellik: tek yol iletişimdir. */
+const ADDON_CONTACT_BENEFITS = [
+  "Servis Paketi'nin üzerine ayrıca eklenir",
+  "Uygulama içinden satın alınamaz; bizimle iletişime geçin",
+  "Kayıtlarınız silinmez, açıldığında kaldığınız yerden devam",
+] as const
+
 const ADDON_DEFAULT = {
   kind: "addon" as const,
   benefits: [
@@ -183,6 +190,7 @@ export const FEATURE_CATALOG: Record<GatedFeature, FeatureDefinition> = {
   },
   multiBranch: {
     ...ADDON_DEFAULT,
+    benefits: ADDON_CONTACT_BENEFITS,
     name: "Çoklu şube",
     title: "Şubelerinizi tek merkezden yönetin",
     description: "Aynı hesapla birden fazla şube oluşturun ve aralarında geçiş yapın.",
