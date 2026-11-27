@@ -9,6 +9,8 @@ import {
   PlanWriteLockedError,
   PLAN_EXPIRED_LOCK_REASONS,
   PLAN_SEATS,
+  TRIAL_SEAT_LIMIT,
+  TRIAL_ACCESS_TIER,
   getSeatLimit,
   seatLimitMessage,
   VIN_LOOKUP_QUOTA,
@@ -23,7 +25,6 @@ import {
   ADDON_FEATURES,
   ADDON_LOCKED_MESSAGE,
   SALE_PLAN_TIERS,
-  TRIAL_ACCESS_TIER,
   TRIAL_INCLUDES_ADDONS,
   isAddonFeature,
   isSalePlanTier,
@@ -126,6 +127,17 @@ test("plaka okuma pakete dahil — ruhsat OCR ek özelliktir", () => {
 test("canWrite is true for an active in-period subscription", () => {
   const future = new Date(Date.now() + 5 * 86_400_000)
   expect(getPlanState(wsFields({ currentPeriodEnd: future })).canWrite).toBe(true)
+})
+
+test("deneme koltuk limiti paketle aynı: özellik profili premium olsa da 5 (#938)", () => {
+  const future = new Date(Date.now() + 3 * 86_400_000)
+  const trial = wsFields({ planTier: "pro", subscriptionStatus: "trialing", trialEndsAt: future })
+  const paid = wsFields({ planTier: "pro", subscriptionStatus: "active", currentPeriodEnd: future })
+  expect(TRIAL_SEAT_LIMIT).toBe(PLAN_SEATS.pro)
+  expect(getPlanState(trial).accessTier).toBe(TRIAL_ACCESS_TIER)
+  expect(getPlanState(trial).includedSeats).toBe(5)
+  expect(getEffectiveSeatLimit(trial)).toBe(getEffectiveSeatLimit(paid))
+  expect(getEffectiveSeatLimit({ ...trial, extraSeats: 2 })).toBe(7)
 })
 
 test("canWrite is true for an active trial", () => {
@@ -389,7 +401,7 @@ test("aktif deneme TRIAL_ACCESS_TIER'a çözülür ve ek özellikleri açar", ()
   expect(getPlanState(trial).accessTier).toBe(TRIAL_ACCESS_TIER)
   for (const feature of ADDON_FEATURES) expect(hasWorkshopFeature(trial, feature)).toBe(true)
   expect(hasWorkshopFeature(trial, "plateScan")).toBe(true)
-  expect(getEffectiveSeatLimit({ ...trial, extraSeats: 2 })).toBe(PLAN_SEATS[TRIAL_ACCESS_TIER] + 2)
+  expect(getEffectiveSeatLimit({ ...trial, extraSeats: 2 })).toBe(TRIAL_SEAT_LIMIT + 2)
 })
 
 test("ücretli Servis Paketi ek özellikleri açmaz", () => {

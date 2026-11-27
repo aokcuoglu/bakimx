@@ -24,12 +24,26 @@ const SCANNED_DIRS = [
   "parts",
   "suppliers",
   "purchases",
+  "technician",
+  "quotes",
+  "appointments",
+  "reminders",
+  "communications",
+  "analytics",
   "intake",
   "damage",
 ].flatMap((name) => [
   join(SRC, "components", name),
   join(SRC, "app", "(app)", name),
 ])
+
+// Ad eşlemesine uymayan yüzeyler (#920 dilim 4: yönetim, satış, site asistanı, canlı destek)
+const EXTRA_SCANNED_DIRS = [
+  join(SRC, "app", "admin"),
+  join(SRC, "components", "sales"),
+  join(SRC, "components", "site-assistant"),
+  join(SRC, "app", "(site)", "destek"),
+]
 
 // `dosya: gerekçe` — bilinçli istisna. Gerekçesiz ekleme yapma.
 const ALLOWLIST: Record<string, string> = {
@@ -125,8 +139,8 @@ export function findNestedRadiusOffenders(source: string, fileName = "x.tsx"): n
 
 test("kapla aynı köşeyi taşıyan iç kutu yok (iç köşe her zaman dıştan küçük)", () => {
   const offenders: string[] = []
-  for (const dir of SCANNED_DIRS) {
-    // components/<ad> ile app/(app)/<ad> her özellikte birlikte bulunmaz (ör. kabul yalnız components/'te)
+  for (const dir of [...SCANNED_DIRS, ...EXTRA_SCANNED_DIRS]) {
+    // components/<ad> ile app/(app)/<ad> her özellikte birlikte bulunmaz
     if (!existsSync(dir)) continue
     for (const file of tsxFiles(dir)) {
       const path = relative(SRC, file)
