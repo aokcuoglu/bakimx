@@ -62,7 +62,7 @@ test("addonFeaturesFor tekilleştirir", () => {
 
 test("describeBillingOrder paket ve ek özellik", () => {
   const pkg = describeBillingOrder({ type: "new_purchase", planTier: "pro", billingCycle: "yearly" })
-  expect(pkg.title).toBe("Servis Paketi paketi")
+  expect(pkg.title).toBe("Servis Paketi")
   expect(pkg.cycleLabel).toBe("Yıllık")
   expect(pkg.lines[0].amountMinor).toBeNull()
   const line = { key: "vinLookup", name: "Şaseden parça", quantity: 1, unitAmountMinor: 100, amountMinor: 100 }

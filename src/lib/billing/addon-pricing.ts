@@ -128,5 +128,7 @@ export function describeBillingOrder(o: {
     }
   }
   const name = getPlanPackage(o.planTier as Parameters<typeof getPlanPackage>[0])?.name ?? o.planTier
-  return { title: `${name} paketi`, cycleLabel, lines: [{ label: `${name} paketi`, amountMinor: null }] }
+  // "Servis Paketi" / "Paket + ek özellikler" zaten "paket" içerir — "Servis Paketi paketi" yazma.
+  const title = /paket/i.test(name) ? name : `${name} paketi`
+  return { title, cycleLabel, lines: [{ label: title, amountMinor: null }] }
 }
