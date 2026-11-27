@@ -2,6 +2,7 @@
 
 import { CheckCircle2, Clock, ClipboardList, Camera, AlertTriangle, MessageSquare, Wrench, Package, Pencil } from "lucide-react"
 import { TIMELINE_EVENT_LABELS } from "@/lib/intake/timeline-constants"
+import { formatTrDateTime } from "@/lib/format-date"
 
 type TimelineEntry = {
   eventType: string
@@ -28,13 +29,7 @@ const EVENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
 }
 
 function formatTimelineDate(d: Date): string {
-  return new Date(d).toLocaleDateString("tr-TR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+  return formatTrDateTime(d)
 }
 
 export function ApprovalTimeline({ events, intakeCreatedAt, approvedAt, compact = false }: ApprovalTimelineProps) {

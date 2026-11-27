@@ -132,6 +132,9 @@ const buttonVariants = cva(
         row: "min-h-(--control-h) justify-start gap-3 rounded-md px-3 py-2.5 text-left text-(length:--control-fs-sm) leading-5 whitespace-normal",
         // Görsel küçük resmi / fotoğraf ekle karosu: dolgusuz, taşanı kırpar.
         tile: "flex-col gap-1.5 overflow-hidden rounded-md p-0 text-(length:--control-fs-xs) leading-4 whitespace-normal",
+        // Teknisyen iş ekranı kutucuğu (#1036): eldivenli/yağlı elle tek dokunuş
+        // için büyük, ikon üstte etiket altta. Genişliği çağrı yeri verir (`w-full`).
+        kiosk: "min-h-24 flex-col justify-center gap-2 rounded-lg px-2 py-3 text-(length:--control-fs-sm) font-medium leading-4 whitespace-normal [&_svg:not([class*='size-'])]:size-6",
       },
     },
     defaultVariants: {

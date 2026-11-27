@@ -76,6 +76,7 @@ const TYPE_LABELS: Record<BillingOrderType, string> = {
   upgrade: "Yükseltme",
   downgrade: "Paket düşürme",
   renewal: "Yenileme",
+  addon: "Ek özellik",
 }
 
 export function CommissionLedger({
@@ -154,7 +155,7 @@ function CommissionCard({ commission, canManage }: { commission: Commission; can
         </dl>
 
         {commission.adjustmentReason && (
-          <div className="rounded-lg bg-muted p-3 text-sm">
+          <div className="rounded-md bg-muted p-3 text-sm">
             <span className="font-medium text-foreground">Düzeltme gerekçesi:</span>{" "}
             <span className="text-muted-foreground-strong">{commission.adjustmentReason}</span>
           </div>

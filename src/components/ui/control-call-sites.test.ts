@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
-import { relative, sep } from "node:path"
+import { existsSync } from "node:fs"
+import { join, relative, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 import { eachTsx, jsxOpeningTags, utilityCore, utilityVariants, type JsxOpeningTag } from "./jsx-source-scan"
 
@@ -521,26 +522,23 @@ const SRC = fileURLToPath(new URL("../../", import.meta.url))
 const OUT_OF_SCOPE = [
   // Kontrollerin kendisi: ölçüyü burada tanımlar.
   `components${sep}ui${sep}`,
-  // Landing / pazarlama yüzeyi kendi --mk-* ölçeğini taşır.
-  `components${sep}sections${sep}`,
+  // Pazarlama yüzeyi kendi --mk-* ölçeğini taşır.
   `components${sep}marketing${sep}`,
 ]
 /**
- * Kapsam dışı klasördeki istisnai dosyalar: `sections/Footer.tsx` pazarlama
- * bölümü değil, uygulamaya bitişik genel sayfaların (fiyatlar, blog, rehber,
- * demo, durum, yasal) ortak altbilgisi — kontrolleri matrise uyar (#889;
- * "Demo talep et" CSS modülüyle 28px'e indirilmişti ve kapı görmüyordu).
- * Aynı gerekçeyle form/demo bileşenleri de kapsamdadır (#929): HeroLeadForm,
- * ContactPage, RuhsatDemoSection, demo-ocr-upload — kontrolleri matrise uyar;
- * pazarlama CTA yüksekliği `Button size="lg"`dan gelir.
+ * `components/sections/` VARSAYILAN olarak kapsamdadır (#1000): yeni bir bölüm
+ * dosyası matrise uymak zorunda doğar; `h-*`/`rounded-*` ezmesi kapıyı düşürür.
+ * Bir bölüm gerçekten `--mk-*` pazarlama ölçeğini taşıyorsa buraya DOSYA
+ * adıyla ve GEREKÇESİYLE eklenir — klasör toptan dışarıda bırakılmaz.
  */
-const IN_SCOPE_FILES = [
-  "components/sections/Footer.tsx",
-  "components/sections/HeroLeadForm.tsx",
-  "components/sections/ContactPage.tsx",
-  "components/sections/RuhsatDemoSection.tsx",
-  "components/sections/demo-ocr-upload.tsx",
-]
+const SECTION_EXCEPTIONS: Record<string, string> = {}
+const SECTIONS_DIR = `components${sep}sections${sep}`
+
+/** `rel`: `src/`ye göre yol. `sections/` varsayılan kapsamdadır, yalnız gerekçeli istisna dışarıda. */
+function isOutOfScope(rel: string): boolean {
+  if (rel.startsWith(SECTIONS_DIR)) return rel.split(sep).join("/") in SECTION_EXCEPTIONS
+  return OUT_OF_SCOPE.some((dir) => `${rel}${sep}`.startsWith(dir))
+}
 
 type ScannedTag = JsxOpeningTag & { file: string }
 
@@ -559,11 +557,7 @@ function scan() {
         ;(tag.name === "input" ? rawInputs : controls).push({ ...tag, file })
       }
     },
-    (path) => {
-      const rel = relative(SRC, path)
-      if (IN_SCOPE_FILES.includes(rel.split(sep).join("/"))) return false
-      return OUT_OF_SCOPE.some((dir) => `${rel}${sep}`.startsWith(dir))
-    }
+    (path) => isOutOfScope(relative(SRC, path))
   )
   scanned = { controls, rawInputs }
   return scanned
@@ -893,6 +887,26 @@ describe("form kontrolleri, düğmeler ve akordeon çağrı yerinde ezilmez (#88
       return hits.length ? [`${row.file}:${row.line} <${row.tag}> ${hits.join(", ")}`] : []
     })
     expect(offenders).toEqual([])
+  })
+
+  test("yeni bir sections/ dosyası varsayılan kapsamda doğar; h-*/rounded-* ezmesi düşer (#1000)", () => {
+    const fresh = `components${sep}sections${sep}YeniBolum.tsx`
+    expect(isOutOfScope(fresh)).toBe(false)
+    expect(isOutOfScope(`components${sep}ui${sep}button.tsx`)).toBe(true)
+    for (const reason of Object.values(SECTION_EXCEPTIONS)) expect(reason.length).toBeGreaterThan(20)
+    const bad = ['<Button className="h-12 px-6">', '<Input className="rounded-full" />']
+    for (const source of bad) {
+      const tags = jsxOpeningTags(source, CONTROLS)
+      expect(tags.length).toBeGreaterThan(0)
+      expect(violations(tags[0])).not.toEqual([])
+    }
+  })
+
+  test("tarama components/sections/ dosyalarına gerçekten ulaşır; SECTION_EXCEPTIONS'ta bayat anahtar yok (#1000)", () => {
+    expect(scan().controls.some((tag) => tag.file.startsWith("components/sections/"))).toBe(true)
+    for (const file of Object.keys(SECTION_EXCEPTIONS)) {
+      expect(existsSync(join(SRC, file))).toBe(true)
+    }
   })
 
   test("istisna listesinde bayat ya da gerekçesiz satır yok", () => {

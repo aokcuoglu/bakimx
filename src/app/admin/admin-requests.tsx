@@ -34,6 +34,7 @@ import {
   updateDemoRequestStatus,
   updateSupportRequestStatus,
 } from "@/app/admin/actions"
+import { formatTrShortDate, formatTrTime } from "@/lib/format-date"
 
 export interface AdminDemoRequestRow {
   id: string
@@ -147,8 +148,8 @@ function DemoRequestRow({ r, canManage }: { r: AdminDemoRequestRow; canManage: b
 
   const isNew = r.status === "new"
   const created = new Date(r.createdAt)
-  const dateStr = created.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })
-  const timeStr = created.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
+  const dateStr = formatTrShortDate(created)
+  const timeStr = formatTrTime(created)
 
   return (
     <div
@@ -157,7 +158,7 @@ function DemoRequestRow({ r, canManage }: { r: AdminDemoRequestRow; canManage: b
         isNew ? "border-primary/30 shadow-sm" : "border-border/60"
       )}
     >
-      {isNew && <div className="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-primary" />}
+      {isNew && <div className="absolute inset-y-0 left-0 w-1 rounded-l-md bg-primary" />}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-2">
@@ -344,8 +345,8 @@ function SupportRequestRow({
 
   const isNew = r.status === "new"
   const created = new Date(r.createdAt)
-  const dateStr = created.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })
-  const timeStr = created.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
+  const dateStr = formatTrShortDate(created)
+  const timeStr = formatTrTime(created)
 
   const workshopOptions = [{ value: UNASSIGNED, label: "Bağlı değil" }, ...options.workshops]
   const adminOptions = [{ value: UNASSIGNED, label: "Atanmadı" }, ...options.admins]

@@ -621,13 +621,6 @@ const OPACITY_UTILITY_EXCEPTIONS: OpacityUtilityException[] = [
   },
 
   // --- Etkisiz (disabled/pending) durumlar — WCAG 1.4.3 muafiyeti
-  {
-    file: "components/technician/technician-dashboard.tsx",
-    className: "opacity-60",
-    reason:
-      "`isPending` sırasında `pointer-events-none` ile birlikte veriliyor; sunucu " +
-      "eylemi dönene kadar süren geçici etkisiz durum, durağan metin değil.",
-  },
 
   // --- İkon ve görsel: soldurulan şey metin değil
   {

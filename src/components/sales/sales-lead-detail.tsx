@@ -411,10 +411,10 @@ export function SalesLeadDetail({
 
       <section className="space-y-3 rounded-xl border bg-card p-4">
         <div className="flex items-center justify-between gap-3"><div><h2 className="font-semibold text-foreground">Satış görevleri</h2><p className="text-sm text-muted-foreground">Arama, ziyaret, online demo ve takip ajandası.</p></div><Badge variant="secondary">{lead.tasks.length}</Badge></div>
-        {lead.tasks.length === 0 ? <p className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">Henüz görev yok.</p> : (
+        {lead.tasks.length === 0 ? <p className="rounded-md border border-dashed p-5 text-center text-sm text-muted-foreground">Henüz görev yok.</p> : (
           <div className="space-y-2">
             {lead.tasks.map((task) => (
-              <article key={task.id} className="rounded-lg border bg-background p-3">
+              <article key={task.id} className="rounded-md border bg-background p-3">
                 <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-medium text-foreground">{labelFor(TASK_TYPES, task.type)}</p><p className="text-xs text-muted-foreground">{formatDate(task.startsAt)} · {task.durationMinutes} dk · {task.createdByName}</p></div><Badge variant={task.status === "no_show" ? "destructive" : "outline"}>{TASK_STATUS_LABELS[task.status]}</Badge></div>
                 {task.note && <p className="mt-2 text-sm text-foreground">{task.note}</p>}
                 {canManage && task.status === "scheduled" && (
@@ -475,8 +475,8 @@ export function SalesLeadDetail({
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="space-y-3 rounded-xl border bg-card p-4 lg:col-span-2">
           <div className="flex items-center justify-between gap-3"><div><h2 className="font-semibold text-foreground">Tüm görüşmeler</h2><p className="text-sm text-muted-foreground">Sayfa {activityPage} / {activityPages}</p></div></div>
-          {lead.activities.length === 0 ? <p className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">Henüz görüşme yok.</p> : lead.activities.map((activity) => (
-            <article key={activity.id} className="rounded-lg border bg-background p-3">
+          {lead.activities.length === 0 ? <p className="rounded-md border border-dashed p-5 text-center text-sm text-muted-foreground">Henüz görüşme yok.</p> : lead.activities.map((activity) => (
+            <article key={activity.id} className="rounded-md border bg-background p-3">
               <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline">{labelFor(ACTIVITY_TYPES, activity.type)}</Badge>{activity.result && <Badge variant={activity.result === "lost" ? "destructive" : "secondary"}>{labelFor(ACTIVITY_RESULTS, activity.result)}</Badge>}</div><span className="text-xs text-muted-foreground">{formatDate(activity.occurredAt)}</span></div>
               <p className="mt-2 text-sm text-foreground">{activity.summary}</p>
               {activity.lostReason && <p className="mt-1 text-sm text-destructive-strong">Neden: {activity.lostReason}</p>}

@@ -12,6 +12,8 @@ import {
 } from "@/lib/admin-workshop-filters"
 import { INTERNAL_OPERATIONS_WORKSHOP_ID } from "@/lib/workshop-kind"
 import { istanbulMonthStart } from "@/lib/istanbul-time"
+import { formatTrDate } from "@/lib/format-date"
+import { describeBillingOrder } from "@/lib/billing/addon-pricing"
 
 export interface WorkshopListResult {
   rows: AdminWorkshopRow[]
@@ -107,7 +109,7 @@ export async function getAcquisitionSummary() {
   const rows = await Promise.all(groups.map(async (group) => {
     const [active, purchased, revenue] = await Promise.all([
       prisma.workshop.count({ where: { kind: "customer", acquisitionSource: group.acquisitionSource, subscriptionStatus: { in: ["active", "trialing"] } } }),
-      prisma.workshop.count({ where: { kind: "customer", acquisitionSource: group.acquisitionSource, billingOrders: { some: { status: "confirmed" } } } }),
+      prisma.workshop.count({ where: { kind: "customer", acquisitionSource: group.acquisitionSource, billingOrders: { some: { status: "confirmed", type: { not: "addon" } } } } }),
       prisma.billingOrder.aggregate({ where: { status: "confirmed", workshop: { kind: "customer", acquisitionSource: group.acquisitionSource } }, _sum: { amountMinor: true } }),
     ])
     return { source: group.acquisitionSource, workshops: group._count._all, active, purchased, revenueMinor: revenue._sum.amountMinor ?? 0 }
@@ -265,6 +267,7 @@ type OrderWithTxns = {
   confirmedByEmail: string | null
   reference: string
   billingSnapshot: unknown
+  addonLines?: unknown
   createdAt: Date
   paymentTransactions: Array<{
     id: string
@@ -298,6 +301,7 @@ function toOrderRow(o: OrderWithTxns): AdminOrderRow {
     workshopName: o.workshop.name,
     type: o.type,
     planTier: o.planTier,
+    orderLabel: describeBillingOrder({ ...o, billingCycle: o.billingCycle === "yearly" ? "yearly" : "monthly" }).title,
     billingCycle: o.billingCycle,
     amountLabel: formatMinor(o.amountMinor),
     reference: o.reference,
@@ -408,7 +412,7 @@ export async function getBillingData(): Promise<BillingData> {
       name: w.name,
       planTier: w.planTier,
       billingCycle: w.billingCycle ?? null,
-      periodEnd: end.toLocaleDateString("tr-TR"),
+      periodEnd: formatTrDate(end),
       daysLeft: Math.max(0, Math.ceil((end.getTime() - now) / 86_400_000)),
     }
   })

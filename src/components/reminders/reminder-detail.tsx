@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ReminderStatusBadge, ReminderTypeBadge } from "@/components/reminders/reminder-status-badge"
@@ -148,7 +149,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
   }
 
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <Collapsible open={showPostpone} onOpenChange={setShowPostpone} className="space-y-5 sm:space-y-6">
       {actionError ? (
         <Alert variant="destructive"><AlertDescription>{actionError}</AlertDescription></Alert>
       ) : null}
@@ -156,7 +157,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
       <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-navy-foreground shrink-0">
+            <div className="size-12 rounded-md bg-navy flex items-center justify-center text-navy-foreground shrink-0">
               <BellRing className="size-5" />
             </div>
             <div className="min-w-0">
@@ -193,15 +194,12 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                   {actionLoading ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
                   <span className="hidden sm:inline">Tamamlandı</span>
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="compact"
-                  onClick={() => setShowPostpone(!showPostpone)}
-                >
-                  <Clock className="size-4" />
-                  <span className="hidden sm:inline">Ertele</span>
-                </Button>
+                <CollapsibleTrigger asChild>
+                  <Button type="button" variant="outline" size="compact" aria-label="Ertele">
+                    <Clock className="size-4" />
+                    <span className="hidden sm:inline">Ertele</span>
+                  </Button>
+                </CollapsibleTrigger>
               </>
             ) : null}
             {!isTerminal ? (
@@ -250,7 +248,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
         ) : null}
       </header>
 
-      {showPostpone ? (
+      <CollapsibleContent>
         <Card className="border-warning/20 bg-warning/5">
           <CardHeader>
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -282,7 +280,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             </form>
           </CardContent>
         </Card>
-      ) : null}
+      </CollapsibleContent>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">
@@ -353,7 +351,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               <CardContent className="pt-0">
                 <Link
                   href={`/appointments/${reminder.createdAppointment.id}`}
-                  className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted transition-colors"
+                  className="flex items-center gap-3 rounded-md border border-border p-3 hover:bg-muted transition-colors"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground">
@@ -381,9 +379,9 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             <CardContent className="pt-0">
               <Link
                 href={`/customers/${reminder.customer.id}`}
-                className="flex items-center gap-3 rounded-lg p-2 -m-2 hover:bg-muted transition-colors"
+                className="flex items-center gap-3 rounded-md p-2 -m-2 hover:bg-muted transition-colors"
               >
-                <div className="size-10 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
+                <div className="size-10 rounded-md bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
                   <User className="size-4" />
                 </div>
                 <div className="min-w-0">
@@ -406,9 +404,9 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             <CardContent className="pt-0">
               <Link
                 href={`/vehicles/${reminder.vehicle.id}`}
-                className="flex items-center gap-3 rounded-lg p-2 -m-2 hover:bg-muted transition-colors"
+                className="flex items-center gap-3 rounded-md p-2 -m-2 hover:bg-muted transition-colors"
               >
-                <div className="size-10 rounded-lg bg-navy text-navy-foreground flex items-center justify-center shrink-0">
+                <div className="size-10 rounded-md bg-navy text-navy-foreground flex items-center justify-center shrink-0">
                   <Car className="size-4" />
                 </div>
                 <div className="min-w-0">
@@ -465,7 +463,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
           </div>
         </aside>
       </div>
-    </div>
+    </Collapsible>
   )
 }
 

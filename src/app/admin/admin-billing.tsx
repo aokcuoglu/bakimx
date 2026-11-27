@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { confirmBillingOrder, cancelBillingOrder, retryStuckActivation } from "@/app/admin/actions"
 import { planLabel } from "@/lib/plan"
+import { formatTrDate, formatTrDateTime } from "@/lib/format-date"
 
 /** Bir kartlı ödeme denemesinin (PaymentTransaction) admin'e görünen özeti —
  *  TAMI destek talebi için correlationId dahil. Kart verisi (PAN/CVV) asla
@@ -42,6 +43,8 @@ export interface AdminOrderRow {
   workshopName: string
   type: string
   planTier: string
+  /** `describeBillingOrder` başlığı: paket adı ya da "Ek özellik: …" (#829). */
+  orderLabel: string
   billingCycle: string
   amountLabel: string
   reference: string
@@ -235,7 +238,7 @@ function PaymentAttempts({ txns }: { txns: AdminTxnRow[] }) {
               <tbody className="divide-y divide-border">
                 {txns.map((t) => (
                   <tr key={t.id}>
-                    <td className="px-3 py-2 whitespace-nowrap">{new Date(t.createdAt).toLocaleString("tr-TR")}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{formatTrDateTime(t.createdAt)}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{TXN_STATUS_LABELS[t.status] ?? t.status}</td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       {t.cardBrand ?? "—"}
@@ -253,7 +256,7 @@ function PaymentAttempts({ txns }: { txns: AdminTxnRow[] }) {
               <div key={t.id} className="rounded-lg border border-border bg-background p-2.5 text-xs space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-foreground">{TXN_STATUS_LABELS[t.status] ?? t.status}</span>
-                  <span className="text-muted-foreground">{new Date(t.createdAt).toLocaleString("tr-TR")}</span>
+                  <span className="text-muted-foreground">{formatTrDateTime(t.createdAt)}</span>
                 </div>
                 {(t.cardBrand || t.maskedPan) && (
                   <p className="text-muted-foreground">
@@ -308,7 +311,7 @@ function OrderRow({ o, canConfirm }: { o: AdminOrderRow; canConfirm: boolean }) 
         <div className="min-w-0 text-sm">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-foreground">{o.workshopName}</span>
-            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px]">{planLabel(o.planTier)} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}</span>
+            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px]">{o.orderLabel} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}</span>
             <MethodBadge method={o.method} />
             <span className="font-semibold text-foreground">{o.amountLabel}</span>
           </div>
@@ -393,7 +396,7 @@ function StuckTxnRow({ r }: { r: AdminStuckTxnRow }) {
             )}
             İşlem: <CopyMono value={r.providerOrderId} />
           </p>
-          <p className="text-muted-foreground">{new Date(r.createdAt).toLocaleString("tr-TR")} tarihinden beri &quot;callback_received&quot;</p>
+          <p className="text-muted-foreground">{formatTrDateTime(r.createdAt)} tarihinden beri &quot;callback_received&quot;</p>
           {error && <p className="text-destructive-strong mt-1">{error}</p>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -439,7 +442,7 @@ function RecentOrderRow({ o }: { o: AdminOrderRow }) {
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-foreground">{o.workshopName}</span>
             <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-              {planLabel(o.planTier)} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}
+              {o.orderLabel} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}
             </span>
             <Badge variant="outline" className={cn("text-[11px]", statusTone)}>
               {ORDER_STATUS_LABELS[o.status] ?? o.status}
@@ -451,7 +454,7 @@ function RecentOrderRow({ o }: { o: AdminOrderRow }) {
         </div>
 
         <div className="flex items-start justify-between gap-3 sm:block sm:text-right">
-          <div className="rounded-lg bg-primary/10 px-3 py-2 text-left sm:text-right">
+          <div className="rounded-md bg-primary/10 px-3 py-2 text-left sm:text-right">
             <p className="text-[11px] font-medium text-primary-strong">Tahsil edilen</p>
             <p className="text-xl font-bold tracking-tight text-primary-strong">{o.amountLabel}</p>
           </div>
@@ -462,13 +465,13 @@ function RecentOrderRow({ o }: { o: AdminOrderRow }) {
       <div className="mt-4 grid gap-2 border-t pt-3 text-xs sm:grid-cols-3">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <MethodBadge method={o.method} />
-          <span>{new Date(o.createdAt).toLocaleDateString("tr-TR")}</span>
+          <span>{formatTrDate(o.createdAt)}</span>
         </div>
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <CalendarClock className="size-3.5" />
           {o.periodEnd ? (
             <span>
-              Bitiş: {new Date(o.periodEnd).toLocaleDateString("tr-TR")}
+              Bitiş: {formatTrDate(o.periodEnd)}
               {o.daysLeft != null && ` · ${o.daysLeft} gün`}
             </span>
           ) : (

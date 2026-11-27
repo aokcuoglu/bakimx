@@ -131,36 +131,6 @@ OCR_PROVIDER=mock
 - Kullanıcı onayı zorunludur — OCR sonucu otomatik kaydedilmez
 - Düşük güven oranlı alanlar sarı vurgu ile işaretlenir
 
-### Landing Ürün Asistanı Ortam Değişkenleri
-
-```env
-# Varsayılan: hazırlanan ve kaynaklı yanıt eşleştiricisi; dış çağrı yapmaz
-LANDING_ASSISTANT_AI=off
-AI_PROVIDER=mock
-
-# Gerçek AI için: openai veya anthropic
-# AI_PROVIDER=openai
-# AI_PROVIDER=anthropic
-
-# Sağlayıcıdan bağımsız model override (opsiyonel)
-# AI_MODEL=gpt-4o-mini
-
-# OpenAI (AI_PROVIDER=openai iken gerekli)
-# OPENAI_API_KEY=your-key (OCR ile paylaşımlı)
-# AI_MODEL=gpt-4o-mini
-
-# Anthropic (AI_PROVIDER=anthropic iken gerekli)
-# ANTHROPIC_API_KEY=your-key (OCR ile paylaşımlı)
-# AI_MODEL=claude-haiku-4-5
-```
-
-**Landing asistanı davranışı:**
-- `LANDING_ASSISTANT_AI=off` iken ziyaretçiye yalnız hazırlanmış, kaynaklı yanıtlar sunulur ve sunucu AI çağrısı yapmaz
-- `AI_PROVIDER` ayarlanmazsa veya `mock` ise kaynaklı yerel eşleştirici kullanılır, API anahtarı gerekmez
-- `AI_PROVIDER=openai`: OpenAI Chat Completions API; `OPENAI_API_KEY` zorunlu, `AI_MODEL` opsiyonel (varsayılan: gpt-4o-mini)
-- `AI_PROVIDER=anthropic`: Anthropic Messages API; `ANTHROPIC_API_KEY` zorunlu, `AI_MODEL` opsiyonel (varsayılan: claude-haiku-4-5)
-- `AI_MODEL` ortam değişkeni, sağlayıcıya özel model ayarını override eder
-
 ### Web Push (Teknisyen Bildirimleri) Ortam Değişkenleri
 
 ```env
@@ -223,7 +193,7 @@ SMS_PROVIDER=mock
 # NETGSM_USERCODE=your-netgsm-usercode
 # NETGSM_PASSWORD=your-netgsm-password
 # NETGSM_SENDER=BAKIMX
-# NETGSM_API_URL=https://api.netgsm.com.tr/sms/send/get
+# NETGSM_API_URL=https://api.netgsm.com.tr/sms/rest/v2/send
 
 # E-posta Sağlayıcı — mock (varsayılan) veya resend
 EMAIL_PROVIDER=mock

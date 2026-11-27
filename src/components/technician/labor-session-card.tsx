@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import { Pencil, Play, Timer } from "lucide-react"
+import { useState, useTransition, type ComponentProps } from "react"
+import { Pencil, Timer } from "lucide-react"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation"
@@ -26,10 +26,10 @@ import {
 import { formatMinutes } from "@/lib/format"
 import { formatDateTime } from "@/lib/utils-client"
 import {
-  startLaborSessionAction,
   stopLaborSessionAction,
   updateLaborSessionAction,
 } from "@/app/(app)/technician/actions"
+import { formatTrTime } from "@/lib/format-date"
 
 /**
  * Teknisyen panelindeki "İşçilik Süresi" bloğu (BAK-138).
@@ -53,7 +53,7 @@ export type TechnicianLaborSessionRow = {
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
+  return formatTrTime(iso)
 }
 
 /**
@@ -76,11 +76,21 @@ function toDatetimeLocalValue(iso: string): string {
 export function StopLaborButton({
   orderId,
   className,
+  label = "Durdur",
+  size = "lg",
+  variant = "destructive",
+  mode = "stop",
 }: {
   orderId: string
   className?: string
+  label?: string
+  /** `pause`: "Ara Ver" akışı — yıkıcı olmayan dil ve düğme. */
+  mode?: "stop" | "pause"
+  size?: ComponentProps<typeof Button>["size"]
+  variant?: ComponentProps<typeof Button>["variant"]
 }) {
   const router = useRouter()
+  const pause = mode === "pause"
   const [open, setOpen] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -98,7 +108,7 @@ export function StopLaborButton({
         setServerError(res.error)
         return
       }
-      toast.success("İşçilik durduruldu.")
+      toast.success(pause ? "Ara verildi." : "İşçilik durduruldu.")
       setOpen(false)
       form.reset({ note: "" })
       router.refresh()
@@ -108,13 +118,13 @@ export function StopLaborButton({
   return (
     <>
       <Button
-        variant="destructive"
-        size="lg"
+        variant={variant}
+        size={size}
         onClick={() => setOpen(true)}
         disabled={isPending}
         className={className}
       >
-        <Timer /> Durdur
+        <Timer /> {label}
       </Button>
 
       <Dialog
@@ -126,7 +136,7 @@ export function StopLaborButton({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>İşçiliği durdur</DialogTitle>
+            <DialogTitle>{pause ? "Ara verilsin mi?" : "İşçiliği durdur"}</DialogTitle>
             <DialogDescription>
               Bu sürede ne yaptığını yazabilirsin. Zorunlu değil — boş bırakıp sonradan da ekleyebilirsin.
             </DialogDescription>
@@ -163,8 +173,8 @@ export function StopLaborButton({
                 <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
                   Vazgeç
                 </Button>
-                <Button type="submit" variant="destructive" disabled={isPending}>
-                  Durdur
+                <Button type="submit" variant={pause ? "foreground" : "destructive"} disabled={isPending}>
+                  {pause ? "Ara Ver" : "Durdur"}
                 </Button>
               </DialogFooter>
             </form>
@@ -314,39 +324,23 @@ function EditLaborSessionDialog({
 // ── Kart ─────────────────────────────────────────────────────────────────────
 
 export function LaborSessionCard({
-  orderId,
   sessions,
   locked,
-  canStart,
   canEdit,
 }: {
-  orderId: string
   sessions: TechnicianLaborSessionRow[]
   /** İş emri teslim/iptal — hiçbir yazma yapılamaz. */
   locked: boolean
-  /** Sayaç başlatılabilir mi (iş emri durumu uygun mu). */
-  canStart: boolean
   /** Kullanıcı `order.edit` taşıyor mu — bitmiş kaydı geriye dönük düzeltme yetkisi. */
   canEdit: boolean
 }) {
-  const router = useRouter()
   const [editing, setEditing] = useState<TechnicianLaborSessionRow | null>(null)
-  const [isPending, startTransition] = useTransition()
 
-  const activeSession = sessions.find((s) => !s.endTime)
   const finished = sessions.filter((s) => s.endTime)
   const totalMinutes = finished.reduce((sum, s) => sum + (s.durationMinutes ?? 0), 0)
 
-  function handleStart() {
-    startTransition(async () => {
-      const res = await startLaborSessionAction(orderId)
-      if (res && "error" in res && res.error) toast.error(res.error)
-      router.refresh()
-    })
-  }
-
   return (
-    <Card className="bg-primary/[0.04]">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-1.5">
           <Timer className="size-4 text-muted-foreground" />
@@ -359,19 +353,6 @@ export function LaborSessionCard({
         )}
       </CardHeader>
       <CardContent>
-
-      {!activeSession && !locked && (
-        <Button
-          variant="success"
-          size="lg"
-          onClick={handleStart}
-          disabled={isPending || !canStart}
-          className="touch-manipulation"
-        >
-          <Play className="size-4" />
-          İşçilik Başlat
-        </Button>
-      )}
 
       {finished.length > 0 && (
         <ul className="mt-3 space-y-1.5">

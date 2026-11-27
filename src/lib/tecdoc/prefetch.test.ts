@@ -41,6 +41,7 @@ test("eagerPrefetchTarget: eksik/undefined alanlar → null", () => {
 })
 
 const proWorkshop = {
+  organizationId: null,
   id: "w1",
   planTier: "pro" as const,
   subscriptionStatus: "active" as const,
@@ -51,15 +52,15 @@ const proWorkshop = {
   addons: [] as string[],
 }
 
-test("ön yükleme bağlamı yalnız partsCatalog yetkisi olan atölyeye verilir (#827)", () => {
-  expect(prefetchQuotaContext({ ...proWorkshop, addons: ["vinLookup"] })).toBeNull()
-  expect(prefetchQuotaContext({ ...proWorkshop, extraVinQuota: 5_000 })).toBeNull()
-  expect(prefetchQuotaContext(proWorkshop)).toBeNull()
-  expect(prefetchQuotaContext({ ...proWorkshop, addons: ["partsCatalog"] })).toMatchObject({
+test("ön yükleme bağlamı yalnız partsCatalog yetkisi olan atölyeye verilir (#827)", async () => {
+  expect(await prefetchQuotaContext({ ...proWorkshop, addons: ["vinLookup"] })).toBeNull()
+  expect(await prefetchQuotaContext({ ...proWorkshop, extraVinQuota: 5_000 })).toBeNull()
+  expect(await prefetchQuotaContext(proWorkshop)).toBeNull()
+  expect(await prefetchQuotaContext({ ...proWorkshop, addons: ["partsCatalog"] })).toMatchObject({
     workshopId: "w1",
-    baseQuota: 15_000,
+    baseQuota: 1_000,
   })
-  expect(prefetchQuotaContext({ ...proWorkshop, planTier: "premium" })).not.toBeNull()
+  expect(await prefetchQuotaContext({ ...proWorkshop, planTier: "premium" })).not.toBeNull()
 })
 
 test("yetkisiz atölyede ön yükleme sessizce çıkar, throw etmez (#827)", async () => {

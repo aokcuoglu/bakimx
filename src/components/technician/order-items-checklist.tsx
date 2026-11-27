@@ -1,11 +1,15 @@
 "use client"
 
 import { useCallback, useEffect, useOptimistic, useRef, useState, useTransition } from "react"
-import { CheckSquare, ListChecks, Loader2, Square, Undo2 } from "lucide-react"
+import { CheckSquare, ChevronRight, ListChecks, Loader2, Square, Undo2 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { formatTRY } from "@/lib/format"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { applyCompletion, completionSummary, incompleteIds } from "@/lib/technician/order-items"
 import {
   completeAllOrderItemsAction,
@@ -48,12 +52,25 @@ export function OrderItemsChecklist({
   items,
   locked,
   onError,
+  onEditItem,
+  canToggle = true,
+  hideHeading = false,
+  emptyMessage = "Henüz kalem yok.",
 }: {
   orderId: string
   items: OrderItemRow[]
   locked: boolean
   onError?: (msg: string) => void
+  /** Verilirse satır gövdesi düzenlemeyi açar; tik yalnız soldaki kutudan atılır. */
+  onEditItem?: (itemId: string) => void
+  /** Kullanıcı kalemi "yapıldı" işaretleyebilir mi (`order.edit`); değilse liste salt okunur. */
+  canToggle?: boolean
+  /** Dış sarmalayıcı başlık + sayıyı zaten gösteriyorsa iç başlık çizilmez. */
+  hideHeading?: boolean
+  /** Liste boşken gösterilen metin. */
+  emptyMessage?: string
 }) {
+  const [completeAllOpen, setCompleteAllOpen] = useState(false)
   const [, startTransition] = useTransition()
   const [optimisticItems, patchOptimistic] = useOptimistic(
     items,
@@ -108,12 +125,13 @@ export function OrderItemsChecklist({
     })
   }, [])
 
+  const readOnly = locked || !canToggle
   const { total, done, remaining } = completionSummary(optimisticItems)
   const parts = optimisticItems.filter((i) => i.type === "part")
   const labor = optimisticItems.filter((i) => i.type !== "part")
 
   function toggle(item: OrderItemRow) {
-    if (locked || busyIds.has(item.id)) return
+    if (readOnly || busyIds.has(item.id)) return
     const nextDone = !item.completedAt
     setBusy([item.id], true)
     if (nextDone) flash([item.id])
@@ -127,7 +145,7 @@ export function OrderItemsChecklist({
   }
 
   function completeAll() {
-    if (locked || bulkPending) return
+    if (readOnly || bulkPending) return
     const ids = incompleteIds(optimisticItems)
     if (ids.length === 0) return
 
@@ -145,7 +163,7 @@ export function OrderItemsChecklist({
   }
 
   function uncompleteAll() {
-    if (locked || bulkPending) return
+    if (readOnly || bulkPending) return
     const ids = optimisticItems.filter((item) => !!item.completedAt).map((item) => item.id)
     if (ids.length === 0) return
 
@@ -162,55 +180,79 @@ export function OrderItemsChecklist({
 
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground">
-          Yapılacak İşler
-          <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">
-            {done}/{total}
-          </span>
-        </h3>
-        {!locked && total > 0 && (
-          <div className="flex shrink-0 items-center gap-1.5">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={uncompleteAll}
-              disabled={done === 0 || bulkPending}
-              className="gap-1.5 touch-manipulation"
-            >
-              {bulkPending ? <Loader2 className="size-3.5 animate-spin" /> : <Undo2 className="size-3.5" />}
-              Tümünü kaldır
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={completeAll}
-              disabled={remaining === 0 || bulkPending}
-              className="gap-1.5 touch-manipulation"
-            >
-              {bulkPending ? <Loader2 className="size-3.5 animate-spin" /> : <ListChecks className="size-3.5" />}
-              Tümünü tamamla
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {total === 0 ? (
-        <p className="text-sm text-muted-foreground">Bu araç kabulünde henüz parça veya işçilik kalemi yok.</p>
-      ) : (
-        <div className="space-y-3">
-          <ItemGroup title="Parçalar" items={parts} locked={locked} busyIds={busyIds} flashIds={flashIds} onToggle={toggle} />
-          <ItemGroup title="İşçilik" items={labor} locked={locked} busyIds={busyIds} flashIds={flashIds} onToggle={toggle} />
+      {(!hideHeading || (!readOnly && total > 0)) && (
+        <div className="mb-3 space-y-2">
+          {!hideHeading && (
+            <h3 className="text-sm font-semibold text-foreground">
+              Yapılacak İşler
+              <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">
+                {done}/{total}
+              </span>
+            </h3>
+          )}
+          {!readOnly && total > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={uncompleteAll}
+                disabled={done === 0 || bulkPending}
+                className="touch-manipulation"
+              >
+                {bulkPending ? <Loader2 className="animate-spin" /> : <Undo2 />}
+                Tümünü geri al
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCompleteAllOpen(true)}
+                disabled={remaining === 0 || bulkPending}
+                className="touch-manipulation"
+              >
+                {bulkPending ? <Loader2 className="animate-spin" /> : <ListChecks />}
+                Tümünü tamamla
+              </Button>
+            </div>
+          )}
         </div>
       )}
+
+      {total === 0 ? (
+        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+      ) : (
+        <div className="space-y-3">
+          <ItemGroup title="Parçalar" items={parts} locked={readOnly} busyIds={busyIds} flashIds={flashIds} onToggle={toggle} onEdit={onEditItem} />
+          <ItemGroup title="İşçilik" items={labor} locked={readOnly} busyIds={busyIds} flashIds={flashIds} onToggle={toggle} onEdit={onEditItem} />
+        </div>
+      )}
+
+      <AlertDialog open={completeAllOpen} onOpenChange={setCompleteAllOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tüm kalemler yapıldı olarak işaretlensin mi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {remaining} kalem yapıldı olur. İstersen “Tümünü geri al” ile geri alabilirsin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setCompleteAllOpen(false)
+                completeAll()
+              }}
+            >
+              Tümünü tamamla
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
 
 function ItemGroup({
-  title, items, locked, busyIds, flashIds, onToggle,
+  title, items, locked, busyIds, flashIds, onToggle, onEdit,
 }: {
   title: string
   items: OrderItemRow[]
@@ -218,6 +260,7 @@ function ItemGroup({
   busyIds: ReadonlySet<string>
   flashIds: ReadonlySet<string>
   onToggle: (item: OrderItemRow) => void
+  onEdit?: (itemId: string) => void
 }) {
   if (items.length === 0) return null
   const done = items.filter((i) => i.completedAt).length
@@ -239,51 +282,31 @@ function ItemGroup({
               ? formatTRY(Math.round(item.unitPrice * item.quantity))
               : "—"
 
-          return (
-            <Button
-              key={item.id}
-              type="button"
-              variant="ghost"
-              size="row"
-              disabled={isBusy || locked}
-              aria-pressed={isDone}
-              onClick={() => onToggle(item)}
+          const tick = (
+            <span
+              key={isDone ? "done" : "todo"}
               className={cn(
-                "group w-full gap-2.5",
-                // Sunucu yanıtı beklenirken satır kilitli ama SOLUK DEĞİL:
-                // iyimser tik zaten göründüğü için soluklaştırmak "işlem geri
-                // alındı" gibi okunuyordu.
-                "disabled:cursor-default disabled:opacity-100 disabled:hover:bg-transparent",
-                // İşaretlendiği an kısa bir yeşil parlama — hangi satıra
-                // dokunulduğu, toplu tamamlamada da tek tek görünür.
-                isFlashing && isDone && "motion-safe:animate-item-done",
+                "shrink-0 inline-flex motion-safe:transition-transform motion-safe:duration-150",
+                !locked && !isBusy && "motion-safe:group-active:scale-90",
+                isFlashing && isDone && "motion-safe:animate-check-pop",
               )}
             >
-              {/* Tik anında gelir; `key` durum değişince değişir ki pop animasyonu
-                  her işaretlemede baştan çalışsın. */}
-              <span
-                key={isDone ? "done" : "todo"}
-                className={cn(
-                  "shrink-0 inline-flex motion-safe:transition-transform motion-safe:duration-150",
-                  // Basılı tutarken kutu içeri gider — dokunuşun kaydedildiği
-                  // sunucu yanıtından ÖNCE hissedilsin diye.
-                  !locked && !isBusy && "motion-safe:group-active:scale-90",
-                  isFlashing && isDone && "motion-safe:animate-check-pop",
-                )}
-              >
-                {isDone
-                  ? <CheckSquare className="size-5 text-success-strong" />
-                  : <Square className="size-5 text-muted-foreground" />}
-              </span>
+              {isDone
+                ? <CheckSquare className="size-5 text-success-strong" />
+                : <Square className="size-5 text-muted-foreground" />}
+            </span>
+          )
 
-              <span className="flex-1 min-w-0">
+          const body = (
+            <>
+              <span className="flex-1 min-w-0 text-left">
                 <span className={cn(
-                  "block truncate text-sm transition-colors duration-300",
+                  "block line-clamp-2 text-sm break-words transition-colors duration-300",
                   isDone ? "text-success-strong" : "text-foreground",
                 )}>
                   {item.name}
                 </span>
-                {item.note && <span className="block truncate text-xs text-muted-foreground">{item.note}</span>}
+                {item.note && <span className="block line-clamp-2 text-xs text-muted-foreground">{item.note}</span>}
               </span>
 
               <span className={cn(
@@ -293,6 +316,63 @@ function ItemGroup({
                 {item.quantity > 1 && <span className="mr-1.5 text-xs text-muted-foreground">×{item.quantity}</span>}
                 {price}
               </span>
+            </>
+          )
+
+          const rowClass = cn(
+            "group w-full gap-2.5",
+            // Sunucu yanıtı beklenirken satır kilitli ama SOLUK DEĞİL:
+            // iyimser tik zaten göründüğü için soluklaştırmak "işlem geri
+            // alındı" gibi okunuyordu.
+            "disabled:cursor-default disabled:opacity-100 disabled:hover:bg-transparent",
+            // İşaretlendiği an kısa bir yeşil parlama.
+            isFlashing && isDone && "motion-safe:animate-item-done",
+          )
+
+          if (onEdit) {
+            return (
+              <div key={item.id} className={cn("flex items-center", isFlashing && isDone && "motion-safe:animate-item-done")}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={isBusy || locked}
+                  aria-pressed={isDone}
+                  aria-label={isDone ? `${item.name} yapıldı, geri al` : `${item.name} yapıldı olarak işaretle`}
+                  onClick={() => onToggle(item)}
+                  className="group disabled:cursor-default disabled:opacity-100 disabled:hover:bg-transparent"
+                >
+                  {tick}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="row"
+                  disabled={locked}
+                  aria-label={`${item.name} — düzenle`}
+                  onClick={() => onEdit(item.id)}
+                  className="min-w-0 flex-1 gap-2.5 disabled:cursor-default disabled:opacity-100 disabled:hover:bg-transparent"
+                >
+                  {body}
+                  <ChevronRight className="text-muted-foreground" aria-hidden />
+                </Button>
+              </div>
+            )
+          }
+
+          return (
+            <Button
+              key={item.id}
+              type="button"
+              variant="ghost"
+              size="row"
+              disabled={isBusy || locked}
+              aria-pressed={isDone}
+              onClick={() => onToggle(item)}
+              className={rowClass}
+            >
+              {tick}
+              {body}
             </Button>
           )
         })}

@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Info,
+  Wrench,
 } from "lucide-react"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -21,6 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { InputGroup, InputGroupInput } from "@/components/ui/input-group"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
@@ -566,6 +568,10 @@ export default function DesignSystemPage() {
               <Button variant="secondary" size="tile" className="aspect-[4/3] w-full justify-center text-muted-foreground">
                 tile · görsel karosu
               </Button>
+              <Button variant="outline" size="kiosk" className="w-full">
+                <Wrench />
+                kiosk · iş ekranı kutucuğu
+              </Button>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">status</Badge>
@@ -719,6 +725,34 @@ export default function DesignSystemPage() {
                   placeholder={`size="${size}" · ${use}`}
                 />
               ))}
+            </div>
+            <div className="space-y-2" data-testid="input-appearances">
+              <p className="font-mono text-[11px] text-muted-foreground">
+                appearance · dinlenme / odak için alana tıkla
+              </p>
+              {(["default", "ghost", "inline"] as const).map((appearance) => (
+                <Input
+                  key={appearance}
+                  appearance={appearance}
+                  aria-label={`Input appearance ${appearance}`}
+                  defaultValue={`Input appearance="${appearance}"`}
+                />
+              ))}
+              {(["default", "ghost", "quiet", "soft"] as const).map((appearance) => (
+                <div key={appearance} className="group/field-row">
+                  <InputGroup appearance={appearance}>
+                    <InputGroupInput
+                      aria-label={`InputGroup appearance ${appearance}`}
+                      defaultValue={`InputGroup appearance="${appearance}"`}
+                    />
+                  </InputGroup>
+                </div>
+              ))}
+              <p className="text-xs text-muted-foreground">
+                Hayalet alan görünümü <code className="font-mono">appearance</code>{" "}
+                varyantından gelir; ata seçicisiyle (
+                <code className="font-mono">[&amp;_input]:…</code>) yazılmaz.
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="foreground" size="sm">

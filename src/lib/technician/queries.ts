@@ -6,82 +6,11 @@ import {
   technicianOrderListWhere,
 } from "@/lib/technician/order-visibility"
 import { UNASSIGNED_IN_SERVICE_WHERE } from "@/lib/orders/unassigned-in-service"
-import { istanbulDayBounds, istanbulDayStart } from "@/lib/istanbul-time"
+import { completedTodayWhere } from "@/lib/technician/kiosk-home"
 
 type OStat = import("@prisma/client").OrderStatus
 
 const NOT_DELIVERED_CANCELLED: OStat[] = ["delivered", "cancelled"]
-
-export interface TechnicianDashboardStats {
-  assignedToMe: number
-  inProgress: number
-  waiting: number
-  completed: number
-  todayDelivery: number
-}
-
-/**
- * `assignedToMe` her zaman verilen teknisyenin sayısıdır. Diğer KPI'lar
- * `scopeToTechnician` kapalıyken atölyenin tüm araç kabullerini sayar —
- * teknisyen panelindeki "Bana atananlar" anahtarı kapalı olduğunda.
- */
-export async function getTechnicianDashboardStats(
-  workshopId: string,
-  technicianId: string,
-  scopeToTechnician = true
-): Promise<TechnicianDashboardStats> {
-  const scope = scopeToTechnician ? { assignedTechnicianId: technicianId } : {}
-  // "Bugün" Türkiye takvimine göre (#904) — süreç TZ'sinden bağımsız.
-  const { start: today, end: tomorrow } = istanbulDayBounds()
-
-  const [
-    assignedToMe,
-    inProgress,
-    waiting,
-    completed,
-    todayDelivery,
-  ] = await Promise.all([
-    prisma.serviceOrder.count({
-      where: {
-        workshopId,
-        assignedTechnicianId: technicianId,
-        status: { notIn: NOT_DELIVERED_CANCELLED },
-      },
-    }),
-    prisma.serviceOrder.count({
-      where: {
-        workshopId,
-        ...scope,
-        status: "in_progress",
-      },
-    }),
-    prisma.serviceOrder.count({
-      where: {
-        workshopId,
-        ...scope,
-        status: { in: ["approved", "waiting_parts"] },
-      },
-    }),
-    prisma.serviceOrder.count({
-      where: {
-        workshopId,
-        ...scope,
-        status: "delivered",
-        completedAt: { gte: today },
-      },
-    }),
-    prisma.serviceOrder.count({
-      where: {
-        workshopId,
-        ...scope,
-        estimatedDeliveryAt: { gte: today, lt: tomorrow },
-        status: { notIn: NOT_DELIVERED_CANCELLED },
-      },
-    }),
-  ])
-
-  return { assignedToMe, inProgress, waiting, completed, todayDelivery }
-}
 
 export interface TechnicianOrderRow {
   id: string
@@ -103,6 +32,53 @@ export interface TechnicianOrderRow {
   hasActiveLabor: boolean
 }
 
+const ORDER_ROW_INCLUDE = {
+  intakeForm: {
+    include: {
+      customer: { select: { firstName: true, lastName: true, fullName: true, companyName: true, type: true, phone: true } },
+      vehicle: { select: { plate: true, brand: true, model: true } },
+    },
+  },
+  assignedTechnician: { select: { fullName: true } },
+  checklistItems: { where: ACTIVE_CHECKLIST_ITEM, select: { isCompleted: true } },
+  laborSessions: { select: { endTime: true } },
+} satisfies import("@prisma/client").Prisma.ServiceOrderInclude
+
+type OrderRowSource = import("@prisma/client").Prisma.ServiceOrderGetPayload<{
+  include: typeof ORDER_ROW_INCLUDE
+}>
+
+function toTechnicianOrderRow(o: OrderRowSource): TechnicianOrderRow {
+  const cust = o.intakeForm.customer
+  const customerName =
+    cust.type === "corporate"
+      ? cust.companyName || "Kurumsal"
+      : cust.fullName || [cust.firstName, cust.lastName].filter(Boolean).join(" ") || "Müşteri"
+
+  return {
+    id: o.id,
+    workOrderNo: o.workOrderNo || `BX-${o.id.replace(/[^A-Za-z0-9]/g, "").slice(-6).toUpperCase()}`,
+    status: o.status,
+    customerName,
+    customerPhone: cust.phone,
+    plate: o.intakeForm.vehicle.plate,
+    brand: o.intakeForm.vehicle.brand,
+    model: o.intakeForm.vehicle.model,
+    customerComplaint: o.intakeForm.customerComplaint,
+    estimatedDeliveryAt: o.estimatedDeliveryAt?.toISOString() ?? null,
+    assignedAt: o.assignedAt?.toISOString() ?? null,
+    completedAt: o.completedAt?.toISOString() ?? null,
+    createdAt: o.createdAt.toISOString(),
+    assignedTechnicianId: o.assignedTechnicianId,
+    technicianName: o.assignedTechnician?.fullName || o.technicianName || null,
+    checklistProgress: {
+      completed: o.checklistItems.filter((c) => c.isCompleted).length,
+      total: o.checklistItems.length,
+    },
+    hasActiveLabor: o.laborSessions.some((l) => !l.endTime),
+  }
+}
+
 export async function getTechnicianOrders(
   workshopId: string,
   technicianId?: string,
@@ -113,112 +89,25 @@ export async function getTechnicianOrders(
 
   const orders = await prisma.serviceOrder.findMany({
     where,
-    include: {
-      intakeForm: {
-        include: {
-          customer: { select: { firstName: true, lastName: true, fullName: true, companyName: true, type: true, phone: true } },
-          vehicle: { select: { plate: true, brand: true, model: true } },
-        },
-      },
-      assignedTechnician: { select: { fullName: true } },
-      checklistItems: { where: ACTIVE_CHECKLIST_ITEM, select: { isCompleted: true } },
-      laborSessions: { select: { endTime: true } },
-    },
+    include: ORDER_ROW_INCLUDE,
     orderBy: { createdAt: "desc" },
     take: 50,
   })
 
-  return orders.map((o) => {
-    const cust = o.intakeForm.customer
-    const customerName =
-      cust.type === "corporate"
-        ? cust.companyName || "Kurumsal"
-        : cust.fullName || [cust.firstName, cust.lastName].filter(Boolean).join(" ") || "Müşteri"
-
-    const checklistTotal = o.checklistItems.length
-    const checklistCompleted = o.checklistItems.filter((c) => c.isCompleted).length
-    const hasActiveLabor = o.laborSessions.some((l) => !l.endTime)
-
-    return {
-      id: o.id,
-      workOrderNo: o.workOrderNo || `BX-${o.id.replace(/[^A-Za-z0-9]/g, "").slice(-6).toUpperCase()}`,
-      status: o.status,
-      customerName,
-      customerPhone: cust.phone,
-      plate: o.intakeForm.vehicle.plate,
-      brand: o.intakeForm.vehicle.brand,
-      model: o.intakeForm.vehicle.model,
-      customerComplaint: o.intakeForm.customerComplaint,
-      estimatedDeliveryAt: o.estimatedDeliveryAt?.toISOString() ?? null,
-      assignedAt: o.assignedAt?.toISOString() ?? null,
-      completedAt: o.completedAt?.toISOString() ?? null,
-      createdAt: o.createdAt.toISOString(),
-      assignedTechnicianId: o.assignedTechnicianId,
-      technicianName: o.assignedTechnician?.fullName || o.technicianName || null,
-      checklistProgress: { completed: checklistCompleted, total: checklistTotal },
-      hasActiveLabor,
-    }
-  })
+  return orders.map(toTechnicianOrderRow)
 }
 
-/** Teknisyen ana ekranındaki "Son Tamamlananlar" alanı için yakın dönem işleri. */
-export async function getRecentCompletedTechnicianOrders(
+/** Teknisyen ana ekranındaki "Bugün biten" grubu (İstanbul gününe göre). */
+export async function getCompletedTodayTechnicianOrders(
   workshopId: string,
   technicianId?: string
 ): Promise<TechnicianOrderRow[]> {
-  const completedSince = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-  const where: import("@prisma/client").Prisma.ServiceOrderWhereInput = {
-    workshopId,
-    ...(technicianId ? { assignedTechnicianId: technicianId } : {}),
-    status: { in: ["ready_for_delivery", "delivered"] },
-    completedAt: { gte: completedSince },
-  }
-
   const orders = await prisma.serviceOrder.findMany({
-    where,
-    include: {
-      intakeForm: {
-        include: {
-          customer: { select: { firstName: true, lastName: true, fullName: true, companyName: true, type: true, phone: true } },
-          vehicle: { select: { plate: true, brand: true, model: true } },
-        },
-      },
-      assignedTechnician: { select: { fullName: true } },
-      checklistItems: { where: ACTIVE_CHECKLIST_ITEM, select: { isCompleted: true } },
-      laborSessions: { select: { endTime: true } },
-    },
+    where: completedTodayWhere(workshopId, new Date(), technicianId),
+    include: ORDER_ROW_INCLUDE,
     orderBy: { completedAt: "desc" },
   })
-
-  return orders.map((o) => {
-    const cust = o.intakeForm.customer
-    const customerName =
-      cust.type === "corporate"
-        ? cust.companyName || "Kurumsal"
-        : cust.fullName || [cust.firstName, cust.lastName].filter(Boolean).join(" ") || "Müşteri"
-    const checklistTotal = o.checklistItems.length
-    const checklistCompleted = o.checklistItems.filter((c) => c.isCompleted).length
-
-    return {
-      id: o.id,
-      workOrderNo: o.workOrderNo || `BX-${o.id.replace(/[^A-Za-z0-9]/g, "").slice(-6).toUpperCase()}`,
-      status: o.status,
-      customerName,
-      customerPhone: cust.phone,
-      plate: o.intakeForm.vehicle.plate,
-      brand: o.intakeForm.vehicle.brand,
-      model: o.intakeForm.vehicle.model,
-      customerComplaint: o.intakeForm.customerComplaint,
-      estimatedDeliveryAt: o.estimatedDeliveryAt?.toISOString() ?? null,
-      assignedAt: o.assignedAt?.toISOString() ?? null,
-      completedAt: o.completedAt?.toISOString() ?? null,
-      createdAt: o.createdAt.toISOString(),
-      assignedTechnicianId: o.assignedTechnicianId,
-      technicianName: o.assignedTechnician?.fullName || o.technicianName || null,
-      checklistProgress: { completed: checklistCompleted, total: checklistTotal },
-      hasActiveLabor: o.laborSessions.some((l) => !l.endTime),
-    }
-  })
+  return orders.map(toTechnicianOrderRow)
 }
 
 export async function getTechnicianOrderDetail(
@@ -308,37 +197,4 @@ export async function getUnassignedOrderCount(workshopId: string): Promise<numbe
   return prisma.serviceOrder.count({
     where: { workshopId, ...UNASSIGNED_IN_SERVICE_WHERE },
   })
-}
-
-export async function getManagerTechnicianOverview(workshopId: string) {
-  const technicians = await prisma.technician.findMany({
-    where: { workshopId, isActive: true },
-    include: {
-      assignedOrders: {
-        where: { status: { notIn: NOT_DELIVERED_CANCELLED } },
-        select: {
-          id: true,
-          status: true,
-          estimatedDeliveryAt: true,
-          createdAt: true,
-        },
-      },
-    },
-    orderBy: { fullName: "asc" },
-  })
-
-  const today = istanbulDayStart()
-
-  return technicians.map((t) => ({
-    id: t.id,
-    fullName: t.fullName,
-    phone: t.phone,
-    role: t.role,
-    activeJobs: t.assignedOrders.length,
-    inProgressJobs: t.assignedOrders.filter((o) => o.status === "in_progress").length,
-    delayedJobs: t.assignedOrders.filter(
-      (o) => o.estimatedDeliveryAt && o.estimatedDeliveryAt < today && o.status !== "delivered" && o.status !== "cancelled"
-    ).length,
-    completedToday: 0,
-  }))
 }

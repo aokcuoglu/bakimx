@@ -338,7 +338,7 @@ export function InlineCreateModal({
           <div className="space-y-1">
             <Label>Müşteri (sahip) *</Label>
             {owner ? (
-              <div className="flex items-center justify-between rounded-lg border border-border p-2.5">
+              <div className="flex items-center justify-between rounded-md border border-border p-2.5">
                 <span className="flex items-center gap-2 text-sm font-medium"><User className="size-4 text-primary" /> {owner.label}</span>
                 {!fixedCustomer && (
                   <Button type="button" size="icon-sm" variant="ghost" onClick={() => setOwner(null)} aria-label="Müşteriyi değiştir"><X className="size-4" /></Button>
@@ -379,7 +379,7 @@ export function InlineCreateModal({
           </div>
 
           {existingMatch && (
-            <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 space-y-2">
+            <div className="rounded-md border border-warning/40 bg-warning/10 p-3 space-y-2">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="size-4 text-warning-strong mt-0.5 shrink-0" />
                 <div className="min-w-0 text-sm">
@@ -408,7 +408,7 @@ export function InlineCreateModal({
             </CollapsibleTrigger>
 
             <CollapsibleContent>
-              <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-border p-3">
+              <div className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-border p-3">
                 <div className="min-w-0 space-y-1 col-span-2">
                   <Label>Ticari Adı</Label>
                   <Input value={fields.commercialName} onChange={(e) => setField("commercialName", e.target.value)} />

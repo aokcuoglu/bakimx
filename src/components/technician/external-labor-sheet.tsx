@@ -83,7 +83,7 @@ export function EditExternalLaborButton({ orderId, item }: { orderId: string; it
   )
 }
 
-function ExternalLaborSheet({
+export function ExternalLaborSheet({
   orderId,
   item,
   open,
@@ -174,7 +174,7 @@ function ExternalLaborSheet({
 
         <div className="space-y-3 py-1">
           {error && (
-            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
               {error}
             </p>
           )}

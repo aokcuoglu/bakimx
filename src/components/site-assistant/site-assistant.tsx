@@ -23,13 +23,11 @@ const AssistantPanel = dynamic(
 import {
   getAssistantBridge,
   getServerAssistantBridge,
-  setAssistantPanelOpen,
   subscribeAssistantBridge,
 } from "./assistant-bridge";
 
 export type AssistantView =
   | "menu"
-  | "answers"
   | "chat"
   | "demo"
   | "support"
@@ -39,18 +37,11 @@ export type SuccessContext = "demo" | "support";
 
 const OPEN_KEY = "bakimx.assistant.open";
 
-export function SiteAssistant({ aiEnabled = false }: { aiEnabled?: boolean }) {
+export function SiteAssistant() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<AssistantView>("menu");
   const [successContext, setSuccessContext] = useState<SuccessContext>("demo");
-  const [query, setQuery] = useState("");
-  /**
-   * Panel hero'daki ask bar'dan mı açıldı? Geçici açılış `localStorage`a
-   * YAZILMAZ: bir soru sormak "asistanı kalıcı olarak açık bırak" demek değil,
-   * yoksa kullanıcı sonraki ziyaretinde paneli kendiliğinden açık bulurdu.
-   */
-  const [transient, setTransient] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   const bridge = useSyncExternalStore(
@@ -58,7 +49,6 @@ export function SiteAssistant({ aiEnabled = false }: { aiEnabled?: boolean }) {
     getAssistantBridge,
     getServerAssistantBridge,
   );
-  const [appliedNonce, setAppliedNonce] = useState(0);
   const [appliedResumeNonce, setAppliedResumeNonce] = useState(0);
 
   const persist = useCallback((next: boolean) => {
@@ -80,38 +70,13 @@ export function SiteAssistant({ aiEnabled = false }: { aiEnabled?: boolean }) {
     }
   }, []);
 
-  // Ask bar `aria-expanded` için panelin durumunu köprüye bildirir.
-  useEffect(() => {
-    setAssistantPanelOpen(open);
-  }, [open]);
-
-  // Ask bar'dan gelen soru. Nonce'u render sırasında karşılaştırmak effect'e
-  // göre fazladan bir boyama turu yaratmaz — `FAQSection`teki hash deseninin
-  // aynısı.
-  const nonce = bridge.request?.nonce ?? 0;
-  if (hydrated && nonce !== appliedNonce) {
-    setAppliedNonce(nonce);
-    if (bridge.request) {
-      setQuery(bridge.request.query);
-      setView("answers");
-      // Zaten açık bir panel devralınıyorsa geçici sayılmaz: kullanıcı onu
-      // kendisi açmıştı, kapatınca tercihi yine kaydedilmeli.
-      if (!open) {
-        setOpen(true);
-        setTransient(true);
-      }
-    }
-  }
-
-  // E-postadaki "sohbete dön" bağlantısı (BAK-99). Ask bar akışının aksine bu
-  // GEÇİCİ değil: ziyaretçi görüşmesine döndü, panelin açık kalması beklenir —
+  // E-postadaki "sohbete dön" bağlantısı (BAK-99): ziyaretçi görüşmesine döndü, panelin açık kalması beklenir —
   // başka bir sayfaya geçtiğinde de sohbeti açık bulmalı.
   const resumeNonce = bridge.resumeNonce;
   if (hydrated && resumeNonce !== appliedResumeNonce) {
     setAppliedResumeNonce(resumeNonce);
     if (resumeNonce > 0) {
       setView("chat");
-      setTransient(false);
       if (!open) {
         setOpen(true);
         persist(true);
@@ -121,39 +86,29 @@ export function SiteAssistant({ aiEnabled = false }: { aiEnabled?: boolean }) {
 
   const close = useCallback(() => {
     setOpen(false);
-    if (!transient) persist(false);
-    setTransient(false);
-  }, [transient, persist]);
+    persist(false);
+  }, [persist]);
 
   if (!isPublicAssistantPath(pathname)) return null;
 
   return (
     <>
-      {/* Ask bar ekrandayken FAB gizlenir — iki asistan girişi aynı anda durmaz. */}
-      {!bridge.askBarVisible && (
-        <>
-          <AssistantLauncher
-            open={open}
-            onClick={() => {
-              if (open) {
-                close();
-              } else {
-                setView("menu");
-                setOpen(true);
-                setTransient(false);
-                persist(true);
-              }
-            }}
-          />
-        </>
-      )}
+      <AssistantLauncher
+        open={open}
+        onClick={() => {
+          if (open) {
+            close();
+          } else {
+            setView("menu");
+            setOpen(true);
+            persist(true);
+          }
+        }}
+      />
       {open && (
         <AssistantPanel
           view={view}
           successContext={successContext}
-          query={query}
-          aiEnabled={aiEnabled}
-          modal={transient}
           onNavigate={setView}
           onSuccess={(context) => {
             setSuccessContext(context);

@@ -1,109 +1,74 @@
 "use client"
 
 import Link from "next/link"
-import { cn } from "@/lib/utils"
-import {
-  Clock, CheckCircle2, Truck, AlertTriangle,
-  ChevronRight, Car, User,
-} from "lucide-react"
-import { TECHNICIAN_ROLES } from "@/lib/constants"
+import { ChevronRight, Clock, ListChecks, MessageSquareText, User, UserX } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useTransition } from "react"
+import { cn } from "@/lib/utils"
+import { TECHNICIAN_ROLES } from "@/lib/constants"
 import { TECHNICIAN_PARAM } from "@/lib/technician/selected-technician"
+import type { KioskOrderGroups } from "@/lib/technician/kiosk-home"
+import type { TechnicianOrderRow } from "@/lib/technician/queries"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Card, CardContent } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
+import { Progress } from "@/components/ui/progress"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
   Item,
   ItemActions,
   ItemContent,
-  ItemDescription,
   ItemGroup,
   ItemHeader,
-  ItemTitle,
 } from "@/components/ui/item"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { TechnicianQuickActions } from "@/components/technician/technician-quick-actions"
-// e-santral yazı ölçeği: /dashboard ile aynı başlık/KPI/bölüm sınıfları.
+// e-santral yazı ölçeği: /dashboard ile aynı başlık/bölüm sınıfları.
 import { surface } from "@/components/dashboard/surface"
+import { formatTrDayMonthTime, formatTrTime } from "@/lib/format-date"
 import { Plate } from "@/components/shared/plate"
-import { DashboardPagination, useDashboardPage } from "@/components/dashboard/dashboard-pagination"
 
-type DashboardFilter = "all" | "in_progress" | "waiting" | "completed" | "today_delivery"
+// Telefonda tek sütun, masaüstünde iki sütun.
+const ORDER_GRID = "gap-3 lg:grid lg:grid-cols-2"
 
-const DASHBOARD_FILTER_PARAM = "filter"
-const ONLY_MINE_PARAM = "mine"
-
-type TechnicianInfo = {
-  id: string
-  fullName: string
-  phone: string
-  role: string
-  isActive: boolean
+function CountBadge({ count }: { count: number }) {
+  return (
+    <Badge variant="secondary" className="tabular-nums">
+      {count}
+    </Badge>
+  )
 }
 
-type DashboardStats = {
-  assignedToMe: number
-  inProgress: number
-  waiting: number
-  completed: number
-  todayDelivery: number
-}
+type TechnicianInfo = { id: string; fullName: string; role: string }
 
-type OrderRow = {
-  id: string
-  workOrderNo: string
-  status: string
-  customerName: string
-  customerPhone: string
-  plate: string
-  brand: string
-  model: string
-  customerComplaint: string
-  estimatedDeliveryAt: string | null
-  assignedAt: string | null
-  completedAt: string | null
-  createdAt: string
-  assignedTechnicianId: string | null
-  technicianName: string | null
-  checklistProgress: { completed: number; total: number }
-  hasActiveLabor: boolean
-}
-
-export function TechnicianDashboard({
+export function TechnicianKioskHome({
   technicians,
-  selectedTechnicianId,
+  focusTechnicianId,
   canSelectTechnician,
-  onlyAssignedToMe,
-  stats,
-  orders,
-  recentCompletedOrders,
+  greetingName,
+  groups,
+  completedToday,
 }: {
   technicians: TechnicianInfo[]
-  selectedTechnicianId: string
+  focusTechnicianId: string | null
   canSelectTechnician: boolean
-  onlyAssignedToMe: boolean
-  stats: DashboardStats
-  orders: OrderRow[]
-  recentCompletedOrders: OrderRow[]
+  greetingName: string | null
+  groups: KioskOrderGroups
+  completedToday: TechnicianOrderRow[]
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
 
-  // Seçim URL'de taşınır: sunucu KPI'ları ve iş emirlerini seçilen teknisyene
-  // göre yeniden sorgular. Yerel state yalnızca gezinme sürerken seçimi anında
-  // göstermek için tutulur; sunucudan yeni seçim gelince (ör. geri/ileri) ona
-  // hizalanır.
-  const [optimisticId, setOptimisticId] = useState(selectedTechnicianId)
-  const [lastServerId, setLastServerId] = useState(selectedTechnicianId)
-  if (lastServerId !== selectedTechnicianId) {
-    setLastServerId(selectedTechnicianId)
-    setOptimisticId(selectedTechnicianId)
+  // Seçim URL'de taşınır: sunucu İşlerim'i seçilen teknisyene göre yeniden
+  // gruplar. Yerel state yalnız gezinme sürerken seçimi anında göstermek için;
+  // sunucudan yeni seçim gelince (geri/ileri) ona hizalanır.
+  const [optimisticId, setOptimisticId] = useState(focusTechnicianId)
+  const [lastServerId, setLastServerId] = useState(focusTechnicianId)
+  if (lastServerId !== focusTechnicianId) {
+    setLastServerId(focusTechnicianId)
+    setOptimisticId(focusTechnicianId)
   }
 
   function handleTechnicianChange(value: string | null) {
@@ -116,97 +81,27 @@ export function TechnicianDashboard({
     })
   }
 
-  const requestedFilter = searchParams.get(DASHBOARD_FILTER_PARAM)
-  const activeFilter: DashboardFilter = ["in_progress", "waiting", "completed", "today_delivery"].includes(requestedFilter ?? "")
-    ? requestedFilter as DashboardFilter
-    : "all"
-
-  function handleFilterChange(filter: DashboardFilter) {
-    const params = new URLSearchParams(searchParams.toString())
-    if (filter === activeFilter) params.delete(DASHBOARD_FILTER_PARAM)
-    else params.set(DASHBOARD_FILTER_PARAM, filter)
-    startTransition(() => router.replace(`/technician${params.size ? `?${params.toString()}` : ""}`, { scroll: false }))
-  }
-
-  // "Bana atananlar" anahtarı da URL'de taşınır; sunucu KPI'ları ve listeyi
-  // buna göre daraltır. Yerel state yalnız gezinme sürerken anında tepki için.
-  const [optimisticOnlyMine, setOptimisticOnlyMine] = useState(onlyAssignedToMe)
-  const [lastServerOnlyMine, setLastServerOnlyMine] = useState(onlyAssignedToMe)
-  if (lastServerOnlyMine !== onlyAssignedToMe) {
-    setLastServerOnlyMine(onlyAssignedToMe)
-    setOptimisticOnlyMine(onlyAssignedToMe)
-  }
-
-  function handleOnlyMineChange(checked: boolean) {
-    setOptimisticOnlyMine(checked)
-    const params = new URLSearchParams(searchParams.toString())
-    if (checked) params.set(ONLY_MINE_PARAM, "1")
-    else params.delete(ONLY_MINE_PARAM)
-    startTransition(() => router.replace(`/technician${params.size ? `?${params.toString()}` : ""}`, { scroll: false }))
-  }
-
-  // Varsayılan görünümdeki listeler, Özet kartlarıyla aynı tanımı kullanır:
-  // Aktif = Devam Eden kartı, Bekleyen = Bekleyen kartı (başlamaya hazır ya da
-  // parça bekliyor). Taslak / onay bekleyen kabuller "Taslak İşler"de durur.
-  const activeOrders = orders.filter((o) => o.status === "in_progress")
-  const waitingOrders = orders.filter((o) => ["approved", "waiting_parts"].includes(o.status))
-  const draftOrders = orders.filter((o) => ["draft", "waiting_approval"].includes(o.status))
-  const { page: completedPage, pageCount: completedPageCount, pageItems: completedPageItems, setPage: setCompletedPage } =
-    useDashboardPage(recentCompletedOrders, 10)
-
-  const today = new Date().toLocaleDateString("en-CA")
-  // Liste sunucudan zaten kapsamına göre gelir: saha rolünde anahtar kapalıyken
-  // atölyenin tamamı, açıkken yalnız kendi atamaları; yöneticide seçili teknisyen.
-  const selectedCompletedOrders = orders.filter((o) =>
-    o.status === "delivered" && o.completedAt && new Date(o.completedAt).toLocaleDateString("en-CA") === today
-  )
-  const todayDeliveryOrders = orders.filter((o) =>
-    o.estimatedDeliveryAt && new Date(o.estimatedDeliveryAt).toLocaleDateString("en-CA") === today && !["delivered", "cancelled"].includes(o.status)
-  )
-
-  const visibleSections = activeFilter === "all"
-    ? [
-        { title: "Aktif İşler", orders: activeOrders, empty: "Aktif iş bulunmuyor" },
-        { title: "Bekleyen İşler", orders: waitingOrders, empty: "Bekleyen iş bulunmuyor" },
-        { title: "Taslak İşler", orders: draftOrders, empty: "Taslak iş bulunmuyor", collapsible: true },
-        {
-          title: "Son Tamamlananlar",
-          orders: completedPageItems,
-          total: recentCompletedOrders.length,
-          empty: "Son 2 günde tamamlanan iş bulunmuyor",
-          paginated: true,
-        },
-      ]
-    : activeFilter === "in_progress"
-      ? [{ title: "Devam Eden İşler", orders: activeOrders, empty: "Devam eden iş bulunmuyor" }]
-      : activeFilter === "waiting"
-        ? [{ title: "Bekleyen İşler", orders: waitingOrders, empty: "Bekleyen iş bulunmuyor" }]
-        : activeFilter === "completed"
-          ? [{ title: "Tamamlanan İşler", orders: selectedCompletedOrders, empty: "Bugün tamamlanan iş bulunmuyor" }]
-          : [{ title: "Bugün Teslim Edilecekler", orders: todayDeliveryOrders, empty: "Bugün teslim edilecek iş bulunmuyor" }]
-
-  const kpiCards = [
-    { filter: "in_progress" as const, label: "Devam Eden", value: stats.inProgress, icon: Clock, color: "bg-warning/10 text-warning-strong" },
-    { filter: "waiting" as const, label: "Bekleyen", value: stats.waiting, icon: AlertTriangle, color: "bg-warning/10 text-warning-strong" },
-    { filter: "completed" as const, label: "Tamamlanan", value: stats.completed, icon: CheckCircle2, color: "bg-success/10 text-success-strong" },
-    { filter: "today_delivery" as const, label: "Bugün Teslim", value: stats.todayDelivery, icon: Truck, color: "bg-primary/10 text-primary-strong" },
-  ]
+  // Yönetici kendi adıyla karşılanmaz: başlık seçili teknisyeni gösterir.
+  const focusName = technicians.find((t) => t.id === optimisticId)?.fullName
+  const heading = canSelectTechnician
+    ? (focusName ?? "Teknisyen")
+    : greetingName
+      ? `Merhaba ${greetingName}`
+      : "Merhaba"
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className={surface.heroTitle}>Servis Yönetimi</h2>
-          {canSelectTechnician && (
-            <p className={surface.heroSub}>Seçili teknisyenin iş atamalarını yönetin</p>
-          )}
-        </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:justify-end">
+        {/* Telefonda sayfa başlığı selamdır; lg+'da başlık PageFrame'dedir (alt
+            başlığı aynı selam), burada yalnız CSS ile gizlenir — erişilebilirlik
+            ağacında her genişlikte tek h1 kalır. */}
+        <h1 className={cn(surface.heroTitle, "lg:hidden")}>
+          {heading}
+          <span className={surface.panelMeta}>· {groups.mine.length} iş</span>
+        </h1>
         {canSelectTechnician && (
-          <Select
-            value={optimisticId}
-            onValueChange={handleTechnicianChange}
-          >
-            <SelectTrigger aria-label="Teknisyen seç">
+          <Select value={optimisticId ?? undefined} onValueChange={handleTechnicianChange}>
+            <SelectTrigger aria-label="Teknisyen seç" className="w-full sm:w-64">
               <SelectValue placeholder="Teknisyen seç" />
             </SelectTrigger>
             <SelectContent>
@@ -220,187 +115,181 @@ export function TechnicianDashboard({
         )}
       </div>
 
+      {/* Telefon/tablet: büyük kiosk tuşları. lg+'da aynı işlemler sayfa başlığındadır. */}
       <TechnicianQuickActions />
 
       <div
         aria-busy={isPending}
-        className={cn(
-          "space-y-5 sm:space-y-6 transition-opacity",
-          isPending && "opacity-60 pointer-events-none"
-        )}
+        className={cn("space-y-5 sm:space-y-6", isPending && "pointer-events-none")}
       >
-        {/* Hızlı işlemlerden (yeni kayıt / sorgu) ayrı bir bölüm: araç kabul filtreleri. */}
-        <section aria-labelledby="technician-filters-title" className="space-y-3">
-          <div className="space-y-2">
-            <h3 id="technician-filters-title" className={surface.panelTitle}>
-              Özet
-            </h3>
-            {!canSelectTechnician && (
-              // Rozet görünümlü anahtar: hapın tamamı etikete bağlı, dokunma alanı geniş.
-              <Label
-                htmlFor="technician-only-mine"
-                className={cn(
-                  "inline-flex min-h-11 cursor-pointer items-center gap-3 rounded-full py-1.5 pr-2 pl-4 text-base font-medium ring-1 transition-colors",
-                  optimisticOnlyMine
-                    ? "bg-primary/10 text-primary-strong ring-primary/30"
-                    : "bg-card text-foreground ring-foreground/10"
-                )}
-              >
-                Bana atananlar
-                <Badge variant={optimisticOnlyMine ? "default" : "secondary"} className="tabular-nums">
-                  {stats.assignedToMe}
-                </Badge>
-                <Switch
-                  id="technician-only-mine"
-                  checked={optimisticOnlyMine}
-                  onCheckedChange={handleOnlyMineChange}
-                />
-              </Label>
-            )}
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {kpiCards.map((card) => {
-              const Icon = card.icon
-              return (
-                <Button
-                  key={card.label}
-                  type="button"
-                  variant={activeFilter === card.filter ? "tint" : "outline"}
-                  size="row"
-                  aria-pressed={activeFilter === card.filter}
-                  onClick={() => handleFilterChange(card.filter)}
-                  className={cn(
-                    "min-w-0 cursor-pointer items-start hover:ring-2 hover:ring-primary",
-                    // Hover: beyaz zemin + 2px mavi kenar (saydam bg-primary/5 kartı gri
-                    // sayfaya karıştırıp 1px kenarı yutuyordu). Seçili: aynı kenar +
-                    // tint variant'ının tonu (#925).
-                    activeFilter === card.filter ? "ring-2 ring-primary" : "hover:bg-card"
-                  )}
-                >
-                  <span className="flex w-full min-w-0 items-center gap-2.5 sm:block">
-                    <span className={cn("inline-flex size-8 shrink-0 items-center justify-center rounded-lg sm:mb-2 sm:size-9", card.color)}>
-                      <Icon className="size-4" />
-                    </span>
-                    <span className="min-w-0">
-                      {/* Başlık üstte, sayı altta; başlık belirgin (koyu, kalın, büyük).
-                          statLabel modül CSS'i katmansız olduğundan boşluk/boyut/renk
-                          yalnız !important ile ezilir. */}
-                      <span className={cn(surface.statLabel, "mt-0! text-sm! font-semibold text-foreground! sm:text-base!")}>
-                        {card.label}
-                      </span>
-                      <span className={cn(surface.statValue, "mt-0.5 text-2xl! leading-7! sm:text-3xl! sm:leading-9!")}>{card.value}</span>
-                    </span>
-                  </span>
-                </Button>
-              )
-            })}
-          </div>
+        <section aria-labelledby="technician-mine-title" className="space-y-3">
+          <h2 id="technician-mine-title" className={cn(surface.panelTitle, "flex items-center gap-2 px-3")}>
+            İşlerim
+            <CountBadge count={groups.mine.length} />
+          </h2>
+          {groups.mine.length === 0 ? (
+            <Card>
+              <CardContent className="space-y-1 py-8 text-center">
+                <p className="text-base font-semibold text-foreground">Sana atanmış iş yok</p>
+                <p className="text-sm text-muted-foreground">
+                  {groups.others.length > 0 ? "Atölyedeki diğer işler aşağıda" : "Şu an açık iş yok"}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <ItemGroup className={ORDER_GRID}>
+              {groups.mine.map((order) => (
+                <OrderCard key={order.id} order={order} />
+              ))}
+            </ItemGroup>
+          )}
         </section>
 
-        {visibleSections.map((section) => {
-          const count = section.total !== undefined ? section.total : section.orders.length
-          const body = (
-            <>
-              {section.orders.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center text-base text-muted-foreground">
-                    {section.empty}
-                  </CardContent>
-                </Card>
-              ) : (
-                <ItemGroup className="gap-2">
-                  {section.orders.map((order) => (
-                    <OrderCard key={order.id} order={order} />
-                  ))}
-                </ItemGroup>
-              )}
-              {"paginated" in section && section.paginated && completedPageCount > 1 && (
-                <div className="rounded-lg border border-border bg-card">
-                  <DashboardPagination
-                    page={completedPage}
-                    pageCount={completedPageCount}
-                    onPageChange={setCompletedPage}
-                  />
-                </div>
-              )}
-            </>
-          )
-
-          // Taslak işler varsayılan olarak kapalı gelir (defaultValue yok);
-          // başlıktaki sayı kapalıyken de görünür.
-          if ("collapsible" in section && section.collapsible) {
-            return (
-              <Accordion key={section.title} type="single" collapsible variant="disclosure">
-                <AccordionItem value="section">
-                  {/* Kapalıyken de dokunulabilir olduğu belli olsun: `disclosure`
-                      tetikleyicisi kart görünümlü, tam genişlik, en az kontrol
-                      yüksekliğinde (telefonda 44px), hover/basılı geri bildirimli. */}
-                  <AccordionTrigger>
-                    <span className={surface.panelTitle}>
-                      {section.title}
-                      <span className={surface.panelMeta}>({count})</span>
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-3">
-                    {body}
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            )
-          }
-
-          return (
-            <section key={section.title} className="space-y-3">
-              <h3 className={surface.panelTitle}>
-                {section.title}
-                <span className={surface.panelMeta}>({count})</span>
-              </h3>
-              {body}
-            </section>
-          )
-        })}
+        <KioskGroup
+          title="Atölyedeki diğer işler"
+          orders={groups.others}
+          showTechnician
+          defaultOpen={groups.mine.length === 0}
+        />
+        <KioskGroup title="Taslak" orders={groups.drafts} showTechnician />
+        <KioskGroup title="Bugün biten" orders={completedToday} showTechnician showCompletedTime />
       </div>
     </div>
   )
 }
 
-function OrderCard({ order }: { order: OrderRow }) {
-  // Kart sade tutulur: durum rozeti, plaka, araç ve müşteri. Kontrol
-  // listesi, teknisyen, şikâyet gibi ayrıntılar iş emri detayında.
+function KioskGroup({
+  title,
+  orders,
+  showTechnician,
+  showCompletedTime,
+  defaultOpen,
+}: {
+  title: string
+  orders: TechnicianOrderRow[]
+  showTechnician?: boolean
+  showCompletedTime?: boolean
+  defaultOpen?: boolean
+}) {
+  if (orders.length === 0) return null
   return (
-    <Item
-      variant="outline"
-      asChild
-      className="cursor-pointer bg-card/80 shadow-xs transition-all hover:bg-muted/60 hover:bg-primary/10 hover:ring-2 hover:ring-primary/20"
-    >
+    <Collapsible defaultOpen={defaultOpen} className="space-y-3">
+      <h2>
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            size="row"
+            className="w-full justify-between [&[data-state=open]>svg]:rotate-90"
+          >
+            <span className={cn(surface.panelTitle, "flex items-center gap-2")}>
+              {title}
+              <CountBadge count={orders.length} />
+            </span>
+            <ChevronRight aria-hidden="true" className="transition-transform" />
+          </Button>
+        </CollapsibleTrigger>
+      </h2>
+      <CollapsibleContent>
+        <ItemGroup className={ORDER_GRID}>
+          {orders.map((order) => (
+            <OrderCard key={order.id} order={order} showTechnician={showTechnician} showCompletedTime={showCompletedTime} />
+          ))}
+        </ItemGroup>
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
+function OrderCard({
+  order,
+  showTechnician,
+  showCompletedTime,
+}: {
+  order: TechnicianOrderRow
+  showTechnician?: boolean
+  showCompletedTime?: boolean
+}) {
+  const { completed, total } = order.checklistProgress
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0
+  return (
+    <Item asChild className="min-h-11 flex-nowrap items-stretch bg-card">
       <Link href={`/technician/orders/${order.id}`}>
-        <ItemContent>
-          {/* Üst satır: büyük e-santral plaka + mavi bant solda,
-              durum rozetleri sağda. Dar ekranda rozetler alt satıra sarar. */}
+        <ItemContent className="min-w-0 gap-2">
           <ItemHeader className="flex-wrap">
             <Plate plate={order.plate} size="lg" />
             <span className="flex flex-wrap items-center justify-end gap-1.5">
-              <StatusBadge status={order.status} size="lg" className="text-sm" />
+              <StatusBadge status={order.status} size="md" />
               {order.hasActiveLabor && (
-                <Badge variant="success-tint" className="h-7 px-3 text-sm">
-                  İşçilik
-                </Badge>
+                <Badge variant="outline">İşçilik sürüyor</Badge>
               )}
             </span>
           </ItemHeader>
-          <ItemTitle className="flex items-center gap-2 text-base font-semibold">
-            <Car className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-            <span className="line-clamp-1">{order.brand} {order.model}</span>
-          </ItemTitle>
-          <ItemDescription className="flex items-center gap-2">
-            <User className="size-4 shrink-0" aria-hidden="true" />
-            <span className="line-clamp-1">{order.customerName}</span>
-          </ItemDescription>
+          {/* line-clamp, kendi display'ini (-webkit-box) ister: flex/ItemTitle ile
+              birleşince satır kutusu 10px'e kırpılıyordu. Kırpma yalnız metin
+              düğümünde; simge dışarıda, satırlar kutuya sığmayınca küçülmez. */}
+          <p className="shrink-0 text-base leading-snug font-semibold text-foreground">
+            <span className="line-clamp-1">
+              {order.brand} {order.model}
+            </span>
+          </p>
+          {order.customerComplaint && (
+            <div className="flex shrink-0 items-start gap-1.5 text-sm leading-normal text-muted-foreground">
+              <MessageSquareText className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+              <p className="line-clamp-2 min-w-0">{order.customerComplaint}</p>
+            </div>
+          )}
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-2.5 text-sm text-muted-foreground">
+            {showTechnician &&
+              (order.technicianName ? (
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <User className="size-4 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{order.technicianName}</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 font-medium text-warning-strong">
+                  <UserX className="size-4 shrink-0" aria-hidden="true" />
+                  Usta atanmadı
+                </span>
+              ))}
+            {total > 0 && (
+              <span className="flex items-center gap-1.5 tabular-nums">
+                <ListChecks className="size-4 shrink-0" aria-hidden="true" />
+                {completed}/{total} kontrol
+                <Progress value={percent} aria-hidden="true" className="w-12" />
+              </span>
+            )}
+            <span className="ml-auto flex items-center gap-1.5 tabular-nums">
+              <Clock className="size-4 shrink-0" aria-hidden="true" />
+              {showCompletedTime && order.completedAt
+                ? `Bitti ${formatTrTime(order.completedAt)}`
+                : `Kabul ${formatTrDayMonthTime(order.createdAt)}`}
+            </span>
+          </div>
         </ItemContent>
         <ItemActions>
-          <ChevronRight className="size-4 text-muted-foreground" />
+          <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
         </ItemActions>
       </Link>
     </Item>
+  )
+}
+
+/** Teknisyen kaydı olmayan atölye: telefonda tek h1 burada (PageFrame başlığı lg+). */
+export function TechnicianEmptyState() {
+  return (
+    <div className="space-y-5 sm:space-y-6">
+      <h1 className={cn(surface.heroTitle, "lg:hidden")}>Teknisyen Paneli</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>Henüz teknisyen kaydı yok</CardTitle>
+          <CardDescription>Ayarlar &gt; Ekip sayfasından bir teknisyen ekleyin</CardDescription>
+        </CardHeader>
+        <CardFooter className="justify-center border-t-0 bg-transparent">
+          <Button variant="foreground" asChild>
+            <Link href="/settings/team">Ekip Sayfasına Git</Link>
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   )
 }

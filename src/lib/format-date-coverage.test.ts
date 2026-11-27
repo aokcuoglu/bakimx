@@ -49,45 +49,8 @@ const INTENTIONAL: Record<string, string> = {
   "components/ui/calendar.tsx": "takvim ilkeli; günleri ve ay adlarını kullanıcının yerel saatinde çizer",
 }
 
-/** Henüz `@/lib/format-date`'e geçmemiş çağrılar. Boşaldıkça silinir. */
-const PENDING_MIGRATION: Record<string, string> = {
-  "app/admin/active-impersonations.tsx": "#875",
-  "app/admin/admin-billing.tsx": "#875",
-  "app/admin/admin-requests.tsx": "#875",
-  "app/admin/admin-workshops.tsx": "#875",
-  "app/admin/admins/page.tsx": "#875",
-  "app/admin/audit/page.tsx": "#875",
-  "app/admin/catalog/[id]/page.tsx": "#875",
-  "app/admin/catalog/import/import-wizard.tsx": "#875",
-  "app/admin/catalog/orders/orders-list.tsx": "#875",
-  "app/admin/communications/communication-log-table.tsx": "#875",
-  "app/admin/data.ts": "#875",
-  "app/admin/health/page.tsx": "#875",
-  "app/admin/live-chat/live-chat-inbox.tsx": "#875",
-  "app/admin/sales/sales-console.tsx": "#875",
-  "app/admin/status/status-incident-console.tsx": "#875",
-  "app/admin/workshop-actions.tsx": "#875",
-  "app/admin/workshop-activity-tables.tsx": "#875",
-  "app/admin/workshops/[id]/page.tsx": "#875",
-  "components/billing/manage-plan-dialog.tsx": "#875",
-  "components/communications/communication-log-list.tsx": "#875",
-  "components/damage/vehicle-damage-map.tsx": "#875",
-  "components/intake/approval-timeline.tsx": "#875",
-  "components/intake/damage-capture.tsx": "#875",
-  "components/intake/public-share-page.tsx": "#875",
-  "components/orders/order-list.tsx": "#875",
-  "components/orders/parts-labor-grid.tsx": "#875",
-  "components/orders/parts-request-panel.tsx": "#875",
-  "components/parts/supplier-price-dialog.tsx": "#875",
-  "components/purchases/purchases-list.tsx": "#875",
-  "components/quotes/quote-list.tsx": "#875",
-  "components/site-assistant/views/live-chat-view.tsx": "#875",
-  "components/technician/labor-session-card.tsx": "#875",
-  "components/technician/technician-dashboard.tsx": "#875",
-  "components/technician/technician-order-detail.tsx": "#875",
-  "components/vehicles/public-vehicle-passport.tsx": "#875",
-  "lib/blog/format.ts": "#875",
-}
+/** Henüz `@/lib/format-date`'e geçmemiş çağrılar. Boşaldıkça silinir (#875: şu an boş). */
+const PENDING_MIGRATION: Record<string, string> = {}
 
 /** `(`'ten başlayıp dengeli kapanan `)`'e kadar olan metni verir. */
 function balancedArgs(source: string, openIndex: number): string {

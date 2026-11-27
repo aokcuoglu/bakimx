@@ -211,15 +211,9 @@ recommended for media recovery.
 
 ## 8. AI provider integrations
 
-Two distinct AI-backed capabilities remain, both behind provider interfaces:
+One AI-backed capability remains, behind a provider interface (the landing product assistant's AI answer chain was removed in #1020):
 
-### a) Landing product assistant (`src/lib/landing/`)
-- **Purpose:** answer public product questions from the curated BakımX corpus. It is separate from
-  authenticated workshop operations and cannot add labor or parts to work orders.
-- **Providers:** grounded local `mock` matcher (default) | `openai` | `anthropic`.
-- **Configuration:** `AI_PROVIDER`, optional `AI_MODEL`, and the selected provider's API key.
-
-### b) Registration-document OCR (`src/lib/ocr/`)
+### Registration-document OCR (`src/lib/ocr/`)
 - **Purpose:** read the vehicle registration (ruhsat) to auto-fill plate/brand/VIN/owner, then the
   user confirms before save. Every run is recorded in an `OcrLog` (raw text never exposed publicly).
 - **Providers:** `mock` | `openai` | `anthropic` | `tesseract`.
@@ -242,7 +236,7 @@ default**, with every send recorded in `CommunicationLog` / `CalendarSyncLog`:
 
 | Capability | Real provider | Endpoint |
 |---|---|---|
-| SMS | **Netgsm** | `https://api.netgsm.com.tr/sms/send/get` |
+| SMS | **Netgsm** | `https://api.netgsm.com.tr/sms/rest/v2/send` |
 | WhatsApp | **WhatsApp Business** (Meta) | `https://graph.facebook.com/v18.0` |
 | E-mail | **Resend** | `https://api.resend.com/emails` |
 | Calendar | **Google Calendar** | `https://www.googleapis.com/calendar/v3` |

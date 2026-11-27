@@ -8,7 +8,7 @@ import { isTamiConfigured } from "@/lib/tami/config"
 import { alertTamiMisconfigOnce, isCardPaymentBlocked } from "@/lib/tami/misconfig-alert"
 import { TamiError, sanitizeForLog } from "@/lib/tami/errors"
 import { buildTamiPaymentBody } from "@/lib/tami/request-builder"
-import { getPlanPackage } from "@/lib/plans-catalog"
+import { describeBillingOrder, isAddonPeriodOpen } from "@/lib/billing/addon-pricing"
 import { cardSchema } from "@/lib/billing/card-schema"
 import {
   generateProviderOrderId,
@@ -128,6 +128,15 @@ export async function POST(request: Request) {
     await tx.$queryRaw`SELECT id FROM "Workshop" WHERE id = ${order.workshopId} FOR UPDATE`
     const current = await tx.billingOrder.findUnique({ where: { id: order.id }, select: { status: true } })
     if (current?.status !== "pending_payment") return null
+    // Ek özellik: paket dönemi bu arada bittiyse kart çekilmesin — aktivasyon
+    // PERIOD_ENDED ile reddedip işlemi askıda bırakırdı (#829). Kilit altında okunur.
+    if (order.type === "addon") {
+      const account = await tx.workshop.findUnique({
+        where: { id: order.workshopId },
+        select: { subscriptionStatus: true, currentPeriodEnd: true },
+      })
+      if (!isAddonPeriodOpen(account, new Date())) return "period_ended" as const
+    }
     return tx.paymentTransaction.create({
       data: {
         billingOrderId: order.id,
@@ -141,13 +150,13 @@ export async function POST(request: Request) {
       },
     })
   })
+  if (txn === "period_ended") return resultRedirect(request, reference, "period")
   if (!txn) return resultRedirect(request, reference)
 
   // 6) TAMI 3DS auth çağrısı — gövde tek doğruluk kaynağı buildTamiPaymentBody'den
   // gelir (canlı sandbox'ta doğrulanan gerçek wire şeması); tutar order.amountMinor'dan
   // türetilir (client'tan asla).
-  const planLabel = getPlanPackage(order.planTier)?.name ?? order.planTier
-  const cycleLabel = order.billingCycle === "monthly" ? "Aylık" : "Yıllık"
+  const described = describeBillingOrder(order)
   const auth = buildTamiPaymentBody({
     orderId: providerOrderId,
     amountMinor: order.amountMinor,
@@ -169,7 +178,7 @@ export async function POST(request: Request) {
       address: snap("address") || workshop.address || undefined,
       companyName: snap("invoiceTitle") || workshop.name,
     },
-    basketItemName: `${planLabel} · ${cycleLabel}`,
+    basketItemName: `${described.title} · ${described.cycleLabel}`,
   })
 
   try {

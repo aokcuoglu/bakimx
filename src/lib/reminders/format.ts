@@ -1,5 +1,3 @@
-import { istanbulDayStart } from "@/lib/istanbul-time"
-
 export function formatReminderStatus(status: string): string {
   const labels: Record<string, string> = {
     upcoming: "Yaklaşan",
@@ -35,12 +33,6 @@ export function formatChannel(channel: string): string {
     email: "E-posta",
   }
   return labels[channel] || channel
-}
-
-/** Bugünden `date`'in gününe kalan gün; günler Türkiye takvimine göre (#904). */
-export function daysUntil(date: string | Date, now: Date = new Date()): number | null {
-  const d = typeof date === "string" ? new Date(date) : date
-  return Math.round((istanbulDayStart(d).getTime() - istanbulDayStart(now).getTime()) / 86400000)
 }
 
 export function kmUntil(dueMileage: number, currentMileage?: number | null): number | null {
