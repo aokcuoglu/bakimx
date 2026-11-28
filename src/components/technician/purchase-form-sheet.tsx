@@ -143,6 +143,7 @@ export function PurchaseFormSheet({
   open,
   onOpenChange,
   surface = "dialog",
+  onCloseAutoFocus,
 }: {
   orderId: string
   vehicle: PickerVehicle
@@ -155,6 +156,8 @@ export function PurchaseFormSheet({
   onOpenChange: (open: boolean) => void
   /** Telefonda alt sayfa, masaüstünde diyalog — seçimi çağıran yapar (#1061). */
   surface?: FormSurfaceKind
+  /** Diyalog kapanınca odağın döneceği yer (ofis Parça ekle → Dış Alım, #1070). */
+  onCloseAutoFocus?: (event: Event) => void
 }) {
   const router = useRouter()
   const editing = item != null
@@ -352,6 +355,7 @@ export function PurchaseFormSheet({
           : "Aldığınız parçayı bu araç kabulüne kalem olarak ekleyin."
       }
       dialogClassName="sm:max-w-md"
+      onCloseAutoFocus={onCloseAutoFocus}
       footer={
         <div className="flex gap-2">
           <Button variant="foreground"

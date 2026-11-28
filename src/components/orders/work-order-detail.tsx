@@ -115,7 +115,8 @@ import { urlWithout, type OrderSectionId } from "@/lib/orders/detail-sections"
 import { OrderQuickActions } from "@/components/orders/order-quick-actions"
 import { PhotoSourceButtons } from "@/components/intake/photo-source-buttons"
 import { orderQuickActions, type OrderQuickAction } from "@/lib/orders/quick-actions"
-import type { PartsAddType } from "@/components/orders/parts-labor-grid"
+import type { PartsAddType, PurchaseAddContext } from "@/components/orders/parts-labor-grid"
+import type { SupplierInfo } from "@/components/technician/purchase-form-sheet"
 
 // Header aksiyon ikonları (eski orders ekranıyla aynı görünüm). Hedef duruma göre;
 // geri dönüş geçişi ileri geçişin ikonunu almasın diye `ORDER_BACK_ACTION_ICONS`
@@ -242,6 +243,8 @@ export function WorkOrderDetail({
   laborCatalog,
   canReopen = false,
   canEditInfo = false,
+  canPurchase = false,
+  suppliers = [],
   enabledFeatures,
   currentTier,
 }: {
@@ -262,6 +265,11 @@ export function WorkOrderDetail({
   // (`order.edit`). Karar SUNUCUDA verilir (`updateIntakeDetailsAction` →
   // `requireWritableWorkshop("order.edit")`); burada yalnız görünürlük.
   canEditInfo?: boolean
+  // #1070 — dış alım parça ekleme (`procurement` planda açık + `parts.purchase`).
+  // Karar SUNUCUDA verilir; asıl kapı `addPurchaseItemAction`ta.
+  canPurchase?: boolean
+  // Dış alım formunun tedarikçi önerileri; yalnız `canPurchase` iken yüklenir.
+  suppliers?: SupplierInfo[]
   enabledFeatures: readonly GatedFeature[]
   currentTier: PlanTier
 }) {
@@ -865,6 +873,9 @@ export function WorkOrderDetail({
       }
     : null
   const [partsAddType, setPartsAddType] = useState<PartsAddType | null>(null)
+  const purchaseContext: PurchaseAddContext | null = canPurchase
+    ? { suppliers, technicians: technicians ?? [], defaultTechnicianId: order.assignedTechnicianId }
+    : null
   const [collectionModalOpen, setCollectionModalOpen] = useState(false)
 
   // Ödeme kartındaki "Tahsilat al" ve hızlı işlem aynı pencereyi açar; kart
@@ -1311,7 +1322,7 @@ export function WorkOrderDetail({
                 listede ekranın çok altında kalıyor, banner viewport dışında kalıp
                 görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
                 Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
-            <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} addingType={partsAddType} onAddingTypeChange={setPartsAddType} rememberAddOpener={rememberFocus} onAddDialogCloseAutoFocus={returnFocusOnClose} totals={order.totals} onNavigateToPayment={() => scrollToOrderSection("odeme")} />
+            <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} addingType={partsAddType} onAddingTypeChange={setPartsAddType} purchase={purchaseContext} rememberAddOpener={rememberFocus} onAddDialogCloseAutoFocus={returnFocusOnClose} totals={order.totals} onNavigateToPayment={() => scrollToOrderSection("odeme")} />
           </div>
 
           {/* KANIT — kabul kanıtları, fotoğraflar, hasar */}

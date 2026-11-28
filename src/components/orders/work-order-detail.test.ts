@@ -347,7 +347,10 @@ test("hızlı işlem ve Şikayet pencereleri kapanınca odak açan düğmeye dö
   expect(QUICK).toContain("onClick={(event) => onAction(action, event.currentTarget)}")
   // Paylaşılan pencereler dışarıdan gelen işleyiciyi içeriklerine verir.
   const GRID = readFileSync(join(import.meta.dir, "parts-labor-grid.tsx"), "utf8")
-  expect(GRID).toContain('<DialogContent className="sm:max-w-2xl" onCloseAutoFocus={onAddDialogCloseAutoFocus}>')
+  // #1070: Dış Alım'a geçişte açıcı tüketilmez, işleyici dış alım formuna da geçer.
+  const addDialog = GRID.slice(GRID.indexOf('className="sm:max-w-2xl"'), GRID.indexOf('className="sm:max-w-2xl"') + 500)
+  expect(addDialog).toContain("onAddDialogCloseAutoFocus?.(event)")
+  expect(GRID).toContain("onCloseAutoFocus={onAddDialogCloseAutoFocus}")
   const MODAL = readFileSync(join(import.meta.dir, "..", "cashbox", "collection-quick-modal.tsx"), "utf8")
   expect(MODAL).toContain("onCloseAutoFocus={onCloseAutoFocus}>")
   expect(PANEL).toContain("onCloseAutoFocus={onCollectionModalCloseAutoFocus}")
