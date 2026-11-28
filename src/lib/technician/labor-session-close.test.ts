@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import {
   closeOpenSessions,
+  statusClosesLaborSessions,
   decideStart,
   type LaborCloseIO,
   type OpenLaborSession,
@@ -99,6 +100,15 @@ describe("decideStart", () => {
   test("teslime hazır / teslim edilmiş / iptal başlatılamaz", () => {
     for (const s of ["ready_for_delivery", "delivered", "cancelled"] as const) {
       expect(decideStart(s, false)).toEqual({ error: "Bu durum geçişine izin verilmiyor" })
+    }
+  })
+})
+
+describe("statusClosesLaborSessions", () => {
+  test("yalnız Serviste sayaç açık kalır", () => {
+    expect(statusClosesLaborSessions("in_progress")).toBe(false)
+    for (const s of ["draft", "waiting_parts", "ready_for_delivery", "delivered", "cancelled"] as const) {
+      expect(statusClosesLaborSessions(s)).toBe(true)
     }
   })
 })
