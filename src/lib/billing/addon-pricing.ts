@@ -1,5 +1,5 @@
 import { CYCLE_DAYS, DAY_MS } from "@/lib/billing/proration"
-import type { AddonFeature } from "@/lib/plan"
+import { normalizeAddons, type AddonFeature } from "@/lib/plan"
 import { ADDON_CATALOG, getPlanPackage } from "@/lib/plans-catalog"
 import type { BillingCycle } from "@prisma/client"
 
@@ -166,6 +166,22 @@ export function paidAddonKeysAfterFeatureChange(
 ): AddonOrderKey[] {
   const have = new Set(addons)
   return paidAddons.filter((key) => addonFeaturesFor([key]).every((f) => have.has(f)))
+}
+
+/**
+ * Yenilemede tahsil edilecek anahtarlar (#1049): `paidAddons` içinde olup
+ * özellikleri hâlâ açık olanlar. Senkron öncesi admin tarafından kapatılmış
+ * satın alınmış bir ek özellik tahsil edilmez / yeniden açılmaz. Sunucu ve
+ * istemci yüzeyleri aynı süzgeci kullanır.
+ */
+export function effectivePaidAddonKeys(workshop: {
+  paidAddons: readonly string[]
+  addons: readonly string[]
+}): AddonOrderKey[] {
+  return paidAddonKeysAfterFeatureChange(
+    workshop.paidAddons.filter(isAddonOrderKey),
+    normalizeAddons(workshop.addons),
+  )
 }
 
 export function describeBillingOrder(o: {

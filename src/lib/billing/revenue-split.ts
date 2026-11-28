@@ -4,7 +4,7 @@ import { getOrderAmountSplit, isAddonOrderKey, priceRenewalAddonLines } from "@/
 /** Bu ay tahsilatı: paket ve ek özellik payı (#1049). Eski siparişler paket sayılır. */
 export function splitMonthRevenue(
   orders: readonly { type: string; amountMinor: number; addonLines?: unknown }[],
-): { packageMinor: number; addonMinor: number } {
+): { packageMinor: number; addonMinor: number; totalMinor: number } {
   let packageMinor = 0
   let addonMinor = 0
   for (const o of orders) {
@@ -12,7 +12,7 @@ export function splitMonthRevenue(
     packageMinor += split.packageAmountMinor
     addonMinor += split.addonAmountMinor
   }
-  return { packageMinor, addonMinor }
+  return { packageMinor, addonMinor, totalMinor: packageMinor + addonMinor }
 }
 
 /**

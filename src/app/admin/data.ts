@@ -440,7 +440,7 @@ export async function getBillingData(): Promise<BillingData> {
       activeCount: subscriptions.length,
       mrrLabel: formatMinor(mrrMinor),
       addonMrrLabel: formatMinor(addonMrrMinor),
-      monthLabel: formatMinor(monthSplit.packageMinor),
+      monthLabel: formatMinor(monthSplit.totalMinor),
       monthAddonLabel: formatMinor(monthSplit.addonMinor),
     },
   }

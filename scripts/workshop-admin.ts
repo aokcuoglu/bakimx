@@ -4,7 +4,7 @@ import { Pool } from "pg"
 import { ADDON_FEATURES, computeTrialEnd, normalizeAddons, TRIAL_BUSINESS_DAYS } from "../src/lib/plan"
 import { diffAddons, workshopAddonsSchema, type AddonsDiff } from "../src/lib/validations/workshop-addons"
 import { planAddonFanOut, resolveAddonTargets, type AddonTargetClient } from "../src/lib/admin/addon-targets"
-import { planPaidAddonsAfterAdminChange } from "../src/lib/admin/paid-addons-sync"
+import { applyAdminAddonsTx } from "../src/lib/admin/apply-addons"
 import { addPeriod } from "../src/lib/billing/period"
 import { buildPoolConfig } from "../src/lib/pg-connection"
 
@@ -264,36 +264,23 @@ async function setAddons(idOrEmail: string, args: SetAddonsArgs) {
   const plan = planAddonFanOut(targets, args.addons)
   const after = normalizeAddons(args.addons)
   if (plan.noop) return console.log(`Değişiklik yok: ${plan.workshopIds.join(",")} (${after.join(",") || "—"})`)
-  const summary = plan.entries
-    .map(({ id: wid, diff }) => `${wid}: +[${diff.added.join(",")}] -[${diff.removed.join(",")}] → [${diff.after.join(",")}]`)
-    .join("\n")
+  const summarize = (entries: typeof plan.entries) =>
+    entries
+      .map(({ id: wid, diff }) => `${wid}: +[${diff.added.join(",")}] -[${diff.removed.join(",")}] → [${diff.after.join(",")}]`)
+      .join("\n")
+  const summary = summarize(plan.entries)
   if (!args.apply) {
     console.log(`KURU ÇALIŞTIRMA (yazılmadı):\n${summary}\nUygulamak için --apply ekleyin.`)
     return
   }
-  const paid = await planPaidAddonsAfterAdminChange(prisma, id, after)
-  await prisma.$transaction([
-    prisma.workshop.updateMany({ where: { id: { in: plan.workshopIds }, kind: "customer" }, data: { addons: after } }),
-    ...(paid ? [prisma.workshop.update({ where: { id: paid.accountId }, data: { paidAddons: paid.paidAddons } })] : []),
-    ...plan.entries.map(({ id: wid, diff }) =>
-      prisma.auditLog.create({
-        data: {
-          workshopId: wid,
-          actorUserId: null,
-          entityType: "Workshop",
-          entityId: wid,
-          action: "admin_addons_set",
-          metadataJson: JSON.stringify({
-            ...diff,
-            ...(plan.workshopIds.length > 1 ? { workshopIds: plan.workshopIds } : {}),
-            ...(paid && wid === paid.accountId ? { paidAddonsRemoved: paid.removed } : {}),
-            source: "cli",
-          }),
-        },
-      }),
-    ),
-  ])
-  console.log(`✅ Ek özellikler güncellendi:\n${summary}`)
+  // Kilit + okuma + yazım tek interaktif transaction'da (aktivasyonla aynı kilit sırası).
+  const result = await prisma.$transaction((tx) =>
+    applyAdminAddonsTx(tx, { workshopId: id, next: after, actorUserId: null, source: "cli" }),
+  )
+  if (result.status === "not_found") return fail(`İş yeri bulunamadı: ${idOrEmail}`)
+  if (result.status === "noop") return console.log(`Değişiklik yok: ${result.plan.workshopIds.join(",")} (${after.join(",") || "—"})`)
+  // Özet kilitten sonra okunan (kesin) plandan yazılır.
+  console.log(`✅ Ek özellikler güncellendi:\n${summarize(result.plan.entries)}`)
 }
 
 function fail(msg: string) {

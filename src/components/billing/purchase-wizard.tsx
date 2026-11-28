@@ -283,7 +283,7 @@ export function PurchaseWizard({
                           cycle={cycle}
                           packageLabel={pkg.name}
                           packageAmountMinor={getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps)}
-                          totalLabel="Ödenecek"
+                          totalLabel="Ödenecek (KDV dahil)"
                           className="rounded-xl border bg-card p-4"
                         />
                       )}
@@ -471,7 +471,7 @@ export function PurchaseWizard({
                           cycle={cycle}
                           packageLabel={pkg.name}
                           packageAmountMinor={getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps)}
-                          totalLabel="Kredi öncesi toplam"
+                          totalLabel="Kredi öncesi tutar"
                           className="rounded-xl border bg-card p-4"
                         />
                       )}

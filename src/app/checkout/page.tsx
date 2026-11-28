@@ -7,7 +7,7 @@ import { formatMinor } from "@/lib/billing/pricing"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import { prisma } from "@/lib/db"
 import { resolveBillingAccount } from "@/lib/billing/account"
-import { describeBillingOrder, isAddonOrderKey, isReleasableExpiredAddonOrder } from "@/lib/billing/addon-pricing"
+import { describeBillingOrder, effectivePaidAddonKeys, isReleasableExpiredAddonOrder } from "@/lib/billing/addon-pricing"
 import { getPlanState, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
 import { Button } from "@/components/ui/button"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
@@ -36,7 +36,7 @@ export default async function CheckoutPage({
   // Yenilemede tahsil edilecek satın alınmış ek özellikler yalnız hesap atölyesinde (#1049).
   const paidAddonKeys =
     workshop && (await resolveBillingAccount(workshop)).isAccountWorkshop
-      ? workshop.paidAddons.filter(isAddonOrderKey)
+      ? effectivePaidAddonKeys(workshop)
       : []
   const seatUsage = workshop ? await getSeatUsage(workshop.id) : null
   // Dönem verildiyse (kilit yüzeyi, e-posta, yenileme bağlantısı) doğrudan fatura

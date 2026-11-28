@@ -128,7 +128,7 @@ export function AdminBilling({
 }) {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
         <Stat label="Aktif abonelik" value={String(revenue.activeCount)} />
         <Stat label="Paket MRR" value={revenue.mrrLabel} />
         <Stat label="Ek özellik MRR" value={revenue.addonMrrLabel} />
@@ -177,9 +177,9 @@ export function AdminBilling({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="min-w-0 rounded-lg border bg-card p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-xl font-bold text-foreground mt-0.5">{value}</p>
+      <p className="mt-0.5 min-w-0 text-xl font-bold text-foreground tabular-nums">{value}</p>
     </div>
   )
 }

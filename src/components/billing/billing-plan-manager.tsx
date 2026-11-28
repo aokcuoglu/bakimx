@@ -20,7 +20,7 @@ import type { AddonRowViews } from "@/lib/billing/addon-row-state"
 import type { AddonOrderKey } from "@/lib/billing/addon-pricing"
 import type { AddonLandingReason } from "@/lib/billing/addon-landing"
 import { ManagePlanDialog } from "@/components/billing/manage-plan-dialog"
-import { OrderSummaryLines, renewalAddonLines, sumAddonLines } from "@/components/billing/order-summary-lines"
+import { OrderSummaryRows, renewalAddonLines, sumAddonLines } from "@/components/billing/order-summary-lines"
 import { BillingUsagePanel } from "@/components/billing/billing-usage-panel"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { AddonPurchaseDialog } from "@/components/billing/addon-purchase-dialog"
@@ -411,11 +411,11 @@ export function BillingPlanManager({
                       <dl className="space-y-3 border-b pb-4 text-sm">
                         <div className="flex justify-between gap-3"><dt>Liste tutarı</dt><dd className="font-medium">{formatMinor(catalogAmount)}</dd></div>
                         {referralDiscountBps > 0 && <div className="flex justify-between gap-3"><dt>Referans indirimi (%10)</dt><dd>−{formatMinor(catalogAmount - discountedAmount)}</dd></div>}
-                        {renewalLines.length > 0 && <OrderSummaryLines addonLines={renewalLines} cycle={cycle} className="space-y-3" />}
+                        <OrderSummaryRows addonLines={renewalLines} cycle={cycle} />
                         <div className="flex justify-between gap-3"><dt>Dahil kullanıcı</dt><dd>{pkg?.seats}</dd></div>
                         {ownedTier && ownedTier !== tier && <div className="flex justify-between gap-3"><dt>Kalan dönem kredisi</dt><dd>Sonraki adımda</dd></div>}
                       </dl>
-                      <div className="flex items-center justify-between gap-3 font-semibold"><span>{ownedTier && ownedTier !== tier ? "Kredi öncesi tutar" : "Ödenecek"}</span><span>{formatMinor(payableAmount)}</span></div>
+                      <div className="flex items-center justify-between gap-3 font-semibold"><span>{ownedTier && ownedTier !== tier ? "Kredi öncesi tutar" : "Ödenecek"}</span><span className="tabular-nums">{formatMinor(payableAmount)}</span></div>
                       {ownedTier && ownedTier !== tier && <p className="text-xs text-muted-foreground">Kalan dönem kredisi uygulanır; kesin ödeme tutarı sipariş oluşturulduktan sonra gösterilir.</p>}
                       {canPurchase && !hasPendingOrder && <div className="space-y-2 border-t pt-4"><p className="text-sm font-medium">Ödeme yöntemi</p>
                         <ToggleGroup type="single" size="control" value={method} onValueChange={(value) => { if (value) form.setValue("method", value as "card" | "havale") }} className="grid grid-cols-2 gap-2" aria-label="Ödeme yöntemi">

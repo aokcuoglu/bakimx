@@ -10,6 +10,7 @@ import {
   isReleasableExpiredAddonOrder,
   getAddonPriceMinor,
   isAddonOrderKey,
+  effectivePaidAddonKeys,
   parseAddonOrderLines,
   paidAddonKeysAfterFeatureChange,
   priceAddonOrder,
@@ -163,6 +164,12 @@ describe("yenilemede ek özellik kalemleri (#1049)", () => {
   test("şube başına (multiBranch) ve bilinmeyen anahtarlar atlanır; boş girdi boş döner", () => {
     expect(priceRenewalAddonLines({ keys: ["multiBranch", "bogus", "vinLookup"], cycle: "monthly" }).map((l) => l.key)).toEqual(["vinLookup"])
     expect(priceRenewalAddonLines({ keys: [], cycle: "monthly" })).toEqual([])
+  })
+
+  test("effectivePaidAddonKeys: özelliği admin tarafından kapatılmış anahtar tahsil edilmez", () => {
+    const vin = addonFeaturesFor(["vinLookup"])
+    expect(effectivePaidAddonKeys({ paidAddons: ["vinLookup", "ocrIntake", "bogus"], addons: [...vin] })).toEqual(["vinLookup"])
+    expect(effectivePaidAddonKeys({ paidAddons: ["vinLookup"], addons: [] })).toEqual([])
   })
 
   const line = { key: "vinLookup", name: "VIN ile araç tanıma", quantity: 1, unitAmountMinor: 39_900, amountMinor: 39_900 }

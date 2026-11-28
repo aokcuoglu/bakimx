@@ -30,17 +30,18 @@ test("yalnız hesap atölyesi kalem taşır; şube siparişi taşımaz (#1049)",
   expect(read("src/lib/billing/account-context.ts")).toContain("account.isAccountWorkshop ? workshop.paidAddons")
 })
 
-test("aktivasyon kalemleri aynı işlemde uygular; hakediş tabanı yalnız paket payıdır (#1049)", () => {
-  const src = read("src/lib/billing/activate.ts")
-  expect(src).toContain("applyAddonEntitlementsTx(")
-  expect(src).toContain("commissionBaseNetMinor: createBillingTaxSnapshot(split.packageAmountMinor).netAmountMinor")
-  // Paket yazımı `addons` alanına doğrudan dokunmaz (#827); yalnız kalemler uygulanır.
-  const update = src.slice(src.indexOf("tx.workshop.update({"), src.indexOf("applyAddonEntitlementsTx("))
-  expect(update).not.toMatch(/\baddons:/)
+test("yenileme kalemleri süzülmüş anahtarlardan gelir; sunucu ve istemci aynı yardımcıyı kullanır (#1049)", () => {
+  for (const path of [
+    "src/app/(app)/billing/actions.ts",
+    "src/lib/billing/account-context.ts",
+    "src/app/checkout/page.tsx",
+  ]) {
+    expect(read(path)).toContain("effectivePaidAddonKeys(")
+  }
 })
 
-test("admin ek özelliği kapatınca paidAddons aynı işlemde güncellenir (#1049)", () => {
-  expect(read("src/app/admin/actions.ts")).toContain("planPaidAddonsAfterAdminChange(")
-  expect(read("src/app/admin/actions.ts")).toContain("paidAddonsRemoved")
-  expect(read("scripts/workshop-admin.ts")).toContain("planPaidAddonsAfterAdminChange(")
+// Davranış testleri: activate.test.ts (kalemler + hakediş tabanı), apply-addons.test.ts (kilit sırası).
+test("admin ek özellik yazımı tek interaktif transaction'da yapılır (#1049)", () => {
+  expect(read("src/app/admin/actions.ts")).toContain("applyAdminAddonsTx(")
+  expect(read("scripts/workshop-admin.ts")).toContain("applyAdminAddonsTx(")
 })

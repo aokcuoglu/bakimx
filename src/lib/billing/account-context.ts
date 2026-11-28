@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { getAppData } from "@/app/(app)/data"
 import { resolveBillingAccount } from "@/lib/billing/account"
 import { prisma } from "@/lib/db"
-import { isAddonOrderKey } from "@/lib/billing/addon-pricing"
+import { effectivePaidAddonKeys } from "@/lib/billing/addon-pricing"
 import { getPlanState, type PlanTier } from "@/lib/plan"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { getSeatUsage } from "@/lib/rbac"
@@ -33,7 +33,7 @@ export async function getAccountBillingContext() {
     user, workshop, plan, ownedTier, planName, pendingOrder, seatUsage,
     isAccountWorkshop: account.isAccountWorkshop,
     /** Yenilemede tahsil edilecek satın alınmış ek özellikler; yalnız hesap atölyesinde (#1049). */
-    paidAddonKeys: account.isAccountWorkshop ? workshop.paidAddons.filter(isAddonOrderKey) : [],
+    paidAddonKeys: account.isAccountWorkshop ? effectivePaidAddonKeys(workshop) : [],
     canPurchase: actorCan(user, "billing.manage"),
   }
 }

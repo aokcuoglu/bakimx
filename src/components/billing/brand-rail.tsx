@@ -85,7 +85,7 @@ export function BrandRail({
               </div>
               <OrderSummaryLines addonLines={addonLines} cycle={cycle} tone="onNavy" className="mt-3" />
               <div className="mt-3 flex items-baseline justify-between border-t border-white/10 pt-3">
-                <span className="text-sm text-navy-foreground/60">{mode === "inapp" ? "Kredi öncesi · KDV dahil" : "Toplam · KDV dahil"}</span>
+                <span className="text-sm text-navy-foreground/60">{mode === "inapp" ? "Kredi öncesi tutar · KDV dahil" : "Toplam · KDV dahil"}</span>
                 <span className="text-2xl font-extrabold">{amount}</span>
               </div>
             </>

@@ -18,7 +18,7 @@ import { actorCan } from "@/lib/roles"
 import { canCancelPendingCardOrder } from "@/lib/billing/cancellation"
 import { releaseExpiredAddonOrders } from "@/lib/billing/release-expired-addon-orders"
 import { resolveBillingAccount } from "@/lib/billing/account"
-import { priceRenewalAddonLines } from "@/lib/billing/addon-pricing"
+import { effectivePaidAddonKeys, priceRenewalAddonLines } from "@/lib/billing/addon-pricing"
 import type { Prisma } from "@prisma/client"
 
 /**
@@ -130,10 +130,10 @@ export async function createBillingOrder(input: {
   // #1049: hesap atölyesinin satın alınmış ek özellikleri paket siparişine tam
   // dönem fiyatıyla eklenir (upgrade'de de kredisiz). Şube siparişleri taşımaz.
   const billingAccount = await resolveBillingAccount(workshop)
-  const addonLines =
-    billingAccount.isAccountWorkshop && type !== "downgrade"
-      ? priceRenewalAddonLines({ keys: workshop.paidAddons, cycle })
-      : []
+  // (Dönem içi alt pakete geçiş yukarıda reddedildiği için burada downgrade kalmaz.)
+  const addonLines = billingAccount.isAccountWorkshop
+    ? priceRenewalAddonLines({ keys: effectivePaidAddonKeys(workshop), cycle })
+    : []
   const addonAmountMinor = addonLines.reduce((sum, l) => sum + l.amountMinor, 0)
   const amountMinor = packageAmountMinor + addonAmountMinor
   const taxSnapshot = createBillingTaxSnapshot(amountMinor)

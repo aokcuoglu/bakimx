@@ -1,6 +1,6 @@
+import type { ComponentProps } from "react"
 import { cn } from "@/lib/utils"
 import {
-  formatAddonMinor,
   isAddonOrderKey,
   priceRenewalAddonLines,
   type AddonOrderLine,
@@ -23,19 +23,20 @@ const TONES = {
   onNavy: { dt: "text-navy-foreground/55", dd: "text-navy-foreground", border: "border-white/10" },
 } as const
 
+const DD = "shrink-0 whitespace-nowrap tabular-nums"
+
 /**
- * Paket + satın alınmış ek özellik satırları (`dl`). Ek özellik yoksa hiçbir
- * şey çizmez; çağıran mevcut düzenini korur. `packageAmountMinor` verilirse
- * paket satırı ve toplam da gösterilir.
+ * Satırlar (`div > dt + dd`), sarmalayıcısız: bir `dl`in içine girer. Ek özellik
+ * yoksa hiçbir şey çizmez. `packageAmountMinor` verilirse paket satırı ve toplam
+ * da çizilir. Tüm tutarlar tek biçimleyiciyle (`formatMinor`) yazılır.
  */
-export function OrderSummaryLines({
+export function OrderSummaryRows({
   addonLines,
   cycle,
   packageLabel,
   packageAmountMinor,
   totalLabel = "Toplam",
   tone = "default",
-  className,
 }: {
   addonLines: readonly AddonOrderLine[]
   cycle: Cycle
@@ -43,34 +44,46 @@ export function OrderSummaryLines({
   packageAmountMinor?: number
   totalLabel?: string
   tone?: keyof typeof TONES
-  className?: string
 }) {
   if (addonLines.length === 0) return null
   const t = TONES[tone]
   const cycleLabel = cycle === "yearly" ? "Yıllık" : "Aylık"
   const total = packageAmountMinor === undefined ? null : packageAmountMinor + sumAddonLines(addonLines)
   return (
-    <dl className={cn("space-y-1.5 text-sm", className)}>
+    <>
       {packageAmountMinor !== undefined && (
         <div className="flex justify-between gap-3">
-          <dt className={t.dt}>{packageLabel ?? "Paket"}</dt>
-          <dd className={cn("font-semibold", t.dd)}>{formatMinor(packageAmountMinor)}</dd>
+          <dt className={cn("min-w-0", t.dt)}>{packageLabel ?? "Paket"}</dt>
+          <dd className={cn("font-semibold", DD, t.dd)}>{formatMinor(packageAmountMinor)}</dd>
         </div>
       )}
       {addonLines.map((l) => (
         <div key={l.key} className="flex justify-between gap-3">
-          <dt className={t.dt}>
+          <dt className={cn("min-w-0", t.dt)}>
             {l.name} ({cycleLabel})
           </dt>
-          <dd className={cn("shrink-0 font-semibold", t.dd)}>{formatAddonMinor(l.amountMinor)}</dd>
+          <dd className={cn("font-semibold", DD, t.dd)}>{formatMinor(l.amountMinor)}</dd>
         </div>
       ))}
       {total !== null && (
         <div className={cn("flex justify-between gap-3 border-t pt-1.5", t.border)}>
-          <dt className={cn("font-semibold", t.dd)}>{totalLabel}</dt>
-          <dd className={cn("font-bold", t.dd)}>{formatMinor(total)}</dd>
+          <dt className={cn("min-w-0 font-semibold", t.dd)}>{totalLabel}</dt>
+          <dd className={cn("font-bold", DD, t.dd)}>{formatMinor(total)}</dd>
         </div>
       )}
+    </>
+  )
+}
+
+/** `OrderSummaryRows`un kendi `dl`i ile sarılmış hâli; ek özellik yoksa hiçbir şey çizmez. */
+export function OrderSummaryLines({
+  className,
+  ...rows
+}: ComponentProps<typeof OrderSummaryRows> & { className?: string }) {
+  if (rows.addonLines.length === 0) return null
+  return (
+    <dl className={cn("space-y-1.5 text-sm", className)}>
+      <OrderSummaryRows {...rows} />
     </dl>
   )
 }

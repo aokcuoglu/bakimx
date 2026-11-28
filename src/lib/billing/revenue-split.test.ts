@@ -10,8 +10,8 @@ test("bu ay tahsilatı paket ve ek özelliğe ayrılır", () => {
       { type: "new_purchase", amountMinor: 100_000 },
       { type: "addon", amountMinor: 24_900 },
     ]),
-  ).toEqual({ packageMinor: 200_000, addonMinor: 64_800 })
-  expect(splitMonthRevenue([])).toEqual({ packageMinor: 0, addonMinor: 0 })
+  ).toEqual({ packageMinor: 200_000, addonMinor: 64_800, totalMinor: 264_800 })
+  expect(splitMonthRevenue([])).toEqual({ packageMinor: 0, addonMinor: 0, totalMinor: 0 })
 })
 
 test("ek özellik MRR: aylık olduğu gibi, yıllık 12'ye bölünür; multiBranch sayılmaz", () => {

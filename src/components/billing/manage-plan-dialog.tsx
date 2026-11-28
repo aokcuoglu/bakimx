@@ -17,7 +17,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatMinor } from "@/lib/billing/pricing"
-import { formatAddonMinor } from "@/lib/billing/addon-pricing"
 import { renewalAddonLines, sumAddonLines } from "@/components/billing/order-summary-lines"
 import { getDiscountedPlanPriceMinor } from "@/lib/billing/referral-discount"
 import { getSeatLimit, type SalePlanTier } from "@/lib/plan"
@@ -276,17 +275,17 @@ export function ManagePlanDialog({
             <dl className="space-y-2 text-sm">
               <div className="flex items-start justify-between gap-3">
                 <dt className="min-w-0 text-muted-foreground">{pkg.name} · {seatTotal} kullanıcı</dt>
-                <dd>{formatMinor(planAmount)}</dd>
+                <dd className="shrink-0 whitespace-nowrap tabular-nums">{formatMinor(planAmount)}</dd>
               </div>
               {addonLines.map((line) => (
                 <div key={line.key} className="flex items-start justify-between gap-3">
                   <dt className="min-w-0 text-muted-foreground">{line.name} ({cycle === "yearly" ? "Yıllık" : "Aylık"})</dt>
-                  <dd>{formatAddonMinor(line.amountMinor)}</dd>
+                  <dd className="shrink-0 whitespace-nowrap tabular-nums">{formatMinor(line.amountMinor)}</dd>
                 </div>
               ))}
               <div className="flex items-start justify-between gap-3 border-t pt-3">
-                <dt className="font-medium">{planTier ? "Yenilemede toplam" : "Toplam"}</dt>
-                <dd className="text-lg font-semibold">{formatMinor(total)}</dd>
+                <dt className="min-w-0 font-medium">{planTier ? "Yenilemede toplam" : "Toplam"}</dt>
+                <dd className="shrink-0 whitespace-nowrap text-lg font-semibold tabular-nums">{formatMinor(total)}</dd>
               </div>
             </dl>
             {error && <p className="text-sm text-destructive-strong" role="alert">{error}</p>}
