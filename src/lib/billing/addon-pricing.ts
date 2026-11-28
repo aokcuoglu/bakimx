@@ -123,11 +123,57 @@ export function addonFeaturesFor(keys: readonly AddonOrderKey[]): AddonFeature[]
   return [...set]
 }
 
+/**
+ * Paket siparişine (yeni/yenileme/yükseltme) eklenen ek özellik kalemleri (#1049):
+ * hesapta satın alınmış anahtarlar TAM dönem fiyatıyla, adet 1, orantısız.
+ * Fiyatsız ve şube başına satılan kalemler (multiBranch → #1050) atlanır.
+ */
+export function priceRenewalAddonLines(i: {
+  keys: readonly string[]
+  cycle: BillingCycle
+}): AddonOrderLine[] {
+  const wanted = new Set(i.keys.filter(isAddonOrderKey))
+  const lines: AddonOrderLine[] = []
+  for (const key of ADDON_ORDER_KEYS) {
+    if (!wanted.has(key) || isPerBranchAddon(key)) continue
+    const item = catalogItem(key)
+    const price = i.cycle === "yearly" ? item.yearlyPrice : item.monthlyPrice
+    if (price === null) continue
+    const amount = getAddonPriceMinor(key, i.cycle)
+    lines.push({ key, name: item.name, quantity: 1, unitAmountMinor: amount, amountMinor: amount })
+  }
+  return lines
+}
+
+/** Siparişin paket ve ek özellik payı (kuruş). Eski siparişler tümüyle paket sayılır. */
+export function getOrderAmountSplit(o: {
+  type: string
+  amountMinor: number
+  addonLines?: unknown
+}): { packageAmountMinor: number; addonAmountMinor: number } {
+  if (o.type === "addon") return { packageAmountMinor: 0, addonAmountMinor: o.amountMinor }
+  const addon = parseAddonOrderLines(o.addonLines).reduce((sum, l) => sum + l.amountMinor, 0)
+  return { packageAmountMinor: Math.max(0, o.amountMinor - addon), addonAmountMinor: addon }
+}
+
+/**
+ * Admin bir ek özelliğin özelliklerinden birini kapattığında o anahtar
+ * `paidAddons`'ta kalmaz; sonraki yenilemede tahsil edilmez.
+ */
+export function paidAddonKeysAfterFeatureChange(
+  paidAddons: readonly AddonOrderKey[],
+  addons: readonly AddonFeature[],
+): AddonOrderKey[] {
+  const have = new Set(addons)
+  return paidAddons.filter((key) => addonFeaturesFor([key]).every((f) => have.has(f)))
+}
+
 export function describeBillingOrder(o: {
   type: string
   planTier: string
   billingCycle: "monthly" | "yearly"
   addonLines?: unknown
+  amountMinor?: number
 }): { title: string; cycleLabel: string; lines: { label: string; amountMinor: number | null }[] } {
   const cycleLabel = o.billingCycle === "yearly" ? "Yıllık" : "Aylık"
   if (o.type === "addon") {
@@ -143,8 +189,23 @@ export function describeBillingOrder(o: {
   }
   const name = getPlanPackage(o.planTier as Parameters<typeof getPlanPackage>[0])?.name ?? o.planTier
   // "Servis Paketi" / "Paket + ek özellikler" zaten "paket" içerir — "Servis Paketi paketi" yazma.
-  const title = /paket/i.test(name) ? name : `${name} paketi`
-  return { title, cycleLabel, lines: [{ label: title, amountMinor: null }] }
+  const packageTitle = /paket/i.test(name) ? name : `${name} paketi`
+  const addon = parseAddonOrderLines(o.addonLines)
+  if (addon.length === 0) {
+    return { title: packageTitle, cycleLabel, lines: [{ label: packageTitle, amountMinor: null }] }
+  }
+  const addonSum = addon.reduce((sum, l) => sum + l.amountMinor, 0)
+  return {
+    title: `${packageTitle} + ek özellikler`,
+    cycleLabel,
+    lines: [
+      {
+        label: packageTitle,
+        amountMinor: o.amountMinor === undefined ? null : Math.max(0, o.amountMinor - addonSum),
+      },
+      ...addon.map((l) => ({ label: l.name, amountMinor: l.amountMinor as number | null })),
+    ],
+  }
 }
 
 /** Ek özellik ödemesi/aktivasyonu için paket dönemi açık mı (ücretli, bitmemiş)? */

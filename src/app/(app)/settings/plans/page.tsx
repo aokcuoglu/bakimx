@@ -15,7 +15,7 @@ export default async function SettingsPlansPage({
   searchParams: Promise<{ addon?: string | string[] }>
 }) {
   const { addon } = await searchParams
-  const { workshop, plan, ownedTier, planName, pendingOrder, seatUsage, canPurchase, isAccountWorkshop } =
+  const { workshop, plan, ownedTier, planName, pendingOrder, seatUsage, canPurchase, isAccountWorkshop, paidAddonKeys } =
     await getAccountBillingContext()
 
   const addonViews = resolveAddonRowViews(workshop, { isAccountWorkshop })
@@ -65,6 +65,7 @@ export default async function SettingsPlansPage({
           extraSeats={Math.max(0, workshop.extraSeats)}
           havale={getHavaleInstructions()}
           referralDiscountBps={getReferralDiscountBps(workshop)}
+          paidAddonKeys={paidAddonKeys}
         />
       </div>
     </AppShell>

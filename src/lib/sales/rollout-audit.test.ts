@@ -98,3 +98,18 @@ describe("sales rollout audit", () => {
     expect(report.findings.some((finding) => finding.id === "missing-rule-valid")).toBe(false)
   })
 })
+
+describe("ek özellikli paket siparişi (#1049)", () => {
+  test("paket + ek özellik toplamı üzerinden alınan KDV snapshot'ı geçerlidir", () => {
+    const snapshot = emptySnapshot()
+    // 1.000,00 + 399,00 = 139_900 brüt → net ROUND(139_900 / 1,2) = 116_583
+    snapshot.billingOrders.push({
+      id: "combined",
+      amountMinor: 139_900,
+      vatRateBps: 2_000,
+      grossAmountMinor: 139_900,
+      netAmountMinor: 116_583,
+    })
+    expect(buildSalesRolloutAuditReport(snapshot).findings).toEqual([])
+  })
+})

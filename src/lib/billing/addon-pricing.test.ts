@@ -11,7 +11,10 @@ import {
   getAddonPriceMinor,
   isAddonOrderKey,
   parseAddonOrderLines,
+  paidAddonKeysAfterFeatureChange,
   priceAddonOrder,
+  priceRenewalAddonLines,
+  getOrderAmountSplit,
 } from "@/lib/billing/addon-pricing"
 
 const now = new Date("2026-01-01T00:00:00Z")
@@ -144,5 +147,53 @@ describe("ek özellik uygunluğu (#829)", () => {
     expect(isAddonPeriodOpen({ subscriptionStatus: "active", currentPeriodEnd: inDays(-1) }, now)).toBe(false)
     expect(isAddonPeriodOpen({ subscriptionStatus: "trial", currentPeriodEnd: inDays(1) }, now)).toBe(false)
     expect(isAddonPeriodOpen(null, now)).toBe(false)
+  })
+})
+
+describe("yenilemede ek özellik kalemleri (#1049)", () => {
+  test("tam dönem fiyatı, adet 1, ADDON_ORDER_KEYS sırasında", () => {
+    const monthly = priceRenewalAddonLines({ keys: ["ocrIntake", "vinLookup"], cycle: "monthly" })
+    expect(monthly.map((l) => l.key)).toEqual(["vinLookup", "ocrIntake"])
+    expect(monthly.map((l) => l.amountMinor)).toEqual([39_900, 24_900])
+    expect(monthly.every((l) => l.quantity === 1 && l.unitAmountMinor === l.amountMinor)).toBe(true)
+    const yearly = priceRenewalAddonLines({ keys: ["vinLookup"], cycle: "yearly" })
+    expect(yearly[0].amountMinor).toBe(399_000)
+  })
+
+  test("şube başına (multiBranch) ve bilinmeyen anahtarlar atlanır; boş girdi boş döner", () => {
+    expect(priceRenewalAddonLines({ keys: ["multiBranch", "bogus", "vinLookup"], cycle: "monthly" }).map((l) => l.key)).toEqual(["vinLookup"])
+    expect(priceRenewalAddonLines({ keys: [], cycle: "monthly" })).toEqual([])
+  })
+
+  const line = { key: "vinLookup", name: "VIN ile araç tanıma", quantity: 1, unitAmountMinor: 39_900, amountMinor: 39_900 }
+
+  test("getOrderAmountSplit: addon, kalemli paket ve eski sipariş", () => {
+    expect(getOrderAmountSplit({ type: "addon", amountMinor: 500 })).toEqual({ packageAmountMinor: 0, addonAmountMinor: 500 })
+    expect(getOrderAmountSplit({ type: "renewal", amountMinor: 139_900, addonLines: [line] })).toEqual({
+      packageAmountMinor: 100_000,
+      addonAmountMinor: 39_900,
+    })
+    expect(getOrderAmountSplit({ type: "renewal", amountMinor: 100_000 })).toEqual({ packageAmountMinor: 100_000, addonAmountMinor: 0 })
+    expect(getOrderAmountSplit({ type: "renewal", amountMinor: 100, addonLines: [line] }).packageAmountMinor).toBe(0)
+  })
+
+  test("describeBillingOrder kalemli paket siparişi", () => {
+    const d = describeBillingOrder({ type: "renewal", planTier: "pro", billingCycle: "monthly", addonLines: [line], amountMinor: 139_900 })
+    expect(d.title).toBe("Servis Paketi + ek özellikler")
+    expect(d.lines).toEqual([
+      { label: "Servis Paketi", amountMinor: 100_000 },
+      { label: "VIN ile araç tanıma", amountMinor: 39_900 },
+    ])
+    const plain = describeBillingOrder({ type: "renewal", planTier: "pro", billingCycle: "monthly", amountMinor: 100_000 })
+    expect(plain.title).toBe("Servis Paketi")
+    expect(plain.lines).toEqual([{ label: "Servis Paketi", amountMinor: null }])
+  })
+
+  test("paidAddonKeysAfterFeatureChange: özelliklerinden biri kapanan anahtar düşer", () => {
+    const all = addonFeaturesFor(["vinLookup", "ocrIntake"])
+    expect(paidAddonKeysAfterFeatureChange(["vinLookup", "ocrIntake"], all)).toEqual(["vinLookup", "ocrIntake"])
+    const withoutOcr = all.filter((f) => !addonFeaturesFor(["ocrIntake"]).includes(f) || addonFeaturesFor(["vinLookup"]).includes(f))
+    expect(paidAddonKeysAfterFeatureChange(["vinLookup", "ocrIntake"], withoutOcr)).toEqual(["vinLookup"])
+    expect(paidAddonKeysAfterFeatureChange(["vinLookup"], [])).toEqual([])
   })
 })

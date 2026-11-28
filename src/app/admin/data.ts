@@ -14,6 +14,7 @@ import { INTERNAL_OPERATIONS_WORKSHOP_ID } from "@/lib/workshop-kind"
 import { istanbulMonthStart } from "@/lib/istanbul-time"
 import { formatTrDate } from "@/lib/format-date"
 import { describeBillingOrder } from "@/lib/billing/addon-pricing"
+import { computeAddonMrrMinor, splitMonthRevenue } from "@/lib/billing/revenue-split"
 
 export interface WorkshopListResult {
   rows: AdminWorkshopRow[]
@@ -247,7 +248,13 @@ export interface BillingData {
   recentOrders: AdminOrderRow[]
   stuckTransactions: AdminStuckTxnRow[]
   subscriptions: AdminSubRow[]
-  revenue: { activeCount: number; mrrLabel: string; monthLabel: string }
+  revenue: {
+    activeCount: number
+    mrrLabel: string
+    addonMrrLabel: string
+    monthLabel: string
+    monthAddonLabel: string
+  }
 }
 
 /** Son 15 (aktif/pasif fark etmez) siparişte gösterilecek deneme geçmişi. */
@@ -301,7 +308,7 @@ function toOrderRow(o: OrderWithTxns): AdminOrderRow {
     workshopName: o.workshop.name,
     type: o.type,
     planTier: o.planTier,
-    orderLabel: describeBillingOrder({ ...o, billingCycle: o.billingCycle === "yearly" ? "yearly" : "monthly" }).title,
+    orderLabel: describeBillingOrder({ ...o, amountMinor: o.amountMinor, billingCycle: o.billingCycle === "yearly" ? "yearly" : "monthly" }).title,
     billingCycle: o.billingCycle,
     amountLabel: formatMinor(o.amountMinor),
     reference: o.reference,
@@ -352,11 +359,11 @@ export async function getBillingData(): Promise<BillingData> {
     }),
     prisma.billingOrder.findMany({
       where: { status: "confirmed", confirmedAt: { gte: monthStart }, workshop: { kind: "customer" } },
-      select: { amountMinor: true },
+      select: { amountMinor: true, type: true, addonLines: true },
     }),
     prisma.workshop.findMany({
       where: { kind: "customer", subscriptionStatus: "active", currentPeriodEnd: { not: null } },
-      select: { id: true, name: true, planTier: true, billingCycle: true, currentPeriodEnd: true },
+      select: { id: true, name: true, planTier: true, billingCycle: true, currentPeriodEnd: true, paidAddons: true },
     }),
   ])
 
@@ -417,7 +424,8 @@ export async function getBillingData(): Promise<BillingData> {
     }
   })
 
-  const monthRevenueMinor = monthOrders.reduce((sum, o) => sum + o.amountMinor, 0)
+  const monthSplit = splitMonthRevenue(monthOrders)
+  const addonMrrMinor = computeAddonMrrMinor(activeWorkshops)
   const mrrMinor = activeWorkshops.reduce((sum, w) => {
     const minor = getPlanPriceMinor(w.planTier as PlanTier, (w.billingCycle ?? "monthly") as BillingCycle)
     return sum + (w.billingCycle === "yearly" ? Math.round(minor / 12) : minor)
@@ -431,7 +439,9 @@ export async function getBillingData(): Promise<BillingData> {
     revenue: {
       activeCount: subscriptions.length,
       mrrLabel: formatMinor(mrrMinor),
-      monthLabel: formatMinor(monthRevenueMinor),
+      addonMrrLabel: formatMinor(addonMrrMinor),
+      monthLabel: formatMinor(monthSplit.packageMinor),
+      monthAddonLabel: formatMinor(monthSplit.addonMinor),
     },
   }
 }

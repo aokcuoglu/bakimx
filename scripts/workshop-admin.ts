@@ -4,6 +4,7 @@ import { Pool } from "pg"
 import { ADDON_FEATURES, computeTrialEnd, normalizeAddons, TRIAL_BUSINESS_DAYS } from "../src/lib/plan"
 import { diffAddons, workshopAddonsSchema, type AddonsDiff } from "../src/lib/validations/workshop-addons"
 import { planAddonFanOut, resolveAddonTargets, type AddonTargetClient } from "../src/lib/admin/addon-targets"
+import { planPaidAddonsAfterAdminChange } from "../src/lib/admin/paid-addons-sync"
 import { addPeriod } from "../src/lib/billing/period"
 import { buildPoolConfig } from "../src/lib/pg-connection"
 
@@ -270,8 +271,10 @@ async function setAddons(idOrEmail: string, args: SetAddonsArgs) {
     console.log(`KURU ÇALIŞTIRMA (yazılmadı):\n${summary}\nUygulamak için --apply ekleyin.`)
     return
   }
+  const paid = await planPaidAddonsAfterAdminChange(prisma, id, after)
   await prisma.$transaction([
     prisma.workshop.updateMany({ where: { id: { in: plan.workshopIds }, kind: "customer" }, data: { addons: after } }),
+    ...(paid ? [prisma.workshop.update({ where: { id: paid.accountId }, data: { paidAddons: paid.paidAddons } })] : []),
     ...plan.entries.map(({ id: wid, diff }) =>
       prisma.auditLog.create({
         data: {
@@ -283,6 +286,7 @@ async function setAddons(idOrEmail: string, args: SetAddonsArgs) {
           metadataJson: JSON.stringify({
             ...diff,
             ...(plan.workshopIds.length > 1 ? { workshopIds: plan.workshopIds } : {}),
+            ...(paid && wid === paid.accountId ? { paidAddonsRemoved: paid.removed } : {}),
             source: "cli",
           }),
         },

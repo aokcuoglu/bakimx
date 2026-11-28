@@ -17,6 +17,9 @@ import type { PlanTier } from "@/lib/plan"
 import { actorCan } from "@/lib/roles"
 import { canCancelPendingCardOrder } from "@/lib/billing/cancellation"
 import { releaseExpiredAddonOrders } from "@/lib/billing/release-expired-addon-orders"
+import { resolveBillingAccount } from "@/lib/billing/account"
+import { priceRenewalAddonLines } from "@/lib/billing/addon-pricing"
+import type { Prisma } from "@prisma/client"
 
 /**
  * Creates a pending-payment BillingOrder for the current workshop (upgrade /
@@ -111,7 +114,7 @@ export async function createBillingOrder(input: {
       })
     : null
   const previousDiscountBps = getOrderReferralDiscountBps(previousOrder?.billingSnapshot)
-  const amountMinor =
+  const packageAmountMinor =
     type === "upgrade" || type === "downgrade"
       ? computeUpgradeAmountMinor({
           currentTier: workshop.planTier as PlanTier,
@@ -124,6 +127,15 @@ export async function createBillingOrder(input: {
           newPriceMinor: discountedAmountMinor,
         })
       : discountedAmountMinor
+  // #1049: hesap atölyesinin satın alınmış ek özellikleri paket siparişine tam
+  // dönem fiyatıyla eklenir (upgrade'de de kredisiz). Şube siparişleri taşımaz.
+  const billingAccount = await resolveBillingAccount(workshop)
+  const addonLines =
+    billingAccount.isAccountWorkshop && type !== "downgrade"
+      ? priceRenewalAddonLines({ keys: workshop.paidAddons, cycle })
+      : []
+  const addonAmountMinor = addonLines.reduce((sum, l) => sum + l.amountMinor, 0)
+  const amountMinor = packageAmountMinor + addonAmountMinor
   const taxSnapshot = createBillingTaxSnapshot(amountMinor)
 
   const billingSnapshot = {
@@ -136,6 +148,8 @@ export async function createBillingOrder(input: {
     phone: workshop.phone,
     referralDiscountBps,
     catalogAmountMinor,
+    packageAmountMinor,
+    addonAmountMinor,
   }
 
   // Persist invoice/tax info on the workshop, keep the legacy admin "talep"
@@ -168,6 +182,7 @@ export async function createBillingOrder(input: {
             method: data.method,
             reference,
             billingSnapshot,
+            ...(addonLines.length > 0 ? { addonLines: addonLines as unknown as Prisma.InputJsonValue } : {}),
           },
         })
       })
@@ -178,7 +193,7 @@ export async function createBillingOrder(input: {
         "BillingOrder",
         reference,
         "billing_order_created",
-        JSON.stringify({ tier, cycle, amountMinor, catalogAmountMinor, referralDiscountBps, netAmountMinor: taxSnapshot.netAmountMinor, type, method: data.method })
+        JSON.stringify({ tier, cycle, amountMinor, catalogAmountMinor, referralDiscountBps, netAmountMinor: taxSnapshot.netAmountMinor, packageAmountMinor, addonAmountMinor, addonKeys: addonLines.map((l) => l.key), type, method: data.method })
       )
       revalidatePath("/settings/plans")
       revalidatePath("/settings/billing")

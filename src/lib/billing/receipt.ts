@@ -24,7 +24,7 @@ interface ReceiptData {
 /** Simple, self-contained HTML receipt (makbuz). NOT a legal e-invoice — that
  *  is issued offline. VAT-included amount. */
 export function generateReceiptHtml(d: ReceiptData): string {
-  const tl = formatTRY(d.amountMinor / 100)
+  const tl = formatTRY(d.amountMinor)
   const date = formatTrDate(d.confirmedAt ?? new Date())
   return `<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -46,7 +46,7 @@ export function generateReceiptHtml(d: ReceiptData): string {
     ${d.lines
       .map(
         (l) =>
-          `<tr><td>${escapeHtml(l.label)} (${escapeHtml(d.cycleLabel)})</td><td class="r">${escapeHtml(l.amountMinor === null ? tl : formatTRY(l.amountMinor / 100))}</td></tr>`,
+          `<tr><td>${escapeHtml(l.label)} (${escapeHtml(d.cycleLabel)})</td><td class="r">${escapeHtml(l.amountMinor === null ? tl : formatTRY(l.amountMinor))}</td></tr>`,
       )
       .join("\n    ")}
     <tr class="total"><td>Toplam (KDV dahil)</td><td class="r">${escapeHtml(tl)}</td></tr>

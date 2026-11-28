@@ -1,7 +1,7 @@
 import { Prisma, type BillingOrder } from "@prisma/client"
 import { AuditLogAction } from "@/lib/audit"
 import { prisma } from "@/lib/db"
-import { addonFeaturesFor, parseAddonOrderLines } from "@/lib/billing/addon-pricing"
+import { addonFeaturesFor, parseAddonOrderLines, type AddonOrderKey } from "@/lib/billing/addon-pricing"
 import { resolveBillingAccount } from "@/lib/billing/account"
 import { getSeatLimit, normalizeAddons } from "@/lib/plan"
 import type { ActivateBillingOrderOpts } from "@/lib/billing/activate"
@@ -9,6 +9,39 @@ import type { ActivateBillingOrderOpts } from "@/lib/billing/activate"
 type Result =
   | { ok: true; seatAdjustment: { limit: number; deactivatedUsers: number; deactivatedTechnicians: number; revokedInvites: number } }
   | { ok: false; error: string }
+
+/**
+ * Anahtarların özelliklerini hesabın tüm atölyelerine yazar ve hesap
+ * atölyesinde `paidAddons`'a ekler. Hesap atölyesi satırı çağıranda zaten
+ * kilitlidir; şube satırları sıralı id ile kilitlenir (kilit sırası sabit).
+ * Ek özellik siparişi (#829) ve ek özellik taşıyan paket siparişi (#1049) paylaşır.
+ */
+export async function applyAddonEntitlementsTx(
+  tx: Prisma.TransactionClient,
+  account: { id: string; organizationId: string | null; paidAddons: string[] },
+  keys: readonly AddonOrderKey[],
+): Promise<void> {
+  const { workshopIds } = await resolveBillingAccount(account, tx)
+  // Şube satırları da kilitlenir (sıralı id): eşzamanlı yazımlar okunan `addons`
+  // üzerinden birbirini ezmesin.
+  const lockIds = [...new Set(workshopIds)].sort()
+  await tx.$queryRaw`SELECT id FROM "Workshop" WHERE id IN (${Prisma.join(lockIds)}) ORDER BY id FOR UPDATE`
+  const targets = await tx.workshop.findMany({
+    where: { id: { in: workshopIds } },
+    select: { id: true, addons: true },
+  })
+  const granted = addonFeaturesFor(keys)
+  for (const w of targets) {
+    await tx.workshop.update({
+      where: { id: w.id },
+      data: { addons: normalizeAddons([...w.addons, ...granted]) },
+    })
+  }
+  await tx.workshop.update({
+    where: { id: account.id },
+    data: { paidAddons: [...new Set([...account.paidAddons, ...keys])] },
+  })
+}
 
 /**
  * Ek özellik siparişini etkinleştirir (#829). Paket aktivasyonuyla aynı
@@ -52,27 +85,7 @@ export async function activateAddonOrder(
       })
       if (claimed.count === 0) throw new Error("ALREADY_PROCESSED")
 
-      const { workshopIds } = await resolveBillingAccount(account, tx)
-      // Şube satırları da kilitlenir (sıralı id): eşzamanlı yazımlar okunan `addons`
-      // üzerinden birbirini ezmesin. Hesap satırı zaten yukarıda kilitli; sıra
-      // sabit olduğundan kilit sırası çakışmaz.
-      const lockIds = [...new Set(workshopIds)].sort()
-      await tx.$queryRaw`SELECT id FROM "Workshop" WHERE id IN (${Prisma.join(lockIds)}) ORDER BY id FOR UPDATE`
-      const targets = await tx.workshop.findMany({
-        where: { id: { in: workshopIds } },
-        select: { id: true, addons: true },
-      })
-      const granted = addonFeaturesFor(keys)
-      for (const w of targets) {
-        await tx.workshop.update({
-          where: { id: w.id },
-          data: { addons: normalizeAddons([...w.addons, ...granted]) },
-        })
-      }
-      await tx.workshop.update({
-        where: { id: account.id },
-        data: { paidAddons: [...new Set([...account.paidAddons, ...keys])] },
-      })
+      await applyAddonEntitlementsTx(tx, account, keys)
       return end
     })
   } catch (err) {

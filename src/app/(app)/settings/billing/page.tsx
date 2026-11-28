@@ -28,7 +28,7 @@ function formatDate(date: Date | null): string {
 export default async function SettingsBillingPage({ searchParams }: {
   searchParams: Promise<{ pendingBlocked?: string }>
 }) {
-  const { user, workshop, plan, ownedTier, planName, pendingOrder, seatUsage, canPurchase } = await getAccountBillingContext()
+  const { user, workshop, plan, ownedTier, planName, pendingOrder, seatUsage, canPurchase, paidAddonKeys } = await getAccountBillingContext()
   const sp = await searchParams
   const [quota, orders] = await Promise.all([
     resolveWorkshopQuotaContext(workshop).then((context) => getWorkshopQuotaUsage(context)),
@@ -86,6 +86,7 @@ export default async function SettingsBillingPage({ searchParams }: {
             havale={getHavaleInstructions()}
             currentPeriodEnd={workshop.currentPeriodEnd}
             referralDiscountBps={getReferralDiscountBps(workshop)}
+            paidAddonKeys={paidAddonKeys}
             usage={{ plan, quota }}
             showComparison={false}
             explorePlansHref="/settings/plans"

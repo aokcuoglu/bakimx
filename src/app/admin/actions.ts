@@ -26,6 +26,7 @@ import { canReceivePasswordReset } from "@/lib/user-identity"
 import { ASSIGNABLE_ROLES, roleRequiresEmail } from "@/lib/roles"
 import { ACQUISITION_SOURCES, normalizeAcquisitionAdvisorId } from "@/lib/acquisition-sources"
 import type { AcquisitionSource } from "@prisma/client"
+import { planPaidAddonsAfterAdminChange } from "@/lib/admin/paid-addons-sync"
 
 type Result = { ok: true } | { ok: false; error: string }
 
@@ -278,8 +279,11 @@ export async function setWorkshopAddons(workshopId: string, addons: unknown): Pr
 
   // `AuditLogAction` tek satır yazar; burada yazım + şube başına kayıt atomik
   // olmalı, bu yüzden aynı şemayla doğrudan `auditLog.create` kullanılır.
+  // Satın alınmış anahtarın özelliği kapatılırsa sonraki yenilemede tahsil edilmez (#1049).
+  const paid = await planPaidAddonsAfterAdminChange(prisma, workshopId, next)
   await prisma.$transaction([
     prisma.workshop.updateMany({ where: { id: { in: workshopIds }, kind: "customer" }, data: { addons: next } }),
+    ...(paid ? [prisma.workshop.update({ where: { id: paid.accountId }, data: { paidAddons: paid.paidAddons } })] : []),
     ...entries.map(({ id, diff }) =>
       prisma.auditLog.create({
         data: {
@@ -288,7 +292,11 @@ export async function setWorkshopAddons(workshopId: string, addons: unknown): Pr
           entityType: "Workshop",
           entityId: id,
           action: "admin_addons_set",
-          metadataJson: JSON.stringify(workshopIds.length > 1 ? { ...diff, workshopIds } : diff),
+          metadataJson: JSON.stringify({
+            ...diff,
+            ...(workshopIds.length > 1 ? { workshopIds } : {}),
+            ...(paid && id === paid.accountId ? { paidAddonsRemoved: paid.removed } : {}),
+          }),
         },
       }),
     ),
