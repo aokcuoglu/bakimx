@@ -217,7 +217,7 @@ varyantı, hap varyantları, plaka rozeti — bugün `Plate`) orada kurup diğer
   beyaz zemin, ince çizgi, 12px/600 gri grup başlıkları, 34px/10px köşe satırlar
   (mobil açılır menüde 44px), seçili öğe mavi ton, dolgulu arama kutusu, paket
   kartı. Üst bar ve mobil sekme çubuğu buzlu yarı saydam (`blur(20px)`), seçili
-  sekme mavi. Ayarlar sidebar'ı kapsam dışında (kendi modülünü korur).
+  sekme mavi. Ayarlar (`/settings/*`) aynı kabuğu kullanır (#1071): aynı `.sidebar` modülü, aynı gri zemin; ayarlara özgü yalnız geri oku + "Ayarlar" başlığı, Kişisel / Çalışma alanı grupları, kilit rozeti ve ortalı 768px sütundur.
 - Global token'lar değişmedi; onaydan sonra taşınacak.
 
 ## 7. Pazarlama ölçeği (#781, ana sayfa)
