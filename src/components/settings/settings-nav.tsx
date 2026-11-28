@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { LockKeyhole, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import shellStyles from "@/components/layout/app-shell.module.css"
+import { cn } from "@/lib/utils"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -61,22 +63,22 @@ export function SettingsNav({
 
   return (
     <>
-      <div className="relative border-b border-sidebar-border px-3 py-2.5">
-        <Search className="pointer-events-none absolute left-[18px] top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+      <div className="relative px-3 py-2">
+        <Search className="pointer-events-none absolute left-[22px] top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <SidebarInput
           aria-label="Ayarlarda ara"
           placeholder="Ayarlarda ara..."
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          className="pl-7 text-sm font-medium leading-5 tracking-[-0.005em]"
+          className={cn(shellStyles.search, shellStyles.searchInput)}
         />
       </div>
 
-      {visibleGroups.map((group, index) => (
-        <SidebarGroup key={group.label} className={index === 0 ? "px-2 py-0 pt-px" : "mt-3 px-2 py-0"}>
-          <SidebarGroupLabel className="text-xs leading-4 tracking-normal">{group.label}</SidebarGroupLabel>
+      {visibleGroups.map((group) => (
+        <SidebarGroup key={group.label}>
+          <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-px pt-px">
+            <SidebarMenu>
               {group.items.map((item) => (
                 <SettingsNavLink
                   key={item.href}
@@ -118,10 +120,9 @@ function SettingsNavLink({
         asChild
         isActive={isActive}
         tooltip={isLocked && item.feature ? `${item.label} · ${lockedFeatureLabels(item.feature).description}` : item.label}
-        className="h-7 gap-1.5 rounded-[9px] px-2 py-0 text-sm font-medium leading-5 tracking-[-0.005em]"
       >
         <Link href={item.href} onClick={onNavigate}>
-          <Icon className="size-4" />
+          <Icon />
           <span className="flex-1">{item.label}</span>
           {isLocked ? (
             <>
