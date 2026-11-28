@@ -268,6 +268,16 @@ Squash mesajına işaretçiyi ne zaman ekleyeceksin:
 app-dev'in bayat kalması normaldir ve bir arıza değildir; sürüm öncesi zaten elle
 deploy ediliyor ([releasing.md](../releasing.md) §Sürüm çıkarma adım 2).
 
+**Concurrency grubu da işaretçiye bağlı (#1075).** Yalnız deploy edecek run'lar
+(`[deploy-dev]` veya elle çalıştırma) `aws-dev-deploy` grubunu paylaşır; işaretsiz
+push kendi tek kullanımlık grubuna girer. Neden: GitHub bir grupta yalnız **bir
+bekleyen** run tutar ve yeni kuyruğa giren, öncekini `cancelled` yapar
+(`cancel-in-progress: false` bunu engellemez). Tek grup varken bir deploy sürerken
+kuyruğa giren işaretli run, ardından gelen sıradan bir merge tarafından sessizce
+düşürülüyordu — 28-11'de #1067'nin migration'ı app-dev'e bu yüzden gitmedi ve elle
+dispatch ile kurtarıldı. Grubun koşulu job-seviyesi `if` ile birebir aynı kalmalı;
+`src/lib/deploy-dev-concurrency.test.ts` ikisini karşılaştırır.
+
 ## 7. `mock.module` süreç geneli ve KALICI — geri alınamaz
 
 `bun test` tüm dosyaları tek süreçte koşar. `mock.module("X", …)` bir dosyada
