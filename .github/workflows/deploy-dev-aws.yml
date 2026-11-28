@@ -34,8 +34,19 @@ permissions:
   id-token: write
   contents: read
 
+# Only runs that will actually deploy share the `aws-dev-deploy` group; every unmarked
+# push gets a throwaway group of its own (#1075). GitHub keeps ONE pending run per group
+# and a newly queued run cancels the pending one — `cancel-in-progress: false` does not
+# prevent that. With a single shared group, an unmarked merge landing while a deploy was
+# running cancelled the queued `[deploy-dev]` run behind it, even though the unmarked run
+# was itself skipped a moment later: on 2026-11-28 #1067's migration never reached app-dev
+# that way (run 46118225594). Unmarked runs also no longer wait ~16 min behind a deploy
+# just to be skipped. A marked run replacing an older pending marked run is fine: it ships
+# a newer dev SHA that contains the older one's migrations.
+# The condition MUST stay identical to the job-level `if` below
+# (src/lib/deploy-dev-concurrency.test.ts).
 concurrency:
-  group: aws-dev-deploy
+  group: ${{ (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[deploy-dev]')) && 'aws-dev-deploy' || format('aws-dev-skip-{0}', github.run_id) }}
   cancel-in-progress: false
 
 env:
