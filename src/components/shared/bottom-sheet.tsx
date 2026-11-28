@@ -47,11 +47,10 @@ export function BottomSheet({
       {trigger ? <SheetTrigger asChild>{trigger}</SheetTrigger> : null}
       <SheetContent
         side="bottom"
-        showCloseButton={false}
         className={cn("max-h-[85vh] gap-0 rounded-t-(--radius-dialog)", className)}
       >
         <div className="mx-auto mt-2 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-muted-foreground/25" />
-        <SheetHeader className={cn("pt-2 pb-3", hideHeader && "sr-only")}>
+        <SheetHeader className={cn("pt-2 pb-3 pr-14", hideHeader && "sr-only")}>
           <SheetTitle>{title}</SheetTitle>
           {description && <SheetDescription>{description}</SheetDescription>}
         </SheetHeader>
