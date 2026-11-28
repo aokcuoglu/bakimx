@@ -104,6 +104,11 @@
   background: color-mix(in oklab, var(--foreground) 9%, transparent);
 }
 
+/* Ayarlar araması: girdi, sol ikon için iç boşluk bırakır. */
+.searchInput {
+  padding-left: 34px;
+}
+
 .searchKey {
   border: 0;
   border-radius: 6px;

@@ -13,7 +13,6 @@ import {
 import { SettingsNav } from "@/components/settings/settings-nav"
 import { SettingsTrail, SettingsTrailProvider } from "@/components/settings/settings-trail"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import settingsSidebarStyles from "@/components/settings/settings-sidebar.module.css"
 import shellStyles from "@/components/layout/app-shell.module.css"
 import { DashboardProductTour } from "@/components/dashboard/dashboard-product-tour"
 import { ACCOUNT_SETTINGS_ITEMS, SETTINGS_NAV_GROUPS, isSettingsPath, matchesSettingsNavItem } from "@/lib/settings-nav"
@@ -250,7 +249,7 @@ export function AppShellChrome({
           <AppHeader pageHeader={pageHeader} userIdentity={userIdentity} />
           <PageHeaderAccessContext.Provider value={headerAccess}>
             <AddonAccessProvider enabledFeatures={enabledFeatures} role={userIdentity?.role}>
-              <main className={cn("flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:pb-8", inSettings && "bg-card")}>{children}</main>
+              <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:pb-8">{children}</main>
             </AddonAccessProvider>
           </PageHeaderAccessContext.Provider>
         </SidebarInset>
@@ -416,7 +415,7 @@ function AppSidebar({
   })).filter((group) => group.items.length > 0)
 
   return (
-    <Sidebar collapsible="offcanvas" className={cn(inSettings ? settingsSidebarStyles.sidebar : shellStyles.sidebar, topBannerVisible && "lg:top-8! lg:h-[calc(100svh-2rem)]!")}>
+    <Sidebar collapsible="offcanvas" className={cn(shellStyles.sidebar, topBannerVisible && "lg:top-8! lg:h-[calc(100svh-2rem)]!")}>
       <SidebarHeader className={cn("flex-row items-center border-b border-sidebar-border", inSettings ? "h-[49px] gap-3 px-3 py-0 pr-10" : "gap-1 p-2")}>
         {inSettings ? (
           <>

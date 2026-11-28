@@ -86,6 +86,8 @@ Kaynak, 27 Eylül 2026 öğleden sonra `app.attio.com/bakimx` Home, Companies li
 - Başlık (`Edit task`) 15px / 700. Kapat, tarih, atama ve “Add record” 28px, köşe 8px, şeffaf, metin `rgba(0,0,0,0.55)`.
 - `Cancel` beyaz 28px / 8px. `Save` 28px / 8px / `#266DF0` ve birincil gölge.
 
+> **#1071 notu:** Ayarlar kabuğu artık e-santral kalıbını izler. Aşağıdaki Attio ölçümleri (`#FBFBFB` sütun, 28px satır, nötr aktif öğe, beyaz sağ yüzey, çerçeveli arama) **karar geçmişidir**; sidebar `app-shell.module.css` `.sidebar` ile (beyaz `--card`, 34px/15px satır, mavi ton aktif öğe, 13/600 grup başlığı, dolgulu arama hapı), içerik zemini global gruplu gri `--background` ile çizilir. Ayarlara özgü kalanlar: geri oku + başlık şeridi, iki grup, kilit rozeti, ortalı 768px sütun.
+
 ### Ayarlar
 
 - Etiket alanın üstünde, 12px / 500, `rgba(0,0,0,0.5)`. Değer 14px / 500 / `#101112`.
