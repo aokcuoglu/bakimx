@@ -35,11 +35,12 @@ import {
   Pencil,
   Wallet,
   PackagePlus,
+  ShoppingCart,
   Wrench,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SendReminderButton } from "@/components/orders/send-reminder-button"
-import { PartsLaborGrid, type PartsAddType } from "@/components/orders/parts-labor-grid"
+import { PartsLaborGrid, type PartsAddType, type PurchaseAddContext } from "@/components/orders/parts-labor-grid"
 import pl from "./parts-labor.module.css"
 import type { LaborCatalogRow } from "@/lib/labor/types"
 import type { PartsRequestRow } from "@/components/orders/parts-request-panel"
@@ -263,6 +264,7 @@ export function PartsLaborCard({
   onAddDialogCloseAutoFocus,
   totals,
   onNavigateToPayment,
+  purchase = null,
 }: {
   orderId: string
   status: string
@@ -296,8 +298,15 @@ export function PartsLaborCard({
   totals?: Totals
   /** Toplam satırının "Ödeme" bağlantısı: Ödeme bölümüne kaydırır. */
   onNavigateToPayment?: () => void
+  /**
+   * Dış alım ekleme bağlamı (#1070). Yalnız `procurement` + `parts.purchase`
+   * varken dolu; menüde "Dış alım parça" ve Parça ekle diyaloğunda Dış Alım kipi.
+   */
+  purchase?: PurchaseAddContext | null
 }) {
   const canAdd = !isOrderLocked(status as OrderStatus)
+  // Dış alım formu araç kataloğu araması ister (bkz. PartsLaborEditor).
+  const canAddPurchase = purchase != null && vehicle != null
   const addMenuTriggerRef = useRef<HTMLButtonElement>(null)
   return (
     <DetailPanel
@@ -333,6 +342,18 @@ export function PartsLaborCard({
                   <Wrench className="size-4" />
                   İşçilik ekle
                 </DropdownMenuItem>
+                {canAddPurchase && (
+                  <DropdownMenuItem
+                    className="gap-2"
+                    onClick={() => {
+                      rememberAddOpener?.(addMenuTriggerRef.current)
+                      onAddingTypeChange("dis_alim")
+                    }}
+                  >
+                    <ShoppingCart className="size-4" />
+                    Dış alım parça
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -355,6 +376,7 @@ export function PartsLaborCard({
           onAddingTypeChange={onAddingTypeChange}
           onAddDialogCloseAutoFocus={onAddDialogCloseAutoFocus}
           compactRows
+          purchase={canAddPurchase ? purchase : null}
         />
       </div>
       {totals?.hasAnyPrice && (

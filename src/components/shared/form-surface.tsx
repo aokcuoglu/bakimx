@@ -31,6 +31,7 @@ export function FormSurface({
   description,
   footer,
   dialogClassName,
+  onCloseAutoFocus,
   children,
 }: {
   surface?: FormSurfaceKind
@@ -41,6 +42,11 @@ export function FormSurface({
   footer: React.ReactNode
   /** Yalnız diyalog yüzeyinde: genişlik (ör. `sm:max-w-md`). */
   dialogClassName?: string
+  /**
+   * Yalnız diyalog yüzeyinde: dışarıdan (tetikleyicisiz) açılan pencere kapanınca
+   * odağı açan öğeye döndürmek için (`useReturnFocus`, #913 / #1070).
+   */
+  onCloseAutoFocus?: (event: Event) => void
   children: React.ReactNode
 }) {
   if (surface === "sheet") {
@@ -59,7 +65,7 @@ export function FormSurface({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={dialogClassName}>
+      <DialogContent className={dialogClassName} onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}

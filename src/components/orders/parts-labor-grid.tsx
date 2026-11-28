@@ -43,6 +43,7 @@ import {
 import { splitRowActions } from "@/lib/orders/row-actions"
 import { PRICE_NOT_ENTERED, compactRowDetail } from "@/lib/orders/compact-row"
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
+import { PurchaseFormSheet, type SupplierInfo, type TechnicianInfo } from "@/components/technician/purchase-form-sheet"
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 import { salePriceFollowsCost } from "@/lib/orders/external-labor-cost"
@@ -203,8 +204,24 @@ function emptyDraft(type: ItemType, source: DraftSource, includeVat: boolean): R
 /** Kalem satırı — kalıcılık katmanından bağımsız (bkz. PartsLaborEditor). */
 export type PartsLaborRow = Row
 
-/** Ekleme modalının türü: parça mı, işçilik mi. */
-export type PartsAddType = "parca" | "iscilik"
+/**
+ * Ekleme modalının türü: parça, işçilik ya da dış alım (#1070). `"dis_alim"`
+ * ekleme diyaloğunu değil dış alım formunu (`PurchaseFormSheet`) açar; yalnız
+ * `purchase` bağlamı verilmişse anlamlıdır, aksi hâlde yok sayılır.
+ */
+export type PartsAddType = "parca" | "iscilik" | "dis_alim"
+
+/**
+ * Ofiste dış alım (dışarıdan satın alınan parça) ekleme bağlamı (#1070). Çağıran
+ * yalnız `procurement` planda açık VE kullanıcının `parts.purchase` yetkisi
+ * varken verir — `addPurchaseItemAction` aynı iki kapıyı sunucuda uygular, yani
+ * görünen seçenek hiçbir zaman yetki hatasına götürmez.
+ */
+export type PurchaseAddContext = {
+  suppliers: SupplierInfo[]
+  technicians: TechnicianInfo[]
+  defaultTechnicianId: string | null
+}
 
 /**
  * Kalem düzenleyicinin SUNUM çekirdeği: composer'lar (katalog araması, TecDoc
@@ -227,7 +244,7 @@ export function PartsLaborEditor({
   onSaveRow,
   addingType: addingTypeProp, onAddingTypeChange, onAddDialogCloseAutoFocus,
   addSurface = "dialog", hideAddToolbar = false, editRequest,
-  compactRows = false,
+  compactRows = false, purchase = null,
 }: {
   rows: Row[]
   vehicle?: PickerVehicle
@@ -285,6 +302,8 @@ export function PartsLaborEditor({
    * verir; teklif ve teknisyen ekranı kartı korur.
    */
   compactRows?: boolean
+  /** Doluysa Parça ekle diyaloğunda "Dış Alım" kipi çıkar (#1070); bkz. `PurchaseAddContext`. */
+  purchase?: PurchaseAddContext | null
 }) {
   // Parça detay modalı (tek örnek) — arama, katalog picker'ı ve kalem satırları besler.
   const [detail, setDetail] = useState<DetailRequest | null>(null)
@@ -348,15 +367,33 @@ export function PartsLaborEditor({
     [taxRateBps, vatPerLine, defaultVatLiable, documentTaxSet, onApplyStandardTax]
   )
 
+  // Dış alım formu araç (katalog araması) ve iş emri kimliği ister; kilitli
+  // belgeye kalem eklenmez.
+  const canAddPurchase = purchase != null && orderId != null && vehicle != null && !locked
+  const addDialogOpen = addingType === "parca" || addingType === "iscilik"
   const addTitle = addingType === "iscilik" ? "İşçilik ekle" : "Parça ekle"
   const addDescription = "Yeni kalem araç kabulüne Ekle seçilince kaydedilir."
   const addComposer = (
     <>
-      {addingType === "parca" && <UnifiedPartComposer vehicle={vehicle} onAdd={async (draft) => {
-        const added = await onAdd(draft)
-        if (added) setAddingType(null)
-        return added
-      }} disabled={loading} onShowDetail={setDetail} />}
+      {addingType === "parca" && (
+        <div className="space-y-3">
+          {/* "Dış Alım" seçilince bu diyalog kapanır, dış alım formu açılır:
+              tek durum (`addingType`), iki ayrı form. */}
+          {canAddPurchase && (
+            <ModeToggle
+              value="stock"
+              options={PART_MODE_OPTIONS}
+              onChange={(mode) => { if (mode === "purchase") setAddingType("dis_alim") }}
+              disabled={loading}
+            />
+          )}
+          <UnifiedPartComposer vehicle={vehicle} onAdd={async (draft) => {
+            const added = await onAdd(draft)
+            if (added) setAddingType(null)
+            return added
+          }} disabled={loading} onShowDetail={setDetail} />
+        </div>
+      )}
       {addingType === "iscilik" && <LaborComposer onAdd={async (draft) => {
         const added = await onAdd(draft)
         if (added) setAddingType(null)
@@ -418,7 +455,7 @@ export function PartsLaborEditor({
 
       {addSurface === "sheet" ? (
         <BottomSheet
-          open={addingType != null}
+          open={addDialogOpen}
           onOpenChange={(open) => { if (!open) setAddingType(null) }}
           title={addTitle}
           description={addDescription}
@@ -426,8 +463,16 @@ export function PartsLaborEditor({
           {addComposer}
         </BottomSheet>
       ) : (
-      <Dialog open={addingType != null} onOpenChange={(open) => { if (!open) setAddingType(null) }}>
-        <DialogContent className="sm:max-w-2xl" onCloseAutoFocus={onAddDialogCloseAutoFocus}>
+      <Dialog open={addDialogOpen} onOpenChange={(open) => { if (!open) setAddingType(null) }}>
+        <DialogContent
+          className="sm:max-w-2xl"
+          onCloseAutoFocus={(event) => {
+            // Dış Alım'a geçişte diyalog kapanır ama iş bitmedi: hatırlanan açıcı
+            // (tek kullanımlık) dış alım formunun kapanışına saklanır.
+            if (addingType === "dis_alim") { event.preventDefault(); return }
+            onAddDialogCloseAutoFocus?.(event)
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{addTitle}</DialogTitle>
             <DialogDescription>{addDescription}</DialogDescription>
@@ -435,6 +480,24 @@ export function PartsLaborEditor({
           {addComposer}
         </DialogContent>
       </Dialog>
+      )}
+
+      {/* Dış alım (#1070): mevcut form, ekleme kipinde. Kayıt
+          `addPurchaseItemAction` ile yapılır, form `router.refresh()` çağırır ve
+          yeni kalem (source=purchase) listeye sunucudan düşer. */}
+      {canAddPurchase && addingType === "dis_alim" && (
+        <PurchaseFormSheet
+          orderId={orderId}
+          vehicle={vehicle}
+          suppliers={purchase.suppliers}
+          technicians={purchase.technicians}
+          defaultTechnicianId={purchase.defaultTechnicianId}
+          item={null}
+          open
+          onOpenChange={(open) => { if (!open) setAddingType(null) }}
+          surface={addSurface}
+          onCloseAutoFocus={onAddDialogCloseAutoFocus}
+        />
       )}
 
       {!locked && <Separator />}
@@ -628,7 +691,7 @@ export function PartsLaborGrid({
   orderId, status, items, vehicle, onError, loading, laborCatalog, taxRateBps, onApplyStandardTax,
   allowExternalLabor = true, addingType, onAddingTypeChange, onAddDialogCloseAutoFocus,
   addSurface, hideAddToolbar, editRequest,
-  compactRows,
+  compactRows, purchase,
 }: {
   orderId: string
   status: string
@@ -658,6 +721,8 @@ export function PartsLaborGrid({
   editRequest?: { rowId: string } | null
   /** Dar kapsayıcıda iki satırlık kompakt kalem satırı (#968); bkz. `PartsLaborEditor`. */
   compactRows?: boolean
+  /** Ofiste dış alım ekleme bağlamı (#1070); bkz. `PurchaseAddContext`. */
+  purchase?: PurchaseAddContext | null
 }) {
   const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
@@ -865,6 +930,7 @@ export function PartsLaborGrid({
       hideAddToolbar={hideAddToolbar}
       editRequest={editRequest}
       compactRows={compactRows}
+      purchase={purchase}
     />
   )
 }
@@ -906,25 +972,36 @@ function AddButton({ draft, onSubmit, submitting, disabled }: {
   )
 }
 
-// İki-düğmeli segment: İşçilik composer'ında İç / Dış işçilik modu.
-function LaborModeToggle({ mode, onChange, disabled }: {
-  mode: "labor" | "external_labor"; onChange: (m: "labor" | "external_labor") => void; disabled: boolean
+type ModeOption<T extends string> = { value: T; label: string; Icon: typeof Wrench }
+
+const LABOR_MODE_OPTIONS: ModeOption<"labor" | "external_labor">[] = [
+  { value: "labor", label: "İç İşçilik", Icon: Wrench },
+  { value: "external_labor", label: "Dış İşçilik", Icon: ExternalLink },
+]
+
+/** Parça ekle diyaloğu: stok/katalog bestecisi ya da dış alım formu (#1070). */
+const PART_MODE_OPTIONS: ModeOption<"stock" | "purchase">[] = [
+  { value: "stock", label: "Stok / Katalog", Icon: PackagePlus },
+  { value: "purchase", label: "Dış Alım", Icon: ShoppingCart },
+]
+
+// İki-düğmeli segment: İşçilik composer'ında İç / Dış işçilik, Parça ekle
+// diyaloğunda Stok / Dış Alım kipi. İki yerde AYNI görünüm.
+function ModeToggle<T extends string>({ value: current, options, onChange, disabled }: {
+  value: T; options: ModeOption<T>[]; onChange: (m: T) => void; disabled: boolean
 }) {
-  const opts: Array<{ value: "labor" | "external_labor"; label: string; Icon: typeof Wrench }> = [
-    { value: "labor", label: "İç İşçilik", Icon: Wrench },
-    { value: "external_labor", label: "Dış İşçilik", Icon: ExternalLink },
-  ]
   return (
     <div className="inline-flex rounded-md border border-input bg-muted/40 p-0.5">
-      {opts.map(({ value, label, Icon }) => (
+      {options.map(({ value, label, Icon }) => (
         <Button
           key={value}
           type="button"
           size="sm"
-          variant={mode === value ? "secondary" : "ghost"}
+          variant={current === value ? "secondary" : "ghost"}
+          aria-pressed={current === value}
           disabled={disabled}
           onClick={() => onChange(value)}
-          className={cn("gap-1.5", mode !== value && "text-muted-foreground")}
+          className={cn("gap-1.5", current !== value && "text-muted-foreground")}
         >
           <Icon className="size-3.5" /> {label}
         </Button>
@@ -1006,7 +1083,7 @@ function LaborComposer({ onAdd, disabled, catalog, allowExternal = true, modalLa
   const effectiveMode = allowExternal ? mode : "labor"
   return (
     <div className="space-y-3">
-      {allowExternal && <LaborModeToggle mode={mode} onChange={setMode} disabled={disabled} />}
+      {allowExternal && <ModeToggle value={mode} options={LABOR_MODE_OPTIONS} onChange={setMode} disabled={disabled} />}
       <LaborComposerBody
         key={`${effectiveMode}-${nonce}`}
         mode={effectiveMode}

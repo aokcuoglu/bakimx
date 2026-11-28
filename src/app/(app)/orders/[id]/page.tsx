@@ -391,6 +391,18 @@ export default async function OrderDetailPage({
     ? await getLaborCatalog(user.workshopId, { activeOnly: true })
     : []
 
+  // #1070 — ofiste dış alım parça: planda `procurement` + `parts.purchase` yetkisi.
+  // `addPurchaseItemAction` (`requireWritableFeatureWorkshop("parts.purchase",
+  // "procurement")`) ile aynı iki kapı; görünen seçenek yetki hatasına götürmez.
+  const canPurchase = enabledFeatures.includes("procurement") && actorCan(user, "parts.purchase")
+  const suppliers = canPurchase
+    ? await prisma.supplier.findMany({
+        where: { workshopId: user.workshopId, isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      })
+    : []
+
   return (
     <AppShell
       workshopName={workshop?.name}
@@ -408,6 +420,8 @@ export default async function OrderDetailPage({
         currentTier={plan?.tier ?? "lite"}
         canReopen={actorCan(user, "order.reopen")}
         canEditInfo={actorCan(user, "order.edit")}
+        canPurchase={canPurchase}
+        suppliers={suppliers}
       />
     </AppShell>
   )
