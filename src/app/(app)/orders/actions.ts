@@ -27,6 +27,7 @@ import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/
 import { assertIntakePhotoQuota } from "@/lib/photos/quota"
 import { trDateToDate } from "@/lib/format"
 import { parseIstanbulLocalDateTime } from "@/lib/istanbul-time"
+import { closeOpenSessions, statusClosesLaborSessions } from "@/lib/technician/labor-session-close"
 import { nanoid } from "nanoid"
 import { computeStockDelta } from "@/lib/parts/stock-delta"
 import { ORDER_ITEM_UNITS, quantityToNumber, validateQuantityForUnit } from "@/lib/orders/quantity"
@@ -1064,11 +1065,49 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
     if (undecided.length > 0) return { error: undecidedPartsRequestsMessage(undecided) }
   }
 
-  const updateResult = await prisma.serviceOrder.updateMany({
-    where: { id: orderId, workshopId: user.workshopId },
-    data: { status },
+  // Sayaç yalnız Serviste akar: emir başka duruma geçerken açık işçilik
+  // oturumları aynı transaction'da kapanır (teknisyen beklet/bitir ile aynı çekirdek).
+  const closeLabor = statusClosesLaborSessions(status)
+  const workshopId = user.workshopId
+  const txResult = await prisma.$transaction(async (tx) => {
+    const updated = await tx.serviceOrder.updateMany({
+      where: { id: orderId, workshopId },
+      data: { status },
+    })
+    if (updated.count === 0) return null
+    if (!closeLabor) return { sessions: [] }
+    const outcome = await closeOpenSessions(
+      {
+        listOpen: () =>
+          tx.laborSession.findMany({
+            where: { serviceOrderId: orderId, workshopId, endTime: null },
+            select: { id: true, startTime: true },
+          }),
+        closeOne: async (id, data) =>
+          (await tx.laborSession.updateMany({ where: { id, workshopId, endTime: null }, data })).count,
+      },
+      new Date(),
+    )
+    return { sessions: outcome.status === "closed" ? outcome.sessions : [] }
   })
-  if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
+  if (!txResult) return { error: "Servis emri bulunamadı" }
+
+  for (const c of txResult.sessions) {
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "LaborSession",
+      c.sessionId,
+      "labor_session_stopped",
+      JSON.stringify({
+        startTime: c.startTime.toISOString(),
+        endTime: c.endTime.toISOString(),
+        durationMinutes: c.durationMinutes,
+        note: c.note,
+      }),
+      orderId,
+    )
+  }
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_status_changed_to_${status}`, undefined, orderId)
 

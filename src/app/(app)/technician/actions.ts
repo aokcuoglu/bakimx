@@ -27,7 +27,11 @@ import {
   decideStart,
   type ClosedLaborSession,
 } from "@/lib/technician/labor-session-close"
-import type { OrderStatus, Prisma } from "@prisma/client"
+import { Prisma, type OrderStatus } from "@prisma/client"
+
+function isUniqueViolation(e: unknown) {
+  return e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002"
+}
 
 const ORDER_LOCKED_ERROR = "Teslim edilmiş veya iptal edilmiş araç kabulü düzenlenemez"
 
@@ -233,6 +237,11 @@ export async function startWorkWithTimerAction(orderId: string) {
       data: { workshopId: user.workshopId, serviceOrderId: orderId, startTime: new Date() },
     })
     return { statusChanged, timerStarted: true, session } as const
+  }).catch((e: unknown) => {
+    // Kısmi benzersiz dizin (emir başına tek açık oturum) son savunma: satır
+    // kilidi atlanırsa 500 yerine anlaşılır hata.
+    if (isUniqueViolation(e)) return { error: "Bu iş için sayaç zaten çalışıyor, sayfayı yenileyin" } as const
+    throw e
   })
 
   if ("error" in outcome) return { error: outcome.error }
