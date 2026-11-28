@@ -27,7 +27,7 @@ test("referans indirimi ve yükseltme kredisi yalnız paket tutarında kalır (#
 test("yalnız hesap atölyesi kalem taşır; şube siparişi taşımaz (#1049)", () => {
   const src = read("src/app/(app)/billing/actions.ts")
   expect(src).toContain("billingAccount.isAccountWorkshop")
-  expect(read("src/lib/billing/account-context.ts")).toContain("account.isAccountWorkshop ? workshop.paidAddons")
+  expect(read("src/lib/billing/account-context.ts")).toContain("account.isAccountWorkshop ? effectivePaidAddonKeys(workshop)")
 })
 
 test("yenileme kalemleri süzülmüş anahtarlardan gelir; sunucu ve istemci aynı yardımcıyı kullanır (#1049)", () => {

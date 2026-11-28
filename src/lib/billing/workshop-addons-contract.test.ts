@@ -22,16 +22,20 @@ test("self-serve paket etkinleştirmesi atölyenin addons alanına yazmaz (#827)
 
 test("admin ek özellik ve ek kota eylemleri yetki kapısı ve denetim kaydı taşır (#827)", () => {
   const actions = read("src/app/admin/actions.ts")
-  for (const [name, auditKey] of [
-    ["setWorkshopAddons", "admin_addons_set"],
-    ["setWorkshopExtraVinQuota", "admin_extra_vin_quota_set"],
-  ] as const) {
-    const body = actionBody(actions, name)
-    expect(body).toContain('requireAdminCapability("manageWorkshops")')
-    expect(body).toContain("AuditLogAction")
-    expect(body).toContain(auditKey)
-    expect(body).toContain('kind: "customer"')
-  }
+  const quota = actionBody(actions, "setWorkshopExtraVinQuota")
+  expect(quota).toContain('requireAdminCapability("manageWorkshops")')
+  expect(quota).toContain("AuditLogAction")
+  expect(quota).toContain("admin_extra_vin_quota_set")
+  expect(quota).toContain('kind: "customer"')
+
+  // Ek özellik yazımı (#1049'dan beri) ortak transaction yardımcısındadır; denetim kaydı orada.
+  const addons = actionBody(actions, "setWorkshopAddons")
+  expect(addons).toContain('requireAdminCapability("manageWorkshops")')
+  expect(addons).toContain("applyAdminAddonsTx")
+  const helper = read("src/lib/admin/apply-addons.ts")
+  expect(helper).toContain("admin_addons_set")
+  expect(helper).toContain("auditLog.create")
+  expect(helper).toContain('kind: "customer"')
 })
 
 test("bağımsız ek kota satın alma rotası fiyat ve Satın Al içermez, kullanıma yönlenir (#827)", () => {
