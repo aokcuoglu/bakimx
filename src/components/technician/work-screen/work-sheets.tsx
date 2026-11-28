@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
 import { BottomSheet } from "@/components/shared/bottom-sheet"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -59,6 +60,9 @@ export function WorkSheets({
   technicians: TechnicianInfo[]
   defaultTechnicianId: string | null
 }) {
+  // Kutucuklardan açılan diğer eklemeler gibi: telefonda alt sayfa, lg'de diyalog (#1061).
+  const isMobile = useIsMobile()
+  const surface = isMobile ? "sheet" : "dialog"
   const handleOpenChange = (open: boolean) => {
     if (!open) onClose()
   }
@@ -74,6 +78,7 @@ export function WorkSheets({
         technicians={technicians}
         defaultTechnicianId={sheet.item ? null : defaultTechnicianId}
         item={sheet.item}
+        surface={surface}
         open
         onOpenChange={handleOpenChange}
       />
@@ -81,7 +86,15 @@ export function WorkSheets({
   }
 
   if (sheet.kind === "externalLabor") {
-    return <ExternalLaborSheet orderId={orderId} item={sheet.item} open onOpenChange={handleOpenChange} />
+    return (
+      <ExternalLaborSheet
+        orderId={orderId}
+        item={sheet.item}
+        surface={surface}
+        open
+        onOpenChange={handleOpenChange}
+      />
+    )
   }
 
   if (sheet.kind === "photo") {
