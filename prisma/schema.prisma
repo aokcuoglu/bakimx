@@ -1784,6 +1784,11 @@ enum PartsRequestStatus {
   cancelled
 }
 
+/// DİKKAT — şemada görünmeyen HAM dizin: `LaborSession_one_open_per_order`,
+/// `("serviceOrderId") WHERE "endTime" IS NULL` üzerinde kısmi UNIQUE (#1062;
+/// migration 20261128100000). Emir başına en fazla bir açık sayaç. Prisma kısmi
+/// dizini ifade edemez, `migrate dev` bunu "drift" diye düşürmeyi önerebilir —
+/// KABUL ETME, dizin bilinçlidir.
 model LaborSession {
   id              String       @id @default(cuid())
   workshopId      String

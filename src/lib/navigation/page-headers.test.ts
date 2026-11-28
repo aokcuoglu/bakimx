@@ -210,6 +210,14 @@ describe("alt sayfa başlıkları (#855)", () => {
       }
     }
   })
+  test("#1063: teknisyen iş ekranı Teknisyen Paneli altında, plaka kayıt adı", () => {
+    expect(matchSubPage("/technician/orders/o1")).toEqual({ pattern: "/technician/orders/[id]" })
+    const h = resolvePageHeader("/technician/orders/o1", ALL, { recordTitle: "34ABC123" })!
+    expect(h.back).toEqual({ label: "Teknisyen Paneli", href: "/technician" })
+    expect(h.title).toBe("34ABC123")
+    expect(h.desktopOnly).toBeUndefined()
+    expect(h.crumbs.slice(-2)).toEqual([{ label: "Teknisyen Paneli", href: "/technician" }, { label: "34ABC123" }])
+  })
   test("#883: ofis rolleri ve aktörsüz bağlam değişmez", () => {
     for (const actor of [{ role: "owner" as const }, { role: "manager" as const }, null]) {
       const h = resolvePageHeader("/quotes/new", { ...ALL, actor })!
@@ -233,7 +241,6 @@ describe("alt sayfa başlıkları (#855)", () => {
       "/vehicles/v1/passport",
       "/orders/new",
       "/orders/o1",
-      "/technician/orders/x",
       "/customers/a/b",
       "/customers/",
     ]) {
@@ -270,10 +277,10 @@ describe("alt sayfa başlıkları (#855)", () => {
   })
   // /technician telefonda sidebar'sız kiosktur ama lg+ tam kabukla ve PageFrame
   // başlığıyla çizilir (#1046); başka hiçbir kayıtlı yol sidebar'sız olmaz.
-  test("/technician dışında kayıtlı hiçbir yol sidebar'sız değil (?from=technician dahil)", () => {
+  test("/technician ve altı dışında kayıtlı hiçbir yol sidebar'sız değil (?from=technician dahil)", () => {
     const fromTechnician = new URLSearchParams("from=technician")
     const paths = [...Object.keys(PAGE_HEADERS), ...Object.keys(SUB_PAGE_HEADERS)].map((p) => p.replaceAll("[id]", "x1"))
-      .filter((p) => p !== "/technician")
+      .filter((p) => p !== "/technician" && !p.startsWith("/technician/"))
     expect(paths.filter((p) => isSidebarlessRoute(p, fromTechnician))).toEqual([])
   })
 })

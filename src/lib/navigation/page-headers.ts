@@ -171,6 +171,7 @@ export const SUB_PAGE_HEADERS: Readonly<Record<string, SubPageHeaderConfig>> = {
   "/vehicles/new": { parent: "/vehicles", title: "Yeni Araç", description: "Araç bilgilerini eksiksiz girin" },
   "/vehicles/[id]": { parent: "/vehicles", backLabel: "Araç Detayı" },
   "/vehicles/[id]/edit": { parent: "/vehicles/[id]", title: "Aracı Düzenle", crumb: "Düzenle" },
+  "/technician/orders/[id]": { parent: "/technician" },
   "/quotes/new": { parent: "/quotes", title: "Yeni Teklif" },
   "/quotes/[id]": { parent: "/quotes" },
   "/appointments/new": {

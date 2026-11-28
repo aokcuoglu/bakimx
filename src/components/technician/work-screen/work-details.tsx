@@ -31,7 +31,7 @@ export type WorkCustomer = {
 
 export type WorkDamageMark = { id: string; zone: string; damageType: string; severity: string; note: string | null }
 
-export type WorkInternalNote = { id: string; content: string; isPinned: boolean; createdAt: string }
+export type WorkInternalNote = { id: string; content: string; isPinned: boolean; createdAt: string; authorName: string | null }
 
 export type WorkTotals = {
   discountAmount: number
@@ -214,6 +214,11 @@ export function PhotoThumbnail({ src, label, onOpen }: { src: string; label: str
   )
 }
 
+function noteMeta(note: WorkInternalNote): string {
+  const date = formatTrDateTime(note.createdAt)
+  return note.authorName ? `${note.authorName} · ${date}` : date
+}
+
 /** Detaylar kapalıyken bile görünen en yeni iç not (2 satır kırpılır). */
 export function LatestInternalNote({ note }: { note: WorkInternalNote | undefined }) {
   if (!note) return null
@@ -223,7 +228,7 @@ export function LatestInternalNote({ note }: { note: WorkInternalNote | undefine
       <div className="min-w-0 flex-1">
         <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Son not</h2>
         <p className="mt-1 line-clamp-2 text-sm break-words whitespace-pre-wrap text-foreground">{note.content}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{formatTrDateTime(note.createdAt)}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{noteMeta(note)}</p>
       </div>
     </section>
   )
@@ -268,7 +273,7 @@ export function InternalNotesSection({
           <StickyNote className="mt-0.5 size-4 shrink-0 text-warning-strong" />
           <div className="min-w-0 flex-1">
             <p className="whitespace-pre-wrap text-sm text-foreground">{note.content}</p>
-            <p className="mt-1 text-xs text-muted-foreground-strong">{formatTrDateTime(note.createdAt)}</p>
+            <p className="mt-1 text-xs text-muted-foreground-strong">{noteMeta(note)}</p>
           </div>
           {!locked && canDelete && (
             <Button

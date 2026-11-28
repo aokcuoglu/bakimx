@@ -27,7 +27,11 @@ import {
   decideStart,
   type ClosedLaborSession,
 } from "@/lib/technician/labor-session-close"
-import type { OrderStatus, Prisma } from "@prisma/client"
+import { Prisma, type OrderStatus } from "@prisma/client"
+
+function isUniqueViolation(e: unknown) {
+  return e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002"
+}
 
 const ORDER_LOCKED_ERROR = "Teslim edilmiş veya iptal edilmiş araç kabulü düzenlenemez"
 
@@ -233,6 +237,11 @@ export async function startWorkWithTimerAction(orderId: string) {
       data: { workshopId: user.workshopId, serviceOrderId: orderId, startTime: new Date() },
     })
     return { statusChanged, timerStarted: true, session } as const
+  }).catch((e: unknown) => {
+    // Kısmi benzersiz dizin (emir başına tek açık oturum) son savunma: satır
+    // kilidi atlanırsa 500 yerine anlaşılır hata.
+    if (isUniqueViolation(e)) return { error: "Bu iş için sayaç zaten çalışıyor, sayfayı yenileyin" } as const
+    throw e
   })
 
   if ("error" in outcome) return { error: outcome.error }
@@ -650,10 +659,20 @@ export async function addInternalNoteAction(formData: FormData) {
   if (!order) return { error: "Araç kabulü bulunamadı" }
   if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
+  // Yazar: oturum açan kullanıcının atölyedeki Teknisyen kaydı. Teknisyen
+  // kaydı olmayan ofis kullanıcılarında boş kalır.
+  const author = user.technicianId
+    ? await prisma.technician.findFirst({
+        where: { id: user.technicianId, workshopId: user.workshopId },
+        select: { id: true },
+      })
+    : null
+
   await prisma.internalNote.create({
     data: {
       workshopId: user.workshopId,
       serviceOrderId: raw.serviceOrderId,
+      authorId: author?.id ?? null,
       content: parsed.data.content,
     },
   })

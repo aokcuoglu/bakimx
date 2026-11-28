@@ -191,7 +191,7 @@ export function OrderItemsChecklist({
             </h3>
           )}
           {!readOnly && total > 0 && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-2">
               <Button
                 type="button"
                 variant="outline"

@@ -89,3 +89,12 @@ export function decideStart(status: OrderStatus, hasActiveSession: boolean): Sta
   if (statusChanged && !canTransitionOrder(status, "in_progress")) return blocked
   return { statusChanged, createSession: !hasActiveSession }
 }
+
+/**
+ * Sayaç yalnız Serviste (`in_progress`) akar: emir başka bir duruma geçerken
+ * (parça bekliyor, teslime hazır, teslim, iptal, taslak…) açık oturumlar
+ * kapanır. Teknisyen "beklet/bitir" ile ofis durum eylemi aynı kuralı paylaşır.
+ */
+export function statusClosesLaborSessions(next: OrderStatus): boolean {
+  return next !== "in_progress"
+}

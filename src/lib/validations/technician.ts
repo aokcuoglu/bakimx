@@ -1,5 +1,6 @@
 import { z } from "zod/v4"
 import { parseTRYToKurus } from "@/lib/money"
+import { parseIstanbulLocalDateTime } from "@/lib/istanbul-time"
 
 export const checklistItemSchema = z.object({
   serviceOrderId: z.string().min(1, "Araç kabulü zorunludur"),
@@ -181,8 +182,8 @@ export type LaborSessionEditInput = z.infer<typeof laborSessionEditSchema>
 
 /**
  * İSTEMCİ şeması: alanlar `datetime-local` girdisinin ürettiği YEREL saat
- * metnidir ("2026-08-19T18:40"). `new Date(...)` tarayıcıda bunu yerel saat
- * olarak çözer, gönderimde `toISOString()` UTC'ye çevirir.
+ * metnidir ("2026-08-19T18:40"), Europe/Istanbul duvar saati olarak okunur
+ * (`parseIstanbulLocalDateTime`) — tarayıcının saat diliminden bağımsız.
  */
 export const laborSessionEditFormSchema = z
   .object({
@@ -192,7 +193,17 @@ export const laborSessionEditFormSchema = z
   })
   .superRefine((data, ctx) => {
     if (!data.startLocal || !data.endLocal) return
-    const err = laborSessionRangeError(new Date(data.startLocal), new Date(data.endLocal))
+    const start = parseIstanbulLocalDateTime(data.startLocal)
+    const end = parseIstanbulLocalDateTime(data.endLocal)
+    if (!start) {
+      ctx.addIssue({ code: "custom", path: ["startLocal"], message: "Geçerli bir başlangıç saati giriniz" })
+      return
+    }
+    if (!end) {
+      ctx.addIssue({ code: "custom", path: ["endLocal"], message: "Geçerli bir bitiş saati giriniz" })
+      return
+    }
+    const err = laborSessionRangeError(start, end)
     if (err) {
       ctx.addIssue({ code: "custom", path: [err.field === "start" ? "startLocal" : "endLocal"], message: err.message })
     }
