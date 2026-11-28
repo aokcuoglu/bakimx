@@ -29,6 +29,7 @@ import { createBillingOrder } from "@/app/(app)/billing/actions"
 import { getSeatLimit, type PlanTier } from "@/lib/plan"
 import type { HavaleInfo } from "@/lib/billing/provider"
 import { BrandRail } from "@/components/billing/brand-rail"
+import { OrderSummaryLines, renewalAddonLines } from "@/components/billing/order-summary-lines"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
@@ -60,6 +61,7 @@ export function PurchaseWizard({
   seatUsage,
   extraSeats = 0,
   referralDiscountBps = 0,
+  paidAddonKeys = [],
 }: {
   mode: Mode
   initialCycle?: Cycle
@@ -72,6 +74,8 @@ export function PurchaseWizard({
   seatUsage?: { activeUsers: number; pendingInvites: number; used: number }
   extraSeats?: number
   referralDiscountBps?: number
+  /** Hesapta satın alınmış ek özellikler; yenilemede pakete eklenir (#1049). */
+  paidAddonKeys?: readonly string[]
 }) {
   const isPublic = mode === "public"
   const STEPS = isPublic
@@ -191,7 +195,7 @@ export function PurchaseWizard({
 
   return (
     <div className={frameClass}>
-      <BrandRail mode={mode} tier={tier} cycle={cycle} step={done ? 2 : step} referralDiscountBps={referralDiscountBps} />
+      <BrandRail mode={mode} tier={tier} cycle={cycle} step={done ? 2 : step} referralDiscountBps={referralDiscountBps} paidAddonKeys={paidAddonKeys} />
 
       <div className={cn("flex flex-col bg-background", formColClass)}>
         {/* my-auto: boş alan varsa dikey ortalar, içerik taşarsa kırpmadan üstten başlar */}
@@ -273,6 +277,16 @@ export function PurchaseWizard({
                           </p>
                         </div>
                       </section>
+                      {!isPublic && (
+                        <OrderSummaryLines
+                          addonLines={renewalAddonLines(paidAddonKeys, cycle)}
+                          cycle={cycle}
+                          packageLabel={pkg.name}
+                          packageAmountMinor={getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps)}
+                          totalLabel="Ödenecek (KDV dahil)"
+                          className="rounded-xl border bg-card p-4"
+                        />
+                      )}
                       <p className="text-xs leading-5 text-muted-foreground">
                         Ek özellikler pakete dahil değildir. {ADDON_CATALOG.filter((addon) => addon.purchasable).map((addon) => addon.name).join(" ve ")}, Ayarlar → Paketler’den satın alınır; diğerleri için bizimle iletişime geçin.
                       </p>
@@ -451,6 +465,16 @@ export function PurchaseWizard({
                   {step === 2 && (
                     <div className="space-y-4">
                       <h2 className="text-lg font-bold text-foreground">Özet</h2>
+                      {!isPublic && (
+                        <OrderSummaryLines
+                          addonLines={renewalAddonLines(paidAddonKeys, cycle)}
+                          cycle={cycle}
+                          packageLabel={pkg.name}
+                          packageAmountMinor={getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps)}
+                          totalLabel="Kredi öncesi tutar"
+                          className="rounded-xl border bg-card p-4"
+                        />
+                      )}
 
                       {/* Ödeme yöntemi seçimi — kart görünümlü iki seçenek */}
                       <div>

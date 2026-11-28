@@ -1,22 +1,14 @@
 import { prisma } from "@/lib/db"
 import type { Prisma } from "@prisma/client"
+import { pickAccountWorkshopId } from "@/lib/billing/account-pick"
+
+export { pickAccountWorkshopId }
 
 export type BillingAccount = {
   accountWorkshopId: string
   organizationId: string | null
   workshopIds: string[]
   isAccountWorkshop: boolean
-}
-
-/** Hesap atölyesi: en eski `createdAt`; eşitlikte en küçük id. */
-export function pickAccountWorkshopId(rows: readonly { id: string; createdAt: Date }[]): string {
-  if (rows.length === 0) throw new Error("Hesap atölyesi seçilemedi: atölye yok.")
-  let best = rows[0]
-  for (const r of rows) {
-    const dt = r.createdAt.getTime() - best.createdAt.getTime()
-    if (dt < 0 || (dt === 0 && r.id < best.id)) best = r
-  }
-  return best.id
 }
 
 /** Faturalama hesabı: kuruluşsuz atölye kendi hesabıdır; kuruluşta en eski müşteri atölyesi. */

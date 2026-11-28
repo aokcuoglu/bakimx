@@ -5,7 +5,8 @@ import { isIndefiniteAccess } from "@/lib/admin/manual-plan-activation"
 import { ArrowLeft, ChevronLeft, ChevronRight, Handshake } from "lucide-react"
 import { can, getAdminContext } from "@/lib/admin"
 import { prisma } from "@/lib/db"
-import { describeBillingOrder } from "@/lib/billing/addon-pricing"
+import { addonFeaturesFor, describeBillingOrder, isAddonOrderKey } from "@/lib/billing/addon-pricing"
+import { resolveBillingAccount } from "@/lib/billing/account"
 import { ADDON_VIN_LOOKUP_QUOTA, getEffectiveSeatLimit, getPlanState, hasLifetimeLite, normalizeAddons, planLabel } from "@/lib/plan"
 import { FEATURE_CATALOG } from "@/lib/feature-catalog"
 import { formatMinor } from "@/lib/billing/pricing"
@@ -132,6 +133,12 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
   const activeUsers = workshop.users.filter((u) => u.isActive).length
   const seatLimit = getEffectiveSeatLimit(workshop)
   const enabledAddons = normalizeAddons(workshop.addons)
+  // Satın alınmış ek özellikler hesap atölyesinde tutulur (#1049); şube sayfası da onu gösterir.
+  const billingAccount = await resolveBillingAccount(workshop)
+  const accountPaidAddons = billingAccount.isAccountWorkshop
+    ? workshop.paidAddons
+    : ((await prisma.workshop.findUnique({ where: { id: billingAccount.accountWorkshopId }, select: { paidAddons: true } }))?.paidAddons ?? [])
+  const paidAddonFeatures = addonFeaturesFor(accountPaidAddons.filter(isAddonOrderKey))
   // Erişim profili ek özelliklerin hepsini zaten açıyorsa admin'e nedenini söyle (#827).
   const allUnlockedReason =
     plan.accessTier === "premium" ? (plan.isTrialing ? ("trial" as const) : ("premium" as const)) : undefined
@@ -317,9 +324,10 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
         <Section title="Ek Özellikler & Katalog Kotası">
           {can(ctx, "manageWorkshops") ? (
             <WorkshopAddonsForm
-              key={`${enabledAddons.join(",")}-${workshop.extraVinQuota}`}
+              key={`${enabledAddons.join(",")}-${workshop.extraVinQuota}-${paidAddonFeatures.join(",")}`}
               workshopId={workshop.id}
               addons={enabledAddons}
+              paidAddonFeatures={paidAddonFeatures}
               extraVinQuota={workshop.extraVinQuota}
               addonBaseQuota={ADDON_VIN_LOOKUP_QUOTA}
               allUnlockedReason={allUnlockedReason}

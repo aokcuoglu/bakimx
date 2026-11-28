@@ -36,3 +36,20 @@ test("paket makbuzu tek satır ve toplam tutarı gösterir", () => {
   expect(html).toContain("(Yıllık)")
   expect(html).toContain("Toplam (KDV dahil)")
 })
+
+test("kalemli paket makbuzu paket ve ek özellik tutarlarını ayrı gösterir (#1049)", () => {
+  const d = describeBillingOrder({
+    type: "renewal",
+    planTier: "pro",
+    billingCycle: "monthly",
+    amountMinor: 139_900,
+    addonLines: [{ key: "vinLookup", name: "VIN ile araç tanıma", quantity: 1, unitAmountMinor: 39_900, amountMinor: 39_900 }],
+  })
+  const html = generateReceiptHtml({ ...base, amountMinor: 139_900, lines: d.lines, cycleLabel: d.cycleLabel })
+  expect(html).toContain("Servis Paketi (Aylık)")
+  expect(html).toContain("VIN ile araç tanıma (Aylık)")
+  // formatTRY kuruş alır; makbuz tutarı 100'e bölmemeli (eskiden ₺13,99 yazıyordu).
+  expect(html).toMatch(/1\.000,00/)
+  expect(html).toMatch(/399,00/)
+  expect(html).toMatch(/1\.399,00/)
+})

@@ -119,3 +119,36 @@ describe("commission draft persistence", () => {
     })
   })
 })
+
+describe("commission base override (#1049)", () => {
+  function txCapture(creates: Array<Record<string, unknown>>) {
+    return {
+      salesCommission: {
+        findUnique: async () => null,
+        create: async ({ data }: { data: Record<string, unknown> }) => {
+          creates.push(data)
+          return { id: "c" }
+        },
+      },
+      salesLead: { findUnique: async () => ({ id: "lead-1", advisorId: "advisor-1" }) },
+      salesCommissionRule: { findFirst: async () => ({ id: "rule-1", rateBps: 1_000 }) },
+    } as unknown as Prisma.TransactionClient
+  }
+
+  it("commissionBaseNetMinor verilirse taban odur (ek özellik payı hariç)", async () => {
+    const creates: Array<Record<string, unknown>> = []
+    await createCommissionDraftForBillingOrderTx(
+      txCapture(creates),
+      { ...baseOrder, netAmountMinor: 120_000, commissionBaseNetMinor: 100_000 },
+      null,
+      { label: "tami" },
+    )
+    expect(creates[0]).toMatchObject({ calculationBaseMinor: 100_000, calculatedAmountMinor: 10_000 })
+  })
+
+  it("verilmezse netAmountMinor'a düşer", async () => {
+    const creates: Array<Record<string, unknown>> = []
+    await createCommissionDraftForBillingOrderTx(txCapture(creates), baseOrder, null, { label: "tami" })
+    expect(creates[0]).toMatchObject({ calculationBaseMinor: 108_250, calculatedAmountMinor: 10_825 })
+  })
+})

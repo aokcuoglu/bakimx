@@ -7,8 +7,7 @@ import { AuditLogAction } from "@/lib/audit"
 import { planActivationAuditMetadata } from "@/lib/admin/plan-activation-audit"
 import { resolveManualActivationPeriod } from "@/lib/admin/manual-plan-activation"
 import { manualPlanActivationSchema } from "@/lib/validations/plan-activation"
-import { computeTrialEnd, hasLifetimeLite, isSalePlanTier, normalizeAddons } from "@/lib/plan"
-import { planAddonFanOut, resolveAddonTargets, type AddonTargetClient } from "@/lib/admin/addon-targets"
+import { computeTrialEnd, hasLifetimeLite, isSalePlanTier } from "@/lib/plan"
 import { extraSeatsSchema, extraVinQuotaSchema, workshopAddonsSchema } from "@/lib/validations/workshop-addons"
 import { activateBillingOrder } from "@/lib/billing/activate"
 import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
@@ -26,6 +25,7 @@ import { canReceivePasswordReset } from "@/lib/user-identity"
 import { ASSIGNABLE_ROLES, roleRequiresEmail } from "@/lib/roles"
 import { ACQUISITION_SOURCES, normalizeAcquisitionAdvisorId } from "@/lib/acquisition-sources"
 import type { AcquisitionSource } from "@prisma/client"
+import { applyAdminAddonsTx } from "@/lib/admin/apply-addons"
 
 type Result = { ok: true } | { ok: false; error: string }
 
@@ -269,30 +269,13 @@ export async function setWorkshopAddons(workshopId: string, addons: unknown): Pr
   const parsed = workshopAddonsSchema.safeParse(addons)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz ek özellik." }
 
-  const targets = await resolveAddonTargets(prisma as unknown as AddonTargetClient, workshopId)
-  if (!targets) return { ok: false, error: "İş yeri bulunamadı." }
-
-  const next = normalizeAddons(parsed.data)
-  const { noop, workshopIds, entries } = planAddonFanOut(targets, next)
-  if (noop) return { ok: true }
-
-  // `AuditLogAction` tek satır yazar; burada yazım + şube başına kayıt atomik
-  // olmalı, bu yüzden aynı şemayla doğrudan `auditLog.create` kullanılır.
-  await prisma.$transaction([
-    prisma.workshop.updateMany({ where: { id: { in: workshopIds }, kind: "customer" }, data: { addons: next } }),
-    ...entries.map(({ id, diff }) =>
-      prisma.auditLog.create({
-        data: {
-          workshopId: id,
-          actorUserId: ctx.user.id,
-          entityType: "Workshop",
-          entityId: id,
-          action: "admin_addons_set",
-          metadataJson: JSON.stringify(workshopIds.length > 1 ? { ...diff, workshopIds } : diff),
-        },
-      }),
-    ),
-  ])
+  // Kilit + okuma + yazım tek interaktif transaction'da (aktivasyonla aynı kilit sırası).
+  const result = await prisma.$transaction((tx) =>
+    applyAdminAddonsTx(tx, { workshopId, next: parsed.data, actorUserId: ctx.user.id }),
+  )
+  if (result.status === "not_found") return { ok: false, error: "İş yeri bulunamadı." }
+  if (result.status === "noop") return { ok: true }
+  const { workshopIds } = result.plan
   for (const id of workshopIds) revalidatePath(`/admin/workshops/${id}`, "page")
   return { ok: true }
 }

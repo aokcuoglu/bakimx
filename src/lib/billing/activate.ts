@@ -4,7 +4,9 @@ import { AuditLogAction } from "@/lib/audit"
 import { addPeriod, periodStartFrom } from "@/lib/billing/period"
 import { createCommissionDraftForBillingOrderTx } from "@/lib/sales/commission"
 import { getSeatLimit } from "@/lib/plan"
-import { activateAddonOrder } from "@/lib/billing/activate-addon"
+import { activateAddonOrder, applyAddonEntitlementsTx } from "@/lib/billing/activate-addon"
+import { getOrderAmountSplit, parseAddonOrderLines } from "@/lib/billing/addon-pricing"
+import { createBillingTaxSnapshot } from "@/lib/billing/tax"
 import { selectSeatAdjustment } from "@/lib/billing/seat-adjustment"
 
 export type SeatAdjustmentResult = {
@@ -57,6 +59,9 @@ export async function activateBillingOrder(
   const periodStart =
     order.type === "renewal" ? periodStartFrom(workshop?.currentPeriodEnd ?? null, now) : now
   const periodEnd = addPeriod(periodStart, order.billingCycle)
+
+  const addonLines = parseAddonOrderLines(order.addonLines)
+  const split = getOrderAmountSplit(order)
 
   let seatAdjustment: SeatAdjustmentResult = {
     limit: getSeatLimit(order.planTier, workshop?.extraSeats ?? 0),
@@ -130,8 +135,8 @@ export async function activateBillingOrder(
       await tx.workshop.update({
         where: { id: order.workshopId },
         data: {
-          // `addons` bilerek yazılmaz (#827): ek özellikler atölye bazında admin
-          // anahtarıyla tutulur; paket yenilemesi onları ne açar ne kapatır.
+          // `addons` burada yazılmaz (#827): paket hiçbir ek özelliği kaldırmaz;
+          // yalnız siparişin tahsil ettiği kalemler aşağıda yeniden uygulanır (#1049).
           planTier: order.planTier,
           billingCycle: order.billingCycle,
           subscriptionStatus: "active",
@@ -141,12 +146,24 @@ export async function activateBillingOrder(
           planRequestedAt: null,
         },
       })
+      if (addonLines.length > 0) {
+        // Satır kilitli: paidAddons'u kilit altında taze oku (eşzamanlı ek özellik aktivasyonu).
+        const account = await tx.workshop.findUnique({
+          where: { id: order.workshopId },
+          select: { id: true, organizationId: true, paidAddons: true },
+        })
+        if (!account) throw new Error("WORKSHOP_MISSING")
+        await applyAddonEntitlementsTx(tx, account, addonLines.map((l) => l.key))
+      }
       if (order.amountMinor > 0 && ["new_purchase", "upgrade"].includes(order.type)) {
         await recordMarketingConversion(tx, { name: "paid_subscription_confirmed", workshopId: order.workshopId, key: order.id, payload: { plan_tier: order.planTier, billing_cycle: order.billingCycle } })
       }
       await createCommissionDraftForBillingOrderTx(
         tx,
-        order,
+        // Hakediş tabanı yalnız paket payıdır; ek özellik tahsilatı komisyon doğurmaz.
+        addonLines.length > 0
+          ? { ...order, commissionBaseNetMinor: createBillingTaxSnapshot(split.packageAmountMinor).netAmountMinor }
+          : order,
         workshop?.planTier ?? null,
         { userId: opts.actorUserId, label: opts.confirmedByEmail },
       )

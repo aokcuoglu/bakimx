@@ -59,7 +59,7 @@ mock.module("@/lib/audit", () => ({
   },
 }))
 
-const { activateAddonOrder } = await import("./activate-addon")
+const { activateAddonOrder, applyAddonEntitlementsTx } = await import("./activate-addon")
 
 const FUTURE = new Date(Date.now() + 10 * 86_400_000)
 const lines = [{ key: "vinLookup", name: "Şaseden parça", quantity: 1, unitAmountMinor: 1000, amountMinor: 1000 }]
@@ -154,5 +154,21 @@ describe("activateAddonOrder", () => {
   test("okunamayan kalemde reddeder", async () => {
     const res = await activateAddonOrder(order({ addonLines: null }), opts)
     expect(res.ok).toBe(false)
+  })
+})
+
+describe("applyAddonEntitlementsTx (#1049)", () => {
+  test("admin tarafından kapatılmış özellikleri yeniden açar, paidAddons'u birleştirir", async () => {
+    workshops[0].paidAddons = ["ocrIntake"]
+    workshops[1].addons = ["ocrIntake"]
+    await applyAddonEntitlementsTx(
+      tx as never,
+      { id: "w1", organizationId: "org", paidAddons: ["ocrIntake"] },
+      ["vinLookup", "ocrIntake"],
+    )
+    for (const w of workshops) expect(w.addons).toEqual(["vinLookup", "partsCatalog", "ocrIntake"])
+    expect(workshops[0].paidAddons).toEqual(["ocrIntake", "vinLookup"])
+    expect(workshops[1].paidAddons).toEqual([])
+    expect(branchLockIds).toEqual([...branchLockIds].sort())
   })
 })

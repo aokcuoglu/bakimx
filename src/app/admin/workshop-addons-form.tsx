@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { AlertCircle, Info, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/form"
 import { setWorkshopAddons, setWorkshopExtraVinQuota } from "@/app/admin/actions"
 import { FEATURE_CATALOG } from "@/lib/feature-catalog"
-import { ADDON_FEATURES } from "@/lib/plan"
+import { ADDON_FEATURES, type AddonFeature } from "@/lib/plan"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
   addonsFromToggles,
@@ -31,6 +32,8 @@ import {
 interface WorkshopAddonsFormProps {
   workshopId: string
   addons: readonly string[]
+  /** Hesapta satın alınmış ek özelliklerin özellikleri (#1049); yenilemede tahsil edilir. */
+  paidAddonFeatures?: readonly AddonFeature[]
   extraVinQuota: number
   /** Ek özellik açıkken gelen aylık taban katalog kotası (bilgi metni için). */
   addonBaseQuota: number
@@ -62,6 +65,7 @@ const UNLOCKED_NOTES: Record<NonNullable<WorkshopAddonsFormProps["allUnlockedRea
 export function WorkshopAddonsForm({
   workshopId,
   addons,
+  paidAddonFeatures = [],
   extraVinQuota,
   addonBaseQuota,
   allUnlockedReason,
@@ -136,6 +140,12 @@ export function WorkshopAddonsForm({
         <p className="text-xs text-muted-foreground">Değişiklik hesabın tüm şubelerine uygulanır.</p>
       )}
 
+      {paidAddonFeatures.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Satın alınmış bir ek özelliği kapatırsanız sonraki yenilemede tahsil edilmez.
+        </p>
+      )}
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="divide-y rounded-lg border">
@@ -147,7 +157,10 @@ export function WorkshopAddonsForm({
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between gap-3 px-3 py-3">
                     <div className="min-w-0 space-y-0.5">
-                      <FormLabel className="cursor-pointer">{FEATURE_CATALOG[addon].name}</FormLabel>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <FormLabel className="cursor-pointer">{FEATURE_CATALOG[addon].name}</FormLabel>
+                        {paidAddonFeatures.includes(addon) && <Badge variant="primary-tint">Satın alındı</Badge>}
+                      </div>
                       <FormDescription className="text-xs">{FEATURE_CATALOG[addon].description}</FormDescription>
                     </div>
                     <FormControl>

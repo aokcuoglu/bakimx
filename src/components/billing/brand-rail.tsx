@@ -5,6 +5,7 @@ import { getPlanPackage } from "@/lib/plans-catalog"
 import { getPlanPriceMinor, formatMinor } from "@/lib/billing/pricing"
 import { getDiscountedPlanPriceMinor } from "@/lib/billing/referral-discount"
 import type { PlanTier } from "@/lib/plan"
+import { OrderSummaryLines, renewalAddonLines, sumAddonLines } from "@/components/billing/order-summary-lines"
 
 type Cycle = "monthly" | "yearly"
 type Mode = "public" | "inapp"
@@ -20,17 +21,22 @@ export function BrandRail({
   cycle,
   step,
   referralDiscountBps = 0,
+  paidAddonKeys,
 }: {
   mode: Mode
   tier: PlanTier
   cycle: Cycle
   step: number
   referralDiscountBps?: number
+  /** Yenilemede tahsil edilecek satın alınmış ek özellikler (yalnız uygulama içi, #1049). */
+  paidAddonKeys?: readonly string[]
 }) {
   const pkg = getPlanPackage(tier)
   // pkg her zaman katalogda var (kapalı PlanTier union); yine de fiyat aramasını
   // koruyalım ki gelecekte katalogsuz bir tier eklenirse render çökmesin.
-  const amount = formatMinor(pkg ? mode === "inapp" ? getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps) : getPlanPriceMinor(tier, cycle) : 0)
+  const packageMinor = pkg ? mode === "inapp" ? getDiscountedPlanPriceMinor(tier, cycle, referralDiscountBps) : getPlanPriceMinor(tier, cycle) : 0
+  const addonLines = mode === "inapp" ? renewalAddonLines(paidAddonKeys, cycle) : []
+  const amount = formatMinor(packageMinor + sumAddonLines(addonLines))
   const isSummary = step === 2
 
   return (
@@ -77,8 +83,9 @@ export function BrandRail({
                 <Row label="Dönem" value={cycle === "monthly" ? "Aylık" : "Yıllık (2 ay bedava)"} />
                 <Row label="Kullanıcı" value={`${pkg?.seats ?? "—"} kullanıcı`} />
               </div>
+              <OrderSummaryLines addonLines={addonLines} cycle={cycle} tone="onNavy" className="mt-3" />
               <div className="mt-3 flex items-baseline justify-between border-t border-white/10 pt-3">
-                <span className="text-sm text-navy-foreground/60">{mode === "inapp" ? "Kredi öncesi · KDV dahil" : "Toplam · KDV dahil"}</span>
+                <span className="text-sm text-navy-foreground/60">{mode === "inapp" ? "Kredi öncesi tutar · KDV dahil" : "Toplam · KDV dahil"}</span>
                 <span className="text-2xl font-extrabold">{amount}</span>
               </div>
             </>

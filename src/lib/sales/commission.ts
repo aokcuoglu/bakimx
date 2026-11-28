@@ -21,6 +21,8 @@ export type CommissionOrderSnapshot = {
   billingCycle: BillingCycle
   createdAt: Date
   netAmountMinor: number
+  /** Hakediş tabanı; yoksa `netAmountMinor` (ek özellik taşıyan siparişte yalnız paket payı). */
+  commissionBaseNetMinor?: number
 }
 
 export type CommissionDraftResult =
@@ -132,8 +134,9 @@ export async function createCommissionDraftForBillingOrderTx(
     orderBy: { effectiveFrom: "desc" },
     select: { id: true, rateBps: true },
   })
+  const baseNetMinor = order.commissionBaseNetMinor ?? order.netAmountMinor
   const calculatedAmountMinor = rule
-    ? calculateCommissionAmountMinor(order.netAmountMinor, rule.rateBps)
+    ? calculateCommissionAmountMinor(baseNetMinor, rule.rateBps)
     : null
 
   const commission = await tx.salesCommission.create({
@@ -142,7 +145,7 @@ export async function createCommissionDraftForBillingOrderTx(
       leadId: lead.id,
       advisorId: lead.advisorId,
       ruleId: rule?.id ?? null,
-      calculationBaseMinor: order.netAmountMinor,
+      calculationBaseMinor: baseNetMinor,
       calculationRateBps: rule?.rateBps ?? null,
       calculatedAmountMinor,
       reviewReason: rule ? null : "missing_rule",

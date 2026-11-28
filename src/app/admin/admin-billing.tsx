@@ -115,17 +115,25 @@ export function AdminBilling({
   recentOrders: AdminOrderRow[]
   stuckTransactions: AdminStuckTxnRow[]
   subscriptions: AdminSubRow[]
-  revenue: { activeCount: number; mrrLabel: string; monthLabel: string }
+  revenue: {
+    activeCount: number
+    mrrLabel: string
+    addonMrrLabel: string
+    monthLabel: string
+    monthAddonLabel: string
+  }
   /** `confirmBilling` yetkisi. Kapı sunucudadır; bu yalnız 404 üretecek
    *  düğmeleri yetkisiz role göstermemek içindir (BAK-93). */
   canConfirm?: boolean
 }) {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
         <Stat label="Aktif abonelik" value={String(revenue.activeCount)} />
-        <Stat label="MRR (aylık)" value={revenue.mrrLabel} />
+        <Stat label="Paket MRR" value={revenue.mrrLabel} />
+        <Stat label="Ek özellik MRR" value={revenue.addonMrrLabel} />
         <Stat label="Bu ay tahsil" value={revenue.monthLabel} />
+        <Stat label="Bu ay ek özellik" value={revenue.monthAddonLabel} />
       </div>
 
       {canConfirm && <StuckTransactionsSection rows={stuckTransactions} />}
@@ -169,9 +177,9 @@ export function AdminBilling({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="min-w-0 rounded-lg border bg-card p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-xl font-bold text-foreground mt-0.5">{value}</p>
+      <p className="mt-0.5 min-w-0 text-xl font-bold text-foreground tabular-nums">{value}</p>
     </div>
   )
 }

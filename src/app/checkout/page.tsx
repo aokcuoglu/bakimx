@@ -6,7 +6,8 @@ import { PurchaseWizard } from "@/components/billing/purchase-wizard"
 import { formatMinor } from "@/lib/billing/pricing"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import { prisma } from "@/lib/db"
-import { describeBillingOrder, isReleasableExpiredAddonOrder } from "@/lib/billing/addon-pricing"
+import { resolveBillingAccount } from "@/lib/billing/account"
+import { describeBillingOrder, effectivePaidAddonKeys, isReleasableExpiredAddonOrder } from "@/lib/billing/addon-pricing"
 import { getPlanState, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
 import { Button } from "@/components/ui/button"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
@@ -32,6 +33,11 @@ export default async function CheckoutPage({
   const explicitCycle = sp.cycle === "yearly" || sp.cycle === "monthly" ? sp.cycle : null
   const cycle = explicitCycle ?? "monthly"
   const ownedTier = workshop?.subscriptionStatus === "active" ? (workshop.planTier as PlanTier) : null
+  // Yenilemede tahsil edilecek satın alınmış ek özellikler yalnız hesap atölyesinde (#1049).
+  const paidAddonKeys =
+    workshop && (await resolveBillingAccount(workshop)).isAccountWorkshop
+      ? effectivePaidAddonKeys(workshop)
+      : []
   const seatUsage = workshop ? await getSeatUsage(workshop.id) : null
   // Dönem verildiyse (kilit yüzeyi, e-posta, yenileme bağlantısı) doğrudan fatura
   // adımına atla. Aynı paketin yenilenmesi kasıtlı olarak mümkündür
@@ -120,6 +126,7 @@ export default async function CheckoutPage({
         seatUsage={seatUsage ?? undefined}
         extraSeats={workshop?.extraSeats ?? 0}
         referralDiscountBps={workshop ? getReferralDiscountBps(workshop) : 0}
+        paidAddonKeys={paidAddonKeys}
       />
     </main>
   )
