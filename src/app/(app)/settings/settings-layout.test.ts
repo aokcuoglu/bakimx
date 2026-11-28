@@ -73,3 +73,18 @@ describe("Ayarlar nav IA", () => {
     expect(navSource).toContain("WORKSPACE_SETTINGS_ITEMS")
   })
 })
+
+describe("Ayarlar kabuğu e-santral kalıbında (#1071)", () => {
+  const shellSource = readFileSync(join(process.cwd(), "src/components/layout/app-shell.tsx"), "utf8")
+  const settingsNavSource = readFileSync(join(process.cwd(), "src/components/settings/settings-nav.tsx"), "utf8")
+
+  test("ayarlar ayrı sidebar modülü ve bg-card içerik zemini kullanmaz", () => {
+    expect(shellSource).not.toContain("settings-sidebar.module.css")
+    expect(shellSource).not.toMatch(/inSettings\s*&&\s*"bg-card"/)
+  })
+
+  test("ayar menüsü satır/ikon/grup ölçülerini kabuk CSS'inden alır", () => {
+    expect(settingsNavSource).not.toMatch(/h-7|rounded-\[9px\]|size-4"\s*\/>\s*<span/)
+    expect(settingsNavSource).toContain("shellStyles.search")
+  })
+})
