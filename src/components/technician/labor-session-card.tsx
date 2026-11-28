@@ -30,6 +30,7 @@ import {
   updateLaborSessionAction,
 } from "@/app/(app)/technician/actions"
 import { formatTrTime } from "@/lib/format-date"
+import { istanbulDateTimeInputValue, parseIstanbulLocalDateTime } from "@/lib/istanbul-time"
 
 /**
  * Teknisyen panelindeki "İşçilik Süresi" bloğu (BAK-138).
@@ -54,17 +55,6 @@ export type TechnicianLaborSessionRow = {
 
 function formatTime(iso: string): string {
   return formatTrTime(iso)
-}
-
-/**
- * ISO (UTC) → `datetime-local` girdisinin beklediği YEREL saat metni
- * ("2026-08-19T18:40"). `toISOString()` kullanılamaz: o UTC yazar ve alan
- * atölyenin saatinden kaymış görünür.
- */
-function toDatetimeLocalValue(iso: string): string {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 // ── Sayacı durdurma (açıklama sorar) ─────────────────────────────────────────
@@ -205,8 +195,8 @@ function EditLaborSessionDialog({
     values:
       session && session.endTime
         ? {
-            startLocal: toDatetimeLocalValue(session.startTime),
-            endLocal: toDatetimeLocalValue(session.endTime),
+            startLocal: istanbulDateTimeInputValue(new Date(session.startTime)),
+            endLocal: istanbulDateTimeInputValue(new Date(session.endTime)),
             note: session.note ?? "",
           }
         : undefined,
@@ -216,9 +206,13 @@ function EditLaborSessionDialog({
     if (!session) return
     setServerError(null)
     const fd = new FormData()
-    // Yerel saat metni burada UTC'ye çevrilir — sunucu ISO bekler.
-    fd.set("startTime", new Date(values.startLocal).toISOString())
-    fd.set("endTime", new Date(values.endLocal).toISOString())
+    // İstanbul duvar saati burada UTC'ye çevrilir — sunucu ISO bekler. Şema
+    // metni zaten doğruladığı için ayrıştırma boş dönemez.
+    const start = parseIstanbulLocalDateTime(values.startLocal)
+    const end = parseIstanbulLocalDateTime(values.endLocal)
+    if (!start || !end) return
+    fd.set("startTime", start.toISOString())
+    fd.set("endTime", end.toISOString())
     fd.set("note", values.note ?? "")
     startTransition(async () => {
       const res = await updateLaborSessionAction(session.id, fd)

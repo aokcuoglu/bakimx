@@ -650,10 +650,20 @@ export async function addInternalNoteAction(formData: FormData) {
   if (!order) return { error: "Araç kabulü bulunamadı" }
   if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
+  // Yazar: oturum açan kullanıcının atölyedeki Teknisyen kaydı. Teknisyen
+  // kaydı olmayan ofis kullanıcılarında boş kalır.
+  const author = user.technicianId
+    ? await prisma.technician.findFirst({
+        where: { id: user.technicianId, workshopId: user.workshopId },
+        select: { id: true },
+      })
+    : null
+
   await prisma.internalNote.create({
     data: {
       workshopId: user.workshopId,
       serviceOrderId: raw.serviceOrderId,
+      authorId: author?.id ?? null,
       content: parsed.data.content,
     },
   })

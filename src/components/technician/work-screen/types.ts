@@ -76,7 +76,7 @@ export type OrderData = {
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
   photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string; serviceOrderId: string | null; serviceOrderItemId: string | null; note: string | null; createdAt: string }[]
   checklistItems: { id: string; category: string; description: string; isCompleted: boolean; isRequired: boolean; completedAt: string | null; note: string | null; sortOrder: number; deletedAt: string | null }[]
-  internalNotes: { id: string; content: string; isPinned: boolean; createdAt: string }[]
+  internalNotes: { id: string; content: string; isPinned: boolean; createdAt: string; authorName: string | null }[]
   partsRequests: TechnicianPartsRequest[]
   laborSessions: TechnicianLaborSessionRow[]
   paidAmount: number

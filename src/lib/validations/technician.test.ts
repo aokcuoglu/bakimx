@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test"
+import { istanbulDateTimeInputValue } from "@/lib/istanbul-time"
 import {
   laborSessionEditSchema,
   laborSessionEditFormSchema,
@@ -176,14 +177,20 @@ test("aralık kuralları istemci ve sunucu şemasında AYNI kaynaktan gelir", ()
   expect(shared).toEqual({ field: "end", message: "Bitiş saati başlangıçtan sonra olmalıdır" })
 
   // İstemci şeması yerel `datetime-local` metniyle çalışır ama aynı mesajı verir.
-  const local = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+  const local = istanbulDateTimeInputValue
   const r = laborSessionEditFormSchema.safeParse({ startLocal: local(start), endLocal: local(end), note: "" })
   expect(r.success).toBe(false)
   if (!r.success) {
     expect(r.error.issues[0]?.message).toBe("Bitiş saati başlangıçtan sonra olmalıdır")
     expect(r.error.issues[0]?.path).toEqual(["endLocal"])
   }
+})
+
+test("istemci şeması saati İstanbul duvar saati okur ve bozuk metni reddeder", () => {
+  const ok = laborSessionEditFormSchema.safeParse({ startLocal: "2026-08-19T09:00", endLocal: "2026-08-19T10:00", note: "" })
+  expect(ok.success).toBe(true)
+  const bad = laborSessionEditFormSchema.safeParse({ startLocal: "2026-13-45T09:00", endLocal: "2026-08-19T10:00", note: "" })
+  expect(bad.success).toBe(false)
 })
 
 test("boş açıklama geçerlidir — sayacı durdurmak nota bağlı değil", () => {
