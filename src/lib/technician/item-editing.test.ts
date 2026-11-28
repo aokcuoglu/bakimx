@@ -52,3 +52,21 @@ test("iş ekranı ekleme yüzeyini ve araç çubuğunu seçer; ofis varsayılan�
   expect(grid).toContain('addSurface = "dialog"')
   expect(grid).toContain("hideAddToolbar = false")
 })
+
+test("dış parça / dış işçilik iş ekranında telefonda alt sayfa, lg'de diyalog (#1061)", () => {
+  // Parça/işçilik eklemeyle aynı sözleşme: yüzeyi çağıran seçer, formlar varsayılan
+  // olarak diyalogdur (ofis `purchase-detail-dialog` bir diyaloğun içinden açar).
+  const sheets = readFileSync("src/components/technician/work-screen/work-sheets.tsx", "utf8")
+  expect(sheets).toContain('const surface = isMobile ? "sheet" : "dialog"')
+  expect(sheets.match(/surface=\{surface\}/g)?.length).toBe(2)
+
+  for (const path of [
+    "src/components/technician/purchase-form-sheet.tsx",
+    "src/components/technician/external-labor-sheet.tsx",
+  ]) {
+    const form = readFileSync(path, "utf8")
+    expect(form).toContain('surface = "dialog"')
+    expect(form).toContain("<FormSurface")
+    expect(form).not.toContain('from "@/components/ui/dialog"')
+  }
+})

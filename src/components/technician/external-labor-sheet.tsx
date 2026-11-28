@@ -7,7 +7,7 @@ import { Pencil, Plus, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DatePicker } from "@/components/ui/date-picker"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { FormSurface, type FormSurfaceKind } from "@/components/shared/form-surface"
 import { parseTRYToKurus } from "@/lib/money"
 import { formatTrDate } from "@/lib/format-date"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -84,11 +84,14 @@ export function ExternalLaborSheet({
   item,
   open,
   onOpenChange,
+  surface = "dialog",
 }: {
   orderId: string
   item: ExternalLaborFormItem | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** Telefonda alt sayfa, masaüstünde diyalog — seçimi çağıran yapar (#1061). */
+  surface?: FormSurfaceKind
 }) {
   const router = useRouter()
   const editing = item != null
@@ -157,114 +160,113 @@ export function ExternalLaborSheet({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) close() }}>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>{editing ? "Dış İşçiliği Düzenle" : "Dış İşçilik Ekle"}</DialogTitle>
-          <DialogDescription>
-            {editing
-              ? "Dışarıda yaptırılan işin bilgilerini güncelle."
-              : "Araca dışarıda yaptırdığın işi araç kabulüne kalem olarak ekle. Müşteri fiyatını ofis belirler."}
-          </DialogDescription>
-        </DialogHeader>
+    <FormSurface
+      surface={surface}
+      open={open}
+      onOpenChange={(o) => { if (!o) close() }}
+      title={editing ? "Dış İşçiliği Düzenle" : "Dış İşçilik Ekle"}
+      description={
+        editing
+          ? "Dışarıda yaptırılan işin bilgilerini güncelle."
+          : "Araca dışarıda yaptırdığın işi araç kabulüne kalem olarak ekle. Müşteri fiyatını ofis belirler."
+      }
+      dialogClassName="sm:max-w-sm"
+      footer={
+        <div className="flex gap-2">
+          <Button variant="foreground"
+            type="button"
+            size="lg"
+            className="flex-1 touch-manipulation"
+            disabled={submitting || !name.trim()}
+            onClick={handleSubmit}
+          >
+            <Send className="size-3.5" />
+            {submitting ? "Kaydediliyor…" : editing ? "Değişiklikleri Kaydet" : "Kalem Olarak Ekle"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="touch-manipulation"
+            disabled={submitting}
+            onClick={close}
+          >
+            İptal
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-3 py-1">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-        <div className="space-y-3 py-1">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-1">
-            <label htmlFor="external-labor-name" className="text-xs font-medium text-muted-foreground">
-              İşçilik *
-            </label>
-            <Input
-              id="external-labor-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={200}
-              placeholder="Ör. Rot balans ayarı"
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label htmlFor="external-labor-supplier" className="text-xs font-medium text-muted-foreground">
-              Nerede yaptırıldı
-            </label>
-            <Input
-              id="external-labor-supplier"
-              value={supplierName}
-              onChange={(e) => setSupplierName(e.target.value)}
-              maxLength={160}
-              placeholder="Firma (opsiyonel)"
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label htmlFor="external-labor-price" className="text-xs font-medium text-muted-foreground">
-              Alış fiyatı (₺, KDV hariç)
-            </label>
-            {/* inputMode="decimal": mobil klavyede virgül/nokta çıkar. Türkçe
-                "1.250,50" biçimi parseTRYToKurus ile çevrilir. */}
-            <Input
-              id="external-labor-price"
-              inputMode="decimal"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              maxLength={20}
-              placeholder="0,00"
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Tarih</label>
-            <DatePicker value={purchasedAt} onChange={setPurchasedAt} disabled={submitting} />
-          </div>
-
-          <div className="space-y-1">
-            <label htmlFor="external-labor-note" className="text-xs font-medium text-muted-foreground">
-              Not
-            </label>
-            <Input
-              id="external-labor-note"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              maxLength={500}
-              placeholder="Ör. ön takım, fişi alındı (opsiyonel)"
-              disabled={submitting}
-            />
-          </div>
+        <div className="space-y-1">
+          <label htmlFor="external-labor-name" className="text-xs font-medium text-muted-foreground">
+            İşçilik *
+          </label>
+          <Input
+            id="external-labor-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={200}
+            placeholder="Ör. Rot balans ayarı"
+            disabled={submitting}
+          />
         </div>
 
-        <DialogFooter>
-          <div className="flex gap-2">
-            <Button variant="foreground"
-              type="button"
-              size="lg"
-              className="flex-1 touch-manipulation"
-              disabled={submitting || !name.trim()}
-              onClick={handleSubmit}
-            >
-              <Send className="size-3.5" />
-              {submitting ? "Kaydediliyor…" : editing ? "Değişiklikleri Kaydet" : "Kalem Olarak Ekle"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="touch-manipulation"
-              disabled={submitting}
-              onClick={close}
-            >
-              İptal
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <div className="space-y-1">
+          <label htmlFor="external-labor-supplier" className="text-xs font-medium text-muted-foreground">
+            Nerede yaptırıldı
+          </label>
+          <Input
+            id="external-labor-supplier"
+            value={supplierName}
+            onChange={(e) => setSupplierName(e.target.value)}
+            maxLength={160}
+            placeholder="Firma (opsiyonel)"
+            disabled={submitting}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label htmlFor="external-labor-price" className="text-xs font-medium text-muted-foreground">
+            Alış fiyatı (₺, KDV hariç)
+          </label>
+          {/* inputMode="decimal": mobil klavyede virgül/nokta çıkar. Türkçe
+              "1.250,50" biçimi parseTRYToKurus ile çevrilir. */}
+          <Input
+            id="external-labor-price"
+            inputMode="decimal"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            maxLength={20}
+            placeholder="0,00"
+            disabled={submitting}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">Tarih</label>
+          <DatePicker value={purchasedAt} onChange={setPurchasedAt} disabled={submitting} />
+        </div>
+
+        <div className="space-y-1">
+          <label htmlFor="external-labor-note" className="text-xs font-medium text-muted-foreground">
+            Not
+          </label>
+          <Input
+            id="external-labor-note"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={500}
+            placeholder="Ör. ön takım, fişi alındı (opsiyonel)"
+            disabled={submitting}
+          />
+        </div>
+      </div>
+    </FormSurface>
   )
 }
