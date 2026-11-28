@@ -50,6 +50,7 @@ export interface TechnicianInternalNote {
   content: string
   isPinned: boolean
   createdAt: string
+  authorName?: string | null
 }
 
 const CATEGORY_ORDER: ChecklistCategoryKey[] = ["inspection", "repair", "delivery"]
@@ -236,7 +237,7 @@ export function TechnicianProgressPanel({
                     </span>
                   }
                   title={<span className="whitespace-pre-wrap font-normal">{note.content}</span>}
-                  meta={formatTrDateTime(note.createdAt)}
+                  meta={note.authorName ? `${note.authorName} · ${formatTrDateTime(note.createdAt)}` : formatTrDateTime(note.createdAt)}
                 />
               </li>
             ))}

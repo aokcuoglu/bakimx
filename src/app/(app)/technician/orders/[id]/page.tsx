@@ -61,7 +61,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       // silinen maddelerin `templateKey`ine muhtaç ve panel silinenleri "geri
       // al" bölümünde gösteriyor. Ayrım bellekte `deletedAt` ile yapılır.
       checklistItems: { orderBy: { sortOrder: "asc" } },
-      internalNotes: { orderBy: { createdAt: "desc" } },
+      internalNotes: { orderBy: { createdAt: "desc" }, include: { author: { select: { fullName: true } } } },
       partsRequests: { orderBy: { createdAt: "desc" } },
       laborSessions: {
         orderBy: { startTime: "desc" },
@@ -263,6 +263,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       content: n.content,
       isPinned: n.isPinned,
       createdAt: n.createdAt.toISOString(),
+      authorName: n.author?.fullName ?? null,
     })),
     partsRequests: order.partsRequests.map((p) => ({
       id: p.id,
@@ -300,7 +301,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
   }
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle={`İş ${safeOrder.workOrderNo}`} showGlobalSearch={false}>
+    <AppShell workshopName={workshop?.name} recordTitle={safeOrder.vehicle.plate} showGlobalSearch={false}>
       <TechnicianOrderDetail
         order={safeOrder}
         technicians={allTechnicians.map((t) => ({

@@ -98,7 +98,7 @@ export default async function OrderDetailPage({
           editedByUser: { select: { firstName: true, lastName: true, email: true, username: true } },
         },
       },
-      internalNotes: { orderBy: { createdAt: "desc" } },
+      internalNotes: { orderBy: { createdAt: "desc" }, include: { author: { select: { fullName: true } } } },
     },
   })
 
@@ -255,6 +255,7 @@ export default async function OrderDetailPage({
       content: n.content,
       isPinned: n.isPinned,
       createdAt: n.createdAt.toISOString(),
+      authorName: n.author?.fullName ?? null,
     })),
     customer: {
       id: currentCustomer.id,

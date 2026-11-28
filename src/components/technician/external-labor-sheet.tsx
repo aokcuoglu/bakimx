@@ -52,11 +52,6 @@ export type ExternalLaborFormItem = {
   createdAt: string
 }
 
-function todayTrString(): string {
-  const now = new Date()
-  return `${String(now.getDate()).padStart(2, "0")}.${String(now.getMonth() + 1).padStart(2, "0")}.${now.getFullYear()}`
-}
-
 function isoToTr(iso: string | null): string {
   if (!iso) return ""
   const date = new Date(iso)
@@ -103,7 +98,7 @@ export function ExternalLaborSheet({
     item?.purchasePriceKurus != null ? String(item.purchasePriceKurus / 100) : "",
   )
   const [note, setNote] = useState(item?.note ?? "")
-  const [purchasedAt, setPurchasedAt] = useState(item ? isoToTr(item.purchasedAt ?? item.createdAt) : todayTrString())
+  const [purchasedAt, setPurchasedAt] = useState(item ? isoToTr(item.purchasedAt ?? item.createdAt) : formatTrDate(new Date()))
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 

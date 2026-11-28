@@ -49,13 +49,6 @@ type CatalogLink = {
   label: string
 }
 
-function todayTrString(): string {
-  const now = new Date()
-  const dd = String(now.getDate()).padStart(2, "0")
-  const mm = String(now.getMonth() + 1).padStart(2, "0")
-  return `${dd}.${mm}.${now.getFullYear()}`
-}
-
 /** ISO → dd.MM.yyyy (DatePicker depolama biçimi). */
 function isoToTr(iso: string | null): string {
   if (!iso) return ""
@@ -177,7 +170,7 @@ export function PurchaseFormSheet({
   const [price, setPrice] = useState(
     item?.purchasePriceKurus != null ? String(kurusToLira(item.purchasePriceKurus)) : "",
   )
-  const [purchasedAt, setPurchasedAt] = useState(editing ? isoToTr(item.purchasedAt) : todayTrString())
+  const [purchasedAt, setPurchasedAt] = useState(editing ? isoToTr(item.purchasedAt) : formatTrDate(new Date()))
   const [technicianId, setTechnicianId] = useState(defaultTechnicianId || "")
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)

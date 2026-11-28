@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
-import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, ListChecks, Package, Pause, Play } from "lucide-react"
+import { CheckCircle2, ChevronDown, ChevronRight, ListChecks, Package, Pause, Play } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { toast } from "sonner"
 import { useOrderSync } from "@/hooks/use-order-sync"
@@ -160,9 +160,12 @@ export function TechnicianOrderDetail({
   const missingPhotoCount = missingRequiredPhotoTypes(order.photos.map((p) => p.type)).length
   const tileBadges = missingPhotoCount > 0 ? { photo: `${missingPhotoCount} eksik` } : undefined
 
+  // Sayı, bölümlerde gerçekten listelenen karelerden gelir (VISIBLE_PHOTO sunucuda
+  // süzer, alış kareleri galeri dışı); silme `router.refresh()` ile yeniden hesaplanır.
+  const listedPhotoCount = beforePhotos.length + duringPhotos.length + afterPhotos.length
   const detailsSummary = [
     "Detaylar",
-    galleryPhotos.length > 0 ? `${galleryPhotos.length} fotoğraf` : null,
+    listedPhotoCount > 0 ? `${listedPhotoCount} fotoğraf` : null,
     order.internalNotes.length > 0 ? `${order.internalNotes.length} not` : null,
   ].filter(Boolean).join(" · ")
 
@@ -282,12 +285,7 @@ export function TechnicianOrderDetail({
     <div className="mx-auto w-full max-w-6xl space-y-4">
       <section className="space-y-2 rounded-xl bg-card p-4">
         <div className="flex items-center justify-between gap-2">
-          <Button variant="ghost" size="inline" asChild>
-            <Link href="/technician">
-              <ArrowLeft />
-              Teknisyen Paneli
-            </Link>
-          </Button>
+          <StatusBadge status={order.status} />
           {canEditOrder && (
             <Button variant="ghost" size="inline" asChild>
               <Link href={workOrderPath(order.id)}>
@@ -296,10 +294,6 @@ export function TechnicianOrderDetail({
               </Link>
             </Button>
           )}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-2xl font-bold tracking-wide text-foreground">{order.vehicle.plate}</h2>
-          <StatusBadge status={order.status} />
         </div>
         <p className="text-sm text-muted-foreground">{vehicleLine}</p>
         {order.intake.customerComplaint && (
